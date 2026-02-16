@@ -1,0 +1,38 @@
+[
+  { "id": 1, "nome": "Pull-down Barra", "musculo": "Costas", "treino": "A" },
+  { "id": 2, "nome": "Rosca inversa", "musculo": "Antebraço", "treino": "A" },
+  { "id": 3, "nome": "Puxada vertical", "musculo": "Costas", "treino": "A" },
+  { "id": 4, "nome": "Remada baixa peg. aberta", "musculo": "Costas", "treino": "A" },
+  { "id": 5, "nome": "Remada baixa peg. fechada", "musculo": "Costas", "treino": "A" },
+  { "id": 6, "nome": "Remada unilateral pegada neutra", "musculo": "Costas", "treino": "A" },
+
+  { "id": 7, "nome": "Voador", "musculo": "Peito", "treino": "B" },
+  { "id": 8, "nome": "Supino reto no Smith", "musculo": "Peito", "treino": "B" },
+  { "id": 9, "nome": "Supino inclinado halter", "musculo": "Peito", "treino": "B" },
+  { "id": 10, "nome": "Supino vertical", "musculo": "Peito", "treino": "B" },
+  { "id": 11, "nome": "Crossover", "musculo": "Peito", "treino": "B" },
+
+  { "id": 12, "nome": "Francesa polia", "musculo": "Tríceps", "treino": "C" },
+  { "id": 13, "nome": "Rosca inversa", "musculo": "Antebraço", "treino": "C" },
+  { "id": 14, "nome": "Patada polia", "musculo": "Tríceps", "treino": "C" },
+  { "id": 15, "nome": "Rosca polia", "musculo": "Bíceps", "treino": "C" },
+  { "id": 16, "nome": "Tríceps polia barra V", "musculo": "Tríceps", "treino": "C" },
+  { "id": 17, "nome": "Rosca polia corda", "musculo": "Bíceps", "treino": "C" },
+  { "id": 18, "nome": "Rosca Scott máquina", "musculo": "Bíceps", "treino": "C" },
+
+  { "id": 19, "nome": "Cadeira extensora", "musculo": "Quadríceps", "treino": "D" },
+  { "id": 20, "nome": "Mesa flexora", "musculo": "Posterior da coxa", "treino": "D" },
+  { "id": 21, "nome": "Agachamento livre", "musculo": "Quadríceps", "treino": "D" },
+  { "id": 22, "nome": "Panturrilha em pé", "musculo": "Panturrilha", "treino": "D" },
+  { "id": 23, "nome": "Leg press", "musculo": "Quadríceps", "treino": "D" },
+  { "id": 24, "nome": "Flexão em pé", "musculo": "Posterior da coxa", "treino": "D" },
+  { "id": 25, "nome": "Panturrilha sentado", "musculo": "Panturrilha", "treino": "D" },
+
+  { "id": 26, "nome": "Desenvolvimento", "musculo": "Ombro", "treino": "E" },
+  { "id": 27, "nome": "Trapézio encolhimento halteres", "musculo": "Trapézio", "treino": "E" },
+  { "id": 28, "nome": "Desenvolvimento máquina", "musculo": "Ombro", "treino": "E" },
+  { "id": 29, "nome": "Elevação frontal", "musculo": "Ombro", "treino": "E" },
+  { "id": 30, "nome": "Trapézio máquina", "musculo": "Trapézio", "treino": "E" },
+  { "id": 31, "nome": "Remada alta cross", "musculo": "Ombro", "treino": "E" },
+  { "id": 32, "nome": "Tríceps polia barra V", "musculo": "Tríceps", "treino": "E" }
+]

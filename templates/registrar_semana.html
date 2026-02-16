@@ -1,0 +1,481 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2>
+            <i class="bi bi-plus-circle me-2" style="color: #F28C33;"></i>Registrar Treino
+        </h2>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Treino</label>
+                <select name="treino" class="form-select form-select-lg" required>
+                    <option value="">Selecione o treino</option>
+                    {% for t in treinos %}
+                    <option value="{{ t.id }}" {% if treino == t.id %}selected{% endif %}>
+                        {{ t.id }} - {{ t.descricao }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Período</label>
+                <input name="periodo" class="form-control form-control-lg" 
+                       placeholder="Ex: Janeiro/2024" 
+                       value="{{ periodo or '' }}" 
+                       list="periodos-sugeridos" required>
+                <datalist id="periodos-sugeridos">
+                    {% for p in periodos_existentes %}
+                    <option value="{{ p }}">
+                    {% endfor %}
+                </datalist>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Semana</label>
+                <input type="number" name="semana" class="form-control form-control-lg" 
+                       placeholder="Nº da semana" value="{{ semana or '' }}" 
+                       min="1" max="52" required>
+            </div>
+            <div class="col-12 mt-4">
+                <button class="btn btn-lg w-100" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
+                    <i class="bi bi-search me-2"></i>Carregar Exercícios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if exercicios %}
+<style>
+    .exercise-header {
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        color: white;
+        padding: 15px;
+        border-radius: 10px 10px 0 0;
+        margin-bottom: 0;
+    }
+    
+    .series-control {
+        background: #2D2D2D;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.9em;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .series-control select {
+        background: white;
+        color: #2D2D2D;
+        border: none;
+        border-radius: 15px;
+        padding: 5px 8px;
+        font-weight: bold;
+        cursor: pointer;
+        width: 65px;
+        font-size: 0.95rem;
+    }
+    
+    .exercise-row {
+        background: #fff9f0;
+        padding: 20px;
+        margin-bottom: 15px;
+        border-radius: 10px;
+        border-left: 5px solid #F28C33;
+        transition: all 0.2s;
+    }
+    
+    .exercise-row:hover {
+        box-shadow: 0 5px 15px rgba(242, 140, 51, 0.2);
+    }
+    
+    .volume-total {
+        background: #2D2D2D;
+        color: white;
+        padding: 12px 25px;
+        border-radius: 25px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        display: inline-block;
+        white-space: nowrap;
+    }
+    
+    .ultima-carga {
+        background: #e9ecef;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        color: #F28C33;
+        font-weight: 600;
+        display: inline-block;
+        border: 1px solid #F28C33;
+    }
+    
+    /* Inputs maiores */
+    .carga-input, .reps-input {
+        text-align: center;
+        font-weight: 600;
+        font-size: 1.2rem !important;
+        padding: 12px 5px !important;
+        height: auto !important;
+    }
+    
+    .input-group-text {
+        background-color: #f8f9fa;
+        font-size: 1rem;
+        padding: 12px 15px;
+    }
+    
+    /* Remove as setas do input number */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+    }
+    input[type=number] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+    
+    /* Nome do exercício */
+    .exercise-row h5 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+        color: #2D2D2D;
+    }
+    
+    /* Botão de carregar último treino */
+    .btn-load-last {
+        background: #F28C33;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-load-last:hover {
+        background: #2D2D2D;
+        transform: scale(1.05);
+    }
+    
+    /* Responsivo */
+    @media (max-width: 768px) {
+        .carga-input, .reps-input {
+            font-size: 1rem !important;
+            padding: 8px 5px !important;
+        }
+        
+        .volume-total {
+            font-size: 1rem;
+            padding: 8px 15px;
+        }
+        
+        .exercise-row {
+            padding: 15px;
+        }
+        
+        .input-group-text {
+            padding: 8px 10px;
+        }
+    }
+</style>
+
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">
+            <i class="bi bi-list-check me-2" style="color: #F28C33;"></i>Exercícios - {{ treino }}
+        </h4>
+        <div>
+            <button type="button" class="btn-load-last me-2" onclick="carregarUltimoRegistro()">
+                <i class="bi bi-clock-history"></i> Carregar Último Treino
+            </button>
+            <span class="badge" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; font-size: 1rem; padding: 8px 15px;">
+                {{ exercicios|length }} exercícios
+            </span>
+        </div>
+    </div>
+    <div class="card-body">
+        <form method="post" id="registroForm">
+            <input type="hidden" name="treino" value="{{ treino }}">
+            <input type="hidden" name="periodo" value="{{ periodo }}">
+            <input type="hidden" name="semana" value="{{ semana }}">
+
+            {% for ex in exercicios %}
+            {% set registro_atual = registros.get(ex.id) %}
+            {% set ultimas = historico_series.get(ex.id, []) %}
+            
+            <div class="exercise-row" data-exercicio-id="{{ ex.id }}" id="exercicio-{{ ex.id }}" 
+                 data-ultima-carga="{% if ultimas %}{{ ultimas[0].carga }}{% endif %}"
+                 data-ultimas-reps="{% if ultimas %}{{ ultimas[0].repeticoes }}{% endif %}"
+                 data-ultimas-series="{% if ultimas %}{{ ultimas|length }}{% endif %}">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <h5 class="mb-1">{{ ex.nome }}</h5>
+                        <span class="badge bg-secondary" style="font-size: 0.9rem; padding: 5px 10px;">{{ ex.musculo }}</span>
+                        {% if ultimas %}
+                        <div class="ultima-carga mt-2">
+                            <i class="bi bi-clock-history"></i> 
+                            Último: {{ ultimas[0].carga }}kg × {{ ultimas[0].repeticoes }}reps 
+                            ({{ ultimas|length }} séries)
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-1">
+                        <select name="num_series_{{ ex.id }}" id="series-select-{{ ex.id }}" 
+                                class="form-select" style="font-size: 1.1rem; padding: 10px; font-weight: bold;"
+                                onchange="atualizarVolume({{ ex.id }})">
+                            <option value="1" {% if (registro_atual and registro_atual.num_series == 1) or (ultimas|length == 1) %}selected{% endif %}>1</option>
+                            <option value="2" {% if (registro_atual and registro_atual.num_series == 2) or (ultimas|length == 2) %}selected{% endif %}>2</option>
+                            <option value="3" {% if (not registro_atual and not ultimas) or (registro_atual and registro_atual.num_series == 3) or (ultimas|length == 3) %}selected{% endif %}>3</option>
+                            <option value="4" {% if (registro_atual and registro_atual.num_series == 4) or (ultimas|length == 4) %}selected{% endif %}>4</option>
+                            <option value="5" {% if (registro_atual and registro_atual.num_series == 5) or (ultimas|length == 5) %}selected{% endif %}>5</option>
+                        </select>
+                        <small class="text-muted d-block text-center">séries</small>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-light"><i class="bi bi-weight"></i></span>
+                            <input type="number" name="carga_{{ ex.id }}" 
+                                   class="form-control carga-input" 
+                                   placeholder="Carga" 
+                                   value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].carga }}{% elif ultimas %}{{ ultimas[0].carga }}{% endif %}"
+                                   step="0.5" 
+                                   inputmode="decimal"
+                                   onchange="atualizarVolume({{ ex.id }})"
+                                   onkeyup="atualizarVolume({{ ex.id }})">
+                            <span class="input-group-text bg-light">kg</span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-light"><i class="bi bi-arrow-repeat"></i></span>
+                            <input type="text" name="reps_{{ ex.id }}" 
+                                   class="form-control reps-input" 
+                                   placeholder="Repetições" 
+                                   value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].repeticoes }}{% elif ultimas %}{{ ultimas[0].repeticoes }}{% endif %}"
+                                   inputmode="numeric"
+                                   pattern="[0-9]*"
+                                   onchange="atualizarVolume({{ ex.id }})"
+                                   onkeyup="atualizarVolume({{ ex.id }})"
+                                   onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+                            <span class="input-group-text bg-light">reps</span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2 text-end">
+                        <span class="volume-total" id="volume-total-{{ ex.id }}">
+                            0 kg
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Detalhamento do cálculo -->
+                <div class="row mt-2">
+                    <div class="col-md-12 text-muted text-end" id="volume-detalhe-{{ ex.id }}" style="font-size: 0.95rem;">
+                        
+                    </div>
+                </div>
+            </div>
+            
+            <script>
+                (function() {
+                    const exId = {{ ex.id }};
+                    setTimeout(function() {
+                        atualizarVolume(exId);
+                    }, 50);
+                })();
+            </script>
+            {% endfor %}
+
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <button type="button" class="btn btn-lg w-100" style="background: #F28C33; color: white; border: none; font-size: 1.2rem; padding: 15px;" onclick="carregarUltimoRegistro()">
+                        <i class="bi bi-clock-history me-2"></i>Carregar Dados do Último Treino
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <button type="submit" name="salvar" class="btn btn-lg w-100" style="background: #2D2D2D; color: white; border: none; font-size: 1.2rem; padding: 15px;">
+                        <i class="bi bi-check-circle me-2"></i>Salvar Treino
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg w-100">
+                        <i class="bi bi-x-circle me-2"></i>Cancelar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function atualizarVolume(exercicioId) {
+        const exercicio = document.getElementById(`exercicio-${exercicioId}`);
+        if (!exercicio) return;
+        
+        const cargaInput = exercicio.querySelector('.carga-input');
+        const repsInput = exercicio.querySelector('.reps-input');
+        
+        if (!cargaInput || !repsInput) return;
+        
+        const carga = parseFloat(cargaInput.value) || 0;
+        const reps = parseInt(repsInput.value) || 0;
+        
+        const seriesSelect = document.getElementById(`series-select-${exercicioId}`);
+        if (!seriesSelect) return;
+        
+        const numSeries = parseInt(seriesSelect.value) || 3;
+        
+        const volumeTotal = carga * reps * numSeries;
+        
+        // Atualizar volume total
+        const volumeElement = document.getElementById(`volume-total-${exercicioId}`);
+        if (volumeElement) {
+            if (volumeTotal > 0) {
+                volumeElement.innerHTML = `<i class="bi bi-bar-chart"></i> ${volumeTotal} kg`;
+            } else {
+                volumeElement.innerHTML = `<i class="bi bi-bar-chart"></i> 0 kg`;
+            }
+        }
+        
+        // Atualizar detalhamento
+        const detalheElement = document.getElementById(`volume-detalhe-${exercicioId}`);
+        if (detalheElement) {
+            if (carga > 0 && reps > 0) {
+                detalheElement.textContent = `${carga} kg × ${reps} reps × ${numSeries} séries = ${volumeTotal} kg`;
+            } else {
+                detalheElement.textContent = '';
+            }
+        }
+    }
+
+    function carregarUltimoRegistro() {
+        // Para cada exercício, carregar os dados do último registro
+        document.querySelectorAll('[id^="exercicio-"]').forEach(exercicio => {
+            const exId = exercicio.id.replace('exercicio-', '');
+            
+            // Pegar os dados do último registro armazenados no elemento
+            const ultimaCarga = exercicio.dataset.ultimaCarga;
+            const ultimasReps = exercicio.dataset.ultimasReps;
+            const ultimasSeries = exercicio.dataset.ultimasSeries;
+            
+            if (ultimaCarga && ultimasReps) {
+                // Atualizar campos
+                const cargaInput = exercicio.querySelector('.carga-input');
+                const repsInput = exercicio.querySelector('.reps-input');
+                const seriesSelect = document.getElementById(`series-select-${exId}`);
+                
+                if (cargaInput) cargaInput.value = ultimaCarga;
+                if (repsInput) repsInput.value = ultimasReps;
+                if (seriesSelect && ultimasSeries) {
+                    seriesSelect.value = ultimasSeries;
+                }
+                
+                // Atualizar volume
+                atualizarVolume(parseInt(exId));
+            }
+        });
+        
+        // Feedback visual
+        alert('Dados do último treino carregados com sucesso!');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.carga-input, .reps-input').forEach(input => {
+            input.addEventListener('input', function() {
+                const exercicioId = this.closest('[data-exercicio-id]').getAttribute('data-exercicio-id');
+                atualizarVolume(parseInt(exercicioId));
+            });
+            
+            input.addEventListener('keyup', function() {
+                const exercicioId = this.closest('[data-exercicio-id]').getAttribute('data-exercicio-id');
+                atualizarVolume(parseInt(exercicioId));
+            });
+        });
+        
+        document.querySelectorAll('[id^="series-select-"]').forEach(select => {
+            select.addEventListener('change', function() {
+                const exercicioId = this.id.replace('series-select-', '');
+                atualizarVolume(parseInt(exercicioId));
+            });
+        });
+        
+        // Verificar se existem registros anteriores para carregar automaticamente
+        {% if historico_series %}
+            {% set tem_historico = true %}
+        {% else %}
+            {% set tem_historico = false %}
+        {% endif %}
+        
+        {% if registros %}
+            {% set tem_registro_atual = true %}
+        {% else %}
+            {% set tem_registro_atual = false %}
+        {% endif %}
+        
+        const temHistorico = {{ 'true' if tem_historico else 'false' }};
+        const temRegistroAtual = {{ 'true' if tem_registro_atual else 'false' }};
+        
+        // Se não tem registro atual mas tem histórico, carregar automaticamente
+        if (!temRegistroAtual && temHistorico) {
+            setTimeout(function() {
+                carregarUltimoRegistro();
+            }, 500);
+        }
+    });
+
+    // Validar formulário antes de enviar - AGORA ACEITA ZERO
+    document.getElementById('registroForm')?.addEventListener('submit', function(e) {
+        let valid = true;
+        let firstEmpty = null;
+        let mensagem = '';
+        
+        document.querySelectorAll('.carga-input, .reps-input').forEach(input => {
+            if (input.value === '') {
+                valid = false;
+                input.classList.add('is-invalid');
+                if (!firstEmpty) firstEmpty = input;
+                mensagem = 'Preencha todos os campos!';
+            } else {
+                // Verifica se é um número válido (pode ser zero)
+                const valor = parseFloat(input.value);
+                if (isNaN(valor)) {
+                    valid = false;
+                    input.classList.add('is-invalid');
+                    if (!firstEmpty) firstEmpty = input;
+                    mensagem = 'Digite apenas números válidos!';
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+            }
+        });
+        
+        if (!valid) {
+            e.preventDefault();
+            alert(mensagem || 'Preencha todos os campos corretamente!');
+            firstEmpty?.focus();
+        }
+    });
+</script>
+{% endblock %}
