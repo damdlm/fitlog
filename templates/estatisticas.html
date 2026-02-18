@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2>
+			<i class="bi bi-graph-up"  style="color: #F28C33;"></i> Estatísticas dos Treinos
+        </h2>
+    </div>
+</div>
+
+<!-- Cards de Resumo -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card stats-card" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50">Total de Exercícios</h6>
+                        <h3 class="text-white mb-0">{{ musculo_stats.values()|sum(attribute='qtd_exercicios') }}</h3>
+                    </div>
+                    <i class="bi bi-activity fs-1 text-white-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card" style="background: #2D2D2D;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50">Volume Total</h6>
+                        <h3 class="text-white mb-0">{{ musculo_stats.values()|sum(attribute='volume_total')|int }}kg</h3>
+                    </div>
+                    <i class="bi bi-lightning-charge fs-1 text-white-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50">Média por Treino</h6>
+                        <h3 class="text-white mb-0">
+                            {% set total_vol = musculo_stats.values()|sum(attribute='volume_total') %}
+                            {% set total_reg = musculo_stats.values()|sum(attribute='qtd_registros') %}
+                            {% if total_reg and total_reg > 0 %}
+                                {{ (total_vol / total_reg)|int }}kg
+                            {% else %}
+                                0kg
+                            {% endif %}
+                        </h3>
+                    </div>
+                    <i class="bi bi-calculator fs-1 text-white-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Gráfico de Volume por Músculo -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart me-2" style="color: #F28C33;"></i>Volume por Músculo
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="muscleChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabela de Estatísticas por Músculo -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-table me-2" style="color: #F28C33;"></i>Detalhamento por Músculo
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Músculo</th>
+                                <th>Exercícios</th>
+                                <th>Registros</th>
+                                <th>Volume Total</th>
+                                <th>Média por Sessão</th>
+                                <th>Média por Série</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for musculo, stats in musculo_stats.items() %}
+                            <tr>
+                                <td><strong>{{ musculo }}</strong></td>
+                                <td>{{ stats.qtd_exercicios }}</td>
+                                <td>{{ stats.qtd_registros }}</td>
+                                <td>{{ stats.volume_total|int }}kg</td>
+                                <td>
+                                    {% if stats.qtd_registros > 0 %}
+                                        {{ (stats.volume_total / stats.qtd_registros)|int }}kg
+                                    {% else %}
+                                        0kg
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if stats.qtd_registros > 0 and stats.total_series is defined and stats.total_series > 0 %}
+                                        {{ (stats.volume_total / stats.total_series)|int }}kg
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Estatísticas por Treino -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-trophy me-2" style="color: #F28C33;"></i>Desempenho por Treino
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for treino_id, stats in treino_stats.items() %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5 class="card-title">Treino {{ treino_id }}</h5>
+                                <h6 class="card-subtitle mb-3 text-muted">{{ stats.descricao }}</h6>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Exercícios:</span>
+                                    <strong>{{ stats.qtd_exercicios }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Registros:</span>
+                                    <strong>{{ stats.qtd_registros }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Total de Séries:</span>
+                                    <strong>{{ stats.total_series|default(0) }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Volume Total:</span>
+                                    <strong class="text-primary" style="color: #F28C33 !important;">{{ stats.volume_total|int }}kg</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráfico de Evolução por Treino -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up me-2" style="color: #F28C33;"></i>Evolução do Volume por Treino
+                </h5>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary active" onclick="carregarEvolucao('todos')">Todos</button>
+                    {% for t in treinos %}
+                    <button class="btn btn-outline-primary" onclick="carregarEvolucao('{{ t.id }}')">{{ t.id }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="evolucaoChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Dados do gráfico de pizza
+    const muscleData = {{ musculo_stats|tojson }};
+    const labels = Object.keys(muscleData);
+    const volumes = Object.values(muscleData).map(v => v.volume_total);
+    
+    new Chart(document.getElementById('muscleChart'), {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: volumes,
+                backgroundColor: [
+                    '#0d6efd', '#198754', '#0dcaf0', '#ffc107', '#dc3545',
+                    '#6f42c1', '#fd7e14', '#20c997', '#e83e8c', '#6c757d',
+                    '#F28C33', '#FFB366', '#2D2D2D', '#4A4A4A', '#FF8C42',
+                    '#FFA559', '#FFE6C7', '#FFB38B', '#FF9F4D', '#FF8000'
+                ],                                   
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value.toFixed(0)}kg (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Gráfico de evolução
+    let evolucaoChart;
+    
+    function carregarEvolucao(treinoId) {
+        const url = treinoId === 'todos' ? '/api/progresso' : `/api/progresso?treino=${treinoId}`;
+        
+        fetch(url)
+            .then(r => {
+                if (!r.ok) {
+                    throw new Error('Erro na requisição');
+                }
+                return r.json();
+            })
+            .then(data => {
+                if (evolucaoChart) evolucaoChart.destroy();
+                
+                evolucaoChart = new Chart(document.getElementById('evolucaoChart'), {
+                    type: 'line',
+                    data: {
+                        labels: data.semanas,
+                        datasets: [{
+                            label: 'Volume Total (kg)',
+                            data: data.volumes,
+                            borderColor: '#F28C33',
+                            backgroundColor: 'rgba(242, 140, 51, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointHoverRadius: 8,
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.raw}kg`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Volume (kg)'
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Erro ao carregar evolução:', error);
+            });
+    }
+    
+    // Carregar gráfico inicial
+    carregarEvolucao('todos');
+</script>
+{% endblock %}

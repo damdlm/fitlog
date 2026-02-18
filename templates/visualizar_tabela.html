@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2>
+            <i class="bi bi-table me-2" style="color: #F28C33;"></i>Tabela de Progresso - Visão Semanal
+        </h2>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Treino</label>
+                <select name="treino" class="form-select" onchange="this.form.submit()">
+                    <option value="">Todos os Treinos</option>
+                    {% for t in treinos %}
+                    <option value="{{ t.id }}" {% if treino_selecionado == t.id %}selected{% endif %}>
+                        {{ t.id }} - {{ t.descricao }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Músculo</label>
+                <select name="musculo" class="form-select" onchange="this.form.submit()">
+                    <option value="">Todos os Músculos</option>
+                    {% for m in musculos %}
+                    <option value="{{ m }}" {% if musculo_selecionado == m %}selected{% endif %}>
+                        {{ m }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Semanas para exibir</label>
+                <select name="semanas" class="form-select" onchange="this.form.submit()">
+                    <option value="todas" {% if semanas_selecionadas == 'todas' %}selected{% endif %}>
+                        📅 Todas as semanas
+                    </option>
+                    <option value="ultimas3" {% if semanas_selecionadas == 'ultimas3' %}selected{% endif %}>
+                        🔥 Últimas 3 semanas
+                    </option>
+                    <option value="ultimas5" {% if semanas_selecionadas == 'ultimas5' %}selected{% endif %}>
+                        📊 Últimas 5 semanas
+                    </option>
+                    <option value="personalizado" {% if semanas_selecionadas == 'personalizado' %}selected{% endif %}>
+                        ⚙️ Selecionar específicas...
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold">&nbsp;</label>
+                <div>
+                    <button type="button" class="btn w-100" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;" data-bs-toggle="modal" data-bs-target="#modalSelecionarSemanas">
+                        <i class="bi bi-calendar-check"></i> Escolher
+                    </button>
+                </div>
+            </div> 
+        </form>
+    </div>
+</div>
+
+<!-- Modal para selecionar semanas específicas -->
+<div class="modal fade" id="modalSelecionarSemanas" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+                <h5 class="modal-title">
+                    <i class="bi bi-calendar-check me-2"></i>Selecionar Semanas
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="get" id="formSemanas">
+                <div class="modal-body">
+                    <input type="hidden" name="treino" value="{{ treino_selecionado }}">
+                    <input type="hidden" name="musculo" value="{{ musculo_selecionado }}">
+                    <input type="hidden" name="ordenar" value="{{ ordenar }}">
+                    <input type="hidden" name="semanas" value="personalizado">
+                    
+                    <div class="row">
+                        {% for periodo in periodos_disponiveis %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-calendar" style="color: #F28C33;"></i> {{ periodo.periodo }}
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        {% for semana in periodo.semanas %}
+                                        <div class="col-6 mb-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="semana_{{ periodo.periodo }}_{{ semana }}" 
+                                                       id="semana_{{ periodo.periodo }}_{{ semana }}"
+                                                       value="{{ semana }}"
+                                                       {% if periodo.periodo|string + '_' + semana|string in semanas_selecionadas_lista %}checked{% endif %}>
+                                                <label class="form-check-label" for="semana_{{ periodo.periodo }}_{{ semana }}">
+                                                    Semana {{ semana }}
+                                                    <span class="badge bg-secondary">
+                                                        {{ periodo.registros_por_semana[semana] }} registros
+                                                    </span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="me-auto">
+                        <button type="button" class="btn btn-outline-secondary" onclick="selecionarTodas()">
+                            Selecionar Todas
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="limparTodas()">
+                            Limpar Todas
+                        </button>
+                    </div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">Aplicar Seleção</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover table-sm" id="progressTable">
+                <thead class="table-light">
+                    <tr>
+                        <th rowspan="2" class="align-middle text-center" style="background-color: #f8f9fa; min-width: 50px;">Treino</th>
+                        <th rowspan="2" class="align-middle text-center" style="background-color: #f8f9fa; min-width: 200px;">Exercício</th>
+                        <th rowspan="2" class="align-middle text-center" style="background-color: #f8f9fa; min-width: 120px;">Músculo</th>
+                        
+                        {% for semana in semanas %}
+                        <th colspan="2" class="text-center" style="background-color: 
+                            {% if loop.index % 2 == 0 %}#fff3e0{% else %}#ffe4cc{% endif %};">
+                            <div style="font-size: 1.1em; font-weight: bold; color: #F28C33;">{{ semana.periodo }}</div>
+                            <div style="font-size: 0.9em; color: #666;">Semana {{ semana.semana }}</div>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        {% for semana in semanas %}
+                        <th class="text-center" style="background-color: 
+                            {% if loop.index % 2 == 0 %}#fff3e0{% else %}#ffe4cc{% endif %};">
+                            Carga (kg)
+                        </th>
+                        <th class="text-center" style="background-color: 
+                            {% if loop.index % 2 == 0 %}#fff3e0{% else %}#ffe4cc{% endif %};">
+                            Repetições
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exercicio in exercicios %}
+                    <tr>
+                        <td class="text-center">
+                            <span class="badge" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">{{ exercicio.treino }}</span>
+                        </td>
+                        <td>
+                            <strong>{{ exercicio.nome }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ exercicio.musculo }}</span>
+                        </td>
+                        
+                        {% for semana in semanas %}
+                            {% set registro = registros_por_exercicio[exercicio.id].get(semana.key) if exercicio.id in registros_por_exercicio else None %}
+                            
+                            {# Inicializar variáveis #}
+                            {% set carga = '' %}
+                            {% set reps = '' %}
+                            {% set num_series = 0 %}
+                            
+                            {# Verificar se é o formato antigo ou novo #}
+                            {% if registro %}
+                                {% if registro.series is defined and registro.series and registro.series|length > 0 %}
+                                    {# Formato novo com séries - pega a primeira série como referência #}
+                                    {% set carga = registro.series[0].carga %}
+                                    {% set reps = registro.series[0].repeticoes %}
+                                    {% set num_series = registro.series|length %}
+                                {% elif registro.carga is defined and registro.repeticoes is defined %}
+                                    {# Formato antigo #}
+                                    {% set carga = registro.carga %}
+                                    {% set reps = registro.repeticoes %}
+                                    {% set num_series = 1 %}
+                                {% endif %}
+                            {% endif %}
+                            
+                            <td class="text-center {% if registro %}table-success{% endif %}" 
+                                style="font-weight: {% if registro and carga > 0 %}600{% else %}normal{% endif %};">
+                                {% if registro %}
+                                    {{ carga }}
+                                    {% if num_series > 1 %}
+                                        <small class="text-muted d-block">{{ num_series }} séries</small>
+                                    {% endif %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="text-center {% if registro %}table-info{% endif %}">
+                                {% if registro %}
+                                    {{ reps }}x
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <th colspan="3" class="text-end">Totais:</th>
+                        {% for semana in semanas %}
+                        <th colspan="2" class="text-center">
+                            {% set count = namespace(value=0) %}
+                            {% set volume = namespace(value=0) %}
+                            
+                            {% for exercicio in exercicios %}
+                                {% if exercicio.id in registros_por_exercicio %}
+                                    {% set reg = registros_por_exercicio[exercicio.id].get(semana.key) %}
+                                    {% if reg %}
+                                        {% set count.value = count.value + 1 %}
+                                        
+                                        {# Calcular volume considerando formato antigo ou novo #}
+                                        {% if reg.series is defined and reg.series %}
+                                            {% for serie in reg.series %}
+                                                {% set volume.value = volume.value + (serie.carga * serie.repeticoes) %}
+                                            {% endfor %}
+                                        {% elif reg.carga is defined and reg.repeticoes is defined %}
+                                            {% set volume.value = volume.value + (reg.carga * reg.repeticoes) %}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                            
+                            <div>
+                                <span class="badge" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">{{ count.value }} ex.</span>
+                                <span class="badge" style="background: #2D2D2D; color: white;">{{ volume.value }} kg</span>
+                            </div>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Botões de ação -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="btn-group">
+            <button class="btn btn-outline-secondary" onclick="exportarCSV()">
+                <i class="bi bi-download"></i> Exportar CSV
+            </button>
+            <button class="btn btn-outline-secondary" onclick="window.print()">
+                <i class="bi bi-printer"></i> Imprimir
+            </button>
+            <a href="{{ url_for('visualizar_tabela') }}" class="btn btn-outline-danger">
+                <i class="bi bi-eraser"></i> Limpar Filtros
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+    /* Estilo para tabela de progresso */
+    #progressTable {
+        font-size: 0.9em;
+    }
+    
+    #progressTable th {
+        vertical-align: middle;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 10;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    #progressTable th[rowspan="2"] {
+        position: sticky;
+        left: 0;
+        background: #f8f9fa;
+        z-index: 20;
+    }
+    
+    #progressTable td:first-child,
+    #progressTable td:nth-child(2),
+    #progressTable td:nth-child(3) {
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 5;
+    }
+    
+    #progressTable td:nth-child(2) {
+        left: 50px;
+    }
+    
+    #progressTable td:nth-child(3) {
+        left: 250px;
+    }
+    
+    #progressTable td {
+        transition: all 0.2s;
+    }
+    
+    #progressTable td:hover {
+        background-color: #fff3e0 !important;
+        cursor: pointer;
+    }
+    
+    .table-success {
+        background-color: #fff3e0 !important;
+    }
+    
+    .table-info {
+        background-color: #ffe4cc !important;
+    }
+    
+    /* Scroll horizontal suave */
+    .table-responsive {
+        overflow-x: auto;
+        overflow-y: visible;
+        max-height: 80vh;
+    }
+    
+    /* Tooltip personalizado */
+    [data-tooltip] {
+        position: relative;
+        cursor: help;
+    }
+    
+    [data-tooltip]:before {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 5px 10px;
+        background: #2D2D2D;
+        color: white;
+        border-radius: 5px;
+        font-size: 12px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        z-index: 1000;
+    }
+    
+    [data-tooltip]:hover:before {
+        opacity: 1;
+    }
+</style>
+
+<script>
+    // Selecionar todas as semanas no modal
+    function selecionarTodas() {
+        document.querySelectorAll('#formSemanas input[type="checkbox"]').forEach(cb => {
+            cb.checked = true;
+        });
+    }
+    
+    // Limpar todas as semanas no modal
+    function limparTodas() {
+        document.querySelectorAll('#formSemanas input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+        });
+    }
+    
+    // Destacar recordes pessoais
+    document.addEventListener('DOMContentLoaded', function() {
+        const rows = document.querySelectorAll('#progressTable tbody tr');
+        
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            // Pula as primeiras 3 colunas (Treino, Exercício, Músculo)
+            for (let i = 3; i < cells.length; i += 2) {
+                const cargaCell = cells[i];
+                if (!cargaCell) continue;
+                
+                const cargaTexto = cargaCell.textContent.trim().split('\n')[0]; // Pega só o número, ignora o texto pequeno
+                const carga = parseFloat(cargaTexto);
+                
+                if (!isNaN(carga) && carga > 0) {
+                    // Verificar se é a maior carga para este exercício
+                    let maiorCarga = 0;
+                    for (let j = 3; j < cells.length; j += 2) {
+                        const cell = cells[j];
+                        if (!cell) continue;
+                        
+                        const valorTexto = cell.textContent.trim().split('\n')[0];
+                        const valor = parseFloat(valorTexto);
+                        if (!isNaN(valor) && valor > maiorCarga) maiorCarga = valor;
+                    }
+                    
+                    if (carga === maiorCarga) {
+                        cargaCell.style.backgroundColor = '#fff3e0';
+                        cargaCell.style.fontWeight = 'bold';
+                        cargaCell.style.color = '#F28C33';
+                        cargaCell.setAttribute('data-tooltip', 'Recorde pessoal! 🏆');
+                    }
+                }
+            }
+        });
+    });
+    
+    // Exportar para CSV
+    function exportarCSV() {
+        const table = document.getElementById('progressTable');
+        let csv = [];
+        
+        // Cabeçalhos
+        const headers = [];
+        table.querySelectorAll('thead th').forEach(th => {
+            let text = th.textContent.trim().replace(/,/g, ';'); // Substituir vírgulas
+            if (text) headers.push(text);
+        });
+        csv.push(headers.join(';')); // Usar ; como separador
+        
+        // Dados
+        table.querySelectorAll('tbody tr').forEach(tr => {
+            const row = [];
+            tr.querySelectorAll('td').forEach(td => {
+                let text = td.textContent.trim().replace(/,/g, ';'); // Substituir vírgulas
+                row.push('"' + text.replace(/"/g, '""') + '"');
+            });
+            csv.push(row.join(';'));
+        });
+        
+        // Download
+        const csvContent = csv.join('\n');
+        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'progresso_treinos.csv';
+        link.click();
+    }
+    
+    // Atalhos de teclado
+    document.addEventListener('keydown', function(e) {
+        // Ctrl + E = Exportar
+        if (e.ctrlKey && e.key === 'e') {
+            e.preventDefault();
+            exportarCSV();
+        }
+        // Ctrl + P = Imprimir
+        if (e.ctrlKey && e.key === 'p') {
+            e.preventDefault();
+            window.print();
+        }
+    });
+</script>
+{% endblock %}
