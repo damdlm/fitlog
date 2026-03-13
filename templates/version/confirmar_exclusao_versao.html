@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Confirmar Exclusão
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Atenção!</strong> Esta ação é irreversível.
+                </div>
+                
+                <p>Você está prestes a excluir permanentemente a versão:</p>
+                
+                <div class="card bg-light mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title">Versão {{ versao.numero_versao }}</h6>
+                        <p class="card-text">{{ versao.descricao }}</p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                Período: {{ versao.data_inicio.strftime('%d/%m/%Y') }} até 
+                                {{ versao.data_fim.strftime('%d/%m/%Y') if versao.data_fim else 'Atual' }}
+                            </small>
+                        </p>
+                    </div>
+                </div>
+                
+                <p><strong>Esta ação irá:</strong></p>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-x-circle text-danger"></i>
+                        Excluir todos os treinos desta versão
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-x-circle text-danger"></i>
+                        Excluir todas as associações de exercícios
+                    </li>
+                    <li class="mb-2 text-muted">
+                        <i class="bi bi-info-circle"></i>
+                        Registros de treino antigos NÃO serão afetados
+                    </li>
+                </ul>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('version.gerenciar_versoes_global') }}" 
+                       class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Cancelar
+                    </a>
+                    
+                    <a href="{{ url_for('version.excluir_versao_global', versao_id=versao.id, confirmar='true') }}" 
+                       class="btn btn-danger"
+                       onclick="return confirm('Tem certeza absoluta? Esta ação não pode ser desfeita.')">
+                        <i class="bi bi-trash"></i> Sim, excluir permanentemente
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

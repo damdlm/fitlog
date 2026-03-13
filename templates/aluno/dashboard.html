@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-person me-2" style="color: #F28C33;"></i>
+        Meu Dashboard
+    </h2>
+</div>
+
+<!-- Cards de Resumo -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-white-50">Meus Treinos</h6>
+                        <h3 class="text-white mb-0">{{ total_treinos }}</h3>
+                    </div>
+                    <i class="bi bi-trophy fs-1 text-white-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card" style="background: #2D2D2D;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-white-50">Meus Exercícios</h6>
+                        <h3 class="text-white mb-0">{{ total_exercicios }}</h3>
+                    </div>
+                    <i class="bi bi-list-check fs-1 text-white-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-white-50">Minhas Versões</h6>
+                        <h3 class="text-white mb-0">{{ total_versoes }}</h3>
+                    </div>
+                    <i class="bi bi-clock-history fs-1 text-white-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card" style="background: #2D2D2D;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-white-50">Total de Registros</h6>
+                        <h3 class="text-white mb-0">{{ total_registros }}</h3>
+                    </div>
+                    <i class="bi bi-calendar-check fs-1 text-white-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Links Rápidos -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Acesso Rápido</h5>
+                <div class="btn-group flex-wrap" role="group">
+                    <a href="{{ url_for('aluno.treinos') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-trophy"></i> Meus Treinos
+                    </a>
+                    <a href="{{ url_for('aluno.exercicios') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-list-check"></i> Meus Exercícios
+                    </a>
+                    <a href="{{ url_for('aluno.versoes') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-clock-history"></i> Minhas Versões
+                    </a>
+                    <a href="{{ url_for('calendar.calendario') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-calendar"></i> Calendário
+                    </a>
+                    <a href="{{ url_for('register.registrar_treino') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-circle"></i> Registrar Treino
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Últimos Registros -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">
+            <i class="bi bi-clock-history me-2" style="color: #F28C33;"></i>
+            Últimos Registros
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Treino</th>
+                        <th>Exercício</th>
+                        <th>Carga</th>
+                        <th>Repetições</th>
+                        <th>Séries</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registro in ultimos_registros %}
+                    <tr>
+                        <td>{{ registro.data_registro.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            {% if registro.treino_ref %}
+                                {{ registro.treino_ref.codigo }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ registro.exercicio_ref.nome if registro.exercicio_ref else '-' }}</td>
+                        <td>
+                            {% if registro.series and registro.series|length > 0 %}
+                                {{ registro.series[0].carga }}kg
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if registro.series and registro.series|length > 0 %}
+                                {{ registro.series[0].repeticoes }}x
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ registro.series|length }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">
+                            Nenhum registro encontrado
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

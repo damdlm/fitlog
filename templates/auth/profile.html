@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h4 class="mb-0" style="color: #F28C33;">
+                    <i class="bi bi-person-circle"></i> Meu Perfil
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- Abas -->
+                <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="dados-tab" data-bs-toggle="tab" 
+                                data-bs-target="#dados" type="button" role="tab"
+                                style="color: #F28C33; font-weight: 600;">
+                            <i class="bi bi-person me-2"></i>Dados Pessoais
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="senha-tab" data-bs-toggle="tab" 
+                                data-bs-target="#senha" type="button" role="tab"
+                                style="color: #F28C33; font-weight: 600;">
+                            <i class="bi bi-key me-2"></i>Alterar Senha
+                        </button>
+                    </li>
+                </ul>
+                
+                <!-- Conteúdo das abas -->
+                <div class="tab-content" id="profileTabContent">
+                    <!-- Aba de Dados Pessoais -->
+                    <div class="tab-pane fade show active" id="dados" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-4 text-center mb-3">
+                                <i class="bi bi-person-circle" style="font-size: 80px; color: #F28C33;"></i>
+                                <h5 class="mt-2">{{ user.username }}</h5>
+                                {% if user.is_admin %}
+                                    <span class="badge bg-warning">Administrador</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <form action="{{ url_for('auth.update_profile') }}" method="post">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Nome Completo</label>
+                                        <input type="text" name="nome_completo" class="form-control" 
+                                               value="{{ user.nome_completo or '' }}">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Usuário</label>
+                                        <input type="text" class="form-control" value="{{ user.username }}" disabled readonly>
+                                        <small class="text-muted">O nome de usuário não pode ser alterado</small>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">E-mail</label>
+                                        <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Telefone</label>
+                                        <input type="text" name="telefone" class="form-control" value="{{ user.telefone or '' }}">
+                                    </div>
+                                    
+                                    <button type="submit" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+                                        <i class="bi bi-save"></i> Salvar Alterações
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Aba de Alterar Senha -->
+                    <div class="tab-pane fade" id="senha" role="tabpanel">
+                        <form action="{{ url_for('auth.change_password') }}" method="post">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Senha atual</label>
+                                <input type="password" name="current_password" class="form-control" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Nova senha</label>
+                                <input type="password" name="new_password" class="form-control" required minlength="6">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Confirmar nova senha</label>
+                                <input type="password" name="confirm_password" class="form-control" required>
+                            </div>
+                            
+                            <button type="submit" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+                                <i class="bi bi-key"></i> Alterar senha
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-people-fill me-2" style="color: #F28C33;"></i>
+        Gerenciar Alunos
+    </h2>
+    {% if current_user.is_admin %}
+    <button type="button" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;" 
+            data-bs-toggle="modal" data-bs-target="#modalNovoAluno">
+        <i class="bi bi-person-plus"></i> Novo Aluno
+    </button>
+    {% endif %}
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Buscar</label>
+                <input type="text" name="busca" class="form-control" placeholder="Nome ou e-mail..." value="{{ request.args.get('busca', '') }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Professor</label>
+                <select name="professor" class="form-select">
+                    <option value="">Todos</option>
+                    {% for p in professores %}
+                    <option value="{{ p.id }}" {% if request.args.get('professor') == p.id|string %}selected{% endif %}>
+                        {{ p.nome_completo or p.username }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Status</label>
+                <select name="status" class="form-select">
+                    <option value="todos" {% if request.args.get('status') == 'todos' %}selected{% endif %}>Todos</option>
+                    <option value="ativos" {% if request.args.get('status') != 'inativos' %}selected{% endif %}>Ativos</option>
+                    <option value="inativos" {% if request.args.get('status') == 'inativos' %}selected{% endif %}>Inativos</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Ações em Massa -->
+<div class="card mb-3" id="bulkActions" style="display: none;">
+    <div class="card-body bg-light">
+        <div class="d-flex align-items-center">
+            <span class="me-3 fw-bold" id="selectedCount">0 alunos selecionados</span>
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-danger" onclick="bulkDesativar()">
+                    <i class="bi bi-person-x"></i> Desativar
+                </button>
+                <button type="button" class="btn btn-sm btn-success" onclick="bulkAtivar()">
+                    <i class="bi bi-person-check"></i> Ativar
+                </button>
+                <button type="button" class="btn btn-sm btn-info" onclick="bulkAssociarProfessor()">
+                    <i class="bi bi-link"></i> Associar Professor
+                </button>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" onclick="limparSelecao()">
+                <i class="bi bi-x"></i> Limpar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Alunos -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th width="40">
+                            <input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)">
+                        </th>
+                        <th>Nome</th>
+                        <th>Usuário</th>
+                        <th>E-mail</th>
+                        <th>Telefone</th>
+                        <th>Professor</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for aluno in alunos %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="aluno-select" value="{{ aluno.id }}" 
+                                   onchange="atualizarSelecao()">
+                        </td>
+                        <td>{{ aluno.nome_completo or '-' }}</td>
+                        <td><strong>{{ aluno.username }}</strong></td>
+                        <td>{{ aluno.email }}</td>
+                        <td>{{ aluno.telefone or '-' }}</td>
+                        <td>
+                            {% set professor = aluno.get_professor() %}
+                            {% if professor %}
+                                <span class="badge bg-info">
+                                    {{ professor.nome_completo or professor.username }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Não associado</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if aluno.ativo %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('admin.visualizar_aluno', aluno_id=aluno.id) }}" 
+                                   class="btn btn-sm btn-info" title="Visualizar">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('admin.editar_aluno', aluno_id=aluno.id) }}" 
+                                   class="btn btn-sm btn-warning" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-primary" 
+                                        onclick="associarProfessor({{ aluno.id }})" title="Associar Professor">
+                                    <i class="bi bi-link"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">
+                            Nenhum aluno encontrado
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Novo Aluno -->
+<div class="modal fade" id="modalNovoAluno" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-plus"></i> Novo Aluno
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.criar_aluno') }}" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nome Completo</label>
+                        <input type="text" name="nome_completo" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Usuário</label>
+                        <input type="text" name="username" class="form-control" required minlength="3">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">E-mail</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Telefone</label>
+                        <input type="text" name="telefone" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Senha</label>
+                        <input type="password" name="password" class="form-control" required minlength="6">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Professor (opcional)</label>
+                        <select name="professor_id" class="form-select">
+                            <option value="">Nenhum</option>
+                            {% for p in professores %}
+                            <option value="{{ p.id }}">{{ p.nome_completo or p.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
+                        <i class="bi bi-save"></i> Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Associar Professor -->
+<div class="modal fade" id="modalAssociarProfessor" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #17a2b8; color: white;">
+                <h5 class="modal-title">
+                    <i class="bi bi-link"></i> Associar Professor
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.associar_professor') }}" method="post" id="formAssociar">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="aluno_id" id="associar_aluno_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Professor</label>
+                        <select name="professor_id" class="form-select" required>
+                            <option value="">Selecione um professor...</option>
+                            {% for p in professores %}
+                            <option value="{{ p.id }}">{{ p.nome_completo or p.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        O aluno passará a ter acesso aos treinos e acompanhamento deste professor.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info text-white">
+                        <i class="bi bi-check-circle"></i> Associar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Associar Professor em Massa -->
+<div class="modal fade" id="modalBulkAssociarProfessor" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #17a2b8; color: white;">
+                <h5 class="modal-title">
+                    <i class="bi bi-link"></i> Associar Professor a Múltiplos Alunos
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.bulk_associar_professor') }}" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="aluno_ids" id="bulk_aluno_ids">
+                <div class="modal-body">
+                    <p><strong id="bulkCount">0 alunos selecionados</strong></p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Professor</label>
+                        <select name="professor_id" class="form-select" required>
+                            <option value="">Selecione um professor...</option>
+                            {% for p in professores %}
+                            <option value="{{ p.id }}">{{ p.nome_completo or p.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info text-white">
+                        <i class="bi bi-check-circle"></i> Associar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// =============================================
+// FUNÇÕES PARA AÇÕES EM MASSA
+// =============================================
+let alunosSelecionados = [];
+
+function toggleSelectAll(checkbox) {
+    const checkboxes = document.querySelectorAll('.aluno-select');
+    checkboxes.forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+    atualizarSelecao();
+}
+
+function atualizarSelecao() {
+    alunosSelecionados = [];
+    document.querySelectorAll('.aluno-select:checked').forEach(cb => {
+        alunosSelecionados.push(cb.value);
+    });
+    
+    const count = alunosSelecionados.length;
+    document.getElementById('selectedCount').textContent = count + ' alunos selecionados';
+    document.getElementById('bulkActions').style.display = count > 0 ? 'block' : 'none';
+    
+    // Atualizar checkbox "Select All"
+    const totalCheckboxes = document.querySelectorAll('.aluno-select').length;
+    const selectAll = document.getElementById('selectAll');
+    if (selectAll) {
+        if (count === 0) {
+            selectAll.checked = false;
+            selectAll.indeterminate = false;
+        } else if (count === totalCheckboxes) {
+            selectAll.checked = true;
+            selectAll.indeterminate = false;
+        } else {
+            selectAll.indeterminate = true;
+        }
+    }
+    
+    // Atualizar contador no modal bulk
+    document.getElementById('bulkCount').textContent = count + ' alunos selecionados';
+}
+
+function limparSelecao() {
+    document.querySelectorAll('.aluno-select').forEach(cb => {
+        cb.checked = false;
+    });
+    atualizarSelecao();
+}
+
+function bulkDesativar() {
+    if (alunosSelecionados.length === 0) return;
+    
+    if (confirm(`Desativar ${alunosSelecionados.length} alunos selecionados?`)) {
+        fetch('{{ url_for("admin.bulk_desativar_alunos") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: JSON.stringify({ alunos: alunosSelecionados })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao desativar alunos: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao comunicar com o servidor');
+        });
+    }
+}
+
+function bulkAtivar() {
+    if (alunosSelecionados.length === 0) return;
+    
+    if (confirm(`Ativar ${alunosSelecionados.length} alunos selecionados?`)) {
+        fetch('{{ url_for("admin.bulk_ativar_alunos") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: JSON.stringify({ alunos: alunosSelecionados })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao ativar alunos: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao comunicar com o servidor');
+        });
+    }
+}
+
+function bulkAssociarProfessor() {
+    if (alunosSelecionados.length === 0) return;
+    
+    // Abrir modal de seleção de professor
+    document.getElementById('bulk_aluno_ids').value = alunosSelecionados.join(',');
+    const modal = new bootstrap.Modal(document.getElementById('modalBulkAssociarProfessor'));
+    modal.show();
+}
+
+function associarProfessor(alunoId) {
+    document.getElementById('associar_aluno_id').value = alunoId;
+    var modal = new bootstrap.Modal(document.getElementById('modalAssociarProfessor'));
+    modal.show();
+}
+</script>
+{% endblock %}

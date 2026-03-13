@@ -1,0 +1,160 @@
+<!-- Modal para Adicionar Exercício a um Treino na Versão -->
+<div class="modal fade" id="modalAdicionarExercicio" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle"></i> Adicionar Exercício ao Treino
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modal_versao_id">
+                <input type="hidden" id="modal_treino_id">
+                
+                <ul class="nav nav-tabs mb-3" id="adicionarExercicioTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="existente-tab" data-bs-toggle="tab" 
+                                data-bs-target="#existente" type="button" role="tab"
+                                style="color: #F28C33 !important;">
+                            <i class="bi bi-search"></i> Exercícios Existentes
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="novo-exercicio-tab" data-bs-toggle="tab" 
+                                data-bs-target="#novo-exercicio" type="button" role="tab"
+                                style="color: #F28C33 !important;">
+                            <i class="bi bi-plus-circle"></i> Criar Novo Exercício
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="existente" role="tabpanel">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Buscar por nome</label>
+                            <input type="text" id="buscaExercicio" class="form-control" 
+                                   placeholder="Digite para buscar..." autocomplete="off">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Filtrar por músculo</label>
+                            <select id="filtroMusculo" class="form-select">
+                                <option value="">Todos os músculos</option>
+                                {% for m in musculos %}
+                                <option value="{{ m }}">{{ m }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div id="resultadosBusca" style="max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 5px;">
+                            <div class="text-center p-3 text-muted">
+                                Digite para buscar exercícios
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="novo-exercicio" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label fw-bold">Nome do Exercício</label>
+                                <input type="text" id="novo_exercicio_nome" class="form-control" 
+                                       placeholder="Ex: Rosca direta" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Músculo</label>
+                                <input type="text" id="novo_exercicio_musculo" class="form-control" 
+                                       placeholder="Ex: biceps" list="musculos-sugeridos">
+                                <datalist id="musculos-sugeridos">
+                                    {% for m in musculos %}
+                                    <option value="{{ m }}">
+                                    {% endfor %}
+                                </datalist>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Treino base (opcional)</label>
+                            <select id="novo_exercicio_treino" class="form-select">
+                                <option value="">Não definir</option>
+                                {% for t in treinos %}
+                                <option value="{{ t.id }}">{{ t.codigo }} - {{ t.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-success" onclick="criarEAdicionarExercicio()">
+                                <i class="bi bi-check-circle"></i> Criar e Adicionar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let versaoAtual, treinoAtual;
+    
+    function abrirModalAdicionar(versaoId, treinoId) {
+        versaoAtual = versaoId;
+        treinoAtual = treinoId;
+        
+        document.getElementById('modal_versao_id').value = versaoId;
+        document.getElementById('modal_treino_id').value = treinoId;
+        
+        const modal = new bootstrap.Modal(document.getElementById('modalAdicionarExercicio'));
+        modal.show();
+        
+        // Reiniciar busca
+        document.getElementById('buscaExercicio').value = '';
+        document.getElementById('filtroMusculo').value = '';
+        document.getElementById('resultadosBusca').innerHTML = '<div class="text-center p-3 text-muted">Digite para buscar exercícios</div>';
+    }
+    
+    function criarEAdicionarExercicio() {
+        const nome = document.getElementById('novo_exercicio_nome').value.trim();
+        const musculo = document.getElementById('novo_exercicio_musculo').value.trim();
+        const treinoBase = document.getElementById('novo_exercicio_treino').value;
+        
+        if (!nome) {
+            alert('Digite o nome do exercício!');
+            return;
+        }
+        
+        fetch('/api/criar-exercicio', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: JSON.stringify({
+                nome: nome,
+                musculo: musculo || 'Outros',
+                treino: treinoBase || null
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                return fetch(`/version/versao/${versaoAtual}/treino/${treinoAtual}/exercicio/adicionar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+                    },
+                    body: JSON.stringify({exercicio_id: data.id})
+                });
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+</script>

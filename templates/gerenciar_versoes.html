@@ -1,0 +1,505 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .versao-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .versao-card.versao-atual {
+        border-left-color: #F28C33;
+        background-color: #f8fff8;
+    }
+    
+    .versao-card.versao-antiga {
+        border-left-color: #6c757d;
+        opacity: 0.9;
+    }
+    
+    .versao-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .badge-versao {
+        font-size: 0.9rem;
+        padding: 5px 10px;
+        border-radius: 20px;
+    }
+    
+    .data-badge {
+        background-color: #e9ecef;
+        padding: 3px 8px;
+        border-radius: 15px;
+        font-size: 0.85rem;
+    }
+    
+    .exercicio-item {
+        background-color: #f8f9fa;
+        padding: 5px 10px;
+        border-radius: 5px;
+        margin-bottom: 5px;
+        border-left: 3px solid #F28C33;
+    }
+    
+    .modal-exercicio-item {
+        padding: 8px 12px;
+        border-bottom: 1px solid #dee2e6;
+        transition: all 0.2s;
+    }
+    
+    .modal-exercicio-item:hover {
+        background-color: #fff3e0;
+    }
+    
+    .modal-exercicio-item.selecionado {
+        background-color: #e8f5e9;
+        border-left: 4px solid #F28C33;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-clock-history me-2" style="color: #F28C33;"></i>
+        Versões do Treino {{ treino.id }} - {{ treino.descricao }}
+    </h2>
+    <div>
+        <a href="{{ url_for('gerenciar') }}" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+        <button type="button" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;" 
+                data-bs-toggle="modal" data-bs-target="#modalNovaVersao">
+            <i class="bi bi-plus-circle"></i> Nova Versão
+        </button>
+    </div>
+</div>
+
+<!-- Modal Nova Versão -->
+<div class="modal fade" id="modalNovaVersao" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle"></i> Nova Versão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('salvar_versao') }}" method="post" id="formNovaVersao">
+                <div class="modal-body">
+                    <input type="hidden" name="treino_id" value="{{ treino.id }}">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descrição</label>
+                        <input type="text" name="descricao" class="form-control" 
+                               placeholder="Ex: Foco em puxada vertical" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Data de Início</label>
+                        <input type="date" name="data_inicio" class="form-control" 
+                               value="{{ now().strftime('%Y-%m-%d') }}" required>
+                        <small class="text-muted">A partir desta data, esta será a versão ativa</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Exercícios</label>
+                        <div style="max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; padding: 10px; border-radius: 5px;">
+                            {% for ex in exercicios if ex.treino == treino.id %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       name="exercicios[]" value="{{ ex.id }}" 
+                                       id="nova_ex_{{ ex.id }}">
+                                <label class="form-check-label" for="nova_ex_{{ ex.id }}">
+                                    {{ ex.nome }} - <small class="text-muted">{{ ex.musculo }}</small>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        A versão atual será automaticamente finalizada na data de início da nova versão.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
+                        <i class="bi bi-save"></i> Criar Versão
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Versão -->
+<div class="modal fade" id="modalEditarVersao" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%); color: white;">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square"></i> Editar Versão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('editar_versao') }}" method="post" id="formEditarVersao">
+                <div class="modal-body">
+                    <input type="hidden" name="versao_id" id="edit_versao_id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descrição</label>
+                        <input type="text" name="descricao" id="edit_descricao" class="form-control" required>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Data de Início</label>
+                            <input type="date" name="data_inicio" id="edit_data_inicio" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Data de Fim</label>
+                            <input type="date" name="data_fim" id="edit_data_fim" class="form-control">
+                            <small class="text-muted">Deixe em branco se for a versão atual</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Exercícios</label>
+                        <div id="edit_exercicios_container" style="max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; padding: 10px; border-radius: 5px;">
+                            <!-- Será preenchido via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%); color: white; border: none;">
+                        <i class="bi bi-save"></i> Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Finalizar Versão -->
+<div class="modal fade" id="modalFinalizarVersao" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #ffc107; color: white;">
+                <h5 class="modal-title">
+                    <i class="bi bi-calendar-x"></i> Finalizar Versão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('finalizar_versao') }}" method="post" id="formFinalizarVersao">
+                <div class="modal-body">
+                    <input type="hidden" name="versao_id" id="finalizar_versao_id">
+                    
+                    <p>Finalizar a versão <strong id="finalizar_versao_desc"></strong>?</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Data de Fim</label>
+                        <input type="date" name="data_fim" id="finalizar_data_fim" class="form-control" 
+                               value="{{ now().strftime('%Y-%m-%d') }}" required>
+                        <small class="text-muted">Após finalizar, esta versão não será mais considerada ativa</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn" style="background: #ffc107; color: white; border: none;">
+                        <i class="bi bi-check-circle"></i> Finalizar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Versões -->
+<div class="row">
+    <div class="col-12">
+        {% if versoes %}
+            {% for item in versoes|sort(attribute='versao.versao', reverse=true) %}
+            {% set is_atual = item.versao.data_fim is none %}
+            <div class="card mb-3 versao-card {% if is_atual %}versao-atual{% else %}versao-antiga{% endif %}">
+                <div class="card-header {% if is_atual %}bg-success text-white{% else %}bg-light{% endif %}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">
+                                <i class="bi bi-tag"></i> 
+                                Versão {{ item.versao.versao }}: {{ item.versao.descricao }}
+                            </h5>
+                        </div>
+                        <div>
+                            {% if is_atual %}
+                            <span class="badge bg-white text-success me-2 badge-versao">
+                                <i class="bi bi-check-circle"></i> Versão Atual
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary text-white me-2 badge-versao">
+                                <i class="bi bi-archive"></i> Versão Arquivada
+                            </span>
+                            {% endif %}
+                            
+                            <div class="btn-group">
+                                <button class="btn btn-sm {% if is_atual %}btn-outline-light{% else %}btn-outline-primary{% endif %}" 
+                                        onclick="editarVersao({{ item.versao.id }})"
+                                        {% if is_atual %}style="color: white; border-color: white;"{% endif %}>
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                
+                                {% if is_atual %}
+                                <button class="btn btn-sm btn-warning" 
+                                        onclick="finalizarVersao({{ item.versao.id }}, '{{ item.versao.descricao }}')">
+                                    <i class="bi bi-calendar-x"></i> Finalizar
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <span class="data-badge">
+                                <i class="bi bi-calendar"></i> Início: {{ item.versao.data_inicio }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="data-badge">
+                                <i class="bi bi-calendar-x"></i> Fim: {{ item.versao.data_fim or 'Atual' }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <h6 class="mb-2">
+                        <i class="bi bi-list-check" style="color: #F28C33;"></i> 
+                        Exercícios ({{ item.exercicios|length }}):
+                    </h6>
+                    <div class="row">
+                        {% for ex in item.exercicios %}
+                        <div class="col-md-4">
+                            <div class="exercicio-item">
+                                <i class="bi bi-dot"></i> 
+                                <strong>{{ ex.nome }}</strong>
+                                <small class="text-muted d-block">{{ ex.musculo }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> 
+                Nenhuma versão cadastrada para este treino. 
+                <button class="btn btn-sm btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#modalNovaVersao">
+                    Criar Primeira Versão
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Botões de Ação Global -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-question-circle" style="color: #F28C33;"></i> 
+                    Sobre o Versionamento
+                </h5>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle-fill text-success"></i> 
+                        <strong>Versão Atual:</strong> É a versão ativa no momento. Novos registros usarão esta versão.
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle-fill text-warning"></i> 
+                        <strong>Finalizar Versão:</strong> Define uma data de fim para a versão atual. Após finalizada, não poderá mais ser usada para novos registros.
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle-fill text-info"></i> 
+                        <strong>Editar Versão:</strong> Permite alterar descrição, datas e exercícios. Cuidado ao alterar datas de versões com registros existentes.
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Cache dos exercícios para usar na edição
+    let todosExercicios = [];
+    
+    // Carrega todos os exercícios do treino ao iniciar
+    document.addEventListener('DOMContentLoaded', function() {
+        {% for ex in exercicios if ex.treino == treino.id %}
+        todosExercicios.push({
+            id: {{ ex.id }},
+            nome: "{{ ex.nome }}",
+            musculo: "{{ ex.musculo }}"
+        });
+        {% endfor %}
+        
+        // Botões de seleção para nova versão
+        const checkboxes = document.querySelectorAll('input[name="exercicios[]"]');
+        const container = document.querySelector('input[name="exercicios[]"]')?.parentNode?.parentNode;
+        
+        if (container) {
+            const btnSelecionarTodos = document.createElement('button');
+            btnSelecionarTodos.type = 'button';
+            btnSelecionarTodos.className = 'btn btn-sm btn-outline-primary mb-2';
+            btnSelecionarTodos.innerHTML = '<i class="bi bi-check-all"></i> Selecionar Todos';
+            btnSelecionarTodos.onclick = function() {
+                checkboxes.forEach(cb => cb.checked = true);
+            };
+            
+            const btnLimparTodos = document.createElement('button');
+            btnLimparTodos.type = 'button';
+            btnLimparTodos.className = 'btn btn-sm btn-outline-secondary mb-2 ms-2';
+            btnLimparTodos.innerHTML = '<i class="bi bi-x"></i> Limpar Todos';
+            btnLimparTodos.onclick = function() {
+                checkboxes.forEach(cb => cb.checked = false);
+            };
+            
+            container.insertBefore(btnSelecionarTodos, container.firstChild);
+            container.insertBefore(btnLimparTodos, container.firstChild.nextSibling);
+        }
+    });
+    
+    // Função para editar versão
+    function editarVersao(versaoId) {
+        console.log('Editando versão:', versaoId);
+        
+        // Busca dados da versão via API
+        fetch(`/api/versao-detalhes/${versaoId}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Dados da versão:', data);
+                
+                // Preenche os campos do modal
+                document.getElementById('edit_versao_id').value = versaoId;
+                document.getElementById('edit_descricao').value = data.descricao;
+                document.getElementById('edit_data_inicio').value = data.data_inicio;
+                document.getElementById('edit_data_fim').value = data.data_fim || '';
+                
+                // Monta a lista de exercícios
+                const container = document.getElementById('edit_exercicios_container');
+                container.innerHTML = '';
+                
+                todosExercicios.forEach(ex => {
+                    const isChecked = data.exercicios.includes(ex.id);
+                    const div = document.createElement('div');
+                    div.className = `modal-exercicio-item ${isChecked ? 'selecionado' : ''}`;
+                    
+                    div.innerHTML = `
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" 
+                                   name="edit_exercicios[]" value="${ex.id}" 
+                                   id="edit_ex_${ex.id}" ${isChecked ? 'checked' : ''}>
+                            <label class="form-check-label" for="edit_ex_${ex.id}">
+                                <strong>${ex.nome}</strong>
+                                <br><small class="text-muted">${ex.musculo}</small>
+                            </label>
+                        </div>
+                    `;
+                    
+                    // Adiciona evento para destacar quando selecionado
+                    const checkbox = div.querySelector('input');
+                    checkbox.addEventListener('change', function() {
+                        if (this.checked) {
+                            div.classList.add('selecionado');
+                        } else {
+                            div.classList.remove('selecionado');
+                        }
+                    });
+                    
+                    container.appendChild(div);
+                });
+                
+                // Botões de seleção para edição
+                const btnSelecionarTodos = document.createElement('button');
+                btnSelecionarTodos.type = 'button';
+                btnSelecionarTodos.className = 'btn btn-sm btn-outline-primary mb-2';
+                btnSelecionarTodos.innerHTML = '<i class="bi bi-check-all"></i> Selecionar Todos';
+                btnSelecionarTodos.onclick = function() {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = true;
+                        cb.closest('.modal-exercicio-item').classList.add('selecionado');
+                    });
+                };
+                
+                const btnLimparTodos = document.createElement('button');
+                btnLimparTodos.type = 'button';
+                btnLimparTodos.className = 'btn btn-sm btn-outline-secondary mb-2 ms-2';
+                btnLimparTodos.innerHTML = '<i class="bi bi-x"></i> Limpar Todos';
+                btnLimparTodos.onclick = function() {
+                    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = false;
+                        cb.closest('.modal-exercicio-item').classList.remove('selecionado');
+                    });
+                };
+                
+                container.insertBefore(btnSelecionarTodos, container.firstChild);
+                container.insertBefore(btnLimparTodos, container.firstChild.nextSibling);
+                
+                // Abre o modal
+                var modal = new bootstrap.Modal(document.getElementById('modalEditarVersao'));
+                modal.show();
+            })
+            .catch(error => {
+                console.error('Erro ao carregar versão:', error);
+                alert('Erro ao carregar dados da versão');
+            });
+    }
+    
+    // Função para finalizar versão
+    function finalizarVersao(versaoId, descricao) {
+        console.log('Finalizando versão:', versaoId, descricao);
+        
+        document.getElementById('finalizar_versao_id').value = versaoId;
+        document.getElementById('finalizar_versao_desc').textContent = descricao;
+        
+        // Define a data de hoje como padrão
+        const hoje = new Date().toISOString().split('T')[0];
+        document.getElementById('finalizar_data_fim').value = hoje;
+        
+        var modal = new bootstrap.Modal(document.getElementById('modalFinalizarVersao'));
+        modal.show();
+    }
+    
+    // Validação antes de enviar formulário de edição
+    document.getElementById('formEditarVersao')?.addEventListener('submit', function(e) {
+        const dataInicio = document.getElementById('edit_data_inicio').value;
+        const dataFim = document.getElementById('edit_data_fim').value;
+        
+        if (dataFim && dataFim < dataInicio) {
+            e.preventDefault();
+            alert('A data de fim não pode ser anterior à data de início!');
+            return;
+        }
+        
+        const checkboxes = document.querySelectorAll('input[name="edit_exercicios[]"]:checked');
+        if (checkboxes.length === 0) {
+            e.preventDefault();
+            alert('Selecione pelo menos um exercício!');
+            return;
+        }
+    });
+    
+    // Validação antes de enviar formulário de finalização
+    document.getElementById('formFinalizarVersao')?.addEventListener('submit', function(e) {
+        if (!confirm('Tem certeza que deseja finalizar esta versão? Após finalizada, não poderá mais ser usada para novos registros.')) {
+            e.preventDefault();
+        }
+    });
+</script>
+{% endblock %}

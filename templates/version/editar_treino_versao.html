@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-pencil-square me-2" style="color: #F28C33;"></i>
+        Editar Treino {{ treino_id }} na Versão {{ versao.versao }}
+    </h2>
+    <a href="{{ url_for('version.ver_versao', versao_id=versao.id) }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <p><strong>Período da Versão:</strong> {{ versao.data_inicio_formatada }} até {{ versao.data_fim_formatada or 'Atual' }}</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" id="formEditarTreino">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">ID do Treino</label>
+                    <input type="text" class="form-control" value="{{ treino_id }}" disabled readonly>
+                    <small class="text-muted">O ID não pode ser alterado</small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Nome do Treino</label>
+                    <input type="text" name="nome_treino" class="form-control" 
+                           value="{{ treino.nome }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Descrição</label>
+                    <input type="text" name="descricao_treino" class="form-control" 
+                           value="{{ treino.descricao }}">
+                </div>
+            </div>
+            
+            <!-- Aba única com todos os exercícios do catálogo -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Todos os Exercícios do Catálogo</label>
+                
+                <!-- Filtros -->
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" id="buscaExercicios" class="form-control" 
+                                   placeholder="Digite para filtrar exercícios..." autocomplete="off">
+                            <button class="btn btn-outline-secondary" type="button" onclick="limparFiltro()">
+                                <i class="bi bi-x"></i> Limpar
+                            </button>
+                        </div>
+                        <small class="text-muted">{{ exercicios_catalogo|length }} exercícios disponíveis</small>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="filtroMusculo" class="form-select">
+                            <option value="">Todos os músculos</option>
+                            {% for m in musculos_catalogo %}
+                            <option value="{{ m }}">{{ m }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Botões de seleção em massa -->
+                <div class="mb-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selecionarTodosVisiveis()">
+                        <i class="bi bi-check-all"></i> Selecionar Visíveis
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limparTodos()">
+                        <i class="bi bi-x"></i> Limpar Todos
+                    </button>
+                    <span id="contadorSelecionados" class="ms-2 badge bg-info">0 selecionados</span>
+                </div>
+                
+                <!-- Lista de exercícios -->
+                <div style="max-height: 500px; overflow-y: auto; border: 1px solid #dee2e6; padding: 15px; border-radius: 5px;">
+                    <div class="row" id="listaExercicios">
+                        {% for ex in exercicios_catalogo %}
+                        {% set musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'Músculo não definido' %}
+                        <div class="col-md-4 exercicio-item" 
+                             data-nome="{{ ex.nome|lower }}" 
+                             data-musculo="{{ musculo_nome }}">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input exercicio-checkbox" 
+                                       type="checkbox" 
+                                       name="exercicios[]" 
+                                       value="{{ ex.id }}" 
+                                       id="ex_{{ ex.id }}"
+                                       {% if ex.id in treino.exercicios %}checked{% endif %}
+                                       onchange="atualizarContador()">
+                                <label class="form-check-label" for="ex_{{ ex.id }}">
+                                    <strong>{{ ex.nome }}</strong>
+                                    <br><small class="text-muted">{{ musculo_nome }}</small>
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
+                    <i class="bi bi-save"></i> Salvar Alterações
+                </button>
+                <a href="{{ url_for('version.ver_versao', versao_id=versao.id) }}" class="btn btn-secondary">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Filtros para a lista de exercícios
+    const buscaInput = document.getElementById('buscaExercicios');
+    const filtroMusculo = document.getElementById('filtroMusculo');
+    
+    function filtrarExercicios() {
+        const termo = buscaInput.value.toLowerCase().trim();
+        const musculo = filtroMusculo.value;
+        
+        document.querySelectorAll('.exercicio-item').forEach(item => {
+            const nome = item.dataset.nome;
+            const itemMusculo = item.dataset.musculo;
+            
+            let mostrar = true;
+            
+            if (termo && !nome.includes(termo)) {
+                mostrar = false;
+            }
+            
+            if (musculo && itemMusculo !== musculo) {
+                mostrar = false;
+            }
+            
+            item.style.display = mostrar ? 'block' : 'none';
+        });
+        
+        atualizarContador();
+    }
+    
+    function limparFiltro() {
+        buscaInput.value = '';
+        filtroMusculo.value = '';
+        filtrarExercicios();
+    }
+    
+    function selecionarTodosVisiveis() {
+        document.querySelectorAll('.exercicio-item[style*="display: block"] .exercicio-checkbox').forEach(cb => {
+            cb.checked = true;
+        });
+        atualizarContador();
+    }
+    
+    function limparTodos() {
+        document.querySelectorAll('.exercicio-checkbox').forEach(cb => {
+            cb.checked = false;
+        });
+        atualizarContador();
+    }
+    
+    function atualizarContador() {
+        const total = document.querySelectorAll('.exercicio-checkbox:checked').length;
+        const contador = document.getElementById('contadorSelecionados');
+        if (contador) {
+            contador.textContent = total + ' selecionados';
+        }
+    }
+    
+    // Event listeners
+    if (buscaInput) {
+        buscaInput.addEventListener('input', filtrarExercicios);
+    }
+    
+    if (filtroMusculo) {
+        filtroMusculo.addEventListener('change', filtrarExercicios);
+    }
+    
+    // Inicializar contador
+    document.addEventListener('DOMContentLoaded', function() {
+        atualizarContador();
+        
+        // Inicializar tooltips do Bootstrap
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+    
+    // Validação do formulário
+    document.getElementById('formEditarTreino')?.addEventListener('submit', function(e) {
+        const checkboxes = document.querySelectorAll('.exercicio-checkbox:checked');
+        if (checkboxes.length === 0) {
+            e.preventDefault();
+            alert('Selecione pelo menos um exercício para o treino!');
+            return false;
+        }
+        
+        // Mostrar loading
+        const btn = this.querySelector('button[type="submit"]');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Salvando...';
+        btn.disabled = true;
+    });
+</script>
+
+<style>
+    .exercicio-item {
+        transition: all 0.2s;
+        padding: 5px;
+        border-radius: 5px;
+    }
+    .exercicio-item:hover {
+        background-color: #f8f9fa;
+    }
+    .form-check-input:checked {
+        background-color: #F28C33;
+        border-color: #F28C33;
+    }
+    #contadorSelecionados {
+        font-size: 0.9rem;
+        padding: 5px 10px;
+    }
+    .btn-outline-primary {
+        color: #F28C33;
+        border-color: #F28C33;
+    }
+    .btn-outline-primary:hover {
+        background-color: #F28C33;
+        border-color: #F28C33;
+        color: white;
+    }
+</style>
+{% endblock %}

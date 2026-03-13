@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-pencil-square me-2" style="color: #F28C33;"></i>
+        Editar Treino {{ treino_id }} na Versão {{ versao.numero_versao }}
+    </h2>
+    <a href="{{ url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <p><strong>Aluno:</strong> {{ aluno.nome_completo or aluno.username }}</p>
+        <p><strong>Período da Versão:</strong> {{ versao.data_inicio.strftime('%d/%m/%Y') if versao.data_inicio }} até {{ versao.data_fim.strftime('%d/%m/%Y') if versao.data_fim else 'Atual' }}</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" id="formEditarTreino">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">ID do Treino</label>
+                    <input type="text" class="form-control" value="{{ treino_id }}" disabled readonly>
+                    <small class="text-muted">O ID não pode ser alterado</small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Nome do Treino</label>
+                    <input type="text" name="nome_treino" class="form-control" 
+                           value="{{ treino.nome }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Descrição</label>
+                    <input type="text" name="descricao_treino" class="form-control" 
+                           value="{{ treino.descricao }}">
+                </div>
+            </div>
+            
+            <!-- AVISO IMPORTANTE -->
+            <div class="alert alert-warning mb-3">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>Atenção!</strong> Apenas exercícios já criados no catálogo do aluno aparecem abaixo.
+                Para adicionar novos exercícios do catálogo global, primeiro crie-os em 
+                <a href="{{ url_for('professor.exercicios_aluno', aluno_id=aluno.id) }}" class="alert-link">Exercícios do Aluno</a>.
+            </div>
+            
+            <!-- Filtros -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <input type="text" id="filtroNome" class="form-control" placeholder="Buscar por nome...">
+                </div>
+                <div class="col-md-4">
+                    <select id="filtroMusculo" class="form-select">
+                        <option value="">Todos os músculos</option>
+                        {% for m in musculos %}
+                        <option value="{{ m }}">{{ m }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-outline-secondary w-100" onclick="limparFiltros()">
+                        <i class="bi bi-eraser"></i> Limpar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Botões de seleção em massa -->
+            <div class="mb-2">
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="selecionarTodosVisiveis()">
+                    <i class="bi bi-check-all"></i> Selecionar Visíveis
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limparTodos()">
+                    <i class="bi bi-x"></i> Limpar Todos
+                </button>
+                <span id="contadorSelecionados" class="ms-2 badge bg-info">0 selecionados</span>
+            </div>
+            
+            <!-- Lista de exercícios -->
+            <div style="max-height: 500px; overflow-y: auto; border: 1px solid #dee2e6; padding: 15px; border-radius: 5px;">
+                <div class="row" id="listaExercicios">
+                    {% for ex in exercicios %}
+                    {% set musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'Músculo não definido' %}
+                    <div class="col-md-4 exercicio-item" 
+                         data-nome="{{ ex.nome|lower }}" 
+                         data-musculo="{{ musculo_nome }}">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input exercicio-checkbox" 
+                                   type="checkbox" 
+                                   name="exercicios[]" 
+                                   value="{{ ex.id }}" 
+                                   id="ex_{{ ex.id }}"
+                                   data-nome="{{ ex.nome }}"
+                                   data-musculo="{{ musculo_nome }}"
+                                   {% if ex.id in treino.exercicios %}checked{% endif %}
+                                   onchange="atualizarContador()">
+                            <label class="form-check-label" for="ex_{{ ex.id }}">
+                                <strong>{{ ex.nome }}</strong>
+                                <br><small class="text-muted">{{ musculo_nome }}</small>
+                            </label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Salvar Alterações
+                </button>
+                <a href="{{ url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" class="btn btn-secondary">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// =============================================
+// SELEÇÃO DE EXERCÍCIOS (CORRIGIDA)
+// =============================================
+let estadoSelecao = new Map(); // Guarda o estado de cada checkbox independente do filtro
+
+function inicializarEstadoSelecao() {
+    document.querySelectorAll('.exercicio-checkbox').forEach(cb => {
+        estadoSelecao.set(cb.id, cb.checked);
+    });
+}
+
+function filtrarExercicios() {
+    const termo = document.getElementById('filtroNome').value.toLowerCase().trim();
+    const musculo = document.getElementById('filtroMusculo').value;
+    
+    document.querySelectorAll('.exercicio-item').forEach(item => {
+        const nome = item.dataset.nome || '';
+        const itemMusculo = item.dataset.musculo || '';
+        
+        let mostrar = true;
+        
+        if (termo && !nome.includes(termo)) mostrar = false;
+        if (musculo && itemMusculo !== musculo) mostrar = false;
+        
+        item.style.display = mostrar ? 'block' : 'none';
+        
+        // Restaurar estado salvo quando o item fica visível
+        if (mostrar) {
+            const checkbox = item.querySelector('.exercicio-checkbox');
+            if (checkbox && estadoSelecao.has(checkbox.id)) {
+                checkbox.checked = estadoSelecao.get(checkbox.id);
+            }
+        }
+    });
+    
+    atualizarContador();
+}
+
+function limparFiltros() {
+    document.getElementById('filtroNome').value = '';
+    document.getElementById('filtroMusculo').value = '';
+    filtrarExercicios();
+}
+
+function selecionarTodosVisiveis() {
+    document.querySelectorAll('.exercicio-item[style*="display: block"] .exercicio-checkbox').forEach(cb => {
+        cb.checked = true;
+        estadoSelecao.set(cb.id, true);
+    });
+    atualizarContador();
+}
+
+function limparTodos() {
+    document.querySelectorAll('.exercicio-checkbox').forEach(cb => {
+        cb.checked = false;
+        estadoSelecao.set(cb.id, false);
+    });
+    atualizarContador();
+}
+
+function atualizarContador() {
+    const total = document.querySelectorAll('.exercicio-checkbox:checked').length;
+    const contador = document.getElementById('contadorSelecionados');
+    if (contador) {
+        contador.textContent = total + ' selecionados';
+    }
+}
+
+document.getElementById('filtroNome').addEventListener('input', filtrarExercicios);
+document.getElementById('filtroMusculo').addEventListener('change', filtrarExercicios);
+
+document.addEventListener('DOMContentLoaded', function() {
+    inicializarEstadoSelecao();
+    
+    document.querySelectorAll('.exercicio-checkbox').forEach(cb => {
+        cb.addEventListener('change', function() {
+            estadoSelecao.set(this.id, this.checked);
+            atualizarContador();
+        });
+    });
+    
+    atualizarContador();
+});
+
+document.getElementById('formEditarTreino')?.addEventListener('submit', function(e) {
+    const checkboxes = document.querySelectorAll('.exercicio-checkbox:checked');
+    if (checkboxes.length === 0) {
+        e.preventDefault();
+        alert('Selecione pelo menos um exercício para o treino!');
+        return false;
+    }
+    
+    // Coletar dados dos exercícios selecionados
+    const selecionados = [];
+    document.querySelectorAll('.exercicio-checkbox:checked').forEach(cb => {
+        // Encontrar o container do exercício para pegar os dados
+        const item = cb.closest('.exercicio-item');
+        const nome = cb.dataset.nome || (item ? item.dataset.nome : 'Exercício');
+        const musculo = cb.dataset.musculo || (item ? item.dataset.musculo : 'Outros');
+        
+        selecionados.push({
+            id: parseInt(cb.value),
+            nome: nome,
+            musculo: musculo
+        });
+    });
+    
+    // Adicionar campo oculto com os dados
+    const inputDados = document.createElement('input');
+    inputDados.type = 'hidden';
+    inputDados.name = 'exercicios_dados';
+    inputDados.value = JSON.stringify(selecionados);
+    this.appendChild(inputDados);
+    
+    console.log('📦 Dados dos exercícios enviados:', selecionados);
+});
+</script>
+
+<style>
+    .exercicio-item {
+        transition: all 0.2s;
+        padding: 5px;
+        border-radius: 5px;
+    }
+    .exercicio-item:hover {
+        background-color: #f8f9fa;
+    }
+    .form-check-input:checked {
+        background-color: #F28C33;
+        border-color: #F28C33;
+    }
+    #contadorSelecionados {
+        font-size: 0.9rem;
+        padding: 5px 10px;
+    }
+</style>
+{% endblock %}

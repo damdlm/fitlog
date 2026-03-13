@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .versao-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+        margin-bottom: 20px;
+    }
+    
+    .treino-card {
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+    }
+    
+    .treino-card:hover {
+        box-shadow: 0 5px 15px rgba(242, 140, 51, 0.1);
+    }
+    
+    .treino-header {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px 10px 0 0;
+        border-bottom: 2px solid #F28C33;
+    }
+    
+    .exercicio-item {
+        background-color: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 5px;
+        margin-bottom: 8px;
+        border-left: 3px solid #F28C33;
+        transition: all 0.2s;
+    }
+    
+    .exercicio-item:hover {
+        background-color: #fff3e0;
+    }
+    
+    .divisao-badge {
+        font-size: 1rem;
+        padding: 5px 15px;
+        border-radius: 25px;
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        color: white;
+        font-weight: bold;
+        display: inline-block;
+    }
+    
+    .progresso-divisao {
+        height: 8px;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+        flex-grow: 1;
+    }
+    
+    .progresso-divisao-bar {
+        height: 100%;
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        border-radius: 4px;
+    }
+    
+    .edit-section {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-left: 5px solid #F28C33;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+    
+    .badge-musculo {
+        background-color: #e9ecef;
+        color: #495057;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-pencil-square me-2" style="color: #F28C33;"></i>
+        Versão {{ versao.numero_versao }} de {{ aluno.nome_completo or aluno.username }}
+    </h2>
+    <div>
+        <a href="{{ url_for('professor.versoes_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+        <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-info">
+            <i class="bi bi-person"></i> Aluno
+        </a>
+    </div>
+</div>
+
+<!-- Informações da Versão -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted">Número</h6>
+                <h4>v{{ versao.numero_versao }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted">Divisão</h6>
+                <h4><span class="divisao-badge">{{ versao.divisao }}</span></h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted">Período</h6>
+                <h5>{{ versao.data_inicio.strftime('%d/%m/%Y') if versao.data_inicio else '?' }}</h5>
+                <h5>até {{ versao.data_fim.strftime('%d/%m/%Y') if versao.data_fim else 'Atual' }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted">Status</h6>
+                <h4>
+                    {% if versao.data_fim %}
+                        <span class="badge bg-secondary">Finalizada</span>
+                    {% else %}
+                        <span class="badge bg-success">Ativa</span>
+                    {% endif %}
+                </h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progresso da Divisão -->
+{% set total_treinos = treinos|length %}
+{% set max_treinos = 3 if versao.divisao == 'ABC' else 4 if versao.divisao == 'ABCD' else 5 %}
+{% set percentual = (total_treinos / max_treinos * 100) if max_treinos > 0 else 0 %}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center">
+            <span class="me-3 fw-bold">Progresso da Divisão:</span>
+            <div class="progresso-divisao me-3" style="width: 300px;">
+                <div class="progresso-divisao-bar" style="width: {{ percentual }}%;"></div>
+            </div>
+            <span class="badge bg-primary">{{ total_treinos }}/{{ max_treinos }} treinos</span>
+            {% if total_treinos < max_treinos %}
+            <a href="{{ url_for('professor.novo_treino_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
+               class="btn btn-sm btn-success ms-auto">
+                <i class="bi bi-plus-circle"></i> Adicionar Treino
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- SEÇÃO DE EDIÇÃO DA VERSÃO -->
+<div class="edit-section">
+    <h5 class="mb-3">
+        <i class="bi bi-tag" style="color: #F28C33;"></i> 
+        Editar Dados da Versão
+    </h5>
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Descrição</label>
+                <input type="text" name="descricao" class="form-control" 
+                       value="{{ versao.descricao }}" required>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Divisão (Split)</label>
+                <select name="divisao" class="form-select">
+                    <option value="ABC" {% if versao.divisao == 'ABC' %}selected{% endif %}>ABC (3 treinos)</option>
+                    <option value="ABCD" {% if versao.divisao == 'ABCD' %}selected{% endif %}>ABCD (4 treinos)</option>
+                    <option value="ABCDE" {% if versao.divisao == 'ABCDE' %}selected{% endif %}>ABCDE (5 treinos)</option>
+                </select>
+                <small class="text-muted">Alterar a divisão afeta quantos treinos podem ser adicionados</small>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Data de Início</label>
+                <input type="date" name="data_inicio" class="form-control" 
+                       value="{{ versao.data_inicio }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Data de Fim</label>
+                <input type="date" name="data_fim" class="form-control" 
+                       value="{{ versao.data_fim or '' }}">
+                <small class="text-muted">Deixe em branco se for a versão atual</small>
+            </div>
+        </div>
+        <div class="mt-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save"></i> Salvar Alterações da Versão
+            </button>
+            
+            {% if not versao.data_fim %}
+            <a href="{{ url_for('professor.finalizar_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
+               class="btn btn-warning"
+               onclick="return confirm('Finalizar esta versão?')">
+                <i class="bi bi-calendar-x"></i> Finalizar Versão
+            </a>
+            {% endif %}
+            
+            <a href="{{ url_for('professor.clonar_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
+               class="btn btn-info"
+               onclick="return confirm('Criar uma nova versão baseada nesta?')">
+                <i class="bi bi-copy"></i> Clonar Versão
+            </a>
+            
+            <a href="{{ url_for('professor.excluir_versao_aluno', aluno_id=aluno.id, versao_id=versao.id, confirmar='false') }}" 
+               class="btn btn-danger"
+               onclick="return confirm('Tem certeza que deseja excluir esta versão? Esta ação não pode ser desfeita.')">
+                <i class="bi bi-trash"></i> Excluir Versão
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Lista de Treinos da Versão -->
+<h4 class="mb-3">
+    <i class="bi bi-trophy me-2" style="color: #F28C33;"></i>
+    Treinos da Versão ({{ total_treinos }})
+</h4>
+
+{% if treinos %}
+    {% for treino_id, treino in treinos.items() %}
+    <div class="treino-card">
+        <div class="treino-header d-flex justify-content-between align-items-center">
+            <div>
+                <span class="badge me-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); font-size: 1rem;">
+                    {{ treino_id }}
+                </span>
+                <strong>{{ treino.nome }}</strong>
+                <span class="badge bg-secondary ms-2">{{ treino.exercicios|length }} exercícios</span>
+            </div>
+            <div class="action-buttons">
+                <a href="{{ url_for('professor.editar_treino_versao_aluno', 
+                      aluno_id=aluno.id, 
+                      versao_id=versao.id, 
+                      treino_codigo=treino_id) }}" 
+                   class="btn btn-sm btn-warning" title="Editar treino">
+                    <i class="bi bi-pencil"></i>
+                </a>
+                <a href="{{ url_for('professor.excluir_treino_versao_aluno', 
+                      aluno_id=aluno.id, 
+                      versao_id=versao.id, 
+                      treino_codigo=treino_id) }}" 
+                   class="btn btn-sm btn-danger" title="Remover da versão"
+                   onclick="return confirm('Remover este treino da versão? Os exercícios não serão excluídos do catálogo.')">
+                    <i class="bi bi-trash"></i>
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="text-muted small">{{ treino.descricao }}</p>
+            
+            <h6 class="mb-2">
+                <i class="bi bi-list-check" style="color: #F28C33;"></i>
+                Exercícios:
+            </h6>
+            
+            <div class="row">
+                {% for ex_id in treino.exercicios %}
+                    {% set exercicio = exercicios|selectattr('id', 'equalto', ex_id)|first %}
+                    {% if exercicio %}
+                    <div class="col-md-4 mb-2">
+                        <div class="exercicio-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ exercicio.nome }}</strong>
+                                    <br>
+                                    <span class="badge-musculo">
+                                        {{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}
+                                    </span>
+                                </div>
+                                <small class="text-muted">
+                                    ID: {{ exercicio.id }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            
+            <!-- Informações adicionais do treino -->
+            {% set treino_base = treinos_disponiveis|selectattr('id', 'equalto', treino_id)|first if treinos_disponiveis else None %}
+            {% if treino_base %}
+            <div class="mt-3">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i>
+                    Treino base: {{ treino_base.codigo }} - {{ treino_base.nome }}
+                </small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    Nenhum treino cadastrado nesta versão.
+    <a href="{{ url_for('professor.novo_treino_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" class="alert-link">
+        Adicionar primeiro treino
+    </a>
+</div>
+{% endif %}
+
+<!-- Resumo da Versão -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart me-2" style="color: #F28C33;"></i>
+                    Resumo da Versão
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3>{{ total_treinos }}</h3>
+                            <small class="text-muted">Treinos</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3>
+                                {% set total_ex = namespace(value=0) %}
+                                {% for treino in treinos.values() %}
+                                    {% set total_ex.value = total_ex.value + treino.exercicios|length %}
+                                {% endfor %}
+                                {{ total_ex.value }}
+                            </h3>
+                            <small class="text-muted">Exercícios</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3>{{ max_treinos - total_treinos }}</h3>
+                            <small class="text-muted">Vagas restantes</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3>
+                                {% if versao.data_fim %}
+                                    Finalizada
+                                {% else %}
+                                    Ativa
+                                {% endif %}
+                            </h3>
+                            <small class="text-muted">Status</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botões de ação rápida -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex gap-2 justify-content-center">
+            <a href="{{ url_for('professor.versoes_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Todas as Versões
+            </a>
+            <a href="{{ url_for('professor.novo_treino_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
+               class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Adicionar Treino
+            </a>
+            <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-info">
+                <i class="bi bi-person"></i> Perfil do Aluno
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmação para exclusão (opcional) -->
+<div class="modal fade" id="modalConfirmarExclusao" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir esta versão?</p>
+                <p class="text-danger">
+                    <i class="bi bi-info-circle"></i>
+                    Esta ação não pode ser desfeita!
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="#" id="modalConfirmarLink" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Sim, excluir
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Função para confirmar exclusão via modal
+    function confirmarExclusao(url) {
+        document.getElementById('modalConfirmarLink').href = url;
+        var modal = new bootstrap.Modal(document.getElementById('modalConfirmarExclusao'));
+        modal.show();
+    }
+    
+    // Inicializar tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

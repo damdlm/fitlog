@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-plus-circle me-2" style="color: #F28C33;"></i>
+        Novo Treino na Versão {{ versao.versao }}
+    </h2>
+    <a href="{{ url_for('version.ver_versao', versao_id=versao.id) }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+</div>
+
+<!-- Informações da Versão -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted">Versão</h6>
+                <h5>{{ versao.versao }}: {{ versao.descricao }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted">Divisão</h6>
+                <h5>
+                    <span class="badge" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);">
+                        {{ versao.divisao if versao.divisao else 'ABC' }}
+                    </span>
+                </h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted">Período</h6>
+                <h5>{{ versao.data_inicio_formatada }} até {{ versao.data_fim_formatada or 'Atual' }}</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- VALIDAÇÃO DO LIMITE DA DIVISÃO -->
+{% set max_treinos = 3 %}
+{% if versao.divisao == 'ABCD' %}
+    {% set max_treinos = 4 %}
+{% elif versao.divisao == 'ABCDE' %}
+    {% set max_treinos = 5 %}
+{% endif %}
+
+{% if treinos_atuais >= max_treinos %}
+<div class="alert alert-danger mb-4">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>Limite atingido!</strong> Esta versão já possui todos os <strong>{{ max_treinos }}</strong> treinos permitidos para a divisão <strong>{{ versao.divisao }}</strong>.
+    <hr>
+    <p class="mb-2">Para adicionar mais treinos, você pode:</p>
+    <ul class="mb-3">
+        <li>Alterar a divisão da versão para <strong>ABCD</strong> (4 treinos) ou <strong>ABCDE</strong> (5 treinos)</li>
+        <li>Remover algum treino existente</li>
+    </ul>
+    <div class="mt-3">
+        <a href="{{ url_for('version.ver_versao', versao_id=versao.id) }}" class="btn btn-warning">
+            <i class="bi bi-arrow-left"></i> Voltar e ajustar divisão
+        </a>
+    </div>
+</div>
+{% else %}
+<!-- Formulário de Novo Treino -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">
+            <i class="bi bi-trophy" style="color: #F28C33;"></i>
+            Dados do Novo Treino
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">ID do Treino</label>
+                    <input type="text" name="treino_id" class="form-control form-control-lg" 
+                           placeholder="Ex: A" maxlength="1" required 
+                           pattern="[A-Za-z]" title="Uma única letra">
+                    <small class="text-muted">Uma única letra maiúscula (A, B, C, D, E...)</small>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label fw-bold">Nome do Treino</label>
+                    <input type="text" name="nome_treino" class="form-control form-control-lg" 
+                           placeholder="Ex: Treino A - Costas" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Descrição</label>
+                    <input type="text" name="descricao_treino" class="form-control form-control-lg" 
+                           placeholder="Ex: Foco em dorsais e espessura">
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label fw-bold">Opções de criação</label>
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="tipo_criacao" 
+                                   id="tipo_vazio" value="vazio" checked>
+                            <label class="form-check-label" for="tipo_vazio">
+                                <i class="bi bi-file-plus"></i> <strong>Criar treino vazio</strong>
+                                <small class="text-muted d-block">Você adicionará os exercícios depois</small>
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="tipo_criacao" 
+                                   id="tipo_padrao" value="padrao">
+                            <label class="form-check-label" for="tipo_padrao">
+                                <i class="bi bi-files"></i> <strong>Carregar treino padrão</strong>
+                                <small class="text-muted d-block">Copia os exercícios de um treino existente</small>
+                            </label>
+                        </div>
+                        
+                        <div id="treino_padrao_select" style="display: none;" class="mt-3 ms-4">
+                            <select name="treino_padrao" class="form-select">
+                                <option value="">Selecione um treino padrão...</option>
+                                {% for t in treinos_padrao %}
+                                <option value="{{ t.id }}">{{ t.codigo }} - {{ t.nome }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Os exercícios deste treino serão copiados para esta versão</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                <strong>Divisão {{ versao.divisao }}:</strong> Esta versão comporta até <strong>{{ max_treinos }}</strong> treinos.
+                Atualmente você está adicionando o <strong>{{ treinos_atuais + 1 }}º</strong> treino.
+                <br>
+                <small>Letras permitidas: 
+                    <strong>
+                        {% if versao.divisao == 'ABC' %}
+                            A, B, C
+                        {% elif versao.divisao == 'ABCD' %}
+                            A, B, C, D
+                        {% elif versao.divisao == 'ABCDE' %}
+                            A, B, C, D, E
+                        {% endif %}
+                    </strong>
+                </small>
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-lg" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
+                    <i class="bi bi-save"></i> Criar Treino
+                </button>
+                <a href="{{ url_for('version.ver_versao', versao_id=versao.id) }}" class="btn btn-lg btn-secondary">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Controle da exibição do select de treino padrão
+        document.querySelectorAll('input[name="tipo_criacao"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const selectDiv = document.getElementById('treino_padrao_select');
+                selectDiv.style.display = this.value === 'padrao' ? 'block' : 'none';
+            });
+        });
+        
+        // Validar se a letra do treino está dentro do esperado para a divisão
+        const treinoIdInput = document.querySelector('input[name="treino_id"]');
+        if (treinoIdInput) {
+            treinoIdInput.addEventListener('input', function() {
+                const letra = this.value.toUpperCase();
+                const divisao = "{{ versao.divisao }}";
+                let letrasPermitidas = [];
+                
+                if (divisao === 'ABC') {
+                    letrasPermitidas = ['A', 'B', 'C'];
+                } else if (divisao === 'ABCD') {
+                    letrasPermitidas = ['A', 'B', 'C', 'D'];
+                } else if (divisao === 'ABCDE') {
+                    letrasPermitidas = ['A', 'B', 'C', 'D', 'E'];
+                }
+                
+                if (letra && !letrasPermitidas.includes(letra)) {
+                    this.setCustomValidity(`Para divisão ${divisao}, use apenas as letras: ${letrasPermitidas.join(', ')}`);
+                    this.classList.add('is-invalid');
+                    
+                    // Criar ou atualizar mensagem de erro
+                    let feedbackDiv = this.nextElementSibling;
+                    if (!feedbackDiv || !feedbackDiv.classList.contains('invalid-feedback')) {
+                        feedbackDiv = document.createElement('div');
+                        feedbackDiv.className = 'invalid-feedback';
+                        this.parentNode.appendChild(feedbackDiv);
+                    }
+                    feedbackDiv.textContent = `Para divisão ${divisao}, use apenas as letras: ${letrasPermitidas.join(', ')}`;
+                    
+                } else {
+                    this.setCustomValidity('');
+                    this.classList.remove('is-invalid');
+                    
+                    // Remover mensagem de erro se existir
+                    const feedbackDiv = this.nextElementSibling;
+                    if (feedbackDiv && feedbackDiv.classList.contains('invalid-feedback')) {
+                        feedbackDiv.remove();
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

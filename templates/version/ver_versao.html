@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .versao-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+        margin-bottom: 20px;
+    }
+    
+    .divisao-badge {
+        font-size: 1.2rem;
+        padding: 5px 20px;
+        border-radius: 25px;
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        color: white;
+        font-weight: bold;
+        display: inline-block;
+    }
+    
+    .treino-item {
+        transition: all 0.2s;
+    }
+    
+    .treino-card {
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+    }
+    
+    .treino-card:hover {
+        box-shadow: 0 5px 15px rgba(242, 140, 51, 0.1);
+    }
+    
+    .treino-header {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px 10px 0 0;
+        border-bottom: 2px solid #F28C33;
+    }
+    
+    .exercicio-item {
+        background-color: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 5px;
+        margin-bottom: 8px;
+        border-left: 3px solid #F28C33;
+        transition: all 0.2s;
+    }
+    
+    .exercicio-item:hover {
+        background-color: #fff3e0;
+    }
+    
+    .progresso-divisao {
+        height: 8px;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+        flex-grow: 1;
+    }
+    
+    .progresso-divisao-bar {
+        height: 100%;
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        border-radius: 4px;
+    }
+    
+    .edit-section {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-left: 5px solid #F28C33;
+    }
+    
+    .treino-actions {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+    
+    .treino-content {
+        padding: 20px;
+    }
+    
+    .btn-outline-divisao {
+        border: 2px solid #F28C33;
+        color: #F28C33;
+        background: white;
+    }
+    
+    .btn-outline-divisao:hover,
+    .btn-outline-divisao.active {
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        color: white;
+        border-color: transparent;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-pencil-square me-2" style="color: #F28C33;"></i>
+        Editar Versão {{ versao.versao }}
+    </h2>
+    <div>
+        <a href="{{ url_for('version.gerenciar_versoes_global') }}" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<!-- SEÇÃO DE EDIÇÃO DA VERSÃO COM DIVISÃO -->
+<div class="edit-section">
+    <h5 class="mb-3">
+        <i class="bi bi-tag" style="color: #F28C33;"></i> 
+        Dados da Versão
+    </h5>
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Descrição</label>
+                <input type="text" name="descricao" class="form-control" 
+                       value="{{ versao.descricao }}" required>
+            </div>
+            
+            <!-- CAMPO DIVISÃO NA EDIÇÃO -->
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Divisão (Split)</label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="divisao" id="edit_divisaoABC" value="ABC" 
+                           {% if versao.divisao == 'ABC' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="edit_divisaoABC">
+                        <i class="bi bi-123"></i> ABC (3 treinos)
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="divisao" id="edit_divisaoABCD" value="ABCD"
+                           {% if versao.divisao == 'ABCD' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="edit_divisaoABCD">
+                        <i class="bi bi-123"></i> ABCD (4 treinos)
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="divisao" id="edit_divisaoABCDE" value="ABCDE"
+                           {% if versao.divisao == 'ABCDE' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="edit_divisaoABCDE">
+                        <i class="bi bi-123"></i> ABCDE (5 treinos)
+                    </label>
+                </div>
+                <small class="text-muted">Alterar a divisão afeta quantos treinos podem ser adicionados</small>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Data de Início</label>
+                <input type="date" name="data_inicio" class="form-control" 
+                       value="{{ versao.data_inicio }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Data de Fim</label>
+                <input type="date" name="data_fim" class="form-control" 
+                       value="{{ versao.data_fim or '' }}">
+                <small class="text-muted">Deixe em branco se for a versão atual</small>
+            </div>
+        </div>
+        <div class="mt-2">
+            <button type="submit" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
+                <i class="bi bi-save"></i> Salvar Alterações da Versão
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Informações da Versão -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted">Divisão</h6>
+                <h5>
+                    <span class="divisao-badge">
+                        {{ versao.divisao }}
+                    </span>
+                </h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted">Período</h6>
+                <h5>{{ versao.data_inicio_formatada }} até {{ versao.data_fim_formatada or 'Atual' }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted">Progresso</h6>
+                <div class="d-flex align-items-center">
+                    <h5 class="mb-0 me-3">{{ versao.treinos|length }} / 
+                        {{ '3' if versao.divisao == 'ABC' else '4' if versao.divisao == 'ABCD' else '5' }}
+                    </h5>
+                    <div class="progresso-divisao">
+                        {% set total_treinos = versao.treinos|length %}
+                        {% set max_treinos = 3 if versao.divisao == 'ABC' else 4 if versao.divisao == 'ABCD' else 5 %}
+                        {% set percentual = (total_treinos / max_treinos * 100) if max_treinos > 0 else 0 %}
+                        <div class="progresso-divisao-bar" style="width: {{ percentual }}%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted">Exercícios</h6>
+                <h5>
+                    {% set total = namespace(value=0) %}
+                    {% for t in versao.treinos.values() %}
+                        {% set total.value = total.value + t.exercicios|length %}
+                    {% endfor %}
+                    {{ total.value }}
+                </h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AVISO SOBRE A DIVISÃO -->
+{% set max_treinos = 3 if versao.divisao == 'ABC' else 4 if versao.divisao == 'ABCD' else 5 %}
+{% if versao.treinos|length < max_treinos %}
+<div class="alert alert-warning mb-4">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>Divisão incompleta!</strong> Esta versão tem divisão <strong>{{ versao.divisao }}</strong> 
+    mas apenas <strong>{{ versao.treinos|length }}</strong> de <strong>{{ max_treinos }}</strong> treino(s) cadastrado(s).
+    Adicione os treinos faltantes para completar a divisão.
+</div>
+{% endif %}
+
+<!-- Botão Adicionar Treino -->
+<div class="d-flex justify-content-end mb-3">
+    <a href="{{ url_for('version.novo_treino_na_versao', versao_id=versao.id) }}" 
+       class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
+        <i class="bi bi-plus-circle"></i> Adicionar Novo Treino
+    </a>
+</div>
+
+<!-- Lista de Treinos -->
+<div class="row">
+    {% for treino_id, treino in versao.treinos.items() %}
+    <div class="col-md-6 mb-4">
+        <div class="treino-card">
+            <div class="treino-header d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge me-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); font-size: 1rem;">
+                        {{ treino_id }}
+                    </span>
+                    <strong>{{ treino.nome }}</strong>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('version.editar_treino_na_versao', versao_id=versao.id, treino_codigo=treino_id) }}" 
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <a href="{{ url_for('version.excluir_treino_da_versao', versao_id=versao.id, treino_codigo=treino_id) }}" 
+                       class="btn btn-sm btn-outline-danger"
+                       onclick="return confirm('Remover este treino da versão?')">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="treino-content">
+                <p class="text-muted small">{{ treino.descricao }}</p>
+                
+                <h6 class="mb-2">
+                    <i class="bi bi-list-check" style="color: #F28C33;"></i>
+                    Exercícios ({{ treino.exercicios|length }})
+                </h6>
+                
+                <div class="exercicios-container mb-3">
+                    {% for ex_id in treino.exercicios %}
+                        {% set exercicio = exercicios|selectattr('id', 'equalto', ex_id)|first %}
+                        {% if exercicio %}
+                        <div class="exercicio-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ exercicio.nome }}</strong>
+                                    <br><small class="text-muted">{{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <button class="btn btn-sm btn-outline-primary w-100" 
+                        onclick="abrirModalAdicionar({{ versao.id }}, '{{ treino_id }}')">
+                    <i class="bi bi-plus-circle"></i> Adicionar Exercício
+                </button>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> 
+            Nenhum treino cadastrado nesta versão.
+            <a href="{{ url_for('version.novo_treino_na_versao', versao_id=versao.id) }}" class="alert-link">
+                Adicionar primeiro treino
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal para Adicionar Exercício -->
+<div class="modal fade" id="modalAdicionarExercicio" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle"></i> Adicionar Exercício
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modal_versao_id">
+                <input type="hidden" id="modal_treino_id">
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Buscar exercício</label>
+                    <input type="text" id="buscaExercicio" class="form-control" 
+                           placeholder="Digite para buscar..." autocomplete="off">
+                </div>
+                
+                <div id="resultadosBusca" style="max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 5px;">
+                    <div class="text-center p-3 text-muted">
+                        Digite para buscar exercícios
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let versaoAtual = {{ versao.id }};
+    let treinoAtual;
+    
+    function abrirModalAdicionar(versaoId, treinoId) {
+        versaoAtual = versaoId;
+        treinoAtual = treinoId;
+        
+        document.getElementById('modal_versao_id').value = versaoId;
+        document.getElementById('modal_treino_id').value = treinoId;
+        
+        const modal = new bootstrap.Modal(document.getElementById('modalAdicionarExercicio'));
+        modal.show();
+        
+        // Reiniciar busca
+        const input = document.getElementById('buscaExercicio');
+        input.value = '';
+        input.focus();
+        
+        document.getElementById('resultadosBusca').innerHTML = '<div class="text-center p-3 text-muted">Digite para buscar exercícios</div>';
+        
+        // Configurar busca
+        let timeout;
+        input.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const termo = this.value.trim();
+            
+            if (termo.length < 2) {
+                document.getElementById('resultadosBusca').innerHTML = '<div class="text-center p-3 text-muted">Digite para buscar exercícios</div>';
+                return;
+            }
+            
+            timeout = setTimeout(() => {
+                fetch(`/api/buscar-exercicios?termo=${encodeURIComponent(termo)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        const div = document.getElementById('resultadosBusca');
+                        if (data.length === 0) {
+                            div.innerHTML = '<div class="text-center p-3 text-muted">Nenhum exercício encontrado</div>';
+                            return;
+                        }
+                        
+                        div.innerHTML = data.map(ex => `
+                            <div class="card mb-2" style="cursor: pointer;" onclick="adicionarExercicio(${ex.id})">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>${ex.nome}</strong>
+                                            <br><small class="text-muted">${ex.musculo}</small>
+                                        </div>
+                                        <i class="bi bi-plus-circle text-success"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    });
+            }, 300);
+        });
+    }
+    
+    function adicionarExercicio(exercicioId) {
+        fetch(`/version/versao/${versaoAtual}/treino/${treinoAtual}/exercicio/adicionar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: JSON.stringify({exercicio_id: exercicioId})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao adicionar exercício');
+            }
+        });
+    }
+</script>
+{% endblock %}

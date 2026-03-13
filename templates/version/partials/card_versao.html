@@ -1,0 +1,78 @@
+<!-- Componente de Card de Versão Reutilizável -->
+<div class="card versao-card {% if is_atual %}versao-atual{% else %}versao-antiga{% endif %}">
+    <div class="card-header {% if is_atual %}bg-success text-white{% else %}bg-light{% endif %}">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">
+                    <i class="bi bi-tag"></i> 
+                    Versão {{ versao.numero_versao }}: {{ versao.descricao }}
+                </h5>
+                {% if is_atual %}
+                <small class="text-white-50">
+                    <i class="bi bi-calendar-check"></i> Ativa desde {{ versao.data_inicio|formatar_data }}
+                </small>
+                {% else %}
+                <small class="text-muted">
+                    <i class="bi bi-calendar-range"></i> {{ versao.data_inicio|formatar_data }} até {{ versao.data_fim|formatar_data }}
+                </small>
+                {% endif %}
+            </div>
+            <div>
+                {% if is_atual %}
+                <span class="badge bg-white text-success me-2 badge-versao">
+                    <i class="bi bi-check-circle"></i> Atual
+                </span>
+                {% else %}
+                <span class="badge bg-secondary text-white me-2 badge-versao">
+                    <i class="bi bi-archive"></i> Arquivada
+                </span>
+                {% endif %}
+                
+                <div class="btn-group">
+                    <a href="{{ url_for('version.ver_versao', versao_id=versao.id) }}" 
+                       class="btn btn-sm {% if is_atual %}btn-outline-light{% else %}btn-outline-primary{% endif %}">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a href="{{ url_for('version.clonar_versao_global', versao_id=versao.id) }}" 
+                       class="btn btn-sm btn-warning"
+                       onclick="return confirm('Criar uma nova versão baseada nesta?')">
+                        <i class="bi bi-copy"></i> Clonar
+                    </a>
+                    {% if is_atual %}
+                    <a href="{{ url_for('version.finalizar_versao_global', versao_id=versao.id) }}" 
+                       class="btn btn-sm btn-danger"
+                       onclick="return confirm('Finalizar esta versão?')">
+                        <i class="bi bi-calendar-x"></i> Finalizar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <h6>
+            <i class="bi bi-trophy" style="color: #F28C33;"></i> 
+            Treinos ({{ treinos_dict|length }})
+        </h6>
+        <div>
+            {% for treino_id, treino in treinos_dict.items() %}
+            <div class="treino-badge">
+                <strong>{{ treino_id }}</strong>: {{ treino.nome }}
+                <span class="badge bg-secondary">{{ treino.exercicios|length }} ex</span>
+            </div>
+            {% else %}
+            <p class="text-muted">
+                <i class="bi bi-info-circle"></i> 
+                Nenhum treino cadastrado nesta versão.
+            </p>
+            {% endfor %}
+        </div>
+        
+        {% if treinos_dict|length == 0 %}
+        <a href="{{ url_for('version.novo_treino_na_versao', versao_id=versao.id) }}" 
+           class="btn btn-sm btn-outline-primary mt-2">
+            <i class="bi bi-plus-circle"></i> Adicionar Treino
+        </a>
+        {% endif %}
+    </div>
+</div>
