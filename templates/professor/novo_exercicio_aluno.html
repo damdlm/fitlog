@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-plus-circle me-2" style="color: #F28C33;"></i>
+        Novo Exercício para {{ aluno.nome_completo or aluno.username }}
+    </h2>
+    <a href="{{ url_for('professor.exercicios_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Nome do Exercício</label>
+                <input type="text" name="nome" class="form-control" 
+                       placeholder="Ex: Rosca Direta" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Músculo</label>
+                <select name="musculo" class="form-select" required>
+                    <option value="">Selecione...</option>
+                    {% for musculo in musculos %}
+                    <option value="{{ musculo }}">{{ musculo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Treino (opcional)</label>
+                <select name="treino" class="form-select">
+                    <option value="">Não associar</option>
+                    {% for treino in treinos %}
+                    <option value="{{ treino.id }}">{{ treino.codigo }} - {{ treino.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Descrição (opcional)</label>
+                <textarea name="descricao" class="form-control" rows="2" 
+                          placeholder="Ex: Foco na parte inferior"></textarea>
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Criar Exercício
+                </button>
+                <a href="{{ url_for('professor.exercicios_aluno', aluno_id=aluno.id) }}" class="btn btn-secondary">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

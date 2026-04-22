@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .versao-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+        margin-bottom: 20px;
+    }
+    
+    .versao-card.versao-atual {
+        border-left-color: #F28C33;
+        background-color: #f8fff8;
+    }
+    
+    .versao-card.versao-antiga {
+        border-left-color: #6c757d;
+        opacity: 0.9;
+    }
+    
+    .versao-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .badge-versao {
+        font-size: 0.9rem;
+        padding: 5px 10px;
+        border-radius: 20px;
+    }
+    
+    .treino-badge {
+        background-color: #f8f9fa;
+        padding: 8px 12px;
+        border-radius: 5px;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        display: inline-block;
+        border-left: 3px solid #F28C33;
+    }
+    
+    .treino-badge:hover {
+        background-color: #fff3e0;
+    }
+    
+    .divisao-badge {
+        font-size: 1rem;
+        padding: 5px 15px;
+        border-radius: 25px;
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        color: white;
+        font-weight: bold;
+        display: inline-block;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+    
+    .progresso-divisao {
+        width: 100px;
+        height: 6px;
+        background-color: #e9ecef;
+        border-radius: 3px;
+        overflow: hidden;
+        display: inline-block;
+        margin-left: 10px;
+    }
+    
+    .progresso-divisao-bar {
+        height: 100%;
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        border-radius: 3px;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-clock-history me-2" style="color: #F28C33;"></i>
+        Versões de Treino de {{ aluno.nome_completo or aluno.username }}
+    </h2>
+    <div>
+        <a href="{{ url_for('professor.nova_versao_aluno', aluno_id=aluno.id) }}" class="btn btn-success me-2">
+            <i class="bi bi-plus-circle"></i> Nova Versão
+        </a>
+        <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<!-- Informações do Aluno -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <p><strong>Nome:</strong> {{ aluno.nome_completo or aluno.username }}</p>
+            </div>
+            <div class="col-md-3">
+                <p><strong>E-mail:</strong> {{ aluno.email }}</p>
+            </div>
+            <div class="col-md-3">
+                <p><strong>Total de versões:</strong> {{ versoes|length }}</p>
+            </div>
+            <div class="col-md-3">
+                <p><strong>Versão atual:</strong> 
+                    {% set versao_atual = versoes|selectattr('data_fim', 'none')|first %}
+                    {% if versao_atual %}
+                        <span class="badge bg-success">v{{ versao_atual.numero_versao }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Nenhuma</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Versões -->
+{% if versoes %}
+    {% for versao in versoes|sort(attribute='numero_versao', reverse=true) %}
+    {% set is_atual = versao.data_fim is none %}
+    {% set total_treinos = versao.treinos|length %}
+    {% set max_treinos = 3 if versao.divisao == 'ABC' else 4 if versao.divisao == 'ABCD' else 5 %}
+    {% set percentual = (total_treinos / max_treinos * 100) if max_treinos > 0 else 0 %}
+    
+    <div class="card versao-card {% if is_atual %}versao-atual{% else %}versao-antiga{% endif %}">
+        <div class="card-header {% if is_atual %}bg-primary text-white{% else %}bg-light{% endif %}">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h5 class="mb-1">
+                        <i class="bi bi-tag me-2"></i>
+                        Versão {{ versao.numero_versao }}: {{ versao.descricao }}
+                    </h5>
+                    <div class="d-flex align-items-center mt-1">
+                        <span class="divisao-badge me-3">
+                            <i class="bi bi-grid-3x3-gap-fill me-2"></i>{{ versao.divisao }}
+                        </span>
+                        <div class="d-flex align-items-center">
+                            <span class="{% if is_atual %}text-white-50{% else %}text-muted{% endif %} me-2">
+                                <i class="bi bi-trophy me-1"></i>{{ total_treinos }}/{{ max_treinos }} treinos
+                            </span>
+                            <div class="progresso-divisao">
+                                <div class="progresso-divisao-bar" style="width: {{ percentual }}%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <small class="{% if is_atual %}text-white-50{% else %}text-muted{% endif %}">
+                        <i class="bi bi-calendar me-1"></i>
+                        {{ versao.data_inicio.strftime('%d/%m/%Y') if versao.data_inicio else '?' }}
+                        até {{ versao.data_fim.strftime('%d/%m/%Y') if versao.data_fim else 'Atual' }}
+                    </small>
+                </div>
+                <div class="action-buttons">
+                    {% if is_atual %}
+                    <span class="badge bg-white text-success me-2 badge-versao">
+                        <i class="bi bi-check-circle me-1"></i>Ativa
+                    </span>
+                    {% else %}
+                    <span class="badge bg-secondary text-white me-2 badge-versao">
+                        <i class="bi bi-archive me-1"></i>Arquivada
+                    </span>
+                    {% endif %}
+                    
+                    <div class="btn-group">
+                        <a href="{{ url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
+                           class="btn btn-sm btn-primary" title="Visualizar/Editar">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        {% if is_atual %}
+                        <a href="{{ url_for('professor.finalizar_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
+                           class="btn btn-sm btn-warning" title="Finalizar"
+                           onclick="return confirm('Finalizar esta versão?')">
+                            <i class="bi bi-calendar-x"></i>
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('professor.clonar_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
+                           class="btn btn-sm btn-info" title="Clonar"
+                           onclick="return confirm('Criar uma nova versão baseada nesta?')">
+                            <i class="bi bi-copy"></i>
+                        </a>
+                        <a href="{{ url_for('professor.excluir_versao_aluno', aluno_id=aluno.id, versao_id=versao.id, confirmar='false') }}" 
+                           class="btn btn-sm btn-danger" title="Excluir"
+                           onclick="return confirm('Tem certeza que deseja excluir esta versão?')">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <h6>
+                <i class="bi bi-trophy me-2" style="color: #F28C33;"></i>
+                Treinos ({{ total_treinos }})
+            </h6>
+            
+            <div class="mb-3">
+                {% for treino_versao in versao.treinos %}
+                    {% set treino = treino_versao.treino_ref %}
+                    {% if treino %}
+                    <div class="treino-badge">
+                        <strong>{{ treino.codigo }}</strong>: {{ treino_versao.nome_treino }}
+                        <span class="badge bg-secondary ms-2">{{ treino_versao.exercicios|length }} ex</span>
+                    </div>
+                    {% endif %}
+                {% else %}
+                <p class="text-muted">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Nenhum treino cadastrado nesta versão.
+                </p>
+                {% endfor %}
+            </div>
+            
+            {% if total_treinos > 0 %}
+            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" 
+                    data-bs-target="#detalhes-{{ versao.id }}">
+                <i class="bi bi-chevron-down"></i> Ver detalhes dos exercícios
+            </button>
+            
+            <div class="collapse mt-3" id="detalhes-{{ versao.id }}">
+                <div class="card card-body">
+                    {% for treino_versao in versao.treinos %}
+                        {% set treino = treino_versao.treino_ref %}
+                        {% if treino %}
+                        <h6 class="mt-2 mb-2">
+                            <span class="badge bg-primary">{{ treino.codigo }}</span>
+                            {{ treino_versao.nome_treino }}
+                        </h6>
+                        <ul class="list-unstyled ms-3">
+                            {% for ve in treino_versao.exercicios|sort(attribute='ordem') %}
+                                {% set exercicio = ve.exercicio_ref %}
+                                {% if exercicio %}
+                                <li class="mb-1">
+                                    <i class="bi bi-dot me-2" style="color: #F28C33;"></i>
+                                    {{ exercicio.nome }}
+                                    <small class="text-muted">
+                                        ({{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }})
+                                    </small>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if total_treinos < max_treinos %}
+            <div class="mt-3">
+                <a href="{{ url_for('professor.novo_treino_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
+                   class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-plus-circle"></i> 
+                    Adicionar Treino ({{ max_treinos - total_treinos }} restantes)
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    Este aluno ainda não tem versões de treino cadastradas.
+    <a href="{{ url_for('professor.nova_versao_aluno', aluno_id=aluno.id) }}" class="alert-link">
+        Criar primeira versão
+    </a>
+</div>
+{% endif %}
+
+<!-- Estatísticas resumidas -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up me-2" style="color: #F28C33;"></i>
+                    Resumo de Versões
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3>{{ versoes|length }}</h3>
+                            <small class="text-muted">Total de Versões</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3>{{ versoes|selectattr('data_fim', 'none')|list|length }}</h3>
+                            <small class="text-muted">Versões Ativas</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3>
+                                {% set total_treinos = namespace(value=0) %}
+                                {% for versao in versoes %}
+                                    {% set total_treinos.value = total_treinos.value + versao.treinos|length %}
+                                {% endfor %}
+                                {{ total_treinos.value }}
+                            </h3>
+                            <small class="text-muted">Total de Treinos</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3>
+                                {% set total_ex = namespace(value=0) %}
+                                {% for versao in versoes %}
+                                    {% for treino in versao.treinos %}
+                                        {% set total_ex.value = total_ex.value + treino.exercicios|length %}
+                                    {% endfor %}
+                                {% endfor %}
+                                {{ total_ex.value }}
+                            </h3>
+                            <small class="text-muted">Total de Exercícios</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.btn-outline-primary.active-tipo {
+    background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+    color: white;
+    border-color: #F28C33;
+}
+
+.btn-outline-primary.active-tipo i {
+    color: white !important;
+}
+
+.btn-outline-primary {
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(242, 140, 51, 0.3);
+}
+</style>
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white text-center py-3">
+                <h4 class="mb-0" style="color: #F28C33;">
+                    <i class="bi bi-person-plus"></i> Criar Conta
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tipo de Usuário</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="tipo_usuario" id="tipo_aluno" value="aluno" checked>
+                            <label class="btn btn-outline-primary d-flex align-items-center justify-content-center" for="tipo_aluno">
+                                <i class="bi bi-person me-2 aluno-icon"></i>
+                                <span>Aluno</span>
+                                <i class="bi bi-graph-up-arrow ms-2 text-muted aluno-icon-feature" style="font-size: 0.8rem;"></i>
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="tipo_usuario" id="tipo_professor" value="professor">
+                            <label class="btn btn-outline-primary d-flex align-items-center justify-content-center" for="tipo_professor">
+                                <i class="bi bi-person-badge me-2 professor-icon"></i>
+                                <span>Professor</span>
+                                <i class="bi bi-people ms-2 text-muted professor-icon-feature" style="font-size: 0.8rem;"></i>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nome Completo</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person"></i></span>
+                            <input type="text" name="nome_completo" class="form-control" 
+                                   placeholder="Digite seu nome completo">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Usuário</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-at"></i></span>
+                            <input type="text" name="username" class="form-control" 
+                                   placeholder="Escolha um nome de usuário" required autofocus
+                                   minlength="3" maxlength="80">
+                        </div>
+                        <small class="text-muted">Mínimo 3 caracteres</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">E-mail</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                            <input type="email" name="email" class="form-control" 
+                                   placeholder="Digite seu e-mail" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Telefone (opcional)</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                            <input type="text" name="telefone" class="form-control" 
+                                   placeholder="(11) 99999-9999">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Senha</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                            <input type="password" name="password" class="form-control" 
+                                   placeholder="Digite sua senha" required minlength="6">
+                        </div>
+                        <small class="text-muted">Mínimo 6 caracteres</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Confirmar Senha</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                            <input type="password" name="confirm_password" class="form-control" 
+                                   placeholder="Digite a senha novamente" required>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info" id="infoAluno" style="display: block;">
+                        <i class="bi bi-info-circle"></i>
+                        Como <strong>aluno</strong>, você poderá registrar seus treinos e acompanhar sua evolução.
+                    </div>
+                    
+                    <div class="alert alert-info" id="infoProfessor" style="display: none;">
+                        <i class="bi bi-info-circle"></i>
+                        Como <strong>professor</strong>, você poderá gerenciar treinos de múltiplos alunos e acompanhar seu progresso.
+                    </div>
+                    
+                    <button type="submit" class="btn w-100 py-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
+                        <i class="bi bi-person-plus"></i> Criar conta
+                    </button>
+                </form>
+                
+                <hr class="my-4">
+                
+                <div class="text-center">
+                    <p class="mb-2">Já tem uma conta?</p>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-box-arrow-in-right"></i> Fazer login
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const radioAluno = document.getElementById('tipo_aluno');
+        const radioProfessor = document.getElementById('tipo_professor');
+        const infoAluno = document.getElementById('infoAluno');
+        const infoProfessor = document.getElementById('infoProfessor');
+        
+        function atualizarInfo() {
+            if (radioAluno.checked) {
+                infoAluno.style.display = 'block';
+                infoProfessor.style.display = 'none';
+                
+                // Destacar visualmente a opção selecionada
+                document.querySelector('label[for="tipo_aluno"]').classList.add('active-tipo');
+                document.querySelector('label[for="tipo_professor"]').classList.remove('active-tipo');
+                
+                // Mudar ícones
+                document.querySelectorAll('.aluno-icon-feature').forEach(el => {
+                    el.style.color = '#F28C33';
+                });
+                document.querySelectorAll('.professor-icon-feature').forEach(el => {
+                    el.style.color = '#6c757d';
+                });
+            } else {
+                infoAluno.style.display = 'none';
+                infoProfessor.style.display = 'block';
+                
+                document.querySelector('label[for="tipo_professor"]').classList.add('active-tipo');
+                document.querySelector('label[for="tipo_aluno"]').classList.remove('active-tipo');
+                
+                document.querySelectorAll('.professor-icon-feature').forEach(el => {
+                    el.style.color = '#F28C33';
+                });
+                document.querySelectorAll('.aluno-icon-feature').forEach(el => {
+                    el.style.color = '#6c757d';
+                });
+            }
+        }
+        
+        radioAluno.addEventListener('change', atualizarInfo);
+        radioProfessor.addEventListener('change', atualizarInfo);
+        
+        // Inicializar
+        atualizarInfo();
+    });
+</script>
+{% endblock %}

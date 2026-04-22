@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-people-fill me-2" style="color: #F28C33;"></i>
+        Gerenciar Alunos
+    </h2>
+    <div>
+        <a href="{{ url_for('professor.novo_aluno') }}" class="btn btn-success me-2">
+            <i class="bi bi-person-plus"></i> Novo Aluno
+        </a>
+        <a href="{{ url_for('professor.dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Buscar</label>
+                <input type="text" name="busca" class="form-control" 
+                       placeholder="Nome, usuário ou e-mail..." value="{{ busca or '' }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Status</label>
+                <select name="status" class="form-select">
+                    <option value="ativos" {% if status == 'ativos' %}selected{% endif %}>Ativos</option>
+                    <option value="inativos" {% if status == 'inativos' %}selected{% endif %}>Inativos</option>
+                    <option value="todos" {% if status == 'todos' %}selected{% endif %}>Todos</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Alunos -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Usuário</th>
+                        <th>E-mail</th>
+                        <th>Telefone</th>
+                        <th>Status</th>
+                        <th>Registros</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for aluno in alunos %}
+                    <tr>
+                        <td>{{ aluno.nome_completo or '-' }}</td>
+                        <td><strong>{{ aluno.username }}</strong></td>
+                        <td>{{ aluno.email }}</td>
+                        <td>{{ aluno.telefone or '-' }}</td>
+                        <td>
+                            {% if aluno.ativo %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ aluno.registros|length }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" 
+                                   class="btn btn-info" title="Visualizar">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if aluno.ativo %}
+                                <a href="{{ url_for('professor.desativar_aluno', aluno_id=aluno.id) }}" 
+                                   class="btn btn-danger" title="Desativar"
+                                   onclick="return confirm('Desativar este aluno?')">
+                                    <i class="bi bi-person-x"></i>
+                                </a>
+                                {% else %}
+                                <a href="{{ url_for('professor.reativar_aluno', aluno_id=aluno.id) }}" 
+                                   class="btn btn-success" title="Reativar"
+                                   onclick="return confirm('Reativar este aluno?')">
+                                    <i class="bi bi-person-check"></i>
+                                </a>
+                                {% endif %}
+                                <a href="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" 
+                                   class="btn btn-outline-danger" title="Remover vínculo"
+                                   onclick="return confirm('Remover vínculo com este aluno?')">
+                                    <i class="bi bi-link-45deg"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
+                            Nenhum aluno encontrado
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-plus-circle me-2" style="color: #F28C33;"></i>
+        Adicionar Treino à Versão {{ versao.numero_versao }}
+    </h2>
+    <div>
+        <a href="{{ url_for('aluno.ver_versao', versao_id=versao.id) }}" 
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<!-- Informações da Versão -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <p><strong>Versão:</strong> {{ versao.numero_versao }} - {{ versao.descricao }}</p>
+            </div>
+            <div class="col-md-4">
+                <p><strong>Divisão:</strong> <span class="badge bg-primary">{{ versao.divisao }}</span></p>
+            </div>
+            <div class="col-md-4">
+                <p><strong>Período:</strong> {{ versao.data_inicio.strftime('%d/%m/%Y') }} até {{ versao.data_fim.strftime('%d/%m/%Y') if versao.data_fim else 'Atual' }}</p>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-12">
+                <p><strong>Progresso:</strong> {{ versao.treinos|length }} / 
+                    {% if versao.divisao == 'ABC' %}3
+                    {% elif versao.divisao == 'ABCD' %}4
+                    {% else %}5{% endif %} treinos
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulário -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">
+            <i class="bi bi-trophy me-2" style="color: #F28C33;"></i>
+            Selecionar Treino
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="post" id="formAdicionarTreino">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Treino</label>
+                <select name="treino_id" class="form-select form-select-lg" required {% if not treinos %}disabled{% endif %}>
+                    <option value="">Selecione um treino...</option>
+                    {% for treino in treinos %}
+                    <option value="{{ treino.id }}">
+                        {{ treino.codigo }} - {{ treino.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if not treinos %}
+                <div class="alert alert-warning mt-2">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Não há treinos disponíveis para adicionar. 
+                    <a href="{{ url_for('aluno.novo_treino') }}" class="alert-link">
+                        Criar novo treino
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Nome do Treino na Versão</label>
+                <input type="text" name="nome_treino" class="form-control form-control-lg" 
+                       placeholder="Ex: Treino A - Costas" required>
+                <small class="text-muted">Pode ser diferente do nome original do treino</small>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Descrição (opcional)</label>
+                <input type="text" name="descricao_treino" class="form-control" 
+                       placeholder="Ex: Foco em dorsais e espessura">
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Importante:</strong> Ao adicionar este treino à versão, todos os exercícios atualmente associados a ele serão incluídos automaticamente.
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary btn-lg" {% if not treinos %}disabled{% endif %}>
+                    <i class="bi bi-check-circle"></i> Adicionar à Versão
+                </button>
+                <a href="{{ url_for('aluno.ver_versao', versao_id=versao.id) }}" 
+                   class="btn btn-secondary btn-lg">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de exercícios do treino selecionado (para pré-visualização) -->
+<div class="card mt-4" id="previewExercicios" style="display: none;">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">
+            <i class="bi bi-list-check me-2" style="color: #F28C33;"></i>
+            Exercícios do Treino Selecionado
+        </h5>
+    </div>
+    <div class="card-body">
+        <div id="listaExerciciosPreview" class="row">
+            <!-- Será preenchido via JavaScript -->
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectTreino = document.querySelector('select[name="treino_id"]');
+        const previewDiv = document.getElementById('previewExercicios');
+        const listaPreview = document.getElementById('listaExerciciosPreview');
+        
+        if (selectTreino) {
+            selectTreino.addEventListener('change', function() {
+                const treinoId = this.value;
+                
+                if (!treinoId) {
+                    previewDiv.style.display = 'none';
+                    return;
+                }
+                
+                // Buscar exercícios do treino via API
+                fetch(`/api/versao-exercicios/${treinoId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length > 0) {
+                            listaPreview.innerHTML = '';
+                            data.forEach(ex => {
+                                listaPreview.innerHTML += `
+                                    <div class="col-md-4 mb-2">
+                                        <div class="p-2 border rounded">
+                                            <strong>${ex.nome}</strong>
+                                            <br><small class="text-muted">${ex.musculo}</small>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            previewDiv.style.display = 'block';
+                        } else {
+                            listaPreview.innerHTML = '<div class="col-12"><p class="text-muted">Este treino não tem exercícios cadastrados.</p></div>';
+                            previewDiv.style.display = 'block';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao buscar exercícios:', error);
+                    });
+            });
+        }
+    });
+</script>
+{% endblock %}

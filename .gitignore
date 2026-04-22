@@ -1,0 +1,53 @@
+# ============================================================
+# SEGURANÇA — nunca versionar credenciais
+# ============================================================
+.env
+.env.*
+!.env.example   # Manter apenas o template sem credenciais reais
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.egg-info/
+dist/
+build/
+
+# Banco de dados
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+.env.local
+.flaskenv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos de backup
+*.bak
+*.backup
+
+# Dados migrados (opcional)
+storage/
+!storage/.gitkeep

@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-list-check me-2" style="color: #F28C33;"></i>
+        Meus Exercícios
+    </h2>
+    <div>
+        <a href="{{ url_for('aluno.novo_exercicio') }}" class="btn btn-success me-2">
+            <i class="bi bi-plus-circle"></i> Novo Exercício
+        </a>
+        <a href="{{ url_for('aluno.dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <input type="text" id="filtroNome" class="form-control" placeholder="Buscar por nome...">
+            </div>
+            <div class="col-md-4">
+                <select id="filtroMusculo" class="form-select">
+                    <option value="">Todos os músculos</option>
+                    {% for treino in treinos %}
+                        {% for exercicio in treino.exercicios %}
+                            {% if exercicio.musculo_ref %}
+                            <option value="{{ exercicio.musculo_ref.nome_exibicao }}">{{ exercicio.musculo_ref.nome_exibicao }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select id="filtroTreino" class="form-select">
+                    <option value="">Todos os treinos</option>
+                    {% for treino in treinos %}
+                    <option value="{{ treino.id }}">{{ treino.codigo }} - {{ treino.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Exercícios -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="tabelaExercicios">
+                <thead>
+                    <tr>
+                        <th>Treino</th>
+                        <th>Exercício</th>
+                        <th>Músculo</th>
+                        <th>Última Carga</th>
+                        <th>Total Registros</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exercicio in exercicios %}
+                    <tr data-nome="{{ exercicio.nome|lower }}" 
+                        data-musculo="{{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else '' }}"
+                        data-treino="{{ exercicio.treino_id }}">
+                        <td>
+                            {% if exercicio.treino_ref %}
+                                <span class="badge bg-primary">{{ exercicio.treino_ref.codigo }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">-</span>
+                            {% endif %}
+                        </td>
+                        <td><strong>{{ exercicio.nome }}</strong></td>
+                        <td>
+                            <span class="badge bg-info">
+                                {{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if ultimas_cargas.get(exercicio.id) %}
+                                <span class="badge bg-success">{{ ultimas_cargas[exercicio.id] }} kg</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ exercicio.registros|length }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('aluno.editar_exercicio', exercicio_id=exercicio.id) }}" 
+                                   class="btn btn-warning" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{{ url_for('aluno.excluir_exercicio', exercicio_id=exercicio.id, confirmar='false') }}" 
+                                   class="btn btn-danger" title="Excluir"
+                                   onclick="return confirm('Excluir este exercício?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
+                            Nenhum exercício cadastrado.
+                            <a href="{{ url_for('aluno.novo_exercicio') }}" class="d-block mt-2">Criar primeiro exercício</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Filtros em tempo real
+    document.getElementById('filtroNome').addEventListener('input', filtrar);
+    document.getElementById('filtroMusculo').addEventListener('change', filtrar);
+    document.getElementById('filtroTreino').addEventListener('change', filtrar);
+    
+    function filtrar() {
+        const nomeFiltro = document.getElementById('filtroNome').value.toLowerCase();
+        const musculoFiltro = document.getElementById('filtroMusculo').value;
+        const treinoFiltro = document.getElementById('filtroTreino').value;
+        
+        document.querySelectorAll('#tabelaExercicios tbody tr').forEach(row => {
+            const nome = row.dataset.nome || '';
+            const musculo = row.dataset.musculo || '';
+            const treino = row.dataset.treino || '';
+            
+            let mostrar = true;
+            
+            if (nomeFiltro && !nome.includes(nomeFiltro)) mostrar = false;
+            if (musculoFiltro && musculo !== musculoFiltro) mostrar = false;
+            if (treinoFiltro && treino !== treinoFiltro) mostrar = false;
+            
+            row.style.display = mostrar ? '' : 'none';
+        });
+    }
+</script>
+{% endblock %}

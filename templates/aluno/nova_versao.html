@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-plus-circle me-2" style="color: #F28C33;"></i>
+        Nova Versão de Treino
+    </h2>
+    <a href="{{ url_for('aluno.versoes') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Descrição</label>
+                <input type="text" name="descricao" class="form-control" 
+                       placeholder="Ex: Versão Inicial 2024" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Divisão (Split)</label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="divisao" id="divisaoABC" value="ABC" checked>
+                    <label class="btn btn-outline-primary" for="divisaoABC">
+                        <i class="bi bi-123 me-2"></i>ABC (3 treinos)
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="divisao" id="divisaoABCD" value="ABCD">
+                    <label class="btn btn-outline-primary" for="divisaoABCD">
+                        <i class="bi bi-123 me-2"></i>ABCD (4 treinos)
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="divisao" id="divisaoABCDE" value="ABCDE">
+                    <label class="btn btn-outline-primary" for="divisaoABCDE">
+                        <i class="bi bi-123 me-2"></i>ABCDE (5 treinos)
+                    </label>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Data de Início</label>
+                    <input type="date" name="data_inicio" class="form-control" 
+                           value="{{ data_atual_iso() }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Data de Fim</label>
+                    <input type="date" name="data_fim" class="form-control">
+                    <small class="text-muted">Deixe em branco se for a versão atual</small>
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                A versão atual será automaticamente finalizada na data de início da nova versão.
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Criar Versão
+                </button>
+                <a href="{{ url_for('aluno.versoes') }}" class="btn btn-secondary">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

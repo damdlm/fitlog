@@ -1,0 +1,497 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .treino-card {
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+        border-left: 4px solid transparent;
+    }
+    
+    .treino-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(242, 140, 51, 0.1);
+    }
+    
+    .treino-card[data-treino] {
+        border-left-color: #F28C33;
+    }
+    
+    .exercicio-item {
+        background-color: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 5px;
+        margin-bottom: 8px;
+        border-left: 3px solid #F28C33;
+        transition: all 0.2s;
+    }
+    
+    .exercicio-item:hover {
+        background-color: #fff3e0;
+    }
+    
+    .badge-carga {
+        background: #e9ecef;
+        color: #F28C33;
+        font-weight: 600;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+    }
+    
+    .stats-mini-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 10px;
+        padding: 15px;
+        text-align: center;
+    }
+    
+    .stats-mini-card h4 {
+        color: #F28C33;
+        margin-bottom: 5px;
+        font-weight: 700;
+    }
+    
+    .filtro-ativo {
+        background-color: #F28C33;
+        color: white;
+        border-color: #F28C33;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-trophy me-2" style="color: #F28C33;"></i>
+        Treinos de {{ aluno.nome_completo or aluno.username }}
+    </h2>
+    <div>
+        <a href="{{ url_for('professor.novo_treino_aluno', aluno_id=aluno.id) }}" class="btn btn-success me-2">
+            <i class="bi bi-plus-circle"></i> Novo Treino
+        </a>
+        <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<!-- Informações do Aluno e Estatísticas Rápidas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-mini-card">
+            <h4>{{ treinos|length }}</h4>
+            <small class="text-muted">Total de Treinos</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-mini-card">
+            <h4>
+                {% set total_ex = namespace(value=0) %}
+                {% for treino in treinos %}
+                    {% set total_ex.value = total_ex.value + exercicios_por_treino[treino.id]|length %}
+                {% endfor %}
+                {{ total_ex.value }}
+            </h4>
+            <small class="text-muted">Total de Exercícios</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-mini-card">
+            <h4>
+                {% set total_reg = namespace(value=0) %}
+                {% for treino in treinos %}
+                    {% for exercicio in exercicios_por_treino[treino.id] %}
+                        {% set total_reg.value = total_reg.value + exercicio.registros|length %}
+                    {% endfor %}
+                {% endfor %}
+                {{ total_reg.value }}
+            </h4>
+            <small class="text-muted">Total de Registros</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-mini-card">
+            <h4>
+                {% set versao_atual = aluno.versoes|selectattr('data_fim', 'none')|first %}
+                {% if versao_atual %}
+                    v{{ versao_atual.numero_versao }}
+                {% else %}
+                    -
+                {% endif %}
+            </h4>
+            <small class="text-muted">Versão Ativa</small>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros e Busca -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Buscar Treino</label>
+                <input type="text" id="filtroNome" class="form-control" 
+                       placeholder="Nome do treino..." autocomplete="off">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Ordenar por</label>
+                <select id="ordenarPor" class="form-select">
+                    <option value="codigo">Código (A-Z)</option>
+                    <option value="nome">Nome</option>
+                    <option value="exercicios">Quantidade de Exercícios</option>
+                    <option value="registros">Total de Registros</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Visualização</label>
+                <div class="btn-group w-100" role="group">
+                    <button type="button" class="btn btn-outline-primary active" id="viewCards">
+                        <i class="bi bi-grid-3x3-gap-fill"></i> Cards
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="viewList">
+                        <i class="bi bi-list"></i> Lista
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="limparFiltros()">
+                    <i class="bi bi-eraser"></i> Limpar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Container de Treinos (Visualização em Cards) -->
+<div id="viewCardsContainer">
+    {% if treinos %}
+        {% for treino in treinos %}
+        <div class="card treino-card" data-treino-id="{{ treino.id }}" 
+             data-codigo="{{ treino.codigo }}" data-nome="{{ treino.nome|lower }}"
+             data-exercicios="{{ exercicios_por_treino[treino.id]|length }}"
+             data-registros="0">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge me-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); font-size: 1rem;">
+                        {{ treino.codigo }}
+                    </span>
+                    <strong>{{ treino.nome }}</strong>
+                </div>
+                <div class="btn-group btn-group-sm">
+                    <a href="{{ url_for('professor.editar_treino_aluno', aluno_id=aluno.id, treino_id=treino.id) }}" 
+                       class="btn btn-warning" title="Editar">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <a href="{{ url_for('professor.excluir_treino_aluno', aluno_id=aluno.id, treino_id=treino.id, confirmar='false') }}" 
+                       class="btn btn-danger" title="Excluir"
+                       onclick="return confirm('Excluir este treino? Isso também excluirá todos os exercícios e registros associados.')">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">{{ treino.descricao }}</p>
+                
+                <div class="d-flex justify-content-between mb-3">
+                    <div>
+                        <span class="badge bg-info">
+                            <i class="bi bi-list-check"></i> {{ exercicios_por_treino[treino.id]|length }} exercícios
+                        </span>
+                    </div>
+                    <div>
+                        <span class="badge bg-secondary">
+                            <i class="bi bi-calendar-check"></i> 
+                            {% set total_reg = namespace(value=0) %}
+                            {% for exercicio in exercicios_por_treino[treino.id] %}
+                                {% set total_reg.value = total_reg.value + exercicio.registros|length %}
+                            {% endfor %}
+                            {{ total_reg.value }} registros
+                        </span>
+                    </div>
+                </div>
+                
+                <h6 class="mb-2">
+                    <i class="bi bi-list-check" style="color: #F28C33;"></i>
+                    Exercícios
+                </h6>
+                
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Exercício</th>
+                                <th>Músculo</th>
+                                <th>Última Carga</th>
+                                <th>Total Registros</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exercicio in exercicios_por_treino[treino.id] %}
+                            {% set ultimo_registro = exercicio.registros|sort(attribute='data_registro', reverse=true)|first %}
+                            <tr>
+                                <td><strong>{{ exercicio.nome }}</strong></td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if ultimo_registro and ultimo_registro.series|length > 0 %}
+                                        <span class="badge-carga">
+                                            <i class="bi bi-bar-chart"></i> {{ ultimo_registro.series[0].carga }}kg
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ exercicio.registros|length }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Versões que contêm este treino -->
+                {% set versoes_do_treino = [] %}
+                {% for versao in aluno.versoes %}
+                    {% for tv in versao.treinos %}
+                        {% if tv.treino_id == treino.id %}
+                            {% set _ = versoes_do_treino.append(versao) %}
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+                
+                {% if versoes_do_treino %}
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="bi bi-clock-history"></i>
+                        Presente nas versões: 
+                        {% for versao in versoes_do_treino %}
+                            <span class="badge bg-secondary">v{{ versao.numero_versao }}</span>
+                        {% endfor %}
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        Este aluno ainda não tem treinos cadastrados.
+        <a href="{{ url_for('professor.novo_treino_aluno', aluno_id=aluno.id) }}" class="alert-link">
+            Criar primeiro treino
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Container de Treinos (Visualização em Lista - Inicialmente oculto) -->
+<div id="viewListContainer" style="display: none;">
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="tabelaTreinos">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nome</th>
+                            <th>Descrição</th>
+                            <th>Exercícios</th>
+                            <th>Registros</th>
+                            <th>Versões</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for treino in treinos %}
+                        <tr data-treino-id="{{ treino.id }}" data-nome="{{ treino.nome|lower }}">
+                            <td><span class="badge bg-primary">{{ treino.codigo }}</span></td>
+                            <td><strong>{{ treino.nome }}</strong></td>
+                            <td>{{ treino.descricao[:50] }}{% if treino.descricao|length > 50 %}...{% endif %}</td>
+                            <td>{{ exercicios_por_treino[treino.id]|length }}</td>
+                            <td>
+                                {% set total_reg = namespace(value=0) %}
+                                {% for exercicio in exercicios_por_treino[treino.id] %}
+                                    {% set total_reg.value = total_reg.value + exercicio.registros|length %}
+                                {% endfor %}
+                                {{ total_reg.value }}
+                            </td>
+                            <td>
+                                {% set versoes_count = 0 %}
+                                {% for versao in aluno.versoes %}
+                                    {% for tv in versao.treinos %}
+                                        {% if tv.treino_id == treino.id %}
+                                            {% set versoes_count = versoes_count + 1 %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                                {{ versoes_count }}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('professor.editar_treino_aluno', aluno_id=aluno.id, treino_id=treino.id) }}" 
+                                       class="btn btn-warning" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{{ url_for('professor.excluir_treino_aluno', aluno_id=aluno.id, treino_id=treino.id, confirmar='false') }}" 
+                                       class="btn btn-danger" title="Excluir"
+                                       onclick="return confirm('Excluir este treino?')">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="modalConfirmarExclusao" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir o treino <strong id="modalTreinoNome"></strong>?</p>
+                <p class="text-danger">
+                    <i class="bi bi-info-circle"></i>
+                    Esta ação também excluirá todos os exercícios e registros associados!
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="#" id="modalConfirmarLink" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Sim, excluir
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Variáveis para controle de visualização
+    let modoVisualizacao = 'cards';
+    
+    // Funções de filtro
+    function filtrarTreinos() {
+        const nomeFiltro = document.getElementById('filtroNome').value.toLowerCase();
+        
+        if (modoVisualizacao === 'cards') {
+            document.querySelectorAll('[data-treino-id]').forEach(card => {
+                const nome = card.dataset.nome || '';
+                let mostrar = true;
+                
+                if (nomeFiltro && !nome.includes(nomeFiltro)) mostrar = false;
+                
+                card.style.display = mostrar ? '' : 'none';
+            });
+        } else {
+            document.querySelectorAll('#tabelaTreinos tbody tr').forEach(row => {
+                const nome = row.dataset.nome || '';
+                let mostrar = true;
+                
+                if (nomeFiltro && !nome.includes(nomeFiltro)) mostrar = false;
+                
+                row.style.display = mostrar ? '' : 'none';
+            });
+        }
+    }
+    
+    function ordenarTreinos() {
+        const criterio = document.getElementById('ordenarPor').value;
+        const container = document.getElementById('viewCardsContainer');
+        const cards = Array.from(document.querySelectorAll('[data-treino-id]'));
+        
+        cards.sort((a, b) => {
+            if (criterio === 'codigo') {
+                return a.dataset.codigo.localeCompare(b.dataset.codigo);
+            } else if (criterio === 'nome') {
+                return a.dataset.nome.localeCompare(b.dataset.nome);
+            } else if (criterio === 'exercicios') {
+                return parseInt(b.dataset.exercicios) - parseInt(a.dataset.exercicios);
+            } else if (criterio === 'registros') {
+                return parseInt(b.dataset.registros) - parseInt(a.dataset.registros);
+            }
+        });
+        
+        // Reordenar no DOM
+        cards.forEach(card => container.appendChild(card));
+    }
+    
+    function limparFiltros() {
+        document.getElementById('filtroNome').value = '';
+        document.getElementById('ordenarPor').value = 'codigo';
+        filtrarTreinos();
+        ordenarTreinos();
+    }
+    
+    // Alternar visualização
+    document.getElementById('viewCards').addEventListener('click', function() {
+        this.classList.add('active');
+        document.getElementById('viewList').classList.remove('active');
+        document.getElementById('viewCardsContainer').style.display = 'block';
+        document.getElementById('viewListContainer').style.display = 'none';
+        modoVisualizacao = 'cards';
+    });
+    
+    document.getElementById('viewList').addEventListener('click', function() {
+        this.classList.add('active');
+        document.getElementById('viewCards').classList.remove('active');
+        document.getElementById('viewCardsContainer').style.display = 'none';
+        document.getElementById('viewListContainer').style.display = 'block';
+        modoVisualizacao = 'list';
+    });
+    
+    // Event listeners
+    document.getElementById('filtroNome').addEventListener('input', filtrarTreinos);
+    document.getElementById('ordenarPor').addEventListener('change', ordenarTreinos);
+    
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', function() {
+        // Pré-calcular total de registros para ordenação
+        {% for treino in treinos %}
+            {% set total_reg = namespace(value=0) %}
+            {% for exercicio in exercicios_por_treino[treino.id] %}
+                {% set total_reg.value = total_reg.value + exercicio.registros|length %}
+            {% endfor %}
+            const card = document.querySelector(`[data-treino-id="{{ treino.id }}"]`);
+            if (card) {
+                card.dataset.registros = "{{ total_reg.value }}";
+            }
+        {% endfor %}
+        
+        ordenarTreinos();
+    });
+    
+    // Modal de confirmação para exclusão
+    function confirmarExclusao(treinoId, treinoNome) {
+        document.getElementById('modalTreinoNome').textContent = treinoNome;
+        document.getElementById('modalConfirmarLink').href = 
+            "{{ url_for('professor.excluir_treino_aluno', aluno_id=aluno.id, treino_id=0, confirmar='true') }}".replace('0', treinoId);
+        
+        const modal = new bootstrap.Modal(document.getElementById('modalConfirmarExclusao'));
+        modal.show();
+    }
+    
+    // Expor função global
+    window.confirmarExclusaoTreino = confirmarExclusao;
+</script>
+
+<!-- Botão flutuante para adicionar treino (mobile) -->
+<div class="d-block d-md-none position-fixed bottom-0 end-0 m-4" style="z-index: 1000;">
+    <a href="{{ url_for('professor.novo_treino_aluno', aluno_id=aluno.id) }}" 
+       class="btn btn-success btn-lg rounded-circle shadow"
+       style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+        <i class="bi bi-plus fs-1"></i>
+    </a>
+</div>
+{% endblock %}
