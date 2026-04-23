@@ -156,10 +156,5 @@ def create_app(config_class=None):
 app = create_app()
 
 if __name__ == '__main__':
-    print('=' * 60)
-    print('FitLog - Sistema de Controle de Treinos'.center(60))
-    print('=' * 60)
-    print(f"Modo: {'Desenvolvimento' if app.debug else 'Producao'}")
-    print('Acesse: http://127.0.0.1:5000')
-    print('=' * 60)
-    app.run(debug=app.debug, host='127.0.0.1', port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
