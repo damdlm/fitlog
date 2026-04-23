@@ -2,9 +2,11 @@ import os
 import secrets
 import logging
 from logging.handlers import RotatingFileHandler
+
 from flask import Flask
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
+
 from config import get_config
 from models import db, User
 
@@ -42,28 +44,32 @@ def setup_logging(app):
 
 
 # =============================================================
-# ADMIN INICIAL
+# ADMIN INICIAL (SEGURADO)
 # =============================================================
 def _criar_admin_inicial(app):
-    admin_password = os.getenv('ADMIN_PASSWORD', '').strip()
+    try:
+        admin_password = os.getenv('ADMIN_PASSWORD', '').strip()
 
-    if not admin_password:
-        admin_password = secrets.token_urlsafe(16)
-        app.logger.warning(f"ADMIN gerado: {admin_password}")
+        if not admin_password:
+            admin_password = secrets.token_urlsafe(16)
+            app.logger.warning(f"ADMIN gerado: {admin_password}")
 
-    elif len(admin_password) < 12:
-        raise ValueError("ADMIN_PASSWORD precisa ter pelo menos 12 caracteres")
+        elif len(admin_password) < 12:
+            raise ValueError("ADMIN_PASSWORD precisa ter pelo menos 12 caracteres")
 
-    admin = User(
-        username='admin',
-        email='admin@fitlog.com',
-        is_admin=True
-    )
+        admin = User(
+            username='admin',
+            email='admin@fitlog.com',
+            is_admin=True
+        )
 
-    admin.set_password(admin_password)
+        admin.set_password(admin_password)
 
-    db.session.add(admin)
-    db.session.commit()
+        db.session.add(admin)
+        db.session.commit()
+
+    except Exception as e:
+        app.logger.error(f"Erro ao criar admin inicial: {e}")
 
 
 # =============================================================
@@ -101,16 +107,25 @@ def create_app(config_class=None):
     setup_middleware(app)
 
     # =============================================================
-    # DB INIT
+    # DB INIT (SEGURO PARA RAILWAY)
     # =============================================================
-    with app.app_context():
+    def init_db():
         try:
             db.create_all()
+
+            # só cria admin se realmente conectar
+            try:
+                if User.query.first() is None:
+                    _criar_admin_inicial(app)
+            except Exception as e:
+                app.logger.error(f"Erro ao verificar admin: {e}")
+
         except Exception as e:
-            app.logger.error(f"Erro DB: {e}")
-        
-        if User.query.count() == 0:
-            _criar_admin_inicial(app)
+            app.logger.error(f"Erro DB no startup: {e}")
+
+    # 🔥 não quebra boot — roda depois de subir app
+    with app.app_context():
+        init_db()
 
     # =============================================================
     # BLUEPRINTS
@@ -140,11 +155,14 @@ def create_app(config_class=None):
         )
 
     # =============================================================
-    # 🔥 FIX RAILWAY: HEALTH CHECK OBRIGATÓRIO
+    # HEALTH CHECK (RAILWAY)
     # =============================================================
     @app.route("/health")
     def health():
-        return "OK", 200
+        try:
+            return {"status": "ok"}, 200
+        except:
+            return {"status": "error"}, 500
 
     @app.route("/")
     def root():
