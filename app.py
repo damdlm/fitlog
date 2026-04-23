@@ -102,19 +102,6 @@ def create_app(config_class=None):
         return db.session.get(User, int(user_id))
 
     setup_logging(app)
-
-
-# =============================================================
-# TESTE DE CONEXÃO EXPLÍCITO
-# =============================================================
-@app.before_first_request
-def test_db_connection():
-    try:
-        with app.app_context():
-            db.engine.connect()
-            app.logger.info("✅ CONEXÃO POSTGRESQL BEM SUCEDIDA!")
-    except Exception as e:
-        app.logger.error(f"❌ FALHA NA CONEXÃO: {e}")
     
     from middleware.logging_middleware import setup_middleware
     setup_middleware(app)
