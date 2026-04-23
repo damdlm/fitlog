@@ -105,6 +105,8 @@ def create_app(config_class=None):
     
     # from middleware.logging_middleware import setup_middleware
     # setup_middleware(app)
+    logger.info("Middleware de logging desabilitado para teste")
+    
 
     # =============================================================
     # DB INIT (SEGURO PARA RAILWAY)
