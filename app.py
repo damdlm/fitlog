@@ -104,8 +104,11 @@ def create_app(config_class=None):
     # DB INIT
     # =============================================================
     with app.app_context():
-        db.create_all()
-
+        try:
+            db.create_all()
+        except Exception as e:
+            app.logger.error(f"Erro DB: {e}")
+        
         if User.query.count() == 0:
             _criar_admin_inicial(app)
 
