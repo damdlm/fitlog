@@ -9,10 +9,7 @@ load_dotenv()
 class Config:
     """Configuração base compartilhada por todos os ambientes."""
 
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        'DATABASE_URL',
-        'postgresql://postgres:postgres@localhost:5432/fitlog_db'
-    )
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     SECRET_KEY = os.getenv('SECRET_KEY', '')
