@@ -35,6 +35,20 @@ def get_config_class():
     else:
         return DevelopmentConfig
 
+# =============================================================
+# FUNÇÃO QUE SEU APP.PY ESTÁ CHAMANDO
+# =============================================================
+def get_config():
+    """Retorna a classe de configuração correta baseada no ambiente"""
+    env = os.getenv('FLASK_ENV', 'development')
+    
+    if env == 'production':
+        return ProductionConfig
+    elif env == 'testing':
+        return TestingConfig
+    else:
+        return DevelopmentConfig
+
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
