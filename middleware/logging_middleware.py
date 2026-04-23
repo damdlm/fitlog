@@ -1,8 +1,8 @@
 """Middleware para logging de requisições"""
 
 import time
-from flask import request, g
 import logging
+from flask import request
 
 logger = logging.getLogger(__name__)
 
@@ -15,15 +15,16 @@ class LoggingMiddleware:
     def __call__(self, environ, start_response):
         start_time = time.time()
         
+        # Guarda o método e path antes de qualquer coisa
+        method = environ.get('REQUEST_METHOD', 'UNKNOWN')
+        path = environ.get('PATH_INFO', '/')
+        
         def custom_start_response(status, headers, exc_info=None):
             # Calcular tempo de resposta
             duration = time.time() - start_time
             
-            # Logar requisição
-            logger.info(
-                f"Request: {environ.get('REQUEST_METHOD')} {environ.get('PATH_INFO')} - "
-                f"Status: {status} - Duration: {duration:.3f}s"
-            )
+            # Logar requisição APÓS a resposta estar pronta
+            logger.info(f"Request: {method} {path} - Status: {status} - Duration: {duration:.3f}s")
             
             return start_response(status, headers, exc_info)
         
@@ -31,4 +32,16 @@ class LoggingMiddleware:
 
 def setup_middleware(app):
     """Configura middlewares da aplicação"""
-    app.wsgi_app = LoggingMiddleware(app.wsgi_app)
+    # Desabilitar temporariamente o middleware para teste
+    # app.wsgi_app = LoggingMiddleware(app.wsgi_app)
+    
+    # Opção: middleware mais simples sem logging complexo
+    @app.after_request
+    def log_request(response):
+        duration = time.time() - request.start_time if hasattr(request, 'start_time') else 0
+        logger.info(f"Request: {request.method} {request.path} - Status: {response.status_code} - Duration: {duration:.3f}s")
+        return response
+    
+    @app.before_request
+    def start_timer():
+        request.start_time = time.time()
