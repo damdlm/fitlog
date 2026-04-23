@@ -1,39 +1,58 @@
-# Core
-flask==2.3.3
-flask-sqlalchemy==3.1.1
-psycopg2-binary==2.9.9
+# =========================
+# CORE
+# =========================
+Flask==2.3.3
+Flask-SQLAlchemy==3.1.1
 python-dotenv==1.0.0
 
-# Autenticação
-flask-login==0.6.2
-flask-wtf==1.2.1
+# PostgreSQL (CORRIGIDO PARA RAILWAY)
+psycopg2==2.9.9
 
-# Segurança e performance
-flask-limiter==3.5.0       # Rate limiting para prevenir força bruta
-flask-caching==2.3.0       # Cache distribuído (SimpleCache em dev, Redis em prod)
-redis==5.0.3               # Backend Redis para cache e rate-limit em produção
+# =========================
+# AUTENTICAÇÃO
+# =========================
+Flask-Login==0.6.2
+Flask-WTF==1.2.1
 
-# Serialização
+# =========================
+# SEGURANÇA / PERFORMANCE
+# =========================
+Flask-Limiter==3.5.0
+Flask-Caching==2.3.0
+redis==5.0.3
+
+# =========================
+# SERIALIZAÇÃO
+# =========================
 marshmallow==3.20.1
 marshmallow-sqlalchemy==0.29.0
 
-# Utilitários
+# =========================
+# UTILITÁRIOS
+# =========================
 python-dateutil==2.8.2
 unicodedata2==15.0.0
 
-# Documentação API
+# =========================
+# API DOC
+# =========================
 flask-restx==1.2.0
 
-# Testes
+# =========================
+# PROD SERVIDOR
+# =========================
+gunicorn==21.2.0
+
+# =========================
+# TESTES
+# =========================
 pytest==7.4.3
 pytest-cov==4.1.0
 factory-boy==3.3.0
 
-# Ferramentas de desenvolvimento
+# =========================
+# DEV TOOLS (opcional em produção)
+# =========================
 black==23.12.1
 flake8==7.0.0
 mypy==1.8.0
-
-gunicorn
-psycopg2-binary
-flask
