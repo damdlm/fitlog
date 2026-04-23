@@ -7,7 +7,7 @@ from flask import Flask
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 
-from config import get_config  # ← ESSA LINHA ESTÁ CORRETA (desde que get_config exista no config.py)
+from config import get_config
 from models import db, User
 
 from extensions import limiter, cache
@@ -102,8 +102,6 @@ def create_app(config_class=None):
         return db.session.get(User, int(user_id))
 
     setup_logging(app)
-    
-from middleware.logging_middleware import setup_middleware    
 
     # =============================================================
     # DB INIT (SEGURO PARA RAILWAY)
