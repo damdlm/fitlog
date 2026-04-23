@@ -103,8 +103,8 @@ def create_app(config_class=None):
 
     setup_logging(app)
     
-    from middleware.logging_middleware import setup_middleware
-    setup_middleware(app)
+    # from middleware.logging_middleware import setup_middleware
+    # setup_middleware(app)
 
     # =============================================================
     # DB INIT (SEGURO PARA RAILWAY)
