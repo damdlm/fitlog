@@ -7,7 +7,7 @@ from flask import Flask
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 
-from config import get_config
+from config import get_config  # ← ESSA LINHA ESTÁ CORRETA (desde que get_config exista no config.py)
 from models import db, User
 
 from extensions import limiter, cache
