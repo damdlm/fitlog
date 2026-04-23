@@ -145,7 +145,7 @@ def create_app(config_class=None):
 
     @app.route("/")
     def root():
-        return "FitLog rodando", 200
+        return "FitLog rodando"
 
     return app
 
