@@ -5,7 +5,9 @@ Flask==2.3.3
 Flask-SQLAlchemy==3.1.1
 python-dotenv==1.0.0
 
-# PostgreSQL (CORRIGIDO PARA RAILWAY)
+# =========================
+# POSTGRES (FIX RAILWAY + PYTHON 3.11/3.12)
+# =========================
 psycopg2==2.9.9
 
 # =========================
@@ -34,12 +36,12 @@ python-dateutil==2.8.2
 unicodedata2==15.0.0
 
 # =========================
-# API DOC
+# API
 # =========================
 flask-restx==1.2.0
 
 # =========================
-# PROD SERVIDOR
+# PROD SERVER
 # =========================
 gunicorn==21.2.0
 
@@ -51,7 +53,7 @@ pytest-cov==4.1.0
 factory-boy==3.3.0
 
 # =========================
-# DEV TOOLS (opcional em produção)
+# DEV TOOLS (opcional)
 # =========================
 black==23.12.1
 flake8==7.0.0
