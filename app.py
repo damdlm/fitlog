@@ -110,7 +110,6 @@ def create_app(config_class=None):
         try:
             db.create_all()
 
-            # só cria admin se realmente conectar
             try:
                 if User.query.first() is None:
                     _criar_admin_inicial(app)
@@ -120,7 +119,6 @@ def create_app(config_class=None):
         except Exception as e:
             app.logger.error(f"Erro DB no startup: {e}")
 
-    # 🔥 não quebra boot — roda depois de subir app
     with app.app_context():
         init_db()
 
@@ -150,6 +148,16 @@ def create_app(config_class=None):
             formatar_data_para_input=formatar_data_para_input,
             now=datetime.now,
         )
+
+    # =============================================================
+    # HEALTH CHECK (RAILWAY)
+    # =============================================================
+    @app.route("/health")
+    def health():
+        return {"status": "ok"}, 200
+
+    return app  # ← estava faltando isso!
+
 
 # =============================================================
 # GUNICORN ENTRYPOINT
