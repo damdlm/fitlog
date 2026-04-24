@@ -274,26 +274,53 @@
                 Exercícios:
             </h6>
             
+            <!-- Dentro do loop dos treinos, onde mostra os exercícios -->
             <div class="row">
-                {% for ex_id in treino.exercicios %}
-                    {% set exercicio = exercicios|selectattr('id', 'equalto', ex_id)|first %}
-                    {% if exercicio %}
-                    <div class="col-md-4 mb-2">
-                        <div class="exercicio-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>{{ exercicio.nome }}</strong>
-                                    <br>
-                                    <span class="badge-musculo">
-                                        {{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}
-                                    </span>
+                {% for ex_id_completo in treino.exercicios %}
+                    {% if ex_id_completo.startswith('u_') %}
+                        {% set ex_id = ex_id_completo[2:]|int %}
+                        {% set exercicio = exercicios|selectattr('id', 'equalto', ex_id)|first %}
+                        {% if exercicio %}
+                        <div class="col-md-4 mb-2">
+                            <div class="exercicio-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ exercicio.nome }}</strong>
+                                        <br>
+                                        <span class="badge bg-primary">Meu exercício</span>
+                                        <span class="badge-musculo">
+                                            {{ exercicio.musculo_nome }}
+                                        </span>
+                                    </div>
+                                    <small class="text-muted">
+                                        ID: {{ exercicio.id }}
+                                    </small>
                                 </div>
-                                <small class="text-muted">
-                                    ID: {{ exercicio.id }}
-                                </small>
                             </div>
                         </div>
-                    </div>
+                        {% endif %}
+                    {% elif ex_id_completo.startswith('b_') %}
+                        {% set ex_id = ex_id_completo[2:]|int %}
+                        {% set exercicio = exercicios_base|default([])|selectattr('id', 'equalto', ex_id)|first %}
+                        {% if exercicio %}
+                        <div class="col-md-4 mb-2">
+                            <div class="exercicio-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ exercicio.nome }}</strong>
+                                        <br>
+                                        <span class="badge bg-secondary">Catálogo</span>
+                                        <span class="badge-musculo">
+                                            {{ exercicio.musculo_nome }}
+                                        </span>
+                                    </div>
+                                    <small class="text-muted">
+                                        ID: {{ exercicio.id }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                     {% endif %}
                 {% endfor %}
             </div>

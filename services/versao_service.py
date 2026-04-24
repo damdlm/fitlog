@@ -313,20 +313,22 @@ class VersaoService(BaseService):
             for tv in versao.treinos:
                 treino = TreinoService.get_by_id(tv.treino_id, user_id)
                 if treino:
-                    # 🔥 CORREÇÃO: Buscar os IDs corretos
-                    exercicios_ids = []
+                    # ==========================================================
+                    # 🔥 CORREÇÃO: Guardar o tipo junto com o ID
+                    # ==========================================================
+                    exercicios_com_tipo = []
                     for ve in tv.exercicios:
                         if ve.exercicio_usuario_id:
-                            exercicios_ids.append(ve.exercicio_usuario_id)
+                            exercicios_com_tipo.append(f"u_{ve.exercicio_usuario_id}")
                         elif ve.exercicio_base_id:
-                            exercicios_ids.append(ve.exercicio_base_id)
+                            exercicios_com_tipo.append(f"b_{ve.exercicio_base_id}")
                     
                     resultado[treino.codigo] = {
                         "id": tv.treino_id,
                         "codigo": treino.codigo,
                         "nome": tv.nome_treino,
                         "descricao": tv.descricao_treino,
-                        "exercicios": exercicios_ids,  # 🔥 CORRIGIDO
+                        "exercicios": exercicios_com_tipo,  # ← Agora com prefixo!
                         "ordem": tv.ordem if hasattr(tv, 'ordem') else 0
                     }
             
