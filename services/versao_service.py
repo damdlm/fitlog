@@ -308,18 +308,28 @@ class VersaoService(BaseService):
             versao = VersaoService.get_by_id(versao_id, user_id, load_relations=True)
             if not versao:
                 return {}
+            
             resultado = {}
             for tv in versao.treinos:
                 treino = TreinoService.get_by_id(tv.treino_id, user_id)
                 if treino:
+                    # 🔥 CORREÇÃO: Buscar os IDs corretos
+                    exercicios_ids = []
+                    for ve in tv.exercicios:
+                        if ve.exercicio_usuario_id:
+                            exercicios_ids.append(ve.exercicio_usuario_id)
+                        elif ve.exercicio_base_id:
+                            exercicios_ids.append(ve.exercicio_base_id)
+                    
                     resultado[treino.codigo] = {
                         "id": tv.treino_id,
                         "codigo": treino.codigo,
                         "nome": tv.nome_treino,
                         "descricao": tv.descricao_treino,
-                        "exercicios": [ve.exercicio_id for ve in tv.exercicios],
+                        "exercicios": exercicios_ids,  # 🔥 CORRIGIDO
                         "ordem": tv.ordem if hasattr(tv, 'ordem') else 0
                     }
+            
             resultado = dict(sorted(resultado.items(), key=lambda item: item[1].get('ordem', 0)))
             return resultado
         except Exception as e:
