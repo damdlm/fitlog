@@ -151,23 +151,6 @@ def create_app(config_class=None):
             now=datetime.now,
         )
 
-    # =============================================================
-    # HEALTH CHECK (RAILWAY)
-    # =============================================================
-    @app.route("/health")
-    def health():
-        try:
-            return {"status": "ok"}, 200
-        except:
-            return {"status": "error"}, 500
-
-    @app.route("/")
-    def root():
-        return "FitLog rodando"
-
-    return app
-
-
 # =============================================================
 # GUNICORN ENTRYPOINT
 # =============================================================
