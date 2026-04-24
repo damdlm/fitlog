@@ -1684,7 +1684,7 @@ def editar_treino_versao(versao_id, treino_codigo):
             exercicios_atuais.append(f"u_{ve.exercicio_usuario_id}")
         elif ve.exercicio_base_id:
             exercicios_atuais.append(f"b_{ve.exercicio_base_id}")
-    
+
     logger.info(f"Exercícios atuais na versão (com prefixo): {exercicios_atuais}")
     
     musculos = MusculoService.get_all_nomes()
