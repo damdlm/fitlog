@@ -244,10 +244,10 @@ class VersaoExercicio(db.Model):
         """Retorna o objeto exercício (seja do usuário ou base)"""
         return self.exercicio_usuario or self.exercicio_base
 
-    @hybrid_property
-    def exercicio_id(self):
-        """Retorna o ID do exercício (preferencialmente do usuário)"""
-        return self.exercicio_usuario_id or self.exercicio_base_id
+   # @hybrid_property
+   # def exercicio_id(self):
+   #     """Retorna o ID do exercício (preferencialmente do usuário)"""
+   #     return self.exercicio_usuario_id or self.exercicio_base_id
 
     @exercicio_id.setter
     def exercicio_id(self, value):

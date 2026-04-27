@@ -303,7 +303,7 @@ class VersaoService(BaseService):
 
     @staticmethod
     def get_treinos(versao_id, user_id=None):
-        """Retorna treinos de uma versão (formato para template) com ordenação"""
+        """Retorna treinos de uma versão com prefixo nos IDs"""
         try:
             versao = VersaoService.get_by_id(versao_id, user_id, load_relations=True)
             if not versao:
@@ -313,22 +313,19 @@ class VersaoService(BaseService):
             for tv in versao.treinos:
                 treino = TreinoService.get_by_id(tv.treino_id, user_id)
                 if treino:
-                    # ==========================================================
-                    # 🔥 CORREÇÃO: Guardar o tipo junto com o ID
-                    # ==========================================================
-                    exercicios_com_tipo = []
+                    exercicios_com_prefixo = []
                     for ve in tv.exercicios:
                         if ve.exercicio_usuario_id:
-                            exercicios_com_tipo.append(f"u_{ve.exercicio_usuario_id}")
+                            exercicios_com_prefixo.append(f"u_{ve.exercicio_usuario_id}")
                         elif ve.exercicio_base_id:
-                            exercicios_com_tipo.append(f"b_{ve.exercicio_base_id}")
+                            exercicios_com_prefixo.append(f"b_{ve.exercicio_base_id}")
                     
                     resultado[treino.codigo] = {
                         "id": tv.treino_id,
                         "codigo": treino.codigo,
                         "nome": tv.nome_treino,
                         "descricao": tv.descricao_treino,
-                        "exercicios": exercicios_com_tipo,  # ← Agora com prefixo!
+                        "exercicios": exercicios_com_prefixo,
                         "ordem": tv.ordem if hasattr(tv, 'ordem') else 0
                     }
             

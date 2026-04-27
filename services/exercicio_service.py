@@ -193,8 +193,8 @@ class ExercicioService(BaseService):
             BaseService.handle_error(e, "Erro ao buscar exercícios completos")
             return []
 
+    @staticmethod
     def get_by_treino(treino_id, user_id=None):
-        """Retorna exercícios de um treino específico"""
         try:
             from models import VersaoExercicio, TreinoVersao
             
@@ -203,13 +203,18 @@ class ExercicioService(BaseService):
             if not user_id:
                 return []
             
-            # Buscar versões que contêm este treino
             versoes_treino = TreinoVersao.query.filter_by(treino_id=treino_id).all()
             
             exercicios = []
             for tv in versoes_treino:
                 for ve in tv.exercicios:
-                    exercicio = ExercicioService.get_by_id(ve.exercicio_id, user_id)
+                    if ve.exercicio_usuario_id:
+                        exercicio = ExercicioService.get_by_id(ve.exercicio_usuario_id, user_id)
+                    elif ve.exercicio_base_id:
+                        exercicio = ExercicioService.get_by_id(ve.exercicio_base_id, user_id)
+                    else:
+                        continue
+                        
                     if exercicio and exercicio not in exercicios:
                         exercicios.append(exercicio)
             
@@ -217,7 +222,7 @@ class ExercicioService(BaseService):
         except Exception as e:
             BaseService.handle_error(e, f"Erro ao buscar exercícios do treino {treino_id}")
             return []
-    
+
     # =============================================
     # MÉTODOS PARA ADICIONAR/REMOVER EXERCÍCIOS DO USUÁRIO
     # =============================================

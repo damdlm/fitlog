@@ -316,33 +316,59 @@ def reordenar_exercicios_do_treino(versao_id, treino_codigo, nova_ordem):
 
 # ===== FUNÇÕES PARA VERIFICAR ONDE UM EXERCÍCIO É USADO =====
 
-def verificar_exercicio_em_versoes(exercicio_id):
+def verificar_exercicio_em_versoes(exercicio_id, tipo_exercicio=None):
     """
     Verifica em quais versões e treinos um exercício está presente
+    
+    Args:
+        exercicio_id: ID do exercício
+        tipo_exercicio: 'usuario' ou 'base' (se None, busca em ambos)
     """
-    from models import VersaoExercicio, Treino
+    from models import VersaoExercicio, Treino, ExercicioUsuario, ExercicioBase
     
     resultados = []
     
-    # Buscar todas as ocorrências do exercício
-    ocorrencias = VersaoExercicio.query.filter_by(exercicio_id=exercicio_id).all()
-    
-    for ve in ocorrencias:
-        treino_versao = ve.treino_versao_ref
-        versao = treino_versao.versao_ref
-        treino = Treino.query.get(treino_versao.treino_id)
+    if tipo_exercicio is None or tipo_exercicio == 'usuario':
+        ocorrencias_usuario = VersaoExercicio.query.filter_by(
+            exercicio_usuario_id=exercicio_id
+        ).all()
         
-        if treino:
-            resultados.append({
-                "versao_id": versao.id,
-                "versao": versao.numero_versao,
-                "versao_descricao": versao.descricao,
-                "treino_id": treino.codigo,  # Usar o código
-                "treino_nome": treino_versao.nome_treino,
-                "treino_descricao": treino_versao.descricao_treino,
-                "data_inicio": versao.data_inicio.isoformat() if versao.data_inicio else None,
-                "data_fim": versao.data_fim.isoformat() if versao.data_fim else None
-            })
+        for ve in ocorrencias_usuario:
+            treino_versao = ve.treino_versao
+            if treino_versao:
+                versao = treino_versao.versao_ref
+                treino = Treino.query.get(treino_versao.treino_id)
+                if treino:
+                    resultados.append({
+                        "versao_id": versao.id,
+                        "versao": versao.numero_versao,
+                        "versao_descricao": versao.descricao,
+                        "treino_id": treino.codigo,
+                        "data_inicio": versao.data_inicio.isoformat() if versao.data_inicio else None,
+                        "data_fim": versao.data_fim.isoformat() if versao.data_fim else None,
+                        "tipo": "usuario"
+                    })
+    
+    if tipo_exercicio is None or tipo_exercicio == 'base':
+        ocorrencias_base = VersaoExercicio.query.filter_by(
+            exercicio_base_id=exercicio_id
+        ).all()
+        
+        for ve in ocorrencias_base:
+            treino_versao = ve.treino_versao
+            if treino_versao:
+                versao = treino_versao.versao_ref
+                treino = Treino.query.get(treino_versao.treino_id)
+                if treino:
+                    resultados.append({
+                        "versao_id": versao.id,
+                        "versao": versao.numero_versao,
+                        "versao_descricao": versao.descricao,
+                        "treino_id": treino.codigo,
+                        "data_inicio": versao.data_inicio.isoformat() if versao.data_inicio else None,
+                        "data_fim": versao.data_fim.isoformat() if versao.data_fim else None,
+                        "tipo": "base"
+                    })
     
     return resultados
 
