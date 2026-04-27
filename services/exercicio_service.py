@@ -100,7 +100,7 @@ class ExercicioService(BaseService):
             if not user_id:
                 return []
     
-            from models import Muscolo
+            from models import Musculo
     
             # Exercícios base (catálogo global)
             exercicios_base = ExercicioBase.query.options(
