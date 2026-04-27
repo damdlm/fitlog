@@ -201,7 +201,7 @@ class ExercicioService(BaseService):
             if not user_id:
                 return []
     
-            from models import Musculo
+            from models import Musculo  # ← CORRIGIDO (era Muscolo)
     
             # Exercícios base (catálogo global)
             exercicios_base = ExercicioBase.query.options(
@@ -210,16 +210,14 @@ class ExercicioService(BaseService):
     
             for ex in exercicios_base:
                 ex.tipo = 'base'
-                # Garantir nome do músculo
-                if ex.musculo_ref and ex.musculo_ref.nome_exibicao:
+                ex.prefixo = 'b_'
+                ex.is_custom = False
+                if ex.musculo_ref:
                     ex.musculo_nome = ex.musculo_ref.nome_exibicao
                 else:
-                    # Fallback: buscar músculo pelo ID
                     musculo = Musculo.query.get(ex.musculo_id)
                     ex.musculo_nome = musculo.nome_exibicao if musculo else 'Não especificado'
-                    # Criar musculo_ref artificialmente para compatibilidade
                     ex.musculo_ref = musculo
-                # Alias para templates que usam 'musculo'
                 ex.musculo = ex.musculo_nome
     
             # Exercícios do usuário (customizados)
@@ -229,7 +227,9 @@ class ExercicioService(BaseService):
     
             for ex in exercicios_usuario:
                 ex.tipo = 'usuario'
-                if ex.musculo_ref and ex.musculo_ref.nome_exibicao:
+                ex.prefixo = 'u_'
+                ex.is_custom = True
+                if ex.musculo_ref:
                     ex.musculo_nome = ex.musculo_ref.nome_exibicao
                 else:
                     musculo = Musculo.query.get(ex.musculo_id)

@@ -9,80 +9,84 @@ def remover_acentos(texto):
     texto = unicodedata.normalize('NFKD', texto)
     return ''.join([c for c in texto if not unicodedata.combining(c)])
 
+# utils/exercise_utils.py - VERSÃO CORRIGIDA (busca no BANCO)
+
 def buscar_musculo_no_catalogo(nome_exercicio):
     """
-    Busca o músculo primário de um exercício no catálogo completo.
+    Busca o músculo primário de um exercício no catálogo do BANCO DE DADOS.
     Retorna o nome do músculo em português ou None se não encontrar.
     """
-    catalogo_path = Path("storage/exercises-ptbr-full-translation.json")
+    from models import ExercicioBase, Musculo
+    from sqlalchemy.orm import joinedload
+    from utils.exercise_utils import remover_acentos
     
     print(f"🔍 Buscando músculo para: '{nome_exercicio}'")
     
-    if not catalogo_path.exists():
-        print(f"❌ Arquivo de catálogo não encontrado!")
-        return None
+    # Normalizar o nome de busca
+    nome_busca = remover_acentos(nome_exercicio.lower().strip())
+    print(f"🔤 Termo de busca normalizado: '{nome_busca}'")
+    
+    # Mapeamento de músculos em inglês para português (caso o banco ainda tenha nomes em inglês)
+    mapa_musculos = {
+        'abdominais': 'Abdômen',
+        'abductors': 'Abdutores',
+        'adductors': 'Adutores',
+        'biceps': 'Bíceps',
+        'calves': 'Panturrilhas',
+        'chest': 'Peitoral',
+        'forearms': 'Antebraços',
+        'glutes': 'Glúteos',
+        'hamstrings': 'Posterior de Coxa',
+        'lats': 'Dorsal',
+        'lower back': 'Lombar',
+        'middle back': 'Costas',
+        'neck': 'Pescoço',
+        'quadriceps': 'Quadríceps',
+        'shoulders': 'Ombros',
+        'traps': 'Trapézio',
+        'triceps': 'Tríceps'
+    }
     
     try:
-        with open(catalogo_path, 'r', encoding='utf-8') as f:
-            catalogo = json.load(f)
-        
-        # Normalizar o nome de busca
-        nome_busca = remover_acentos(nome_exercicio.lower().strip())
-        print(f"🔤 Termo de busca normalizado: '{nome_busca}'")
-        
-        # Mapeamento de músculos em inglês para português
-        mapa_musculos = {
-            'abdominais': 'Abdômen',
-            'abductors': 'Abdutores',
-            'adductors': 'Adutores',
-            'biceps': 'Bíceps',
-            'calves': 'Panturrilhas',
-            'chest': 'Peitoral',
-            'forearms': 'Antebraços',
-            'glutes': 'Glúteos',
-            'hamstrings': 'Posterior de Coxa',
-            'lats': 'Dorsal',
-            'lower back': 'Lombar',
-            'middle back': 'Costas',
-            'neck': 'Pescoço',
-            'quadriceps': 'Quadríceps',
-            'shoulders': 'Ombros',
-            'traps': 'Trapézio',
-            'triceps': 'Tríceps'
-        }
-        
         # 1. Correspondência exata
-        for ex in catalogo:
-            nome_catalogo = remover_acentos(ex.get('name', '').lower().strip())
-            if nome_catalogo == nome_busca:
-                primary_muscles = ex.get('primaryMuscles', [])
-                if primary_muscles and len(primary_muscles) > 0:
-                    musculo_original = primary_muscles[0].lower()
-                    musculo = mapa_musculos.get(musculo_original, musculo_original.title())
-                    print(f"✅ Correspondência exata encontrada: {musculo}")
-                    return musculo
+        exercicio = ExercicioBase.query.options(
+            joinedload(ExercicioBase.musculo_ref)
+        ).filter(ExercicioBase.nome.ilike(nome_exercicio)).first()
+        
+        if exercicio and exercicio.musculo_ref:
+            musculo = exercicio.musculo_ref.nome_exibicao
+            print(f"✅ Correspondência exata encontrada: {musculo}")
+            return musculo
         
         # 2. Nome do catálogo CONTÉM o nome buscado
-        for ex in catalogo:
-            nome_catalogo = remover_acentos(ex.get('name', '').lower())
-            if nome_busca in nome_catalogo:
-                primary_muscles = ex.get('primaryMuscles', [])
-                if primary_muscles and len(primary_muscles) > 0:
-                    musculo_original = primary_muscles[0].lower()
-                    musculo = mapa_musculos.get(musculo_original, musculo_original.title())
-                    print(f"✅ Correspondência parcial: {musculo}")
-                    return musculo
+        exercicios = ExercicioBase.query.options(
+            joinedload(ExercicioBase.musculo_ref)
+        ).filter(ExercicioBase.nome.ilike(f'%{nome_exercicio}%')).limit(10).all()
+        
+        for ex in exercicios:
+            nome_catalogo = remover_acentos(ex.nome.lower())
+            if nome_busca in nome_catalogo and ex.musculo_ref:
+                musculo = ex.musculo_ref.nome_exibicao
+                print(f"✅ Correspondência parcial: {musculo}")
+                return musculo
         
         # 3. Nome buscado CONTÉM o nome do catálogo
-        for ex in catalogo:
-            nome_catalogo = remover_acentos(ex.get('name', '').lower())
-            if nome_catalogo in nome_busca:
-                primary_muscles = ex.get('primaryMuscles', [])
-                if primary_muscles and len(primary_muscles) > 0:
-                    musculo_original = primary_muscles[0].lower()
-                    musculo = mapa_musculos.get(musculo_original, musculo_original.title())
-                    print(f"✅ Correspondência inversa: {musculo}")
-                    return musculo
+        for ex in exercicios:
+            nome_catalogo = remover_acentos(ex.nome.lower())
+            if nome_catalogo in nome_busca and ex.musculo_ref:
+                musculo = ex.musculo_ref.nome_exibicao
+                print(f"✅ Correspondência inversa: {musculo}")
+                return musculo
+        
+        # 4. Fallback: tentar pelo nome do músculo original (se existir no banco)
+        exercicio = ExercicioBase.query.options(
+            joinedload(ExercicioBase.musculo_ref)
+        ).filter(ExercicioBase.musculo_nome.ilike(f'%{nome_busca}%')).first()
+        
+        if exercicio and exercicio.musculo_ref:
+            musculo = exercicio.musculo_ref.nome_exibicao
+            print(f"✅ Correspondência pelo nome do músculo: {musculo}")
+            return musculo
         
         print(f"❌ Nenhum músculo encontrado para '{nome_exercicio}'")
         
