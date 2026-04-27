@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from models import db, User, AlunoProfessor, Treino, ExercicioCustomizado, RegistroTreino, SolicitacaoVinculo, TreinoVersao, VersaoExercicio
+from models import db, User, AlunoProfessor, Treino, ExercicioCustomizado, RegistroTreino, SolicitacaoVinculo, TreinoVersao, VersaoExercicio, ExercicioBase, ExercicioUsuario
 from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
 from services.versao_service import VersaoService
@@ -42,6 +42,7 @@ def dashboard():
                          total_treinos=total_treinos,
                          total_registros=total_registros)
 
+
 # =============================================
 # GERENCIAMENTO DE ALUNOS
 # =============================================
@@ -71,6 +72,7 @@ def listar_alunos():
                          busca=busca,
                          status=status)
 
+
 @professor_bp.route('/aluno/novo', methods=['GET', 'POST'])
 @login_required
 def novo_aluno():
@@ -86,7 +88,6 @@ def novo_aluno():
         nome_completo = request.form.get('nome_completo')
         telefone = request.form.get('telefone')
         
-        # Validações
         if not username or not email or not password:
             flash('Todos os campos são obrigatórios', 'danger')
             return redirect(url_for('professor.novo_aluno'))
@@ -99,7 +100,6 @@ def novo_aluno():
             flash('Senha deve ter pelo menos 6 caracteres', 'danger')
             return redirect(url_for('professor.novo_aluno'))
         
-        # Verificar se usuário já existe
         if User.query.filter_by(username=username).first():
             flash('Nome de usuário já existe', 'danger')
             return redirect(url_for('professor.novo_aluno'))
@@ -108,7 +108,6 @@ def novo_aluno():
             flash('E-mail já cadastrado', 'danger')
             return redirect(url_for('professor.novo_aluno'))
         
-        # Criar novo aluno
         aluno = User(
             username=username,
             email=email,
@@ -120,9 +119,8 @@ def novo_aluno():
         aluno.set_password(password)
         
         db.session.add(aluno)
-        db.session.flush()  # Para obter o ID do aluno
+        db.session.flush()
         
-        # Criar vínculo com o professor
         vinculo = AlunoProfessor(
             aluno_id=aluno.id,
             professor_id=current_user.id,
@@ -131,7 +129,6 @@ def novo_aluno():
         )
         db.session.add(vinculo)
         
-        # Criar treinos mínimos para o aluno
         SeedService.create_minimal_workouts(aluno.id)
         
         db.session.commit()
@@ -142,28 +139,25 @@ def novo_aluno():
     
     return render_template('professor/novo_aluno.html')
 
+
 @professor_bp.route('/aluno/<int:aluno_id>')
 @login_required
 def visualizar_aluno(aluno_id):
     """Visualiza detalhes de um aluno específico"""
     aluno = User.query.get_or_404(aluno_id)
     
-    # Verificar permissão
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para ver este aluno.', 'danger')
         return redirect(url_for('professor.dashboard'))
     
-    # Estatísticas do aluno
     treinos = TreinoService.get_all(user_id=aluno.id)
     exercicios = ExercicioService.get_exercicios_completos(user_id=aluno.id)
     registros = RegistroTreino.query.filter_by(user_id=aluno.id).count()
     
-    # Últimos registros
     ultimos_registros = RegistroTreino.query.filter_by(user_id=aluno.id)\
         .order_by(RegistroTreino.data_registro.desc())\
         .limit(10).all()
     
-    # Versão ativa
     versao_ativa = VersaoService.get_ativa(user_id=aluno.id)
     
     return render_template('professor/visualizar_aluno.html',
@@ -174,10 +168,11 @@ def visualizar_aluno(aluno_id):
                          ultimos_registros=ultimos_registros,
                          versao_ativa=versao_ativa)
 
+
 @professor_bp.route('/aluno/desativar/<int:aluno_id>')
 @login_required
 def desativar_aluno(aluno_id):
-    """Desativa um aluno (não exclui, apenas marca como inativo)"""
+    """Desativa um aluno"""
     aluno = User.query.get_or_404(aluno_id)
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
@@ -188,6 +183,7 @@ def desativar_aluno(aluno_id):
     db.session.commit()
     flash(f'Aluno {aluno.nome_completo or aluno.username} desativado com sucesso!', 'success')
     return redirect(url_for('professor.listar_alunos'))
+
 
 @professor_bp.route('/aluno/reativar/<int:aluno_id>')
 @login_required
@@ -203,6 +199,7 @@ def reativar_aluno(aluno_id):
     db.session.commit()
     flash(f'Aluno {aluno.nome_completo or aluno.username} reativado com sucesso!', 'success')
     return redirect(url_for('professor.listar_alunos'))
+
 
 @professor_bp.route('/aluno/remover-vinculo/<int:aluno_id>')
 @login_required
@@ -222,6 +219,7 @@ def remover_vinculo(aluno_id):
     
     return redirect(url_for('professor.listar_alunos'))
 
+
 # =============================================
 # SOLICITAÇÕES
 # =============================================
@@ -240,6 +238,7 @@ def solicitacoes():
     ).order_by(SolicitacaoVinculo.data_solicitacao.desc()).all()
     
     return render_template('professor/solicitacoes.html', solicitacoes=solicitacoes)
+
 
 @professor_bp.route('/solicitacao/<int:solicitacao_id>/aprovar')
 @login_required
@@ -278,6 +277,7 @@ def aprovar_solicitacao(solicitacao_id):
     flash(f'Solicitação de {solicitacao.aluno.nome_completo or solicitacao.aluno.username} aprovada!', 'success')
     return redirect(url_for('professor.solicitacoes'))
 
+
 @professor_bp.route('/solicitacao/<int:solicitacao_id>/recusar')
 @login_required
 def recusar_solicitacao(solicitacao_id):
@@ -304,6 +304,7 @@ def recusar_solicitacao(solicitacao_id):
     flash('Solicitação recusada.', 'info')
     return redirect(url_for('professor.solicitacoes'))
 
+
 # =============================================
 # GERENCIAMENTO DE VERSÕES DO ALUNO
 # =============================================
@@ -320,6 +321,7 @@ def versoes_aluno(aluno_id):
     
     versoes = VersaoService.get_all(user_id=aluno.id)
     return render_template('professor/versoes_aluno.html', aluno=aluno, versoes=versoes)
+
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/nova', methods=['GET', 'POST'])
 @login_required
@@ -359,6 +361,7 @@ def nova_versao_aluno(aluno_id):
             flash('Erro ao criar versão!', 'danger')
     
     return render_template('professor/nova_versao_aluno.html', aluno=aluno)
+
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>', methods=['GET', 'POST'])
 @login_required
@@ -400,6 +403,7 @@ def ver_versao_aluno(aluno_id, versao_id):
                          treinos=treinos_dict,
                          exercicios=exercicios)
 
+
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/finalizar')
 @login_required
 def finalizar_versao_aluno(aluno_id, versao_id):
@@ -430,6 +434,7 @@ def finalizar_versao_aluno(aluno_id, versao_id):
     
     return redirect(url_for('professor.versoes_aluno', aluno_id=aluno.id))
 
+
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/clonar')
 @login_required
 def clonar_versao_aluno(aluno_id, versao_id):
@@ -447,6 +452,7 @@ def clonar_versao_aluno(aluno_id, versao_id):
         flash('Erro ao clonar versão!', 'danger')
     
     return redirect(url_for('professor.versoes_aluno', aluno_id=aluno.id))
+
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/excluir')
 @login_required
@@ -487,6 +493,7 @@ def excluir_versao_aluno(aluno_id, versao_id):
     
     return redirect(url_for('professor.versoes_aluno', aluno_id=aluno.id))
 
+
 # =============================================
 # GERENCIAMENTO DE TREINOS DO ALUNO
 # =============================================
@@ -511,6 +518,7 @@ def treinos_aluno(aluno_id):
                          aluno=aluno,
                          treinos=treinos,
                          exercicios_por_treino=exercicios_por_treino)
+
 
 @professor_bp.route('/aluno/<int:aluno_id>/treino/novo', methods=['GET', 'POST'])
 @login_required
@@ -546,6 +554,7 @@ def novo_treino_aluno(aluno_id):
             flash('Erro ao criar treino!', 'danger')
     
     return render_template('professor/novo_treino_aluno.html', aluno=aluno)
+
 
 @professor_bp.route('/aluno/<int:aluno_id>/treino/<int:treino_id>', methods=['GET', 'POST'])
 @login_required
@@ -586,6 +595,7 @@ def editar_treino_aluno(aluno_id, treino_id):
     
     return render_template('professor/editar_treino_aluno.html', aluno=aluno, treino=treino)
 
+
 @professor_bp.route('/aluno/editar/<int:aluno_id>', methods=['GET', 'POST'])
 @login_required
 def editar_aluno(aluno_id):
@@ -624,6 +634,7 @@ def editar_aluno(aluno_id):
     
     return render_template('professor/editar_aluno.html', aluno=aluno)
 
+
 @professor_bp.route('/aluno/<int:aluno_id>/treino/<int:treino_id>/excluir')
 @login_required
 def excluir_treino_aluno(aluno_id, treino_id):
@@ -652,6 +663,7 @@ def excluir_treino_aluno(aluno_id, treino_id):
         flash('Erro ao excluir treino!', 'danger')
     
     return redirect(url_for('professor.treinos_aluno', aluno_id=aluno.id))
+
 
 # =============================================
 # GERENCIAMENTO DE EXERCÍCIOS DO ALUNO
@@ -696,6 +708,7 @@ def exercicios_aluno(aluno_id):
                          treinos=treinos,
                          ultimas_cargas=ultimas_cargas)
 
+
 @professor_bp.route('/aluno/<int:aluno_id>/exercicio/novo', methods=['GET', 'POST'])
 @login_required
 def novo_exercicio_aluno(aluno_id):
@@ -738,6 +751,7 @@ def novo_exercicio_aluno(aluno_id):
                          aluno=aluno,
                          treinos=treinos,
                          musculos=musculos)
+
 
 @professor_bp.route('/aluno/<int:aluno_id>/exercicio/<int:exercicio_id>', methods=['GET', 'POST'])
 @login_required
@@ -796,6 +810,7 @@ def editar_exercicio_aluno(aluno_id, exercicio_id):
                          treinos=treinos,
                          musculos=musculos)
 
+
 @professor_bp.route('/aluno/<int:aluno_id>/exercicio/<int:exercicio_id>/excluir')
 @login_required
 def excluir_exercicio_aluno(aluno_id, exercicio_id):
@@ -829,6 +844,7 @@ def excluir_exercicio_aluno(aluno_id, exercicio_id):
         flash('Erro ao excluir exercício!', 'danger')
     
     return redirect(url_for('professor.exercicios_aluno', aluno_id=aluno.id))
+
 
 # =============================================
 # GERENCIAMENTO DE TREINOS EM VERSÕES (CORRIGIDO)
@@ -884,7 +900,7 @@ def novo_treino_versao_aluno(aluno_id, versao_id):
             db.session.add(treino_versao)
             db.session.flush()
             
-            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, exercicios_ids)
+            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, exercicios_ids, [])
             
             db.session.commit()
             logger.info(f"Professor {current_user.id} adicionou treino {treino.codigo} à versão {versao_id} do aluno {aluno.id}")
@@ -906,8 +922,9 @@ def novo_treino_versao_aluno(aluno_id, versao_id):
                          versao=versao,
                          treinos=treinos_livres)
 
+
 # ==========================================================
-# ROTA EDITAR TREINO VERSÃO ALUNO (REFATORADA - COMPLETA)
+# ROTA EDITAR TREINO VERSÃO ALUNO (CORRIGIDA - COMPLETA)
 # ==========================================================
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/treino/<string:treino_codigo>/editar', methods=['GET', 'POST'])
@@ -928,6 +945,7 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
         valores = request.form.getlist('exercicios[]')
         usuarios_ids = []
         bases_ids = []
+        
         for val in valores:
             if val.startswith('u_'):
                 usuarios_ids.append(int(val[2:]))
@@ -983,7 +1001,6 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
     # ==========================================================
     # MÉTODO GET - CARREGAR FORMULÁRIO
     # ==========================================================
-    
     versao = VersaoService.get_by_id(versao_id, user_id=aluno.id, load_relations=True)
     if not versao:
         flash('Versão não encontrada!', 'danger')
@@ -1003,7 +1020,7 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
         flash(f'Treino {treino_codigo} não encontrado nesta versão!', 'danger')
         return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
     
-    # ✅ CORREÇÃO AQUI - Substituir ve.exercicio_id
+    # ✅ CORREÇÃO: Construir lista de exercícios atuais com prefixo
     exercicios_atuais = []
     for ve in treino_versao.exercicios:
         if ve.exercicio_usuario_id:
@@ -1015,6 +1032,12 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
     todos_exercicios = ExercicioService.get_exercicios_completos(user_id=aluno.id)
     exercicios_display = []
     
+    # Criar conjunto de IDs selecionados para busca rápida
+    selected_ids = set()
+    for e in exercicios_atuais:
+        if '_' in e:
+            selected_ids.add(int(e.split('_')[1]))
+    
     for ex in todos_exercicios:
         musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
         exercicios_display.append({
@@ -1022,7 +1045,7 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
             'nome': ex.nome,
             'musculo': musculo_nome,
             'tipo': getattr(ex, 'tipo', 'usuario'),
-            'checked': ex.id in [int(e.split('_')[1]) for e in exercicios_atuais if '_' in e]
+            'checked': ex.id in selected_ids
         })
     
     musculos = MusculoService.get_all_nomes()
@@ -1039,9 +1062,11 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
                          exercicios=exercicios_display,
                          musculos=musculos)
 
+
 # ==========================================================
-# ROTA EXCLUIR TREINO VERSÃO ALUNO (REFATORADA)
+# ROTA EXCLUIR TREINO VERSÃO ALUNO
 # ==========================================================
+
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/treino/<string:treino_codigo>/excluir')
 @login_required
 def excluir_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
@@ -1064,6 +1089,7 @@ def excluir_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
         flash(str(e), 'danger')
     
     return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
+
 
 # =============================================
 # ESTATÍSTICAS DO ALUNO
@@ -1133,6 +1159,7 @@ def estatisticas_aluno(aluno_id):
                          aluno=aluno,
                          musculo_stats=musculo_stats,
                          treino_stats=treino_stats)
+
 
 # =============================================
 # API PARA PROFESSORES
