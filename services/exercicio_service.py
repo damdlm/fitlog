@@ -93,57 +93,6 @@ class ExercicioService(BaseService):
             return []
     
     @staticmethod
-    def get_exercicios_completos(user_id=None):
-        try:
-            if user_id is None:
-                user_id = BaseService.get_current_user_id()
-            if not user_id:
-                return []
-    
-            from models import Musculo
-    
-            # Exercícios base (catálogo global)
-            exercicios_base = ExercicioBase.query.options(
-                joinedload(ExercicioBase.musculo_ref)
-            ).order_by(ExercicioBase.nome).all()
-    
-            for ex in exercicios_base:
-                ex.tipo = 'base'
-                ex.prefixo = 'b_'
-                ex.is_custom = False
-                if ex.musculo_ref:
-                    ex.musculo_nome = ex.musculo_ref.nome_exibicao
-                else:
-                    musculo = Musculo.query.get(ex.musculo_id)
-                    ex.musculo_nome = musculo.nome_exibicao if musculo else 'Não especificado'
-                    ex.musculo_ref = musculo
-                ex.musculo = ex.musculo_nome
-    
-            # Exercícios do usuário (customizados)
-            exercicios_usuario = ExercicioUsuario.query.options(
-                joinedload(ExercicioUsuario.musculo_ref)
-            ).filter_by(usuario_id=user_id).order_by(ExercicioUsuario.nome).all()
-    
-            for ex in exercicios_usuario:
-                ex.tipo = 'usuario'
-                ex.prefixo = 'u_'
-                ex.is_custom = True
-                if ex.musculo_ref:
-                    ex.musculo_nome = ex.musculo_ref.nome_exibicao
-                else:
-                    musculo = Musculo.query.get(ex.musculo_id)
-                    ex.musculo_nome = musculo.nome_exibicao if musculo else 'Não especificado'
-                    ex.musculo_ref = musculo
-                ex.musculo = ex.musculo_nome
-    
-            resultado = exercicios_base + exercicios_usuario
-            resultado.sort(key=lambda x: x.nome.lower())
-            return resultado
-        except Exception as e:
-            BaseService.handle_error(e, "Erro ao buscar exercícios completos")
-            return []
-
-    @staticmethod
     def get_by_id(exercicio_id, user_id=None, load_relations=False):
         """
         Retorna um exercício pelo ID.
