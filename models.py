@@ -158,7 +158,6 @@ class Treino(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     
-    # exercicios removido — use ExercicioCustomizado.query.filter_by(usuario_id=...) diretamente
     versoes = db.relationship('TreinoVersao', backref='treino_ref', lazy=True, cascade='all, delete-orphan')
     registros = db.relationship('RegistroTreino', backref='treino_ref', lazy=True, cascade='all, delete-orphan')
     
@@ -167,10 +166,6 @@ class Treino(db.Model):
         db.Index('idx_treino_user', 'user_id'),
         db.Index('idx_treino_codigo', 'codigo'),
     )
-
-
-# Musculo e Exercicio (tabelas legadas) foram removidos.
-# Use Musculo e ExercicioCustomizado para novos exercícios do usuário.
 
 
 class VersaoGlobal(db.Model):
@@ -210,6 +205,7 @@ class TreinoVersao(db.Model):
         db.Index('idx_treino_versao_treino', 'treino_id'),
     )
 
+
 class VersaoExercicio(db.Model):
     __tablename__ = 'versao_exercicios'
 
@@ -244,29 +240,13 @@ class VersaoExercicio(db.Model):
         """Retorna o objeto exercício (seja do usuário ou base)"""
         return self.exercicio_usuario or self.exercicio_base
 
-   # @hybrid_property
-   # def exercicio_id(self):
-   #     """Retorna o ID do exercício (preferencialmente do usuário)"""
-   #     return self.exercicio_usuario_id or self.exercicio_base_id
+    # ⚠️ PROPERTY EXERCICIO_ID FOI REMOVIDA - NÃO USE!
+    # Em vez disso, use diretamente exercicio_usuario_id ou exercicio_base_id
 
-    @exercicio_id.setter
-    def exercicio_id(self, value):
-        """Define a FK apropriada baseada no tipo do exercício"""
-        from models import ExercicioUsuario, ExercicioBase
-        
-        ex_user = ExercicioUsuario.query.get(value)
-        if ex_user:
-            self.exercicio_usuario_id = value
-            self.exercicio_base_id = None
-            return
-        
-        ex_base = ExercicioBase.query.get(value)
-        if ex_base:
-            self.exercicio_base_id = value
-            self.exercicio_usuario_id = None
-            return
-        
-        raise ValueError(f"Exercício com ID {value} não encontrado em nenhuma tabela")
+    # ⚠️ SETTER FOI REMOVIDO - NÃO USE!
+    # Para associar um exercício, use diretamente:
+    #   ve.exercicio_usuario_id = id  (para exercícios do usuário)
+    #   ve.exercicio_base_id = id     (para exercícios da base)
 
 
 class RegistroTreino(db.Model):
@@ -299,7 +279,6 @@ class RegistroTreino(db.Model):
     series = db.relationship(
         'HistoricoTreino',
         backref='registro_ref',
-       # lazy='dynamic',
         lazy=True, 
         cascade='all, delete-orphan'
     )
@@ -344,31 +323,28 @@ class Musculo(db.Model):
     nome = db.Column(db.String(50), unique=True, nullable=False)
     nome_exibicao = db.Column(db.String(50), nullable=False)
     descricao = db.Column(db.Text)
-    
-   # exercicios_base = db.relationship('ExercicioBase', backref='musculo_ref', lazy=True)
 
 
 class ExercicioBase(db.Model):
     """
     Catálogo global de exercícios — gerenciado apenas pelo admin.
     Populado a partir do arquivo exercises-ptbr-full-translation.json.
-    Imagens servidas de static/exercises/<imagem_inicial|imagem_execucao>
     """
     __tablename__ = 'exercicios_base'
 
     id               = db.Column(db.Integer, primary_key=True)
-    id_original      = db.Column(db.String(200), unique=True)        # ex: "3_4_Sit-Up"
+    id_original      = db.Column(db.String(200), unique=True)
     nome             = db.Column(db.String(200), nullable=False)
     musculo_id       = db.Column(db.Integer, db.ForeignKey('musculos.id'))
-    musculo_nome     = db.Column(db.String(100))                     # nome original do JSON
-    musculos_secundarios = db.Column(db.JSON)            # db.ARRAY não é suportado por SQLite
+    musculo_nome     = db.Column(db.String(100))
+    musculos_secundarios = db.Column(db.JSON)
     equipamento      = db.Column(db.String(100))
     nivel            = db.Column(db.String(50))
     forca            = db.Column(db.String(50))
     mecanica         = db.Column(db.String(50))
     categoria        = db.Column(db.String(50))
-    instrucoes       = db.Column(db.JSON)                # db.ARRAY não é suportado por SQLite
-    imagem_inicial   = db.Column(db.String(300))                     # relativo a static/exercises/
+    instrucoes       = db.Column(db.JSON)
+    imagem_inicial   = db.Column(db.String(300))
     imagem_execucao  = db.Column(db.String(300))
     created_at       = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
@@ -385,8 +361,6 @@ class ExercicioBase(db.Model):
 class ExercicioUsuario(db.Model):
     """
     Exercicios de professores e alunos.
-    Visibilidade: o proprio usuario + alunos/professor vinculados.
-    Ao quebrar vinculo: exercicios usados em registros sao copiados automaticamente.
     """
     __tablename__ = 'exercicios_usuario'
 
