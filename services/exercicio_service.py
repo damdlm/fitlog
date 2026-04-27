@@ -100,7 +100,7 @@ class ExercicioService(BaseService):
             if not user_id:
                 return []
     
-            from models import Musculo
+            from models import Muscolo
     
             # Exercícios base (catálogo global)
             exercicios_base = ExercicioBase.query.options(
@@ -109,15 +109,15 @@ class ExercicioService(BaseService):
     
             for ex in exercicios_base:
                 ex.tipo = 'base'
-                # Garantir que tenha um nome de músculo
+                ex.prefixo = 'b_'
+                ex.is_custom = False
                 if ex.musculo_ref:
                     ex.musculo_nome = ex.musculo_ref.nome_exibicao
                 else:
-                    # Fallback: buscar músculo pelo ID diretamente
                     musculo = Musculo.query.get(ex.musculo_id)
                     ex.musculo_nome = musculo.nome_exibicao if musculo else 'Não especificado'
-                    # Opcional: criar o atributo musculo_ref para compatibilidade
                     ex.musculo_ref = musculo
+                ex.musculo = ex.musculo_nome
     
             # Exercícios do usuário (customizados)
             exercicios_usuario = ExercicioUsuario.query.options(
@@ -126,12 +126,15 @@ class ExercicioService(BaseService):
     
             for ex in exercicios_usuario:
                 ex.tipo = 'usuario'
+                ex.prefixo = 'u_'
+                ex.is_custom = True
                 if ex.musculo_ref:
                     ex.musculo_nome = ex.musculo_ref.nome_exibicao
                 else:
                     musculo = Musculo.query.get(ex.musculo_id)
                     ex.musculo_nome = musculo.nome_exibicao if musculo else 'Não especificado'
                     ex.musculo_ref = musculo
+                ex.musculo = ex.musculo_nome
     
             resultado = exercicios_base + exercicios_usuario
             resultado.sort(key=lambda x: x.nome.lower())
@@ -149,28 +152,42 @@ class ExercicioService(BaseService):
         try:
             if user_id is None:
                 user_id = BaseService.get_current_user_id()
-
+    
             # Buscar no catálogo global
-            exercicio_base = ExercicioBase.query.options(
-                joinedload(ExercicioBase.musculo_ref)
-            ).get(exercicio_id)
-
+            query_base = ExercicioBase.query
+            if load_relations:
+                query_base = query_base.options(joinedload(ExercicioBase.musculo_ref))
+            
+            exercicio_base = query_base.get(exercicio_id)
+    
             if exercicio_base:
-                exercicio_base.is_custom = False
                 exercicio_base.tipo = 'base'
+                exercicio_base.prefixo = 'b_'
+                exercicio_base.is_custom = False
+                if exercicio_base.musculo_ref:
+                    exercicio_base.musculo_nome = exercicio_base.musculo_ref.nome_exibicao
+                    exercicio_base.musculo = exercicio_base.musculo_nome
                 return exercicio_base
-
+    
             # Buscar nos exercícios do usuário
             if user_id:
-                exercicio_usuario = ExercicioUsuario.query.options(
-                    joinedload(ExercicioUsuario.musculo_ref)
-                ).filter_by(id=exercicio_id, usuario_id=user_id).first()
-
+                query_usuario = ExercicioUsuario.query.filter_by(
+                    id=exercicio_id, usuario_id=user_id
+                )
+                if load_relations:
+                    query_usuario = query_usuario.options(joinedload(ExercicioUsuario.musculo_ref))
+                
+                exercicio_usuario = query_usuario.first()
+    
                 if exercicio_usuario:
-                    exercicio_usuario.is_custom = True
                     exercicio_usuario.tipo = 'usuario'
+                    exercicio_usuario.prefixo = 'u_'
+                    exercicio_usuario.is_custom = True
+                    if exercicio_usuario.musculo_ref:
+                        exercicio_usuario.musculo_nome = exercicio_usuario.musculo_ref.nome_exibicao
+                        exercicio_usuario.musculo = exercicio_usuario.musculo_nome
                     return exercicio_usuario
-
+    
             return None
         except Exception as e:
             BaseService.handle_error(e, f"Erro ao buscar exercício {exercicio_id}")

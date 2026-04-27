@@ -288,24 +288,39 @@ def excluir_exercicio(exercicio_id):
     return redirect(url_for("admin.gerenciar"))
 
 
-@admin_bp.route("/exercicio/detalhes/<int:exercicio_id>")
-@login_required
-def exercicio_detalhes(exercicio_id):
-    """Detalhes de um exercício"""
-    exercicio = ExercicioService.get_by_id(exercicio_id, user_id=current_user.id, load_relations=True)
-
-    if not exercicio:
-        flash("Exercício não encontrado!", "danger")
-        return redirect(url_for("admin.gerenciar"))
-
-    from utils.version_utils import verificar_exercicio_em_versoes
-    versoes = verificar_exercicio_em_versoes(exercicio_id)
-
-    return render_template(
-        "admin/exercicio_detalhes.html",
-        exercicio=exercicio,
-        versoes=versoes
-    )
+    @admin_bp.route("/exercicio/detalhes/<int:exercicio_id>")
+    @login_required
+    def exercicio_detalhes(exercicio_id):
+        """Detalhes de um exercício - CORRIGIDO para suportar ambos os tipos"""
+        
+        # Tentar buscar primeiro como exercício do usuário
+        exercicio_usuario = ExercicioUsuario.query.filter_by(
+            id=exercicio_id, usuario_id=current_user.id
+        ).first()
+        
+        if exercicio_usuario:
+            exercicio = exercicio_usuario
+            exercicio.tipo = 'usuario'
+        else:
+            # Tentar como exercício base
+            exercicio = ExercicioBase.query.get(exercicio_id)
+            if exercicio:
+                exercicio.tipo = 'base'
+        
+        if not exercicio:
+            flash("Exercício não encontrado!", "danger")
+            return redirect(url_for("admin.gerenciar"))
+        
+        from utils.version_utils import verificar_exercicio_em_versoes
+        
+        # Passar o tipo para a função correta
+        versoes = verificar_exercicio_em_versoes(exercicio_id, tipo_exercicio=exercicio.tipo)
+    
+        return render_template(
+            "admin/exercicio_detalhes.html",
+            exercicio=exercicio,
+            versoes=versoes
+        )
 
 
 # =============================================
