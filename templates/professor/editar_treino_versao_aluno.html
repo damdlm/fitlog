@@ -83,6 +83,7 @@
                 <div class="row" id="listaExercicios">
                     {% for ex in exercicios %}
                     {% set musculo_nome = ex.musculo %}
+                    {% set prefixo = 'u_' if ex.tipo == 'usuario' else 'b_' %}
                     <div class="col-md-4 exercicio-item" 
                          data-nome="{{ ex.nome|lower }}" 
                          data-musculo="{{ musculo_nome }}">
@@ -90,7 +91,7 @@
                             <input class="form-check-input exercicio-checkbox" 
                                    type="checkbox" 
                                    name="exercicios[]" 
-                                   value="{{ ex.id }}" 
+                                   value="{{ prefixo }}{{ ex.id }}" 
                                    id="ex_{{ ex.id }}"
                                    data-nome="{{ ex.nome }}"
                                    data-musculo="{{ musculo_nome }}"
@@ -99,6 +100,7 @@
                             <label class="form-check-label" for="ex_{{ ex.id }}">
                                 <strong>{{ ex.nome }}</strong>
                                 <br><small class="text-muted">{{ musculo_nome }}</small>
+                                <span class="badge {% if ex.tipo == 'usuario' %}bg-primary{% else %}bg-secondary{% endif %} ms-1">{{ ex.tipo }}</span>
                             </label>
                         </div>
                     </div>

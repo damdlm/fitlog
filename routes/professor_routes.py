@@ -871,7 +871,10 @@ def novo_treino_versao_aluno(aluno_id, versao_id):
             return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
         
         exercicios = ExercicioService.get_by_treino(treino.id, user_id=aluno.id)
-        exercicios_ids = [ex.id for ex in exercicios]
+        exercicios_com_tipo = [
+            {'id': ex.id, 'tipo': getattr(ex, 'tipo', 'usuario')}
+            for ex in exercicios
+        ]
         
         try:
             treino_versao = TreinoVersao(
@@ -884,7 +887,7 @@ def novo_treino_versao_aluno(aluno_id, versao_id):
             db.session.add(treino_versao)
             db.session.flush()
             
-            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, exercicios_ids)
+            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, exercicios_com_tipo)
             
             db.session.commit()
             logger.info(f"Professor {current_user.id} adicionou treino {treino.codigo} à versão {versao_id} do aluno {aluno.id}")
@@ -926,22 +929,25 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
         nome_treino = request.form.get('nome_treino')
         descricao_treino = request.form.get('descricao_treino', '')
         valores = request.form.getlist('exercicios[]')
-        usuarios_ids = []
-        bases_ids = []
+        exercicios_com_tipo = []
         for val in valores:
             if val.startswith('u_'):
-                usuarios_ids.append(int(val[2:]))
+                exercicios_com_tipo.append({'id': int(val[2:]), 'tipo': 'usuario'})
             elif val.startswith('b_'):
-                bases_ids.append(int(val[2:]))
+                exercicios_com_tipo.append({'id': int(val[2:]), 'tipo': 'base'})
         
-        if not usuarios_ids and not bases_ids:
+        if not exercicios_com_tipo:
             flash('Selecione pelo menos um exercício!', 'danger')
             return redirect(request.url)
         
         # Validar IDs
         from models import ExercicioUsuario, ExercicioBase
-        usuarios_ids_validos = [eid for eid in usuarios_ids if ExercicioUsuario.query.get(eid)]
-        bases_ids_validos = [eid for eid in bases_ids if ExercicioBase.query.get(eid)]
+        exercicios_validos = []
+        for item in exercicios_com_tipo:
+            if item['tipo'] == 'usuario' and ExercicioUsuario.query.get(item['id']):
+                exercicios_validos.append(item)
+            elif item['tipo'] == 'base' and ExercicioBase.query.get(item['id']):
+                exercicios_validos.append(item)
         
         try:
             versao = VersaoService.get_by_id(versao_id, user_id=aluno.id, load_relations=True)
@@ -968,8 +974,7 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
             
             VersaoService.adicionar_exercicios_a_treino_versao(
                 treino_versao.id,
-                usuarios_ids_validos,
-                bases_ids_validos
+                exercicios_validos
             )
             
             db.session.commit()
