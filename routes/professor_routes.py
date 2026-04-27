@@ -938,7 +938,6 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
             flash('Selecione pelo menos um exercício!', 'danger')
             return redirect(request.url)
         
-        # Validar IDs
         from models import ExercicioUsuario, ExercicioBase
         usuarios_ids_validos = [eid for eid in usuarios_ids if ExercicioUsuario.query.get(eid)]
         bases_ids_validos = [eid for eid in bases_ids if ExercicioBase.query.get(eid)]
@@ -981,7 +980,10 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
             flash(str(e), 'danger')
             return redirect(request.url)
     
-    # GET - exibir formulário
+    # ==========================================================
+    # MÉTODO GET - CARREGAR FORMULÁRIO
+    # ==========================================================
+    
     versao = VersaoService.get_by_id(versao_id, user_id=aluno.id, load_relations=True)
     if not versao:
         flash('Versão não encontrada!', 'danger')
@@ -1001,10 +1003,17 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
         flash(f'Treino {treino_codigo} não encontrado nesta versão!', 'danger')
         return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
     
+    # ✅ CORREÇÃO AQUI - Substituir ve.exercicio_id
+    exercicios_atuais = []
+    for ve in treino_versao.exercicios:
+        if ve.exercicio_usuario_id:
+            exercicios_atuais.append(f"u_{ve.exercicio_usuario_id}")
+        elif ve.exercicio_base_id:
+            exercicios_atuais.append(f"b_{ve.exercicio_base_id}")
+    
     # Buscar todos os exercícios (base + usuário) do aluno
     todos_exercicios = ExercicioService.get_exercicios_completos(user_id=aluno.id)
     exercicios_display = []
-    exercicios_atuais = [ve.exercicio_id for ve in treino_versao.exercicios]
     
     for ex in todos_exercicios:
         musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
@@ -1013,7 +1022,7 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
             'nome': ex.nome,
             'musculo': musculo_nome,
             'tipo': getattr(ex, 'tipo', 'usuario'),
-            'checked': ex.id in exercicios_atuais
+            'checked': ex.id in [int(e.split('_')[1]) for e in exercicios_atuais if '_' in e]
         })
     
     musculos = MusculoService.get_all_nomes()
