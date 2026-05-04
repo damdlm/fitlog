@@ -1677,7 +1677,7 @@ def editar_treino_versao(versao_id, treino_codigo):
             return redirect(request.url)
     
     # ==========================================================
-    # MÉTODO GET - CARREGAR FORMULÁRIO
+    # MÉTODO GET - CARREGAR FORMULÁRIO (CORRIGIDO)
     # ==========================================================
     logger.info("Carregando formulário GET para editar treino na versão")
     
