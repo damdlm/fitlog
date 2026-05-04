@@ -313,11 +313,12 @@ class VersaoService(BaseService):
             for tv in versao.treinos:
                 treino = TreinoService.get_by_id(tv.treino_id, user_id)
                 if treino:
+                    # Construir lista de exercícios COM PREFIXO CORRETO
                     exercicios_com_prefixo = []
                     for ve in tv.exercicios:
-                        if ve.exercicio_usuario_id:
+                        if ve.exercicio_usuario_id is not None:
                             exercicios_com_prefixo.append(f"u_{ve.exercicio_usuario_id}")
-                        elif ve.exercicio_base_id:
+                        elif ve.exercicio_base_id is not None:
                             exercicios_com_prefixo.append(f"b_{ve.exercicio_base_id}")
                     
                     resultado[treino.codigo] = {
@@ -329,6 +330,7 @@ class VersaoService(BaseService):
                         "ordem": tv.ordem if hasattr(tv, 'ordem') else 0
                     }
             
+            # Ordenar por ordem
             resultado = dict(sorted(resultado.items(), key=lambda item: item[1].get('ordem', 0)))
             return resultado
         except Exception as e:
@@ -368,8 +370,17 @@ class VersaoService(BaseService):
                 return []
             
             # Separar IDs por tipo
-            usuario_ids = [ve.exercicio_usuario_id for ve in ve_list if ve.exercicio_usuario_id]
-            base_ids = [ve.exercicio_base_id for ve in ve_list if ve.exercicio_base_id]
+            usuario_ids = []
+            base_ids = []
+            ordem_map = {}
+            
+            for idx, ve in enumerate(ve_list):
+                if ve.exercicio_usuario_id is not None:
+                    usuario_ids.append(ve.exercicio_usuario_id)
+                    ordem_map[('usuario', ve.exercicio_usuario_id)] = idx
+                elif ve.exercicio_base_id is not None:
+                    base_ids.append(ve.exercicio_base_id)
+                    ordem_map[('base', ve.exercicio_base_id)] = idx
             
             exercicios = []
             
@@ -380,14 +391,10 @@ class VersaoService(BaseService):
                     ExercicioCustomizado.usuario_id == user_id
                 ).options(joinedload(ExercicioCustomizado.musculo_ref)).all()
                 
-                # Adicionar tipo para identificação
                 for ex in ex_usuario:
                     ex.tipo = 'usuario'
                     ex.prefixo = 'u_'
-                    if ex.musculo_ref:
-                        ex.musculo_nome = ex.musculo_ref.nome_exibicao
-                    else:
-                        ex.musculo_nome = 'N/A'
+                    ex.musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
                     ex.musculo = ex.musculo_nome
                     exercicios.append(ex)
             
@@ -397,26 +404,15 @@ class VersaoService(BaseService):
                     ExercicioBase.id.in_(base_ids)
                 ).options(joinedload(ExercicioBase.musculo_ref)).all()
                 
-                # Adicionar tipo para identificação
                 for ex in ex_base:
                     ex.tipo = 'base'
                     ex.prefixo = 'b_'
-                    if ex.musculo_ref:
-                        ex.musculo_nome = ex.musculo_ref.nome_exibicao
-                    else:
-                        ex.musculo_nome = 'N/A'
+                    ex.musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
                     ex.musculo = ex.musculo_nome
                     exercicios.append(ex)
             
-            # Manter a ordem original
-            ordem_map = {}
-            for idx, ve in enumerate(ve_list):
-                if ve.exercicio_usuario_id:
-                    ordem_map[ve.exercicio_usuario_id] = idx
-                elif ve.exercicio_base_id:
-                    ordem_map[ve.exercicio_base_id] = idx
-            
-            exercicios.sort(key=lambda x: ordem_map.get(x.id, 999))
+            # Ordenar pela ordem original
+            exercicios.sort(key=lambda x: ordem_map.get((x.tipo, x.id), 999))
             
             return exercicios
             
@@ -669,30 +665,48 @@ class VersaoService(BaseService):
 
     @staticmethod
     def adicionar_exercicios_a_treino_versao(treino_versao_id, usuarios_ids, bases_ids):
-        """Adiciona múltiplos exercícios a um treino_versao, substituindo os existentes"""
+        """
+        Adiciona múltiplos exercícios a um treino_versao, substituindo os existentes.
+        Define explicitamente a FK oposta como None para evitar ambiguidades.
+        """
         from models import VersaoExercicio, db
+        
+        # Validar entradas
+        if not usuarios_ids:
+            usuarios_ids = []
+        if not bases_ids:
+            bases_ids = []
+        
+        if not usuarios_ids and not bases_ids:
+            raise ValueError("É necessário fornecer pelo menos um exercício")
+        
         # Remove antigos
         VersaoExercicio.query.filter_by(treino_versao_id=treino_versao_id).delete()
+        db.session.flush()
+        
         ordem = 0
+        
         # Adiciona exercícios do usuário (customizados)
         for ex_id in usuarios_ids:
-            ve = VersaoExercicio(
-                treino_versao_id=treino_versao_id,
-                exercicio_usuario_id=ex_id,
-                ordem=ordem
-            )
+            ve = VersaoExercicio()
+            ve.treino_versao_id = treino_versao_id
+            ve.exercicio_usuario_id = ex_id
+            ve.exercicio_base_id = None  # ← EXPLICITAMENTE None
+            ve.ordem = ordem
             db.session.add(ve)
             ordem += 1
+        
         # Adiciona exercícios da base (catálogo)
         for ex_id in bases_ids:
-            ve = VersaoExercicio(
-                treino_versao_id=treino_versao_id,
-                exercicio_base_id=ex_id,
-                ordem=ordem
-            )
+            ve = VersaoExercicio()
+            ve.treino_versao_id = treino_versao_id
+            ve.exercicio_usuario_id = None  # ← EXPLICITAMENTE None
+            ve.exercicio_base_id = ex_id
+            ve.ordem = ordem
             db.session.add(ve)
             ordem += 1
-        db.session.commit()
+        
+        db.session.flush()
 
     @staticmethod
     def editar_treino_versao(versao_id, treino_codigo, dados, user_id, current_user):
