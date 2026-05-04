@@ -1536,10 +1536,11 @@ def editar_treino_versao(versao_id, treino_codigo):
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
-    from models import VersaoExercicio, ExercicioCustomizado
+    from models import VersaoExercicio, ExercicioCustomizado, ExercicioBase
+    from sqlalchemy.orm import joinedload
     import traceback
 
-    versao = VersaoService.get_by_id(versao_id, user_id=current_user.id)
+    versao = VersaoService.get_by_id(versao_id, user_id=current_user.id, load_relations=True)
 
     if not versao:
         flash('Versão não encontrada!', 'danger')
@@ -1562,6 +1563,9 @@ def editar_treino_versao(versao_id, treino_codigo):
         flash(f'Treino {treino_codigo} não encontrado nesta versão!', 'danger')
         return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
 
+    # ==========================================================
+    # MÉTODO POST - SALVAR
+    # ==========================================================
     if request.method == 'POST':
         logger.info("=" * 60)
         logger.info("EDITAR TREINO VERSÃO - PROCESSANDO SUBMISSÃO")
@@ -1569,33 +1573,38 @@ def editar_treino_versao(versao_id, treino_codigo):
         nome_treino = request.form.get('nome_treino')
         descricao_treino = request.form.get('descricao_treino', '')
         
-        # ==========================================================
-        # 🔥 CORREÇÃO PRINCIPAL - SEPARAR IDs POR TIPO 🔥
-        # ==========================================================
+        # Obter exercícios do formulário
         exercicios_raw = request.form.getlist('exercicios[]')
         
         logger.info(f"📥 RAW - Exercícios recebidos: {exercicios_raw}")
         
         # Separar os IDs por tipo (usuário ou base)
-        usuarios_ids = []  # IDs de exercicios_usuario
-        bases_ids = []     # IDs de exercicios_base
+        usuarios_ids = []
+        bases_ids = []
         
         for item in exercicios_raw:
-            if item and item.strip():
-                if item.startswith('u_'):
-                    try:
-                        ex_id = int(item[2:])  # Remove o prefixo 'u_'
-                        usuarios_ids.append(ex_id)
-                        logger.info(f"   → ID de USUÁRIO: {ex_id}")
-                    except ValueError:
-                        logger.error(f"   → Erro ao converter ID de usuário: {item}")
-                elif item.startswith('b_'):
-                    try:
-                        ex_id = int(item[2:])  # Remove o prefixo 'b_'
-                        bases_ids.append(ex_id)
-                        logger.info(f"   → ID de BASE: {ex_id}")
-                    except ValueError:
-                        logger.error(f"   → Erro ao converter ID de base: {item}")
+            if not item or not item.strip():
+                continue
+            item = item.strip()
+            
+            if item.startswith('u_'):
+                try:
+                    ex_id = int(item[2:])
+                    usuarios_ids.append(ex_id)
+                    logger.info(f"   → ID de USUÁRIO: {ex_id}")
+                except ValueError:
+                    logger.error(f"   → Erro ao converter ID de usuário: {item}")
+            elif item.startswith('b_'):
+                try:
+                    ex_id = int(item[2:])
+                    bases_ids.append(ex_id)
+                    logger.info(f"   → ID de BASE: {ex_id}")
+                except ValueError:
+                    logger.error(f"   → Erro ao converter ID de base: {item}")
+        
+        # Remover duplicatas
+        usuarios_ids = list(set(usuarios_ids))
+        bases_ids = list(set(bases_ids))
         
         logger.info(f"📊 SEPARADOS - Usuários IDs: {usuarios_ids}")
         logger.info(f"📊 SEPARADOS - Base IDs: {bases_ids}")
@@ -1606,7 +1615,7 @@ def editar_treino_versao(versao_id, treino_codigo):
             flash('Selecione pelo menos um exercício para o treino!', 'danger')
             return redirect(request.url)
         
-        # Validar se os IDs de usuário existem no banco
+        # Validar se os IDs de usuário pertencem ao aluno atual
         usuarios_ids_validos = []
         for ex_id in usuarios_ids:
             exercicio = ExercicioCustomizado.query.filter_by(
@@ -1617,20 +1626,31 @@ def editar_treino_versao(versao_id, treino_codigo):
                 usuarios_ids_validos.append(ex_id)
                 logger.info(f"✅ Exercício usuário ID {ex_id} válido: '{exercicio.nome}'")
             else:
-                logger.warning(f"⚠️ Exercício usuário ID {ex_id} NÃO encontrado!")
+                logger.warning(f"⚠️ Exercício usuário ID {ex_id} NÃO encontrado ou não pertence ao aluno!")
+        
+        # Validar se os IDs de base existem
+        bases_ids_validos = []
+        for ex_id in bases_ids:
+            exercicio = ExercicioBase.query.get(ex_id)
+            if exercicio:
+                bases_ids_validos.append(ex_id)
+                logger.info(f"✅ Exercício base ID {ex_id} válido: '{exercicio.nome}'")
+            else:
+                logger.warning(f"⚠️ Exercício base ID {ex_id} NÃO encontrado!")
+        
+        if not usuarios_ids_validos and not bases_ids_validos:
+            flash('Nenhum exercício válido selecionado!', 'danger')
+            return redirect(request.url)
         
         # Atualizar dados básicos do treino na versão
         treino_versao.nome_treino = nome_treino
         treino_versao.descricao_treino = descricao_treino
         
-        # ==========================================================
-        # 🔥 USAR O SERVICE CORRETO COM OS DOIS TIPOS SEPARADOS 🔥
-        # ==========================================================
-        # Remove todos os exercícios antigos e adiciona os novos
+        # Usar o serviço para substituir os exercícios
         VersaoService.adicionar_exercicios_a_treino_versao(
             treino_versao.id,
-            usuarios_ids=usuarios_ids_validos,  # ← vai para exercicio_usuario_id
-            bases_ids=bases_ids                  # ← vai para exercicio_base_id
+            usuarios_ids=usuarios_ids_validos,
+            bases_ids=bases_ids_validos
         )
         
         # Commit final
@@ -1642,7 +1662,9 @@ def editar_treino_versao(versao_id, treino_codigo):
             exercicios_salvos = VersaoExercicio.query.filter_by(treino_versao_id=treino_versao.id).all()
             logger.info(f"📊 APÓS SALVAR - {len(exercicios_salvos)} exercícios na versão:")
             for ve in exercicios_salvos:
-                logger.info(f"   → ID: {ve.id}, usuário_id: {ve.exercicio_usuario_id}, base_id: {ve.exercicio_base_id}, ordem: {ve.ordem}")
+                tipo = 'usuário' if ve.exercicio_usuario_id else 'base'
+                ex_id = ve.exercicio_usuario_id or ve.exercicio_base_id
+                logger.info(f"   → ID: {ve.id}, tipo: {tipo}, exercicio_id: {ex_id}, ordem: {ve.ordem}")
             
             flash(f'Treino {treino_codigo} atualizado com sucesso!', 'success')
             return redirect(url_for('aluno.ver_versao', versao_id=versao.id))
@@ -1655,36 +1677,63 @@ def editar_treino_versao(versao_id, treino_codigo):
             return redirect(request.url)
     
     # ==========================================================
-    # MÉTODO GET - Carregar formulário
+    # MÉTODO GET - CARREGAR FORMULÁRIO
     # ==========================================================
     logger.info("Carregando formulário GET para editar treino na versão")
     
-    # Buscar exercícios do usuário
+    # Buscar exercícios do usuário COM músculo
     exercicios_usuario = ExercicioCustomizado.query\
         .filter_by(usuario_id=current_user.id)\
+        .options(joinedload(ExercicioCustomizado.musculo_ref))\
         .order_by(ExercicioCustomizado.nome)\
         .all()
     
     logger.info(f"Exercícios do usuário encontrados: {len(exercicios_usuario)}")
     
-    # Montar lista de exercícios para exibição no template
+    # Buscar exercícios da base COM músculo
+    exercicios_base = ExercicioBase.query\
+        .options(joinedload(ExercicioBase.musculo_ref))\
+        .order_by(ExercicioBase.nome)\
+        .all()
+    
+    logger.info(f"Exercícios da base encontrados: {len(exercicios_base)}")
+    
+    # Montar lista para template (COM PREFIXO e músculo garantido)
     exercicios_display = []
+    
     for ex in exercicios_usuario:
+        musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
         exercicios_display.append({
             'id': ex.id,
             'nome': ex.nome,
-            'musculo': ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A',
-            'tipo': 'usuario'  # Tipo para o template saber que é 'u_'
+            'musculo': musculo_nome,
+            'musculo_nome': musculo_nome,
+            'tipo': 'usuario',
+            'prefixo': 'u_'
         })
     
-    # Buscar exercícios atuais na versão (com prefixo correto)
+    for ex in exercicios_base:
+        musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
+        exercicios_display.append({
+            'id': ex.id,
+            'nome': ex.nome,
+            'musculo': musculo_nome,
+            'musculo_nome': musculo_nome,
+            'tipo': 'base',
+            'prefixo': 'b_'
+        })
+    
+    # Ordenar por nome
+    exercicios_display.sort(key=lambda x: x['nome'].lower())
+    
+    # Buscar exercícios já salvos na versão (COM PREFIXO)
     exercicios_atuais = []
     for ve in treino_versao.exercicios:
         if ve.exercicio_usuario_id:
             exercicios_atuais.append(f"u_{ve.exercicio_usuario_id}")
         elif ve.exercicio_base_id:
             exercicios_atuais.append(f"b_{ve.exercicio_base_id}")
-
+    
     logger.info(f"Exercícios atuais na versão (com prefixo): {exercicios_atuais}")
     
     musculos = MusculoService.get_all_nomes()

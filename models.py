@@ -240,13 +240,24 @@ class VersaoExercicio(db.Model):
         """Retorna o objeto exercício (seja do usuário ou base)"""
         return self.exercicio_usuario or self.exercicio_base
 
-    # ⚠️ PROPERTY EXERCICIO_ID FOI REMOVIDA - NÃO USE!
-    # Em vez disso, use diretamente exercicio_usuario_id ou exercicio_base_id
+    # ============================================================
+    # NOVAS PROPERTIES PARA COMPATIBILIDADE
+    # ============================================================
+    
+    @property
+    def exercicio_id(self):
+        """
+        Retorna o ID do exercício independente da origem.
+        Usado para compatibilidade com código que espera um único ID.
+        """
+        return self.exercicio_usuario_id or self.exercicio_base_id
 
-    # ⚠️ SETTER FOI REMOVIDO - NÃO USE!
-    # Para associar um exercício, use diretamente:
-    #   ve.exercicio_usuario_id = id  (para exercícios do usuário)
-    #   ve.exercicio_base_id = id     (para exercícios da base)
+    @property
+    def tipo_exercicio(self):
+        """
+        Retorna 'usuario' ou 'base' conforme a FK preenchida.
+        """
+        return 'usuario' if self.exercicio_usuario_id else 'base'
 
 
 class RegistroTreino(db.Model):

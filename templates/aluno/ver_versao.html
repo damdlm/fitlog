@@ -274,49 +274,64 @@
                 Exercícios:
             </h6>
             
-            <!-- Dentro do loop dos treinos, onde mostra os exercícios -->
+            <!-- ============================================================ -->
+            <!-- BLOCO CORRIGIDO: Exibição dos exercícios com prefixo e músculo -->
+            <!-- ============================================================ -->
             <div class="row">
                 {% for ex_id_completo in treino.exercicios %}
-                    {% if ex_id_completo.startswith('u_') %}
+                    {# Verificar se é exercício do usuário (prefixo u_) #}
+                    {% if ex_id_completo is string and ex_id_completo.startswith('u_') %}
                         {% set ex_id = ex_id_completo[2:]|int %}
-                        {% set exercicio = exercicios|selectattr('id', 'equalto', ex_id)|first %}
-                        {% if exercicio %}
+                        {# Buscar o exercício na lista de exercícios do usuário #}
+                        {% set exercicio_encontrado = namespace(obj=None) %}
+                        {% for ex in exercicios %}
+                            {% if ex.id == ex_id and ex.tipo == 'usuario' %}
+                                {% set exercicio_encontrado.obj = ex %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if exercicio_encontrado.obj %}
                         <div class="col-md-4 mb-2">
                             <div class="exercicio-item">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <strong>{{ exercicio.nome }}</strong>
+                                        <strong>{{ exercicio_encontrado.obj.nome }}</strong>
                                         <br>
                                         <span class="badge bg-primary">Meu exercício</span>
                                         <span class="badge-musculo">
-                                            {{ exercicio.musculo_nome }}
+                                            {{ exercicio_encontrado.obj.musculo_nome or exercicio_encontrado.obj.musculo or 'N/A' }}
                                         </span>
                                     </div>
-                                    <small class="text-muted">
-                                        ID: {{ exercicio.id }}
-                                    </small>
+                                    <small class="text-muted">ID: {{ exercicio_encontrado.obj.id }}</small>
                                 </div>
                             </div>
                         </div>
                         {% endif %}
-                    {% elif ex_id_completo.startswith('b_') %}
+                        
+                    {# Verificar se é exercício da base (prefixo b_) #}
+                    {% elif ex_id_completo is string and ex_id_completo.startswith('b_') %}
                         {% set ex_id = ex_id_completo[2:]|int %}
-                        {% set exercicio = exercicios_base|default([])|selectattr('id', 'equalto', ex_id)|first %}
-                        {% if exercicio %}
+                        {# Buscar o exercício na lista de exercícios da base #}
+                        {% set exercicio_encontrado = namespace(obj=None) %}
+                        {% for ex in exercicios %}
+                            {% if ex.id == ex_id and ex.tipo == 'base' %}
+                                {% set exercicio_encontrado.obj = ex %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if exercicio_encontrado.obj %}
                         <div class="col-md-4 mb-2">
                             <div class="exercicio-item">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <strong>{{ exercicio.nome }}</strong>
+                                        <strong>{{ exercicio_encontrado.obj.nome }}</strong>
                                         <br>
                                         <span class="badge bg-secondary">Catálogo</span>
                                         <span class="badge-musculo">
-                                            {{ exercicio.musculo_nome }}
+                                            {{ exercicio_encontrado.obj.musculo_nome or exercicio_encontrado.obj.musculo or 'N/A' }}
                                         </span>
                                     </div>
-                                    <small class="text-muted">
-                                        ID: {{ exercicio.id }}
-                                    </small>
+                                    <small class="text-muted">ID: {{ exercicio_encontrado.obj.id }}</small>
                                 </div>
                             </div>
                         </div>
@@ -324,6 +339,9 @@
                     {% endif %}
                 {% endfor %}
             </div>
+            <!-- ============================================================ -->
+            <!-- FIM DO BLOCO CORRIGIDO -->
+            <!-- ============================================================ -->
             
             <!-- Informações adicionais do treino -->
             {% set treino_base = treinos_disponiveis|selectattr('id', 'equalto', treino_id)|first if treinos_disponiveis else None %}

@@ -375,23 +375,47 @@ class VersaoService(BaseService):
             
             # Buscar exercícios do usuário (customizados)
             if usuario_ids:
-                from models import ExercicioCustomizado
                 ex_usuario = ExercicioCustomizado.query.filter(
                     ExercicioCustomizado.id.in_(usuario_ids),
                     ExercicioCustomizado.usuario_id == user_id
                 ).options(joinedload(ExercicioCustomizado.musculo_ref)).all()
-                exercicios.extend(ex_usuario)
+                
+                # Adicionar tipo para identificação
+                for ex in ex_usuario:
+                    ex.tipo = 'usuario'
+                    ex.prefixo = 'u_'
+                    if ex.musculo_ref:
+                        ex.musculo_nome = ex.musculo_ref.nome_exibicao
+                    else:
+                        ex.musculo_nome = 'N/A'
+                    ex.musculo = ex.musculo_nome
+                    exercicios.append(ex)
             
             # Buscar exercícios da base (catálogo)
             if base_ids:
-                from models import ExercicioBase
                 ex_base = ExercicioBase.query.filter(
                     ExercicioBase.id.in_(base_ids)
                 ).options(joinedload(ExercicioBase.musculo_ref)).all()
-                exercicios.extend(ex_base)
+                
+                # Adicionar tipo para identificação
+                for ex in ex_base:
+                    ex.tipo = 'base'
+                    ex.prefixo = 'b_'
+                    if ex.musculo_ref:
+                        ex.musculo_nome = ex.musculo_ref.nome_exibicao
+                    else:
+                        ex.musculo_nome = 'N/A'
+                    ex.musculo = ex.musculo_nome
+                    exercicios.append(ex)
             
-            # Manter a ordem original (usando a propriedade híbrida exercicio_id)
-            ordem_map = {ve.exercicio_id: idx for idx, ve in enumerate(ve_list)}
+            # Manter a ordem original
+            ordem_map = {}
+            for idx, ve in enumerate(ve_list):
+                if ve.exercicio_usuario_id:
+                    ordem_map[ve.exercicio_usuario_id] = idx
+                elif ve.exercicio_base_id:
+                    ordem_map[ve.exercicio_base_id] = idx
+            
             exercicios.sort(key=lambda x: ordem_map.get(x.id, 999))
             
             return exercicios
@@ -399,6 +423,53 @@ class VersaoService(BaseService):
         except Exception as e:
             BaseService.handle_error(e, f"Erro ao buscar exercícios da versão {versao_id}")
             return []
+
+    @staticmethod
+    def adicionar_exercicios_a_treino_versao(treino_versao_id, usuarios_ids, bases_ids):
+        """
+        Adiciona múltiplos exercícios a um treino_versao, substituindo os existentes.
+        
+        Args:
+            treino_versao_id: ID do TreinoVersao
+            usuarios_ids: Lista de IDs de ExercicioCustomizado (exercicios_usuario)
+            bases_ids: Lista de IDs de ExercicioBase (exercicios_base)
+        """
+        from models import VersaoExercicio, db
+        
+        # Validar que pelo menos uma lista tem itens
+        if not usuarios_ids and not bases_ids:
+            raise ValueError("É necessário fornecer pelo menos um exercício")
+        
+        # Remove antigos
+        VersaoExercicio.query.filter_by(treino_versao_id=treino_versao_id).delete()
+        db.session.flush()
+        
+        ordem = 0
+        
+        # Adiciona exercícios do usuário (customizados)
+        for ex_id in usuarios_ids:
+            ve = VersaoExercicio(
+                treino_versao_id=treino_versao_id,
+                exercicio_usuario_id=ex_id,
+                exercicio_base_id=None,
+                ordem=ordem
+            )
+            db.session.add(ve)
+            ordem += 1
+        
+        # Adiciona exercícios da base (catálogo)
+        for ex_id in bases_ids:
+            ve = VersaoExercicio(
+                treino_versao_id=treino_versao_id,
+                exercicio_usuario_id=None,
+                exercicio_base_id=ex_id,
+                ordem=ordem
+            )
+            db.session.add(ve)
+            ordem += 1
+        
+        db.session.flush()
+        logger.info(f"Adicionados {len(usuarios_ids)} exercícios de usuário e {len(bases_ids)} da base ao treino {treino_versao_id}")
 
     @staticmethod
     def adicionar_treino(versao_id, treino_codigo, nome_treino, descricao_treino, exercicios_ids, user_id=None):
