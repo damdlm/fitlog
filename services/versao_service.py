@@ -163,13 +163,21 @@ class VersaoService(BaseService):
             db.session.add(nova_versao)
             db.session.flush()
             for tv in versao_origem.treinos:
-                exercicios_ids = [ve.exercicio_id for ve in tv.exercicios]
+                usuarios_ids = []
+                bases_ids = []
+                for ve in tv.exercicios:
+                    if ve.exercicio_usuario_id is not None:
+                        usuarios_ids.append(ve.exercicio_usuario_id)
+                    elif ve.exercicio_base_id is not None:
+                        bases_ids.append(ve.exercicio_base_id)
+                
                 VersaoService.adicionar_treino(
                     nova_versao.id,
                     tv.treino_ref.codigo if tv.treino_ref else str(tv.treino_id),
                     tv.nome_treino,
                     tv.descricao_treino,
-                    exercicios_ids,
+                    usuarios_ids,
+                    bases_ids,
                     user_id
                 )
             db.session.commit()
@@ -313,7 +321,6 @@ class VersaoService(BaseService):
             for tv in versao.treinos:
                 treino = TreinoService.get_by_id(tv.treino_id, user_id)
                 if treino:
-                    # Construir lista de exercícios COM PREFIXO CORRETO
                     exercicios_com_prefixo = []
                     for ve in tv.exercicios:
                         if ve.exercicio_usuario_id is not None:
@@ -330,7 +337,6 @@ class VersaoService(BaseService):
                         "ordem": tv.ordem if hasattr(tv, 'ordem') else 0
                     }
             
-            # Ordenar por ordem
             resultado = dict(sorted(resultado.items(), key=lambda item: item[1].get('ordem', 0)))
             return resultado
         except Exception as e:
@@ -348,7 +354,6 @@ class VersaoService(BaseService):
             if not user_id:
                 return []
             
-            # Buscar treino_versao
             query_tv = TreinoVersao.query.filter_by(versao_id=versao_id)
             if treino_codigo:
                 treino = TreinoService.get_by_codigo(treino_codigo, user_id)
@@ -361,7 +366,6 @@ class VersaoService(BaseService):
             
             tv_ids = [tv.id for tv in treinos_versao]
             
-            # Buscar todos os VersaoExercicio
             ve_list = VersaoExercicio.query.filter(
                 VersaoExercicio.treino_versao_id.in_(tv_ids)
             ).order_by(VersaoExercicio.ordem).all()
@@ -369,7 +373,6 @@ class VersaoService(BaseService):
             if not ve_list:
                 return []
             
-            # Separar IDs por tipo
             usuario_ids = []
             base_ids = []
             ordem_map = {}
@@ -384,7 +387,6 @@ class VersaoService(BaseService):
             
             exercicios = []
             
-            # Buscar exercícios do usuário (customizados)
             if usuario_ids:
                 ex_usuario = ExercicioCustomizado.query.filter(
                     ExercicioCustomizado.id.in_(usuario_ids),
@@ -398,7 +400,6 @@ class VersaoService(BaseService):
                     ex.musculo = ex.musculo_nome
                     exercicios.append(ex)
             
-            # Buscar exercícios da base (catálogo)
             if base_ids:
                 ex_base = ExercicioBase.query.filter(
                     ExercicioBase.id.in_(base_ids)
@@ -411,7 +412,6 @@ class VersaoService(BaseService):
                     ex.musculo = ex.musculo_nome
                     exercicios.append(ex)
             
-            # Ordenar pela ordem original
             exercicios.sort(key=lambda x: ordem_map.get((x.tipo, x.id), 999))
             
             return exercicios
@@ -421,46 +421,86 @@ class VersaoService(BaseService):
             return []
 
     @staticmethod
-    def adicionar_exercicios_a_treino_versao(treino_versao_id, usuarios_ids, bases_ids):
-        """
-        Adiciona múltiplos exercícios a um treino_versao, substituindo os existentes.
+    def get_exercicios_para_edicao(user_id, treino_versao):
+        """Retorna (exercicios_display, exercicios_atuais) para o template de edição."""
+        from models import ExercicioCustomizado, ExercicioBase
+        from sqlalchemy.orm import joinedload
         
-        Args:
-            treino_versao_id: ID do TreinoVersao
-            usuarios_ids: Lista de IDs de ExercicioCustomizado (exercicios_usuario)
-            bases_ids: Lista de IDs de ExercicioBase (exercicios_base)
-        """
+        exercicios_usuario = ExercicioCustomizado.query\
+            .filter_by(usuario_id=user_id)\
+            .options(joinedload(ExercicioCustomizado.musculo_ref))\
+            .order_by(ExercicioCustomizado.nome).all()
+        
+        exercicios_base = ExercicioBase.query\
+            .options(joinedload(ExercicioBase.musculo_ref))\
+            .order_by(ExercicioBase.nome).all()
+        
+        exercicios_display = []
+        
+        for ex in exercicios_usuario:
+            musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
+            exercicios_display.append({
+                'id': ex.id,
+                'nome': ex.nome,
+                'musculo': musculo_nome,
+                'musculo_nome': musculo_nome,
+                'tipo': 'usuario',
+                'prefixo': 'u_'
+            })
+        
+        for ex in exercicios_base:
+            musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
+            exercicios_display.append({
+                'id': ex.id,
+                'nome': ex.nome,
+                'musculo': musculo_nome,
+                'musculo_nome': musculo_nome,
+                'tipo': 'base',
+                'prefixo': 'b_'
+            })
+        
+        exercicios_display.sort(key=lambda x: x['nome'].lower())
+        
+        exercicios_atuais = []
+        for ve in treino_versao.exercicios:
+            if ve.exercicio_usuario_id is not None:
+                exercicios_atuais.append(f"u_{ve.exercicio_usuario_id}")
+            elif ve.exercicio_base_id is not None:
+                exercicios_atuais.append(f"b_{ve.exercicio_base_id}")
+        
+        return exercicios_display, exercicios_atuais
+
+    @staticmethod
+    def adicionar_exercicios_a_treino_versao(treino_versao_id, usuarios_ids, bases_ids):
+        """Substitui todos os exercícios de um treino na versão."""
         from models import VersaoExercicio, db
         
-        # Validar que pelo menos uma lista tem itens
-        if not usuarios_ids and not bases_ids:
-            raise ValueError("É necessário fornecer pelo menos um exercício")
+        usuarios_ids = usuarios_ids or []
+        bases_ids = bases_ids or []
         
-        # Remove antigos
+        if not usuarios_ids and not bases_ids:
+            raise ValueError("Pelo menos um exercício é obrigatório")
+        
         VersaoExercicio.query.filter_by(treino_versao_id=treino_versao_id).delete()
         db.session.flush()
         
         ordem = 0
         
-        # Adiciona exercícios do usuário (customizados)
         for ex_id in usuarios_ids:
-            ve = VersaoExercicio(
-                treino_versao_id=treino_versao_id,
-                exercicio_usuario_id=ex_id,
-                exercicio_base_id=None,
-                ordem=ordem
-            )
+            ve = VersaoExercicio()
+            ve.treino_versao_id = treino_versao_id
+            ve.exercicio_usuario_id = ex_id
+            ve.exercicio_base_id = None
+            ve.ordem = ordem
             db.session.add(ve)
             ordem += 1
         
-        # Adiciona exercícios da base (catálogo)
         for ex_id in bases_ids:
-            ve = VersaoExercicio(
-                treino_versao_id=treino_versao_id,
-                exercicio_usuario_id=None,
-                exercicio_base_id=ex_id,
-                ordem=ordem
-            )
+            ve = VersaoExercicio()
+            ve.treino_versao_id = treino_versao_id
+            ve.exercicio_usuario_id = None
+            ve.exercicio_base_id = ex_id
+            ve.ordem = ordem
             db.session.add(ve)
             ordem += 1
         
@@ -468,7 +508,7 @@ class VersaoService(BaseService):
         logger.info(f"Adicionados {len(usuarios_ids)} exercícios de usuário e {len(bases_ids)} da base ao treino {treino_versao_id}")
 
     @staticmethod
-    def adicionar_treino(versao_id, treino_codigo, nome_treino, descricao_treino, exercicios_ids, user_id=None):
+    def adicionar_treino(versao_id, treino_codigo, nome_treino, descricao_treino, usuarios_ids, bases_ids, user_id=None):
         """Adiciona treino a uma versão"""
         try:
             versao = VersaoService.get_by_id(versao_id, user_id)
@@ -488,7 +528,7 @@ class VersaoService(BaseService):
             )
             db.session.add(treino_versao)
             db.session.flush()
-            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, exercicios_ids)
+            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, usuarios_ids, bases_ids)
             db.session.commit()
             return True
         except Exception as e:
@@ -637,13 +677,9 @@ class VersaoService(BaseService):
             BaseService.handle_error(e, f"Erro ao buscar treinos para registro na versão {versao_id}")
             return []
 
-    # ==========================================================
-    # NOVOS MÉTODOS PARA CORREÇÃO DO VersaoExercicio
-    # ==========================================================
-
     @staticmethod
     def _get_exercicio_fk(exercicio_id):
-        """Retorna dicionário com a FK apropriada (exercicio_usuario_id ou exercicio_base_id)"""
+        """Retorna dicionário com a FK apropriada"""
         from models import ExercicioUsuario, ExercicioBase
         ex_user = ExercicioUsuario.query.get(exercicio_id)
         if ex_user:
@@ -655,7 +691,7 @@ class VersaoService(BaseService):
 
     @staticmethod
     def adicionar_exercicio_a_treino_versao(treino_versao_id, exercicio_id, ordem):
-        """Adiciona um exercício a um treino_versao, determinando automaticamente a FK correta"""
+        """Adiciona um exercício a um treino_versao"""
         from models import VersaoExercicio, db
         fk = VersaoService._get_exercicio_fk(exercicio_id)
         ve = VersaoExercicio(treino_versao_id=treino_versao_id, ordem=ordem, **fk)
@@ -664,58 +700,54 @@ class VersaoService(BaseService):
         return ve
 
     @staticmethod
-    def adicionar_exercicios_a_treino_versao(treino_versao_id, usuarios_ids, bases_ids):
-        """
-        Adiciona múltiplos exercícios a um treino_versao, substituindo os existentes.
-        Define explicitamente a FK oposta como None para evitar ambiguidades.
-        """
-        from models import VersaoExercicio, db
+    def processar_exercicios_formulario(exercicios_raw, user_id):
+        """Processa a lista de exercícios vindos do formulário"""
+        from models import ExercicioCustomizado, ExercicioBase
         
-        # Validar entradas
-        if not usuarios_ids:
-            usuarios_ids = []
-        if not bases_ids:
-            bases_ids = []
+        usuarios_ids = []
+        bases_ids = []
         
-        if not usuarios_ids and not bases_ids:
-            raise ValueError("É necessário fornecer pelo menos um exercício")
+        for item in exercicios_raw:
+            if not item or not item.strip():
+                continue
+            item = item.strip()
+            
+            if item.startswith('u_'):
+                try:
+                    ex_id = int(item[2:])
+                    usuarios_ids.append(ex_id)
+                except ValueError:
+                    pass
+            elif item.startswith('b_'):
+                try:
+                    ex_id = int(item[2:])
+                    bases_ids.append(ex_id)
+                except ValueError:
+                    pass
         
-        # Remove antigos
-        VersaoExercicio.query.filter_by(treino_versao_id=treino_versao_id).delete()
-        db.session.flush()
+        usuarios_ids = list(set(usuarios_ids))
+        bases_ids = list(set(bases_ids))
         
-        ordem = 0
+        usuarios_ids_validos = []
+        if usuarios_ids:
+            exercicios = ExercicioCustomizado.query.filter(
+                ExercicioCustomizado.id.in_(usuarios_ids),
+                ExercicioCustomizado.usuario_id == user_id
+            ).all()
+            usuarios_ids_validos = [ex.id for ex in exercicios]
         
-        # Adiciona exercícios do usuário (customizados)
-        for ex_id in usuarios_ids:
-            ve = VersaoExercicio()
-            ve.treino_versao_id = treino_versao_id
-            ve.exercicio_usuario_id = ex_id
-            ve.exercicio_base_id = None  # ← EXPLICITAMENTE None
-            ve.ordem = ordem
-            db.session.add(ve)
-            ordem += 1
+        bases_ids_validos = []
+        if bases_ids:
+            exercicios = ExercicioBase.query.filter(
+                ExercicioBase.id.in_(bases_ids)
+            ).all()
+            bases_ids_validos = [ex.id for ex in exercicios]
         
-        # Adiciona exercícios da base (catálogo)
-        for ex_id in bases_ids:
-            ve = VersaoExercicio()
-            ve.treino_versao_id = treino_versao_id
-            ve.exercicio_usuario_id = None  # ← EXPLICITAMENTE None
-            ve.exercicio_base_id = ex_id
-            ve.ordem = ordem
-            db.session.add(ve)
-            ordem += 1
-        
-        db.session.flush()
+        return usuarios_ids_validos, bases_ids_validos
 
     @staticmethod
     def editar_treino_versao(versao_id, treino_codigo, dados, user_id, current_user):
-        """
-        Edita um treino dentro de uma versão.
-        - user_id: dono dos dados (aluno)
-        - current_user: usuário logado (para permissão)
-        """
-        # Permissão
+        """Edita um treino dentro de uma versão."""
         if not (current_user.is_admin or current_user.id == user_id or
                 (current_user.is_professor() and current_user.pode_acessar_dados_de(user_id))):
             raise PermissionError("Sem permissão para editar este treino.")
@@ -736,14 +768,17 @@ class VersaoService(BaseService):
             treino_versao.nome_treino = dados['nome_treino']
         if 'descricao_treino' in dados:
             treino_versao.descricao_treino = dados['descricao_treino']
-        if 'exercicios_ids' in dados and dados['exercicios_ids'] is not None:
-            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, dados['exercicios_ids'])
+        if 'usuarios_ids' in dados and 'bases_ids' in dados:
+            VersaoService.adicionar_exercicios_a_treino_versao(
+                treino_versao.id, dados['usuarios_ids'], dados['bases_ids']
+            )
         
         db.session.commit()
         return treino_versao
 
     @staticmethod
     def excluir_treino_versao(versao_id, treino_codigo, user_id, current_user):
+        """Exclui um treino de uma versão."""
         if not (current_user.is_admin or current_user.id == user_id or
                 (current_user.is_professor() and current_user.pode_acessar_dados_de(user_id))):
             raise PermissionError("Sem permissão para excluir este treino.")

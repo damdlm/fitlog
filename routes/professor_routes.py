@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from models import db, User, AlunoProfessor, Treino, ExercicioCustomizado, RegistroTreino, SolicitacaoVinculo, TreinoVersao, VersaoExercicio, ExercicioBase, ExercicioUsuario
+from models import db, User, AlunoProfessor, Treino, ExercicioCustomizado, RegistroTreino, SolicitacaoVinculo, TreinoVersao, VersaoExercicio, ExercicioBase, ExercicioUsuario, VersaoGlobal, HistoricoTreino, Musculo
 from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
 from services.versao_service import VersaoService
@@ -8,6 +8,8 @@ from services.estatistica_service import EstatisticaService
 from services.seed_service import SeedService
 from services.musculo_service import MusculoService
 from datetime import datetime, timezone
+from sqlalchemy.orm import joinedload
+from sqlalchemy import func, and_
 import logging
 import json
 
@@ -218,6 +220,45 @@ def remover_vinculo(aluno_id):
         flash(f'Vínculo com {aluno.nome_completo or aluno.username} removido!', 'success')
     
     return redirect(url_for('professor.listar_alunos'))
+
+
+@professor_bp.route('/aluno/editar/<int:aluno_id>', methods=['GET', 'POST'])
+@login_required
+def editar_aluno(aluno_id):
+    """Edita os dados de um aluno"""
+    aluno = User.query.get_or_404(aluno_id)
+    
+    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
+        flash('Você não tem permissão para editar este aluno.', 'danger')
+        return redirect(url_for('professor.dashboard'))
+    
+    if request.method == 'POST':
+        nome_completo = request.form.get('nome_completo')
+        email = request.form.get('email')
+        telefone = request.form.get('telefone')
+        nova_senha = request.form.get('nova_senha')
+        
+        if email != aluno.email:
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user:
+                flash('Este e-mail já está em uso por outro usuário.', 'danger')
+                return redirect(url_for('professor.editar_aluno', aluno_id=aluno.id))
+        
+        aluno.nome_completo = nome_completo
+        aluno.email = email
+        aluno.telefone = telefone
+        
+        if nova_senha and len(nova_senha) >= 6:
+            aluno.set_password(nova_senha)
+            flash('Senha alterada com sucesso!', 'success')
+        
+        db.session.commit()
+        
+        logger.info(f"Professor {current_user.id} editou aluno {aluno.id}")
+        flash(f'Dados de {aluno.nome_completo or aluno.username} atualizados!', 'success')
+        return redirect(url_for('professor.visualizar_aluno', aluno_id=aluno.id))
+    
+    return render_template('professor/editar_aluno.html', aluno=aluno)
 
 
 # =============================================
@@ -596,45 +637,6 @@ def editar_treino_aluno(aluno_id, treino_id):
     return render_template('professor/editar_treino_aluno.html', aluno=aluno, treino=treino)
 
 
-@professor_bp.route('/aluno/editar/<int:aluno_id>', methods=['GET', 'POST'])
-@login_required
-def editar_aluno(aluno_id):
-    """Edita os dados de um aluno"""
-    aluno = User.query.get_or_404(aluno_id)
-    
-    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
-        flash('Você não tem permissão para editar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
-    
-    if request.method == 'POST':
-        nome_completo = request.form.get('nome_completo')
-        email = request.form.get('email')
-        telefone = request.form.get('telefone')
-        nova_senha = request.form.get('nova_senha')
-        
-        if email != aluno.email:
-            existing_user = User.query.filter_by(email=email).first()
-            if existing_user:
-                flash('Este e-mail já está em uso por outro usuário.', 'danger')
-                return redirect(url_for('professor.editar_aluno', aluno_id=aluno.id))
-        
-        aluno.nome_completo = nome_completo
-        aluno.email = email
-        aluno.telefone = telefone
-        
-        if nova_senha and len(nova_senha) >= 6:
-            aluno.set_password(nova_senha)
-            flash('Senha alterada com sucesso!', 'success')
-        
-        db.session.commit()
-        
-        logger.info(f"Professor {current_user.id} editou aluno {aluno.id}")
-        flash(f'Dados de {aluno.nome_completo or aluno.username} atualizados!', 'success')
-        return redirect(url_for('professor.visualizar_aluno', aluno_id=aluno.id))
-    
-    return render_template('professor/editar_aluno.html', aluno=aluno)
-
-
 @professor_bp.route('/aluno/<int:aluno_id>/treino/<int:treino_id>/excluir')
 @login_required
 def excluir_treino_aluno(aluno_id, treino_id):
@@ -682,25 +684,20 @@ def exercicios_aluno(aluno_id):
     exercicios = ExercicioService.get_exercicios_completos(user_id=aluno.id)
     treinos = TreinoService.get_all(user_id=aluno.id)
     
-    from sqlalchemy import func
     subq = db.session.query(
         RegistroTreino.exercicio_id,
         func.max(RegistroTreino.data_registro).label('max_data')
     ).filter_by(user_id=aluno.id).group_by(RegistroTreino.exercicio_id).subquery()
     
-    ultimas_cargas_query = db.session.query(
+    cargas_query = db.session.query(
         RegistroTreino.exercicio_id,
-        RegistroTreino.series
-    ).join(
-        subq,
-        (RegistroTreino.exercicio_id == subq.c.exercicio_id) &
-        (RegistroTreino.data_registro == subq.c.max_data)
-    ).all()
+        HistoricoTreino.carga
+    ).join(subq, (RegistroTreino.exercicio_id == subq.c.exercicio_id) & 
+                  (RegistroTreino.data_registro == subq.c.max_data))\
+     .join(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
+     .filter(HistoricoTreino.ordem == 1).all()
     
-    ultimas_cargas = {}
-    for ex_id, series in ultimas_cargas_query:
-        if series and len(series) > 0:
-            ultimas_cargas[ex_id] = float(series[0].carga)
+    ultimas_cargas = {ex_id: float(carga) for ex_id, carga in cargas_query}
     
     return render_template('professor/exercicios_aluno.html',
                          aluno=aluno,
@@ -847,7 +844,7 @@ def excluir_exercicio_aluno(aluno_id, exercicio_id):
 
 
 # =============================================
-# GERENCIAMENTO DE TREINOS EM VERSÕES (CORRIGIDO)
+# GERENCIAMENTO DE TREINOS EM VERSÕES
 # =============================================
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/treino/novo', methods=['GET', 'POST'])
@@ -887,7 +884,7 @@ def novo_treino_versao_aluno(aluno_id, versao_id):
             return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
         
         exercicios = ExercicioService.get_by_treino(treino.id, user_id=aluno.id)
-        exercicios_ids = [ex.id for ex in exercicios]
+        usuarios_ids = [ex.id for ex in exercicios]
         
         try:
             treino_versao = TreinoVersao(
@@ -900,7 +897,7 @@ def novo_treino_versao_aluno(aluno_id, versao_id):
             db.session.add(treino_versao)
             db.session.flush()
             
-            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, exercicios_ids, [])
+            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, usuarios_ids, [])
             
             db.session.commit()
             logger.info(f"Professor {current_user.id} adicionou treino {treino.codigo} à versão {versao_id} do aluno {aluno.id}")
@@ -924,83 +921,22 @@ def novo_treino_versao_aluno(aluno_id, versao_id):
 
 
 # ==========================================================
-# ROTA EDITAR TREINO VERSÃO ALUNO (CORRIGIDA - COMPLETA)
+# ROTA EDITAR TREINO VERSÃO ALUNO (CORRIGIDA)
 # ==========================================================
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/treino/<string:treino_codigo>/editar', methods=['GET', 'POST'])
 @login_required
 def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
+    """Edita um treino específico dentro de uma versão do aluno (visão do professor)"""
     if not current_user.is_professor() and not current_user.is_admin:
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
     aluno = User.query.get_or_404(aluno_id)
-    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
+    if not (current_user.is_admin or current_user.pode_acessar_dados_de(aluno)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
         return redirect(url_for('professor.dashboard'))
     
-    if request.method == 'POST':
-        nome_treino = request.form.get('nome_treino')
-        descricao_treino = request.form.get('descricao_treino', '')
-        valores = request.form.getlist('exercicios[]')
-        usuarios_ids = []
-        bases_ids = []
-        
-        for val in valores:
-            if val.startswith('u_'):
-                usuarios_ids.append(int(val[2:]))
-            elif val.startswith('b_'):
-                bases_ids.append(int(val[2:]))
-        
-        if not usuarios_ids and not bases_ids:
-            flash('Selecione pelo menos um exercício!', 'danger')
-            return redirect(request.url)
-        
-        from models import ExercicioUsuario, ExercicioBase
-        usuarios_ids_validos = [eid for eid in usuarios_ids if ExercicioUsuario.query.get(eid)]
-        bases_ids_validos = [eid for eid in bases_ids if ExercicioBase.query.get(eid)]
-        
-        try:
-            versao = VersaoService.get_by_id(versao_id, user_id=aluno.id, load_relations=True)
-            if not versao:
-                flash('Versão não encontrada!', 'danger')
-                return redirect(request.url)
-            
-            treino_ref = TreinoService.get_by_codigo(treino_codigo, user_id=aluno.id)
-            if not treino_ref:
-                flash('Treino não encontrado!', 'danger')
-                return redirect(request.url)
-            
-            treino_versao = None
-            for tv in versao.treinos:
-                if tv.treino_id == treino_ref.id:
-                    treino_versao = tv
-                    break
-            if not treino_versao:
-                flash('Treino não encontrado nesta versão!', 'danger')
-                return redirect(request.url)
-            
-            treino_versao.nome_treino = nome_treino
-            treino_versao.descricao_treino = descricao_treino
-            
-            VersaoService.adicionar_exercicios_a_treino_versao(
-                treino_versao.id,
-                usuarios_ids_validos,
-                bases_ids_validos
-            )
-            
-            db.session.commit()
-            flash(f'Treino {treino_codigo} atualizado!', 'success')
-            return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Erro ao editar treino: {e}")
-            flash(str(e), 'danger')
-            return redirect(request.url)
-    
-    # ==========================================================
-    # MÉTODO GET - CARREGAR FORMULÁRIO
-    # ==========================================================
     versao = VersaoService.get_by_id(versao_id, user_id=aluno.id, load_relations=True)
     if not versao:
         flash('Versão não encontrada!', 'danger')
@@ -1020,47 +956,45 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
         flash(f'Treino {treino_codigo} não encontrado nesta versão!', 'danger')
         return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
     
-    # ✅ CORREÇÃO: Construir lista de exercícios atuais com prefixo
-    exercicios_atuais = []
-    for ve in treino_versao.exercicios:
-        if ve.exercicio_usuario_id:
-            exercicios_atuais.append(f"u_{ve.exercicio_usuario_id}")
-        elif ve.exercicio_base_id:
-            exercicios_atuais.append(f"b_{ve.exercicio_base_id}")
+    # ==========================================================
+    # MÉTODO POST - SALVAR
+    # ==========================================================
+    if request.method == 'POST':
+        nome_treino = request.form.get('nome_treino', '').strip()
+        descricao_treino = request.form.get('descricao_treino', '').strip()
+        exercicios_raw = request.form.getlist('exercicios[]')
+        
+        # Usar o método compartilhado do serviço
+        usuarios_ids, bases_ids = VersaoService.processar_exercicios_formulario(exercicios_raw, aluno.id)
+        
+        if not usuarios_ids and not bases_ids:
+            flash('Selecione pelo menos um exercício válido!', 'danger')
+            return redirect(request.url)
+        
+        treino_versao.nome_treino = nome_treino
+        treino_versao.descricao_treino = descricao_treino
+        
+        try:
+            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, usuarios_ids, bases_ids)
+            db.session.commit()
+            flash(f'Treino {treino_codigo} atualizado com sucesso!', 'success')
+            return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Erro ao salvar: {str(e)}")
+            flash(f'Erro ao atualizar treino: {str(e)}', 'danger')
+            return redirect(request.url)
     
-    # Buscar todos os exercícios (base + usuário) do aluno
-    todos_exercicios = ExercicioService.get_exercicios_completos(user_id=aluno.id)
-    exercicios_display = []
-    
-    # Criar conjunto de IDs selecionados para busca rápida
-    selected_ids = set()
-    for e in exercicios_atuais:
-        if '_' in e:
-            selected_ids.add(int(e.split('_')[1]))
-    
-    for ex in todos_exercicios:
-        musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
-        exercicios_display.append({
-            'id': ex.id,
-            'nome': ex.nome,
-            'musculo': musculo_nome,
-            'tipo': getattr(ex, 'tipo', 'usuario'),
-            'checked': ex.id in selected_ids
-        })
-    
+    # ==========================================================
+    # MÉTODO GET - CARREGAR FORMULÁRIO
+    # ==========================================================
+    exercicios_display, exercicios_atuais = VersaoService.get_exercicios_para_edicao(aluno.id, treino_versao)
     musculos = MusculoService.get_all_nomes()
     
     return render_template('professor/editar_treino_versao_aluno.html',
-                         aluno=aluno,
-                         versao=versao,
-                         treino_id=treino_codigo,
-                         treino={
-                             "nome": treino_versao.nome_treino,
-                             "descricao": treino_versao.descricao_treino,
-                             "exercicios": exercicios_atuais
-                         },
-                         exercicios=exercicios_display,
-                         musculos=musculos)
+                         aluno=aluno, versao=versao, treino_id=treino_codigo,
+                         treino={"nome": treino_versao.nome_treino, "descricao": treino_versao.descricao_treino, "exercicios": exercicios_atuais},
+                         exercicios=exercicios_display, musculos=musculos)
 
 
 # ==========================================================
@@ -1105,15 +1039,12 @@ def estatisticas_aluno(aluno_id):
         flash('Você não tem permissão para ver as estatísticas deste aluno.', 'danger')
         return redirect(url_for('professor.dashboard'))
     
-    from models import db, Musculo, ExercicioCustomizado, RegistroTreino, HistoricoTreino
-    from sqlalchemy import func, and_
-
     musculo_stats_raw = db.session.query(
         Musculo.nome_exibicao.label('musculo'),
-        db.func.count(db.distinct(ExercicioCustomizado.id)).label('qtd_exercicios'),
-        db.func.count(db.distinct(RegistroTreino.id)).label('qtd_registros'),
-        db.func.count(HistoricoTreino.id).label('total_series'),
-        db.func.coalesce(db.func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume_total')
+        func.count(func.distinct(ExercicioCustomizado.id)).label('qtd_exercicios'),
+        func.count(func.distinct(RegistroTreino.id)).label('qtd_registros'),
+        func.count(HistoricoTreino.id).label('total_series'),
+        func.coalesce(func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume_total')
     ).select_from(Musculo)\
      .outerjoin(ExercicioCustomizado, and_(ExercicioCustomizado.musculo_id == Musculo.id, ExercicioCustomizado.usuario_id == aluno.id))\
      .outerjoin(RegistroTreino, and_(RegistroTreino.exercicio_id == ExercicioCustomizado.id, RegistroTreino.user_id == aluno.id))\

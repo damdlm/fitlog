@@ -243,22 +243,16 @@ class VersaoExercicio(db.Model):
     # ============================================================
     # NOVAS PROPERTIES PARA COMPATIBILIDADE
     # ============================================================
-    
+
     @property
     def exercicio_id(self):
-        """
-        Retorna o ID do exercício independente da origem.
-        Usado para compatibilidade com código que espera um único ID.
-        """
+        """Retorna o ID do exercício, independente da origem."""
         return self.exercicio_usuario_id or self.exercicio_base_id
 
     @property
     def tipo_exercicio(self):
-        """
-        Retorna 'usuario' ou 'base' conforme a FK preenchida.
-        """
+        """Retorna 'usuario' ou 'base'."""
         return 'usuario' if self.exercicio_usuario_id else 'base'
-
 
 class RegistroTreino(db.Model):
     __tablename__ = 'registros_treino'
