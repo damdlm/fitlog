@@ -88,7 +88,6 @@ class RegistroService(BaseService):
             if user_id is None:
                 user_id = BaseService.get_current_user_id()
             if not user_id:
-                logger.warning("Tentativa de salvar registros sem usuário logado")
                 return False
             
             # Remover registros antigos da mesma sessão
@@ -100,22 +99,27 @@ class RegistroService(BaseService):
                 user_id=user_id
             ).delete()
             
-            # Criar novos registros
             for ex_id, dados in dados_exercicios.items():
                 if dados['carga'] and dados['repeticoes']:
+                    # Determinar tipo do exercício
+                    from models import ExercicioUsuario, ExercicioBase
+                    
+                    is_usuario = ExercicioUsuario.query.get(ex_id) is not None
+                    is_base = ExercicioBase.query.get(ex_id) is not None if not is_usuario else False
+                    
                     registro = RegistroTreino(
                         treino_id=treino_id,
                         versao_id=versao_id,
                         periodo=periodo,
                         semana=semana,
-                        exercicio_id=ex_id,
+                        exercicio_usuario_id=ex_id if is_usuario else None,
+                        exercicio_base_id=ex_id if is_base else None,
                         data_registro=dados.get('data_registro', datetime.now(timezone.utc)),
                         user_id=user_id
                     )
                     db.session.add(registro)
                     db.session.flush()
                     
-                    # Criar séries
                     for i in range(dados['num_series']):
                         serie = HistoricoTreino(
                             registro_id=registro.id,
@@ -126,7 +130,6 @@ class RegistroService(BaseService):
                         db.session.add(serie)
             
             db.session.commit()
-            logger.info(f"Registros salvos para treino {treino_id}, semana {semana}")
             return True
         except Exception as e:
             BaseService.handle_error(e, "Erro ao salvar registros")

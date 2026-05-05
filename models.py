@@ -265,10 +265,17 @@ class RegistroTreino(db.Model):
     periodo = db.Column(db.String(50), nullable=False)
     semana = db.Column(db.Integer, nullable=False)
 
-    exercicio_id = db.Column(
+    # Duas FKs: uma para exercícios do usuário, outra para exercícios base
+    exercicio_usuario_id = db.Column(
         db.Integer,
-        db.ForeignKey('exercicios_usuario.id'),
-        nullable=False
+        db.ForeignKey('exercicios_usuario.id', ondelete='CASCADE'),
+        nullable=True
+    )
+
+    exercicio_base_id = db.Column(
+        db.Integer,
+        db.ForeignKey('exercicios_base.id', ondelete='CASCADE'),
+        nullable=True
     )
 
     data_registro = db.Column(db.DateTime, nullable=False)
@@ -290,17 +297,33 @@ class RegistroTreino(db.Model):
 
     exercicio = db.relationship(
         'ExercicioUsuario',
-        foreign_keys=[exercicio_id],
+        foreign_keys=[exercicio_usuario_id],
+        backref='registros'
+    )
+
+    exercicio_base = db.relationship(
+        'ExercicioBase',
+        foreign_keys=[exercicio_base_id],
         backref='registros'
     )
 
     __table_args__ = (
+        db.CheckConstraint(
+            '(exercicio_usuario_id IS NOT NULL AND exercicio_base_id IS NULL) OR '
+            '(exercicio_usuario_id IS NULL AND exercicio_base_id IS NOT NULL)',
+            name='check_registro_exactly_one_exercicio'
+        ),
         db.Index('idx_registro_user_data', 'user_id', 'data_registro'),
         db.Index('idx_registro_busca', 'user_id', 'treino_id', 'periodo', 'semana'),
-        db.Index('idx_registro_exercicio', 'exercicio_id'),
+        db.Index('idx_registro_exercicio_usuario', 'exercicio_usuario_id'),
+        db.Index('idx_registro_exercicio_base', 'exercicio_base_id'),
         db.Index('idx_registro_versao', 'versao_id'),
         db.Index('idx_registro_periodo_semana', 'periodo', 'semana'),
     )
+
+    @property
+    def exercicio_id(self):
+        return self.exercicio_usuario_id or self.exercicio_base_id
 
 
 class HistoricoTreino(db.Model):
