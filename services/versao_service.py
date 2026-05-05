@@ -478,8 +478,8 @@ class VersaoService(BaseService):
         usuarios_ids = usuarios_ids or []
         bases_ids = bases_ids or []
         
-        if not usuarios_ids and not bases_ids:
-            raise ValueError("Pelo menos um exercício é obrigatório")
+      #  if not usuarios_ids and not bases_ids:
+      #      raise ValueError("Pelo menos um exercício é obrigatório")
         
         VersaoExercicio.query.filter_by(treino_versao_id=treino_versao_id).delete()
         db.session.flush()
