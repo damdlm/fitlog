@@ -44,7 +44,7 @@
             <div class="alert alert-info mb-3">
                 <i class="bi bi-database me-2"></i>
                 <strong>Selecione os exercícios do catálogo do aluno:</strong>
-                <br><small>Total: {{ exercicios|length }} exercícios cadastrados</small>
+                <br><small>Total: {{ exercicios|length }} exercícios disponíveis</small>
             </div>
             
             <!-- Filtros -->
@@ -78,27 +78,30 @@
                 <span id="contadorSelecionados" class="ms-2 badge bg-info">0 selecionados</span>
             </div>
             
-            <!-- Lista de exercícios -->
+            <!-- Lista de exercícios com prefixo -->
             <div style="max-height: 500px; overflow-y: auto; border: 1px solid #dee2e6; padding: 15px; border-radius: 5px;">
                 <div class="row" id="listaExercicios">
                     {% for ex in exercicios %}
-                    {% set musculo_nome = ex.musculo %}
+                    {% set musculo_nome = ex.musculo_nome or ex.musculo or 'N/A' %}
                     <div class="col-md-4 exercicio-item" 
                          data-nome="{{ ex.nome|lower }}" 
-                         data-musculo="{{ musculo_nome }}">
+                         data-musculo="{{ musculo_nome|lower }}"
+                         data-tipo="{{ ex.tipo }}">
                         <div class="form-check mb-2">
                             <input class="form-check-input exercicio-checkbox" 
                                    type="checkbox" 
                                    name="exercicios[]" 
-                                   value="{% if ex.tipo == 'usuario' %}u_{{ ex.id }}{% else %}b_{{ ex.id }}{% endif %}"
-                                   id="ex_{{ ex.id }}"
-                                   data-nome="{{ ex.nome }}"
-                                   data-musculo="{{ musculo_nome }}"
-                                   {% if ex.checked %}checked{% endif %}
+                                   value="{{ ex.prefixo }}{{ ex.id }}" 
+                                   id="ex_{{ ex.tipo }}_{{ ex.id }}"
+                                   data-tipo="{{ ex.tipo }}"
+                                   {% if (ex.prefixo ~ ex.id|string) in treino.exercicios %}checked{% endif %}
                                    onchange="atualizarContador()">
-                            <label class="form-check-label" for="ex_{{ ex.id }}">
+                            <label class="form-check-label" for="ex_{{ ex.tipo }}_{{ ex.id }}">
                                 <strong>{{ ex.nome }}</strong>
                                 <br><small class="text-muted">{{ musculo_nome }}</small>
+                                <span class="badge {% if ex.tipo == 'usuario' %}bg-primary{% else %}bg-secondary{% endif %} ms-1">
+                                    {{ ex.tipo }}
+                                </span>
                             </label>
                         </div>
                     </div>
@@ -136,11 +139,11 @@ function inicializarEstadoSelecao() {
 
 function filtrarExercicios() {
     const termo = document.getElementById('filtroNome').value.toLowerCase().trim();
-    const musculo = document.getElementById('filtroMusculo').value;
+    const musculo = document.getElementById('filtroMusculo').value.toLowerCase();
     
     document.querySelectorAll('.exercicio-item').forEach(item => {
-        const nome = item.dataset.nome || '';
-        const itemMusculo = item.dataset.musculo || '';
+        const nome = (item.dataset.nome || '').toLowerCase();
+        const itemMusculo = (item.dataset.musculo || '').toLowerCase();
         
         let mostrar = true;
         
@@ -148,13 +151,6 @@ function filtrarExercicios() {
         if (musculo && itemMusculo !== musculo) mostrar = false;
         
         item.style.display = mostrar ? 'block' : 'none';
-        
-        if (mostrar) {
-            const checkbox = item.querySelector('.exercicio-checkbox');
-            if (checkbox && estadoSelecao.has(checkbox.id)) {
-                checkbox.checked = estadoSelecao.get(checkbox.id);
-            }
-        }
     });
     
     atualizarContador();
@@ -167,9 +163,14 @@ function limparFiltros() {
 }
 
 function selecionarTodosVisiveis() {
-    document.querySelectorAll('.exercicio-item[style*="display: block"] .exercicio-checkbox').forEach(cb => {
-        cb.checked = true;
-        estadoSelecao.set(cb.id, true);
+    document.querySelectorAll('.exercicio-item').forEach(item => {
+        if (item.style.display !== 'none') {
+            const checkbox = item.querySelector('.exercicio-checkbox');
+            if (checkbox) {
+                checkbox.checked = true;
+                estadoSelecao.set(checkbox.id, true);
+            }
+        }
     });
     atualizarContador();
 }
