@@ -41,17 +41,17 @@
             </div>
             
             <div class="alert alert-info mb-3">
-                <i class="bi bi-database me-2"></i>
-                <strong>Selecione os exercícios do seu catálogo:</strong>
-                <br><small>Total: {{ exercicios|length }} exercícios disponíveis</small>
+                <i class="bi bi-arrows-move me-2"></i>
+                <strong>Arraste os exercícios para reordenar:</strong>
+                <br><small>Pegue pelo ícone <i class="bi bi-grip-vertical"></i> à esquerda de cada exercício</small>
             </div>
             
             <!-- Filtros -->
             <div class="row mb-3">
-                <div class="col-md-6">
+                <div class="col-md-5">
                     <input type="text" id="filtroNome" class="form-control" placeholder="Buscar por nome...">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-5">
                     <select id="filtroMusculo" class="form-select">
                         <option value="">Todos os músculos</option>
                         {% for m in musculos %}
@@ -77,16 +77,20 @@
                 <span id="contadorSelecionados" class="ms-2 badge bg-info">0 selecionados</span>
             </div>
             
-            <!-- Lista de exercícios com prefixo -->
+            <!-- Lista de exercícios COM DRAG AND DROP -->
             <div style="max-height: 500px; overflow-y: auto; border: 1px solid #dee2e6; padding: 15px; border-radius: 5px;">
-                <div class="row" id="listaExercicios">
+                <div id="listaExercicios">
                     {% for ex in exercicios %}
                     {% set musculo_nome = ex.musculo_nome or ex.musculo or 'N/A' %}
-                    <div class="col-md-4 exercicio-item" 
+                    <div class="exercicio-item" 
                          data-nome="{{ ex.nome|lower }}" 
                          data-musculo="{{ musculo_nome|lower }}"
-                         data-tipo="{{ ex.tipo }}">
-                        <div class="form-check mb-2">
+                         data-tipo="{{ ex.tipo }}"
+                         data-id="{{ ex.prefixo }}{{ ex.id }}">
+                        <div class="drag-handle">
+                            <i class="bi bi-grip-vertical"></i>
+                        </div>
+                        <div class="form-check flex-grow-1">
                             <input class="form-check-input exercicio-checkbox" 
                                    type="checkbox" 
                                    name="exercicios[]" 
@@ -105,11 +109,9 @@
                         </div>
                     </div>
                     {% else %}
-                    <div class="col-12">
-                        <div class="alert alert-warning">
-                            <i class="bi bi-exclamation-triangle"></i>
-                            Nenhum exercício encontrado.
-                        </div>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Nenhum exercício encontrado.
                     </div>
                     {% endfor %}
                 </div>
@@ -127,8 +129,75 @@
     </div>
 </div>
 
+<!-- CSS para Drag and Drop -->
+<style>
+    .exercicio-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 15px;
+        background: #f8f9fa;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        border-left: 4px solid #F28C33;
+        transition: all 0.2s;
+    }
+    .exercicio-item:hover {
+        background-color: #fff3e0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .drag-handle {
+        cursor: grab;
+        margin-right: 15px;
+        color: #F28C33;
+        font-size: 1.2rem;
+    }
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+    .exercicio-item.sortable-drag {
+        opacity: 0.5;
+        background-color: #e9ecef;
+    }
+    .exercicio-item.sortable-ghost {
+        opacity: 0.3;
+        background-color: #F28C33;
+    }
+    .form-check-input:checked {
+        background-color: #F28C33;
+        border-color: #F28C33;
+    }
+    #contadorSelecionados {
+        font-size: 0.9rem;
+        padding: 5px 10px;
+    }
+</style>
+
+<!-- SortableJS -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
 <script>
+let sortable;
 let estadoSelecao = new Map();
+
+function inicializarSortable() {
+    const container = document.getElementById('listaExercicios');
+    if (container && !sortable) {
+        sortable = new Sortable(container, {
+            animation: 300,
+            handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            onEnd: function() {
+                // Mostrar mensagem que a ordem mudou
+                const toast = document.getElementById('ordemAlteradaToast');
+                if (toast) {
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+                }
+            }
+        });
+    }
+}
 
 function inicializarEstadoSelecao() {
     document.querySelectorAll('.exercicio-checkbox').forEach(cb => {
@@ -149,7 +218,7 @@ function filtrarExercicios() {
         if (termo && !nome.includes(termo)) mostrar = false;
         if (musculo && itemMusculo !== musculo) mostrar = false;
         
-        item.style.display = mostrar ? 'block' : 'none';
+        item.style.display = mostrar ? 'flex' : 'none';
     });
     
     atualizarContador();
@@ -190,11 +259,82 @@ function atualizarContador() {
     }
 }
 
+// Salvar ordem após drag
+function salvarOrdemAposDrag() {
+    const container = document.getElementById('listaExercicios');
+    const itens = container.querySelectorAll('.exercicio-item');
+    const novaOrdem = [];
+    
+    itens.forEach(item => {
+        const checkbox = item.querySelector('.exercicio-checkbox');
+        if (checkbox && checkbox.checked) {
+            novaOrdem.push(checkbox.value);
+        }
+    });
+    
+    if (novaOrdem.length === 0) return;
+    
+    fetch('{{ url_for("api.api_reordenar_exercicios") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            versao_id: {{ versao.id }},
+            treino_codigo: '{{ treino_id }}',
+            nova_ordem: novaOrdem
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (typeof FitLogUtils !== 'undefined') {
+                FitLogUtils.showToast('Ordem atualizada!', 'success');
+            }
+        } else {
+            console.error('Erro:', data.error);
+            if (typeof FitLogUtils !== 'undefined') {
+                FitLogUtils.showToast('Erro ao salvar ordem', 'danger');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        if (typeof FitLogUtils !== 'undefined') {
+            FitLogUtils.showToast('Erro ao comunicar com o servidor', 'danger');
+        }
+    });
+}
+
+// Toast de ordem alterada
+function criarToastOrdem() {
+    if (!document.getElementById('ordemAlteradaToast')) {
+        const toastHtml = `
+            <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+                <div id="ordemAlteradaToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="2000">
+                    <div class="toast-header bg-success text-white">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <strong class="me-auto">Ordem alterada</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">
+                        A ordem foi alterada. <a href="#" onclick="salvarOrdemAposDrag()">Clique aqui para salvar</a>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', toastHtml);
+    }
+}
+
 document.getElementById('filtroNome').addEventListener('input', filtrarExercicios);
 document.getElementById('filtroMusculo').addEventListener('change', filtrarExercicios);
 
 document.addEventListener('DOMContentLoaded', function() {
+    inicializarSortable();
     inicializarEstadoSelecao();
+    criarToastOrdem();
     
     document.querySelectorAll('.exercicio-checkbox').forEach(cb => {
         cb.addEventListener('change', function() {
@@ -223,23 +363,4 @@ document.getElementById('formEditarTreino')?.addEventListener('submit', function
     return true;
 });
 </script>
-
-<style>
-    .exercicio-item {
-        transition: all 0.2s;
-        padding: 5px;
-        border-radius: 5px;
-    }
-    .exercicio-item:hover {
-        background-color: #f8f9fa;
-    }
-    .form-check-input:checked {
-        background-color: #F28C33;
-        border-color: #F28C33;
-    }
-    #contadorSelecionados {
-        font-size: 0.9rem;
-        padding: 5px 10px;
-    }
-</style>
 {% endblock %}

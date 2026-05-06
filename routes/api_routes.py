@@ -309,3 +309,40 @@ def api_debug_rotas():
             })
     
     return jsonify(rotas)
+
+@api_bp.route("/reordenar-exercicios", methods=["POST"])
+@login_required
+def api_reordenar_exercicios():
+    """
+    API para reordenar exercícios de um treino na versão ativa
+    """
+    try:
+        data = request.get_json()
+        
+        versao_id = data.get('versao_id')
+        treino_codigo = data.get('treino_codigo')
+        nova_ordem = data.get('nova_ordem')  # Lista de IDs com prefixo
+        
+        if not versao_id or not treino_codigo or not nova_ordem:
+            return jsonify({
+                "success": False, 
+                "error": "Dados incompletos. Envie versao_id, treino_codigo e nova_ordem"
+            }), 400
+        
+        from services.exercicio_service import ExercicioService
+        
+        sucesso = ExercicioService.reordenar_exercicios(
+            versao_id=versao_id,
+            treino_codigo=treino_codigo,
+            nova_ordem_ids=nova_ordem,
+            user_id=current_user.id
+        )
+        
+        if sucesso:
+            return jsonify({"success": True, "message": "Ordem atualizada com sucesso!"})
+        else:
+            return jsonify({"success": False, "error": "Erro ao reordenar exercícios"}), 500
+        
+    except Exception as e:
+        logger.error(f"Erro na API reordenar-exercicios: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500    
