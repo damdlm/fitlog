@@ -195,30 +195,45 @@ class ExercicioService(BaseService):
 
     @staticmethod
     def get_by_treino(treino_id, user_id=None):
+        """
+        Retorna os exercícios de um treino na VERSÃO ATIVA do usuário
+        """
         try:
-            from models import VersaoExercicio, TreinoVersao
+            from services.versao_service import VersaoService
+            from services.treino_service import TreinoService
+            from datetime import datetime
             
             if user_id is None:
                 user_id = BaseService.get_current_user_id()
             if not user_id:
+                logger.warning("Tentativa de buscar exercícios sem usuário logado")
                 return []
             
-            versoes_treino = TreinoVersao.query.filter_by(treino_id=treino_id).all()
+            # Buscar o treino para obter o código (A, B, C...)
+            treino = TreinoService.get_by_id(treino_id, user_id=user_id)
+            if not treino:
+                logger.warning(f"Treino {treino_id} não encontrado para usuário {user_id}")
+                return []
             
-            exercicios = []
-            for tv in versoes_treino:
-                for ve in tv.exercicios:
-                    if ve.exercicio_usuario_id:
-                        exercicio = ExercicioService.get_by_id(ve.exercicio_usuario_id, user_id)
-                    elif ve.exercicio_base_id:
-                        exercicio = ExercicioService.get_by_id(ve.exercicio_base_id, user_id)
-                    else:
-                        continue
-                        
-                    if exercicio and exercicio not in exercicios:
-                        exercicios.append(exercicio)
+            # Buscar a versão ativa na data atual
+            versao_ativa = VersaoService.get_ativa_por_data(
+                datetime.now().date(),
+                user_id=user_id
+            )
             
+            if not versao_ativa:
+                logger.info(f"Usuário {user_id} não tem versão ativa")
+                return []
+            
+            # Buscar exercícios do treino APENAS na versão ativa
+            exercicios = VersaoService.get_exercicios(
+                versao_ativa.id,
+                treino_codigo=treino.codigo  # ← usa o código do treino (A, B, C...)
+            )
+            
+            logger.debug(f"Encontrados {len(exercicios)} exercícios para treino {treino.codigo} na versão ativa")
             return exercicios
+            
         except Exception as e:
             BaseService.handle_error(e, f"Erro ao buscar exercícios do treino {treino_id}")
             return []
