@@ -327,6 +327,7 @@ def api_reordenar_exercicios():
         data = request.get_json()
         
         versao_id = data.get('versao_id')
+        user_id = current_user.id
         treino_codigo = data.get('treino_codigo')
         nova_ordem = data.get('nova_ordem')
         
