@@ -2,6 +2,7 @@
 
 from models import db, RegistroTreino, HistoricoTreino
 from sqlalchemy.orm import joinedload
+from sqlalchemy import or_  # ✅ ADICIONADO
 from datetime import datetime, timezone
 from .base_service import BaseService
 import logging
@@ -31,8 +32,15 @@ class RegistroService(BaseService):
                     query = query.filter_by(periodo=filtros['periodo'])
                 if 'semana' in filtros and filtros['semana'] is not None:
                     query = query.filter_by(semana=filtros['semana'])
+                # ✅ CORRIGIDO: usa or_ com as duas colunas reais
                 if 'exercicio_id' in filtros and filtros['exercicio_id']:
-                    query = query.filter_by(exercicio_id=filtros['exercicio_id'])
+                    ex_id = filtros['exercicio_id']
+                    query = query.filter(
+                        or_(
+                            RegistroTreino.exercicio_usuario_id == ex_id,
+                            RegistroTreino.exercicio_base_id == ex_id
+                        )
+                    )
                 if 'versao_id' in filtros and filtros['versao_id']:
                     query = query.filter_by(versao_id=filtros['versao_id'])
             
@@ -41,7 +49,6 @@ class RegistroService(BaseService):
             BaseService.handle_error(e, "Erro ao buscar registros")
             return []
     
-    # ===== MÉTODO ADICIONADO =====
     @staticmethod
     def get_by_data(treino_id, versao_id, data, user_id=None):
         """
@@ -66,7 +73,7 @@ class RegistroService(BaseService):
             if isinstance(data, str):
                 data = datetime.strptime(data, '%Y-%m-%d').date()
             
-            # Buscar registros do dia - SEM joinedload para evitar erro com lazy='dynamic'
+            # Buscar registros do dia
             registros = RegistroTreino.query.filter(
                 RegistroTreino.user_id == user_id,
                 RegistroTreino.treino_id == treino_id,
@@ -104,8 +111,8 @@ class RegistroService(BaseService):
                     # Determinar tipo do exercício
                     from models import ExercicioUsuario, ExercicioBase
                     
-                    is_usuario = ExercicioUsuario.query.get(ex_id) is not None
-                    is_base = ExercicioBase.query.get(ex_id) is not None if not is_usuario else False
+                    is_usuario = db.session.get(ExercicioUsuario, ex_id) is not None
+                    is_base = db.session.get(ExercicioBase, ex_id) is not None if not is_usuario else False
                     
                     registro = RegistroTreino(
                         treino_id=treino_id,
@@ -149,15 +156,28 @@ class RegistroService(BaseService):
             if data_registro is None:
                 data_registro = datetime.now(timezone.utc)
             
+            # Determinar tipo do exercício
+            from models import ExercicioUsuario, ExercicioBase
+            is_usuario = db.session.get(ExercicioUsuario, exercicio_id) is not None
+            is_base = db.session.get(ExercicioBase, exercicio_id) is not None if not is_usuario else False
+            
+            if not is_usuario and not is_base:
+                logger.warning(f"Exercício {exercicio_id} não encontrado em nenhuma tabela")
+                return None
+            
             # Remover registros antigos do mesmo exercício na mesma sessão
-            RegistroTreino.query.filter_by(
-                treino_id=treino_id,
-                periodo=periodo,
-                semana=semana,
-                versao_id=versao_id,
-                exercicio_id=exercicio_id,
-                user_id=user_id
-            ).delete()
+            delete_query = RegistroTreino.query.filter(
+                RegistroTreino.treino_id == treino_id,
+                RegistroTreino.periodo == periodo,
+                RegistroTreino.semana == semana,
+                RegistroTreino.versao_id == versao_id,
+                RegistroTreino.user_id == user_id
+            )
+            if is_usuario:
+                delete_query = delete_query.filter(RegistroTreino.exercicio_usuario_id == exercicio_id)
+            else:
+                delete_query = delete_query.filter(RegistroTreino.exercicio_base_id == exercicio_id)
+            delete_query.delete()
             
             # Criar novo registro
             registro = RegistroTreino(
@@ -165,7 +185,8 @@ class RegistroService(BaseService):
                 versao_id=versao_id,
                 periodo=periodo,
                 semana=semana,
-                exercicio_id=exercicio_id,
+                exercicio_usuario_id=exercicio_id if is_usuario else None,
+                exercicio_base_id=exercicio_id if is_base else None,
                 data_registro=data_registro,
                 user_id=user_id
             )
@@ -258,11 +279,15 @@ class RegistroService(BaseService):
             if not user_id:
                 return []
             
+            # ✅ CORRIGIDO: usa or_ com as colunas reais
             query = RegistroTreino.query.options(
                 joinedload(RegistroTreino.series)
-            ).filter_by(
-                exercicio_id=exercicio_id,
-                user_id=user_id
+            ).filter(
+                RegistroTreino.user_id == user_id,
+                or_(
+                    RegistroTreino.exercicio_usuario_id == exercicio_id,
+                    RegistroTreino.exercicio_base_id == exercicio_id
+                )
             ).order_by(RegistroTreino.data_registro.desc())
             
             if limite:
@@ -318,11 +343,15 @@ class RegistroService(BaseService):
             if not user_id:
                 return None
             
+            # ✅ CORRIGIDO: usa or_ com as colunas reais
             return RegistroTreino.query.options(
                 joinedload(RegistroTreino.series)
-            ).filter_by(
-                exercicio_id=exercicio_id,
-                user_id=user_id
+            ).filter(
+                RegistroTreino.user_id == user_id,
+                or_(
+                    RegistroTreino.exercicio_usuario_id == exercicio_id,
+                    RegistroTreino.exercicio_base_id == exercicio_id
+                )
             ).order_by(RegistroTreino.data_registro.desc()).first()
         except Exception as e:
             BaseService.handle_error(e, f"Erro ao buscar último registro do exercício {exercicio_id}")
