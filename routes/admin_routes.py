@@ -288,37 +288,37 @@ def excluir_exercicio(exercicio_id):
     return redirect(url_for("admin.gerenciar"))
 
 
-    @admin_bp.route("/exercicio/detalhes/<int:exercicio_id>")
-    @login_required
-    def exercicio_detalhes(exercicio_id):
-        """Detalhes de um exercício"""
-        
-        # Buscar em ambas as tabelas
-        exercicio_usuario = ExercicioUsuario.query.filter_by(
-            id=exercicio_id, usuario_id=current_user.id
-        ).first()
-        
-        if exercicio_usuario:
-            exercicio = exercicio_usuario
-            exercicio.tipo = 'usuario'
-        else:
-            exercicio_base = ExercicioBase.query.get(exercicio_id)
-            if exercicio_base:
-                exercicio = exercicio_base
-                exercicio.tipo = 'base'
-        
-        if not exercicio:
-            flash("Exercício não encontrado!", "danger")
-            return redirect(url_for("admin.gerenciar"))
-        
-        from utils.version_utils import verificar_exercicio_em_versoes
-        versoes = verificar_exercicio_em_versoes(exercicio_id, tipo_exercicio=exercicio.tipo)
+@admin_bp.route("/exercicio/detalhes/<int:exercicio_id>")
+@login_required
+def exercicio_detalhes(exercicio_id):
+    """Detalhes de um exercício"""
     
-        return render_template(
-            "admin/exercicio_detalhes.html",
-            exercicio=exercicio,
-            versoes=versoes
-        )
+    # Buscar em ambas as tabelas
+    exercicio_usuario = ExercicioUsuario.query.filter_by(
+        id=exercicio_id, usuario_id=current_user.id
+    ).first()
+    
+    if exercicio_usuario:
+        exercicio = exercicio_usuario
+        exercicio.tipo = 'usuario'
+    else:
+        exercicio_base = ExercicioBase.query.get(exercicio_id)
+        if exercicio_base:
+            exercicio = exercicio_base
+            exercicio.tipo = 'base'
+    
+    if not exercicio:
+        flash("Exercício não encontrado!", "danger")
+        return redirect(url_for("admin.gerenciar"))
+    
+    from utils.version_utils import verificar_exercicio_em_versoes
+    versoes = verificar_exercicio_em_versoes(exercicio_id, tipo_exercicio=exercicio.tipo)
+
+    return render_template(
+        "admin/exercicio_detalhes.html",
+        exercicio=exercicio,
+        versoes=versoes
+    )
 
 
 # =============================================

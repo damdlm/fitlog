@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from flask_login import login_required
+from flask_login import login_required, current_user
 from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
 from services.versao_service import VersaoService
