@@ -24,7 +24,7 @@ def estatisticas():
         func.coalesce(func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume_total')
     ).select_from(Musculo)\
      .outerjoin(ExercicioCustomizado, and_(ExercicioCustomizado.musculo_id == Musculo.id, ExercicioCustomizado.usuario_id == current_user.id))\
-     .outerjoin(RegistroTreino, and_(RegistroTreino.exercicio_id == ExercicioCustomizado.id, RegistroTreino.user_id == current_user.id))\
+     .outerjoin(RegistroTreino, and_(RegistroTreino.exercicio_usuario_id == ExercicioCustomizado.id, RegistroTreino.user_id == current_user.id))\
      .outerjoin(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
      .group_by(Musculo.id, Musculo.nome_exibicao)\
      .all()
