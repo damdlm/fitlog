@@ -24,6 +24,11 @@
         padding: 15px;
         border-radius: 10px 10px 0 0;
         border-bottom: 2px solid #F28C33;
+        cursor: pointer;
+    }
+    
+    .treino-header:hover {
+        background-color: #fff3e0;
     }
     
     .exercicio-item {
@@ -33,10 +38,32 @@
         margin-bottom: 8px;
         border-left: 3px solid #F28C33;
         transition: all 0.2s;
+        display: flex;
+        align-items: center;
     }
     
     .exercicio-item:hover {
         background-color: #fff3e0;
+    }
+    
+    .drag-handle {
+        cursor: grab;
+        margin-right: 15px;
+        color: #999;
+        font-size: 1.2rem;
+    }
+    
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+    
+    .exercicio-item.sortable-drag {
+        opacity: 0.5;
+    }
+    
+    .exercicio-item.sortable-ghost {
+        opacity: 0.3;
+        background-color: #F28C33;
     }
     
     .divisao-badge {
@@ -83,6 +110,15 @@
         padding: 3px 8px;
         border-radius: 12px;
         font-size: 0.8rem;
+    }
+    
+    .btn-save-order {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        border-radius: 50px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 </style>
 
@@ -241,8 +277,9 @@
 
 {% if treinos %}
     {% for treino_id, treino in treinos.items() %}
-    <div class="treino-card">
-        <div class="treino-header d-flex justify-content-between align-items-center">
+    <div class="treino-card" data-treino-codigo="{{ treino_id }}">
+        <div class="treino-header d-flex justify-content-between align-items-center" 
+             onclick="toggleTreino(this)">
             <div>
                 <span class="badge me-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); font-size: 1rem;">
                     {{ treino_id }}
@@ -250,7 +287,7 @@
                 <strong>{{ treino.nome }}</strong>
                 <span class="badge bg-secondary ms-2">{{ treino.exercicios|length }} exercícios</span>
             </div>
-            <div class="action-buttons">
+            <div class="action-buttons" onclick="event.stopPropagation()">
                 <a href="{{ url_for('aluno.editar_treino_versao', 
                       versao_id=versao.id, 
                       treino_codigo=treino_id) }}" 
@@ -266,23 +303,25 @@
                 </a>
             </div>
         </div>
-        <div class="card-body">
+        <div class="card-body treino-body" style="display: block;">
             <p class="text-muted small">{{ treino.descricao }}</p>
             
-            <h6 class="mb-2">
-                <i class="bi bi-list-check" style="color: #F28C33;"></i>
-                Exercícios:
-            </h6>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">
+                    <i class="bi bi-list-check" style="color: #F28C33;"></i>
+                    Exercícios (arraste para reordenar):
+                </h6>
+                <button type="button" class="btn btn-sm btn-outline-primary save-order-btn" 
+                        data-treino-codigo="{{ treino_id }}"
+                        style="display: none;">
+                    <i class="bi bi-save"></i> Salvar ordem
+                </button>
+            </div>
             
-            <!-- ============================================================ -->
-            <!-- BLOCO CORRIGIDO: Exibição dos exercícios com prefixo e músculo -->
-            <!-- ============================================================ -->
-            <div class="row">
+            <div class="exercicios-container" data-treino-codigo="{{ treino_id }}">
                 {% for ex_id_completo in treino.exercicios %}
-                    {# Verificar se é exercício do usuário (prefixo u_) #}
                     {% if ex_id_completo is string and ex_id_completo.startswith('u_') %}
                         {% set ex_id = ex_id_completo[2:]|int %}
-                        {# Buscar o exercício na lista de exercícios do usuário #}
                         {% set exercicio_encontrado = namespace(obj=None) %}
                         {% for ex in exercicios %}
                             {% if ex.id == ex_id and ex.tipo == 'usuario' %}
@@ -291,27 +330,23 @@
                         {% endfor %}
                         
                         {% if exercicio_encontrado.obj %}
-                        <div class="col-md-4 mb-2">
-                            <div class="exercicio-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>{{ exercicio_encontrado.obj.nome }}</strong>
-                                        <br>
-                                        <span class="badge bg-primary">Meu exercício</span>
-                                        <span class="badge-musculo">
-                                            {{ exercicio_encontrado.obj.musculo_nome or exercicio_encontrado.obj.musculo or 'N/A' }}
-                                        </span>
-                                    </div>
-                                    <small class="text-muted">ID: {{ exercicio_encontrado.obj.id }}</small>
-                                </div>
+                        <div class="exercicio-item" data-exercicio-id="{{ ex_id_completo }}">
+                            <div class="drag-handle">
+                                <i class="bi bi-grip-vertical"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <strong>{{ exercicio_encontrado.obj.nome }}</strong>
+                                <br>
+                                <span class="badge bg-primary">Meu exercício</span>
+                                <span class="badge-musculo">
+                                    {{ exercicio_encontrado.obj.musculo_nome or exercicio_encontrado.obj.musculo or 'N/A' }}
+                                </span>
                             </div>
                         </div>
                         {% endif %}
                         
-                    {# Verificar se é exercício da base (prefixo b_) #}
                     {% elif ex_id_completo is string and ex_id_completo.startswith('b_') %}
                         {% set ex_id = ex_id_completo[2:]|int %}
-                        {# Buscar o exercício na lista de exercícios da base #}
                         {% set exercicio_encontrado = namespace(obj=None) %}
                         {% for ex in exercicios %}
                             {% if ex.id == ex_id and ex.tipo == 'base' %}
@@ -320,30 +355,24 @@
                         {% endfor %}
                         
                         {% if exercicio_encontrado.obj %}
-                        <div class="col-md-4 mb-2">
-                            <div class="exercicio-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>{{ exercicio_encontrado.obj.nome }}</strong>
-                                        <br>
-                                        <span class="badge bg-secondary">Catálogo</span>
-                                        <span class="badge-musculo">
-                                            {{ exercicio_encontrado.obj.musculo_nome or exercicio_encontrado.obj.musculo or 'N/A' }}
-                                        </span>
-                                    </div>
-                                    <small class="text-muted">ID: {{ exercicio_encontrado.obj.id }}</small>
-                                </div>
+                        <div class="exercicio-item" data-exercicio-id="{{ ex_id_completo }}">
+                            <div class="drag-handle">
+                                <i class="bi bi-grip-vertical"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <strong>{{ exercicio_encontrado.obj.nome }}</strong>
+                                <br>
+                                <span class="badge bg-secondary">Catálogo</span>
+                                <span class="badge-musculo">
+                                    {{ exercicio_encontrado.obj.musculo_nome or exercicio_encontrado.obj.musculo or 'N/A' }}
+                                </span>
                             </div>
                         </div>
                         {% endif %}
                     {% endif %}
                 {% endfor %}
             </div>
-            <!-- ============================================================ -->
-            <!-- FIM DO BLOCO CORRIGIDO -->
-            <!-- ============================================================ -->
             
-            <!-- Informações adicionais do treino -->
             {% set treino_base = treinos_disponiveis|selectattr('id', 'equalto', treino_id)|first if treinos_disponiveis else None %}
             {% if treino_base %}
             <div class="mt-3">
@@ -420,66 +449,138 @@
     </div>
 </div>
 
-<!-- Botões de ação rápida -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="d-flex gap-2 justify-content-center">
-            <a href="{{ url_for('aluno.versoes') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Todas as Versões
-            </a>
-            <a href="{{ url_for('aluno.novo_treino_versao', versao_id=versao.id) }}" 
-               class="btn btn-success">
-                <i class="bi bi-plus-circle"></i> Adicionar Treino
-            </a>
-            <a href="{{ url_for('aluno.dashboard') }}" class="btn btn-outline-info">
-                <i class="bi bi-speedometer2"></i> Dashboard
-            </a>
-        </div>
-    </div>
-</div>
+<!-- Botão flutuante para salvar ordem -->
+<button id="globalSaveOrderBtn" class="btn btn-primary btn-save-order" style="display: none;">
+    <i class="bi bi-save"></i> Salvar todas as ordens
+</button>
 
-<!-- Modal de confirmação para exclusão -->
-<div class="modal fade" id="modalConfirmarExclusao" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    Confirmar Exclusão
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Tem certeza que deseja excluir esta versão?</p>
-                <p class="text-danger">
-                    <i class="bi bi-info-circle"></i>
-                    Esta ação não pode ser desfeita!
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <a href="#" id="modalConfirmarLink" class="btn btn-danger">
-                    <i class="bi bi-trash"></i> Sim, excluir
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
-    // Função para confirmar exclusão via modal
-    function confirmarExclusao(url) {
-        document.getElementById('modalConfirmarLink').href = url;
-        var modal = new bootstrap.Modal(document.getElementById('modalConfirmarExclusao'));
-        modal.show();
+// Armazenar instâncias do Sortable por treino
+let sortableInstances = {};
+
+function toggleTreino(header) {
+    const body = header.nextElementSibling;
+    if (body.style.display === 'none') {
+        body.style.display = 'block';
+    } else {
+        body.style.display = 'none';
     }
-    
-    // Inicializar tooltips
-    document.addEventListener('DOMContentLoaded', function() {
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
+}
+
+function inicializarSortable() {
+    document.querySelectorAll('.exercicios-container').forEach(container => {
+        const treinoCodigo = container.dataset.treinoCodigo;
+        
+        sortableInstances[treinoCodigo] = new Sortable(container, {
+            animation: 300,
+            handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            onEnd: function() {
+                // Mostrar botão de salvar para este treino
+                const saveBtn = document.querySelector(`.save-order-btn[data-treino-codigo="${treinoCodigo}"]`);
+                if (saveBtn) saveBtn.style.display = 'inline-block';
+                
+                // Mostrar botão global
+                document.getElementById('globalSaveOrderBtn').style.display = 'block';
+            }
         });
     });
+}
+
+async function salvarOrdem(treinoCodigo) {
+    const container = document.querySelector(`.exercicios-container[data-treino-codigo="${treinoCodigo}"]`);
+    const itens = container.querySelectorAll('.exercicio-item');
+    const novaOrdem = [];
+    
+    itens.forEach(item => {
+        const exId = item.dataset.exercicioId;
+        if (exId) novaOrdem.push(exId);
+    });
+    
+    if (novaOrdem.length === 0) return false;
+    
+    try {
+        const response = await fetch('{{ url_for("api.api_reordenar_exercicios") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                versao_id: {{ versao.id }},
+                treino_codigo: treinoCodigo,
+                nova_ordem: novaOrdem
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Esconder botão de salvar deste treino
+            const saveBtn = document.querySelector(`.save-order-btn[data-treino-codigo="${treinoCodigo}"]`);
+            if (saveBtn) saveBtn.style.display = 'none';
+            
+            if (typeof FitLogUtils !== 'undefined') {
+                FitLogUtils.showToast('Ordem salva!', 'success');
+            }
+            return true;
+        } else {
+            if (typeof FitLogUtils !== 'undefined') {
+                FitLogUtils.showToast('Erro ao salvar ordem', 'danger');
+            }
+            return false;
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        if (typeof FitLogUtils !== 'undefined') {
+            FitLogUtils.showToast('Erro ao comunicar com o servidor', 'danger');
+        }
+        return false;
+    }
+}
+
+async function salvarTodasOrdens() {
+    const botoes = document.querySelectorAll('.save-order-btn');
+    let salvos = 0;
+    
+    for (const btn of botoes) {
+        if (btn.style.display === 'inline-block') {
+            const treinoCodigo = btn.dataset.treinoCodigo;
+            const sucesso = await salvarOrdem(treinoCodigo);
+            if (sucesso) salvos++;
+        }
+    }
+    
+    if (salvos > 0) {
+        document.getElementById('globalSaveOrderBtn').style.display = 'none';
+    }
+}
+
+// Inicializar quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', function() {
+    inicializarSortable();
+    
+    // Configurar botões de salvar por treino
+    document.querySelectorAll('.save-order-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const treinoCodigo = this.dataset.treinoCodigo;
+            salvarOrdem(treinoCodigo);
+        });
+    });
+    
+    // Configurar botão global
+    document.getElementById('globalSaveOrderBtn')?.addEventListener('click', function() {
+        salvarTodasOrdens();
+    });
+    
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
 </script>
 {% endblock %}

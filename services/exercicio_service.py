@@ -542,7 +542,86 @@ class ExercicioService(BaseService):
         except Exception as e:
             BaseService.handle_error(e, "Erro ao buscar músculos")
             return []
-    
+
+    @staticmethod
+    def reordenar_exercicios(versao_id, treino_codigo, nova_ordem_ids, user_id=None):
+        """
+        Reordena os exercícios de um treino dentro de uma versão
+        
+        Args:
+            versao_id: ID da versão
+            treino_codigo: Código do treino (A, B, C...)
+            nova_ordem_ids: Lista de IDs dos exercícios na nova ordem (com prefixo u_ ou b_)
+            user_id: ID do usuário (opcional)
+        
+        Returns:
+            bool: True se sucesso
+        """
+        try:
+            from services.versao_service import VersaoService
+            from services.treino_service import TreinoService
+            from models import TreinoVersao, VersaoExercicio, db
+            
+            if user_id is None:
+                user_id = BaseService.get_current_user_id()
+            if not user_id:
+                logger.warning("Tentativa de reordenar sem usuário logado")
+                return False
+            
+            # Buscar versão
+            versao = VersaoService.get_by_id(versao_id, user_id)
+            if not versao:
+                logger.warning(f"Versão {versao_id} não encontrada")
+                return False
+            
+            # Buscar treino pelo código
+            treino = TreinoService.get_by_codigo(treino_codigo, user_id)
+            if not treino:
+                logger.warning(f"Treino {treino_codigo} não encontrado")
+                return False
+            
+            # Buscar treino_versao
+            treino_versao = TreinoVersao.query.filter_by(
+                versao_id=versao_id,
+                treino_id=treino.id
+            ).first()
+            
+            if not treino_versao:
+                logger.warning(f"Treino {treino_codigo} não encontrado na versão {versao_id}")
+                return False
+            
+            # Processar lista de IDs (remover prefixos u_ e b_)
+            ids_sem_prefixo = []
+            for item in nova_ordem_ids:
+                if item.startswith('u_'):
+                    ids_sem_prefixo.append(('usuario', int(item[2:])))
+                elif item.startswith('b_'):
+                    ids_sem_prefixo.append(('base', int(item[2:])))
+            
+            # Atualizar ordem de cada exercício
+            for ordem, (tipo, ex_id) in enumerate(ids_sem_prefixo):
+                if tipo == 'usuario':
+                    ve = VersaoExercicio.query.filter_by(
+                        treino_versao_id=treino_versao.id,
+                        exercicio_usuario_id=ex_id
+                    ).first()
+                else:  # base
+                    ve = VersaoExercicio.query.filter_by(
+                        treino_versao_id=treino_versao.id,
+                        exercicio_base_id=ex_id
+                    ).first()
+                
+                if ve:
+                    ve.ordem = ordem
+            
+            db.session.commit()
+            logger.info(f"Exercícios reordenados no treino {treino_codigo} (versão {versao_id})")
+            return True
+            
+        except Exception as e:
+            BaseService.handle_error(e, "Erro ao reordenar exercícios")
+            return False
+
     @staticmethod
     def get_all_musculos_nomes():
         """Retorna lista com nomes de exibição dos músculos"""
