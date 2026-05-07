@@ -14,6 +14,11 @@ import logging
 api_bp = Blueprint('api', __name__)
 logger = logging.getLogger(__name__)
 
+
+# ============================================================================
+# PROGRESSO E GRÁFICOS
+# ============================================================================
+
 @api_bp.route("/progresso")
 @login_required
 def api_progresso():
@@ -26,7 +31,6 @@ def api_progresso():
     volumes = []
     cargas_medias = []
     
-    # Ordenar por período e semana
     ordem_meses = {
         "Janeiro": 1, "Fevereiro": 2, "Março": 3, "Abril": 4,
         "Maio": 5, "Junho": 6, "Julho": 7, "Agosto": 8,
@@ -57,6 +61,11 @@ def api_progresso():
         "cargas_medias": cargas_medias
     })
 
+
+# ============================================================================
+# BUSCA DE MÚSCULOS E EXERCÍCIOS
+# ============================================================================
+
 @api_bp.route("/buscar-musculo")
 @login_required
 def api_buscar_musculo():
@@ -80,15 +89,14 @@ def api_buscar_musculo():
             "mensagem": "Músculo não encontrado no catálogo"
         })
 
+
 @api_bp.route("/buscar-exercicios")
 @login_required
 def api_buscar_exercicios():
     """API para buscar exercícios no catálogo"""
     termo = request.args.get("termo", "").strip()
     
-    # Caminho do catálogo
     catalogo_path = Path("storage/exercises-ptbr-full-translation.json")
-    
     termo_normalizado = remover_acentos(termo.lower())
     
     if not catalogo_path.exists():
@@ -152,14 +160,19 @@ def api_buscar_exercicios():
         logger.error(f"Erro ao buscar catálogo: {e}")
         return jsonify([])
 
+
+# ============================================================================
+# VERIFICAÇÕES
+# ============================================================================
+
 @api_bp.route("/verificar-treino")
 @login_required
 def api_verificar_treino():
     """Verifica se um código de treino já existe"""
     treino_id = request.args.get("id", "").upper()
     treino = TreinoService.get_by_codigo(treino_id)
-    
     return jsonify({"existe": treino is not None})
+
 
 @api_bp.route("/versao-exercicios/<int:versao_id>")
 @login_required
@@ -178,6 +191,11 @@ def api_versao_exercicios(versao_id):
         })
     
     return jsonify(resultado)
+
+
+# ============================================================================
+# EVOLUÇÃO E ESTATÍSTICAS
+# ============================================================================
 
 @api_bp.route("/evolucao/<int:exercicio_id>")
 @login_required
@@ -217,6 +235,11 @@ def api_evolucao_exercicio(exercicio_id):
         "dados": dados
     })
 
+
+# ============================================================================
+# CRIAÇÃO DE EXERCÍCIOS
+# ============================================================================
+
 @api_bp.route("/criar-exercicio", methods=["POST"])
 @login_required
 def api_criar_exercicio():
@@ -238,8 +261,9 @@ def api_criar_exercicio():
     else:
         return jsonify({"success": False, "error": "Erro ao criar exercício"}), 500
 
+
 # ============================================================================
-# NOVAS ROTAS DO CATÁLOGO
+# CATÁLOGO DE EXERCÍCIOS
 # ============================================================================
 
 @api_bp.route("/catalogo/todos")
@@ -249,7 +273,6 @@ def api_catalogo_todos():
     from services.catalogo_service import CatalogoService
     
     try:
-        # Parâmetro opcional de limite
         limite = request.args.get("limite", 500, type=int)
         exercicios = CatalogoService.get_todos_exercicios(limite=limite)
         return jsonify(exercicios)
@@ -257,10 +280,11 @@ def api_catalogo_todos():
         logger.error(f"Erro ao buscar catálogo: {e}")
         return jsonify([])
 
+
 @api_bp.route("/catalogo/buscar")
 @login_required
 def api_catalogo_buscar():
-    """Busca exercícios no catálogo JSON"""
+    """Busca exercícios no catálogo"""
     termo = request.args.get("termo", "").strip()
     musculo = request.args.get("musculo", "").strip()
     
@@ -276,6 +300,7 @@ def api_catalogo_buscar():
         logger.error(f"Erro ao buscar no catálogo: {e}")
         return jsonify([])
 
+
 @api_bp.route("/catalogo/musculos")
 @login_required
 def api_catalogo_musculos():
@@ -289,43 +314,49 @@ def api_catalogo_musculos():
         logger.error(f"Erro ao buscar músculos do catálogo: {e}")
         return jsonify([])
 
-    @api_bp.route("/reordenar-exercicios", methods=["POST"])
-    @login_required
-    def api_reordenar_exercicios():
-        """API para reordenar exercícios de um treino na versão"""
-        try:
-            data = request.get_json()
-            
-            versao_id = data.get('versao_id')
-            treino_codigo = data.get('treino_codigo')
-            nova_ordem = data.get('nova_ordem')
-            
-            if not versao_id or not treino_codigo or not nova_ordem:
-                return jsonify({
-                    "success": False, 
-                    "error": "Dados incompletos"
-                }), 400
-            
-            from services.exercicio_service import ExercicioService
-            
-            sucesso = ExercicioService.reordenar_exercicios(
-                versao_id=versao_id,
-                treino_codigo=treino_codigo,
-                nova_ordem_ids=nova_ordem,
-                user_id=current_user.id
-            )
-            
-            if sucesso:
-                return jsonify({"success": True})
-            else:
-                return jsonify({"success": False, "error": "Erro ao reordenar"}), 500
-            
-        except Exception as e:
-            logger.error(f"Erro na API reordenar-exercicios: {e}")
-            return jsonify({"success": False, "error": str(e)}), 500
 
 # ============================================================================
-# ROTA PARA DEBUG (OPCIONAL)
+# REORDENAR EXERCÍCIOS
+# ============================================================================
+
+@api_bp.route("/reordenar-exercicios", methods=["POST"])
+@login_required
+def api_reordenar_exercicios():
+    """API para reordenar exercícios de um treino na versão"""
+    try:
+        data = request.get_json()
+        
+        versao_id = data.get('versao_id')
+        treino_codigo = data.get('treino_codigo')
+        nova_ordem = data.get('nova_ordem')
+        
+        if not versao_id or not treino_codigo or not nova_ordem:
+            return jsonify({
+                "success": False, 
+                "error": "Dados incompletos"
+            }), 400
+        
+        from services.exercicio_service import ExercicioService
+        
+        sucesso = ExercicioService.reordenar_exercicios(
+            versao_id=versao_id,
+            treino_codigo=treino_codigo,
+            nova_ordem_ids=nova_ordem,
+            user_id=current_user.id
+        )
+        
+        if sucesso:
+            return jsonify({"success": True})
+        else:
+            return jsonify({"success": False, "error": "Erro ao reordenar"}), 500
+        
+    except Exception as e:
+        logger.error(f"Erro na API reordenar-exercicios: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ============================================================================
+# DEBUG (OPCIONAL)
 # ============================================================================
 
 @api_bp.route("/debug/rotas")
