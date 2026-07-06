@@ -79,10 +79,7 @@ class TestingConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
- #   SQLALCHEMY_DATABASE_URI = get_database_url()
-    @property
-    def SQLALCHEMY_DATABASE_URI(self):
-        return get_database_url()
+    SQLALCHEMY_DATABASE_URI = get_database_url()
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
