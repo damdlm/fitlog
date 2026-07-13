@@ -177,6 +177,64 @@
         font-weight: 600;
         font-size: 1.2rem;
     }
+
+    /* ============================================================
+       Responsivo - registro de treino no celular
+       Em telas pequenas, carga / reps / séries ficam lado a lado
+       (3 colunas) em vez de empilhados um embaixo do outro,
+       o que deixava a tela enorme para rolar em cada exercício.
+       ============================================================ */
+    @media (max-width: 767.98px) {
+        .exercise-row {
+            padding: 14px;
+        }
+
+        .exercise-row .row.align-items-center > [class*="col-"] {
+            margin-bottom: 0.6rem;
+        }
+
+        .exercise-row .row.align-items-center > .col-carga,
+        .exercise-row .row.align-items-center > .col-reps,
+        .exercise-row .row.align-items-center > .col-series {
+            flex: 0 0 33.3333%;
+            max-width: 33.3333%;
+            padding-left: 6px;
+            padding-right: 6px;
+        }
+
+        .exercise-row .col-carga { padding-left: 0; }
+        .exercise-row .col-series { padding-right: 0; }
+
+        .exercise-row .input-group-text {
+            padding: 0.5rem 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .carga-input, .reps-input {
+            font-size: 1.05rem !important;
+            padding: 10px 4px !important;
+        }
+
+        .exercise-row .form-select {
+            font-size: 0.85rem;
+            padding: 0.5rem 1.6rem 0.5rem 0.6rem;
+        }
+
+        .exercise-row .col-volume {
+            text-align: left !important;
+            margin-top: 0.25rem;
+        }
+
+        .historico-cargas {
+            font-size: 0.85rem;
+        }
+
+        /* Resumo do treino: botão de salvar ocupa a largura toda
+           e fica sempre visível sem precisar rolar até o fim */
+        .btn-save {
+            width: 100%;
+        }
+    }
 </style>
 
 <!-- Loading Spinner -->
@@ -317,7 +375,7 @@
                         {% endif %}
                     </div>
                     
-                    <div class="col-md-2">
+                    <div class="col-md-2 col-carga">
                         <div class="input-group">
                             <span class="input-group-text bg-light fw-bold">kg</span>
                             <input type="number" name="carga_{{ ex.id }}" 
@@ -328,7 +386,7 @@
                         </div>
                     </div>
                     
-                    <div class="col-md-2">
+                    <div class="col-md-2 col-reps">
                         <div class="input-group">
                             <span class="input-group-text bg-light fw-bold">reps</span>
                             <input type="number" name="reps_{{ ex.id }}" 
@@ -339,7 +397,7 @@
                         </div>
                     </div>
                     
-                    <div class="col-md-2">
+                    <div class="col-md-2 col-series">
                         <select name="num_series_{{ ex.id }}" id="series-select-{{ ex.id }}" 
                                 class="form-select">
                             <option value="1" {% if (registro_atual and registro_atual.series|length == 1) or (ultimas_series == 1) %}selected{% endif %}>1 série</option>
@@ -350,7 +408,7 @@
                         </select>
                     </div>
                     
-                    <div class="col-md-3 text-end">
+                    <div class="col-md-3 text-end col-volume">
                         <span class="volume-total" id="volume-{{ ex.id }}">
                             <i class="bi bi-bar-chart"></i> 0 kg
                         </span>
