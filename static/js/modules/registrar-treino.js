@@ -135,15 +135,21 @@ const RegistrarTreino = (function() {
      * @param {Object} dados - Dados calculados
      */
     function _atualizarInterfaceVolume(exercicioId, dados) {
-        const volumeElement = document.getElementById(`volume-${exercicioId}`);
-        if (volumeElement) {
+        // Badge de volume: existe uma versão para desktop (volume-X) e
+        // uma versão exibida ao lado do nome no mobile (volume-mobile-X)
+        const volumeElements = [
+            document.getElementById(`volume-${exercicioId}`),
+            document.getElementById(`volume-mobile-${exercicioId}`)
+        ].filter(Boolean);
+
+        volumeElements.forEach(volumeElement => {
             if (dados.volume > 0) {
                 volumeElement.innerHTML = `<i class="bi bi-bar-chart"></i> ${dados.volume} kg`;
                 volumeElement.style.background = '#2D2D2D';
             } else {
                 volumeElement.innerHTML = `<i class="bi bi-bar-chart"></i> 0 kg`;
             }
-        }
+        });
         
         // Atualizar detalhamento
         const detalheElement = document.getElementById(`volume-detalhe-${exercicioId}`);

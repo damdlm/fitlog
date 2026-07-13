@@ -177,6 +177,114 @@
         font-weight: 600;
         font-size: 1.2rem;
     }
+
+    /* ================= MOBILE ================= */
+    @media (max-width: 767.98px) {
+        .display-6 { font-size: 1.5rem; }
+
+        .card-body.p-4 { padding: 1rem !important; }
+
+        .treino-card .row.g-4 { row-gap: 0.75rem !important; }
+
+        .exercise-row {
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+
+        .exercise-row .row {
+            --bs-gutter-x: 0.5rem;
+        }
+
+        .exercise-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .volume-total {
+            font-size: 0.95rem;
+            padding: 6px 14px;
+            white-space: nowrap;
+        }
+
+        .historico-cargas {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            max-width: 100%;
+        }
+
+        .inputs-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .carga-input, .reps-input {
+            font-size: 16px !important; /* evita zoom automatico no iOS */
+            padding: 10px 4px !important;
+        }
+
+        .card-header.d-flex {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 10px;
+        }
+
+        .btn-load-last {
+            width: 100%;
+        }
+
+        .alert-version.d-flex {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 8px;
+        }
+
+        /* Barra fixa de salvar no rodapé */
+        #mobile-save-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
+            padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+            z-index: 1030;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        #mobile-save-bar .mobile-volume-label {
+            font-size: 0.75rem;
+            color: #6c757d;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        #mobile-save-bar .mobile-volume-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--dark-bg);
+        }
+
+        #mobile-save-bar .btn-save {
+            padding: 12px 28px;
+        }
+
+        .mobile-save-spacer {
+            height: 88px;
+        }
+    }
+
+    @media (min-width: 768px) {
+        #mobile-save-bar { display: none !important; }
+    }
 </style>
 
 <!-- Loading Spinner -->
@@ -271,7 +379,7 @@
             <span class="badge bg-secondary ms-2">{{ exercicios|length }} exercícios</span>
         </h4>
         <div>
-            <button type="button" class="btn-load-last me-2" onclick="RegistrarTreino.carregarUltimoRegistro()">
+            <button type="button" class="btn-load-last me-2 me-md-2" onclick="RegistrarTreino.carregarUltimoRegistro()">
                 <i class="bi bi-clock-history me-2"></i>Carregar Último
             </button>
         </div>
@@ -295,15 +403,23 @@
                  data-ultimas-series="{{ ultimas_series }}">
                 
                 <div class="row align-items-center">
-                    <div class="col-md-3">
-                        <h5 class="mb-1 fw-bold">{{ ex.nome }}</h5>
-                        <div>
-                            <span class="badge-musculo">
-                                <i class="bi bi-braces"></i>
-                                {{ ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A' }}
+                    <div class="col-12 col-md-3">
+                        <div class="exercise-header">
+                            <div>
+                                <h5 class="mb-1 fw-bold">{{ ex.nome }}</h5>
+                                <div>
+                                    <span class="badge-musculo">
+                                        <i class="bi bi-braces"></i>
+                                        {{ ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <!-- No mobile o volume aparece aqui, ao lado do nome -->
+                            <span class="volume-total d-inline-block d-md-none" id="volume-mobile-{{ ex.id }}">
+                                <i class="bi bi-bar-chart"></i> 0 kg
                             </span>
                         </div>
-                        
+
                         {% if ultimas %}
                         <div class="historico-cargas mt-2">
                             <i class="bi bi-clock-history me-1"></i> 
@@ -316,41 +432,52 @@
                         </div>
                         {% endif %}
                     </div>
-                    
-                    <div class="col-md-2">
-                        <div class="input-group">
-                            <span class="input-group-text bg-light fw-bold">kg</span>
-                            <input type="number" name="carga_{{ ex.id }}" 
-                                   class="form-control carga-input" 
-                                   placeholder="Carga" 
-                                   step="0.5" min="0"
-                                   value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].carga }}{% elif ultima_carga %}{{ ultima_carga }}{% endif %}">
+
+                    <!-- Carga / Reps / Séries: lado a lado tanto no mobile quanto no desktop -->
+                    <div class="col-12 col-md-6">
+                        <div class="inputs-row row g-2">
+                            <div class="col-4 col-md-4">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light fw-bold d-none d-sm-flex">kg</span>
+                                    <input type="number" name="carga_{{ ex.id }}" 
+                                           class="form-control carga-input" 
+                                           placeholder="Carga" 
+                                           step="0.5" min="0"
+                                           inputmode="decimal"
+                                           value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].carga }}{% elif ultima_carga %}{{ ultima_carga }}{% endif %}">
+                                </div>
+                                <div class="text-center small text-muted d-sm-none mt-1">kg</div>
+                            </div>
+
+                            <div class="col-4 col-md-4">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light fw-bold d-none d-sm-flex">reps</span>
+                                    <input type="number" name="reps_{{ ex.id }}" 
+                                           class="form-control reps-input" 
+                                           placeholder="Reps" 
+                                           min="0" max="100"
+                                           inputmode="numeric"
+                                           value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].repeticoes }}{% elif ultimas_reps %}{{ ultimas_reps }}{% endif %}">
+                                </div>
+                                <div class="text-center small text-muted d-sm-none mt-1">reps</div>
+                            </div>
+
+                            <div class="col-4 col-md-4">
+                                <select name="num_series_{{ ex.id }}" id="series-select-{{ ex.id }}" 
+                                        class="form-select">
+                                    <option value="1" {% if (registro_atual and registro_atual.series|length == 1) or (ultimas_series == 1) %}selected{% endif %}>1 série</option>
+                                    <option value="2" {% if (registro_atual and registro_atual.series|length == 2) or (ultimas_series == 2) %}selected{% endif %}>2 séries</option>
+                                    <option value="3" {% if (registro_atual and registro_atual.series|length == 3) or (ultimas_series == 3) or (not registro_atual and not ultimas) %}selected{% endif %}>3 séries</option>
+                                    <option value="4" {% if (registro_atual and registro_atual.series|length == 4) or (ultimas_series == 4) %}selected{% endif %}>4 séries</option>
+                                    <option value="5" {% if (registro_atual and registro_atual.series|length == 5) or (ultimas_series == 5) %}selected{% endif %}>5 séries</option>
+                                </select>
+                                <div class="text-center small text-muted d-sm-none mt-1">séries</div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="col-md-2">
-                        <div class="input-group">
-                            <span class="input-group-text bg-light fw-bold">reps</span>
-                            <input type="number" name="reps_{{ ex.id }}" 
-                                   class="form-control reps-input" 
-                                   placeholder="Repetições" 
-                                   min="0" max="100"
-                                   value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].repeticoes }}{% elif ultimas_reps %}{{ ultimas_reps }}{% endif %}">
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-2">
-                        <select name="num_series_{{ ex.id }}" id="series-select-{{ ex.id }}" 
-                                class="form-select">
-                            <option value="1" {% if (registro_atual and registro_atual.series|length == 1) or (ultimas_series == 1) %}selected{% endif %}>1 série</option>
-                            <option value="2" {% if (registro_atual and registro_atual.series|length == 2) or (ultimas_series == 2) %}selected{% endif %}>2 séries</option>
-                            <option value="3" {% if (registro_atual and registro_atual.series|length == 3) or (ultimas_series == 3) or (not registro_atual and not ultimas) %}selected{% endif %}>3 séries</option>
-                            <option value="4" {% if (registro_atual and registro_atual.series|length == 4) or (ultimas_series == 4) %}selected{% endif %}>4 séries</option>
-                            <option value="5" {% if (registro_atual and registro_atual.series|length == 5) or (ultimas_series == 5) %}selected{% endif %}>5 séries</option>
-                        </select>
-                    </div>
-                    
-                    <div class="col-md-3 text-end">
+
+                    <!-- No desktop o volume aparece na coluna da direita -->
+                    <div class="col-md-3 text-end d-none d-md-block">
                         <span class="volume-total" id="volume-{{ ex.id }}">
                             <i class="bi bi-bar-chart"></i> 0 kg
                         </span>
@@ -397,7 +524,7 @@
                         </tr>
                     </table>
                 </div>
-                <div class="col-md-6 text-end">
+                <div class="col-md-6 text-end d-none d-md-block">
                     <button type="submit" name="salvar" class="btn btn-lg btn-save px-5" 
                             style="background: #2D2D2D; color: white; border: none;">
                         <i class="bi bi-check-circle me-2"></i>Salvar Treino
@@ -409,8 +536,23 @@
                     </small>
                 </div>
             </div>
+
+            <!-- Espaço reservado no mobile para não ficar escondido atrás da barra fixa -->
+            <div class="mobile-save-spacer d-md-none"></div>
         </form>
     </div>
+</div>
+
+<!-- Barra fixa de salvar (somente mobile) -->
+<div id="mobile-save-bar" class="d-md-none">
+    <div>
+        <div class="mobile-volume-label">Volume total</div>
+        <div class="mobile-volume-value" id="resumo-volume-mobile">0 kg</div>
+    </div>
+    <button type="submit" name="salvar" form="registroForm" class="btn btn-save"
+            style="background: #2D2D2D; color: white; border: none;">
+        <i class="bi bi-check-circle me-2"></i>Salvar
+    </button>
 </div>
 {% endif %}
 
@@ -481,6 +623,11 @@ function atualizarResumo() {
     const resumoElement = document.getElementById('resumo-volume');
     if (resumoElement) {
         resumoElement.textContent = volumeTotal + ' kg';
+    }
+
+    const resumoMobileElement = document.getElementById('resumo-volume-mobile');
+    if (resumoMobileElement) {
+        resumoMobileElement.textContent = volumeTotal + ' kg';
     }
 }
 </script>
