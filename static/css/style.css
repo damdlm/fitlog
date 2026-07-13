@@ -325,177 +325,18 @@ html {
     animation: fadeInUp 0.6s ease-out;
 }
 
-/* ==========================================================
-   Responsive - Tablets e telas médias (<= 991px)
-   ========================================================== */
-@media (max-width: 991.98px) {
-    .navbar-collapse {
-        margin-top: 0.75rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        padding-top: 0.75rem;
-    }
-
-    .navbar-nav .dropdown-menu {
-        border-radius: 10px;
-        box-shadow: none;
-        background: rgba(255, 255, 255, 0.05);
-        margin-bottom: 0.25rem;
-    }
-
-    .navbar-nav .dropdown-item {
-        color: rgba(255, 255, 255, 0.85);
-    }
-
-    .navbar-nav .dropdown-item:hover {
-        background: rgba(242, 140, 51, 0.15);
-        color: #fff;
-    }
-}
-
-/* ==========================================================
-   Responsive - Smartphones (<= 768px)
-   ========================================================== */
+/* Responsive */
 @media (max-width: 768px) {
-    body {
-        font-size: 0.95rem;
-    }
-
     .container {
-        padding-left: 15px;
-        padding-right: 15px;
+        padding: 15px;
     }
-
-    main.container {
-        margin-top: 1rem !important;
-        margin-bottom: 1rem !important;
+    
+    .btn {
+        padding: 0.5rem 1rem;
     }
-
-    h1 { font-size: 1.6rem; }
-    h2 { font-size: 1.4rem; }
-    h3 { font-size: 1.2rem; }
-    h4 { font-size: 1.1rem; }
-    h5 { font-size: 1rem; }
-
-    .navbar {
-        padding: 0.6rem 0;
-    }
-
+    
     .navbar-brand {
         font-size: 1.2rem;
-    }
-
-    /* Cabeçalhos de página com título + botão de ação lado a lado
-       viram empilhados e com o botão ocupando a largura toda */
-    .d-flex.justify-content-between {
-        flex-wrap: wrap;
-        row-gap: 0.75rem;
-    }
-
-    .d-flex.justify-content-between > .btn,
-    .d-flex.justify-content-between > a.btn {
-        width: 100%;
-    }
-
-    /* Cards de estatística: grade 2x2 em vez de empilhados 1x4 */
-    .row.mb-4 > [class*="col-md-3"] {
-        flex: 0 0 50%;
-        max-width: 50%;
-    }
-
-    .card {
-        border-radius: 14px;
-    }
-
-    .card-body {
-        padding: 1rem;
-    }
-
-    .stats-card h2,
-    .stats-card .display-6,
-    .stats-card .fs-1 {
-        font-size: 1.4rem !important;
-    }
-
-    .btn {
-        padding: 0.6rem 1.1rem;
-        font-size: 0.95rem;
-    }
-
-    .btn-lg {
-        padding: 0.7rem 1.25rem;
-        font-size: 1rem;
-    }
-
-    /* Botões que ficam lado a lado viram largura total, empilhados */
-    .btn-group:not(.d-inline-flex) {
-        display: flex;
-        flex-wrap: wrap;
-        width: 100%;
-    }
-
-    .btn-group .btn {
-        flex: 1 1 auto;
-    }
-
-    .form-control, .form-select {
-        font-size: 1rem; /* evita zoom automático em iOS */
-        padding: 0.65rem 0.9rem;
-    }
-
-    .table-responsive {
-        border-radius: 12px;
-    }
-
-    .table {
-        font-size: 0.85rem;
-    }
-
-    .modal-dialog {
-        margin: 0.75rem;
-    }
-
-    .dropdown-menu {
-        font-size: 0.95rem;
-    }
-
-    footer {
-        padding: 1.25rem 0;
-        text-align: center;
-    }
-}
-
-/* ==========================================================
-   Responsive - Telas muito pequenas (<= 480px)
-   ========================================================== */
-@media (max-width: 480px) {
-    .navbar-brand {
-        font-size: 1.05rem;
-    }
-
-    .card-body {
-        padding: 0.85rem;
-    }
-
-    /* Em telas bem pequenas os cards de estatística voltam a
-       ocupar a linha inteira para não ficarem apertados demais */
-    .row.mb-4 > [class*="col-md-3"] {
-        flex: 0 0 100%;
-        max-width: 100%;
-    }
-
-    .btn {
-        padding: 0.55rem 0.9rem;
-        font-size: 0.9rem;
-    }
-
-    .volume-badge,
-    .badge {
-        font-size: 0.8rem;
-        padding: 0.4rem 0.7rem;
-    }
-
-    .table {
-        font-size: 0.8rem;
     }
 }
 
