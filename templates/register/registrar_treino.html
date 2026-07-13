@@ -221,11 +221,25 @@
             grid-template-columns: 1fr 1fr 1fr;
             gap: 8px;
             margin-top: 12px;
+            align-items: stretch;
         }
 
-        .carga-input, .reps-input {
+        .inputs-row .input-group,
+        .inputs-row .carga-input,
+        .inputs-row .reps-input,
+        .inputs-row .form-select {
+            height: 48px;
+        }
+
+        .inputs-row .carga-input,
+        .inputs-row .reps-input {
             font-size: 16px !important; /* evita zoom automatico no iOS */
-            padding: 10px 4px !important;
+            padding: 0 4px !important;
+        }
+
+        .inputs-row .form-select {
+            padding: 0 8px !important;
+            font-size: 0.95rem;
         }
 
         .card-header.d-flex {
