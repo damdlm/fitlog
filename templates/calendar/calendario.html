@@ -378,13 +378,6 @@
                 // Reajusta a altura das linhas do calendário ao girar a tela no celular
                 calendar.updateSize();
             },
-            datesSet: function(dateInfo) {
-                // Sempre que o mês visível mudar (inclusive ao navegar com
-                // os botões anterior/próximo do próprio calendário),
-                // carrega automaticamente os treinos daquele mês
-                const anchor = dateInfo.view.currentStart;
-                carregarEventos(anchor.getFullYear(), anchor.getMonth() + 1);
-            },
             loading: function(isLoading) {
                 const skeleton = document.getElementById('calendar-skeleton');
                 const calendar = document.getElementById('calendar');
@@ -400,24 +393,16 @@
         });
         
         calendar.render();
+        
+        // Carrega TODOS os treinos já registrados de uma vez. Assim, ao
+        // navegar entre os meses com os botões do próprio calendário,
+        // os dados já estão carregados no navegador e aparecem na hora,
+        // sem precisar de uma nova requisição a cada clique.
+        carregarEventos();
     }
     
-    function carregarEventos(ano, mes) {
-        let url = '/calendar/api/eventos';
-        const params = [];
-        
-        if (ano) {
-            params.push(`ano=${ano}`);
-        }
-        if (mes) {
-            params.push(`mes=${mes}`);
-        }
-        
-        if (params.length > 0) {
-            url += '?' + params.join('&');
-        }
-        
-        fetch(url)
+    function carregarEventos() {
+        fetch('/calendar/api/eventos')
             .then(response => response.json())
             .then(data => {
                 eventos = data;
