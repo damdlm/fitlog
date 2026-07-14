@@ -211,7 +211,7 @@ class ExercicioService(BaseService):
             if not user_id:
                 return []
 
-            from models import Musculo, VersaoGlobal, TreinoVersao
+            from models import Musculo, VersaoGlobal, TreinoVersao, Treino
 
             # Todas as associações exercício <-> treino do usuário,
             # em todas as versões (para manter o histórico completo),
@@ -235,6 +235,13 @@ class ExercicioService(BaseService):
                 elif ve.exercicio_base_id is not None:
                     base_map.setdefault(ve.exercicio_base_id, treino_id)
 
+            # Busca os treinos (A, B, C...) de uma vez só, para montar treino_ref
+            treino_ids = {tid for tid in list(usuario_map.values()) + list(base_map.values()) if tid}
+            treinos_by_id = {}
+            if treino_ids:
+                for t in Treino.query.filter(Treino.id.in_(treino_ids)).all():
+                    treinos_by_id[t.id] = t
+
             exercicios = []
 
             if usuario_map:
@@ -247,6 +254,7 @@ class ExercicioService(BaseService):
                     ex.prefixo = 'u_'
                     ex.is_custom = True
                     ex.treino_id = usuario_map.get(ex.id, "")
+                    ex.treino_ref = treinos_by_id.get(ex.treino_id)
                     if ex.musculo_ref:
                         ex.musculo_nome = ex.musculo_ref.nome_exibicao
                     else:
@@ -266,6 +274,7 @@ class ExercicioService(BaseService):
                     ex.prefixo = 'b_'
                     ex.is_custom = False
                     ex.treino_id = base_map.get(ex.id, "")
+                    ex.treino_ref = treinos_by_id.get(ex.treino_id)
                     if ex.musculo_ref:
                         ex.musculo_nome = ex.musculo_ref.nome_exibicao
                     else:
