@@ -10,15 +10,14 @@
 
     .exercise-row {
         background: #fff9f0;
-        padding: 20px;
-        margin-bottom: 15px;
+        padding: 16px 18px;
+        margin-bottom: 10px;
         border-radius: 10px;
         border-left: 5px solid var(--primary-orange);
-        transition: all 0.2s;
+        transition: box-shadow 0.2s;
     }
     .exercise-row:hover {
-        box-shadow: 0 5px 15px rgba(242, 140, 51, 0.2);
-        transform: translateX(5px);
+        box-shadow: 0 4px 12px rgba(242, 140, 51, 0.15);
     }
     
     .ultima-carga {
@@ -87,13 +86,14 @@
     }
     
     .historico-cargas {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: #6c757d;
-        margin-top: 5px;
-        background: #f8f9fa;
-        padding: 3px 8px;
-        border-radius: 15px;
-        display: inline-block;
+        background: transparent;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
     }
     
     .versao-badge {
@@ -421,11 +421,17 @@
                         <div class="exercise-header">
                             <div>
                                 <h5 class="mb-1 fw-bold">{{ ex.nome }}</h5>
-                                <div>
+                                <div class="d-flex align-items-center flex-wrap gap-2">
                                     <span class="badge-musculo">
                                         <i class="bi bi-braces"></i>
                                         {{ ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A' }}
                                     </span>
+                                    {% if ultimas %}
+                                    <span class="historico-cargas">
+                                        <i class="bi bi-clock-history"></i>
+                                        Última: {{ ultimas[0].carga }}kg × {{ ultimas[0].repeticoes }}
+                                    </span>
+                                    {% endif %}
                                 </div>
                             </div>
                             <!-- No mobile o volume aparece aqui, ao lado do nome -->
@@ -433,18 +439,6 @@
                                 <i class="bi bi-bar-chart"></i> 0 kg
                             </span>
                         </div>
-
-                        {% if ultimas %}
-                        <div class="historico-cargas mt-2">
-                            <i class="bi bi-clock-history me-1"></i> 
-                            <strong>Últimos:</strong>
-                            {% for s in ultimas %}
-                                <span class="badge bg-light text-dark me-1">
-                                    {{ s.carga }}kg x {{ s.repeticoes }}
-                                </span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
                     </div>
 
                     <!-- Carga / Reps / Séries: lado a lado tanto no mobile quanto no desktop -->
@@ -497,46 +491,26 @@
                         </span>
                     </div>
                 </div>
-                
-                <!-- Detalhamento do cálculo -->
-                <div class="row mt-3">
-                    <div class="col-md-12">
-                        <div class="progress" style="height: 5px;">
-                            <div class="progress-bar" role="progressbar" 
-                                 style="width: 0%; background: linear-gradient(135deg, #F28C33, #FFB366);" 
-                                 id="progress-{{ ex.id }}"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row mt-2">
-                    <div class="col-md-12 text-muted text-end small" id="volume-detalhe-{{ ex.id }}">
-                    </div>
-                </div>
             </div>
             {% endfor %}
 
             <!-- Resumo do treino -->
-            <div class="row mt-4 p-3 bg-light rounded">
+            <div class="row mt-4 p-3 bg-light rounded align-items-center">
                 <div class="col-md-6">
-                    <h5 class="mb-3">
-                        <i class="bi bi-calculator" style="color: var(--primary-orange);"></i>
-                        Resumo do Treino
-                    </h5>
-                    <table class="table table-sm">
-                        <tr>
-                            <td>Total de exercícios:</td>
-                            <td class="fw-bold">{{ exercicios|length }}</td>
-                        </tr>
-                        <tr>
-                            <td>Volume total estimado:</td>
-                            <td class="fw-bold" id="resumo-volume">0 kg</td>
-                        </tr>
-                        <tr>
-                            <td>Data:</td>
-                            <td class="fw-bold">{{ data_selecionada.strftime('%d/%m/%Y') if data_selecionada else data_atual_iso() }}</td>
-                        </tr>
-                    </table>
+                    <div class="d-flex flex-wrap gap-4">
+                        <div>
+                            <div class="text-muted small">Exercícios</div>
+                            <div class="fw-bold fs-5">{{ exercicios|length }}</div>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Volume total</div>
+                            <div class="fw-bold fs-5" id="resumo-volume">0 kg</div>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Data</div>
+                            <div class="fw-bold fs-5">{{ data_selecionada.strftime('%d/%m/%Y') if data_selecionada else data_atual_iso() }}</div>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-6 text-end d-none d-md-block">
                     <button type="submit" name="salvar" class="btn btn-lg btn-save px-5" 
