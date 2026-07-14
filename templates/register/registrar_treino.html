@@ -393,7 +393,7 @@
             <span class="badge bg-secondary ms-2">{{ exercicios|length }} exercícios</span>
         </h4>
         <div>
-            <button type="button" class="btn-load-last me-2 me-md-2" onclick="RegistrarTreino.carregarUltimoRegistro()">
+            <button type="button" class="btn-load-last me-2 me-md-2" onclick="carregarUltimoRegistro()">
                 <i class="bi bi-clock-history me-2"></i>Carregar Último
             </button>
         </div>
@@ -634,6 +634,53 @@ function atualizarResumo() {
     const resumoMobileElement = document.getElementById('resumo-volume-mobile');
     if (resumoMobileElement) {
         resumoMobileElement.textContent = volumeTotal + ' kg';
+    }
+}
+
+function carregarUltimoRegistro() {
+    let carregados = 0;
+    let totalExercicios = 0;
+
+    document.querySelectorAll('.exercise-row').forEach(row => {
+        const exId = row.dataset.exercicioId;
+        if (!exId) return;
+
+        totalExercicios++;
+
+        const ultimaCarga = row.dataset.ultimaCarga;
+        const ultimasReps = row.dataset.ultimasReps;
+        const ultimasSeries = row.dataset.ultimasSeries;
+
+        if (ultimaCarga && ultimasReps &&
+            ultimaCarga !== 'undefined' && ultimasReps !== 'undefined' &&
+            ultimaCarga !== '' && ultimasReps !== '') {
+
+            const cargaInput = row.querySelector('.carga-input');
+            const repsInput = row.querySelector('.reps-input');
+            const seriesSelect = document.getElementById(`series-select-${exId}`);
+
+            if (cargaInput) cargaInput.value = ultimaCarga;
+            if (repsInput) repsInput.value = ultimasReps;
+            if (seriesSelect && ultimasSeries && ultimasSeries !== 'undefined') {
+                seriesSelect.value = ultimasSeries;
+            }
+
+            carregados++;
+        }
+    });
+
+    // Recalcula os volumes e o total após preencher os campos
+    atualizarResumo();
+
+    const mensagem = carregados > 0
+        ? `${carregados} de ${totalExercicios} exercício(s) carregado(s) com dados do último treino!`
+        : 'Nenhum dado anterior encontrado para carregar.';
+    const tipo = carregados > 0 ? 'success' : 'warning';
+
+    if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
+        window.FitLogUtils.showToast(mensagem, tipo);
+    } else {
+        alert(mensagem);
     }
 }
 </script>
