@@ -62,18 +62,18 @@ def visualizar_tabela():
     semanas_filtro = request.args.get("semanas", "todas")
     
     registros = RegistroService.get_all(load_series=True)
-    exercicios = ExercicioService.get_exercicios_completos()
+    exercicios = ExercicioService.get_exercicios_dos_treinos()
     treinos = TreinoService.get_all()
     musculos_obj = MusculoService.get_all()
     musculos = [m.nome_exibicao for m in musculos_obj]
-    
+
     # Filtrar exercícios
     exercicios_filtrados = []
     for ex in exercicios:
         # Filtro por treino (apenas se o exercício tiver treino associado)
         if treino_selecionado:
             treino_id = _get_treino_id(ex)
-            if treino_id != treino_selecionado:
+            if str(treino_id) != str(treino_selecionado):
                 continue
         
         # Filtro por músculo

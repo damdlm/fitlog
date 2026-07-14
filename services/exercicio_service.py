@@ -194,6 +194,94 @@ class ExercicioService(BaseService):
             return []
 
     @staticmethod
+    def get_exercicios_dos_treinos(user_id=None):
+        """
+        Retorna somente os exercícios que estão de fato associados a algum
+        treino do usuário (via versao_exercicios / treinos_versao), em
+        qualquer versão já criada.
+
+        Diferente de get_exercicios_completos(), que retorna TODO o
+        catálogo global (exercicios_base) + catálogo pessoal, esta função
+        evita trazer exercícios que nunca foram adicionados a um treino.
+        Usada pela Tabela de Progresso.
+        """
+        try:
+            if user_id is None:
+                user_id = BaseService.get_current_user_id()
+            if not user_id:
+                return []
+
+            from models import Musculo, VersaoGlobal, TreinoVersao
+
+            # Todas as associações exercício <-> treino do usuário,
+            # em todas as versões (para manter o histórico completo),
+            # da mais recente para a mais antiga.
+            ve_rows = (
+                db.session.query(VersaoExercicio, TreinoVersao.treino_id)
+                .join(TreinoVersao, VersaoExercicio.treino_versao_id == TreinoVersao.id)
+                .join(VersaoGlobal, TreinoVersao.versao_id == VersaoGlobal.id)
+                .filter(VersaoGlobal.user_id == user_id)
+                .order_by(VersaoGlobal.data_inicio.desc())
+                .all()
+            )
+
+            # Mantém o treino_id mais recente de cada exercício (um exercício
+            # pode ter mudado de treino entre versões diferentes)
+            usuario_map = {}
+            base_map = {}
+            for ve, treino_id in ve_rows:
+                if ve.exercicio_usuario_id is not None:
+                    usuario_map.setdefault(ve.exercicio_usuario_id, treino_id)
+                elif ve.exercicio_base_id is not None:
+                    base_map.setdefault(ve.exercicio_base_id, treino_id)
+
+            exercicios = []
+
+            if usuario_map:
+                ex_usuario = ExercicioUsuario.query.filter(
+                    ExercicioUsuario.id.in_(usuario_map.keys())
+                ).options(joinedload(ExercicioUsuario.musculo_ref)).all()
+
+                for ex in ex_usuario:
+                    ex.tipo = 'usuario'
+                    ex.prefixo = 'u_'
+                    ex.is_custom = True
+                    ex.treino_id = usuario_map.get(ex.id, "")
+                    if ex.musculo_ref:
+                        ex.musculo_nome = ex.musculo_ref.nome_exibicao
+                    else:
+                        musculo = Musculo.query.get(ex.musculo_id)
+                        ex.musculo_nome = musculo.nome_exibicao if musculo else 'Não especificado'
+                        ex.musculo_ref = musculo
+                    ex.musculo = ex.musculo_nome
+                    exercicios.append(ex)
+
+            if base_map:
+                ex_base = ExercicioBase.query.filter(
+                    ExercicioBase.id.in_(base_map.keys())
+                ).options(joinedload(ExercicioBase.musculo_ref)).all()
+
+                for ex in ex_base:
+                    ex.tipo = 'base'
+                    ex.prefixo = 'b_'
+                    ex.is_custom = False
+                    ex.treino_id = base_map.get(ex.id, "")
+                    if ex.musculo_ref:
+                        ex.musculo_nome = ex.musculo_ref.nome_exibicao
+                    else:
+                        musculo = Musculo.query.get(ex.musculo_id)
+                        ex.musculo_nome = musculo.nome_exibicao if musculo else 'Não especificado'
+                        ex.musculo_ref = musculo
+                    ex.musculo = ex.musculo_nome
+                    exercicios.append(ex)
+
+            exercicios.sort(key=lambda x: x.nome.lower())
+            return exercicios
+        except Exception as e:
+            BaseService.handle_error(e, "Erro ao buscar exercícios dos treinos")
+            return []
+
+    @staticmethod
     def get_by_treino(treino_id, user_id=None):
         """
         Retorna os exercícios de um treino na VERSÃO ATIVA do usuário
