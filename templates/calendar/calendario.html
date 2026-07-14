@@ -174,6 +174,140 @@
         position: relative;
         min-height: 500px;
     }
+
+    /* ==========================================================
+       Responsivo - Calendário de Treinos no mobile
+       ========================================================== */
+    @media (max-width: 768px) {
+        #calendar {
+            padding: 12px 6px;
+            border-radius: 14px;
+        }
+
+        .position-relative {
+            min-height: 380px;
+        }
+
+        /* Cards de resumo em grade 2x2 em vez de 4 empilhados */
+        .row > [class*="col-md-3"] {
+            flex: 0 0 50%;
+            max-width: 50%;
+            padding-left: 6px;
+            padding-right: 6px;
+        }
+
+        .stats-card {
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+
+        .stats-card h3 {
+            font-size: 1.4rem;
+        }
+
+        .stats-card i {
+            font-size: 1.4rem !important;
+        }
+
+        .stats-card small {
+            font-size: 0.75rem;
+        }
+
+        .filter-card {
+            padding: 12px;
+        }
+
+        /* Toolbar do FullCalendar: empilha em vez de espremer botões */
+        .fc-toolbar {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .fc-toolbar-chunk {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .fc-toolbar-title {
+            font-size: 1.05rem !important;
+            text-align: center;
+        }
+
+        .fc-button {
+            padding: 0.3rem 0.55rem !important;
+            font-size: 0.8rem !important;
+        }
+
+        /* Células do calendário mais compactas */
+        .fc-daygrid-day-frame {
+            min-height: 55px;
+        }
+
+        .fc-daygrid-day-number {
+            font-size: 0.75rem;
+            padding: 2px !important;
+        }
+
+        .fc-col-header-cell-cushion {
+            font-size: 0.7rem;
+            padding: 4px 2px !important;
+        }
+
+        .fc-event {
+            font-size: 0.7rem !important;
+            padding: 1px 3px !important;
+        }
+
+        .fc-daygrid-event-dot {
+            margin: 0 3px;
+        }
+
+        /* Legenda: quebra em várias linhas em vez de estourar a largura */
+        .legenda {
+            flex-wrap: wrap;
+            gap: 10px 16px;
+            padding: 10px;
+        }
+
+        .legenda-item span {
+            font-size: 0.8rem;
+        }
+
+        .legenda-cor {
+            width: 14px;
+            height: 14px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        /* Em telas bem pequenas, cards de resumo voltam à largura total */
+        .row > [class*="col-md-3"] {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+
+        .fc-daygrid-day-frame {
+            min-height: 42px;
+        }
+
+        .fc-daygrid-day-number {
+            font-size: 0.68rem;
+        }
+
+        .fc-toolbar-title {
+            font-size: 0.95rem !important;
+        }
+
+        .fc-button {
+            padding: 0.25rem 0.45rem !important;
+            font-size: 0.72rem !important;
+        }
+
+        .fc-col-header-cell-cushion {
+            font-size: 0.62rem;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -367,6 +501,10 @@
                 const descricao = info.event.extendedProps.descricao?.replace(/<[^>]*>/g, ' ') || info.event.title;
                 const descricaoTruncada = descricao.length > 100 ? descricao.substring(0, 100) + '...' : descricao;
                 info.el.setAttribute('title', descricaoTruncada);
+            },
+            windowResize: function() {
+                // Reajusta a altura das linhas do calendário ao girar a tela no celular
+                calendar.updateSize();
             },
             loading: function(isLoading) {
                 const skeleton = document.getElementById('calendar-skeleton');
