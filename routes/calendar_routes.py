@@ -82,11 +82,22 @@ def api_eventos():
                     treino = t
                     break
             
+            # Nome do exercício (pode ser do catálogo do usuário ou global)
+            exercicio_obj = r.exercicio if r.exercicio_usuario_id else r.exercicio_base
+            exercicio_nome = exercicio_obj.nome if exercicio_obj else 'Exercício'
+            
+            series_detalhe = [
+                {'carga': float(s.carga), 'repeticoes': s.repeticoes}
+                for s in r.series
+            ]
+            
             volumes_por_dia[data_str]['treinos'].append({
                 'id': r.id,
                 'treino_id': r.treino_id,
                 'treino_codigo': treino.codigo if treino else '?',
                 'treino_nome': treino.nome if treino else 'Treino',
+                'exercicio_nome': exercicio_nome,
+                'series': series_detalhe,
                 'volume': volume_total,
                 'exercicios': len(list(r.series)) if r.series else 0
             })
@@ -105,7 +116,7 @@ def api_eventos():
             descricao += f"Exercícios: {dados['exercicios']}<br><br>"
             
             for t in dados['treinos']:
-                descricao += f"🏋️ {t['treino_codigo']}: {t['volume']:.0f}kg ({t['exercicios']} ex)<br>"
+                descricao += f"🏋️ {t['treino_codigo']} · {t['exercicio_nome']}: {t['volume']:.0f}kg<br>"
             
             eventos.append({
                 'title': titulo,
@@ -131,8 +142,8 @@ def api_eventos():
 @calendar_bp.route("/api/evento/<int:registro_id>")
 @login_required
 def api_evento_detalhe(registro_id):
-    """Retorna detalhes de um evento específico"""
-    from models import RegistroTreino, ExercicioCustomizado, Musculo
+    """Retorna detalhes de um evento (um exercício registrado) específico"""
+    from models import db, RegistroTreino
 
     registro = db.session.get(RegistroTreino, registro_id)
     if not registro or registro.user_id != current_user.id:
@@ -145,14 +156,14 @@ def api_evento_detalhe(registro_id):
             treino = t
             break
 
-    # Buscar exercício e suas séries
-    exercicio = db.session.get(ExercicioCustomizado, registro.exercicio_id)
-    musculo = db.session.get(Musculo, exercicio.musculo_id) if exercicio and exercicio.musculo_id else None
+    # Buscar exercício (do catálogo do usuário ou global) e suas séries
+    exercicio_obj = registro.exercicio if registro.exercicio_usuario_id else registro.exercicio_base
+    musculo = exercicio_obj.musculo_ref if exercicio_obj else None
 
     exercicios = []
     for serie in registro.series:
         exercicios.append({
-            'nome': exercicio.nome if exercicio else 'Desconhecido',
+            'nome': exercicio_obj.nome if exercicio_obj else 'Desconhecido',
             'musculo': musculo.nome_exibicao if musculo else 'N/A',
             'carga': float(serie.carga),
             'repeticoes': serie.repeticoes,

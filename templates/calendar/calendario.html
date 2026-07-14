@@ -46,33 +46,6 @@
         box-shadow: 0 4px 10px rgba(242, 140, 51, 0.3);
     }
     
-    .stats-card {
-        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
-        border-radius: 15px;
-        padding: 20px;
-        color: white;
-        margin-bottom: 20px;
-    }
-    
-    .stats-card h3 {
-        margin: 0;
-        font-size: 2rem;
-        font-weight: 700;
-    }
-    
-    .stats-card small {
-        opacity: 0.9;
-        font-size: 0.9rem;
-    }
-    
-    .filter-card {
-        background: white;
-        border-radius: 15px;
-        padding: 15px;
-        margin-bottom: 20px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    }
-    
     .event-detail-modal .modal-header {
         background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
         color: white;
@@ -188,35 +161,6 @@
             min-height: 380px;
         }
 
-        /* Cards de resumo em grade 2x2 em vez de 4 empilhados */
-        .row > [class*="col-md-3"] {
-            flex: 0 0 50%;
-            max-width: 50%;
-            padding-left: 6px;
-            padding-right: 6px;
-        }
-
-        .stats-card {
-            padding: 14px;
-            margin-bottom: 12px;
-        }
-
-        .stats-card h3 {
-            font-size: 1.4rem;
-        }
-
-        .stats-card i {
-            font-size: 1.4rem !important;
-        }
-
-        .stats-card small {
-            font-size: 0.75rem;
-        }
-
-        .filter-card {
-            padding: 12px;
-        }
-
         /* Toolbar do FullCalendar: empilha em vez de espremer botões */
         .fc-toolbar {
             flex-direction: column;
@@ -281,12 +225,6 @@
     }
 
     @media (max-width: 480px) {
-        /* Em telas bem pequenas, cards de resumo voltam à largura total */
-        .row > [class*="col-md-3"] {
-            flex: 0 0 100%;
-            max-width: 100%;
-        }
-
         .fc-daygrid-day-frame {
             min-height: 42px;
         }
@@ -320,62 +258,6 @@
         </h2>
         <p class="text-muted">Visualize seus treinos realizados em cada dia</p>
     </div>
-</div>
-
-<!-- Cards de Resumo -->
-<div class="row">
-    <div class="col-md-3">
-        <div class="stats-card">
-            <i class="bi bi-calendar3 fs-1"></i>
-            <h3 id="total-dias">0</h3>
-            <small>Dias treinados</small>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stats-card" style="background: #2D2D2D;">
-            <i class="bi bi-trophy fs-1"></i>
-            <h3 id="total-treinos">0</h3>
-            <small>Total de treinos</small>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stats-card" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%);">
-            <i class="bi bi-bar-chart fs-1"></i>
-            <h3 id="volume-total">0</h3>
-            <small>Volume total (kg)</small>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stats-card" style="background: #2D2D2D;">
-            <i class="bi bi-graph-up fs-1"></i>
-            <h3 id="media-volume">0</h3>
-            <small>Média por treino</small>
-        </div>
-    </div>
-</div>
-
-<!-- Filtros -->
-<div class="filter-card">
-    <form id="filterForm" class="row g-3 align-items-end">
-        <div class="col-md-4">
-            <label class="form-label fw-bold">Treino</label>
-            <select name="treino_id" id="filtroTreino" class="form-select">
-                <option value="">Todos os treinos</option>
-                {% for t in treinos %}
-                <option value="{{ t.id }}">{{ t.codigo }} - {{ t.nome }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label class="form-label fw-bold">Mês/Ano</label>
-            <input type="month" id="filtroMes" class="form-control" value="{{ data_atual.strftime('%Y-%m') }}">
-        </div>
-        <div class="col-md-4">
-            <button type="button" class="btn w-100" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;" onclick="aplicarFiltros()">
-                <i class="bi bi-funnel me-2"></i>Filtrar
-            </button>
-        </div>
-    </form>
 </div>
 
 <!-- Calendário -->
@@ -466,16 +348,6 @@
     
     document.addEventListener('DOMContentLoaded', function() {
         inicializarCalendario();
-        carregarEventos();
-        
-        // Atualizar quando mudar o mês no filtro
-        document.getElementById('filtroMes').addEventListener('change', function() {
-            if (calendar) {
-                const [ano, mes] = this.value.split('-');
-                calendar.gotoDate(new Date(ano, mes - 1, 1));
-            }
-            carregarEventos();
-        });
     });
     
     function inicializarCalendario() {
@@ -506,6 +378,13 @@
                 // Reajusta a altura das linhas do calendário ao girar a tela no celular
                 calendar.updateSize();
             },
+            datesSet: function(dateInfo) {
+                // Sempre que o mês visível mudar (inclusive ao navegar com
+                // os botões anterior/próximo do próprio calendário),
+                // carrega automaticamente os treinos daquele mês
+                const anchor = dateInfo.view.currentStart;
+                carregarEventos(anchor.getFullYear(), anchor.getMonth() + 1);
+            },
             loading: function(isLoading) {
                 const skeleton = document.getElementById('calendar-skeleton');
                 const calendar = document.getElementById('calendar');
@@ -523,19 +402,14 @@
         calendar.render();
     }
     
-    function carregarEventos() {
-        const treinoId = document.getElementById('filtroTreino').value;
-        const mesAno = document.getElementById('filtroMes').value;
+    function carregarEventos(ano, mes) {
         let url = '/calendar/api/eventos';
         const params = [];
         
-        if (treinoId) {
-            params.push(`treino_id=${treinoId}`);
-        }
-        
-        if (mesAno) {
-            const [ano, mes] = mesAno.split('-');
+        if (ano) {
             params.push(`ano=${ano}`);
+        }
+        if (mes) {
             params.push(`mes=${mes}`);
         }
         
@@ -549,7 +423,6 @@
                 eventos = data;
                 calendar.removeAllEvents();
                 calendar.addEventSource(data);
-                atualizarResumo(data);
             })
             .catch(error => {
                 console.error('Erro ao carregar eventos:', error);
@@ -557,29 +430,6 @@
                     FitLogUtils.showToast('Erro ao carregar calendário', 'danger');
                 }
             });
-    }
-    
-    function aplicarFiltros() {
-        carregarEventos();
-    }
-    
-    function atualizarResumo(eventos) {
-        let diasTreinados = new Set();
-        let totalTreinos = 0;
-        let volumeTotal = 0;
-        
-        eventos.forEach(evento => {
-            diasTreinados.add(evento.start);
-            totalTreinos += evento.extendedProps?.treinos?.length || 1;
-            volumeTotal += evento.extendedProps?.volume || 0;
-        });
-        
-        document.getElementById('total-dias').textContent = diasTreinados.size;
-        document.getElementById('total-treinos').textContent = totalTreinos;
-        document.getElementById('volume-total').textContent = volumeTotal.toFixed(0) + 'kg';
-        
-        const media = totalTreinos > 0 ? (volumeTotal / totalTreinos).toFixed(0) : 0;
-        document.getElementById('media-volume').textContent = media + 'kg';
     }
     
     function mostrarDetalhesEvento(event) {
@@ -591,23 +441,43 @@
                 <div class="alert alert-info">
                     <i class="bi bi-calendar"></i> <strong>${event.start.toLocaleDateString('pt-BR')}</strong>
                 </div>
-                <h6 class="mb-3">Treinos realizados:</h6>
             `;
             
+            // Agrupar as entradas (uma por exercício) pelo código do treino
+            const porTreino = {};
             event.extendedProps.treinos.forEach(t => {
+                if (!porTreino[t.treino_codigo]) {
+                    porTreino[t.treino_codigo] = { volume: 0, exercicios: [] };
+                }
+                porTreino[t.treino_codigo].volume += t.volume;
+                porTreino[t.treino_codigo].exercicios.push(t);
+            });
+            
+            Object.keys(porTreino).forEach(codigo => {
+                const grupo = porTreino[codigo];
                 html += `
                     <div class="detail-exercicio">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>Treino ${t.treino_codigo}</strong>
-                                <br><small>${t.exercicios} exercícios</small>
-                            </div>
-                            <span class="badge" style="background: #F28C33; color: white; padding: 8px 15px;">
-                                ${t.volume.toFixed(0)} kg
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong>Treino ${codigo}</strong>
+                            <span class="badge" style="background: #F28C33; color: white; padding: 6px 12px;">
+                                ${grupo.volume.toFixed(0)} kg
                             </span>
                         </div>
-                    </div>
                 `;
+                
+                grupo.exercicios.forEach(ex => {
+                    const seriesTexto = (ex.series || [])
+                        .map(s => `${s.carga}kg × ${s.repeticoes}`)
+                        .join(' &nbsp;•&nbsp; ');
+                    html += `
+                        <div class="ps-2 mb-2" style="border-left: 3px solid #F28C33;">
+                            <div class="fw-bold" style="padding-left: 8px;">${ex.exercicio_nome}</div>
+                            <small class="text-muted" style="padding-left: 8px;">${seriesTexto || 'Sem séries registradas'}</small>
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
             });
             
             html += `
