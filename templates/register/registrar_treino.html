@@ -615,7 +615,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Atualizar resumo periodicamente
+    // Atualizar resumo imediatamente ao digitar/mudar qualquer campo
+    const registroForm = document.getElementById('registroForm');
+    if (registroForm) {
+        registroForm.addEventListener('input', atualizarResumo);
+        registroForm.addEventListener('change', atualizarResumo);
+    }
+
+    // Atualizar resumo periodicamente (garantia extra)
     setInterval(atualizarResumo, 1000);
 });
 
@@ -631,7 +638,18 @@ function atualizarResumo() {
         const seriesSelect = document.getElementById(`series-select-${exId}`);
         const series = parseInt(seriesSelect?.value) || 3;
         
-        volumeTotal += carga * reps * series;
+        const volumeExercicio = carga * reps * series;
+        volumeTotal += volumeExercicio;
+
+        // Atualiza o badge de volume do exercício (desktop e mobile)
+        [
+            document.getElementById(`volume-${exId}`),
+            document.getElementById(`volume-mobile-${exId}`)
+        ].forEach(badge => {
+            if (!badge) return;
+            badge.innerHTML = `<i class="bi bi-bar-chart"></i> ${volumeExercicio} kg`;
+            badge.style.background = volumeExercicio > 0 ? '#2D2D2D' : '';
+        });
     });
     
     const resumoElement = document.getElementById('resumo-volume');
