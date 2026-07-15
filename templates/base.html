@@ -56,19 +56,18 @@
             margin-bottom: 4px;
         }
 
-        /* No mobile, centraliza a marca (logo + título) horizontalmente,
-           mantendo o botão do menu fixo à direita. */
+        /* No mobile, a logo permanece à esquerda e o título fica
+           centralizado em relação à largura da tela, independente da logo. */
         @media (max-width: 991.98px) {
             .navbar .container {
                 position: relative;
-                justify-content: flex-end;
             }
 
-            .navbar-brand {
+            .navbar-brand-title {
                 position: absolute;
                 left: 50%;
                 transform: translateX(-50%);
-                margin-right: 0;
+                margin-bottom: 0;
             }
         }
         
@@ -218,12 +217,13 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg bg-white shadow-sm">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-end gap-2" href="{{ url_for('main.index') }}">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
                 <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FitLog" style="height: 50px; width: auto;">
-                <span class="navbar-brand-title d-md-none d-flex align-items-end gap-1">
-                    {% block page_icon %}<i class="bi bi-house" style="color: #F28C33;"></i>{% endblock %}{% block page_title %}FitLog{% endblock %}
-                </span>
             </a>
+
+            <span class="navbar-brand-title d-md-none d-flex align-items-end gap-1">
+                {% block page_icon %}<i class="bi bi-house" style="color: #F28C33;"></i>{% endblock %}{% block page_title %}FitLog{% endblock %}
+            </span>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
