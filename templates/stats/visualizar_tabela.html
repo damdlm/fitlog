@@ -1,5 +1,72 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<style>
+    @media (max-width: 767.98px) {
+        #progressTable {
+            font-size: 0.8rem;
+        }
+
+        #progressTable th,
+        #progressTable td {
+            padding: 0.4rem 0.5rem;
+            white-space: nowrap;
+        }
+
+        /* Coluna do exercício fica fixa ao rolar horizontalmente */
+        #progressTable th:first-child,
+        #progressTable td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            white-space: normal;
+            min-width: 130px;
+            max-width: 150px;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.08);
+        }
+
+        #progressTable td:first-child {
+            background: #fff;
+        }
+
+        #progressTable thead th:first-child {
+            z-index: 3;
+            background: #f8f9fa;
+        }
+
+        /* Badges de treino/músculo dentro da célula do exercício, bem discretos */
+        .exercicio-cell-badges {
+            display: flex;
+            gap: 4px;
+            margin-top: 2px;
+            flex-wrap: wrap;
+        }
+
+        .exercicio-cell-badges .badge {
+            font-size: 0.62rem;
+            font-weight: 500;
+            padding: 2px 6px;
+        }
+
+        /* Dica visual de que dá pra rolar pro lado */
+        .table-responsive {
+            position: relative;
+        }
+
+        .table-responsive::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 18px;
+            background: linear-gradient(to right, transparent, rgba(0,0,0,0.06));
+            pointer-events: none;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
@@ -141,9 +208,7 @@
             <table class="table table-bordered table-hover table-sm" id="progressTable">
                 <thead class="table-light">
                     <tr>
-                        <th rowspan="2" class="align-middle text-center">Treino</th>
                         <th rowspan="2" class="align-middle text-center">Exercício</th>
-                        <th rowspan="2" class="align-middle text-center">Músculo</th>
                         
                         {% for semana in semanas %}
                         <th colspan="2" class="text-center" style="background-color: {% if loop.index % 2 == 0 %}#fff3e0{% else %}#ffe4cc{% endif %};">
@@ -162,14 +227,16 @@
                 <tbody>
                     {% for exercicio in exercicios %}
                     <tr>
-                        <td class="text-center">
-                            <span class="badge" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
-                                {{ exercicio.treino_ref.codigo if exercicio.treino_ref else 'N/A' }}
-                            </span>
-                        </td>
-                        <td><strong>{{ exercicio.nome }}</strong></td>
-                        <td>
-                            <span class="badge bg-secondary">{{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}</span>
+                        <td data-nome="{{ exercicio.nome }}"
+                            data-treino="{{ exercicio.treino_ref.codigo if exercicio.treino_ref else 'N/A' }}"
+                            data-musculo="{{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}">
+                            <strong>{{ exercicio.nome }}</strong>
+                            <div class="exercicio-cell-badges">
+                                <span class="badge" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+                                    {{ exercicio.treino_ref.codigo if exercicio.treino_ref else 'N/A' }}
+                                </span>
+                                <span class="badge bg-secondary">{{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}</span>
+                            </div>
                         </td>
                         
                         {% for semana in semanas %}
@@ -229,21 +296,33 @@
     function exportarCSV() {
         const table = document.getElementById('progressTable');
         let csv = [];
-        
-        table.querySelectorAll('thead th').forEach(th => {
-            let text = th.textContent.trim().replace(/,/g, ';');
-            if (text) csv.push(text);
+
+        // Cabeçalho: usa Treino/Exercício/Músculo como 3 colunas no CSV,
+        // mesmo estando unificadas visualmente em 1 coluna na tela
+        const headerCells = table.querySelectorAll('thead tr:first-child th');
+        const header = ['Treino', 'Exercício', 'Músculo'];
+        headerCells.forEach((th, i) => {
+            if (i === 0) return; // pula o "Exercício" combinado, já tratado acima
+            let text = th.textContent.trim().replace(/\s+/g, ' ').replace(/,/g, ';');
+            if (text) header.push(text);
         });
-        
+        csv.push(header.join(';'));
+
         table.querySelectorAll('tbody tr').forEach(tr => {
             const row = [];
-            tr.querySelectorAll('td').forEach(td => {
-                let text = td.textContent.trim().replace(/,/g, ';');
+            tr.querySelectorAll('td').forEach((td, i) => {
+                if (i === 0 && td.dataset.nome) {
+                    row.push('"' + td.dataset.treino.replace(/"/g, '""') + '"');
+                    row.push('"' + td.dataset.nome.replace(/"/g, '""') + '"');
+                    row.push('"' + td.dataset.musculo.replace(/"/g, '""') + '"');
+                    return;
+                }
+                let text = td.textContent.trim().replace(/\s+/g, ' ');
                 row.push('"' + text.replace(/"/g, '""') + '"');
             });
             csv.push(row.join(';'));
         });
-        
+
         const csvContent = '\uFEFF' + csv.join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
