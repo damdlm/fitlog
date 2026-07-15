@@ -204,7 +204,9 @@
         <div class="container">
             <a class="navbar-brand d-flex align-items-end gap-2" href="{{ url_for('main.index') }}">
                 <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FitLog" style="height: 50px; width: auto;">
-                <span class="navbar-brand-title">{% block page_title %}FitLog{% endblock %}</span>
+                <span class="navbar-brand-title d-md-none d-flex align-items-end gap-1">
+                    {% block page_icon %}{% endblock %}{% block page_title %}{% endblock %}
+                </span>
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
