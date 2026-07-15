@@ -156,6 +156,18 @@ def create_app(config_class=None):
     def health():
         return {"status": "ok"}, 200
 
+    # =============================================================
+    # SERVICE WORKER (PWA) — precisa ficar na raiz "/" para poder
+    # controlar o site inteiro. Servido de /static/sw.js ele só
+    # controlaria a pasta /static/, e o "instalar app" não funcionaria.
+    # =============================================================
+    @app.route("/sw.js")
+    def service_worker():
+        response = app.send_static_file("sw.js")
+        response.headers["Content-Type"] = "application/javascript"
+        response.headers["Service-Worker-Allowed"] = "/"
+        return response
+
     return app  # ← estava faltando isso!
 
 

@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FitLog - Sistema de Treinos</title>
 
+    <!-- PWA: instalar como app no celular -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#F28C33">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FitLog">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
     
@@ -27,9 +36,19 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+            padding-top: 0.35rem;
+            padding-bottom: 0.35rem;
+        }
+
         .navbar-brand {
             font-weight: 700;
             color: var(--primary-color) !important;
+            padding-top: 0;
+            padding-bottom: 0;
         }
         
         .nav-link {
@@ -441,6 +460,21 @@
                 console.log('✅ FitLogUtils carregado');
             }
         });
+
+        // PWA: registra o service worker (necessário pro navegador
+        // permitir "Instalar app"). Só roda em HTTPS ou localhost —
+        // não quebra nada se o navegador não suportar.
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(reg) {
+                        console.log('✅ Service worker registrado, escopo:', reg.scope);
+                    })
+                    .catch(function(err) {
+                        console.warn('Service worker não registrado:', err);
+                    });
+            });
+        }
     </script>
 </body>
 </html>
