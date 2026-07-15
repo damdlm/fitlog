@@ -406,8 +406,8 @@
 
 <div class="card treino-card mb-4">
     <div class="card-body p-4">
-        <form method="get" class="row g-4 align-items-end" id="formBusca">
-            <div class="col-md-5">
+        <form method="get" class="row g-3 g-md-4 align-items-end" id="formBusca">
+            <div class="col-12 col-md-5">
                 <label class="form-label fw-bold fs-5">
                     <i class="bi bi-trophy" style="color: var(--primary-orange);"></i>
                     Treino
@@ -424,7 +424,7 @@
                 </select>
             </div>
             
-            <div class="col-md-5">
+            <div class="col-8 col-md-5">
                 <label class="form-label fw-bold fs-5">
                     <i class="bi bi-calendar" style="color: var(--primary-orange);"></i>
                     Data do Treino
@@ -434,10 +434,10 @@
                        min="2020-01-01" max="{{ data_atual_iso() }}" required>
             </div>
             
-            <div class="col-md-2">
+            <div class="col-4 col-md-2">
                 <button type="submit" class="btn btn-lg w-100" 
                         style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none; padding: 12px;">
-                    <i class="bi bi-search me-2"></i>Carregar
+                    <i class="bi bi-search d-md-me-2"></i><span class="d-none d-md-inline">Carregar</span>
                 </button>
             </div>
         </form>
