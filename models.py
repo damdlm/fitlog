@@ -321,9 +321,13 @@ class RegistroTreino(db.Model):
         db.Index('idx_registro_periodo_semana', 'periodo', 'semana'),
     )
 
-    @property
+    @hybrid_property
     def exercicio_id(self):
         return self.exercicio_usuario_id or self.exercicio_base_id
+
+    @exercicio_id.expression
+    def exercicio_id(cls):
+        return db.func.coalesce(cls.exercicio_usuario_id, cls.exercicio_base_id)
 
 
 class HistoricoTreino(db.Model):
