@@ -95,6 +95,17 @@
         gap: 4px;
         white-space: nowrap;
     }
+
+    .exercicio-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .meta-dot {
+        color: #ced4da;
+    }
     
     .versao-badge {
         background: linear-gradient(135deg, var(--primary-orange) 0%, var(--light-orange) 100%);
@@ -184,11 +195,29 @@
 
         .card-body.p-4 { padding: 1rem !important; }
 
+        /* Rótulos grandes do formulário de busca pesam menos no topo */
+        .card-body .form-label.fs-5 {
+            font-size: 0.95rem !important;
+        }
+
         .treino-card .row.g-4 { row-gap: 0.75rem !important; }
 
+        /* Cabeçalho do card de exercícios mais enxuto */
+        .card-header h4 {
+            font-size: 1.05rem;
+        }
+        .card-header h4 .badge {
+            font-size: 0.68rem;
+            font-weight: 500;
+            vertical-align: middle;
+        }
+
+        /* Card do exercício mais leve: borda fina, sem sombra */
         .exercise-row {
-            padding: 14px;
-            margin-bottom: 12px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            border-left-width: 3px;
+            box-shadow: none !important;
         }
 
         .exercise-row .row {
@@ -202,18 +231,49 @@
             gap: 8px;
         }
 
-        .volume-total {
-            font-size: 0.95rem;
-            padding: 6px 14px;
-            white-space: nowrap;
+        .exercise-header h5 {
+            font-size: 0.98rem;
+            margin-bottom: 3px;
+        }
+
+        /* Músculo + última carga viram uma única linha discreta, sem "pílulas" */
+        .exercicio-meta {
+            gap: 0.4rem;
+            font-size: 0.76rem;
+        }
+
+        .badge-musculo {
+            background: transparent;
+            border: none;
+            color: #6c757d;
+            padding: 0;
+            font-size: 0.76rem;
+            font-weight: 500;
         }
 
         .historico-cargas {
-            display: block;
-            overflow-x: auto;
+            font-size: 0.76rem;
+            white-space: normal;
+        }
+
+        .volume-total {
+            font-size: 0.85rem;
+            padding: 4px 12px;
             white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-            max-width: 100%;
+        }
+
+        /* Um único rótulo acima do grupo, no lugar de 3 repetidos embaixo de cada campo */
+        .inputs-row-label {
+            font-size: 0.72rem;
+            color: #adb5bd;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-top: 10px;
+            margin-bottom: 4px;
+        }
+
+        .unit-label-mobile {
+            display: none;
         }
 
         .inputs-row {
@@ -294,6 +354,30 @@
         .mobile-save-spacer {
             height: 88px;
         }
+
+        /* Resumo do treino: grid compacto de 3 colunas em vez de linha "solta" */
+        .resumo-treino-box {
+            padding: 0.75rem !important;
+        }
+        .resumo-treino-inner {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            text-align: center;
+        }
+        .resumo-treino-inner .text-muted.small {
+            font-size: 0.68rem;
+        }
+        .resumo-treino-inner .fs-5 {
+            font-size: 0.95rem !important;
+        }
+
+        /* Faixa "Versão Ativa" menos carregada */
+        .alert-version {
+            padding: 0.65rem 0.9rem !important;
+        }
+        .alert-version .fs-5 { font-size: 0.95rem !important; }
+        .alert-version .fs-6 { font-size: 0.8rem !important; }
     }
 
     @media (min-width: 768px) {
@@ -421,12 +505,13 @@
                         <div class="exercise-header">
                             <div>
                                 <h5 class="mb-1 fw-bold">{{ ex.nome }}</h5>
-                                <div class="d-flex align-items-center flex-wrap gap-2">
+                                <div class="exercicio-meta">
                                     <span class="badge-musculo">
-                                        <i class="bi bi-braces"></i>
+                                        <i class="bi bi-braces d-none d-md-inline"></i>
                                         {{ ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A' }}
                                     </span>
                                     {% if ultimas %}
+                                    <span class="meta-dot d-none d-sm-inline">•</span>
                                     <span class="historico-cargas">
                                         <i class="bi bi-clock-history"></i>
                                         Última: {{ ultimas[0].carga }}kg × {{ ultimas[0].repeticoes }}
@@ -443,6 +528,7 @@
 
                     <!-- Carga / Reps / Séries: lado a lado tanto no mobile quanto no desktop -->
                     <div class="col-12 col-md-6">
+                        <div class="inputs-row-label d-md-none">Carga (kg) · Repetições · Séries</div>
                         <div class="inputs-row row g-2">
                             <div class="col-md-4">
                                 <div class="input-group">
@@ -454,7 +540,7 @@
                                            inputmode="decimal"
                                            value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].carga }}{% elif ultima_carga %}{{ ultima_carga }}{% endif %}">
                                 </div>
-                                <div class="text-center small text-muted d-md-none mt-1">kg</div>
+                                <div class="text-center small text-muted d-md-none mt-1 unit-label-mobile">kg</div>
                             </div>
 
                             <div class="col-md-4">
@@ -467,7 +553,7 @@
                                            inputmode="numeric"
                                            value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].repeticoes }}{% elif ultimas_reps %}{{ ultimas_reps }}{% endif %}">
                                 </div>
-                                <div class="text-center small text-muted d-md-none mt-1">reps</div>
+                                <div class="text-center small text-muted d-md-none mt-1 unit-label-mobile">reps</div>
                             </div>
 
                             <div class="col-md-4">
@@ -479,7 +565,7 @@
                                     <option value="4" {% if (registro_atual and registro_atual.series|length == 4) or (ultimas_series == 4) %}selected{% endif %}>4 séries</option>
                                     <option value="5" {% if (registro_atual and registro_atual.series|length == 5) or (ultimas_series == 5) %}selected{% endif %}>5 séries</option>
                                 </select>
-                                <div class="text-center small text-muted d-md-none mt-1">séries</div>
+                                <div class="text-center small text-muted d-md-none mt-1 unit-label-mobile">séries</div>
                             </div>
                         </div>
                     </div>
@@ -495,9 +581,9 @@
             {% endfor %}
 
             <!-- Resumo do treino -->
-            <div class="row mt-4 p-3 bg-light rounded align-items-center">
+            <div class="row mt-4 p-3 bg-light rounded align-items-center resumo-treino-box">
                 <div class="col-md-6">
-                    <div class="d-flex flex-wrap gap-4">
+                    <div class="d-flex flex-wrap gap-4 resumo-treino-inner">
                         <div>
                             <div class="text-muted small">Exercícios</div>
                             <div class="fw-bold fs-5">{{ exercicios|length }}</div>
