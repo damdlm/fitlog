@@ -69,6 +69,13 @@
                 transform: translateX(-50%);
                 margin-bottom: 0;
             }
+
+            /* Enquanto o menu mobile está aberto, o título centralizado
+               (position: absolute) ficaria flutuando por cima dos itens
+               do menu. Escondemos ele nesse estado. */
+            .navbar-brand-title.menu-open {
+                display: none;
+            }
         }
         
         .nav-link {
@@ -482,6 +489,21 @@
         document.addEventListener('DOMContentLoaded', function() {
             if (window.FitLogUtils) {
                 console.log('✅ FitLogUtils carregado');
+            }
+        });
+
+        // Esconde o título centralizado do cabeçalho (mobile) enquanto
+        // o menu está aberto, pra ele não ficar sobreposto aos itens do menu.
+        document.addEventListener('DOMContentLoaded', function() {
+            var navbarNav = document.getElementById('navbarNav');
+            var brandTitle = document.querySelector('.navbar-brand-title');
+            if (navbarNav && brandTitle) {
+                navbarNav.addEventListener('show.bs.collapse', function() {
+                    brandTitle.classList.add('menu-open');
+                });
+                navbarNav.addEventListener('hidden.bs.collapse', function() {
+                    brandTitle.classList.remove('menu-open');
+                });
             }
         });
 
