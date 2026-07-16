@@ -70,11 +70,20 @@
                 margin-bottom: 0;
             }
 
-            /* Enquanto o menu mobile está aberto, o título centralizado
-               (position: absolute) ficaria flutuando por cima dos itens
-               do menu. Escondemos ele nesse estado. */
-            .navbar-brand-title.menu-open {
-                display: none;
+            /* O menu mobile abre como um painel flutuante (overlay) por cima
+               do conteúdo, em vez de "empurrar" a página — assim o cabeçalho
+               nunca muda de tamanho, esteja o menu aberto ou fechado. */
+            .navbar-collapse {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: #fff;
+                max-height: calc(100vh - 70px);
+                overflow-y: auto;
+                padding: 0.75rem 1rem 1rem;
+                box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+                border-top: 1px solid rgba(0, 0, 0, 0.06);
             }
         }
         
@@ -489,21 +498,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             if (window.FitLogUtils) {
                 console.log('✅ FitLogUtils carregado');
-            }
-        });
-
-        // Esconde o título centralizado do cabeçalho (mobile) enquanto
-        // o menu está aberto, pra ele não ficar sobreposto aos itens do menu.
-        document.addEventListener('DOMContentLoaded', function() {
-            var navbarNav = document.getElementById('navbarNav');
-            var brandTitle = document.querySelector('.navbar-brand-title');
-            if (navbarNav && brandTitle) {
-                navbarNav.addEventListener('show.bs.collapse', function() {
-                    brandTitle.classList.add('menu-open');
-                });
-                navbarNav.addEventListener('hidden.bs.collapse', function() {
-                    brandTitle.classList.remove('menu-open');
-                });
             }
         });
 
