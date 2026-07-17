@@ -500,6 +500,14 @@
             {% set ultima_carga = ultimas[0].carga if ultimas else '' %}
             {% set ultimas_reps = ultimas[0].repeticoes if ultimas else '' %}
             {% set ultimas_series = ultimas|length if ultimas else 3 %}
+            {# O registro já salvo (se existir) manda sempre. A sugestão de
+               histórico (ultimas_series) só é usada quando NÃO há registro
+               ainda — antes as duas condições eram combinadas com "or" nas
+               options abaixo, e como ultimas_series caía em 3 por padrão
+               sempre que não havia histórico recente, ela podia sobrepor
+               visualmente o valor realmente salvo (ex: registro com 2
+               séries aparecia marcado como 3 no dropdown). #}
+            {% set series_selecionadas = registro_atual.series|length if (registro_atual and registro_atual.series) else ultimas_series %}
             
             <div class="exercise-row" data-exercicio-id="{{ chave_ex }}" 
                  data-ultima-carga="{{ ultima_carga }}"
@@ -565,11 +573,11 @@
                             <div class="col-md-4">
                                 <select name="num_series_{{ chave_ex }}" id="series-select-{{ chave_ex }}" 
                                         class="form-select">
-                                    <option value="1" {% if (registro_atual and registro_atual.series|length == 1) or (ultimas_series == 1) %}selected{% endif %}>1 série</option>
-                                    <option value="2" {% if (registro_atual and registro_atual.series|length == 2) or (ultimas_series == 2) %}selected{% endif %}>2 séries</option>
-                                    <option value="3" {% if (registro_atual and registro_atual.series|length == 3) or (ultimas_series == 3) or (not registro_atual and not ultimas) %}selected{% endif %}>3 séries</option>
-                                    <option value="4" {% if (registro_atual and registro_atual.series|length == 4) or (ultimas_series == 4) %}selected{% endif %}>4 séries</option>
-                                    <option value="5" {% if (registro_atual and registro_atual.series|length == 5) or (ultimas_series == 5) %}selected{% endif %}>5 séries</option>
+                                    <option value="1" {% if series_selecionadas == 1 %}selected{% endif %}>1 série</option>
+                                    <option value="2" {% if series_selecionadas == 2 %}selected{% endif %}>2 séries</option>
+                                    <option value="3" {% if series_selecionadas == 3 %}selected{% endif %}>3 séries</option>
+                                    <option value="4" {% if series_selecionadas == 4 %}selected{% endif %}>4 séries</option>
+                                    <option value="5" {% if series_selecionadas == 5 %}selected{% endif %}>5 séries</option>
                                 </select>
                                 <div class="text-center small text-muted d-md-none mt-1 unit-label-mobile">séries</div>
                             </div>
