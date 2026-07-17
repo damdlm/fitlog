@@ -106,13 +106,14 @@ class RegistroService(BaseService):
                 user_id=user_id
             ).delete()
             
-            for ex_id, dados in dados_exercicios.items():
+            for chave, dados in dados_exercicios.items():
                 if dados['carga'] and dados['repeticoes']:
-                    # Determinar tipo do exercício
-                    from models import ExercicioUsuario, ExercicioBase
-                    
-                    is_usuario = db.session.get(ExercicioUsuario, ex_id) is not None
-                    is_base = db.session.get(ExercicioBase, ex_id) is not None if not is_usuario else False
+                    # Tipo já vem identificado da rota (ex.tipo), não precisa mais
+                    # adivinhar em qual tabela o ID existe — exercicios_usuario e
+                    # exercicios_base têm sequências de ID independentes, então o
+                    # mesmo número pode existir nas duas ao mesmo tempo.
+                    ex_id = dados.get('exercicio_id', chave)
+                    is_usuario = dados.get('tipo') == 'usuario'
                     
                     registro = RegistroTreino(
                         treino_id=treino_id,
@@ -120,7 +121,7 @@ class RegistroService(BaseService):
                         periodo=periodo,
                         semana=semana,
                         exercicio_usuario_id=ex_id if is_usuario else None,
-                        exercicio_base_id=ex_id if is_base else None,
+                        exercicio_base_id=ex_id if not is_usuario else None,
                         data_registro=dados.get('data_registro', datetime.now(timezone.utc)),
                         user_id=user_id
                     )

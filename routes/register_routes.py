@@ -81,17 +81,27 @@ def registrar_treino():
                     versao_id=versao_ativa.id,
                     data=data_obj
                 )
-                registros_map = {r.exercicio_id: r for r in registros}
+                # ⚠️ Chave prefixada (ex: "u_5", "b_5") em vez do ID puro: exercicios_usuario
+                # e exercicios_base têm sequências de ID independentes, então o mesmo número
+                # pode existir nas duas tabelas — usar só o ID causava colisão entre exercícios
+                # diferentes (dados de um "vazando"/sobrescrevendo o outro).
+                registros_map = {}
+                for r in registros:
+                    if r.exercicio_usuario_id is not None:
+                        registros_map[f"u_{r.exercicio_usuario_id}"] = r
+                    elif r.exercicio_base_id is not None:
+                        registros_map[f"b_{r.exercicio_base_id}"] = r
                 
                 # Buscar histórico para sugestão de cargas (últimos 3 registros)
                 for ex in exercicios:
                     ultimas = ExercicioService.get_ultimas_series(
-                        ex.id, 
+                        ex.id,
+                        tipo=ex.tipo,
                         versao_id=versao_ativa.id, 
                         limite=3
                     )
                     if ultimas:
-                        historico_series[ex.id] = ultimas
+                        historico_series[f"{ex.prefixo}{ex.id}"] = ultimas
     
     return render_template(
         "register/registrar_treino.html",
@@ -166,20 +176,23 @@ def salvar_registro():
     dados_exercicios = {}
     
     for ex in exercicios:
-        carga = request.form.get(f"carga_{ex.id}")
-        reps = request.form.get(f"reps_{ex.id}")
+        chave = f"{ex.prefixo}{ex.id}"  # ex: "u_5" ou "b_5" — evita colisão entre as duas tabelas
+        carga = request.form.get(f"carga_{chave}")
+        reps = request.form.get(f"reps_{chave}")
         
         if carga and reps and carga.strip() and reps.strip():
             try:
                 carga_float = float(carga)
                 reps_int = int(reps)
-                num_series = int(request.form.get(f"num_series_{ex.id}", 3))
+                num_series = int(request.form.get(f"num_series_{chave}", 3))
                 
                 if carga_float >= 0 and reps_int >= 0 and 1 <= num_series <= 10:
-                    dados_exercicios[ex.id] = {
+                    dados_exercicios[chave] = {
                         'carga': carga_float,
                         'repeticoes': reps_int,
                         'num_series': num_series,
+                        'tipo': ex.tipo,
+                        'exercicio_id': ex.id,
                         'data_registro': data_obj
                     }
             except (ValueError, TypeError):

@@ -582,9 +582,16 @@ class ExercicioService(BaseService):
             return None
     
     @staticmethod
-    def get_ultimas_series(exercicio_id, versao_id=None, limite=1, user_id=None):
+    def get_ultimas_series(exercicio_id, tipo=None, versao_id=None, limite=1, user_id=None):
         """
         Retorna as últimas séries de um exercício
+
+        IMPORTANTE: `tipo` ('usuario' ou 'base') deve ser informado sempre que
+        possível. exercicios_usuario e exercicios_base têm sequências de ID
+        independentes, então um mesmo número de ID pode existir nas duas
+        tabelas ao mesmo tempo. Sem o `tipo`, RegistroTreino.exercicio_id
+        (coalesce das duas colunas) pode misturar o histórico de dois
+        exercícios diferentes que coincidem no número do ID.
         """
         try:
             from models import HistoricoTreino, RegistroTreino
@@ -596,8 +603,15 @@ class ExercicioService(BaseService):
             
             query = HistoricoTreino.query\
                 .join(RegistroTreino)\
-                .filter(RegistroTreino.exercicio_id == exercicio_id)\
                 .filter(RegistroTreino.user_id == user_id)
+
+            if tipo == 'usuario':
+                query = query.filter(RegistroTreino.exercicio_usuario_id == exercicio_id)
+            elif tipo == 'base':
+                query = query.filter(RegistroTreino.exercicio_base_id == exercicio_id)
+            else:
+                # Compatibilidade com chamadas antigas sem `tipo` informado
+                query = query.filter(RegistroTreino.exercicio_id == exercicio_id)
             
             if versao_id:
                 query = query.filter(RegistroTreino.versao_id == versao_id)

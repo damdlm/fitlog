@@ -191,7 +191,7 @@ const RegistrarTreino = (function() {
             if (!exId) return;
             
             totalExercicios++;
-            const dados = _calcularVolumeExercicio(parseInt(exId));
+            const dados = _calcularVolumeExercicio(exId);
             volumeTotal += dados.volume;
             
             if (dados.carga > 0 && dados.reps > 0) {
@@ -275,7 +275,7 @@ const RegistrarTreino = (function() {
                     const exId = row.dataset.exercicioId;
                     if (exId) {
                         timeoutCalculo = setTimeout(() => {
-                            calcularVolume(parseInt(exId));
+                            calcularVolume(exId);
                         }, 300);
                     }
                 }
@@ -286,7 +286,7 @@ const RegistrarTreino = (function() {
                 const row = this.closest('.exercise-row');
                 if (row) {
                     const exId = row.dataset.exercicioId;
-                    if (exId) calcularVolume(parseInt(exId));
+                    if (exId) calcularVolume(exId);
                 }
             });
             
@@ -300,7 +300,7 @@ const RegistrarTreino = (function() {
         document.querySelectorAll('.exercise-row').forEach(row => {
             const exId = row.dataset.exercicioId;
             if (exId) {
-                const exIdNum = parseInt(exId);
+                const exIdNum = exId;
                 setTimeout(() => calcularVolume(exIdNum), 50);
                 
                 // Armazenar valores iniciais
@@ -444,7 +444,7 @@ const RegistrarTreino = (function() {
         
         document.querySelectorAll('.exercise-row').forEach(row => {
             const exId = row.dataset.exercicioId;
-            if (exId) calcularVolume(parseInt(exId));
+            if (exId) calcularVolume(exId);
         });
         
         _showToast('Todos os campos foram limpos!', 'info');
@@ -547,7 +547,7 @@ const RegistrarTreino = (function() {
             
             if (carga && reps) {
                 dados.push({
-                    exercicio_id: parseInt(exId),
+                    exercicio_id: exId,
                     carga: parseFloat(carga),
                     repeticoes: parseInt(reps),
                     series: parseInt(seriesSelect?.value || 3)
@@ -600,7 +600,7 @@ const RegistrarTreino = (function() {
             if (cargaInput) cargaInput.value = cargaPadrao;
             if (repsInput) repsInput.value = repsPadrao;
             
-            calcularVolume(parseInt(exId));
+            calcularVolume(exId);
         });
         
         _showToast(`Todos os exercícios preenchidos com ${cargaPadrao}kg x ${repsPadrao}reps!`, 'success');
