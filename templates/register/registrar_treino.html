@@ -409,13 +409,13 @@
 
 <div class="card treino-card mb-4">
     <div class="card-body p-4">
-        <form method="get" class="row g-3 g-md-4 align-items-end" id="formBusca">
+        <form method="get" class="row g-2 g-md-3 align-items-end" id="formBusca">
             <div class="col-12 col-md-5">
-                <label class="form-label fw-bold fs-5">
+                <label class="form-label fw-bold">
                     <i class="bi bi-trophy" style="color: var(--primary-orange);"></i>
                     Treino
                 </label>
-                <select name="treino" class="form-select form-select-lg" required>
+                <select name="treino" class="form-select" required>
                     <option value="">Selecione o treino</option>
                     {% for t in treinos_disponiveis %}
                     <option value="{{ t.id }}" {% if treino_selecionado == t.id|string %}selected{% endif %}>
@@ -428,18 +428,18 @@
             </div>
             
             <div class="col-8 col-md-5">
-                <label class="form-label fw-bold fs-5">
+                <label class="form-label fw-bold">
                     <i class="bi bi-calendar" style="color: var(--primary-orange);"></i>
                     Data do Treino
                 </label>
-                <input type="date" name="data" class="form-control form-control-lg" 
+                <input type="date" name="data" class="form-control" 
                        value="{{ data_selecionada_str or data_atual_iso() }}" 
                        min="2020-01-01" max="{{ data_atual_iso() }}" required>
             </div>
             
             <div class="col-4 col-md-2">
-                <button type="submit" class="btn btn-lg w-100" 
-                        style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none; padding: 12px;">
+                <button type="submit" class="btn w-100" 
+                        style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none; padding: 6px;">
                     <i class="bi bi-search d-md-me-2"></i><span class="d-none d-md-inline">Carregar</span>
                 </button>
             </div>
@@ -452,24 +452,6 @@
     <i class="bi bi-exclamation-triangle-fill me-2"></i>
     <strong>Atenção!</strong> {{ erro_versao }}
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-{% endif %}
-
-{% if versao_info %}
-<div class="alert alert-version mb-4 d-flex justify-content-between align-items-center p-3">
-    <div>
-        <i class="bi bi-info-circle-fill me-2" style="color: var(--primary-orange);"></i>
-        <strong class="fs-5">Versão Ativa:</strong> 
-        <span class="versao-badge ms-2 fs-6">v{{ versao_info.numero }}</span>
-        <span class="ms-2 fw-bold">{{ versao_info.descricao }}</span>
-        <span class="badge bg-secondary ms-2">{{ versao_info.divisao }}</span>
-    </div>
-    <div>
-        <span class="data-badge">
-            <i class="bi bi-calendar-check me-1"></i> 
-            {{ data_selecionada.strftime('%d/%m/%Y') if data_selecionada else data_atual_iso() }}
-        </span>
-    </div>
 </div>
 {% endif %}
 
