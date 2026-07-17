@@ -358,7 +358,7 @@
 
         #eventoModal .modal-header {
             border-radius: 20px 20px 0 0;
-            padding: 10px 20px 16px;
+            padding: 4px 20px 16px;
             flex-wrap: wrap;
         }
 
@@ -382,16 +382,61 @@
         .detail-exercicio {
             padding: 14px;
         }
+
+        /* Resumo do mês: volume total + dias treinados, contexto rápido
+           que a grade de pontinhos sozinha não dá */
+        .resumo-mes {
+            display: flex;
+            gap: 10px;
+            padding: 4px 4px 14px;
+        }
+
+        .resumo-mes-item {
+            flex: 1;
+            background: #f8f9fa;
+            border-radius: 14px;
+            padding: 10px 12px;
+            text-align: center;
+        }
+
+        .resumo-mes-valor {
+            display: block;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #2D2D2D;
+            line-height: 1.2;
+        }
+
+        .resumo-mes-label {
+            display: block;
+            font-size: 0.65rem;
+            color: #9a9a9a;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-top: 2px;
+        }
     }
 
-    /* Puxador do bottom sheet — só aparece no mobile (ver regra acima) */
+    /* Puxador do bottom sheet — só aparece no mobile (ver regra acima).
+       A área de toque é maior que o traço visual, pra ser fácil de pegar. */
     .sheet-handle {
         display: none;
+        width: 100%;
+        height: 20px;
+        position: relative;
+        touch-action: none;
+    }
+
+    .sheet-handle::before {
+        content: '';
+        position: absolute;
+        top: 6px;
+        left: 50%;
+        transform: translateX(-50%);
         width: 40px;
         height: 4px;
         border-radius: 4px;
         background: rgba(255,255,255,0.6);
-        margin: 0 auto 8px;
     }
 
     @media (max-width: 400px) {
@@ -441,6 +486,9 @@
             </div>
         </div>
         
+        <!-- Resumo do mês (só no mobile) -->
+        <div id="resumoMes" class="resumo-mes d-md-none"></div>
+
         <!-- Calendário -->
         <div id="calendar"></div>
         
@@ -564,6 +612,11 @@
                 // Reajusta a altura das linhas do calendário ao girar a tela no celular
                 calendar.updateSize();
             },
+            datesSet: function(info) {
+                // Toda vez que o mês visível muda (seta, "Hoje" ou swipe),
+                // recalcula o resumo de volume total / dias treinados
+                atualizarResumoMes(info.view.currentStart, info.view.currentEnd);
+            },
             loading: function(isLoading) {
                 const skeleton = document.getElementById('calendar-skeleton');
                 const calendar = document.getElementById('calendar');
@@ -579,6 +632,8 @@
         });
         
         calendar.render();
+        habilitarSwipeCalendario(calendarEl);
+        habilitarArrastarSheet();
         
         // Carrega TODOS os treinos já registrados de uma vez. Assim, ao
         // navegar entre os meses com os botões do próprio calendário,
@@ -594,6 +649,7 @@
                 eventos = data;
                 calendar.removeAllEvents();
                 calendar.addEventSource(data);
+                atualizarResumoMes(calendar.view.currentStart, calendar.view.currentEnd);
             })
             .catch(error => {
                 console.error('Erro ao carregar eventos:', error);
@@ -601,6 +657,93 @@
                     FitLogUtils.showToast('Erro ao carregar calendário', 'danger');
                 }
             });
+    }
+
+    function atualizarResumoMes(inicio, fim) {
+        const resumoEl = document.getElementById('resumoMes');
+        if (!resumoEl) return;
+
+        const doMes = eventos.filter(ev => {
+            const d = new Date(ev.start + 'T00:00:00');
+            return d >= inicio && d < fim;
+        });
+
+        const volumeTotal = doMes.reduce((soma, ev) => soma + (ev.extendedProps.volume || 0), 0);
+        const diasTreinados = doMes.length;
+
+        resumoEl.innerHTML = `
+            <div class="resumo-mes-item">
+                <span class="resumo-mes-valor">${diasTreinados}</span>
+                <span class="resumo-mes-label">Dia${diasTreinados === 1 ? '' : 's'} treinado${diasTreinados === 1 ? '' : 's'}</span>
+            </div>
+            <div class="resumo-mes-item">
+                <span class="resumo-mes-valor">${volumeTotal >= 1000 ? (volumeTotal/1000).toFixed(1) + 'k' : volumeTotal.toFixed(0)}</span>
+                <span class="resumo-mes-label">kg no mês</span>
+            </div>
+        `;
+    }
+
+    function habilitarSwipeCalendario(calendarEl) {
+        // Deslizar o dedo pra esquerda/direita sobre a grade troca de mês —
+        // as setinhas continuam funcionando, isso só evita ter que mirar nelas.
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        calendarEl.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].clientX;
+            touchStartY = e.changedTouches[0].clientY;
+        }, { passive: true });
+
+        calendarEl.addEventListener('touchend', function(e) {
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            const dy = e.changedTouches[0].clientY - touchStartY;
+            // Só considera swipe horizontal de verdade (ignora rolagem vertical)
+            if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+                if (dx < 0) {
+                    calendar.next();
+                } else {
+                    calendar.prev();
+                }
+            }
+        }, { passive: true });
+    }
+
+    function habilitarArrastarSheet() {
+        // Puxador do bottom sheet arrastável: arrasta pra baixo o suficiente
+        // e o modal fecha, como no iOS/Android — solta antes e ele volta pro lugar.
+        const handle = document.querySelector('#eventoModal .sheet-handle');
+        const content = document.querySelector('#eventoModal .modal-content');
+        if (!handle || !content) return;
+
+        let startY = 0;
+        let deltaY = 0;
+        let arrastando = false;
+
+        handle.addEventListener('touchstart', function(e) {
+            if (window.innerWidth > 768) return;
+            arrastando = true;
+            startY = e.touches[0].clientY;
+            content.style.transition = 'none';
+        }, { passive: true });
+
+        handle.addEventListener('touchmove', function(e) {
+            if (!arrastando) return;
+            deltaY = e.touches[0].clientY - startY;
+            if (deltaY > 0) {
+                content.style.transform = `translateY(${deltaY}px)`;
+            }
+        }, { passive: true });
+
+        handle.addEventListener('touchend', function() {
+            if (!arrastando) return;
+            arrastando = false;
+            content.style.transition = '';
+            if (deltaY > 100) {
+                bootstrap.Modal.getInstance(document.getElementById('eventoModal'))?.hide();
+            }
+            content.style.transform = '';
+            deltaY = 0;
+        });
     }
     
     function mostrarDetalhesEvento(event) {
