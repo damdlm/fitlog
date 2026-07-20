@@ -60,9 +60,13 @@ class VersaoService(BaseService):
                     VersaoGlobal.user_id == user_id,
                     VersaoGlobal.data_inicio <= data_periodo,
                     (VersaoGlobal.data_fim.is_(None) | (VersaoGlobal.data_fim >= data_periodo))
-                ).order_by(VersaoGlobal.data_inicio.desc()).first()
+                ).order_by(
+                    VersaoGlobal.data_fim.is_(None).desc(),
+                    VersaoGlobal.data_inicio.desc()
+                ).first()
             else:
-                return VersaoGlobal.query.filter_by(user_id=user_id, data_fim=None).first()
+                return VersaoGlobal.query.filter_by(user_id=user_id, data_fim=None)\
+                    .order_by(VersaoGlobal.data_inicio.desc()).first()
         except Exception as e:
             BaseService.handle_error(e, "Erro ao buscar versão ativa")
             return None
@@ -81,7 +85,10 @@ class VersaoService(BaseService):
                 VersaoGlobal.user_id == user_id,
                 VersaoGlobal.data_inicio <= data,
                 (VersaoGlobal.data_fim.is_(None) | (VersaoGlobal.data_fim >= data))
-            ).order_by(VersaoGlobal.data_inicio.desc()).first()
+            ).order_by(
+                VersaoGlobal.data_fim.is_(None).desc(),
+                VersaoGlobal.data_inicio.desc()
+            ).first()
         except Exception as e:
             BaseService.handle_error(e, f"Erro ao buscar versão ativa para data {data}")
             return None
