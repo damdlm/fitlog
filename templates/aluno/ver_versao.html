@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 
+{% block page_icon %}<i class="bi bi-pencil-square" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Versão {{ versao.numero_versao }}{% endblock %}
+
 {% block content %}
 <style>
     .versao-card {
@@ -123,7 +126,7 @@
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>
+    <h2 class="d-none d-md-block">
         <i class="bi bi-pencil-square me-2" style="color: #F28C33;"></i>
         Versão {{ versao.numero_versao }}
     </h2>
@@ -138,25 +141,25 @@
 </div>
 
 <!-- Informações da Versão -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card">
+<div class="row mb-4 g-2 g-md-3">
+    <div class="col-6 col-md-3">
+        <div class="card h-100">
             <div class="card-body">
                 <h6 class="text-muted">Número</h6>
                 <h4>v{{ versao.numero_versao }}</h4>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card">
+    <div class="col-6 col-md-3">
+        <div class="card h-100">
             <div class="card-body">
                 <h6 class="text-muted">Divisão</h6>
                 <h4><span class="divisao-badge">{{ versao.divisao }}</span></h4>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card">
+    <div class="col-6 col-md-3">
+        <div class="card h-100">
             <div class="card-body">
                 <h6 class="text-muted">Período</h6>
                 <h5>{{ versao.data_inicio.strftime('%d/%m/%Y') if versao.data_inicio else '?' }}</h5>
@@ -164,8 +167,8 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card">
+    <div class="col-6 col-md-3">
+        <div class="card h-100">
             <div class="card-body">
                 <h6 class="text-muted">Status</h6>
                 <h4>
@@ -187,9 +190,9 @@
 
 <div class="card mb-4">
     <div class="card-body">
-        <div class="d-flex align-items-center">
-            <span class="me-3 fw-bold">Progresso da Divisão:</span>
-            <div class="progresso-divisao me-3" style="width: 300px;">
+        <div class="d-flex align-items-center flex-wrap gap-2">
+            <span class="fw-bold">Progresso da Divisão:</span>
+            <div class="progresso-divisao flex-grow-1" style="min-width: 100px;">
                 <div class="progresso-divisao-bar" style="width: {{ percentual }}%;"></div>
             </div>
             <span class="badge bg-primary">{{ total_treinos }}/{{ max_treinos }} treinos</span>
@@ -278,7 +281,7 @@
 {% if treinos %}
     {% for treino_id, treino in treinos.items() %}
     <div class="treino-card" data-treino-codigo="{{ treino_id }}">
-        <div class="treino-header d-flex justify-content-between align-items-center" 
+        <div class="treino-header d-flex justify-content-between align-items-center flex-wrap gap-2" 
              onclick="toggleTreino(this)">
             <div>
                 <span class="badge me-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); font-size: 1rem;">
