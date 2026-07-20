@@ -1,8 +1,11 @@
 {% extends "base.html" %}
 
+{% block page_icon %}<i class="bi bi-pencil-square" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Editar Treino {{ treino_id }} na Versão {{ versao.versao }}{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>
+    <h2 class="d-none d-md-block">
         <i class="bi bi-pencil-square me-2" style="color: #F28C33;"></i>
         Editar Treino {{ treino_id }} na Versão {{ versao.versao }}
     </h2>
