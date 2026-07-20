@@ -501,6 +501,39 @@
             }
         });
 
+        // Fecha as mensagens de alerta (boas-vindas, sucesso, erro etc.)
+        // automaticamente após 3 segundos, ou ao clicar fora delas.
+        (function () {
+            const alertas = document.querySelectorAll('.alert.alert-dismissible');
+            if (!alertas.length) return;
+
+            function fecharAlerta(el) {
+                if (!document.body.contains(el)) return;
+                const instancia = bootstrap.Alert.getOrCreateInstance(el);
+                instancia.close();
+            }
+
+            alertas.forEach(function (el) {
+                const timer = setTimeout(function () {
+                    fecharAlerta(el);
+                }, 3000);
+
+                // Se o usuário fechar manualmente antes, cancela o timer
+                el.addEventListener('closed.bs.alert', function () {
+                    clearTimeout(timer);
+                });
+            });
+
+            // Clique em qualquer lugar fora dos alertas fecha todos
+            document.addEventListener('click', function (event) {
+                alertas.forEach(function (el) {
+                    if (document.body.contains(el) && !el.contains(event.target)) {
+                        fecharAlerta(el);
+                    }
+                });
+            });
+        })();
+
         // PWA: registra o service worker (necessário pro navegador
         // permitir "Instalar app"). Só roda em HTTPS ou localhost —
         // não quebra nada se o navegador não suportar.
