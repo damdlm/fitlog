@@ -1,88 +1,397 @@
 {% extends "base.html" %}
 
+{% block page_icon %}<i class="bi bi-clock-history" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Versões de {{ aluno.nome_completo or aluno.username }}{% endblock %}
+
 {% block content %}
 <style>
-    .versao-card {
-        transition: all 0.3s ease;
-        border-left: 4px solid transparent;
+    :root {
+        --vc-orange: #F28C33;
+        --vc-orange-light: #FFB366;
+        --vc-ink: #1F2937;
+        --vc-muted: #6B7280;
+        --vc-line: #EEF0F3;
+        --vc-bg-soft: #F9FAFB;
+    }
+
+    .vc-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
         margin-bottom: 20px;
     }
-    
-    .versao-card.versao-atual {
-        border-left-color: #F28C33;
-        background-color: #f8fff8;
+    .vc-header h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--vc-ink);
+        margin: 0;
     }
-    
-    .versao-card.versao-antiga {
-        border-left-color: #6c757d;
-        opacity: 0.9;
-    }
-    
-    .versao-card:hover {
-        transform: translateX(5px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    
-    .badge-versao {
-        font-size: 0.9rem;
-        padding: 5px 10px;
-        border-radius: 20px;
-    }
-    
-    .treino-badge {
-        background-color: #f8f9fa;
-        padding: 8px 12px;
-        border-radius: 5px;
-        margin-right: 5px;
-        margin-bottom: 5px;
-        display: inline-block;
-        border-left: 3px solid #F28C33;
-    }
-    
-    .treino-badge:hover {
-        background-color: #fff3e0;
-    }
-    
-    .divisao-badge {
-        font-size: 1rem;
-        padding: 5px 15px;
-        border-radius: 25px;
-        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
-        color: white;
-        font-weight: bold;
-        display: inline-block;
-    }
-    
-    .action-buttons {
+    .vc-header-actions {
         display: flex;
-        gap: 5px;
+        gap: 8px;
         flex-wrap: wrap;
     }
-    
-    .progresso-divisao {
-        width: 100px;
-        height: 6px;
-        background-color: #e9ecef;
-        border-radius: 3px;
-        overflow: hidden;
-        display: inline-block;
-        margin-left: 10px;
+
+    /* Cartão do aluno */
+    .vc-aluno-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        background: white;
+        border: 1px solid var(--vc-line);
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
     }
-    
-    .progresso-divisao-bar {
+    .vc-aluno-avatar {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: white;
+        background: linear-gradient(135deg, var(--vc-orange) 0%, var(--vc-orange-light) 100%);
+        flex-shrink: 0;
+    }
+    .vc-aluno-info { flex: 1; min-width: 160px; }
+    .vc-aluno-info strong { color: var(--vc-ink); font-size: 1rem; }
+    .vc-aluno-info small { color: var(--vc-muted); display: block; }
+    .vc-aluno-current {
+        font-size: 0.8rem;
+        color: var(--vc-muted);
+    }
+
+    /* Tira de estatísticas */
+    .vc-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1px;
+        background: var(--vc-line);
+        border: 1px solid var(--vc-line);
+        border-radius: 14px;
+        overflow: hidden;
+        margin-bottom: 28px;
+    }
+    .vc-stat {
+        background: white;
+        padding: 16px 12px;
+        text-align: center;
+    }
+    .vc-stat-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, rgba(242,140,51,0.12) 0%, rgba(255,179,102,0.12) 100%);
+        color: var(--vc-orange);
+        font-size: 1.05rem;
+        margin-bottom: 8px;
+    }
+    .vc-stat-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--vc-ink);
+        line-height: 1.1;
+    }
+    .vc-stat-label {
+        font-size: 0.75rem;
+        color: var(--vc-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    @media (max-width: 576px) {
+        .vc-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* Card de versão */
+    .vc-card {
+        background: white;
+        border: 1px solid var(--vc-line);
+        border-radius: 16px;
+        margin-bottom: 20px;
+        overflow: hidden;
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+        position: relative;
+    }
+    .vc-card:hover {
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+        transform: translateY(-2px);
+    }
+    .vc-card-accent {
+        height: 4px;
+        width: 100%;
+        background: var(--vc-line);
+    }
+    .vc-card.is-active .vc-card-accent {
+        background: linear-gradient(90deg, var(--vc-orange) 0%, var(--vc-orange-light) 100%);
+    }
+
+    .vc-card-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 20px;
+        flex-wrap: wrap;
+    }
+    .vc-id-badge {
+        flex-shrink: 0;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: white;
+        background: linear-gradient(135deg, #CBD2D9 0%, #9AA5B1 100%);
+    }
+    .vc-card.is-active .vc-id-badge {
+        background: linear-gradient(135deg, var(--vc-orange) 0%, var(--vc-orange-light) 100%);
+        box-shadow: 0 4px 12px rgba(242, 140, 51, 0.35);
+    }
+
+    .vc-card-heading {
+        flex: 1;
+        min-width: 200px;
+    }
+    .vc-title-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 6px;
+    }
+    .vc-title-row h3 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--vc-ink);
+        margin: 0;
+    }
+    .vc-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        padding: 4px 10px;
+        border-radius: 999px;
+    }
+    .vc-status.status-active {
+        background: #E6F7EE;
+        color: #1A7F4E;
+    }
+    .vc-status.status-archived {
+        background: #F1F2F4;
+        color: var(--vc-muted);
+    }
+    .vc-status .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+    .vc-status.status-active .dot {
+        animation: vc-pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes vc-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.35; }
+    }
+
+    .vc-meta {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        font-size: 0.85rem;
+        color: var(--vc-muted);
+    }
+    .vc-meta .divisao-pill {
+        font-weight: 700;
+        color: var(--vc-orange);
+        background: rgba(242, 140, 51, 0.1);
+        padding: 3px 12px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+    }
+
+    .vc-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-left: auto;
+    }
+    .vc-icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--vc-line);
+        background: white;
+        color: var(--vc-muted);
+        transition: all 0.15s ease;
+        font-size: 0.95rem;
+    }
+    .vc-icon-btn:hover { transform: translateY(-1px); color: white; }
+    .vc-icon-btn.btn-view:hover { background: #3B82F6; border-color: #3B82F6; }
+    .vc-icon-btn.btn-finish:hover { background: #F59E0B; border-color: #F59E0B; }
+    .vc-icon-btn.btn-clone:hover { background: #0EA5E9; border-color: #0EA5E9; }
+    .vc-icon-btn.btn-delete:hover { background: #EF4444; border-color: #EF4444; }
+
+    /* Progresso */
+    .vc-progress-row {
+        padding: 0 20px 16px;
+    }
+    .vc-progress-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        color: var(--vc-muted);
+        margin-bottom: 6px;
+    }
+    .vc-progress-label strong { color: var(--vc-ink); }
+    .vc-progress-track {
+        height: 8px;
+        border-radius: 999px;
+        background: var(--vc-bg-soft);
+        overflow: hidden;
+    }
+    .vc-progress-fill {
         height: 100%;
-        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
-        border-radius: 3px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--vc-orange) 0%, var(--vc-orange-light) 100%);
+        transition: width 0.4s ease;
+    }
+
+    /* Corpo: treinos */
+    .vc-body {
+        border-top: 1px solid var(--vc-line);
+        padding: 18px 20px 20px;
+        background: var(--vc-bg-soft);
+    }
+    .vc-body-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--vc-muted);
+        margin-bottom: 10px;
+    }
+    .vc-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+    .vc-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: white;
+        border: 1px solid var(--vc-line);
+        border-radius: 999px;
+        padding: 6px 14px 6px 6px;
+        font-size: 0.85rem;
+        color: var(--vc-ink);
+    }
+    .vc-chip-code {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--vc-orange) 0%, var(--vc-orange-light) 100%);
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .vc-chip small { color: var(--vc-muted); }
+
+    .vc-details-toggle {
+        background: none;
+        border: 1px dashed #D1D5DB;
+        color: var(--vc-muted);
+        font-size: 0.82rem;
+        border-radius: 10px;
+        padding: 6px 14px;
+        transition: all 0.15s ease;
+    }
+    .vc-details-toggle:hover {
+        border-color: var(--vc-orange);
+        color: var(--vc-orange);
+    }
+    .vc-details-toggle .bi { transition: transform 0.2s ease; }
+    .vc-details-toggle[aria-expanded="true"] .bi { transform: rotate(180deg); }
+
+    .vc-exercicios-box {
+        background: white;
+        border: 1px solid var(--vc-line);
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 12px;
+    }
+    .vc-exercicios-box h6 {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--vc-ink);
+    }
+    .vc-exercicios-box ul li {
+        font-size: 0.88rem;
+        color: var(--vc-ink);
+    }
+
+    .vc-add-treino {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--vc-orange);
+        text-decoration: none;
+        margin-top: 4px;
+    }
+    .vc-add-treino:hover { text-decoration: underline; }
+
+    /* Estado vazio */
+    .vc-empty {
+        text-align: center;
+        padding: 56px 20px;
+        border: 1.5px dashed #D1D5DB;
+        border-radius: 16px;
+        background: var(--vc-bg-soft);
+    }
+    .vc-empty i {
+        font-size: 2.4rem;
+        color: var(--vc-orange-light);
+        margin-bottom: 12px;
+        display: inline-block;
+    }
+    .vc-empty p {
+        color: var(--vc-muted);
+        margin-bottom: 14px;
     }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>
+<div class="vc-header">
+    <h1 class="d-none d-md-block">
         <i class="bi bi-clock-history me-2" style="color: #F28C33;"></i>
         Versões de Treino de {{ aluno.nome_completo or aluno.username }}
-    </h2>
-    <div>
-        <a href="{{ url_for('professor.nova_versao_aluno', aluno_id=aluno.id) }}" class="btn btn-success me-2">
+    </h1>
+    <div class="vc-header-actions">
+        <a href="{{ url_for('professor.nova_versao_aluno', aluno_id=aluno.id) }}" class="btn btn-success">
             <i class="bi bi-plus-circle"></i> Nova Versão
         </a>
         <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
@@ -91,142 +400,153 @@
     </div>
 </div>
 
-<!-- Informações do Aluno -->
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-3">
-                <p><strong>Nome:</strong> {{ aluno.nome_completo or aluno.username }}</p>
-            </div>
-            <div class="col-md-3">
-                <p><strong>E-mail:</strong> {{ aluno.email }}</p>
-            </div>
-            <div class="col-md-3">
-                <p><strong>Total de versões:</strong> {{ versoes|length }}</p>
-            </div>
-            <div class="col-md-3">
-                <p><strong>Versão atual:</strong> 
-                    {% set versao_atual = versoes|selectattr('data_fim', 'none')|first %}
-                    {% if versao_atual %}
-                        <span class="badge bg-success">v{{ versao_atual.numero_versao }}</span>
-                    {% else %}
-                        <span class="badge bg-secondary">Nenhuma</span>
-                    {% endif %}
-                </p>
-            </div>
-        </div>
+<div class="vc-aluno-card">
+    <div class="vc-aluno-avatar">
+        {{ (aluno.nome_completo or aluno.username)[0]|upper }}
+    </div>
+    <div class="vc-aluno-info">
+        <strong>{{ aluno.nome_completo or aluno.username }}</strong>
+        <small>{{ aluno.email }}</small>
+    </div>
+    <div class="vc-aluno-current">
+        Versão atual:
+        {% set versao_atual = versoes|selectattr('data_fim', 'none')|first %}
+        {% if versao_atual %}
+            <span class="vc-status status-active"><span class="dot"></span>v{{ versao_atual.numero_versao }}</span>
+        {% else %}
+            <span class="vc-status status-archived"><span class="dot"></span>Nenhuma</span>
+        {% endif %}
     </div>
 </div>
 
-<!-- Lista de Versões -->
 {% if versoes %}
+{% set versao_ativa_stat = versoes|selectattr('data_fim', 'none')|list %}
+{% set total_treinos_stat = namespace(value=0) %}
+{% set total_ex_stat = namespace(value=0) %}
+{% for versao in versoes %}
+    {% set total_treinos_stat.value = total_treinos_stat.value + versao.treinos|length %}
+    {% for treino in versao.treinos %}
+        {% set total_ex_stat.value = total_ex_stat.value + treino.exercicios|length %}
+    {% endfor %}
+{% endfor %}
+
+<div class="vc-stats">
+    <div class="vc-stat">
+        <div class="vc-stat-icon"><i class="bi bi-collection"></i></div>
+        <div class="vc-stat-value">{{ versoes|length }}</div>
+        <div class="vc-stat-label">Versões</div>
+    </div>
+    <div class="vc-stat">
+        <div class="vc-stat-icon"><i class="bi bi-check-circle"></i></div>
+        <div class="vc-stat-value">{{ versao_ativa_stat|length }}</div>
+        <div class="vc-stat-label">Ativas</div>
+    </div>
+    <div class="vc-stat">
+        <div class="vc-stat-icon"><i class="bi bi-trophy"></i></div>
+        <div class="vc-stat-value">{{ total_treinos_stat.value }}</div>
+        <div class="vc-stat-label">Treinos</div>
+    </div>
+    <div class="vc-stat">
+        <div class="vc-stat-icon"><i class="bi bi-list-check"></i></div>
+        <div class="vc-stat-value">{{ total_ex_stat.value }}</div>
+        <div class="vc-stat-label">Exercícios</div>
+    </div>
+</div>
+
     {% for versao in versoes|sort(attribute='numero_versao', reverse=true) %}
     {% set is_atual = versao.data_fim is none %}
     {% set total_treinos = versao.treinos|length %}
     {% set max_treinos = 3 if versao.divisao == 'ABC' else 4 if versao.divisao == 'ABCD' else 5 %}
     {% set percentual = (total_treinos / max_treinos * 100) if max_treinos > 0 else 0 %}
-    
-    <div class="card versao-card {% if is_atual %}versao-atual{% else %}versao-antiga{% endif %}">
-        <div class="card-header {% if is_atual %}bg-primary text-white{% else %}bg-light{% endif %}">
-            <div class="d-flex justify-content-between align-items-center flex-wrap">
-                <div>
-                    <h5 class="mb-1">
-                        <i class="bi bi-tag me-2"></i>
-                        Versão {{ versao.numero_versao }}: {{ versao.descricao }}
-                    </h5>
-                    <div class="d-flex align-items-center mt-1">
-                        <span class="divisao-badge me-3">
-                            <i class="bi bi-grid-3x3-gap-fill me-2"></i>{{ versao.divisao }}
-                        </span>
-                        <div class="d-flex align-items-center">
-                            <span class="{% if is_atual %}text-white-50{% else %}text-muted{% endif %} me-2">
-                                <i class="bi bi-trophy me-1"></i>{{ total_treinos }}/{{ max_treinos }} treinos
-                            </span>
-                            <div class="progresso-divisao">
-                                <div class="progresso-divisao-bar" style="width: {{ percentual }}%;"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <small class="{% if is_atual %}text-white-50{% else %}text-muted{% endif %}">
-                        <i class="bi bi-calendar me-1"></i>
-                        {{ versao.data_inicio.strftime('%d/%m/%Y') if versao.data_inicio else '?' }}
-                        até {{ versao.data_fim.strftime('%d/%m/%Y') if versao.data_fim else 'Atual' }}
-                    </small>
-                </div>
-                <div class="action-buttons">
+
+    <div class="vc-card {% if is_atual %}is-active{% endif %}">
+        <div class="vc-card-accent"></div>
+        <div class="vc-card-header">
+            <div class="vc-id-badge">v{{ versao.numero_versao }}</div>
+            <div class="vc-card-heading">
+                <div class="vc-title-row">
+                    <h3>{{ versao.descricao }}</h3>
                     {% if is_atual %}
-                    <span class="badge bg-white text-success me-2 badge-versao">
-                        <i class="bi bi-check-circle me-1"></i>Ativa
-                    </span>
+                    <span class="vc-status status-active"><span class="dot"></span>Ativa</span>
                     {% else %}
-                    <span class="badge bg-secondary text-white me-2 badge-versao">
-                        <i class="bi bi-archive me-1"></i>Arquivada
-                    </span>
+                    <span class="vc-status status-archived"><span class="dot"></span>Arquivada</span>
                     {% endif %}
-                    
-                    <div class="btn-group">
-                        <a href="{{ url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
-                           class="btn btn-sm btn-primary" title="Visualizar/Editar">
-                            <i class="bi bi-eye"></i>
-                        </a>
-                        {% if is_atual %}
-                        <a href="{{ url_for('professor.finalizar_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
-                           class="btn btn-sm btn-warning" title="Finalizar"
-                           onclick="return confirm('Finalizar esta versão?')">
-                            <i class="bi bi-calendar-x"></i>
-                        </a>
-                        {% endif %}
-                        <a href="{{ url_for('professor.clonar_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
-                           class="btn btn-sm btn-info" title="Clonar"
-                           onclick="return confirm('Criar uma nova versão baseada nesta?')">
-                            <i class="bi bi-copy"></i>
-                        </a>
-                        <a href="{{ url_for('professor.excluir_versao_aluno', aluno_id=aluno.id, versao_id=versao.id, confirmar='false') }}" 
-                           class="btn btn-sm btn-danger" title="Excluir"
-                           onclick="return confirm('Tem certeza que deseja excluir esta versão?')">
-                            <i class="bi bi-trash"></i>
-                        </a>
-                    </div>
+                </div>
+                <div class="vc-meta">
+                    <span class="divisao-pill"><i class="bi bi-grid-3x3-gap-fill me-1"></i>{{ versao.divisao }}</span>
+                    <span><i class="bi bi-calendar me-1"></i>
+                        {{ versao.data_inicio.strftime('%d/%m/%Y') if versao.data_inicio else '?' }}
+                        até {{ versao.data_fim.strftime('%d/%m/%Y') if versao.data_fim else 'hoje' }}
+                    </span>
                 </div>
             </div>
+            <div class="vc-actions">
+                <a href="{{ url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}"
+                   class="vc-icon-btn btn-view" title="Visualizar/Editar">
+                    <i class="bi bi-eye"></i>
+                </a>
+                {% if is_atual %}
+                <a href="{{ url_for('professor.finalizar_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}"
+                   class="vc-icon-btn btn-finish" title="Finalizar"
+                   onclick="return confirm('Finalizar esta versão?')">
+                    <i class="bi bi-calendar-x"></i>
+                </a>
+                {% endif %}
+                <a href="{{ url_for('professor.clonar_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}"
+                   class="vc-icon-btn btn-clone" title="Clonar"
+                   onclick="return confirm('Criar uma nova versão baseada nesta?')">
+                    <i class="bi bi-copy"></i>
+                </a>
+                <a href="{{ url_for('professor.excluir_versao_aluno', aluno_id=aluno.id, versao_id=versao.id, confirmar='false') }}"
+                   class="vc-icon-btn btn-delete" title="Excluir"
+                   onclick="return confirm('Tem certeza que deseja excluir esta versão?')">
+                    <i class="bi bi-trash"></i>
+                </a>
+            </div>
         </div>
-        
-        <div class="card-body">
-            <h6>
-                <i class="bi bi-trophy me-2" style="color: #F28C33;"></i>
-                Treinos ({{ total_treinos }})
-            </h6>
-            
-            <div class="mb-3">
+
+        <div class="vc-progress-row">
+            <div class="vc-progress-label">
+                <span>Progresso da divisão</span>
+                <strong>{{ total_treinos }}/{{ max_treinos }} treinos</strong>
+            </div>
+            <div class="vc-progress-track">
+                <div class="vc-progress-fill" style="width: {{ percentual }}%;"></div>
+            </div>
+        </div>
+
+        <div class="vc-body">
+            <div class="vc-body-label">Treinos</div>
+            <div class="vc-chip-row">
                 {% for treino_versao in versao.treinos %}
                     {% set treino = treino_versao.treino_ref %}
                     {% if treino %}
-                    <div class="treino-badge">
-                        <strong>{{ treino.codigo }}</strong>: {{ treino_versao.nome_treino }}
-                        <span class="badge bg-secondary ms-2">{{ treino_versao.exercicios|length }} ex</span>
+                    <div class="vc-chip">
+                        <span class="vc-chip-code">{{ treino.codigo }}</span>
+                        {{ treino_versao.nome_treino }}
+                        <small>{{ treino_versao.exercicios|length }} ex</small>
                     </div>
                     {% endif %}
                 {% else %}
-                <p class="text-muted">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Nenhum treino cadastrado nesta versão.
+                <p class="text-muted mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Nenhum treino cadastrado nesta versão.
                 </p>
                 {% endfor %}
             </div>
-            
+
             {% if total_treinos > 0 %}
-            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" 
-                    data-bs-target="#detalhes-{{ versao.id }}">
+            <button class="vc-details-toggle" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#detalhes-{{ versao.id }}" aria-expanded="false">
                 <i class="bi bi-chevron-down"></i> Ver detalhes dos exercícios
             </button>
-            
+
             <div class="collapse mt-3" id="detalhes-{{ versao.id }}">
-                <div class="card card-body">
+                <div class="vc-exercicios-box">
                     {% for treino_versao in versao.treinos %}
                         {% set treino = treino_versao.treino_ref %}
                         {% if treino %}
                         <h6 class="mt-2 mb-2">
-                            <span class="badge bg-primary">{{ treino.codigo }}</span>
+                            <span class="vc-chip-code" style="display:inline-flex;">{{ treino.codigo }}</span>
                             {{ treino_versao.nome_treino }}
                         </h6>
                         <ul class="list-unstyled ms-3">
@@ -248,13 +568,12 @@
                 </div>
             </div>
             {% endif %}
-            
+
             {% if total_treinos < max_treinos %}
             <div class="mt-3">
-                <a href="{{ url_for('professor.novo_treino_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
-                   class="btn btn-sm btn-outline-success">
-                    <i class="bi bi-plus-circle"></i> 
-                    Adicionar Treino ({{ max_treinos - total_treinos }} restantes)
+                <a href="{{ url_for('professor.novo_treino_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" class="vc-add-treino">
+                    <i class="bi bi-plus-circle"></i>
+                    Adicionar treino ({{ max_treinos - total_treinos }} restantes)
                 </a>
             </div>
             {% endif %}
@@ -262,68 +581,12 @@
     </div>
     {% endfor %}
 {% else %}
-<div class="alert alert-info">
-    <i class="bi bi-info-circle me-2"></i>
-    Este aluno ainda não tem versões de treino cadastradas.
-    <a href="{{ url_for('professor.nova_versao_aluno', aluno_id=aluno.id) }}" class="alert-link">
-        Criar primeira versão
+<div class="vc-empty">
+    <i class="bi bi-clock-history"></i>
+    <p>Este aluno ainda não tem versões de treino cadastradas.</p>
+    <a href="{{ url_for('professor.nova_versao_aluno', aluno_id=aluno.id) }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Criar primeira versão
     </a>
 </div>
 {% endif %}
-
-<!-- Estatísticas resumidas -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-graph-up me-2" style="color: #F28C33;"></i>
-                    Resumo de Versões
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="text-center">
-                            <h3>{{ versoes|length }}</h3>
-                            <small class="text-muted">Total de Versões</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="text-center">
-                            <h3>{{ versoes|selectattr('data_fim', 'none')|list|length }}</h3>
-                            <small class="text-muted">Versões Ativas</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="text-center">
-                            <h3>
-                                {% set total_treinos = namespace(value=0) %}
-                                {% for versao in versoes %}
-                                    {% set total_treinos.value = total_treinos.value + versao.treinos|length %}
-                                {% endfor %}
-                                {{ total_treinos.value }}
-                            </h3>
-                            <small class="text-muted">Total de Treinos</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="text-center">
-                            <h3>
-                                {% set total_ex = namespace(value=0) %}
-                                {% for versao in versoes %}
-                                    {% for treino in versao.treinos %}
-                                        {% set total_ex.value = total_ex.value + treino.exercicios|length %}
-                                    {% endfor %}
-                                {% endfor %}
-                                {{ total_ex.value }}
-                            </h3>
-                            <small class="text-muted">Total de Exercícios</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
