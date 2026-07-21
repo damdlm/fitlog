@@ -1,123 +1,259 @@
 {% extends "base.html" %}
 
+{% block page_icon %}<i class="bi bi-plus-circle" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Adicionar Treino à Versão {{ versao.numero_versao }}{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>
+<style>
+    :root {
+        --nt-orange: #F28C33;
+        --nt-orange-light: #FFB366;
+        --nt-ink: #1F2937;
+        --nt-muted: #6B7280;
+        --nt-line: #EEF0F3;
+        --nt-bg-soft: #F9FAFB;
+    }
+
+    .nt-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .nt-header h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--nt-ink);
+        margin: 0;
+    }
+
+    .nt-summary {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        background: white;
+        border: 1px solid var(--nt-line);
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+    }
+    .nt-summary-id {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: white;
+        background: linear-gradient(135deg, var(--nt-orange) 0%, var(--nt-orange-light) 100%);
+        flex-shrink: 0;
+    }
+    .nt-summary-info { flex: 1; min-width: 160px; }
+    .nt-summary-info strong { color: var(--nt-ink); font-size: 1rem; display: block; }
+    .nt-summary-meta {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        font-size: 0.85rem;
+        color: var(--nt-muted);
+        margin-top: 4px;
+    }
+    .nt-summary-meta .divisao-pill {
+        font-weight: 700;
+        color: var(--nt-orange);
+        background: rgba(242, 140, 51, 0.1);
+        padding: 2px 12px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+    }
+    .nt-progress-chip {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--nt-ink);
+        background: var(--nt-bg-soft);
+        border: 1px solid var(--nt-line);
+        border-radius: 999px;
+        padding: 6px 14px;
+        white-space: nowrap;
+    }
+
+    .nt-card {
+        background: white;
+        border: 1px solid var(--nt-line);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .nt-card-header {
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--nt-line);
+        font-weight: 700;
+        color: var(--nt-ink);
+        font-size: 0.95rem;
+    }
+    .nt-card-body { padding: 20px; }
+
+    .nt-field { margin-bottom: 18px; }
+    .nt-field label {
+        font-weight: 600;
+        font-size: 0.88rem;
+        color: var(--nt-ink);
+        margin-bottom: 6px;
+        display: block;
+    }
+    .nt-field small { color: var(--nt-muted); }
+    .nt-field select,
+    .nt-field input {
+        border-radius: 10px;
+        border-color: var(--nt-line);
+        padding: 0.65rem 0.9rem;
+    }
+    .nt-field select:focus,
+    .nt-field input:focus {
+        border-color: var(--nt-orange);
+        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12);
+    }
+
+    .nt-info-box {
+        display: flex;
+        gap: 12px;
+        background: var(--nt-bg-soft);
+        border: 1px solid var(--nt-line);
+        border-radius: 12px;
+        padding: 14px 16px;
+        font-size: 0.88rem;
+        color: var(--nt-muted);
+        margin-bottom: 20px;
+    }
+    .nt-info-box i { color: var(--nt-orange); font-size: 1.1rem; flex-shrink: 0; }
+    .nt-info-box strong { color: var(--nt-ink); }
+
+    .nt-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .nt-preview {
+        margin-top: 20px;
+        display: none;
+    }
+    .nt-preview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 10px;
+    }
+    .nt-preview-item {
+        background: var(--nt-bg-soft);
+        border: 1px solid var(--nt-line);
+        border-radius: 10px;
+        padding: 10px 14px;
+    }
+    .nt-preview-item strong { color: var(--nt-ink); font-size: 0.9rem; display: block; }
+    .nt-preview-item small { color: var(--nt-muted); }
+</style>
+
+<div class="nt-header">
+    <h1 class="d-none d-md-block">
         <i class="bi bi-plus-circle me-2" style="color: #F28C33;"></i>
         Adicionar Treino à Versão {{ versao.numero_versao }}
-    </h2>
-    <div>
-        <a href="{{ url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
-           class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Voltar
-        </a>
-    </div>
+    </h1>
+    <a href="{{ url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
 </div>
 
-<!-- Informações da Versão -->
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-3">
-                <p><strong>Aluno:</strong> {{ aluno.nome_completo or aluno.username }}</p>
-            </div>
-            <div class="col-md-3">
-                <p><strong>Versão:</strong> {{ versao.numero_versao }} - {{ versao.descricao }}</p>
-            </div>
-            <div class="col-md-3">
-                <p><strong>Divisão:</strong> <span class="badge bg-primary">{{ versao.divisao }}</span></p>
-            </div>
-            <div class="col-md-3">
-                <p><strong>Período:</strong> {{ versao.data_inicio.strftime('%d/%m/%Y') }} até {{ versao.data_fim.strftime('%d/%m/%Y') if versao.data_fim else 'Atual' }}</p>
-            </div>
-        </div>
-        <div class="row mt-2">
-            <div class="col-12">
-                <p><strong>Progresso:</strong> {{ versao.treinos|length }} / 
-                    {% if versao.divisao == 'ABC' %}3
-                    {% elif versao.divisao == 'ABCD' %}4
-                    {% else %}5{% endif %} treinos
-                </p>
-            </div>
+{% set max_treinos = 3 if versao.divisao == 'ABC' else 4 if versao.divisao == 'ABCD' else 5 %}
+<div class="nt-summary">
+    <div class="nt-summary-id" style="background: linear-gradient(135deg, #CBD2D9 0%, #9AA5B1 100%);">
+        {{ (aluno.nome_completo or aluno.username)[0]|upper }}
+    </div>
+    <div class="nt-summary-info">
+        <strong>{{ aluno.nome_completo or aluno.username }}</strong>
+        <div class="nt-summary-meta">
+            <span><i class="bi bi-envelope me-1"></i>{{ aluno.email }}</span>
         </div>
     </div>
 </div>
 
-<!-- Formulário -->
-<div class="card">
-    <div class="card-header bg-white">
-        <h5 class="mb-0">
-            <i class="bi bi-trophy me-2" style="color: #F28C33;"></i>
-            Selecionar Treino
-        </h5>
+<div class="nt-summary">
+    <div class="nt-summary-id">v{{ versao.numero_versao }}</div>
+    <div class="nt-summary-info">
+        <strong>{{ versao.descricao }}</strong>
+        <div class="nt-summary-meta">
+            <span class="divisao-pill"><i class="bi bi-grid-3x3-gap-fill me-1"></i>{{ versao.divisao }}</span>
+            <span><i class="bi bi-calendar me-1"></i>{{ versao.data_inicio.strftime('%d/%m/%Y') }} até {{ versao.data_fim.strftime('%d/%m/%Y') if versao.data_fim else 'hoje' }}</span>
+        </div>
     </div>
-    <div class="card-body">
+    <div class="nt-progress-chip">
+        <i class="bi bi-trophy me-1"></i>{{ versao.treinos|length }}/{{ max_treinos }} treinos
+    </div>
+</div>
+
+<div class="nt-card">
+    <div class="nt-card-header">
+        <i class="bi bi-trophy me-2" style="color: #F28C33;"></i>Selecionar treino
+    </div>
+    <div class="nt-card-body">
         <form method="post" id="formAdicionarTreino">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
-            <div class="mb-3">
-                <label class="form-label fw-bold">Treino</label>
+
+            <div class="nt-field">
+                <label>Treino</label>
                 <select name="treino_id" class="form-select form-select-lg" required {% if not treinos %}disabled{% endif %}>
                     <option value="">Selecione um treino...</option>
                     {% for treino in treinos %}
-                    <option value="{{ treino.id }}">
-                        {{ treino.codigo }} - {{ treino.nome }}
-                    </option>
+                    <option value="{{ treino.id }}">{{ treino.codigo }} - {{ treino.nome }}</option>
                     {% endfor %}
                 </select>
                 {% if not treinos %}
-                <div class="alert alert-warning mt-2">
+                <div class="nt-info-box mt-2">
                     <i class="bi bi-exclamation-triangle"></i>
-                    Não há treinos disponíveis para adicionar. 
-                    <a href="{{ url_for('professor.novo_treino_aluno', aluno_id=aluno.id) }}" class="alert-link">
-                        Criar novo treino
-                    </a>
+                    <span>
+                        Não há treinos disponíveis para adicionar.
+                        <a href="{{ url_for('professor.novo_treino_aluno', aluno_id=aluno.id) }}" class="alert-link">Criar novo treino</a>
+                    </span>
                 </div>
                 {% endif %}
             </div>
-            
-            <div class="mb-3">
-                <label class="form-label fw-bold">Nome do Treino na Versão</label>
-                <input type="text" name="nome_treino" class="form-control form-control-lg" 
+
+            <div class="nt-field">
+                <label>Nome do treino na versão</label>
+                <input type="text" name="nome_treino" class="form-control form-control-lg"
                        placeholder="Ex: Treino A - Costas" required>
-                <small class="text-muted">Pode ser diferente do nome original do treino</small>
+                <small>Pode ser diferente do nome original do treino</small>
             </div>
-            
-            <div class="mb-3">
-                <label class="form-label fw-bold">Descrição (opcional)</label>
-                <input type="text" name="descricao_treino" class="form-control" 
+
+            <div class="nt-field">
+                <label>Descrição <span class="text-muted fw-normal">(opcional)</span></label>
+                <input type="text" name="descricao_treino" class="form-control"
                        placeholder="Ex: Foco em dorsais e espessura">
             </div>
-            
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle me-2"></i>
-                <strong>Importante:</strong> Ao adicionar este treino à versão, todos os exercícios atualmente associados a ele serão incluídos automaticamente.
+
+            <div class="nt-info-box">
+                <i class="bi bi-info-circle"></i>
+                <span><strong>Importante:</strong> ao adicionar este treino à versão, todos os exercícios atualmente associados a ele serão incluídos automaticamente.</span>
             </div>
-            
-            <div class="mt-4">
-                <button type="submit" class="btn btn-primary btn-lg" {% if not treinos %}disabled{% endif %}>
-                    <i class="bi bi-check-circle"></i> Adicionar à Versão
+
+            <div class="nt-actions">
+                <button type="submit" class="btn btn-success btn-lg" {% if not treinos %}disabled{% endif %}>
+                    <i class="bi bi-check-circle"></i> Adicionar à versão
                 </button>
-                <a href="{{ url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
-                   class="btn btn-secondary btn-lg">
+                <a href="{{ url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" class="btn btn-outline-secondary btn-lg">
                     Cancelar
                 </a>
             </div>
         </form>
-    </div>
-</div>
 
-<!-- Lista de exercícios do treino selecionado (para pré-visualização) -->
-<div class="card mt-4" id="previewExercicios" style="display: none;">
-    <div class="card-header bg-white">
-        <h5 class="mb-0">
-            <i class="bi bi-list-check me-2" style="color: #F28C33;"></i>
-            Exercícios do Treino Selecionado
-        </h5>
-    </div>
-    <div class="card-body">
-        <div id="listaExerciciosPreview" class="row">
-            <!-- Será preenchido via JavaScript -->
+        <div class="nt-preview" id="previewExercicios">
+            <hr class="my-4">
+            <div class="nt-card-header px-0" style="border: none;">
+                <i class="bi bi-list-check me-2" style="color: #F28C33;"></i>Exercícios do treino selecionado
+            </div>
+            <div class="nt-preview-grid" id="listaExerciciosPreview"></div>
         </div>
     </div>
 </div>
@@ -127,17 +263,16 @@
         const selectTreino = document.querySelector('select[name="treino_id"]');
         const previewDiv = document.getElementById('previewExercicios');
         const listaPreview = document.getElementById('listaExerciciosPreview');
-        
+
         if (selectTreino) {
             selectTreino.addEventListener('change', function() {
                 const treinoId = this.value;
-                
+
                 if (!treinoId) {
                     previewDiv.style.display = 'none';
                     return;
                 }
-                
-                // Buscar exercícios do treino via API
+
                 fetch(`/api/versao-exercicios/${treinoId}`)
                     .then(response => response.json())
                     .then(data => {
@@ -145,19 +280,16 @@
                             listaPreview.innerHTML = '';
                             data.forEach(ex => {
                                 listaPreview.innerHTML += `
-                                    <div class="col-md-4 mb-2">
-                                        <div class="p-2 border rounded">
-                                            <strong>${ex.nome}</strong>
-                                            <br><small class="text-muted">${ex.musculo}</small>
-                                        </div>
+                                    <div class="nt-preview-item">
+                                        <strong>${ex.nome}</strong>
+                                        <small>${ex.musculo}</small>
                                     </div>
                                 `;
                             });
-                            previewDiv.style.display = 'block';
                         } else {
-                            listaPreview.innerHTML = '<div class="col-12"><p class="text-muted">Este treino não tem exercícios cadastrados.</p></div>';
-                            previewDiv.style.display = 'block';
+                            listaPreview.innerHTML = '<p class="text-muted mb-0">Este treino não tem exercícios cadastrados.</p>';
                         }
+                        previewDiv.style.display = 'block';
                     })
                     .catch(error => {
                         console.error('Erro ao buscar exercícios:', error);
