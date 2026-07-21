@@ -205,44 +205,11 @@
     .vc-icon-btn.btn-clone:hover { background: #0EA5E9; border-color: #0EA5E9; }
     .vc-icon-btn.btn-delete:hover { background: #EF4444; border-color: #EF4444; }
 
-    /* Progresso */
-    .vc-progress-row {
-        padding: 0 20px 16px;
-    }
-    .vc-progress-label {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.8rem;
-        color: var(--vc-muted);
-        margin-bottom: 6px;
-    }
-    .vc-progress-label strong { color: var(--vc-ink); }
-    .vc-progress-track {
-        height: 8px;
-        border-radius: 999px;
-        background: var(--vc-bg-soft);
-        overflow: hidden;
-    }
-    .vc-progress-fill {
-        height: 100%;
-        border-radius: 999px;
-        background: linear-gradient(90deg, var(--vc-orange) 0%, var(--vc-orange-light) 100%);
-        transition: width 0.4s ease;
-    }
-
     /* Corpo: treinos */
     .vc-body {
         border-top: 1px solid var(--vc-line);
         padding: 18px 20px 20px;
         background: var(--vc-bg-soft);
-    }
-    .vc-body-label {
-        font-size: 0.78rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-        color: var(--vc-muted);
-        margin-bottom: 10px;
     }
     .vc-chip-row {
         display: flex;
@@ -660,6 +627,7 @@
                         </div>
                         <div class="vc-meta">
                             <span class="divisao-pill"><i class="bi bi-grid-3x3-gap-fill me-1"></i>{{ v.divisao }}</span>
+                            <span><i class="bi bi-trophy me-1"></i>{{ total_treinos }}/{{ max_treinos }} treinos</span>
                             {% if is_atual %}
                             <span><i class="bi bi-calendar-check me-1"></i>Ativa desde {{ v.data_inicio_formatada }}</span>
                             {% else %}
@@ -693,31 +661,27 @@
                     </div>
                 </div>
 
-                <div class="vc-progress-row">
-                    <div class="vc-progress-label">
-                        <span>Progresso da divisão</span>
-                        <strong>{{ total_treinos }}/{{ max_treinos }} treinos</strong>
-                    </div>
-                    <div class="vc-progress-track">
-                        <div class="vc-progress-fill" style="width: {{ percentual }}%;"></div>
-                    </div>
-                </div>
-
                 <div class="vc-body">
-                    <div class="vc-body-label">Treinos</div>
-                    <div class="vc-chip-row">
-                        {% for treino_id, treino in v.treinos.items() %}
-                        <div class="vc-chip">
-                            <span class="vc-chip-code">{{ treino_id }}</span>
-                            {{ treino.nome }}
-                            <small>{{ treino.exercicios|length }} ex</small>
+                    <button class="vc-details-toggle" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#detalhes-{{ v.id }}" aria-expanded="false">
+                        <i class="bi bi-chevron-down"></i> Detalhes dos Treinos
+                    </button>
+
+                    <div class="collapse mt-3" id="detalhes-{{ v.id }}">
+                        <div class="vc-chip-row">
+                            {% for treino_id, treino in v.treinos.items() %}
+                            <div class="vc-chip">
+                                <span class="vc-chip-code">{{ treino_id }}</span>
+                                {{ treino.nome }}
+                                <small>{{ treino.exercicios|length }} ex</small>
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Nenhum treino cadastrado nesta versão.
+                            </p>
+                            {% endfor %}
                         </div>
-                        {% else %}
-                        <p class="text-muted mb-0">
-                            <i class="bi bi-info-circle me-2"></i>
-                            Nenhum treino cadastrado nesta versão.
-                        </p>
-                        {% endfor %}
                     </div>
 
                     {% if total_treinos < max_treinos %}
