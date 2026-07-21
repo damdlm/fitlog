@@ -57,20 +57,53 @@ def listar_alunos():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
-    busca = request.args.get('busca', '')
+    busca = request.args.get('busca', '').strip()
     status = request.args.get('status', 'ativos')
     
-    query = AlunoProfessor.query.filter_by(professor_id=current_user.id, ativo=True)
+    # Uma única query com joinedload evita o N+1 de buscar cada aluno
+    # individualmente (db.session.get dentro do loop).
+    vinculos = (AlunoProfessor.query
+                .options(joinedload(AlunoProfessor.aluno))
+                .filter_by(professor_id=current_user.id, ativo=True)
+                .all())
     
-    alunos = []
-    for assoc in query.all():
-        aluno = db.session.get(User, assoc.aluno_id)
-        if aluno and (status == 'todos' or (status == 'ativos' and aluno.ativo) or (status == 'inativos' and not aluno.ativo)):
-            if busca.lower() in (aluno.nome_completo or '').lower() or busca.lower() in aluno.username.lower() or busca.lower() in aluno.email.lower():
-                alunos.append(aluno)
+    total_ativos = sum(1 for v in vinculos if v.aluno and v.aluno.ativo)
+    total_inativos = sum(1 for v in vinculos if v.aluno and not v.aluno.ativo)
+    
+    busca_lower = busca.lower()
+    alunos_data = []
+    for vinculo in vinculos:
+        aluno = vinculo.aluno
+        if not aluno:
+            continue
+        if status == 'ativos' and not aluno.ativo:
+            continue
+        if status == 'inativos' and aluno.ativo:
+            continue
+        if busca_lower and busca_lower not in (aluno.nome_completo or '').lower() \
+                and busca_lower not in aluno.username.lower() \
+                and busca_lower not in aluno.email.lower():
+            continue
+        alunos_data.append({'aluno': aluno, 'vinculado_desde': vinculo.data_associacao})
+    
+    alunos_data.sort(key=lambda d: (d['aluno'].nome_completo or d['aluno'].username).lower())
+    
+    # Contagem de registros por aluno em uma única query (sem N+1 no template)
+    registros_por_aluno = {}
+    aluno_ids = [d['aluno'].id for d in alunos_data]
+    if aluno_ids:
+        contagem = (db.session.query(RegistroTreino.user_id, func.count(RegistroTreino.id))
+                    .filter(RegistroTreino.user_id.in_(aluno_ids))
+                    .group_by(RegistroTreino.user_id)
+                    .all())
+        registros_por_aluno = dict(contagem)
     
     return render_template('professor/alunos.html', 
-                         alunos=alunos,
+                         alunos_data=alunos_data,
+                         registros_por_aluno=registros_por_aluno,
+                         total_vinculados=len(vinculos),
+                         total_ativos=total_ativos,
+                         total_inativos=total_inativos,
                          busca=busca,
                          status=status)
 
@@ -171,7 +204,7 @@ def visualizar_aluno(aluno_id):
                          versao_ativa=versao_ativa)
 
 
-@professor_bp.route('/aluno/desativar/<int:aluno_id>')
+@professor_bp.route('/aluno/desativar/<int:aluno_id>', methods=['POST'])
 @login_required
 def desativar_aluno(aluno_id):
     """Desativa um aluno"""
@@ -187,7 +220,7 @@ def desativar_aluno(aluno_id):
     return redirect(url_for('professor.listar_alunos'))
 
 
-@professor_bp.route('/aluno/reativar/<int:aluno_id>')
+@professor_bp.route('/aluno/reativar/<int:aluno_id>', methods=['POST'])
 @login_required
 def reativar_aluno(aluno_id):
     """Reativa um aluno"""
@@ -203,7 +236,7 @@ def reativar_aluno(aluno_id):
     return redirect(url_for('professor.listar_alunos'))
 
 
-@professor_bp.route('/aluno/remover-vinculo/<int:aluno_id>')
+@professor_bp.route('/aluno/remover-vinculo/<int:aluno_id>', methods=['POST'])
 @login_required
 def remover_vinculo(aluno_id):
     """Remove o vínculo entre professor e aluno"""

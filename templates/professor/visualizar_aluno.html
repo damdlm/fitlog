@@ -16,17 +16,21 @@
                 <i class="bi bi-pencil"></i> Editar
             </a>
             {% if aluno.ativo %}
-            <a href="{{ url_for('professor.desativar_aluno', aluno_id=aluno.id) }}" 
-               class="btn btn-danger"
-               onclick="return confirm('Desativar este aluno?')">
-                <i class="bi bi-person-x"></i> Desativar
-            </a>
+            <form action="{{ url_for('professor.desativar_aluno', aluno_id=aluno.id) }}" method="post"
+                  class="d-inline" onsubmit="return confirm('Desativar este aluno?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-person-x"></i> Desativar
+                </button>
+            </form>
             {% else %}
-            <a href="{{ url_for('professor.reativar_aluno', aluno_id=aluno.id) }}" 
-               class="btn btn-success"
-               onclick="return confirm('Reativar este aluno?')">
-                <i class="bi bi-person-check"></i> Reativar
-            </a>
+            <form action="{{ url_for('professor.reativar_aluno', aluno_id=aluno.id) }}" method="post"
+                  class="d-inline" onsubmit="return confirm('Reativar este aluno?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-person-check"></i> Reativar
+                </button>
+            </form>
             {% endif %}
         </div>
         <a href="{{ url_for('professor.listar_alunos') }}" class="btn btn-outline-secondary">
