@@ -171,6 +171,7 @@
                                    class="btn btn-outline-info" title="Visualizar" aria-label="Visualizar {{ nome_exibicao }}">
                                     <i class="bi bi-eye"></i>
                                 </a>
+                                {% if current_user.is_admin %}
                                 <a href="{{ url_for('professor.editar_aluno', aluno_id=aluno.id) }}"
                                    class="btn btn-outline-warning" title="Editar" aria-label="Editar {{ nome_exibicao }}">
                                     <i class="bi bi-pencil"></i>
@@ -191,6 +192,7 @@
                                         <i class="bi bi-person-check"></i>
                                     </button>
                                 </form>
+                                {% endif %}
                                 {% endif %}
                                 <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post"
                                       class="d-inline" onsubmit="return confirm('Remover vínculo com {{ nome_exibicao }}?')">
@@ -261,6 +263,7 @@
                    class="btn btn-sm btn-outline-info flex-fill">
                     <i class="bi bi-eye"></i> Ver
                 </a>
+                {% if current_user.is_admin %}
                 <a href="{{ url_for('professor.editar_aluno', aluno_id=aluno.id) }}"
                    class="btn btn-sm btn-outline-warning flex-fill">
                     <i class="bi bi-pencil"></i> Editar
@@ -282,6 +285,7 @@
                     </button>
                 </form>
                 {% endif %}
+                {% endif %}
                 <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post"
                       class="flex-fill" onsubmit="return confirm('Remover vínculo com {{ nome_exibicao }}?')">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -296,6 +300,7 @@
     <div class="card">
         <div class="card-body text-center text-muted py-5">
             <i class="bi bi-people fs-1 d-block mb-3"></i>
+
             {% if busca or status != 'ativos' %}
                 Nenhum aluno encontrado para esse filtro.
             {% else %}

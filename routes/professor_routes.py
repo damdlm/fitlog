@@ -207,10 +207,10 @@ def visualizar_aluno(aluno_id):
 @professor_bp.route('/aluno/desativar/<int:aluno_id>', methods=['POST'])
 @login_required
 def desativar_aluno(aluno_id):
-    """Desativa um aluno"""
+    """Desativa um aluno — ação restrita ao admin"""
     aluno = User.query.get_or_404(aluno_id)
     
-    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
+    if not current_user.is_admin:
         flash('Você não tem permissão para desativar este aluno.', 'danger')
         return redirect(url_for('professor.dashboard'))
     
@@ -223,10 +223,10 @@ def desativar_aluno(aluno_id):
 @professor_bp.route('/aluno/reativar/<int:aluno_id>', methods=['POST'])
 @login_required
 def reativar_aluno(aluno_id):
-    """Reativa um aluno"""
+    """Reativa um aluno — ação restrita ao admin"""
     aluno = User.query.get_or_404(aluno_id)
     
-    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
+    if not current_user.is_admin:
         flash('Você não tem permissão para reativar este aluno.', 'danger')
         return redirect(url_for('professor.dashboard'))
     
@@ -258,10 +258,10 @@ def remover_vinculo(aluno_id):
 @professor_bp.route('/aluno/editar/<int:aluno_id>', methods=['GET', 'POST'])
 @login_required
 def editar_aluno(aluno_id):
-    """Edita os dados de um aluno"""
+    """Edita os dados de um aluno — ação restrita ao admin"""
     aluno = User.query.get_or_404(aluno_id)
     
-    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
+    if not current_user.is_admin:
         flash('Você não tem permissão para editar este aluno.', 'danger')
         return redirect(url_for('professor.dashboard'))
     
