@@ -6,6 +6,7 @@ from extensions import limiter   # <-- importa de extensions, nunca de app
 from datetime import datetime, timezone
 import logging
 from utils.validators import validar_email, validar_senha
+from utils.email_utils import enviar_email
 
 auth_bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
@@ -57,6 +58,77 @@ def login():
         return redirect(_safe_next_url(request.args.get('next')))
 
     return render_template('auth/login.html')
+
+
+@auth_bp.route('/reset-password-request', methods=['GET', 'POST'])
+@limiter.limit("5 per hour")
+def reset_password_request():
+    """Solicitação de recuperação de senha: envia (ou loga, se SMTP não
+    estiver configurado) um link de reset válido por 30 minutos."""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        user = User.query.filter_by(email=email).first() if email else None
+
+        # Mensagem sempre igual, exista ou não a conta com esse e-mail —
+        # evita que alguém use este formulário para descobrir quais
+        # e-mails estão cadastrados (user enumeration).
+        if user and user.ativo:
+            token = user.get_reset_token()
+            reset_url = url_for('auth.reset_password', token=token, _external=True)
+
+            corpo_texto = (
+                f"Olá, {user.nome_completo or user.username}!\n\n"
+                f"Recebemos uma solicitação para redefinir sua senha no FitLog.\n"
+                f"Clique no link abaixo para escolher uma nova senha "
+                f"(válido por 30 minutos):\n\n{reset_url}\n\n"
+                f"Se você não solicitou isso, pode ignorar este e-mail."
+            )
+            enviar_email(user.email, 'FitLog — Redefinição de senha', corpo_texto)
+            logger.info(f"Solicitacao de reset de senha -- usuario ID {user.id}")
+        else:
+            logger.info(f"Solicitacao de reset de senha para e-mail nao encontrado/inativo -- IP: {request.remote_addr}")
+
+        flash('Se este e-mail estiver cadastrado, enviamos um link de redefinição de senha.', 'info')
+        return redirect(url_for('auth.login'))
+
+    return render_template('auth/reset_password_request.html')
+
+
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+@limiter.limit("10 per hour")
+def reset_password(token):
+    """Redefinição de senha a partir de um token válido enviado por e-mail."""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+
+    user = User.verify_reset_token(token)
+    if user is None:
+        flash('Este link de redefinição é inválido ou expirou. Solicite um novo.', 'danger')
+        return redirect(url_for('auth.reset_password_request'))
+
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        ok_senha, msg_senha = validar_senha(password)
+        if not ok_senha:
+            flash(msg_senha, 'danger')
+            return render_template('auth/reset_password.html', token=token)
+
+        if password != confirm_password:
+            flash('As senhas não coincidem', 'danger')
+            return render_template('auth/reset_password.html', token=token)
+
+        user.set_password(password)
+        db.session.commit()
+        logger.info(f"Senha redefinida via token -- usuario ID {user.id}")
+        flash('Senha redefinida com sucesso! Faça login com a nova senha.', 'success')
+        return redirect(url_for('auth.login'))
+
+    return render_template('auth/reset_password.html', token=token)
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])

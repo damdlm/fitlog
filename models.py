@@ -1,8 +1,10 @@
+from flask import current_app
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.ext.hybrid import hybrid_property
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 db = SQLAlchemy()
 
@@ -87,6 +89,45 @@ class User(UserMixin, db.Model):
     
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def get_reset_token(self, expires_sec=1800):
+        """
+        Gera um token assinado (itsdangerous) para reset de senha.
+
+        O token embute o id do usuario e o hash da senha atual (nao a
+        senha em si). Isso tem duas vantagens sobre guardar um token
+        em coluna no banco:
+          - nao precisa de migracao/tabela nova;
+          - o token se invalida sozinho assim que a senha muda (o hash
+            embutido deixa de bater), entao nao da pra reusar um link
+            de reset antigo depois que a senha ja foi trocada.
+
+        expires_sec: validade do token em segundos (padrao 30 minutos).
+        """
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        return s.dumps(
+            {'user_id': self.id, 'pw_hash': self.password_hash},
+            salt='password-reset',
+        )
+
+    @staticmethod
+    def verify_reset_token(token, max_age=1800):
+        """
+        Verifica um token de reset de senha.
+        Retorna o User correspondente se o token for valido, ainda
+        dentro da validade, e a senha nao tiver mudado desde a geracao.
+        Retorna None em qualquer caso de token invalido/expirado/ja usado.
+        """
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token, salt='password-reset', max_age=max_age)
+        except (BadSignature, SignatureExpired):
+            return None
+
+        user = User.query.get(data.get('user_id'))
+        if user is None or user.password_hash != data.get('pw_hash'):
+            return None
+        return user
     
     def is_professor(self):
         return self.tipo_usuario == 'professor'
