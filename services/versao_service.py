@@ -364,8 +364,15 @@ class VersaoService(BaseService):
             query_tv = TreinoVersao.query.filter_by(versao_id=versao_id)
             if treino_codigo:
                 treino = TreinoService.get_by_codigo(treino_codigo, user_id)
-                if treino:
-                    query_tv = query_tv.filter_by(treino_id=treino.id)
+                if not treino:
+                    # Não silenciar: se o treino não existe pra esse user_id,
+                    # o correto é não retornar nada, nunca "todos os treinos".
+                    logger.warning(
+                        f"Treino '{treino_codigo}' não encontrado para usuário {user_id} "
+                        f"ao buscar exercícios da versão {versao_id}"
+                    )
+                    return []
+                query_tv = query_tv.filter_by(treino_id=treino.id)
             
             treinos_versao = query_tv.all()
             if not treinos_versao:
@@ -573,8 +580,6 @@ class VersaoService(BaseService):
             versao = VersaoService.get_by_id(versao_id, user_id)
             if not versao:
                 return False
-            if versao.data_fim is not None:
-                return False
             treino = TreinoService.get_by_codigo(treino_codigo, user_id)
             if not treino:
                 return False
@@ -601,8 +606,6 @@ class VersaoService(BaseService):
         try:
             versao = VersaoService.get_by_id(versao_id, user_id)
             if not versao:
-                return False
-            if versao.data_fim is not None:
                 return False
             treino = TreinoService.get_by_codigo(treino_codigo, user_id)
             if not treino:
@@ -797,10 +800,7 @@ class VersaoService(BaseService):
         versao = VersaoGlobal.query.filter_by(id=versao_id, user_id=user_id).first()
         if not versao:
             raise ValueError("Versão não encontrada")
-
-        if versao.data_fim is not None:
-            raise ValueError("Esta versão está arquivada e não pode ser alterada.")
-
+        
         treino = Treino.query.filter_by(codigo=treino_codigo, user_id=user_id).first()
         if not treino:
             raise ValueError("Treino não encontrado")

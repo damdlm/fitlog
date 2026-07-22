@@ -325,7 +325,8 @@ class ExercicioService(BaseService):
             # Buscar exercícios do treino APENAS na versão ativa
             exercicios = VersaoService.get_exercicios(
                 versao_ativa.id,
-                treino_codigo=treino.codigo  # ← usa o código do treino (A, B, C...)
+                treino_codigo=treino.codigo,  # ← usa o código do treino (A, B, C...)
+                user_id=user_id
             )
             
             logger.debug(f"Encontrados {len(exercicios)} exercícios para treino {treino.codigo} na versão ativa")
