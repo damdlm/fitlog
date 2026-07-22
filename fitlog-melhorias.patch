@@ -1,0 +1,254 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+new file mode 100644
+index 0000000..8036e05
+--- /dev/null
++++ b/.github/workflows/ci.yml
+@@ -0,0 +1,53 @@
++name: CI
++
++on:
++  push:
++    branches: [main]
++  pull_request:
++    branches: [main]
++
++jobs:
++  lint-and-test:
++    runs-on: ubuntu-latest
++
++    env:
++      # Necessária só para o import de config.py não falhar durante o
++      # setup de testes; os testes em si usam SQLite em memória.
++      SECRET_KEY: ci-only-secret-key-not-for-production
++      FLASK_ENV: testing
++
++    steps:
++      - name: Checkout do código
++        uses: actions/checkout@v4
++
++      - name: Configurar Python
++        uses: actions/setup-python@v5
++        with:
++          python-version: "3.12"
++          cache: "pip"
++
++      - name: Instalar dependências do sistema (libpq para psycopg2)
++        run: sudo apt-get update && sudo apt-get install -y libpq-dev
++
++      - name: Instalar dependências Python
++        run: |
++          python -m pip install --upgrade pip
++          pip install -r requirements.txt
++
++      - name: Lint (flake8)
++        run: |
++          # E9/F: erros de sintaxe e imports quebrados nunca podem passar.
++          # O resto do flake8 (estilo) só gera aviso, não quebra o build.
++          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
++          flake8 . --count --exit-zero --max-line-length=120 --statistics
++
++      - name: Rodar testes com cobertura
++        run: |
++          pytest tests/ --cov=. --cov-report=term-missing --cov-report=xml
++
++      - name: Publicar relatório de cobertura como artefato
++        if: always()
++        uses: actions/upload-artifact@v4
++        with:
++          name: coverage-report
++          path: coverage.xml
+diff --git a/app.py b/app.py
+index 958943a..2decd05 100644
+--- a/app.py
++++ b/app.py
+@@ -49,10 +49,35 @@ def setup_logging(app):
+ def _criar_admin_inicial(app):
+     try:
+         admin_password = os.getenv('ADMIN_PASSWORD', '').strip()
++        # DEBUG=True (dev) e TESTING=True (testes/CI) contam como "não
++        # produção". TestingConfig só define TESTING, não DEBUG — se
++        # checássemos só DEBUG, o ambiente de testes seria tratado como
++        # produção e a suíte exigiria ADMIN_PASSWORD para rodar.
++        em_producao = not (app.config.get('DEBUG', False) or app.config.get('TESTING', False))
+ 
+         if not admin_password:
++            if em_producao:
++                # Em produção, NÃO geramos e escondemos uma senha em log —
++                # o log pode ser exposto, versionado por engano, ou lido
++                # por qualquer pessoa com acesso ao servidor/observabilidade.
++                # Exigimos a variável explicitamente, como já fazemos com
++                # SECRET_KEY em config.py.
++                app.logger.error(
++                    "ADMIN_PASSWORD não definida em produção. Nenhum usuário "
++                    "admin foi criado. Defina ADMIN_PASSWORD e reinicie a aplicação."
++                )
++                return
++
++            # Em desenvolvimento, geramos uma senha temporária, mas ela vai
++            # apenas para o console (stdout) — nunca para o arquivo de log
++            # persistente em logs/fitlog.log.
+             admin_password = secrets.token_urlsafe(16)
+-            app.logger.warning(f"ADMIN gerado: {admin_password}")
++            print(
++                "\n" + "=" * 60 +
++                f"\nADMIN (dev) criado -> usuário: admin | senha: {admin_password}" +
++                "\n" + "=" * 60 + "\n"
++            )
++            app.logger.info("Usuário admin criado com senha temporária (exibida somente no console).")
+ 
+         elif len(admin_password) < 12:
+             raise ValueError("ADMIN_PASSWORD precisa ter pelo menos 12 caracteres")
+diff --git a/config.py b/config.py
+index 602787a..93fe264 100644
+--- a/config.py
++++ b/config.py
+@@ -42,6 +42,12 @@ def get_config():
+     }
+     config_class = config_map.get(env, DevelopmentConfig)
+ 
++    if config_class is ProductionConfig and not config_class.SECRET_KEY:
++        raise RuntimeError(
++            "SECRET_KEY não definida no ambiente de produção. "
++            "Configure a variável SECRET_KEY antes de subir a aplicação."
++        )
++
+     logger.debug("get_config() -> FLASK_ENV=%s -> %s", env, config_class.__name__)
+     return config_class
+ 
+@@ -94,10 +100,10 @@ class ProductionConfig(Config):
+         },
+     }
+ 
+-    _secret_key_env = os.getenv('SECRET_KEY')
+-    if not _secret_key_env:
+-        raise RuntimeError(
+-            "SECRET_KEY não definida no ambiente de produção. "
+-            "Configure a variável SECRET_KEY antes de subir a aplicação."
+-        )
+-    SECRET_KEY = _secret_key_env
+\ No newline at end of file
++    # ATENÇÃO: a validação de SECRET_KEY NÃO fica aqui no corpo da classe.
++    # Corpo de classe roda assim que o módulo é importado (na definição da
++    # classe), então um `raise` aqui quebraria qualquer import de config.py
++    # — inclusive em dev/testes — mesmo quando ProductionConfig nunca é
++    # selecionada. A validação real acontece em get_config(), que só roda
++    # quando o ambiente realmente pede ProductionConfig.
++    SECRET_KEY = os.getenv('SECRET_KEY')
+\ No newline at end of file
+diff --git a/repositories/registro_repository.py b/repositories/registro_repository.py
+index 25fa51a..bf6f35f 100644
+--- a/repositories/registro_repository.py
++++ b/repositories/registro_repository.py
+@@ -1,6 +1,6 @@
+ """Repositório para operações com registros de treino"""
+ 
+-from models import RegistroTreino, HistoricoTreino
++from models import db, RegistroTreino, HistoricoTreino
+ from sqlalchemy.orm import joinedload
+ from sqlalchemy import func
+ from .base_repository import BaseRepository
+diff --git a/repositories/treino_repository.py b/repositories/treino_repository.py
+index b68536e..753a3d8 100644
+--- a/repositories/treino_repository.py
++++ b/repositories/treino_repository.py
+@@ -1,6 +1,6 @@
+ """Repositório para operações com treinos"""
+ 
+-from models import Treino
++from models import db, Treino
+ from .base_repository import BaseRepository
+ import logging
+ 
+diff --git a/repositories/versao_repository.py b/repositories/versao_repository.py
+index 47b0d25..bb46ee0 100644
+--- a/repositories/versao_repository.py
++++ b/repositories/versao_repository.py
+@@ -1,6 +1,6 @@
+ """Repositório para operações com versões"""
+ 
+-from models import VersaoGlobal, TreinoVersao, VersaoExercicio
++from models import db, VersaoGlobal, TreinoVersao, VersaoExercicio
+ from sqlalchemy import func
+ from sqlalchemy.orm import joinedload
+ from .base_repository import BaseRepository
+diff --git a/services/musculo_service.py b/services/musculo_service.py
+index 70c1f24..2e3f83b 100644
+--- a/services/musculo_service.py
++++ b/services/musculo_service.py
+@@ -1,6 +1,6 @@
+ """Serviço para operações com músculos — usa Musculo (tabela unificada)"""
+ 
+-from models import Musculo
++from models import db, Musculo
+ from .base_service import BaseService
+ import logging
+ 
+diff --git a/tests/integration/test_routes/test_auth_routes.py b/tests/integration/test_routes/test_auth_routes.py
+index 96e649c..a77a6c3 100644
+--- a/tests/integration/test_routes/test_auth_routes.py
++++ b/tests/integration/test_routes/test_auth_routes.py
+@@ -14,31 +14,43 @@ def test_register_page(client):
+ 
+ def test_register_user(client, db):
+     """Testa registro de usuário"""
++    # '123456' não atende ao validador de senha da aplicação (mínimo 8
++    # caracteres, com letra e número — ver utils/validators.validar_senha),
++    # então o registro falhava silenciosamente e nunca criava o usuário.
+     response = client.post('/auth/register', data={
+         'username': 'testuser',
+         'email': 'test@test.com',
+-        'password': '123456',
+-        'confirm_password': '123456'
++        'password': 'Senha1234',
++        'confirm_password': 'Senha1234'
+     }, follow_redirects=True)
+-    
++
+     assert response.status_code == 200
+-    assert b'Usuário criado com sucesso' in response.data
++
++    from models import User
++    user = User.query.filter_by(username='testuser').first()
++    assert user is not None
++    assert user.email == 'test@test.com'
++
++    # Checagem best-effort do texto de sucesso (decodificado como string,
++    # já que literais bytes não podem conter acentuação em Python).
++    texto = response.get_data(as_text=True)
++    assert 'Conta criada' in texto
+ 
+ def test_login_user(client, db):
+     """Testa login de usuário"""
+-    # Primeiro registra
++    # Primeiro registra (mesma observação sobre senha do teste acima)
+     client.post('/auth/register', data={
+         'username': 'logintest',
+         'email': 'login@test.com',
+-        'password': '123456',
+-        'confirm_password': '123456'
++        'password': 'Senha1234',
++        'confirm_password': 'Senha1234'
+     })
+-    
++
+     # Depois faz login
+     response = client.post('/auth/login', data={
+         'username': 'logintest',
+-        'password': '123456'
++        'password': 'Senha1234'
+     }, follow_redirects=True)
+-    
++
+     assert response.status_code == 200
+     assert b'Bem-vindo' in response.data
+\ No newline at end of file
+diff --git a/utils/version_utils.py b/utils/version_utils.py
+index 4ab50f4..78cdc67 100644
+--- a/utils/version_utils.py
++++ b/utils/version_utils.py
+@@ -1,5 +1,6 @@
+ from .date_utils import converter_periodo_para_data
+ from .exercise_utils import get_series_from_registro
++from models import Treino
+ 
+ # ===== VERSÕES GLOBAIS =====
