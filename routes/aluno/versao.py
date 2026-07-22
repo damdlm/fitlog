@@ -152,6 +152,9 @@ def novo_treino_versao(versao_id):
     if not versao:
         flash('Versão não encontrada!', 'danger')
         return redirect(url_for('aluno.versoes'))
+    if versao.data_fim is not None:
+        flash('Esta versão está arquivada e não pode ser alterada.', 'warning')
+        return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
     if request.method == 'POST':
         treino_id = request.form.get('treino_id')
         nome_treino = request.form.get('nome_treino')
@@ -205,6 +208,10 @@ def editar_treino_versao(versao_id, treino_codigo):
     if not versao:
         flash('Versão não encontrada!', 'danger')
         return redirect(url_for('aluno.versoes'))
+
+    if versao.data_fim is not None:
+        flash('Esta versão está arquivada e não pode ser editada.', 'warning')
+        return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
 
     treino_ref = TreinoService.get_by_codigo(treino_codigo, user_id=current_user.id)
 

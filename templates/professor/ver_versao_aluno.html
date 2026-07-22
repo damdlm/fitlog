@@ -157,7 +157,7 @@
                 <div class="progresso-divisao-bar" style="width: {{ percentual }}%;"></div>
             </div>
             <span class="badge bg-primary">{{ total_treinos }}/{{ max_treinos }} treinos</span>
-            {% if total_treinos < max_treinos %}
+            {% if not versao.data_fim and total_treinos < max_treinos %}
             <a href="{{ url_for('professor.novo_treino_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
                class="btn btn-sm btn-success ms-auto">
                 <i class="bi bi-plus-circle"></i> Adicionar Treino
@@ -251,6 +251,7 @@
                 <span class="badge bg-secondary ms-2">{{ treino.exercicios|length }} exercícios</span>
             </div>
             <div class="action-buttons">
+                {% if not versao.data_fim %}
                 <a href="{{ url_for('professor.editar_treino_versao_aluno', 
                       aluno_id=aluno.id, 
                       versao_id=versao.id, 
@@ -266,6 +267,11 @@
                    onclick="return confirm('Remover este treino da versão? Os exercícios não serão excluídos do catálogo.')">
                     <i class="bi bi-trash"></i>
                 </a>
+                {% else %}
+                <span class="badge bg-secondary" title="Versão arquivada: somente leitura">
+                    <i class="bi bi-lock"></i> Arquivada
+                </span>
+                {% endif %}
             </div>
         </div>
         <div class="card-body">

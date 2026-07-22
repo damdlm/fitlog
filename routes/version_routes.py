@@ -159,6 +159,9 @@ def novo_treino_na_versao(versao_id):
     if not versao:
         flash("Versão não encontrada!", "danger")
         return redirect(url_for("version.gerenciar_versoes_global"))
+    if versao.data_fim is not None:
+        flash("Esta versão está arquivada e não pode ser alterada.", "warning")
+        return redirect(url_for("version.ver_versao", versao_id=versao_id))
     treinos_atuais = TreinoVersao.query.filter_by(versao_id=versao_id).count()
     max_treinos = 3
     if hasattr(versao, 'divisao'):
@@ -222,6 +225,13 @@ def novo_treino_na_versao(versao_id):
 @version_bp.route("/versao/<int:versao_id>/treino/<string:treino_codigo>/editar", methods=["GET", "POST"])
 @login_required
 def editar_treino_na_versao(versao_id, treino_codigo):
+    versao_check = VersaoService.get_by_id(versao_id)
+    if not versao_check:
+        flash("Versão não encontrada!", "danger")
+        return redirect(url_for("version.gerenciar_versoes_global"))
+    if versao_check.data_fim is not None:
+        flash("Esta versão está arquivada e não pode ser editada.", "warning")
+        return redirect(url_for("version.ver_versao", versao_id=versao_id))
     if request.method == "POST":
         nome_treino = request.form.get("nome_treino")
         descricao_treino = request.form.get("descricao_treino", "")
@@ -291,6 +301,9 @@ def excluir_treino_da_versao(versao_id, treino_codigo):
     if not versao:
         flash("Versão não encontrada!", "danger")
         return redirect(url_for("version.gerenciar_versoes_global"))
+    if versao.data_fim is not None:
+        flash("Esta versão está arquivada e não pode ser alterada.", "warning")
+        return redirect(url_for("version.ver_versao", versao_id=versao_id))
     treino_ref = TreinoService.get_by_codigo(treino_codigo)
     if not treino_ref:
         flash(f"Treino {treino_codigo} não encontrado!", "danger")
@@ -312,6 +325,8 @@ def reordenar_exercicios(versao_id, treino_codigo):
     versao = VersaoService.get_by_id(versao_id)
     if not versao:
         return jsonify({"success": False, "error": "Versão não encontrada"}), 404
+    if versao.data_fim is not None:
+        return jsonify({"success": False, "error": "Versão arquivada não pode ser alterada"}), 403
     treino_ref = TreinoService.get_by_codigo(treino_codigo)
     if not treino_ref:
         return jsonify({"success": False, "error": "Treino não encontrado"}), 404
@@ -340,6 +355,8 @@ def adicionar_exercicio_na_versao(versao_id, treino_codigo):
     versao = VersaoService.get_by_id(versao_id)
     if not versao:
         return jsonify({"success": False, "error": "Versão não encontrada"}), 404
+    if versao.data_fim is not None:
+        return jsonify({"success": False, "error": "Versão arquivada não pode ser alterada"}), 403
     treino_ref = TreinoService.get_by_codigo(treino_codigo)
     if not treino_ref:
         return jsonify({"success": False, "error": "Treino não encontrado"}), 404
@@ -363,6 +380,8 @@ def remover_exercicio_da_versao(versao_id, treino_codigo, exercicio_id):
     versao = VersaoService.get_by_id(versao_id)
     if not versao:
         return jsonify({"success": False, "error": "Versão não encontrada"}), 404
+    if versao.data_fim is not None:
+        return jsonify({"success": False, "error": "Versão arquivada não pode ser alterada"}), 403
     treino_ref = TreinoService.get_by_codigo(treino_codigo)
     if not treino_ref:
         return jsonify({"success": False, "error": "Treino não encontrado"}), 404

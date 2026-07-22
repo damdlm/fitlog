@@ -684,7 +684,7 @@
                         </div>
                     </div>
 
-                    {% if total_treinos < max_treinos %}
+                    {% if is_atual and total_treinos < max_treinos %}
                     <div class="mt-3">
                         <a href="{{ url_for('version.ver_versao', versao_id=v.id) }}" class="vc-add-treino">
                             <i class="bi bi-plus-circle"></i>

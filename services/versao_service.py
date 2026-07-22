@@ -573,6 +573,8 @@ class VersaoService(BaseService):
             versao = VersaoService.get_by_id(versao_id, user_id)
             if not versao:
                 return False
+            if versao.data_fim is not None:
+                return False
             treino = TreinoService.get_by_codigo(treino_codigo, user_id)
             if not treino:
                 return False
@@ -599,6 +601,8 @@ class VersaoService(BaseService):
         try:
             versao = VersaoService.get_by_id(versao_id, user_id)
             if not versao:
+                return False
+            if versao.data_fim is not None:
                 return False
             treino = TreinoService.get_by_codigo(treino_codigo, user_id)
             if not treino:
@@ -793,7 +797,10 @@ class VersaoService(BaseService):
         versao = VersaoGlobal.query.filter_by(id=versao_id, user_id=user_id).first()
         if not versao:
             raise ValueError("Versão não encontrada")
-        
+
+        if versao.data_fim is not None:
+            raise ValueError("Esta versão está arquivada e não pode ser alterada.")
+
         treino = Treino.query.filter_by(codigo=treino_codigo, user_id=user_id).first()
         if not treino:
             raise ValueError("Treino não encontrado")

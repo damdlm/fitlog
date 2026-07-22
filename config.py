@@ -81,6 +81,19 @@ class ProductionConfig(Config):
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
 
+    # 'connect_timeout' é específico do psycopg2 (Postgres) — por isso fica
+    # só aqui, e não na Config base (SQLite não aceita esse argumento).
+    # Sem ele, uma conexão travada (rede, Postgres reiniciando etc.) pode
+    # ficar pendurada por bem mais que o --timeout do gunicorn, e o worker
+    # morre em silêncio sem nenhum erro no log. Com isso, falha em 10s com
+    # uma exceção clara em vez de travar o worker inteiro.
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        **Config.SQLALCHEMY_ENGINE_OPTIONS,
+        'connect_args': {
+            'connect_timeout': 10,
+        },
+    }
+
     _secret_key_env = os.getenv('SECRET_KEY')
     if not _secret_key_env:
         raise RuntimeError(
