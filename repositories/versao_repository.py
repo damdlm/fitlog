@@ -1,6 +1,6 @@
 """Repositório para operações com versões"""
 
-from models import VersaoGlobal, TreinoVersao, VersaoExercicio
+from models import db, VersaoGlobal, TreinoVersao, VersaoExercicio
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from .base_repository import BaseRepository

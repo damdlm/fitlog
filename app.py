@@ -49,10 +49,35 @@ def setup_logging(app):
 def _criar_admin_inicial(app):
     try:
         admin_password = os.getenv('ADMIN_PASSWORD', '').strip()
+        # DEBUG=True (dev) e TESTING=True (testes/CI) contam como "não
+        # produção". TestingConfig só define TESTING, não DEBUG — se
+        # checássemos só DEBUG, o ambiente de testes seria tratado como
+        # produção e a suíte exigiria ADMIN_PASSWORD para rodar.
+        em_producao = not (app.config.get('DEBUG', False) or app.config.get('TESTING', False))
 
         if not admin_password:
+            if em_producao:
+                # Em produção, NÃO geramos e escondemos uma senha em log —
+                # o log pode ser exposto, versionado por engano, ou lido
+                # por qualquer pessoa com acesso ao servidor/observabilidade.
+                # Exigimos a variável explicitamente, como já fazemos com
+                # SECRET_KEY em config.py.
+                app.logger.error(
+                    "ADMIN_PASSWORD não definida em produção. Nenhum usuário "
+                    "admin foi criado. Defina ADMIN_PASSWORD e reinicie a aplicação."
+                )
+                return
+
+            # Em desenvolvimento, geramos uma senha temporária, mas ela vai
+            # apenas para o console (stdout) — nunca para o arquivo de log
+            # persistente em logs/fitlog.log.
             admin_password = secrets.token_urlsafe(16)
-            app.logger.warning(f"ADMIN gerado: {admin_password}")
+            print(
+                "\n" + "=" * 60 +
+                f"\nADMIN (dev) criado -> usuário: admin | senha: {admin_password}" +
+                "\n" + "=" * 60 + "\n"
+            )
+            app.logger.info("Usuário admin criado com senha temporária (exibida somente no console).")
 
         elif len(admin_password) < 12:
             raise ValueError("ADMIN_PASSWORD precisa ter pelo menos 12 caracteres")

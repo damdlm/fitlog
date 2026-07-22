@@ -1,6 +1,6 @@
 """Repositório para operações com treinos"""
 
-from models import Treino
+from models import db, Treino
 from .base_repository import BaseRepository
 import logging
 

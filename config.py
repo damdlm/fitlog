@@ -42,6 +42,12 @@ def get_config():
     }
     config_class = config_map.get(env, DevelopmentConfig)
 
+    if config_class is ProductionConfig and not config_class.SECRET_KEY:
+        raise RuntimeError(
+            "SECRET_KEY não definida no ambiente de produção. "
+            "Configure a variável SECRET_KEY antes de subir a aplicação."
+        )
+
     logger.debug("get_config() -> FLASK_ENV=%s -> %s", env, config_class.__name__)
     return config_class
 
@@ -94,10 +100,10 @@ class ProductionConfig(Config):
         },
     }
 
-    _secret_key_env = os.getenv('SECRET_KEY')
-    if not _secret_key_env:
-        raise RuntimeError(
-            "SECRET_KEY não definida no ambiente de produção. "
-            "Configure a variável SECRET_KEY antes de subir a aplicação."
-        )
-    SECRET_KEY = _secret_key_env
+    # ATENÇÃO: a validação de SECRET_KEY NÃO fica aqui no corpo da classe.
+    # Corpo de classe roda assim que o módulo é importado (na definição da
+    # classe), então um `raise` aqui quebraria qualquer import de config.py
+    # — inclusive em dev/testes — mesmo quando ProductionConfig nunca é
+    # selecionada. A validação real acontece em get_config(), que só roda
+    # quando o ambiente realmente pede ProductionConfig.
+    SECRET_KEY = os.getenv('SECRET_KEY')

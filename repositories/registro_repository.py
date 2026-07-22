@@ -1,6 +1,6 @@
 """Repositório para operações com registros de treino"""
 
-from models import RegistroTreino, HistoricoTreino
+from models import db, RegistroTreino, HistoricoTreino
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
 from .base_repository import BaseRepository

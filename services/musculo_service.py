@@ -1,6 +1,6 @@
 """Serviço para operações com músculos — usa Musculo (tabela unificada)"""
 
-from models import Musculo
+from models import db, Musculo
 from .base_service import BaseService
 import logging
 

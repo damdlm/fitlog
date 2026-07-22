@@ -1,5 +1,6 @@
 from .date_utils import converter_periodo_para_data
 from .exercise_utils import get_series_from_registro
+from models import Treino
 
 # ===== VERSÕES GLOBAIS =====
 
