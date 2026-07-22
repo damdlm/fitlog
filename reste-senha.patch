@@ -1,0 +1,507 @@
+diff --git a/.env.example b/.env.example
+index 75c52ad..831d96b 100644
+--- a/.env.example
++++ b/.env.example
+@@ -24,3 +24,13 @@ ADMIN_PASSWORD=
+ FLASK_ENV=development
+ FLASK_DEBUG=True
+ LOG_LEVEL=INFO
++
++# SMTP — usado para enviar o e-mail de recuperação de senha.
++# Se MAIL_SERVER ficar vazio, o link de reset é apenas escrito no log
++# da aplicação em vez de enviado por e-mail (útil em dev local).
++MAIL_SERVER=
++MAIL_PORT=587
++MAIL_USE_TLS=true
++MAIL_USERNAME=
++MAIL_PASSWORD=
++MAIL_DEFAULT_SENDER=
+diff --git a/config.py b/config.py
+index 93fe264..938dc18 100644
+--- a/config.py
++++ b/config.py
+@@ -69,6 +69,16 @@ class Config:
+     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+ 
++    # E-mail (usado no fluxo de recuperação de senha).
++    # Se MAIL_SERVER não for definido, o link de reset é apenas
++    # registrado no log em vez de enviado de verdade — ver utils/email_utils.py.
++    MAIL_SERVER = os.getenv('MAIL_SERVER')
++    MAIL_PORT = int(os.getenv('MAIL_PORT', 587))
++    MAIL_USE_TLS = os.getenv('MAIL_USE_TLS', 'true').lower() in ('1', 'true', 'yes')
++    MAIL_USERNAME = os.getenv('MAIL_USERNAME')
++    MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
++    MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER', os.getenv('MAIL_USERNAME'))
++
+ 
+ class DevelopmentConfig(Config):
+     DEBUG = True
+diff --git a/models.py b/models.py
+index 5da4979..235b3ab 100644
+--- a/models.py
++++ b/models.py
+@@ -1,8 +1,10 @@
++from flask import current_app
+ from flask_sqlalchemy import SQLAlchemy
+ from flask_login import UserMixin
+ from datetime import datetime, timezone
+ from werkzeug.security import generate_password_hash, check_password_hash
+ from sqlalchemy.ext.hybrid import hybrid_property
++from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+ 
+ db = SQLAlchemy()
+ 
+@@ -87,6 +89,45 @@ class User(UserMixin, db.Model):
+     
+     def check_password(self, password):
+         return check_password_hash(self.password_hash, password)
++
++    def get_reset_token(self, expires_sec=1800):
++        """
++        Gera um token assinado (itsdangerous) para reset de senha.
++
++        O token embute o id do usuario e o hash da senha atual (nao a
++        senha em si). Isso tem duas vantagens sobre guardar um token
++        em coluna no banco:
++          - nao precisa de migracao/tabela nova;
++          - o token se invalida sozinho assim que a senha muda (o hash
++            embutido deixa de bater), entao nao da pra reusar um link
++            de reset antigo depois que a senha ja foi trocada.
++
++        expires_sec: validade do token em segundos (padrao 30 minutos).
++        """
++        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
++        return s.dumps(
++            {'user_id': self.id, 'pw_hash': self.password_hash},
++            salt='password-reset',
++        )
++
++    @staticmethod
++    def verify_reset_token(token, max_age=1800):
++        """
++        Verifica um token de reset de senha.
++        Retorna o User correspondente se o token for valido, ainda
++        dentro da validade, e a senha nao tiver mudado desde a geracao.
++        Retorna None em qualquer caso de token invalido/expirado/ja usado.
++        """
++        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
++        try:
++            data = s.loads(token, salt='password-reset', max_age=max_age)
++        except (BadSignature, SignatureExpired):
++            return None
++
++        user = User.query.get(data.get('user_id'))
++        if user is None or user.password_hash != data.get('pw_hash'):
++            return None
++        return user
+     
+     def is_professor(self):
+         return self.tipo_usuario == 'professor'
+diff --git a/routes/auth_routes.py b/routes/auth_routes.py
+index efe881a..80f1136 100644
+--- a/routes/auth_routes.py
++++ b/routes/auth_routes.py
+@@ -6,6 +6,7 @@ from extensions import limiter   # <-- importa de extensions, nunca de app
+ from datetime import datetime, timezone
+ import logging
+ from utils.validators import validar_email, validar_senha
++from utils.email_utils import enviar_email
+ 
+ auth_bp = Blueprint('auth', __name__)
+ logger = logging.getLogger(__name__)
+@@ -59,6 +60,77 @@ def login():
+     return render_template('auth/login.html')
+ 
+ 
++@auth_bp.route('/reset-password-request', methods=['GET', 'POST'])
++@limiter.limit("5 per hour")
++def reset_password_request():
++    """Solicitação de recuperação de senha: envia (ou loga, se SMTP não
++    estiver configurado) um link de reset válido por 30 minutos."""
++    if current_user.is_authenticated:
++        return redirect(url_for('main.index'))
++
++    if request.method == 'POST':
++        email = request.form.get('email', '').strip()
++        user = User.query.filter_by(email=email).first() if email else None
++
++        # Mensagem sempre igual, exista ou não a conta com esse e-mail —
++        # evita que alguém use este formulário para descobrir quais
++        # e-mails estão cadastrados (user enumeration).
++        if user and user.ativo:
++            token = user.get_reset_token()
++            reset_url = url_for('auth.reset_password', token=token, _external=True)
++
++            corpo_texto = (
++                f"Olá, {user.nome_completo or user.username}!\n\n"
++                f"Recebemos uma solicitação para redefinir sua senha no FitLog.\n"
++                f"Clique no link abaixo para escolher uma nova senha "
++                f"(válido por 30 minutos):\n\n{reset_url}\n\n"
++                f"Se você não solicitou isso, pode ignorar este e-mail."
++            )
++            enviar_email(user.email, 'FitLog — Redefinição de senha', corpo_texto)
++            logger.info(f"Solicitacao de reset de senha -- usuario ID {user.id}")
++        else:
++            logger.info(f"Solicitacao de reset de senha para e-mail nao encontrado/inativo -- IP: {request.remote_addr}")
++
++        flash('Se este e-mail estiver cadastrado, enviamos um link de redefinição de senha.', 'info')
++        return redirect(url_for('auth.login'))
++
++    return render_template('auth/reset_password_request.html')
++
++
++@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
++@limiter.limit("10 per hour")
++def reset_password(token):
++    """Redefinição de senha a partir de um token válido enviado por e-mail."""
++    if current_user.is_authenticated:
++        return redirect(url_for('main.index'))
++
++    user = User.verify_reset_token(token)
++    if user is None:
++        flash('Este link de redefinição é inválido ou expirou. Solicite um novo.', 'danger')
++        return redirect(url_for('auth.reset_password_request'))
++
++    if request.method == 'POST':
++        password = request.form.get('password', '')
++        confirm_password = request.form.get('confirm_password', '')
++
++        ok_senha, msg_senha = validar_senha(password)
++        if not ok_senha:
++            flash(msg_senha, 'danger')
++            return render_template('auth/reset_password.html', token=token)
++
++        if password != confirm_password:
++            flash('As senhas não coincidem', 'danger')
++            return render_template('auth/reset_password.html', token=token)
++
++        user.set_password(password)
++        db.session.commit()
++        logger.info(f"Senha redefinida via token -- usuario ID {user.id}")
++        flash('Senha redefinida com sucesso! Faça login com a nova senha.', 'success')
++        return redirect(url_for('auth.login'))
++
++    return render_template('auth/reset_password.html', token=token)
++
++
+ @auth_bp.route('/register', methods=['GET', 'POST'])
+ @limiter.limit("5 per hour")
+ def register():
+diff --git a/templates/auth/login.html b/templates/auth/login.html
+index 5e4f0a7..1be27f7 100644
+--- a/templates/auth/login.html
++++ b/templates/auth/login.html
+@@ -31,9 +31,12 @@
+                         </div>
+                     </div>
+                     
+-                    <div class="mb-3 form-check">
+-                        <input type="checkbox" name="remember" class="form-check-input" id="remember">
+-                        <label class="form-check-label" for="remember">Lembrar-me</label>
++                    <div class="mb-3 form-check d-flex justify-content-between align-items-center">
++                        <span>
++                            <input type="checkbox" name="remember" class="form-check-input" id="remember">
++                            <label class="form-check-label" for="remember">Lembrar-me</label>
++                        </span>
++                        <a href="{{ url_for('auth.reset_password_request') }}" class="small">Esqueci minha senha</a>
+                     </div>
+                     
+                     <button type="submit" class="btn w-100 py-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
+diff --git a/templates/auth/reset_password.html b/templates/auth/reset_password.html
+new file mode 100644
+index 0000000..3a59ab5
+--- /dev/null
++++ b/templates/auth/reset_password.html
+@@ -0,0 +1,42 @@
++{% extends "base.html" %}
++
++{% block content %}
++<div class="row justify-content-center">
++    <div class="col-md-6 col-lg-5">
++        <div class="card shadow-sm">
++            <div class="card-header bg-white text-center py-3">
++                <h4 class="mb-0" style="color: #F28C33;">
++                    <i class="bi bi-shield-lock"></i> Nova senha
++                </h4>
++            </div>
++            <div class="card-body p-4">
++                <form method="post">
++                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
++
++                    <div class="mb-3">
++                        <label class="form-label fw-bold">Nova senha</label>
++                        <div class="input-group">
++                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
++                            <input type="password" name="password" class="form-control"
++                                   placeholder="Digite a nova senha" required autofocus>
++                        </div>
++                    </div>
++
++                    <div class="mb-3">
++                        <label class="form-label fw-bold">Confirmar nova senha</label>
++                        <div class="input-group">
++                            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
++                            <input type="password" name="confirm_password" class="form-control"
++                                   placeholder="Repita a nova senha" required>
++                        </div>
++                    </div>
++
++                    <button type="submit" class="btn w-100 py-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
++                        <i class="bi bi-check-circle"></i> Redefinir senha
++                    </button>
++                </form>
++            </div>
++        </div>
++    </div>
++</div>
++{% endblock %}
+diff --git a/templates/auth/reset_password_request.html b/templates/auth/reset_password_request.html
+new file mode 100644
+index 0000000..f6bef7f
+--- /dev/null
++++ b/templates/auth/reset_password_request.html
+@@ -0,0 +1,45 @@
++{% extends "base.html" %}
++
++{% block content %}
++<div class="row justify-content-center">
++    <div class="col-md-6 col-lg-5">
++        <div class="card shadow-sm">
++            <div class="card-header bg-white text-center py-3">
++                <h4 class="mb-0" style="color: #F28C33;">
++                    <i class="bi bi-key"></i> Recuperar senha
++                </h4>
++            </div>
++            <div class="card-body p-4">
++                <p class="text-muted">
++                    Informe o e-mail cadastrado na sua conta. Se ele existir,
++                    enviaremos um link para você redefinir sua senha.
++                </p>
++                <form method="post">
++                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
++
++                    <div class="mb-3">
++                        <label class="form-label fw-bold">E-mail</label>
++                        <div class="input-group">
++                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
++                            <input type="email" name="email" class="form-control"
++                                   placeholder="Digite seu e-mail" required autofocus>
++                        </div>
++                    </div>
++
++                    <button type="submit" class="btn w-100 py-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
++                        <i class="bi bi-send"></i> Enviar link de redefinição
++                    </button>
++                </form>
++
++                <hr class="my-4">
++
++                <div class="text-center">
++                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary">
++                        <i class="bi bi-arrow-left"></i> Voltar para o login
++                    </a>
++                </div>
++            </div>
++        </div>
++    </div>
++</div>
++{% endblock %}
+diff --git a/tests/integration/test_routes/test_auth_routes.py b/tests/integration/test_routes/test_auth_routes.py
+index a77a6c3..dcbbb1c 100644
+--- a/tests/integration/test_routes/test_auth_routes.py
++++ b/tests/integration/test_routes/test_auth_routes.py
+@@ -53,4 +53,111 @@ def test_login_user(client, db):
+     }, follow_redirects=True)
+ 
+     assert response.status_code == 200
+-    assert b'Bem-vindo' in response.data
+\ No newline at end of file
++    assert b'Bem-vindo' in response.data
++
++
++def test_reset_password_request_page(client):
++    """Testa se página de solicitação de reset carrega"""
++    response = client.get('/auth/reset-password-request')
++    assert response.status_code == 200
++
++
++def test_reset_password_request_email_existente(client, db):
++    """Solicitar reset para e-mail cadastrado deve retornar a mesma
++    mensagem genérica de sucesso (sem revelar se o e-mail existe)."""
++    from models import User
++    user = User(username='resetuser', email='reset@test.com')
++    user.set_password('SenhaAntiga123')
++    db.session.add(user)
++    db.session.commit()
++
++    response = client.post('/auth/reset-password-request',
++                            data={'email': 'reset@test.com'},
++                            follow_redirects=True)
++    assert response.status_code == 200
++    assert 'link de redefinição' in response.get_data(as_text=True)
++
++
++def test_reset_password_request_email_inexistente(client, db):
++    """Solicitar reset para e-mail não cadastrado deve dar a MESMA
++    resposta genérica (protege contra user enumeration)."""
++    response = client.post('/auth/reset-password-request',
++                            data={'email': 'naoexiste@test.com'},
++                            follow_redirects=True)
++    assert response.status_code == 200
++    assert 'link de redefinição' in response.get_data(as_text=True)
++
++
++def test_reset_password_com_token_valido(client, db):
++    """Fluxo completo: token válido troca a senha, e a senha antiga
++    deixa de funcionar."""
++    from models import User
++    user = User(username='tokenuser', email='token@test.com')
++    user.set_password('SenhaAntiga123')
++    db.session.add(user)
++    db.session.commit()
++
++    token = user.get_reset_token()
++
++    get_resp = client.get(f'/auth/reset-password/{token}')
++    assert get_resp.status_code == 200
++
++    post_resp = client.post(f'/auth/reset-password/{token}', data={
++        'password': 'SenhaNova456',
++        'confirm_password': 'SenhaNova456',
++    }, follow_redirects=True)
++    assert post_resp.status_code == 200
++
++    user_atualizado = User.query.filter_by(username='tokenuser').first()
++    assert user_atualizado.check_password('SenhaNova456') is True
++    assert user_atualizado.check_password('SenhaAntiga123') is False
++
++
++def test_reset_password_com_token_invalido(client):
++    """Token inválido/adulterado deve redirecionar para a solicitação,
++    sem quebrar a aplicação."""
++    response = client.get('/auth/reset-password/token-adulterado-qualquer',
++                           follow_redirects=True)
++    assert response.status_code == 200
++    assert 'inválido' in response.get_data(as_text=True) or 'expirou' in response.get_data(as_text=True)
++
++
++def test_reset_password_token_nao_pode_ser_reusado(client, db):
++    """Depois que a senha já foi trocada, o mesmo token não pode ser
++    usado de novo (ele embute o hash da senha antiga)."""
++    from models import User
++    user = User(username='reuseuser', email='reuse@test.com')
++    user.set_password('SenhaAntiga123')
++    db.session.add(user)
++    db.session.commit()
++
++    token = user.get_reset_token()
++
++    client.post(f'/auth/reset-password/{token}', data={
++        'password': 'SenhaNova456',
++        'confirm_password': 'SenhaNova456',
++    })
++
++    response = client.get(f'/auth/reset-password/{token}', follow_redirects=True)
++    texto = response.get_data(as_text=True)
++    assert 'inválido' in texto or 'expirou' in texto
++
++
++def test_reset_password_senhas_nao_coincidem(client, db):
++    """Se a confirmação de senha não bater, a senha não deve ser alterada."""
++    from models import User
++    user = User(username='mismatchuser', email='mismatch@test.com')
++    user.set_password('SenhaAntiga123')
++    db.session.add(user)
++    db.session.commit()
++
++    token = user.get_reset_token()
++
++    response = client.post(f'/auth/reset-password/{token}', data={
++        'password': 'SenhaNova456',
++        'confirm_password': 'SenhaDiferente789',
++    }, follow_redirects=True)
++
++    assert response.status_code == 200
++    user_atualizado = User.query.filter_by(username='mismatchuser').first()
++    assert user_atualizado.check_password('SenhaAntiga123') is True
+\ No newline at end of file
+diff --git a/utils/email_utils.py b/utils/email_utils.py
+new file mode 100644
+index 0000000..37e4418
+--- /dev/null
++++ b/utils/email_utils.py
+@@ -0,0 +1,73 @@
++"""
++Utilitário de envio de e-mail via SMTP (usa apenas smtplib da stdlib,
++sem adicionar Flask-Mail como dependência nova).
++
++Configuração via variáveis de ambiente (ver config.py):
++    MAIL_SERVER, MAIL_PORT, MAIL_USE_TLS, MAIL_USERNAME, MAIL_PASSWORD,
++    MAIL_DEFAULT_SENDER
++
++Se MAIL_SERVER não estiver configurado (ex: ambiente de desenvolvimento
++local sem SMTP), o e-mail não é enviado de verdade — o conteúdo é apenas
++registrado no logger em nível INFO, para permitir testar o fluxo de
++recuperação de senha sem precisar de um servidor SMTP real.
++"""
++
++import logging
++import smtplib
++from email.message import EmailMessage
++
++from flask import current_app
++
++logger = logging.getLogger(__name__)
++
++
++def enviar_email(destinatario, assunto, corpo_texto, corpo_html=None):
++    """
++    Envia um e-mail simples (texto + opcionalmente HTML).
++
++    Retorna True se o e-mail foi (tentativamente) enviado via SMTP,
++    ou False se apenas foi registrado em log (SMTP não configurado)
++    ou se houve falha no envio.
++    """
++    mail_server = current_app.config.get('MAIL_SERVER')
++
++    if not mail_server:
++        # Sem SMTP configurado (ex: dev local): loga o conteúdo em vez de
++        # falhar silenciosamente, para o fluxo continuar testável.
++        logger.info(
++            "MAIL_SERVER nao configurado -- e-mail NAO enviado de verdade.\n"
++            "Para: %s | Assunto: %s\n%s",
++            destinatario, assunto, corpo_texto,
++        )
++        return False
++
++    remetente = current_app.config.get('MAIL_DEFAULT_SENDER') or current_app.config.get('MAIL_USERNAME')
++
++    msg = EmailMessage()
++    msg['Subject'] = assunto
++    msg['From'] = remetente
++    msg['To'] = destinatario
++    msg.set_content(corpo_texto)
++    if corpo_html:
++        msg.add_alternative(corpo_html, subtype='html')
++
++    porta = current_app.config.get('MAIL_PORT', 587)
++    usar_tls = current_app.config.get('MAIL_USE_TLS', True)
++    usuario = current_app.config.get('MAIL_USERNAME')
++    senha = current_app.config.get('MAIL_PASSWORD')
++
++    try:
++        with smtplib.SMTP(mail_server, porta, timeout=10) as smtp:
++            if usar_tls:
++                smtp.starttls()
++            if usuario and senha:
++                smtp.login(usuario, senha)
++            smtp.send_message(msg)
++        logger.info("E-mail enviado -- destinatario=%s assunto=%s", destinatario, assunto)
++        return True
++    except Exception as e:
++        # Falha de envio nao deve derrubar a request (ex: usuario pediria
++        # reset de senha e receberia um erro 500 por causa do SMTP).
++        # O chamador trata isso mostrando uma mensagem generica ao usuario.
++        logger.error("Falha ao enviar e-mail para %s: %s", destinatario, e)
++        return False
