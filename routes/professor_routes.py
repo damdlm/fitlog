@@ -57,20 +57,53 @@ def listar_alunos():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
-    busca = request.args.get('busca', '')
+    busca = request.args.get('busca', '').strip()
     status = request.args.get('status', 'ativos')
     
-    query = AlunoProfessor.query.filter_by(professor_id=current_user.id, ativo=True)
+    # Uma única query com joinedload evita o N+1 de buscar cada aluno
+    # individualmente (db.session.get dentro do loop).
+    vinculos = (AlunoProfessor.query
+                .options(joinedload(AlunoProfessor.aluno))
+                .filter_by(professor_id=current_user.id, ativo=True)
+                .all())
     
-    alunos = []
-    for assoc in query.all():
-        aluno = db.session.get(User, assoc.aluno_id)
-        if aluno and (status == 'todos' or (status == 'ativos' and aluno.ativo) or (status == 'inativos' and not aluno.ativo)):
-            if busca.lower() in (aluno.nome_completo or '').lower() or busca.lower() in aluno.username.lower() or busca.lower() in aluno.email.lower():
-                alunos.append(aluno)
+    total_ativos = sum(1 for v in vinculos if v.aluno and v.aluno.ativo)
+    total_inativos = sum(1 for v in vinculos if v.aluno and not v.aluno.ativo)
+    
+    busca_lower = busca.lower()
+    alunos_data = []
+    for vinculo in vinculos:
+        aluno = vinculo.aluno
+        if not aluno:
+            continue
+        if status == 'ativos' and not aluno.ativo:
+            continue
+        if status == 'inativos' and aluno.ativo:
+            continue
+        if busca_lower and busca_lower not in (aluno.nome_completo or '').lower() \
+                and busca_lower not in aluno.username.lower() \
+                and busca_lower not in aluno.email.lower():
+            continue
+        alunos_data.append({'aluno': aluno, 'vinculado_desde': vinculo.data_associacao})
+    
+    alunos_data.sort(key=lambda d: (d['aluno'].nome_completo or d['aluno'].username).lower())
+    
+    # Contagem de registros por aluno em uma única query (sem N+1 no template)
+    registros_por_aluno = {}
+    aluno_ids = [d['aluno'].id for d in alunos_data]
+    if aluno_ids:
+        contagem = (db.session.query(RegistroTreino.user_id, func.count(RegistroTreino.id))
+                    .filter(RegistroTreino.user_id.in_(aluno_ids))
+                    .group_by(RegistroTreino.user_id)
+                    .all())
+        registros_por_aluno = dict(contagem)
     
     return render_template('professor/alunos.html', 
-                         alunos=alunos,
+                         alunos_data=alunos_data,
+                         registros_por_aluno=registros_por_aluno,
+                         total_vinculados=len(vinculos),
+                         total_ativos=total_ativos,
+                         total_inativos=total_inativos,
                          busca=busca,
                          status=status)
 
@@ -171,13 +204,13 @@ def visualizar_aluno(aluno_id):
                          versao_ativa=versao_ativa)
 
 
-@professor_bp.route('/aluno/desativar/<int:aluno_id>')
+@professor_bp.route('/aluno/desativar/<int:aluno_id>', methods=['POST'])
 @login_required
 def desativar_aluno(aluno_id):
-    """Desativa um aluno"""
+    """Desativa um aluno — ação restrita ao admin"""
     aluno = User.query.get_or_404(aluno_id)
     
-    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
+    if not current_user.is_admin:
         flash('Você não tem permissão para desativar este aluno.', 'danger')
         return redirect(url_for('professor.dashboard'))
     
@@ -187,13 +220,13 @@ def desativar_aluno(aluno_id):
     return redirect(url_for('professor.listar_alunos'))
 
 
-@professor_bp.route('/aluno/reativar/<int:aluno_id>')
+@professor_bp.route('/aluno/reativar/<int:aluno_id>', methods=['POST'])
 @login_required
 def reativar_aluno(aluno_id):
-    """Reativa um aluno"""
+    """Reativa um aluno — ação restrita ao admin"""
     aluno = User.query.get_or_404(aluno_id)
     
-    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
+    if not current_user.is_admin:
         flash('Você não tem permissão para reativar este aluno.', 'danger')
         return redirect(url_for('professor.dashboard'))
     
@@ -203,7 +236,7 @@ def reativar_aluno(aluno_id):
     return redirect(url_for('professor.listar_alunos'))
 
 
-@professor_bp.route('/aluno/remover-vinculo/<int:aluno_id>')
+@professor_bp.route('/aluno/remover-vinculo/<int:aluno_id>', methods=['POST'])
 @login_required
 def remover_vinculo(aluno_id):
     """Remove o vínculo entre professor e aluno"""
@@ -225,10 +258,10 @@ def remover_vinculo(aluno_id):
 @professor_bp.route('/aluno/editar/<int:aluno_id>', methods=['GET', 'POST'])
 @login_required
 def editar_aluno(aluno_id):
-    """Edita os dados de um aluno"""
+    """Edita os dados de um aluno — ação restrita ao admin"""
     aluno = User.query.get_or_404(aluno_id)
     
-    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
+    if not current_user.is_admin:
         flash('Você não tem permissão para editar este aluno.', 'danger')
         return redirect(url_for('professor.dashboard'))
     
@@ -637,7 +670,7 @@ def editar_treino_aluno(aluno_id, treino_id):
     return render_template('professor/editar_treino_aluno.html', aluno=aluno, treino=treino)
 
 
-@professor_bp.route('/aluno/<int:aluno_id>/treino/<int:treino_id>/excluir')
+@professor_bp.route('/aluno/<int:aluno_id>/treino/<int:treino_id>/excluir', methods=['POST'])
 @login_required
 def excluir_treino_aluno(aluno_id, treino_id):
     """Exclui um treino do aluno"""
@@ -651,11 +684,6 @@ def excluir_treino_aluno(aluno_id, treino_id):
     
     if not treino:
         flash('Treino não encontrado!', 'danger')
-        return redirect(url_for('professor.treinos_aluno', aluno_id=aluno.id))
-    
-    confirmado = request.args.get('confirmar', 'false').lower() == 'true'
-    if not confirmado:
-        flash(f'⚠️ Clique novamente para confirmar a exclusão do treino {treino.codigo}.', 'warning')
         return redirect(url_for('professor.treinos_aluno', aluno_id=aluno.id))
     
     if TreinoService.delete(treino_id, user_id=aluno.id):
@@ -862,11 +890,7 @@ def novo_treino_versao_aluno(aluno_id, versao_id):
     if not versao:
         flash('Versão não encontrada!', 'danger')
         return redirect(url_for('professor.versoes_aluno', aluno_id=aluno.id))
-
-    if versao.data_fim is not None:
-        flash('Esta versão está arquivada e não pode ser alterada.', 'warning')
-        return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
-
+    
     if request.method == 'POST':
         treino_id = request.form.get('treino_id')
         nome_treino = request.form.get('nome_treino')
@@ -945,11 +969,7 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
     if not versao:
         flash('Versão não encontrada!', 'danger')
         return redirect(url_for('professor.versoes_aluno', aluno_id=aluno.id))
-
-    if versao.data_fim is not None:
-        flash('Esta versão está arquivada e não pode ser editada.', 'warning')
-        return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
-
+    
     treino_ref = TreinoService.get_by_codigo(treino_codigo, user_id=aluno.id)
     if not treino_ref:
         flash(f'Treino {treino_codigo} não encontrado!', 'danger')
