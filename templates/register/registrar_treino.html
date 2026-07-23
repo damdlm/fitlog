@@ -455,6 +455,7 @@
 </div>
 {% endif %}
 
+{% from "macros/exercicio_imagens.html" import botao_imagens_exercicio %}
 {% if exercicios %}
 <div class="card">
     <div class="card-header bg-white d-flex justify-content-between align-items-center p-3">
@@ -500,7 +501,10 @@
                     <div class="col-12 col-md-3">
                         <div class="exercise-header">
                             <div>
-                                <h5 class="mb-1 fw-bold">{{ ex.nome }}</h5>
+                                <h5 class="mb-1 fw-bold">
+                                    {{ ex.nome }}
+                                    {{ botao_imagens_exercicio(ex, extra_class='ms-1') }}
+                                </h5>
                                 <div class="exercicio-meta">
                                     <span class="badge-musculo">
                                         <i class="bi bi-braces d-none d-md-inline"></i>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/exercicio_imagens.html" import botao_imagens_exercicio %}
 
 {% block content %}
 <style>
@@ -291,6 +292,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <strong>{{ exercicio.nome }}</strong>
+                                    {{ botao_imagens_exercicio(exercicio, extra_class='ms-1') }}
                                     <br>
                                     <span class="badge-musculo">
                                         {{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}

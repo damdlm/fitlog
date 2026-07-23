@@ -465,6 +465,33 @@
         </div>
     </footer>
     
+    <!-- Modal global de imagens do exercício (posição inicial / execução) -->
+    <div class="modal fade" id="modalImagensExercicio" tabindex="-1" aria-labelledby="modalImagensExercicioLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalImagensExercicioLabel">Exercício</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalImagensExercicioImg" src="" alt="" class="img-fluid rounded" style="max-height: 60vh;">
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <span id="modalImagensExercicioLegenda" class="text-muted small"></span>
+                        <span id="modalImagensExercicioContador" class="badge bg-secondary d-none"></span>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" id="btnImgExercicioAnterior" class="btn btn-outline-secondary d-none" onclick="alternarImagemExercicio(-1)">
+                        <i class="bi bi-chevron-left"></i> Anterior
+                    </button>
+                    <button type="button" id="btnImgExercicioProxima" class="btn d-none" style="background: var(--gradient-primary); color: #fff;" onclick="alternarImagemExercicio(1)">
+                        Próxima <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -474,6 +501,9 @@
     
     <!-- CSRF Protection -->
     <script src="{{ url_for('static', filename='js/modules/csrf.js') }}"></script>
+
+    <!-- Modal de imagens do exercício -->
+    <script src="{{ url_for('static', filename='js/modules/exercicio-imagens.js') }}"></script>
     
     <!-- Bloco para scripts específicos de cada página -->
     {% block scripts %}{% endblock %}

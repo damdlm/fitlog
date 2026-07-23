@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/exercicio_imagens.html" import botao_imagens_exercicio %}
 
 {% block page_icon %}<i class="bi bi-pencil-square" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Versão {{ versao.numero_versao }}{% endblock %}
@@ -344,6 +345,7 @@
                             </div>
                             <div class="flex-grow-1">
                                 <strong>{{ exercicio_encontrado.obj.nome }}</strong>
+                                {{ botao_imagens_exercicio(exercicio_encontrado.obj, extra_class='ms-1') }}
                                 <br>
                                 <span class="badge bg-primary">Meu exercício</span>
                                 <span class="badge-musculo">
@@ -369,6 +371,7 @@
                             </div>
                             <div class="flex-grow-1">
                                 <strong>{{ exercicio_encontrado.obj.nome }}</strong>
+                                {{ botao_imagens_exercicio(exercicio_encontrado.obj, extra_class='ms-1') }}
                                 <br>
                                 <span class="badge bg-secondary">Catálogo</span>
                                 <span class="badge-musculo">

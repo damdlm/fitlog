@@ -1,0 +1,28 @@
+{#
+  Macro: botao_imagens_exercicio
+  ---------------------------------
+  Renderiza um ícone que abre o modal global com as imagens do exercício
+  (imagem_inicial / imagem_execucao), com botão para alternar entre elas.
+
+  Só é exibido se o exercício tiver ao menos uma das duas imagens
+  cadastradas. Exercícios criados pelo próprio aluno (ExercicioUsuario)
+  não têm esses campos, então o ícone simplesmente não aparece pra eles
+  — nenhum erro é lançado (getattr do Jinja retorna Undefined).
+
+  Uso:
+    {% from "macros/exercicio_imagens.html" import botao_imagens_exercicio %}
+    {{ botao_imagens_exercicio(exercicio) }}
+#}
+{% macro botao_imagens_exercicio(ex, extra_class='') %}
+{% if ex and (ex.imagem_inicial or ex.imagem_execucao) %}
+<button type="button"
+        class="btn btn-sm btn-outline-secondary btn-imagens-exercicio {{ extra_class }}"
+        title="Ver imagens do exercício"
+        data-nome="{{ ex.nome }}"
+        data-img-inicial="{{ ex.imagem_inicial or '' }}"
+        data-img-execucao="{{ ex.imagem_execucao or '' }}"
+        onclick="abrirModalImagensExercicio(this)">
+    <i class="bi bi-images"></i>
+</button>
+{% endif %}
+{% endmacro %}
