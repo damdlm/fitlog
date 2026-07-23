@@ -22,8 +22,9 @@
             legenda: document.getElementById('modalImagensExercicioLegenda'),
             titulo: document.getElementById('modalImagensExercicioLabel'),
             contador: document.getElementById('modalImagensExercicioContador'),
-            btnAnterior: document.getElementById('btnImgExercicioAnterior'),
-            btnProxima: document.getElementById('btnImgExercicioProxima'),
+            btnAlternar: document.getElementById('btnImgExercicioAlternar'),
+            btnAlternarTexto: document.getElementById('btnImgExercicioAlternarTexto'),
+            btnAlternarIcone: document.getElementById('btnImgExercicioAlternarIcone'),
         };
     }
 
@@ -42,16 +43,22 @@
         els.legenda.textContent = atual.label;
 
         const temMaisDeUma = imagens.length > 1;
-        els.btnAnterior.classList.toggle('d-none', !temMaisDeUma);
-        els.btnProxima.classList.toggle('d-none', !temMaisDeUma);
+        els.btnAlternar.classList.toggle('d-none', !temMaisDeUma);
         els.contador.classList.toggle('d-none', !temMaisDeUma);
+
         if (temMaisDeUma) {
             els.contador.textContent = (indiceAtual + 1) + ' / ' + imagens.length;
+
+            // Na primeira imagem mostra "Próxima"; na última mostra "Anterior".
+            const naUltima = indiceAtual === imagens.length - 1;
+            els.btnAlternarTexto.textContent = naUltima ? 'Anterior' : 'Próxima';
+            els.btnAlternarIcone.className = naUltima ? 'bi bi-chevron-left' : 'bi bi-chevron-right';
         }
     }
 
-    window.alternarImagemExercicio = function (direcao) {
+    window.alternarImagemExercicio = function () {
         if (imagens.length < 2) return;
+        const direcao = indiceAtual === imagens.length - 1 ? -1 : 1;
         indiceAtual = (indiceAtual + direcao + imagens.length) % imagens.length;
         atualizarTela();
     };
