@@ -107,35 +107,39 @@ class ExercicioService(BaseService):
             if load_relations:
                 query_base = query_base.options(joinedload(ExercicioBase.musculo_ref))
             
-            exercicio_base = query_base.get(exercicio_id)
-    
-            if exercicio_base:
-                exercicio_base.tipo = 'base'
-                exercicio_base.prefixo = 'b_'
-                exercicio_base.is_custom = False
-                if exercicio_base.musculo_ref:
-                    exercicio_base.musculo_nome = exercicio_base.musculo_ref.nome_exibicao
-                    exercicio_base.musculo = exercicio_base.musculo_nome
-                return exercicio_base
-    
-            # Buscar nos exercícios do usuário
-            if user_id:
-                query_usuario = ExercicioUsuario.query.filter_by(
-                    id=exercicio_id, usuario_id=user_id
-                )
-                if load_relations:
-                    query_usuario = query_usuario.options(joinedload(ExercicioUsuario.musculo_ref))
-                
-                exercicio_usuario = query_usuario.first()
-    
-                if exercicio_usuario:
-                    exercicio_usuario.tipo = 'usuario'
-                    exercicio_usuario.prefixo = 'u_'
-                    exercicio_usuario.is_custom = True
-                    if exercicio_usuario.musculo_ref:
-                        exercicio_usuario.musculo_nome = exercicio_usuario.musculo_ref.nome_exibicao
-                        exercicio_usuario.musculo = exercicio_usuario.musculo_nome
-                    return exercicio_usuario
+            with db.session.no_autoflush:
+                exercicio_base = query_base.get(exercicio_id)
+
+                if exercicio_base:
+                    exercicio_base.tipo = 'base'
+                    exercicio_base.prefixo = 'b_'
+                    exercicio_base.is_custom = False
+                    if exercicio_base.musculo_ref:
+                        # musculo_nome é coluna real em ExercicioBase — não deixamos
+                        # esse objeto sujo ir para uma flush (ver get_exercicios_completos).
+                        exercicio_base.musculo_nome = exercicio_base.musculo_ref.nome_exibicao
+                        exercicio_base.musculo = exercicio_base.musculo_nome
+                    db.session.expunge(exercicio_base)
+                    return exercicio_base
+
+                # Buscar nos exercícios do usuário
+                if user_id:
+                    query_usuario = ExercicioUsuario.query.filter_by(
+                        id=exercicio_id, usuario_id=user_id
+                    )
+                    if load_relations:
+                        query_usuario = query_usuario.options(joinedload(ExercicioUsuario.musculo_ref))
+
+                    exercicio_usuario = query_usuario.first()
+
+                    if exercicio_usuario:
+                        exercicio_usuario.tipo = 'usuario'
+                        exercicio_usuario.prefixo = 'u_'
+                        exercicio_usuario.is_custom = True
+                        if exercicio_usuario.musculo_ref:
+                            exercicio_usuario.musculo_nome = exercicio_usuario.musculo_ref.nome_exibicao
+                            exercicio_usuario.musculo = exercicio_usuario.musculo_nome
+                        return exercicio_usuario
     
             return None
         except Exception as e:
@@ -151,41 +155,58 @@ class ExercicioService(BaseService):
                 return []
     
             from models import Musculo  # ← CORRIGIDO (era Muscolo)
-    
-            # Exercícios base (catálogo global)
-            exercicios_base = ExercicioBase.query.options(
-                joinedload(ExercicioBase.musculo_ref)
-            ).order_by(ExercicioBase.nome).all()
-    
-            for ex in exercicios_base:
-                ex.tipo = 'base'
-                ex.prefixo = 'b_'
-                ex.is_custom = False
-                if ex.musculo_ref:
-                    ex.musculo_nome = ex.musculo_ref.nome_exibicao
-                else:
-                    musculo = Musculo.query.get(ex.musculo_id)
-                    ex.musculo_nome = musculo.nome_exibicao if musculo else 'Não especificado'
-                    ex.musculo_ref = musculo
-                ex.musculo = ex.musculo_nome
-    
-            # Exercícios do usuário (customizados)
-            exercicios_usuario = ExercicioUsuario.query.options(
-                joinedload(ExercicioUsuario.musculo_ref)
-            ).filter_by(usuario_id=user_id).order_by(ExercicioUsuario.nome).all()
-    
-            for ex in exercicios_usuario:
-                ex.tipo = 'usuario'
-                ex.prefixo = 'u_'
-                ex.is_custom = True
-                if ex.musculo_ref:
-                    ex.musculo_nome = ex.musculo_ref.nome_exibicao
-                else:
-                    musculo = Musculo.query.get(ex.musculo_id)
-                    ex.musculo_nome = musculo.nome_exibicao if musculo else 'Não especificado'
-                    ex.musculo_ref = musculo
-                ex.musculo = ex.musculo_nome
-    
+
+            # IMPORTANTE: esta função é só leitura (monta uma listagem para a
+            # tela), mas "musculo_nome" (em ExercicioBase) e "musculo_ref"
+            # (nos dois modelos) são coluna/relacionamento REAIS do banco.
+            # Atribuir valores a eles marcava o objeto como "sujo" na sessão
+            # do SQLAlchemy. Como essa função roda a cada carregamento de
+            # página, isso acumulava um lote de UPDATEs pendentes no catálogo
+            # global — e a query seguinte (.all()) disparava um autoflush que
+            # tentava gravá-los todos de uma vez, disputando locks com outras
+            # requisições simultâneas até estourar o timeout do worker
+            # (era exatamente esse o crash: WORKER TIMEOUT dentro do
+            # get_exercicios_completos).
+            #
+            # A correção: continuamos calculando o nome de exibição do
+            # músculo do mesmo jeito (sem mudar o que aparece na tela), mas
+            # damos expunge() nos objetos assim que terminamos de montá-los.
+            # Isso os desliga da sessão — os atributos continuam acessíveis
+            # normalmente nos templates, só que o SQLAlchemy nunca mais tenta
+            # gravar essas mudanças no banco.
+            with db.session.no_autoflush:
+                # Exercícios base (catálogo global)
+                exercicios_base = ExercicioBase.query.options(
+                    joinedload(ExercicioBase.musculo_ref)
+                ).order_by(ExercicioBase.nome).all()
+
+                for ex in exercicios_base:
+                    ex.tipo = 'base'
+                    ex.prefixo = 'b_'
+                    ex.is_custom = False
+                    musculo_ref = ex.musculo_ref
+                    if not musculo_ref and ex.musculo_id:
+                        musculo_ref = Musculo.query.get(ex.musculo_id)
+                    ex.musculo_nome = musculo_ref.nome_exibicao if musculo_ref else 'Não especificado'
+                    ex.musculo = ex.musculo_nome
+                    db.session.expunge(ex)
+
+                # Exercícios do usuário (customizados)
+                exercicios_usuario = ExercicioUsuario.query.options(
+                    joinedload(ExercicioUsuario.musculo_ref)
+                ).filter_by(usuario_id=user_id).order_by(ExercicioUsuario.nome).all()
+
+                for ex in exercicios_usuario:
+                    ex.tipo = 'usuario'
+                    ex.prefixo = 'u_'
+                    ex.is_custom = True
+                    musculo_ref = ex.musculo_ref
+                    if not musculo_ref and ex.musculo_id:
+                        musculo_ref = Musculo.query.get(ex.musculo_id)
+                    ex.musculo_nome = musculo_ref.nome_exibicao if musculo_ref else 'Não especificado'
+                    ex.musculo = ex.musculo_nome
+                    db.session.expunge(ex)
+
             resultado = exercicios_base + exercicios_usuario
             resultado.sort(key=lambda x: x.nome.lower())
             return resultado
@@ -244,45 +265,49 @@ class ExercicioService(BaseService):
 
             exercicios = []
 
-            if usuario_map:
-                ex_usuario = ExercicioUsuario.query.filter(
-                    ExercicioUsuario.id.in_(usuario_map.keys())
-                ).options(joinedload(ExercicioUsuario.musculo_ref)).all()
+            # Mesmo cuidado de get_exercicios_completos: leitura não pode
+            # mutar coluna/relacionamento reais (musculo_nome em
+            # ExercicioBase, musculo_ref nos dois modelos) sem depois dar
+            # expunge — senão o autoflush da próxima query tenta gravar tudo
+            # isso no catálogo global e trava sob concorrência.
+            with db.session.no_autoflush:
+                if usuario_map:
+                    ex_usuario = ExercicioUsuario.query.filter(
+                        ExercicioUsuario.id.in_(usuario_map.keys())
+                    ).options(joinedload(ExercicioUsuario.musculo_ref)).all()
 
-                for ex in ex_usuario:
-                    ex.tipo = 'usuario'
-                    ex.prefixo = 'u_'
-                    ex.is_custom = True
-                    ex.treino_id = usuario_map.get(ex.id, "")
-                    ex.treino_ref = treinos_by_id.get(ex.treino_id)
-                    if ex.musculo_ref:
-                        ex.musculo_nome = ex.musculo_ref.nome_exibicao
-                    else:
-                        musculo = Musculo.query.get(ex.musculo_id)
-                        ex.musculo_nome = musculo.nome_exibicao if musculo else 'Não especificado'
-                        ex.musculo_ref = musculo
-                    ex.musculo = ex.musculo_nome
-                    exercicios.append(ex)
+                    for ex in ex_usuario:
+                        ex.tipo = 'usuario'
+                        ex.prefixo = 'u_'
+                        ex.is_custom = True
+                        ex.treino_id = usuario_map.get(ex.id, "")
+                        ex.treino_ref = treinos_by_id.get(ex.treino_id)
+                        musculo_ref = ex.musculo_ref
+                        if not musculo_ref and ex.musculo_id:
+                            musculo_ref = Musculo.query.get(ex.musculo_id)
+                        ex.musculo_nome = musculo_ref.nome_exibicao if musculo_ref else 'Não especificado'
+                        ex.musculo = ex.musculo_nome
+                        db.session.expunge(ex)
+                        exercicios.append(ex)
 
-            if base_map:
-                ex_base = ExercicioBase.query.filter(
-                    ExercicioBase.id.in_(base_map.keys())
-                ).options(joinedload(ExercicioBase.musculo_ref)).all()
+                if base_map:
+                    ex_base = ExercicioBase.query.filter(
+                        ExercicioBase.id.in_(base_map.keys())
+                    ).options(joinedload(ExercicioBase.musculo_ref)).all()
 
-                for ex in ex_base:
-                    ex.tipo = 'base'
-                    ex.prefixo = 'b_'
-                    ex.is_custom = False
-                    ex.treino_id = base_map.get(ex.id, "")
-                    ex.treino_ref = treinos_by_id.get(ex.treino_id)
-                    if ex.musculo_ref:
-                        ex.musculo_nome = ex.musculo_ref.nome_exibicao
-                    else:
-                        musculo = Musculo.query.get(ex.musculo_id)
-                        ex.musculo_nome = musculo.nome_exibicao if musculo else 'Não especificado'
-                        ex.musculo_ref = musculo
-                    ex.musculo = ex.musculo_nome
-                    exercicios.append(ex)
+                    for ex in ex_base:
+                        ex.tipo = 'base'
+                        ex.prefixo = 'b_'
+                        ex.is_custom = False
+                        ex.treino_id = base_map.get(ex.id, "")
+                        ex.treino_ref = treinos_by_id.get(ex.treino_id)
+                        musculo_ref = ex.musculo_ref
+                        if not musculo_ref and ex.musculo_id:
+                            musculo_ref = Musculo.query.get(ex.musculo_id)
+                        ex.musculo_nome = musculo_ref.nome_exibicao if musculo_ref else 'Não especificado'
+                        ex.musculo = ex.musculo_nome
+                        db.session.expunge(ex)
+                        exercicios.append(ex)
 
             exercicios.sort(key=lambda x: x.nome.lower())
             return exercicios

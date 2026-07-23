@@ -400,34 +400,43 @@ class VersaoService(BaseService):
                     ordem_map[('base', ve.exercicio_base_id)] = idx
             
             exercicios = []
-            
-            if usuario_ids:
-                ex_usuario = ExercicioCustomizado.query.filter(
-                    ExercicioCustomizado.id.in_(usuario_ids),
-                    ExercicioCustomizado.usuario_id == user_id
-                ).options(joinedload(ExercicioCustomizado.musculo_ref)).all()
-                
-                for ex in ex_usuario:
-                    ex.tipo = 'usuario'
-                    ex.prefixo = 'u_'
-                    ex.musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
-                    ex.musculo = ex.musculo_nome
-                    exercicios.append(ex)
-            
-            if base_ids:
-                ex_base = ExercicioBase.query.filter(
-                    ExercicioBase.id.in_(base_ids)
-                ).options(joinedload(ExercicioBase.musculo_ref)).all()
-                
-                for ex in ex_base:
-                    ex.tipo = 'base'
-                    ex.prefixo = 'b_'
-                    ex.musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
-                    ex.musculo = ex.musculo_nome
-                    exercicios.append(ex)
-            
+
+            # "musculo_nome" é coluna REAL em ExercicioBase — atribuir aqui
+            # dentro de uma leitura marca o objeto como sujo e o autoflush da
+            # próxima query tenta gravar isso no catálogo global, disputando
+            # locks com outras requisições (ver correção equivalente em
+            # ExercicioService.get_exercicios_completos). no_autoflush +
+            # expunge garantem que essa listagem nunca gera escrita.
+            with db.session.no_autoflush:
+                if usuario_ids:
+                    ex_usuario = ExercicioCustomizado.query.filter(
+                        ExercicioCustomizado.id.in_(usuario_ids),
+                        ExercicioCustomizado.usuario_id == user_id
+                    ).options(joinedload(ExercicioCustomizado.musculo_ref)).all()
+
+                    for ex in ex_usuario:
+                        ex.tipo = 'usuario'
+                        ex.prefixo = 'u_'
+                        ex.musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
+                        ex.musculo = ex.musculo_nome
+                        db.session.expunge(ex)
+                        exercicios.append(ex)
+
+                if base_ids:
+                    ex_base = ExercicioBase.query.filter(
+                        ExercicioBase.id.in_(base_ids)
+                    ).options(joinedload(ExercicioBase.musculo_ref)).all()
+
+                    for ex in ex_base:
+                        ex.tipo = 'base'
+                        ex.prefixo = 'b_'
+                        ex.musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
+                        ex.musculo = ex.musculo_nome
+                        db.session.expunge(ex)
+                        exercicios.append(ex)
+
             exercicios.sort(key=lambda x: ordem_map.get((x.tipo, x.id), 999))
-            
+
             return exercicios
             
         except Exception as e:
