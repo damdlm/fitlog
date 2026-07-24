@@ -236,8 +236,7 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // ---------- Dicas em slide ----------
-    // Lista completa de dicas (extraída da lista original)
+    // ---------- Dicas em slide (aleatório) ----------
     const dicas = [
         "Registre seu treino logo após finalizar",
         "Tente aumentar 2.5kg a cada semana",
@@ -292,22 +291,28 @@
         "Faça do treino um hábito diário"
     ];
 
-    let indiceAtual = 0;
+    let indiceAtual = -1;
     const tipText = document.getElementById('tipText');
 
     function exibirProximaDica() {
+        // Escolhe um índice aleatório diferente do atual (se houver mais de uma dica)
+        let novoIndice;
+        do {
+            novoIndice = Math.floor(Math.random() * dicas.length);
+        } while (novoIndice === indiceAtual && dicas.length > 1);
+
+        indiceAtual = novoIndice;
         tipText.style.opacity = 0;
         setTimeout(() => {
             tipText.textContent = dicas[indiceAtual];
             tipText.style.opacity = 1;
-            indiceAtual = (indiceAtual + 1) % dicas.length;
         }, 300);
     }
 
-    // Inicia com a primeira dica
+    // Inicia com uma dica aleatória
     exibirProximaDica();
     // Troca a cada 5 segundos
-    setInterval(exibirProximaDica, 8000);
+    setInterval(exibirProximaDica, 5000);
 
     // ---------- Gráfico (mantido) ----------
     let chart;
