@@ -1,86 +1,210 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<style>
+    .dash-hero {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .dash-eyebrow {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--primary-color);
+        margin-bottom: 4px;
+    }
+
+    .dash-title {
+        font-weight: 700;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 6px;
+        font-size: 1.6rem;
+    }
+
+    .dash-subtitle {
+        color: var(--ink-soft);
+        margin-bottom: 0;
+    }
+
+    .dash-card {
+        border: 1px solid rgba(45, 45, 45, 0.06);
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(45, 45, 45, 0.05);
+        overflow: hidden;
+    }
+
+    .dash-card-header {
+        background: #fff;
+        border-bottom: 1px solid rgba(45, 45, 45, 0.06);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 1rem 1.25rem;
+    }
+
+    .dash-filter-group {
+        display: flex;
+        gap: 4px;
+        background: var(--surface-alt);
+        padding: 4px;
+        border-radius: 999px;
+    }
+
+    .dash-filter-pill {
+        border: none;
+        background: transparent;
+        color: var(--ink-soft);
+        font-weight: 600;
+        font-size: 0.82rem;
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        transition: all 0.15s ease;
+    }
+
+    .dash-filter-pill:hover {
+        color: var(--primary-color);
+    }
+
+    .dash-filter-pill.active {
+        background: var(--gradient-primary);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(242, 140, 51, 0.35);
+    }
+
+    .dash-empty-state {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 2rem;
+        background: #fff;
+        z-index: 2;
+    }
+
+    .dash-empty-state i {
+        font-size: 2.5rem;
+        color: rgba(242, 140, 51, 0.35);
+        margin-bottom: 0.75rem;
+    }
+
+    .dash-empty-state p {
+        color: var(--ink-soft);
+        max-width: 280px;
+    }
+
+    .dash-tip {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .dash-tip + .dash-tip {
+        margin-top: 14px;
+    }
+
+    .dash-tip .item-icon {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        border-radius: 9px;
+        background: rgba(242, 140, 51, 0.1);
+        color: var(--primary-color);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+
+    .dash-tip span:last-child {
+        color: var(--ink);
+        padding-top: 4px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <h2 class="mb-4">
-            <i class="bi bi-bar-chart-fill me-2" style="color: #F28C33;"></i>
+<div class="dash-hero mb-4">
+    <div>
+        <div class="dash-eyebrow">Dashboard</div>
+        <h2 class="dash-title">
+            <i class="bi bi-bar-chart-fill" style="color: var(--primary-color);"></i>
             Acompanhe sua evolução e maximize seus resultados
         </h2>
+        <p class="dash-subtitle">Veja como seu volume total e sua carga média têm evoluído a cada treino.</p>
     </div>
+    <a href="{{ url_for('register.registrar_treino') }}" class="nav-link btn-treino-cta">
+        <i class="bi bi-plus-circle-fill"></i> Registrar treino
+    </a>
 </div>
 
-<div class="row">
+<div class="row g-4">
     <div class="col-lg-8">
-        <div class="card mb-4">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="card dash-card">
+            <div class="dash-card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-graph-up me-2" style="color: #F28C33;"></i>
+                    <i class="bi bi-graph-up me-2" style="color: var(--primary-color);"></i>
                     Progresso de Volume Total
                 </h5>
-                <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-primary active" onclick="atualizarGrafico('todos')">Todos</button>
+                <div class="dash-filter-group">
+                    <button type="button" class="dash-filter-pill active" data-treino="todos" onclick="atualizarGrafico('todos', this)">Todos</button>
                     {% for t in treinos %}
-                    <button class="btn btn-outline-primary" onclick="atualizarGrafico('{{ t.id }}')">{{ t.codigo }}</button>
+                    <button type="button" class="dash-filter-pill" data-treino="{{ t.id }}" onclick="atualizarGrafico('{{ t.id }}', this)">{{ t.codigo }}</button>
                     {% endfor %}
                 </div>
             </div>
-            <div class="card-body">
+            <div class="card-body position-relative">
+                <div id="chartEmptyState" class="dash-empty-state d-none">
+                    <i class="bi bi-graph-up"></i>
+                    <p>Ainda não há treinos registrados para mostrar aqui.</p>
+                    <a href="{{ url_for('register.registrar_treino') }}" class="nav-link btn-treino-cta">
+                        <i class="bi bi-plus-circle-fill"></i> Registrar primeiro treino
+                    </a>
+                </div>
                 <canvas id="progressChart" height="300"></canvas>
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-4">
-        <div class="card mb-4">
-            <div class="card-header bg-white">
+        <div class="card dash-card">
+            <div class="dash-card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-info-circle me-2" style="color: #F28C33;"></i>
-                    Resumo
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="d-flex justify-content-between mb-3">
-                    <span>Total de registros:</span>
-                    <strong>{{ total_registros }}</strong>
-                </div>
-                <div class="d-flex justify-content-between mb-3">
-                    <span>Semanas treinadas:</span>
-                    <strong>{{ semanas_treinadas }}</strong>
-                </div>
-                <div class="d-flex justify-content-between">
-                    <span>Última semana:</span>
-                    <strong>{{ ultima_semana }}</strong>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-lightbulb me-2" style="color: #F28C33;"></i>
+                    <i class="bi bi-lightbulb me-2" style="color: var(--primary-color);"></i>
                     Dicas de Treino
                 </h5>
             </div>
             <div class="card-body">
-                <div class="tip-item mb-3">
-                    <i class="bi bi-check-circle-fill me-2" style="color: #F28C33;"></i>
-                    Registre seu treino logo após finalizar
+                <div class="dash-tip">
+                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
+                    <span>Registre seu treino logo após finalizar</span>
                 </div>
-                <div class="tip-item mb-3">
-                    <i class="bi bi-check-circle-fill me-2" style="color: #F28C33;"></i>
-                    Tente aumentar 2.5kg a cada semana
+                <div class="dash-tip">
+                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
+                    <span>Tente aumentar 2.5kg a cada semana</span>
                 </div>
-                <div class="tip-item mb-3">
-                    <i class="bi bi-check-circle-fill me-2" style="color: #F28C33;"></i>
-                    Mantenha a consistência nos treinos
+                <div class="dash-tip">
+                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
+                    <span>Mantenha a consistência nos treinos</span>
                 </div>
-                <div class="tip-item">
-                    <i class="bi bi-check-circle-fill me-2" style="color: #F28C33;"></i>
-                    Descanse adequadamente entre as séries
+                <div class="dash-tip">
+                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
+                    <span>Descanse adequadamente entre as séries</span>
                 </div>
             </div>
-        </div>		
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -89,16 +213,31 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     let chart;
-    
-    function atualizarGrafico(treinoId) {
+
+    function atualizarGrafico(treinoId, botao) {
+        document.querySelectorAll('.dash-filter-pill').forEach(b => b.classList.remove('active'));
+        if (botao) botao.classList.add('active');
+
         const url = treinoId === 'todos' ? '/api/progresso' : `/api/progresso?treino=${treinoId}`;
-        
+
         fetch(url)
             .then(r => r.json())
             .then(data => {
+                const vazio = !data.semanas || data.semanas.length === 0;
+                const emptyState = document.getElementById('chartEmptyState');
+                const canvas = document.getElementById('progressChart');
+
+                emptyState.classList.toggle('d-none', !vazio);
+                canvas.classList.toggle('d-none', vazio);
+
+                if (vazio) {
+                    if (chart) chart.destroy();
+                    return;
+                }
+
                 if (chart) chart.destroy();
-                
-                chart = new Chart(document.getElementById('progressChart'), {
+
+                chart = new Chart(canvas, {
                     type: 'line',
                     data: {
                         labels: data.semanas,
@@ -173,7 +312,7 @@
                 FitLogUtils.showToast('Erro ao carregar dados do gráfico', 'danger');
             });
     }
-    
+
     // Carregar gráfico inicial
     atualizarGrafico('todos');
 </script>

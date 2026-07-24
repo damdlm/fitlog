@@ -2,7 +2,8 @@ from flask import render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from . import aluno_bp
 from models import db, User, AlunoProfessor, SolicitacaoVinculo, Treino, ExercicioCustomizado, VersaoGlobal, RegistroTreino
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,13 +26,47 @@ def dashboard():
     ultimos_registros = RegistroTreino.query.filter_by(user_id=current_user.id)\
         .order_by(RegistroTreino.data_registro.desc())\
         .limit(5).all()
+
+    # Atividade dos últimos 7 dias (para o gráfico de constância)
+    hoje = datetime.now(timezone.utc).date()
+    inicio_semana = hoje - timedelta(days=6)
+    registros_semana = RegistroTreino.query.filter(
+        RegistroTreino.user_id == current_user.id,
+        RegistroTreino.data_registro >= inicio_semana
+    ).all()
+    contagem_por_dia = {}
+    for registro in registros_semana:
+        dia = registro.data_registro.date()
+        contagem_por_dia[dia] = contagem_por_dia.get(dia, 0) + 1
+
+    dias_semana_labels = []
+    dias_semana_valores = []
+    nomes_dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+    for i in range(7):
+        dia = inicio_semana + timedelta(days=i)
+        dias_semana_labels.append(nomes_dias[dia.weekday()])
+        dias_semana_valores.append(contagem_por_dia.get(dia, 0))
+
+    dias_treinados_semana = sum(1 for v in dias_semana_valores if v > 0)
+
+    hora_atual = datetime.now(ZoneInfo('America/Sao_Paulo')).hour
+    if hora_atual < 12:
+        saudacao = 'Bom dia'
+    elif hora_atual < 18:
+        saudacao = 'Boa tarde'
+    else:
+        saudacao = 'Boa noite'
     
     return render_template('aluno/dashboard.html',
                          total_treinos=total_treinos,
                          total_exercicios=total_exercicios,
                          total_versoes=total_versoes,
                          total_registros=total_registros,
-                         ultimos_registros=ultimos_registros)
+                         ultimos_registros=ultimos_registros,
+                         dias_semana_labels=dias_semana_labels,
+                         dias_semana_valores=dias_semana_valores,
+                         dias_treinados_semana=dias_treinados_semana,
+                         saudacao=saudacao)
 
 @aluno_bp.route('/meu-professor')
 @login_required
