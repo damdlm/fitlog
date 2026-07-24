@@ -2,6 +2,7 @@
 
 {% block extra_css %}
 <style>
+    /* --- Estilos existentes (mantidos) --- */
     .dash-hero {
         display: flex;
         justify-content: space-between;
@@ -105,17 +106,20 @@
         max-width: 280px;
     }
 
-    .dash-tip {
+    /* --- Estilo do slide de dicas (novo) --- */
+    .dash-tip-slide {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: 12px;
+        min-height: 60px;
+        padding: 0.5rem 0;
     }
 
-    .dash-tip + .dash-tip {
-        margin-top: 14px;
-    }
+						   
+						 
+	 
 
-    .dash-tip .item-icon {
+    .dash-tip-slide .item-icon {
         width: 30px;
         height: 30px;
         min-width: 30px;
@@ -128,14 +132,48 @@
         font-size: 0.9rem;
     }
 
-    .dash-tip span:last-child {
+    .dash-tip-slide .tip-text {
         color: var(--ink);
-        padding-top: 4px;
+        font-size: 1rem;
+        transition: opacity 0.3s ease;
+    }
+
+    /* --- Marca d'água (nova) --- */
+    .watermark {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;    /* permite interagir com os elementos acima */
+        z-index: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.08;           /* ajuste a transparência conforme preferir */
+        background-image: url("{{ url_for('static', filename='images/fitlog-logo.png') }}");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 400px auto; /* tamanho da imagem; ajuste conforme necessário */
+    }
+
+    /* Garantir que o conteúdo fique acima da marca d'água */
+    .container, .row, .card {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* (Opcional) Fundo semi-transparente nos cards para melhor legibilidade */
+    .card-body {
+        background: rgba(255,255,255,0.85);
     }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Marca d'água -->
+<div class="watermark"></div>
+
 <div class="dash-hero mb-4">
     <div>
         <div class="dash-eyebrow">Workout Journal</div>
@@ -143,7 +181,8 @@
             <i class="bi bi-bar-chart-fill" style="color: var(--primary-color);"></i>
              Train · Log · Analyze
         </h2>
-       <!-- <p class="dash-subtitle">Veja como seu volume total e sua carga média têm evoluído a cada treino.</p> -->
+        <!-- O texto "FitLog" foi removido do cabeçalho. 
+             Caso ainda apareça, verifique no arquivo base.html e remova/edite a parte correspondente. -->
     </div>
     <a href="{{ url_for('register.registrar_treino') }}" class="nav-link btn-treino-cta">
         <i class="bi bi-plus-circle-fill"></i> Registrar treino
@@ -183,214 +222,215 @@
             <div class="dash-card-header">
                 <h5 class="mb-0">
                     <i class="bi bi-lightbulb me-2" style="color: var(--primary-color);"></i>
-                    Dicas de Treino
+                    Dica do dia
                 </h5>
             </div>
             <div class="card-body">
-                <div class="dash-tip">
+                <!-- Slide de dicas (agora com apenas uma dica por vez) -->
+                <div id="tipSlide" class="dash-tip-slide">
                     <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Registre seu treino logo após finalizar</span>
+                    <span class="tip-text" id="tipText">Carregando dica...</span>
+					  
+									  
+																				 
+																   
+					  
+									  
+																				 
+																	 
+					  
+									  
+																				 
+																		
+					  
+									  
+																				 
+																	   
+					  
+									  
+																				 
+																			  
+					  
+									  
+																				 
+																	   
+					  
+									  
+																				 
+																	 
+					  
+									  
+																				 
+																 
+					  
+									  
+																				 
+																	   
+					  
+									  
+																				 
+																	
+					  
+									  
+																				 
+																	
+					  
+									  
+																				 
+																		
+					  
+									  
+																				 
+																	
+					  
+									  
+																				 
+																 
+					  
+									  
+																				 
+																		   
+					  
+									  
+																				 
+																 
+					  
+									  
+																				 
+																  
+					  
+									  
+																				 
+																			 
+					  
+									  
+																				 
+																	
+					  
+									  
+																				 
+																 
+					  
+									  
+																				 
+																	  
+					  
+									  
+																				 
+																	   
+					  
+									  
+																				 
+																   
+					  
+									  
+																				 
+																  
+					  
+									  
+																				 
+																		
+					  
+									  
+																				 
+																		   
+					  
+									  
+																				 
+																  
+					  
+									  
+																				 
+																	  
+					  
+									  
+																				 
+																  
+					  
+									  
+																				 
+																 
+					  
+									  
+																				 
+																	   
+					  
+									  
+																				 
+																  
+					  
+									  
+																				 
+																	  
+					  
+									  
+																				 
+																	  
+					  
+									  
+																				 
+																		   
+					  
+									  
+																				 
+																	  
+					  
+									  
+																				 
+															  
+					  
+									  
+																				 
+																	
+					  
+									  
+																				 
+																	  
+					  
+									  
+																				 
+																		   
+					  
+									  
+																				 
+																	
+					  
+									  
+																				 
+																	
+					  
+									  
+																				 
+																	   
+					  
+									  
+																				 
+																
+					  
+									  
+																				 
+																   
+					  
+									  
+																				 
+																  
+					  
+									  
+																				 
+																		
+					  
+									  
+																				 
+																	
+					  
+									  
+																				 
+																	  
                 </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Tente aumentar 2.5kg a cada semana</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Mantenha a consistência nos treinos</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Descanse adequadamente entre as séries</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Aqueça por 5 minutos antes de treinar</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Priorize a execução correta dos exercícios</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Controle o movimento do início ao fim</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Evite usar carga acima do seu limite</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Hidrate-se durante todo o treino</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Respeite o tempo de descanso planejado</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Mantenha uma postura correta sempre</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Concentre-se no músculo trabalhado</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Durma bem para melhorar a recuperação</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Treine com intensidade e disciplina</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Evite pular dias sem necessidade</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Alongue-se após o treino quando possível</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Alimente-se bem antes de treinar</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Consuma proteínas após o treino</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Respire corretamente durante as repetições</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Evite distrações durante o treino</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Respeite os limites do seu corpo</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Treine cada repetição com qualidade</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Não tenha pressa entre os exercícios</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Faça cada série até o planejado</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Revise sua evolução toda semana</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Treinar bem vale mais que treinar muito</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Comece sempre pelos exercícios principais</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Mantenha o foco em cada movimento</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Não compare seu progresso com outros</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Cada treino é um passo à frente</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Evite treinar com dores intensas</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Planeje seus treinos com antecedência</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Organize seus horários de treino</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Use roupas confortáveis para treinar</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Use calçados adequados para o treino</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Pequenos avanços geram grandes resultados</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Não desista por causa de um dia ruim</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>A técnica vem antes da carga</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Treine com objetivo em cada sessão</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Evite interromper o treino sem motivo</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Persistência supera a motivação diária</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Confie no processo e continue firme</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Registre suas cargas frequentemente</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Faça pausas apenas quando necessário</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Valorize cada treino concluído</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Cuide da alimentação diariamente</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Seja paciente com seus resultados</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Treine pensando na evolução contínua</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Todo treino conta para seu objetivo</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>A disciplina vence a procrastinação</span>
-                </div>
-                <div class="dash-tip">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span>Faça do treino um hábito diário</span>
-                </div>
+									  
+																				 
+																   
+					  
             </div>
         </div>
     </div>
@@ -400,6 +440,80 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // ---------- Dicas em slide ----------
+    // Lista completa de dicas (extraída da lista original)
+    const dicas = [
+        "Registre seu treino logo após finalizar",
+        "Tente aumentar 2.5kg a cada semana",
+        "Mantenha a consistência nos treinos",
+        "Descanse adequadamente entre as séries",
+        "Aqueça por 5 minutos antes de treinar",
+        "Priorize a execução correta dos exercícios",
+        "Controle o movimento do início ao fim",
+        "Evite usar carga acima do seu limite",
+        "Hidrate-se durante todo o treino",
+        "Respeite o tempo de descanso planejado",
+        "Mantenha uma postura correta sempre",
+        "Concentre-se no músculo trabalhado",
+        "Durma bem para melhorar a recuperação",
+        "Treine com intensidade e disciplina",
+        "Evite pular dias sem necessidade",
+        "Alongue-se após o treino quando possível",
+        "Alimente-se bem antes de treinar",
+        "Consuma proteínas após o treino",
+        "Respire corretamente durante as repetições",
+        "Evite distrações durante o treino",
+        "Respeite os limites do seu corpo",
+        "Treine cada repetição com qualidade",
+        "Não tenha pressa entre os exercícios",
+        "Faça cada série até o planejado",
+        "Revise sua evolução toda semana",
+        "Treinar bem vale mais que treinar muito",
+        "Comece sempre pelos exercícios principais",
+        "Mantenha o foco em cada movimento",
+        "Não compare seu progresso com outros",
+        "Cada treino é um passo à frente",
+        "Evite treinar com dores intensas",
+        "Planeje seus treinos com antecedência",
+        "Organize seus horários de treino",
+        "Use roupas confortáveis para treinar",
+        "Use calçados adequados para o treino",
+        "Pequenos avanços geram grandes resultados",
+        "Não desista por causa de um dia ruim",
+        "A técnica vem antes da carga",
+        "Treine com objetivo em cada sessão",
+        "Evite interromper o treino sem motivo",
+        "Persistência supera a motivação diária",
+        "Confie no processo e continue firme",
+        "Registre suas cargas frequentemente",
+        "Faça pausas apenas quando necessário",
+        "Valorize cada treino concluído",
+        "Cuide da alimentação diariamente",
+        "Seja paciente com seus resultados",
+        "Treine pensando na evolução contínua",
+        "Todo treino conta para seu objetivo",
+        "A disciplina vence a procrastinação",
+        "Faça do treino um hábito diário"
+    ];
+
+    let indiceAtual = 0;
+    const tipText = document.getElementById('tipText');
+
+    function exibirProximaDica() {
+        tipText.style.opacity = 0;
+        setTimeout(() => {
+            tipText.textContent = dicas[indiceAtual];
+            tipText.style.opacity = 1;
+            indiceAtual = (indiceAtual + 1) % dicas.length;
+        }, 300);
+    }
+
+    // Inicia com a primeira dica
+    exibirProximaDica();
+    // Troca a cada 5 segundos
+    setInterval(exibirProximaDica, 5000);
+
+    // ---------- Gráfico (mantido) ----------
     let chart;
 
     function atualizarGrafico(treinoId, botao) {
