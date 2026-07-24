@@ -69,19 +69,22 @@ class Config:
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
 
-    # E-mail (usado no fluxo de recuperação de senha), enviado via SMTP
-    # do Gmail. ATENCAO: a Railway bloqueia portas SMTP de saida
-    # (25/465/587) por padrao em alguns planos/regioes -- se o envio
-    # comecar a dar timeout em vez de erro de autenticacao, e sinal de
-    # bloqueio de porta, nao de credencial invalida. GMAIL_APP_PASSWORD
-    # e uma "senha de app" de 16 digitos gerada em myaccount.google.com
-    # (Seguranca > Verificacao em duas etapas > Senhas de app), NAO a
-    # senha normal da conta Google. Se GMAIL_APP_PASSWORD nao for
-    # definida, o link de reset e apenas registrado no log em vez de
-    # enviado de verdade -- ver utils/email_utils.py.
-    GMAIL_USER = os.getenv('GMAIL_USER')
-    GMAIL_APP_PASSWORD = os.getenv('GMAIL_APP_PASSWORD')
-    MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER', os.getenv('GMAIL_USER'))
+    # E-mail (usado no fluxo de recuperação de senha), enviado via API
+    # HTTPS do Resend (api.resend.com), NAO via SMTP -- a Railway
+    # bloqueia portas SMTP de saida (25/465/587) por padrao em alguns
+    # planos/regioes (confirmado em producao: "Network is unreachable"
+    # na porta 587). A API do Resend usa HTTPS (porta 443), que nao e
+    # bloqueada.
+    #
+    # RESEND_API_KEY e gerada em resend.com -> API Keys. MAIL_DEFAULT_SENDER
+    # precisa ser um endereco de um dominio verificado em resend.com ->
+    # Domains, OU o remetente de teste onboarding@resend.dev (sem
+    # verificacao, mas so entrega para o proprio e-mail cadastrado na
+    # conta Resend). Se RESEND_API_KEY nao estiver configurada, o link
+    # de reset e apenas registrado no log em vez de enviado de verdade
+    # -- ver utils/email_utils.py.
+    RESEND_API_KEY = os.getenv('RESEND_API_KEY')
+    MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER', 'onboarding@resend.dev')
 
 
 class DevelopmentConfig(Config):
