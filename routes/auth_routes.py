@@ -135,11 +135,11 @@ def reset_password(token):
 @limiter.limit("20 per minute")
 def check_email():
     """
-    Verifica se um e-mail já está cadastrado -- usado no formulário de
-    cadastro para validar em tempo real, antes do usuário enviar o
-    formulário. Só é chamado a partir da tela de registro (não do
-    fluxo de reset de senha, que mantém resposta genérica por
-    segurança -- ver reset_password_request).
+    Verifica se um e-mail já está cadastrado -- usado tanto no cadastro
+    (bloquear e-mail duplicado) quanto na tela de recuperação de senha
+    (avisar que o e-mail não tem conta). NOTA: usar isso na recuperação
+    de senha remove a proteção contra enumeração de usuários que o
+    fluxo de reset tinha antes -- decisão explícita do dono do projeto.
     """
     email = request.args.get('email', '').strip()
     if not email:
