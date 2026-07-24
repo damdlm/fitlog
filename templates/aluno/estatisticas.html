@@ -4,327 +4,183 @@
 {% block page_title %}Minhas Estatísticas{% endblock %}
 
 {% block content %}
-<style>
-    .est-hero {
-        background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
-        border-radius: 18px;
-        padding: 28px 32px;
-        color: white;
-        position: relative;
-        overflow: hidden;
-        margin-bottom: 24px;
-    }
-    .est-hero::before {
-        content: '';
-        position: absolute;
-        top: -60px;
-        right: -60px;
-        width: 220px;
-        height: 220px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(242,140,51,0.35) 0%, rgba(242,140,51,0) 70%);
-    }
-    .est-hero-title {
-        font-size: 0.95rem;
-        color: rgba(255,255,255,0.6);
-        margin-bottom: 2px;
-    }
-    .est-hero-destaque {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: 0;
-    }
-    .est-hero-destaque .highlight {
-        color: #FFB366;
-    }
-
-    .est-stat {
-        border-radius: 16px;
-        padding: 20px;
-        height: 100%;
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
-    }
-    .est-stat:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 24px rgba(0,0,0,0.12);
-    }
-    .est-stat-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255,255,255,0.18);
-        font-size: 1.2rem;
-        margin-bottom: 14px;
-    }
-    .est-stat-value {
-        font-size: 1.8rem;
-        font-weight: 700;
-        line-height: 1;
-        margin-bottom: 2px;
-    }
-    .est-stat-label {
-        font-size: 0.82rem;
-        opacity: 0.85;
-    }
-
-    .est-card {
-        border-radius: 16px;
-        border: 1px solid rgba(0,0,0,0.06);
-    }
-
-    .est-ranking-item {
-        margin-bottom: 16px;
-    }
-    .est-ranking-item:last-child {
-        margin-bottom: 0;
-    }
-    .est-ranking-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        margin-bottom: 5px;
-    }
-    .est-ranking-nome {
-        font-weight: 600;
-        color: var(--secondary-color);
-        font-size: 0.92rem;
-    }
-    .est-ranking-valor {
-        font-size: 0.85rem;
-        color: #8a8a8a;
-        white-space: nowrap;
-    }
-    .est-ranking-bar-bg {
-        background: #f0f0f0;
-        border-radius: 999px;
-        height: 8px;
-        overflow: hidden;
-    }
-    .est-ranking-bar-fill {
-        height: 100%;
-        border-radius: 999px;
-        background: linear-gradient(90deg, #FFB366 0%, #F28C33 100%);
-        transition: width 0.6s ease;
-    }
-
-    .est-treino-card {
-        border-radius: 14px;
-        border: 1px solid rgba(0,0,0,0.06);
-        padding: 18px;
-        height: 100%;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .est-treino-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 18px rgba(0,0,0,0.08);
-    }
-    .est-treino-codigo {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        background: rgba(242, 140, 51, 0.12);
-        color: var(--primary-color);
-        font-weight: 700;
-        font-size: 0.85rem;
-        margin-bottom: 10px;
-    }
-    .est-treino-metric {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.85rem;
-        padding: 5px 0;
-        border-bottom: 1px dashed rgba(0,0,0,0.06);
-    }
-    .est-treino-metric:last-child {
-        border-bottom: none;
-    }
-
-    .est-pill-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-    .est-pill {
-        border: 1px solid rgba(242, 140, 51, 0.3);
-        background: white;
-        color: var(--primary-color);
-        border-radius: 999px;
-        padding: 5px 14px;
-        font-size: 0.82rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.15s ease;
-    }
-    .est-pill:hover {
-        background: rgba(242, 140, 51, 0.08);
-    }
-    .est-pill.active {
-        background: var(--gradient-primary);
-        color: white;
-        border-color: transparent;
-    }
-
-    .est-empty {
-        text-align: center;
-        padding: 40px 20px;
-        color: #999;
-    }
-    .est-empty i {
-        font-size: 2.4rem;
-        color: #e0a877;
-        margin-bottom: 10px;
-        display: block;
-    }
-</style>
-
-<!-- Cabeçalho com destaque -->
-<div class="est-hero">
-    <div class="est-hero-title">Resumo da sua evolução</div>
-    {% if musculo_destaque %}
-    <p class="est-hero-destaque">
-        Seu grupo muscular mais treinado é
-        <span class="highlight">{{ musculo_destaque }}</span> 💪
-    </p>
-    {% else %}
-    <p class="est-hero-destaque">Registre seus treinos para ver suas estatísticas aqui 📊</p>
-    {% endif %}
+<div class="row mb-4 d-none d-md-flex">
+    <div class="col-12">
+        <h2>
+            <i class="bi bi-graph-up" style="color: #F28C33;"></i> 
+            Minhas Estatísticas
+        </h2>
+    </div>
 </div>
 
 <!-- Cards de Resumo -->
-<div class="row mb-4 g-3">
+<div class="row mb-4">
     <div class="col-md-4">
-        <div class="est-stat" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
-            <div class="est-stat-icon"><i class="bi bi-activity"></i></div>
-            <div class="est-stat-value">{{ musculo_stats.values()|sum(attribute='qtd_exercicios') }}</div>
-            <div class="est-stat-label">Total de Exercícios</div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="est-stat" style="background: #2D2D2D; color: white;">
-            <div class="est-stat-icon"><i class="bi bi-lightning-charge"></i></div>
-            <div class="est-stat-value">{{ musculo_stats.values()|sum(attribute='volume_total')|int }}kg</div>
-            <div class="est-stat-label">Volume Total</div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="est-stat" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%); color: white;">
-            <div class="est-stat-icon"><i class="bi bi-calculator"></i></div>
-            <div class="est-stat-value">
-                {% set total_vol = musculo_stats.values()|sum(attribute='volume_total') %}
-                {% set total_reg = musculo_stats.values()|sum(attribute='qtd_registros') %}
-                {% if total_reg and total_reg > 0 %}
-                    {{ (total_vol / total_reg)|int }}kg
-                {% else %}
-                    0kg
-                {% endif %}
+        <div class="card stats-card" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50">Total de Exercícios</h6>
+                        <h3 class="text-white mb-0">{{ musculo_stats.values()|sum(attribute='qtd_exercicios') }}</h3>
+                    </div>
+                    <i class="bi bi-activity fs-1 text-white-50"></i>
+                </div>
             </div>
-            <div class="est-stat-label">Média por Treino</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card" style="background: #2D2D2D;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50">Volume Total</h6>
+                        <h3 class="text-white mb-0">{{ musculo_stats.values()|sum(attribute='volume_total')|int }}kg</h3>
+                    </div>
+                    <i class="bi bi-lightning-charge fs-1 text-white-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50">Média por Treino</h6>
+                        <h3 class="text-white mb-0">
+                            {% set total_vol = musculo_stats.values()|sum(attribute='volume_total') %}
+                            {% set total_reg = musculo_stats.values()|sum(attribute='qtd_registros') %}
+                            {% if total_reg and total_reg > 0 %}
+                                {{ (total_vol / total_reg)|int }}kg
+                            {% else %}
+                                0kg
+                            {% endif %}
+                        </h3>
+                    </div>
+                    <i class="bi bi-calculator fs-1 text-white-50"></i>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="row g-3 mb-3">
+<div class="row">
     <!-- Gráfico de Volume por Músculo -->
-    <div class="col-lg-6">
-        <div class="card est-card h-100">
-            <div class="card-header bg-white border-0 pb-0">
-                <h6 class="fw-bold mb-0">
-                    <i class="bi bi-pie-chart me-1" style="color: #F28C33;"></i>Volume por Músculo
-                </h6>
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart me-2" style="color: #F28C33;"></i>Volume por Músculo
+                </h5>
             </div>
             <div class="card-body">
-                <canvas id="muscleChart" height="260"></canvas>
+                <canvas id="muscleChart" height="300"></canvas>
             </div>
         </div>
     </div>
-
-    <!-- Ranking por Músculo -->
-    <div class="col-lg-6">
-        <div class="card est-card h-100">
-            <div class="card-header bg-white border-0 pb-0">
-                <h6 class="fw-bold mb-0">
-                    <i class="bi bi-bar-chart-steps me-1" style="color: #F28C33;"></i>Ranking por Músculo
-                </h6>
+    
+    <!-- Tabela de Estatísticas por Músculo -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-table me-2" style="color: #F28C33;"></i>Detalhamento por Músculo
+                </h5>
             </div>
-            <div class="card-body" style="max-height: 320px; overflow-y: auto;">
-                {% set musculos_ordenados = musculo_stats.items()|sort(attribute='1.volume_total', reverse=True) %}
-                {% for musculo, stats in musculos_ordenados %}
-                <div class="est-ranking-item">
-                    <div class="est-ranking-top">
-                        <span class="est-ranking-nome">{{ musculo }}</span>
-                        <span class="est-ranking-valor">{{ stats.volume_total|int }}kg · {{ stats.qtd_registros }} registros</span>
-                    </div>
-                    <div class="est-ranking-bar-bg">
-                        <div class="est-ranking-bar-fill" style="width: {{ ((stats.volume_total / volume_maximo_musculo * 100) if volume_maximo_musculo > 0 else 0)|round(1) }}%;"></div>
-                    </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Músculo</th>
+                                <th>Exercícios</th>
+                                <th>Registros</th>
+                                <th>Volume Total</th>
+                                <th>Média/Sessão</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for musculo, stats in musculo_stats.items() %}
+                            <tr>
+                                <td><strong>{{ musculo }}</strong></td>
+                                <td>{{ stats.qtd_exercicios }}</td>
+                                <td>{{ stats.qtd_registros }}</td>
+                                <td>{{ stats.volume_total|int }}kg</td>
+                                <td>
+                                    {% if stats.qtd_registros > 0 %}
+                                        {{ (stats.volume_total / stats.qtd_registros)|int }}kg
+                                    {% else %}
+                                        0kg
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-                {% endfor %}
             </div>
         </div>
     </div>
 </div>
 
-<!-- Desempenho por Treino -->
-<div class="card est-card mb-3">
-    <div class="card-header bg-white border-0 pb-0">
-        <h6 class="fw-bold mb-0">
-            <i class="bi bi-trophy me-1" style="color: #F28C33;"></i>Desempenho por Treino
-        </h6>
-    </div>
-    <div class="card-body">
-        {% if treino_stats %}
-        <div class="row g-3">
-            {% for treino_id, stats in treino_stats.items() %}
-            <div class="col-md-4">
-                <div class="est-treino-card">
-                    <div class="est-treino-codigo">{{ stats.codigo }}</div>
-                    <div class="fw-bold mb-2">{{ stats.nome }}</div>
-                    <div class="est-treino-metric">
-                        <span class="text-muted">Exercícios</span>
-                        <strong>{{ stats.qtd_exercicios }}</strong>
+<div class="row">
+    <!-- Estatísticas por Treino -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-trophy me-2" style="color: #F28C33;"></i>Desempenho por Treino
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for treino_id, stats in treino_stats.items() %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5 class="card-title">Treino {{ stats.codigo }}</h5>
+                                <h6 class="card-subtitle mb-3 text-muted">{{ stats.nome }}</h6>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Exercícios:</span>
+                                    <strong>{{ stats.qtd_exercicios }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Registros:</span>
+                                    <strong>{{ stats.qtd_registros }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Volume Total:</span>
+                                    <strong class="text-primary">{{ stats.volume_total|int }}kg</strong>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="est-treino-metric">
-                        <span class="text-muted">Registros</span>
-                        <strong>{{ stats.qtd_registros }}</strong>
-                    </div>
-                    <div class="est-treino-metric">
-                        <span class="text-muted">Volume Total</span>
-                        <strong style="color: var(--primary-color);">{{ stats.volume_total|int }}kg</strong>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
-            {% endfor %}
         </div>
-        {% else %}
-        <div class="est-empty">
-            <i class="bi bi-clipboard-x"></i>
-            Nenhum treino cadastrado ainda.
-        </div>
-        {% endif %}
     </div>
 </div>
 
 <!-- Gráfico de Evolução -->
-<div class="card est-card">
-    <div class="card-header bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 pb-0">
-        <h6 class="fw-bold mb-0">
-            <i class="bi bi-graph-up me-1" style="color: #F28C33;"></i>Evolução do Volume
-        </h6>
-        <div class="est-pill-group" id="filtrosEvolucao">
-            <button class="est-pill active" data-treino="todos">Todos</button>
-            {% for t in treino_stats.values() %}
-            <button class="est-pill" data-treino="{{ t.codigo }}">{{ t.codigo }}</button>
-            {% endfor %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up me-2" style="color: #F28C33;"></i>Evolução do Volume
+                </h5>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary active" onclick="carregarEvolucao('todos')">Todos</button>
+                    {% for t in treino_stats.values() %}
+                    <button class="btn btn-outline-primary" onclick="carregarEvolucao('{{ t.codigo }}')">{{ t.codigo }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="evolucaoChart" height="300"></canvas>
+            </div>
         </div>
-    </div>
-    <div class="card-body">
-        <canvas id="evolucaoChart" height="280"></canvas>
     </div>
 </div>
 {% endblock %}
@@ -336,7 +192,7 @@
     const muscleData = {{ musculo_stats|tojson }};
     const labels = Object.keys(muscleData);
     const volumes = Object.values(muscleData).map(v => v.volume_total);
-
+    
     new Chart(document.getElementById('muscleChart'), {
         type: 'doughnut',
         data: {
@@ -361,7 +217,7 @@
                             const label = context.label || '';
                             const value = context.raw || 0;
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            const percentage = ((value / total) * 100).toFixed(1);
                             return `${label}: ${value.toFixed(0)}kg (${percentage}%)`;
                         }
                     }
@@ -369,17 +225,17 @@
             }
         }
     });
-
+    
     let evolucaoChart;
-
+    
     function carregarEvolucao(treinoCodigo) {
         const url = treinoCodigo === 'todos' ? '/api/progresso' : `/api/progresso?treino=${treinoCodigo}`;
-
+        
         fetch(url)
             .then(r => r.json())
             .then(data => {
                 if (evolucaoChart) evolucaoChart.destroy();
-
+                
                 evolucaoChart = new Chart(document.getElementById('evolucaoChart'), {
                     type: 'line',
                     data: {
@@ -405,16 +261,7 @@
                 });
             });
     }
-
-    document.getElementById('filtrosEvolucao').addEventListener('click', function(evento) {
-        const botao = evento.target.closest('.est-pill');
-        if (!botao) return;
-
-        this.querySelectorAll('.est-pill').forEach(p => p.classList.remove('active'));
-        botao.classList.add('active');
-        carregarEvolucao(botao.dataset.treino);
-    });
-
+    
     carregarEvolucao('todos');
 </script>
 {% endblock %}
