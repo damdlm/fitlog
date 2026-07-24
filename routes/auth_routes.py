@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User
 from services.seed_service import SeedService
@@ -129,6 +129,23 @@ def reset_password(token):
         return redirect(url_for('auth.login'))
 
     return render_template('auth/reset_password.html', token=token)
+
+
+@auth_bp.route('/check-email')
+@limiter.limit("20 per minute")
+def check_email():
+    """
+    Verifica se um e-mail já está cadastrado -- usado no formulário de
+    cadastro para validar em tempo real, antes do usuário enviar o
+    formulário. Só é chamado a partir da tela de registro (não do
+    fluxo de reset de senha, que mantém resposta genérica por
+    segurança -- ver reset_password_request).
+    """
+    email = request.args.get('email', '').strip()
+    if not email:
+        return jsonify({'exists': False})
+    existe = User.query.filter_by(email=email).first() is not None
+    return jsonify({'exists': existe})
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
