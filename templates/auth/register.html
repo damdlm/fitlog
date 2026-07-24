@@ -204,7 +204,8 @@
         const emailInput = document.getElementById('emailInput');
         const emailFeedback = document.getElementById('emailFeedback');
         const form = emailInput.closest('form');
-        let emailJaCadastrado = false;
+        const submitBtnCadastro = form.querySelector('button[type="submit"]');
+        const submitBtnCadastroHtmlOriginal = submitBtnCadastro.innerHTML;
 
         function mostrarFeedbackEmail() {
             emailFeedback.classList.remove('d-none');
@@ -216,39 +217,55 @@
             emailInput.classList.remove('is-invalid');
         }
 
-        async function verificarEmail() {
-            const email = emailInput.value.trim();
-            emailJaCadastrado = false;
-            esconderFeedbackEmail();
-
-            if (!email) return;
-
-            try {
-                const resp = await fetch('/auth/check-email?email=' + encodeURIComponent(email));
-                const dados = await resp.json();
-                if (dados.exists) {
-                    emailJaCadastrado = true;
-                    mostrarFeedbackEmail();
-                }
-            } catch (erro) {
-                // Falha de rede na checagem não deve travar o usuário --
-                // a validação final e definitiva continua acontecendo no
-                // backend ao enviar o formulário.
-                console.error('Erro ao verificar e-mail:', erro);
-            }
+        async function emailJaExiste(email) {
+            const resp = await fetch('/auth/check-email?email=' + encodeURIComponent(email));
+            const dados = await resp.json();
+            return dados.exists;
         }
 
-        emailInput.addEventListener('blur', verificarEmail);
+        // Checagem "de passagem" ao sair do campo -- dá feedback rápido,
+        // mas NÃO é a validação que decide se o formulário pode ser
+        // enviado (ver submit abaixo), pra evitar corrida entre o blur
+        // ainda em andamento e um envio rápido (Enter ou clique rápido
+        // no botão antes do blur terminar).
+        emailInput.addEventListener('blur', async function() {
+            const email = emailInput.value.trim();
+            esconderFeedbackEmail();
+            if (!email) return;
+            try {
+                if (await emailJaExiste(email)) mostrarFeedbackEmail();
+            } catch (erro) {
+                console.error('Erro ao verificar e-mail:', erro);
+            }
+        });
+
         emailInput.addEventListener('input', esconderFeedbackEmail);
 
-        form.addEventListener('submit', function(evento) {
-            if (emailJaCadastrado) {
-                evento.preventDefault();
-                mostrarFeedbackEmail();
-                emailInput.classList.add('fitlog-shake');
-                setTimeout(() => emailInput.classList.remove('fitlog-shake'), 400);
-                emailInput.focus();
-                emailInput.select();
+        form.addEventListener('submit', async function(evento) {
+            evento.preventDefault();
+            const email = emailInput.value.trim();
+
+            submitBtnCadastro.disabled = true;
+            submitBtnCadastro.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Verificando...';
+
+            try {
+                if (await emailJaExiste(email)) {
+                    mostrarFeedbackEmail();
+                    emailInput.classList.add('fitlog-shake');
+                    setTimeout(() => emailInput.classList.remove('fitlog-shake'), 400);
+                    emailInput.focus();
+                    emailInput.select();
+                    return;
+                }
+                form.submit();
+            } catch (erro) {
+                // Falha ao checar (ex: sem internet): não trava o usuário
+                // -- deixa o backend, que valida de novo, tratar o envio.
+                console.error('Erro ao verificar e-mail:', erro);
+                form.submit();
+            } finally {
+                submitBtnCadastro.disabled = false;
+                submitBtnCadastro.innerHTML = submitBtnCadastroHtmlOriginal;
             }
         });
     });
