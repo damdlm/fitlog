@@ -142,6 +142,16 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    .dash-registro-exercicio-trunc {
+        cursor: pointer;
+        border-bottom: 1px dashed #ccc;
+        display: inline-block;
+    }
+    .dash-registro-exercicio-trunc:hover,
+    .dash-registro-exercicio-trunc:focus {
+        color: var(--primary-color);
+        outline: none;
+    }
     .dash-registro-meta {
         font-size: 0.8rem;
         color: #8a8a8a;
@@ -284,7 +294,15 @@
                     <i class="bi bi-check2"></i>
                 </div>
                 <div class="dash-registro-info">
-                    <div class="dash-registro-exercicio" title="{{ nome_exercicio }}">
+                    <div class="dash-registro-exercicio{{ ' dash-registro-exercicio-trunc' if nome_exercicio|length > 20 else '' }}"
+                         {% if nome_exercicio|length > 20 %}
+                         tabindex="0"
+                         role="button"
+                         data-bs-toggle="popover"
+                         data-bs-trigger="focus"
+                         data-bs-placement="top"
+                         data-bs-content="{{ nome_exercicio }}"
+                         {% endif %}>
                         {{ nome_exercicio[:20] }}{{ '...' if nome_exercicio|length > 20 else '' }}
                     </div>
                     <div class="dash-registro-meta">
@@ -318,6 +336,12 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Popovers de clique -- mostram o nome completo dos exercícios
+    // abreviados na lista de "Último Treino".
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
+        new bootstrap.Popover(el);
+    });
+
     const ctx = document.getElementById('graficoSemana');
     if (!ctx) return;
 
