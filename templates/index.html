@@ -2,7 +2,7 @@
 
 {% block extra_css %}
 <style>
-    /* --- Estilos existentes (mantidos) --- */
+    /* --- Estilos gerais --- */
     .dash-hero {
         display: flex;
         justify-content: space-between;
@@ -106,16 +106,28 @@
         max-width: 280px;
     }
 
-    /* --- Estilo do slide de dicas (novo) --- */
+    /* --- Estilo do slide de dicas (lateral) --- */
     .dash-tip-slide {
+        overflow: hidden;
+        position: relative;
+        min-height: 60px;
+    }
+
+    .tip-wrapper {
+        display: flex;
+        transition: transform 0.5s ease;
+        width: 200%;
+    }
+
+    .tip-slide-item {
+        width: 50%;
         display: flex;
         align-items: center;
         gap: 12px;
-        min-height: 60px;
         padding: 0.5rem 0;
     }
 
-    .dash-tip-slide .item-icon {
+    .item-icon {
         width: 30px;
         height: 30px;
         min-width: 30px;
@@ -128,29 +140,28 @@
         font-size: 0.9rem;
     }
 
-    .dash-tip-slide .tip-text {
+    .tip-text {
         color: var(--ink);
         font-size: 1rem;
-        transition: opacity 0.3s ease;
     }
 
-    /* --- Marca d'água (nova) --- */
+    /* --- Marca d'água --- */
     .watermark {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        pointer-events: none;    /* permite interagir com os elementos acima */
+        pointer-events: none;
         z-index: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        opacity: 0.08;           /* ajuste a transparência conforme preferir */
+        opacity: 0.08;
         background-image: url("{{ url_for('static', filename='images/fitlog-logo.png') }}");
         background-repeat: no-repeat;
         background-position: center;
-        background-size: 400px auto; /* tamanho da imagem; ajuste conforme necessário */
+        background-size: 400px auto;
     }
 
     /* Garantir que o conteúdo fique acima da marca d'água */
@@ -159,7 +170,6 @@
         z-index: 1;
     }
 
-    /* (Opcional) Fundo semi-transparente nos cards para melhor legibilidade */
     .card-body {
         background: rgba(255,255,255,0.85);
     }
@@ -222,10 +232,18 @@
                 </h5>
             </div>
             <div class="card-body">
-                <!-- Slide de dicas (agora com apenas uma dica por vez) -->
-                <div id="tipSlide" class="dash-tip-slide">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span class="tip-text" id="tipText">Carregando dica...</span>
+                <!-- Slide de dicas com efeito lateral -->
+                <div class="dash-tip-slide" id="tipSlide">
+                    <div class="tip-wrapper" id="tipWrapper">
+                        <div class="tip-slide-item">
+                            <span class="item-icon"><i class="bi bi-check-lg"></i></span>
+                            <span class="tip-text" id="tipText1">Carregando...</span>
+                        </div>
+                        <div class="tip-slide-item">
+                            <span class="item-icon"><i class="bi bi-check-lg"></i></span>
+                            <span class="tip-text" id="tipText2">Carregando...</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -236,7 +254,7 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // ---------- Dicas em slide (aleatório) ----------
+    // ---------- Dicas em slide lateral (aleatório) ----------
     const dicas = [
         "Registre seu treino logo após finalizar",
         "Tente aumentar 2.5kg a cada semana",
@@ -291,28 +309,48 @@
         "Faça do treino um hábito diário"
     ];
 
-    let indiceAtual = -1;
-    const tipText = document.getElementById('tipText');
+    const wrapper = document.getElementById('tipWrapper');
+    const tip1 = document.getElementById('tipText1');
+    const tip2 = document.getElementById('tipText2');
+    let currentIndex = 0;          // 0 = mostra o lado esquerdo (tip1), 1 = mostra o direito (tip2)
+    let ultimaDica = -1;           // para evitar repetição consecutiva
 
-    function exibirProximaDica() {
-        // Escolhe um índice aleatório diferente do atual (se houver mais de uma dica)
-        let novoIndice;
+    // Função para sortear uma dica diferente da última
+    function sortearDica() {
+        let novo;
         do {
-            novoIndice = Math.floor(Math.random() * dicas.length);
-        } while (novoIndice === indiceAtual && dicas.length > 1);
-
-        indiceAtual = novoIndice;
-        tipText.style.opacity = 0;
-        setTimeout(() => {
-            tipText.textContent = dicas[indiceAtual];
-            tipText.style.opacity = 1;
-        }, 300);
+            novo = Math.floor(Math.random() * dicas.length);
+        } while (novo === ultimaDica && dicas.length > 1);
+        ultimaDica = novo;
+        return novo;
     }
 
-    // Inicia com uma dica aleatória
-    exibirProximaDica();
+    // Inicializa com duas dicas aleatórias diferentes
+    const idx1 = sortearDica();
+    const idx2 = sortearDica();
+    tip1.textContent = dicas[idx1];
+    tip2.textContent = dicas[idx2];
+
+    function proximaDica() {
+        // Escolhe uma nova dica aleatória
+        const novaDica = dicas[sortearDica()];
+
+        // Atualiza o lado que está oculto (o oposto do currentIndex)
+        if (currentIndex === 0) {
+            // lado esquerdo visível → atualiza o direito
+            tip2.textContent = novaDica;
+        } else {
+            // lado direito visível → atualiza o esquerdo
+            tip1.textContent = novaDica;
+        }
+
+        // Desliza para mostrar o lado atualizado
+        wrapper.style.transform = currentIndex === 0 ? 'translateX(-50%)' : 'translateX(0)';
+        currentIndex = 1 - currentIndex; // alterna
+    }
+
     // Troca a cada 5 segundos
-    setInterval(exibirProximaDica, 10000);
+    setInterval(proximaDica, 10000);
 
     // ---------- Gráfico (mantido) ----------
     let chart;
