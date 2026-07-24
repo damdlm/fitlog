@@ -20,6 +20,18 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(242, 140, 51, 0.3);
 }
+
+@keyframes fitlogFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fitlogShake {
+    10%, 90% { transform: translateX(-1px); }
+    20%, 80% { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-4px); }
+    40%, 60% { transform: translateX(4px); }
+}
+.fitlog-shake { animation: fitlogShake 0.4s; }
 </style>
 
 <div class="row justify-content-center">
@@ -79,6 +91,11 @@
                             <span class="input-group-text"><i class="bi bi-envelope"></i></span>
                             <input type="email" name="email" id="emailInput" class="form-control" 
                                    placeholder="Digite seu e-mail" required>
+                        </div>
+                        <div id="emailFeedback" class="alert alert-danger d-flex align-items-center gap-2 mt-2 mb-0 py-2 px-3 d-none"
+                             style="font-size: 0.9rem; border-radius: 10px; animation: fitlogFadeIn 0.2s ease-out;">
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                            <span>Este e-mail já está cadastrado. Use outro e-mail ou faça login.</span>
                         </div>
                     </div>
                     
@@ -185,13 +202,24 @@
 
         // --- Validação de e-mail já cadastrado ---
         const emailInput = document.getElementById('emailInput');
+        const emailFeedback = document.getElementById('emailFeedback');
         const form = emailInput.closest('form');
         let emailJaCadastrado = false;
+
+        function mostrarFeedbackEmail() {
+            emailFeedback.classList.remove('d-none');
+            emailInput.classList.add('is-invalid');
+        }
+
+        function esconderFeedbackEmail() {
+            emailFeedback.classList.add('d-none');
+            emailInput.classList.remove('is-invalid');
+        }
 
         async function verificarEmail() {
             const email = emailInput.value.trim();
             emailJaCadastrado = false;
-            emailInput.classList.remove('is-invalid');
+            esconderFeedbackEmail();
 
             if (!email) return;
 
@@ -200,7 +228,7 @@
                 const dados = await resp.json();
                 if (dados.exists) {
                     emailJaCadastrado = true;
-                    emailInput.classList.add('is-invalid');
+                    mostrarFeedbackEmail();
                 }
             } catch (erro) {
                 // Falha de rede na checagem não deve travar o usuário --
@@ -211,11 +239,14 @@
         }
 
         emailInput.addEventListener('blur', verificarEmail);
+        emailInput.addEventListener('input', esconderFeedbackEmail);
 
         form.addEventListener('submit', function(evento) {
             if (emailJaCadastrado) {
                 evento.preventDefault();
-                alert('Este e-mail já está cadastrado. Use outro e-mail ou faça login.');
+                mostrarFeedbackEmail();
+                emailInput.classList.add('fitlog-shake');
+                setTimeout(() => emailInput.classList.remove('fitlog-shake'), 400);
                 emailInput.focus();
                 emailInput.select();
             }
