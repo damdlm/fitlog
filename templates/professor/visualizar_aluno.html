@@ -173,7 +173,7 @@
                                 -
                             {% endif %}
                         </td>
-                        <td>{{ registro.exercicio_ref.nome if registro.exercicio_ref else '-' }}</td>
+                        <td>{{ registro.exercicio.nome if registro.exercicio else registro.exercicio_base.nome if registro.exercicio_base else '-' }}</td>
                         <td>
                             {% if registro.series and registro.series|length > 0 %}
                                 {{ registro.series[0].carga }}kg

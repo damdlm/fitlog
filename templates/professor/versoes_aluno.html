@@ -508,7 +508,7 @@
                         </h6>
                         <ul class="list-unstyled ms-3">
                             {% for ve in treino_versao.exercicios|sort(attribute='ordem') %}
-                                {% set exercicio = ve.exercicio_ref %}
+                                {% set exercicio = ve.exercicio %}
                                 {% if exercicio %}
                                 <li class="mb-1">
                                     <i class="bi bi-dot me-2" style="color: #F28C33;"></i>
