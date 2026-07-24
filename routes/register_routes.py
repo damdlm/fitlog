@@ -92,13 +92,14 @@ def registrar_treino():
                     elif r.exercicio_base_id is not None:
                         registros_map[f"b_{r.exercicio_base_id}"] = r
                 
-                # Buscar histórico para sugestão de cargas (últimos 3 registros)
+                # Buscar histórico da ÚLTIMA sessão completa (carga, reps E
+                # número real de séries -- não uma janela fixa que pode
+                # misturar sessões diferentes, ver get_ultima_sessao_series)
                 for ex in exercicios:
-                    ultimas = ExercicioService.get_ultimas_series(
+                    ultimas = ExercicioService.get_ultima_sessao_series(
                         ex.id,
                         tipo=ex.tipo,
-                        versao_id=versao_ativa.id, 
-                        limite=3
+                        versao_id=versao_ativa.id
                     )
                     if ultimas:
                         historico_series[f"{ex.prefixo}{ex.id}"] = ultimas

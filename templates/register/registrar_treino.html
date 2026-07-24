@@ -514,7 +514,7 @@
                                     <span class="meta-dot d-none d-sm-inline">•</span>
                                     <span class="historico-cargas">
                                         <i class="bi bi-clock-history"></i>
-                                        Última: {{ ultimas[0].carga }}kg × {{ ultimas[0].repeticoes }}
+                                        Última: {{ ultimas[0].carga }}kg × {{ ultimas[0].repeticoes }} · {{ ultimas|length }} série{{ 's' if ultimas|length != 1 }}
                                     </span>
                                     {% endif %}
                                 </div>
@@ -557,13 +557,16 @@
                             </div>
 
                             <div class="col-md-4">
+                                {# O select precisa cobrir pelo menos até a quantidade real
+                                   de séries da última sessão -- antes ia fixo até 5, então uma
+                                   sessão anterior com 6+ séries não tinha opção correspondente
+                                   e o dropdown ficava sem nada marcado (ou marcado errado). #}
+                                {% set max_opcoes = [6, series_selecionadas]|max %}
                                 <select name="num_series_{{ chave_ex }}" id="series-select-{{ chave_ex }}" 
                                         class="form-select">
-                                    <option value="1" {% if series_selecionadas == 1 %}selected{% endif %}>1 série</option>
-                                    <option value="2" {% if series_selecionadas == 2 %}selected{% endif %}>2 séries</option>
-                                    <option value="3" {% if series_selecionadas == 3 %}selected{% endif %}>3 séries</option>
-                                    <option value="4" {% if series_selecionadas == 4 %}selected{% endif %}>4 séries</option>
-                                    <option value="5" {% if series_selecionadas == 5 %}selected{% endif %}>5 séries</option>
+                                    {% for n in range(1, max_opcoes + 1) %}
+                                    <option value="{{ n }}" {% if series_selecionadas == n %}selected{% endif %}>{{ n }} série{{ 's' if n != 1 }}</option>
+                                    {% endfor %}
                                 </select>
                                 <div class="text-center small text-muted d-md-none mt-1 unit-label-mobile">séries</div>
                             </div>

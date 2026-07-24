@@ -656,6 +656,59 @@ class ExercicioService(BaseService):
         except Exception as e:
             logger.error(f"Erro ao buscar últimas séries: {e}")
             return []
+
+    @staticmethod
+    def get_ultima_sessao_series(exercicio_id, tipo=None, versao_id=None, user_id=None):
+        """
+        Retorna TODAS as séries (carga/repetições) do último treino
+        registrado para este exercício -- ou seja, todas as linhas de
+        HistoricoTreino que pertencem a um único RegistroTreino (o mais
+        recente).
+
+        Diferença para get_ultimas_series: aquele método pega uma janela
+        de N linhas de HistoricoTreino ordenadas por data, o que mistura
+        sessões diferentes sempre que a sessão mais recente teve menos
+        séries que N (ex: pediu 3, a última sessão só tinha 2 séries --
+        a 3ª linha vem de um dia anterior). Isso é inofensivo pra sugerir
+        só a carga/reps da 1ª série, mas dá um número de séries errado se
+        usado para preencher "quantas séries fazer hoje". Este método
+        busca primeiro o RegistroTreino mais recente e retorna TODAS as
+        suas séries, então a contagem sempre reflete a sessão real.
+        """
+        try:
+            from models import RegistroTreino
+
+            if user_id is None:
+                user_id = BaseService.get_current_user_id()
+            if not user_id:
+                return []
+
+            query = RegistroTreino.query.filter(RegistroTreino.user_id == user_id)
+
+            if tipo == 'usuario':
+                query = query.filter(RegistroTreino.exercicio_usuario_id == exercicio_id)
+            elif tipo == 'base':
+                query = query.filter(RegistroTreino.exercicio_base_id == exercicio_id)
+            else:
+                # Compatibilidade com chamadas antigas sem `tipo` informado
+                query = query.filter(RegistroTreino.exercicio_id == exercicio_id)
+
+            if versao_id:
+                query = query.filter(RegistroTreino.versao_id == versao_id)
+
+            ultimo_registro = query.order_by(RegistroTreino.data_registro.desc()).first()
+            if not ultimo_registro:
+                return []
+
+            series_ordenadas = sorted(ultimo_registro.series, key=lambda s: (s.ordem or 0))
+
+            return [
+                {'carga': float(s.carga), 'repeticoes': s.repeticoes}
+                for s in series_ordenadas
+            ]
+        except Exception as e:
+            logger.error(f"Erro ao buscar última sessão de séries: {e}")
+            return []
     
     # =============================================
     # MÉTODOS DE UTILIDADE
