@@ -45,8 +45,21 @@ def estatisticas():
         "volume_total": sum(float(s.carga) * s.repeticoes for r in registros if r.treino_id == t.id for s in r.series),
         "total_series": sum(1 for r in registros if r.treino_id == t.id for s in r.series)
     } for t in treinos}
+
+    # Músculo com maior volume total -- usado no destaque do cabeçalho
+    musculo_destaque = None
+    if musculo_stats:
+        musculos_com_volume = {k: v for k, v in musculo_stats.items() if v['volume_total'] > 0}
+        if musculos_com_volume:
+            musculo_destaque = max(musculos_com_volume, key=lambda k: musculos_com_volume[k]['volume_total'])
+
+    volume_maximo_musculo = max((v['volume_total'] for v in musculo_stats.values()), default=0)
     
-    return render_template('aluno/estatisticas.html', musculo_stats=musculo_stats, treino_stats=treino_stats)
+    return render_template('aluno/estatisticas.html',
+                         musculo_stats=musculo_stats,
+                         treino_stats=treino_stats,
+                         musculo_destaque=musculo_destaque,
+                         volume_maximo_musculo=volume_maximo_musculo)
 
 @aluno_bp.route('/api/buscar-professores')
 @login_required
