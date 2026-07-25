@@ -219,11 +219,302 @@
         footer a:hover {
             text-decoration: underline;
         }
+
+        /* =====================================================
+           MENU (mega-menu desktop + barra inferior mobile)
+           ===================================================== */
+
+        /* --- Avatar do perfil (substitui o antigo "usuário >") --- */
+        .btn-avatar {
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 0;
+        }
+
+        .btn-avatar::after {
+            display: none; /* remove a setinha padrão do Bootstrap */
+        }
+
+        .avatar-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        /* --- Mega-menu (desktop, >= lg) --- */
+        .mega-nav {
+            gap: 0.15rem;
+        }
+
+        .mega-item {
+            position: relative;
+        }
+
+        .mega-trigger {
+            background: none;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.65rem 0.9rem;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .mega-trigger:hover,
+        .mega-trigger.active {
+            color: var(--primary-color) !important;
+            background: rgba(242, 140, 51, 0.08);
+        }
+
+        .mega-caret {
+            font-size: 0.6rem;
+            transition: transform 0.2s ease;
+            margin-left: 2px;
+        }
+
+        .mega-item.open .mega-caret {
+            transform: rotate(180deg);
+        }
+
+        .mega-badge-dot {
+            position: absolute;
+            top: 2px;
+            right: -2px;
+            font-size: 0.6rem;
+            padding: 0.15em 0.4em;
+        }
+
+        .mega-panel {
+            display: none;
+            position: absolute;
+            top: calc(100% + 12px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.14);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            padding: 1.1rem;
+            z-index: 1040;
+        }
+
+        .mega-item.open .mega-panel {
+            display: block;
+            animation: megaIn 0.15s ease;
+        }
+
+        @keyframes megaIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        .mega-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(220px, 1fr));
+            gap: 0.35rem;
+        }
+
+        .mega-grid-1col {
+            grid-template-columns: minmax(220px, 1fr);
+        }
+
+        .mega-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .mega-col-label {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #9aa0a6;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+            padding-left: 0.35rem;
+        }
+
+        .mega-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.7rem;
+            padding: 0.6rem 0.65rem;
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--secondary-color);
+            transition: background 0.15s ease, transform 0.15s ease;
+        }
+
+        .mega-card:hover {
+            background: rgba(242, 140, 51, 0.09);
+            transform: translateY(-1px);
+            color: var(--secondary-color);
+        }
+
+        .mega-icon {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            border-radius: 10px;
+            background: rgba(242, 140, 51, 0.12);
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .mega-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            font-size: 0.87rem;
+        }
+
+        .mega-desc {
+            display: block;
+            font-size: 0.75rem;
+            color: #8a8f98;
+            margin-top: 1px;
+            line-height: 1.25;
+        }
+
+        /* --- Barra inferior (mobile, < lg) --- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1035;
+            background: #fff;
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            flex: 1;
+            background: none;
+            border: none;
+            color: #8a8f98;
+            text-decoration: none;
+            font-size: 0.66rem;
+            font-weight: 600;
+            padding: 4px 0;
+            position: relative;
+        }
+
+        .bottom-nav-item i {
+            font-size: 1.3rem;
+        }
+
+        .bottom-nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .bottom-nav-item .bottom-nav-badge {
+            position: absolute;
+            top: -2px;
+            right: 22%;
+            font-size: 0.55rem;
+            padding: 0.15em 0.4em;
+        }
+
+        .bottom-nav-cta {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            color: #fff !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            margin-top: -28px;
+            border: 4px solid #fff;
+            box-shadow: 0 8px 20px rgba(242, 140, 51, 0.45);
+            flex: 0 0 auto;
+            text-decoration: none;
+        }
+
+        body.has-bottom-nav {
+            padding-bottom: 0;
+        }
+
+        @media (max-width: 991.98px) {
+            body.has-bottom-nav {
+                padding-bottom: 78px;
+            }
+        }
+
+        /* --- Painel "Mais" (offcanvas inferior) --- */
+        .mais-sheet {
+            border-radius: 20px 20px 0 0;
+            max-height: 82vh;
+        }
+
+        .mais-section {
+            margin-bottom: 1.35rem;
+        }
+
+        .mais-section-label {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #9aa0a6;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+            padding-left: 0.25rem;
+        }
+
+        .mais-link {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.7rem 0.5rem;
+            border-radius: 10px;
+            text-decoration: none;
+            color: var(--secondary-color);
+            font-weight: 500;
+            font-size: 0.92rem;
+        }
+
+        .mais-link:hover {
+            background: rgba(242, 140, 51, 0.08);
+            color: var(--primary-color);
+        }
+
+        .mais-link i {
+            width: 20px;
+            text-align: center;
+            color: var(--primary-color);
+        }
+
     </style>
     
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="{{ 'has-bottom-nav' if current_user.is_authenticated else '' }}">
     <!-- Loading Spinner Global -->
     <div id="global-loader">
         <div class="loader-spinner"></div>
@@ -237,244 +528,294 @@
                 <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FitLog" style="height: 50px; width: auto;">
             </a>
 
-            <span class="navbar-brand-title d-md-none d-flex align-items-end gap-1">
+            <span class="navbar-brand-title d-lg-none d-flex align-items-end gap-1">
                 {% block page_icon %}<i class="bi bi-house" style="color: #F28C33;"></i>{% endblock %}{% block page_title %}FitLog{% endblock %}
             </span>
-            
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    {% if current_user.is_authenticated %}
-                        
-                        <!-- ========================================= -->
-                        <!-- MENU ADMIN (apenas admin)                 -->
-                        <!-- ========================================= -->
-                        {% if current_user.is_admin %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-gear-fill"></i> Admin
+
+            {% if current_user.is_authenticated %}
+            <!-- ========================================= -->
+            <!-- MEGA-MENU (desktop, >= lg)                -->
+            <!-- ========================================= -->
+            <ul class="navbar-nav mega-nav d-none d-lg-flex flex-row me-auto">
+
+                {% if current_user.is_admin %}
+                <li class="nav-item mega-item">
+                    <button type="button" class="nav-link mega-trigger {{ 'active' if request.blueprint in ['admin', 'version'] else '' }}" data-mega="admin">
+                        <i class="bi bi-gear-fill"></i> Painel <i class="bi bi-chevron-down mega-caret"></i>
+                    </button>
+                    <div class="mega-panel" data-mega-panel="admin">
+                        <div class="mega-grid mega-grid-1col">
+                            <a class="mega-card" href="{{ url_for('admin.gerenciar') }}">
+                                <span class="mega-icon"><i class="bi bi-database"></i></span>
+                                <span>
+                                    <span class="mega-title">Catálogo Global</span>
+                                    <span class="mega-desc">Exercícios e treinos disponíveis pra todo mundo</span>
+                                </span>
                             </a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('admin.gerenciar') }}">
-                                        <i class="bi bi-database"></i> Catálogo Global
-                                    </a>
-                                </li>
-                                <li>                                    
-                                    <a class="dropdown-item" href="{{ url_for('admin.gerenciar') }}">
-                                        <i class="bi bi-people"></i> Gerenciar Alunos
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('version.gerenciar_versoes_global') }}">
-                                        <i class="bi bi-clock-history"></i> Versões Globais
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                            <a class="mega-card" href="{{ url_for('version.gerenciar_versoes_global') }}">
+                                <span class="mega-icon"><i class="bi bi-clock-history"></i></span>
+                                <span>
+                                    <span class="mega-title">Versões Globais</span>
+                                    <span class="mega-desc">Publique e organize versões do catálogo</span>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                </li>
+                {% endif %}
+
+                {% if current_user.is_professor() %}
+                <li class="nav-item mega-item">
+                    <button type="button" class="nav-link mega-trigger {{ 'active' if request.blueprint == 'professor' else '' }}" data-mega="professor">
+                        <i class="bi bi-person-badge"></i> Professor <i class="bi bi-chevron-down mega-caret"></i>
+                        {% if current_user.solicitacoes_pendentes_count > 0 %}
+                            <span class="badge rounded-pill bg-danger mega-badge-dot">{{ current_user.solicitacoes_pendentes_count }}</span>
                         {% endif %}
-                        
-                        <!-- ========================================= -->
-                        <!-- MENU PROFESSOR (apenas professores)       -->
-                        <!-- ========================================= -->
-                        {% if current_user.is_professor() %}  <!-- ← CORRIGIDO: chamando o método -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-person-badge"></i> Professor
+                    </button>
+                    <div class="mega-panel" data-mega-panel="professor">
+                        <div class="mega-grid">
+                            <a class="mega-card" href="{{ url_for('professor.dashboard') }}">
+                                <span class="mega-icon"><i class="bi bi-speedometer2"></i></span>
+                                <span>
+                                    <span class="mega-title">Dashboard</span>
+                                    <span class="mega-desc">Visão geral dos seus alunos</span>
+                                </span>
                             </a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('professor.dashboard') }}">
-                                        <i class="bi bi-speedometer2"></i> Dashboard
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('professor.listar_alunos') }}">
-                                        <i class="bi bi-people"></i> Meus Alunos
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('professor.novo_aluno') }}">
-                                        <i class="bi bi-person-plus"></i> Novo Aluno
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('professor.solicitacoes') }}">
-                                        <i class="bi bi-bell"></i> Solicitações
+                            <a class="mega-card" href="{{ url_for('professor.listar_alunos') }}">
+                                <span class="mega-icon"><i class="bi bi-people"></i></span>
+                                <span>
+                                    <span class="mega-title">Meus Alunos</span>
+                                    <span class="mega-desc">Acompanhe o progresso de cada um</span>
+                                </span>
+                            </a>
+                            <a class="mega-card" href="{{ url_for('professor.novo_aluno') }}">
+                                <span class="mega-icon"><i class="bi bi-person-plus"></i></span>
+                                <span>
+                                    <span class="mega-title">Novo Aluno</span>
+                                    <span class="mega-desc">Cadastre um aluno diretamente</span>
+                                </span>
+                            </a>
+                            <a class="mega-card" href="{{ url_for('professor.solicitacoes') }}">
+                                <span class="mega-icon"><i class="bi bi-bell"></i></span>
+                                <span>
+                                    <span class="mega-title">
+                                        Solicitações
                                         {% if current_user.solicitacoes_pendentes_count > 0 %}
-                                            <span class="badge bg-danger ms-2">{{ current_user.solicitacoes_pendentes_count }}</span>
+                                            <span class="badge bg-danger">{{ current_user.solicitacoes_pendentes_count }}</span>
                                         {% endif %}
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        {% endif %}
+                                    </span>
+                                    <span class="mega-desc">Pedidos de vínculo aguardando resposta</span>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                </li>
+                {% endif %}
 
-                        <!-- ========================================= -->
-                        <!-- MENU TREINO PRÓPRIO DO PROFESSOR           -->
-                        <!-- (professor também pode treinar por conta   -->
-                        <!-- própria, reaproveitando as telas do aluno) -->
-                        <!-- ========================================= -->
-                        {% if current_user.is_professor() %}
+                {% if current_user.pode_gerenciar_treino_proprio() %}
+                <li class="nav-item mega-item">
+                    <button type="button" class="nav-link mega-trigger {{ 'active' if request.blueprint in ['aluno', 'calendar', 'stats'] else '' }}" data-mega="treino">
+                        <i class="bi bi-heart-pulse"></i> {{ 'Meu Treino' if current_user.is_professor() else 'Treino' }} <i class="bi bi-chevron-down mega-caret"></i>
+                    </button>
+                    <div class="mega-panel" data-mega-panel="treino">
+                        <div class="mega-columns">
+                            <div>
+                                <span class="mega-col-label">Acompanhamento</span>
+                                <div class="mega-grid mega-grid-1col">
+                                    <a class="mega-card" href="{{ url_for('aluno.dashboard') }}">
+                                        <span class="mega-icon"><i class="bi bi-speedometer2"></i></span>
+                                        <span>
+                                            <span class="mega-title">Dashboard</span>
+                                            <span class="mega-desc">Resumo do seu progresso</span>
+                                        </span>
+                                    </a>
+                                    <a class="mega-card" href="{{ url_for('calendar.calendario') }}">
+                                        <span class="mega-icon"><i class="bi bi-calendar"></i></span>
+                                        <span>
+                                            <span class="mega-title">Calendário</span>
+                                            <span class="mega-desc">Seus treinos ao longo do tempo</span>
+                                        </span>
+                                    </a>
+                                    <a class="mega-card" href="{{ url_for('aluno.estatisticas') }}">
+                                        <span class="mega-icon"><i class="bi bi-graph-up"></i></span>
+                                        <span>
+                                            <span class="mega-title">Estatísticas</span>
+                                            <span class="mega-desc">Evolução de carga e volume</span>
+                                        </span>
+                                    </a>
+                                    {% if current_user.is_aluno() %}
+                                    <a class="mega-card" href="{{ url_for('stats.visualizar_tabela') }}">
+                                        <span class="mega-icon"><i class="bi bi-table"></i></span>
+                                        <span>
+                                            <span class="mega-title">Tabela de Progresso</span>
+                                            <span class="mega-desc">Números por exercício</span>
+                                        </span>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div>
+                                <span class="mega-col-label">Gerenciar</span>
+                                <div class="mega-grid mega-grid-1col">
+                                    <a class="mega-card" href="{{ url_for('aluno.exercicios') }}">
+                                        <span class="mega-icon"><i class="bi bi-list-check"></i></span>
+                                        <span>
+                                            <span class="mega-title">Meus Exercícios</span>
+                                            <span class="mega-desc">Catálogo pessoal de exercícios</span>
+                                        </span>
+                                    </a>
+                                    <a class="mega-card" href="{{ url_for('aluno.treinos') }}">
+                                        <span class="mega-icon"><i class="bi bi-trophy"></i></span>
+                                        <span>
+                                            <span class="mega-title">Meus Treinos</span>
+                                            <span class="mega-desc">Fichas A, B, C...</span>
+                                        </span>
+                                    </a>
+                                    <a class="mega-card" href="{{ url_for('aluno.versoes') }}">
+                                        <span class="mega-icon"><i class="bi bi-clock-history"></i></span>
+                                        <span>
+                                            <span class="mega-title">Minhas Versões</span>
+                                            <span class="mega-desc">Histórico de planos de treino</span>
+                                        </span>
+                                    </a>
+                                    {% if current_user.is_aluno() %}
+                                    <a class="mega-card" href="{{ url_for('aluno.meu_professor') }}">
+                                        <span class="mega-icon"><i class="bi bi-person-badge"></i></span>
+                                        <span>
+                                            <span class="mega-title">Meu Professor</span>
+                                            <span class="mega-desc">Vínculo e solicitações</span>
+                                        </span>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                {% endif %}
+            </ul>
+
+            <!-- Ação rápida + avatar (desktop e mobile) -->
+            <div class="d-flex align-items-center gap-2 order-lg-2">
+                {% if current_user.pode_gerenciar_treino_proprio() %}
+                <a href="{{ url_for('register.registrar_treino') }}" class="btn btn-primary btn-sm d-none d-lg-inline-flex align-items-center gap-1 fw-semibold">
+                    <i class="bi bi-plus-circle"></i> Registrar treino
+                </a>
+                {% endif %}
+                <div class="nav-item dropdown">
+                    <button class="btn btn-avatar dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ current_user.username }}">
+                        <span class="avatar-circle">{{ current_user.username[0]|upper }}</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><h6 class="dropdown-header">{{ current_user.username }}</h6></li>
                         <li>
-                            <a class="nav-link dropdown-item" href="{{ url_for('register.registrar_treino') }}">
-                                <i class="bi bi-plus-circle"></i> Registrar Treino
+                            <a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                                <i class="bi bi-person"></i> Meu Perfil
                             </a>
                         </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-person"></i> Meu Treino
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('aluno.dashboard') }}">
-                                        <i class="bi bi-speedometer2"></i> Dashboard
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('calendar.calendario') }}">
-                                        <i class="bi bi-calendar"></i> Calendário
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('aluno.estatisticas') }}">
-                                        <i class="bi bi-graph-up"></i> Estatísticas
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('aluno.exercicios') }}">
-                                        <i class="bi bi-list-check"></i> Meus Exercícios
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('aluno.treinos') }}">
-                                        <i class="bi bi-trophy"></i> Meus Treinos
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('aluno.versoes') }}">
-                                        <i class="bi bi-clock-history"></i> Minhas Versões
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        {% endif %}
-
-                        <!-- ========================================= -->
-                        <!-- MENU ALUNO (COMPLETO)                     -->
-                        <!-- ========================================= -->
-                        {% if current_user.is_aluno() %}
+                        <li><hr class="dropdown-divider"></li>
                         <li>
-                            <a class="nav-link dropdown-item" href="{{ url_for('register.registrar_treino') }}">
-                                <i class="bi bi-plus-circle"></i> Treino
+                            <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                                <i class="bi bi-box-arrow-right"></i> Sair
                             </a>
                         </li>
-                        
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-bar-chart"></i> Dados
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('aluno.dashboard') }}">
-                                        <i class="bi bi-speedometer2"></i> Dashboard
-                                    </a>
-                                </li>
-                                
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('calendar.calendario') }}">
-                                        <i class="bi bi-calendar"></i> Calendário
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('aluno.estatisticas') }}">
-                                        <i class="bi bi-graph-up"></i> Estatísticas
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('stats.visualizar_tabela') }}">
-                                        <i class="bi bi-table"></i> Tabela de Progresso
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-person"></i> Aluno
-                            </a>
-                            <ul class="dropdown-menu">                                
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('aluno.exercicios') }}">
-                                        <i class="bi bi-list-check"></i> Meus Exercícios
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('aluno.treinos') }}">
-                                        <i class="bi bi-trophy"></i> Meus Treinos
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('aluno.versoes') }}">
-                                        <i class="bi bi-clock-history"></i> Minhas Versões
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('aluno.meu_professor') }}">
-                                        <i class="bi bi-person-badge"></i> Meu Professor
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        {% endif %}  
-                        
-                        <!-- ========================================= -->
-                        <!-- MENU PERFIL (comum a todos)               -->
-                        <!-- ========================================= -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-person-circle"></i> {{ current_user.username }}
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('auth.profile') }}">
-                                        <i class="bi bi-person"></i> Meu Perfil
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
-                                        <i class="bi bi-box-arrow-right"></i> Sair
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        
-                    {% else %}
-                        <!-- Menu para não logados -->
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.login') }}">
-                                <i class="bi bi-box-arrow-in-right"></i> Login
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.register') }}">
-                                <i class="bi bi-person-plus"></i> Registrar
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
+                    </ul>
+                </div>
             </div>
+            {% else %}
+            <!-- Menu para não logados -->
+            <div class="d-flex align-items-center gap-2 ms-auto">
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-box-arrow-in-right"></i> Login
+                </a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-person-plus"></i> Registrar
+                </a>
+            </div>
+            {% endif %}
         </div>
     </nav>
+
+    {% if current_user.is_authenticated %}
+    <!-- ========================================= -->
+    <!-- BARRA INFERIOR (mobile, < lg)              -->
+    <!-- ========================================= -->
+    <nav class="bottom-nav d-lg-none" aria-label="Navegação principal">
+        <a href="{{ url_for('aluno.dashboard') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'aluno.dashboard' else '' }}">
+            <i class="bi bi-house{{ '-fill' if request.endpoint == 'aluno.dashboard' else '' }}"></i>
+            <span>Início</span>
+        </a>
+        <a href="{{ url_for('calendar.calendario') }}" class="bottom-nav-item {{ 'active' if request.blueprint == 'calendar' else '' }}">
+            <i class="bi bi-calendar{{ '-fill' if request.blueprint == 'calendar' else '' }}"></i>
+            <span>Calendário</span>
+        </a>
+        {% if current_user.pode_gerenciar_treino_proprio() %}
+        <a href="{{ url_for('register.registrar_treino') }}" class="bottom-nav-cta" aria-label="Registrar treino">
+            <i class="bi bi-plus-lg"></i>
+        </a>
+        {% endif %}
+        <a href="{{ url_for('aluno.estatisticas') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'aluno.estatisticas' else '' }}">
+            <i class="bi bi-graph-up-arrow"></i>
+            <span>Progresso</span>
+        </a>
+        <button type="button" class="bottom-nav-item" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMais" aria-controls="offcanvasMais">
+            <i class="bi bi-grid-3x3-gap"></i>
+            <span>Mais</span>
+            {% if current_user.is_professor() and current_user.solicitacoes_pendentes_count > 0 %}
+                <span class="badge rounded-pill bg-danger bottom-nav-badge">{{ current_user.solicitacoes_pendentes_count }}</span>
+            {% endif %}
+        </button>
+    </nav>
+
+    <!-- Painel "Mais" (offcanvas inferior, mobile) -->
+    <div class="offcanvas offcanvas-bottom mais-sheet" tabindex="-1" id="offcanvasMais" aria-labelledby="offcanvasMaisLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="offcanvasMaisLabel">Mais opções</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
+        </div>
+        <div class="offcanvas-body">
+            {% if current_user.is_admin %}
+            <div class="mais-section">
+                <span class="mais-section-label">Administração</span>
+                <a class="mais-link" href="{{ url_for('admin.gerenciar') }}"><i class="bi bi-database"></i> Catálogo Global</a>
+                <a class="mais-link" href="{{ url_for('version.gerenciar_versoes_global') }}"><i class="bi bi-clock-history"></i> Versões Globais</a>
+            </div>
+            {% endif %}
+
+            {% if current_user.is_professor() %}
+            <div class="mais-section">
+                <span class="mais-section-label">Professor</span>
+                <a class="mais-link" href="{{ url_for('professor.dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                <a class="mais-link" href="{{ url_for('professor.listar_alunos') }}"><i class="bi bi-people"></i> Meus Alunos</a>
+                <a class="mais-link" href="{{ url_for('professor.novo_aluno') }}"><i class="bi bi-person-plus"></i> Novo Aluno</a>
+                <a class="mais-link" href="{{ url_for('professor.solicitacoes') }}">
+                    <i class="bi bi-bell"></i> Solicitações
+                    {% if current_user.solicitacoes_pendentes_count > 0 %}
+                        <span class="badge bg-danger ms-1">{{ current_user.solicitacoes_pendentes_count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+            {% endif %}
+
+            <div class="mais-section">
+                <span class="mais-section-label">Treino</span>
+                <a class="mais-link" href="{{ url_for('aluno.exercicios') }}"><i class="bi bi-list-check"></i> Meus Exercícios</a>
+                <a class="mais-link" href="{{ url_for('aluno.treinos') }}"><i class="bi bi-trophy"></i> Meus Treinos</a>
+                <a class="mais-link" href="{{ url_for('aluno.versoes') }}"><i class="bi bi-clock-history"></i> Minhas Versões</a>
+                {% if current_user.is_aluno() %}
+                <a class="mais-link" href="{{ url_for('stats.visualizar_tabela') }}"><i class="bi bi-table"></i> Tabela de Progresso</a>
+                <a class="mais-link" href="{{ url_for('aluno.meu_professor') }}"><i class="bi bi-person-badge"></i> Meu Professor</a>
+                {% endif %}
+            </div>
+
+            <div class="mais-section">
+                <span class="mais-section-label">Conta</span>
+                <a class="mais-link" href="{{ url_for('auth.profile') }}"><i class="bi bi-person"></i> Meu Perfil</a>
+                <a class="mais-link text-danger" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Sair</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
     
     <!-- Flash Messages -->
     <div class="container mt-3">
@@ -627,6 +968,43 @@
                     });
             });
         }
+    </script>
+
+    <!-- Mega-menu do topo (desktop) -->
+    <script>
+        (function () {
+            var items = document.querySelectorAll('.mega-item');
+            if (!items.length) return;
+
+            function closeAll(except) {
+                items.forEach(function (item) {
+                    if (item !== except) item.classList.remove('open');
+                });
+            }
+
+            items.forEach(function (item) {
+                var trigger = item.querySelector('.mega-trigger');
+                if (!trigger) return;
+                trigger.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    var isOpen = item.classList.contains('open');
+                    closeAll();
+                    if (!isOpen) item.classList.add('open');
+                });
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('.mega-item')) closeAll();
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') closeAll();
+            });
+
+            window.addEventListener('resize', function () {
+                if (window.innerWidth < 992) closeAll();
+            });
+        })();
     </script>
 </body>
 </html>
