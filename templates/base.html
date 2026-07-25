@@ -729,9 +729,9 @@
                 <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-sm">
                     <i class="bi bi-box-arrow-in-right"></i> Login
                 </a>
-              <!--  <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">
                     <i class="bi bi-person-plus"></i> Registrar
-                </a> -->
+                </a> 
             </div>
             {% endif %}
         </div>
@@ -751,9 +751,9 @@
             <span>Calendário</span>
         </a>
         {% if current_user.pode_gerenciar_treino_proprio() %}
-        <a href="{{ url_for('register.registrar_treino') }}" class="bottom-nav-cta" aria-label="Registrar treino">
+        <!-- <a href="{{ url_for('register.registrar_treino') }}" class="bottom-nav-cta" aria-label="Registrar treino">
             <i class="bi bi-plus-lg"></i>
-        </a>
+        </a> -->
         {% endif %}
         <a href="{{ url_for('aluno.estatisticas') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'aluno.estatisticas' else '' }}">
             <i class="bi bi-graph-up-arrow"></i>
