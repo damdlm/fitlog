@@ -54,7 +54,7 @@ def exercicios():
 @login_required
 def novo_exercicio():
     """Cria um novo exercício para o aluno"""
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
@@ -90,7 +90,7 @@ def novo_exercicio():
 @login_required
 def editar_exercicio(exercicio_id):
     """Edita um exercício do aluno"""
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
@@ -136,7 +136,7 @@ def editar_exercicio(exercicio_id):
 @login_required
 def excluir_exercicio(exercicio_id):
     """Exclui um exercício do aluno"""
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     

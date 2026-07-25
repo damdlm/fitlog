@@ -29,10 +29,6 @@
             --primary-color: #F28C33;
             --secondary-color: #2D2D2D;
             --gradient-primary: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
-            --ink: #2D2D2D;
-            --ink-soft: #8a8a8a;
-            --surface-alt: #FAF7F4;
-            --ring: rgba(242, 140, 51, 0.16);
         }
         
         body {
@@ -44,18 +40,8 @@
             position: sticky;
             top: 0;
             z-index: 1030;
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
-            background: rgba(255, 255, 255, 0.86) !important;
-            -webkit-backdrop-filter: saturate(180%) blur(14px);
-            backdrop-filter: saturate(180%) blur(14px);
-            border-bottom: 1px solid rgba(45, 45, 45, 0.06);
-            box-shadow: 0 1px 0 rgba(45, 45, 45, 0.03) !important;
-            transition: box-shadow 0.25s ease;
-        }
-
-        .navbar.is-scrolled {
-            box-shadow: 0 8px 24px rgba(45, 45, 45, 0.08) !important;
+            padding-top: 0.35rem;
+            padding-bottom: 0.35rem;
         }
 
         .navbar-brand {
@@ -89,159 +75,47 @@
                nunca muda de tamanho, esteja o menu aberto ou fechado. */
             .navbar-collapse {
                 position: absolute;
-                top: calc(100% + 8px);
-                left: 12px;
-                right: 12px;
+                top: 100%;
+                left: 0;
+                right: 0;
                 background: #fff;
-                max-height: calc(100vh - 90px);
+                max-height: calc(100vh - 70px);
                 overflow-y: auto;
-                padding: 0.5rem;
-                box-shadow: 0 20px 40px rgba(45, 45, 45, 0.16);
-                border-radius: 18px;
-                border: 1px solid rgba(45, 45, 45, 0.06);
-            }
-
-            .navbar-nav {
-                gap: 2px;
+                padding: 0.75rem 1rem 1rem;
+                box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+                border-top: 1px solid rgba(0, 0, 0, 0.06);
             }
         }
-
-        /* ---------- Pills de navegação ---------- */
-        .nav-pill {
-            color: var(--ink) !important;
+        
+        .nav-link {
+            color: var(--secondary-color) !important;
             font-weight: 500;
-            border-radius: 999px;
-            padding: 0.5rem 0.95rem !important;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: background-color 0.2s ease, color 0.2s ease;
+            transition: color 0.3s;
         }
-
-        .nav-pill:hover {
-            background-color: rgba(242, 140, 51, 0.08);
+        
+        .nav-link:hover {
             color: var(--primary-color) !important;
         }
-
-        .nav-pill.active,
-        .nav-item.dropdown.show > .nav-pill {
-            background-color: rgba(242, 140, 51, 0.12);
+        
+        .nav-link.active {
             color: var(--primary-color) !important;
+            border-bottom: 2px solid var(--primary-color);
         }
-
-        .nav-pill .bi {
-            font-size: 0.95rem;
-        }
-
-        .nav-pill.dropdown-toggle::after {
-            transition: transform 0.2s ease;
-            opacity: 0.55;
-        }
-
-        .nav-item.dropdown.show > .nav-pill.dropdown-toggle::after {
-            transform: rotate(180deg);
-        }
-
-        /* Ação principal em destaque (Treino) */
-        .btn-treino-cta {
-            background: var(--gradient-primary) !important;
-            color: #fff !important;
-            border-radius: 999px !important;
-            padding: 0.5rem 1.05rem !important;
-            font-weight: 600;
-            box-shadow: 0 3px 10px rgba(242, 140, 51, 0.35);
-        }
-
-        .btn-treino-cta:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(242, 140, 51, 0.45);
-            color: #fff !important;
-        }
-
-        /* Avatar com iniciais */
-        .avatar-bubble {
-            width: 30px;
-            height: 30px;
-            min-width: 30px;
-            border-radius: 50%;
-            background: var(--gradient-primary);
-            color: #fff;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.82rem;
-            letter-spacing: 0;
-        }
-
-        /* Notificação com "pulso" */
-        .badge-pulse {
-            animation: pulseBadge 1.8s ease-in-out infinite;
-        }
-
-        @keyframes pulseBadge {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.45); }
-            50% { box-shadow: 0 0 0 5px rgba(220, 53, 69, 0); }
-        }
-
-        /* ---------- Dropdowns modernos ---------- */
+        
         .dropdown-menu {
-            border: 1px solid rgba(45, 45, 45, 0.06);
-            box-shadow: 0 16px 40px rgba(45, 45, 45, 0.14);
-            border-radius: 14px;
-            padding: 8px;
-            animation: dropdownReveal 0.16s ease-out;
-        }
-
-        @keyframes dropdownReveal {
-            from { opacity: 0; transform: translateY(-6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .dropdown-header.nav-eyebrow {
-            font-size: 0.68rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--ink-soft);
-            padding: 8px 10px 4px;
-        }
-
-        .dropdown-item {
-            padding: 8px 10px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             border-radius: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.15s ease;
         }
-
-        .dropdown-item:hover,
-        .dropdown-item:focus {
+        
+        .dropdown-item {
+            padding: 8px 20px;
+            transition: all 0.2s;
+        }
+        
+        .dropdown-item:hover {
             background-color: rgba(242, 140, 51, 0.1);
             color: var(--primary-color);
-        }
-
-        .dropdown-item .item-icon {
-            width: 30px;
-            height: 30px;
-            min-width: 30px;
-            border-radius: 9px;
-            background: rgba(242, 140, 51, 0.1);
-            color: var(--primary-color);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-        }
-
-        .dropdown-item.text-danger .item-icon {
-            background: rgba(220, 53, 69, 0.1);
-            color: #dc3545;
-        }
-
-        .dropdown-item .badge-pulse {
-            margin-left: auto;
         }
         
         .btn-primary {
@@ -380,28 +254,24 @@
                         <!-- ========================================= -->
                         {% if current_user.is_admin %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link nav-pill dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-gear-fill"></i> Admin
                             </a>
                             <ul class="dropdown-menu">
-                                <li><h6 class="dropdown-header nav-eyebrow">Catálogo &amp; alunos</h6></li>
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('admin.gerenciar') }}">
-                                        <span class="item-icon"><i class="bi bi-database"></i></span>
-                                        Catálogo Global
+                                        <i class="bi bi-database"></i> Catálogo Global
                                     </a>
                                 </li>
                                 <li>                                    
                                     <a class="dropdown-item" href="{{ url_for('admin.gerenciar') }}">
-                                        <span class="item-icon"><i class="bi bi-people"></i></span>
-                                        Gerenciar Alunos
+                                        <i class="bi bi-people"></i> Gerenciar Alunos
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('version.gerenciar_versoes_global') }}">
-                                        <span class="item-icon"><i class="bi bi-clock-history"></i></span>
-                                        Versões Globais
+                                        <i class="bi bi-clock-history"></i> Versões Globais
                                     </a>
                                 </li>
                             </ul>
@@ -413,40 +283,62 @@
                         <!-- ========================================= -->
                         {% if current_user.is_professor() %}  <!-- ← CORRIGIDO: chamando o método -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link nav-pill dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-person-badge"></i> Professor
-                                {% if current_user.solicitacoes_pendentes_count > 0 %}
-                                    <span class="badge rounded-pill bg-danger badge-pulse" style="font-size: 0.6rem;">{{ current_user.solicitacoes_pendentes_count }}</span>
-                                {% endif %}
                             </a>
                             <ul class="dropdown-menu">
-                                <li><h6 class="dropdown-header nav-eyebrow">Visão geral</h6></li>
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('professor.dashboard') }}">
-                                        <span class="item-icon"><i class="bi bi-speedometer2"></i></span>
-                                        Dashboard
+                                        <i class="bi bi-speedometer2"></i> Dashboard
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('professor.listar_alunos') }}">
-                                        <span class="item-icon"><i class="bi bi-people"></i></span>
-                                        Meus Alunos
+                                        <i class="bi bi-people"></i> Meus Alunos
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('professor.novo_aluno') }}">
-                                        <span class="item-icon"><i class="bi bi-person-plus"></i></span>
-                                        Novo Aluno
+                                        <i class="bi bi-person-plus"></i> Novo Aluno
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('professor.solicitacoes') }}">
-                                        <span class="item-icon"><i class="bi bi-bell"></i></span>
-                                        Solicitações
+                                        <i class="bi bi-bell"></i> Solicitações
                                         {% if current_user.solicitacoes_pendentes_count > 0 %}
-                                            <span class="badge rounded-pill bg-danger badge-pulse">{{ current_user.solicitacoes_pendentes_count }}</span>
+                                            <span class="badge bg-danger ms-2">{{ current_user.solicitacoes_pendentes_count }}</span>
                                         {% endif %}
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        {% endif %}
+
+                        <!-- ========================================= -->
+                        <!-- MENU TREINO PRÓPRIO DO PROFESSOR           -->
+                        <!-- (professor também pode treinar por conta   -->
+                        <!-- própria, reaproveitando as telas do aluno) -->
+                        <!-- ========================================= -->
+                        {% if current_user.is_professor() %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person"></i> Meu Treino
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('aluno.exercicios') }}">
+                                        <i class="bi bi-list-check"></i> Meus Exercícios
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('aluno.treinos') }}">
+                                        <i class="bi bi-trophy"></i> Meus Treinos
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('aluno.versoes') }}">
+                                        <i class="bi bi-clock-history"></i> Minhas Versões
                                     </a>
                                 </li>
                             </ul>
@@ -457,76 +349,66 @@
                         <!-- MENU ALUNO (COMPLETO)                     -->
                         <!-- ========================================= -->
                         {% if current_user.is_aluno() %}
-                        <li class="nav-item d-flex align-items-center">
-                            <a class="nav-link btn-treino-cta" href="{{ url_for('register.registrar_treino') }}">
-                                <i class="bi bi-plus-circle-fill"></i> Treino
+                        <li>
+                            <a class="nav-link dropdown-item" href="{{ url_for('register.registrar_treino') }}">
+                                <i class="bi bi-plus-circle"></i> Treino
                             </a>
                         </li>
                         
                         <li class="nav-item dropdown">
-                            <a class="nav-link nav-pill dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-bar-chart"></i> Dados
                             </a>
                             <ul class="dropdown-menu">
-                                <li><h6 class="dropdown-header nav-eyebrow">Acompanhamento</h6></li>
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('aluno.dashboard') }}">
-                                        <span class="item-icon"><i class="bi bi-speedometer2"></i></span>
-                                        Dashboard
+                                        <i class="bi bi-speedometer2"></i> Dashboard
                                     </a>
                                 </li>
                                 
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('calendar.calendario') }}">
-                                        <span class="item-icon"><i class="bi bi-calendar"></i></span>
-                                        Calendário
+                                        <i class="bi bi-calendar"></i> Calendário
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('aluno.estatisticas') }}">
-                                        <span class="item-icon"><i class="bi bi-graph-up"></i></span>
-                                        Estatísticas
+                                        <i class="bi bi-graph-up"></i> Estatísticas
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('stats.visualizar_tabela') }}">
-                                        <span class="item-icon"><i class="bi bi-table"></i></span>
-                                        Tabela de Progresso
+                                        <i class="bi bi-table"></i> Tabela de Progresso
                                     </a>
                                 </li>
                             </ul>
                         </li>
 
                         <li class="nav-item dropdown">
-                            <a class="nav-link nav-pill dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-person"></i> Aluno
                             </a>
-                            <ul class="dropdown-menu">
-                                <li><h6 class="dropdown-header nav-eyebrow">Meu treino</h6></li>
+                            <ul class="dropdown-menu">                                
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('aluno.exercicios') }}">
-                                        <span class="item-icon"><i class="bi bi-list-check"></i></span>
-                                        Meus Exercícios
+                                        <i class="bi bi-list-check"></i> Meus Exercícios
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('aluno.treinos') }}">
-                                        <span class="item-icon"><i class="bi bi-trophy"></i></span>
-                                        Meus Treinos
+                                        <i class="bi bi-trophy"></i> Meus Treinos
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('aluno.versoes') }}">
-                                        <span class="item-icon"><i class="bi bi-clock-history"></i></span>
-                                        Minhas Versões
+                                        <i class="bi bi-clock-history"></i> Minhas Versões
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('aluno.meu_professor') }}">
-                                        <span class="item-icon"><i class="bi bi-person-badge"></i></span>
-                                        Meu Professor
+                                        <i class="bi bi-person-badge"></i> Meu Professor
                                     </a>
                                 </li>
                             </ul>
@@ -537,22 +419,19 @@
                         <!-- MENU PERFIL (comum a todos)               -->
                         <!-- ========================================= -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link nav-pill dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                <span class="avatar-bubble">{{ current_user.username[:1]|upper }}</span>
-                                <span>{{ current_user.username }}</span>
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle"></i> {{ current_user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('auth.profile') }}">
-                                        <span class="item-icon"><i class="bi bi-person"></i></span>
-                                        Meu Perfil
+                                        <i class="bi bi-person"></i> Meu Perfil
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
-                                        <span class="item-icon"><i class="bi bi-box-arrow-right"></i></span>
-                                        Sair
+                                        <i class="bi bi-box-arrow-right"></i> Sair
                                     </a>
                                 </li>
                             </ul>
@@ -561,12 +440,12 @@
                     {% else %}
                         <!-- Menu para não logados -->
                         <li class="nav-item">
-                            <a class="nav-link nav-pill" href="{{ url_for('auth.login') }}">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">
                                 <i class="bi bi-box-arrow-in-right"></i> Login
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link btn-treino-cta" href="{{ url_for('auth.register') }}">
+                            <a class="nav-link" href="{{ url_for('auth.register') }}">
                                 <i class="bi bi-person-plus"></i> Registrar
                             </a>
                         </li>
@@ -653,19 +532,6 @@
 
     <!-- Modal de imagens do exercício -->
     <script src="{{ url_for('static', filename='js/modules/exercicio-imagens.js') }}"></script>
-
-    <!-- Efeito de elevação da navbar ao rolar a página -->
-    <script>
-        (function () {
-            const nav = document.querySelector('.navbar');
-            if (!nav) return;
-            const aplicarSombra = () => {
-                nav.classList.toggle('is-scrolled', window.scrollY > 4);
-            };
-            aplicarSombra();
-            window.addEventListener('scroll', aplicarSombra, { passive: true });
-        })();
-    </script>
     
     <!-- Bloco para scripts específicos de cada página -->
     {% block scripts %}{% endblock %}

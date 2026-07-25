@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 @aluno_bp.route('/versoes')
 @login_required
 def versoes():
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     versoes = VersaoService.get_all(user_id=current_user.id)
@@ -24,7 +24,7 @@ def versoes():
 @aluno_bp.route('/versao/nova', methods=['GET', 'POST'])
 @login_required
 def nova_versao():
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     if request.method == 'POST':
@@ -54,7 +54,7 @@ def nova_versao():
 @aluno_bp.route('/versao/<int:versao_id>', methods=['GET', 'POST'])
 @login_required
 def ver_versao(versao_id):
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     versao = VersaoService.get_by_id(versao_id, user_id=current_user.id, load_relations=True)
@@ -84,7 +84,7 @@ def ver_versao(versao_id):
 @aluno_bp.route('/versao/<int:versao_id>/finalizar')
 @login_required
 def finalizar_versao(versao_id):
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     versao = VersaoService.get_by_id(versao_id, user_id=current_user.id)
@@ -104,7 +104,7 @@ def finalizar_versao(versao_id):
 @aluno_bp.route('/versao/<int:versao_id>/clonar')
 @login_required
 def clonar_versao(versao_id):
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     if VersaoService.clone(versao_id, user_id=current_user.id):
@@ -116,7 +116,7 @@ def clonar_versao(versao_id):
 @aluno_bp.route('/versao/<int:versao_id>/excluir')
 @login_required
 def excluir_versao(versao_id):
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     versao = VersaoService.get_by_id(versao_id, user_id=current_user.id)
@@ -145,7 +145,7 @@ def excluir_versao(versao_id):
 @aluno_bp.route('/versao/<int:versao_id>/treino/novo', methods=['GET', 'POST'])
 @login_required
 def novo_treino_versao(versao_id):
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     versao = VersaoService.get_by_id(versao_id, user_id=current_user.id)
@@ -196,7 +196,7 @@ def novo_treino_versao(versao_id):
 @login_required
 def editar_treino_versao(versao_id, treino_codigo):
     """Edita um treino específico dentro de uma versão do aluno"""
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
@@ -380,7 +380,7 @@ def editar_treino_versao(versao_id, treino_codigo):
 @aluno_bp.route('/versao/<int:versao_id>/treino/<string:treino_codigo>/excluir')
 @login_required
 def excluir_treino_versao(versao_id, treino_codigo):
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     try:

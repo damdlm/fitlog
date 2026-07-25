@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 @login_required
 def treinos():
     """Lista todos os treinos do aluno"""
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
@@ -28,7 +28,7 @@ def treinos():
 @login_required
 def novo_treino():
     """Cria um novo treino para o aluno"""
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
@@ -59,7 +59,7 @@ def novo_treino():
 @login_required
 def editar_treino(treino_id):
     """Edita um treino do aluno"""
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
@@ -92,7 +92,7 @@ def editar_treino(treino_id):
 @login_required
 def excluir_treino(treino_id):
     """Exclui um treino do aluno"""
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     

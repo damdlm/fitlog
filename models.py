@@ -134,6 +134,16 @@ class User(UserMixin, db.Model):
     
     def is_aluno(self):
         return self.tipo_usuario == 'aluno'
+
+    def pode_gerenciar_treino_proprio(self):
+        """
+        Retorna True se o usuário pode ter seus próprios exercícios,
+        treinos e versões -- alunos sempre podem, e professores também,
+        já que um professor pode treinar por conta própria usando o
+        mesmo sistema (reaproveita as telas/rotas do aluno, sempre
+        filtradas por user_id=current_user.id).
+        """
+        return self.is_aluno() or self.is_professor()
     
     def get_alunos(self):
         """Retorna alunos ativos do professor em uma única query (sem N+1)."""
