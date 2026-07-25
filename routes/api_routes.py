@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
+from datetime import datetime, timedelta, timezone, date
 from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
 from services.versao_service import VersaoService
@@ -22,39 +23,41 @@ logger = logging.getLogger(__name__)
 @api_bp.route("/progresso")
 @login_required
 def api_progresso():
-    """API de dados de progresso para gráficos"""
+    """
+    API de dados de progresso para o gráfico de evolução.
+    Retorna apenas os últimos 30 dias corridos (calendário real), com os
+    dias sem registro preenchidos em 0 para o gráfico ficar contínuo.
+    """
     treino = request.args.get("treino")
-    
-    dados = EstatisticaService.get_progresso_por_semana(treino if treino != 'todos' else None)
-    
+
+    dados = EstatisticaService.get_progresso_ultimos_30_dias(treino if treino != 'todos' else None)
+
+    if not dados:
+        # Sem nenhum registro nos últimos 30 dias: mantém a resposta vazia
+        # para o front-end mostrar o estado "ainda não há treinos" (em vez
+        # de um gráfico com uma linha zerada).
+        return jsonify({"semanas": [], "volumes": [], "cargas_medias": []})
+
+    # dia -> (volume_total, carga_media), vindo do banco (chave pode ser
+    # date ou string dependendo do driver/backend do SQLAlchemy)
+    por_dia = {}
+    for item in dados:
+        chave = item.dia if isinstance(item.dia, date) else datetime.strptime(str(item.dia), "%Y-%m-%d").date()
+        por_dia[chave] = item
+
+    hoje = datetime.now(timezone.utc).date()
+    dias_janela = [hoje - timedelta(days=i) for i in range(29, -1, -1)]
+
     semanas = []
     volumes = []
     cargas_medias = []
-    
-    ordem_meses = {
-        "Janeiro": 1, "Fevereiro": 2, "Março": 3, "Abril": 4,
-        "Maio": 5, "Junho": 6, "Julho": 7, "Agosto": 8,
-        "Setembro": 9, "Outubro": 10, "Novembro": 11, "Dezembro": 12
-    }
-    
-    def extrair_ordenacao(item):
-        periodo = item.periodo
-        mes_nome = periodo.split('/')[0] if '/' in periodo else periodo.split(' ')[0]
-        ano = 2024
-        if '/' in periodo and len(periodo.split('/')) > 1:
-            try:
-                ano = int(periodo.split('/')[1])
-            except:
-                pass
-        return (ano, ordem_meses.get(mes_nome, 0), item.semana)
-    
-    dados_ordenados = sorted(dados, key=extrair_ordenacao)
-    
-    for item in dados_ordenados:
-        semanas.append(f"{item.periodo} - S{item.semana}")
-        volumes.append(float(item.volume_total) if item.volume_total else 0)
-        cargas_medias.append(float(item.carga_media) if item.carga_media else 0)
-    
+
+    for dia in dias_janela:
+        item = por_dia.get(dia)
+        semanas.append(dia.strftime("%d/%m"))
+        volumes.append(float(item.volume_total) if item and item.volume_total else 0)
+        cargas_medias.append(float(item.carga_media) if item and item.carga_media else 0)
+
     return jsonify({
         "semanas": semanas,
         "volumes": volumes,

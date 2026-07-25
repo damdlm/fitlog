@@ -40,6 +40,10 @@
         border-radius: 16px;
         box-shadow: 0 10px 30px rgba(45, 45, 45, 0.05);
         overflow: hidden;
+        transition: box-shadow 0.25s ease;
+    }
+    .dash-card:hover {
+        box-shadow: 0 14px 36px rgba(45, 45, 45, 0.08);
     }
 
     .dash-card-header {
@@ -74,12 +78,26 @@
 
     .dash-filter-pill:hover {
         color: var(--primary-color);
+        background: rgba(242, 140, 51, 0.08);
     }
 
     .dash-filter-pill.active {
         background: var(--gradient-primary);
         color: #fff;
         box-shadow: 0 2px 8px rgba(242, 140, 51, 0.35);
+    }
+
+    /* Gráfico: altura controlada pelo container, não pelo atributo
+       height do <canvas>, para se ajustar bem em telas de celular. */
+    .dash-chart-wrap {
+        position: relative;
+        width: 100%;
+        height: 300px;
+    }
+    @media (max-width: 576px) {
+        .dash-chart-wrap {
+            height: 220px;
+        }
     }
 
     .dash-empty-state {
@@ -219,7 +237,9 @@
                         <i class="bi bi-plus-circle-fill"></i> Registrar primeiro treino
                     </a>
                 </div>
-                <canvas id="progressChart" height="300"></canvas>
+                <div class="dash-chart-wrap">
+                    <canvas id="progressChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -379,6 +399,19 @@
 
                 if (chart) chart.destroy();
 
+                const ctx = canvas.getContext('2d');
+                const alturaGrafico = canvas.clientHeight || 300;
+
+                const gradienteVolume = ctx.createLinearGradient(0, 0, 0, alturaGrafico);
+                gradienteVolume.addColorStop(0, 'rgba(242, 140, 51, 0.32)');
+                gradienteVolume.addColorStop(1, 'rgba(242, 140, 51, 0)');
+
+                const gradienteCarga = ctx.createLinearGradient(0, 0, 0, alturaGrafico);
+                gradienteCarga.addColorStop(0, 'rgba(45, 45, 45, 0.22)');
+                gradienteCarga.addColorStop(1, 'rgba(45, 45, 45, 0)');
+
+                const isMobile = window.innerWidth < 576;
+
                 chart = new Chart(canvas, {
                     type: 'line',
                     data: {
@@ -387,20 +420,28 @@
                             label: 'Volume Total (kg)',
                             data: data.volumes,
                             borderColor: '#F28C33',
-                            backgroundColor: 'rgba(242, 140, 51, 0.1)',
+                            backgroundColor: gradienteVolume,
                             borderWidth: 3,
-                            pointRadius: 5,
-                            pointHoverRadius: 8,
-                            tension: 0.3
+                            pointRadius: isMobile ? 0 : 3,
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: '#F28C33',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            tension: 0.35,
+                            fill: true
                         }, {
                             label: 'Carga Média (kg)',
                             data: data.cargas_medias,
                             borderColor: '#2D2D2D',
-                            backgroundColor: 'rgba(45, 45, 45, 0.1)',
+                            backgroundColor: gradienteCarga,
                             borderWidth: 3,
-                            pointRadius: 5,
-                            pointHoverRadius: 8,
-                            tension: 0.3,
+                            pointRadius: isMobile ? 0 : 3,
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: '#2D2D2D',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            tension: 0.35,
+                            fill: true,
                             yAxisID: 'y1'
                         }]
                     },
@@ -413,6 +454,9 @@
                         },
                         plugins: {
                             tooltip: {
+                                backgroundColor: '#2D2D2D',
+                                padding: 10,
+                                cornerRadius: 10,
                                 callbacks: {
                                     label: function(context) {
                                         let label = context.dataset.label || '';
@@ -432,7 +476,8 @@
                                 },
                                 grid: {
                                     color: 'rgba(0, 0, 0, 0.05)'
-                                }
+                                },
+                                ticks: { font: { size: 11 } }
                             },
                             y1: {
                                 beginAtZero: true,
@@ -443,6 +488,16 @@
                                 title: {
                                     display: true,
                                     text: 'Carga Média (kg)'
+                                },
+                                ticks: { font: { size: 11 } }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    font: { size: 11 },
+                                    maxRotation: 0,
+                                    autoSkip: true,
+                                    maxTicksLimit: isMobile ? 6 : 10
                                 }
                             }
                         }

@@ -1,5 +1,6 @@
 """Serviço para cálculos estatísticos"""
 
+from datetime import datetime, timedelta, timezone
 from models import db, Musculo, ExercicioCustomizado, RegistroTreino, HistoricoTreino
 from sqlalchemy import func, and_
 from .base_service import BaseService
@@ -106,7 +107,38 @@ class EstatisticaService(BaseService):
         except Exception as e:
             BaseService.handle_error(e, "Erro ao calcular progresso por semana")
             return []
-    
+
+    @staticmethod
+    def get_progresso_ultimos_30_dias(treino_id=None, user_id=None):
+        """
+        Retorna volume total agregado por dia, apenas dos últimos 30 dias
+        corridos (calendário real, via RegistroTreino.data_registro) —
+        usado no gráfico "Evolução do Volume" da tela de estatísticas.
+        """
+        try:
+            user_id = user_id or BaseService.get_current_user_id()
+            if not user_id:
+                return []
+
+            limite = datetime.now(timezone.utc) - timedelta(days=30)
+
+            query = db.session.query(
+                func.date(RegistroTreino.data_registro).label('dia'),
+                func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes).label('volume_total'),
+                func.avg(HistoricoTreino.carga).label('carga_media')
+            ).join(HistoricoTreino)\
+             .filter(RegistroTreino.user_id == user_id)\
+             .filter(RegistroTreino.data_registro >= limite)\
+             .group_by(func.date(RegistroTreino.data_registro))
+
+            if treino_id:
+                query = query.filter(RegistroTreino.treino_id == treino_id)
+
+            return query.order_by(func.date(RegistroTreino.data_registro)).all()
+        except Exception as e:
+            BaseService.handle_error(e, "Erro ao calcular progresso dos últimos 30 dias")
+            return []
+
     @staticmethod
     def preparar_dados_tabela(exercicios, registros, semanas_filtro, request_args):
         """Prepara dados para a tabela de visualização"""
