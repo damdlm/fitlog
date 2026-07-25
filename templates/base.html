@@ -321,11 +321,32 @@
                         <!-- própria, reaproveitando as telas do aluno) -->
                         <!-- ========================================= -->
                         {% if current_user.is_professor() %}
+                        <li>
+                            <a class="nav-link dropdown-item" href="{{ url_for('register.registrar_treino') }}">
+                                <i class="bi bi-plus-circle"></i> Registrar Treino
+                            </a>
+                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-person"></i> Meu Treino
                             </a>
                             <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('aluno.dashboard') }}">
+                                        <i class="bi bi-speedometer2"></i> Dashboard
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('calendar.calendario') }}">
+                                        <i class="bi bi-calendar"></i> Calendário
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('aluno.estatisticas') }}">
+                                        <i class="bi bi-graph-up"></i> Estatísticas
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('aluno.exercicios') }}">
                                         <i class="bi bi-list-check"></i> Meus Exercícios

@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 @aluno_bp.route('/dashboard')
 @login_required
 def dashboard():
-    """Dashboard do aluno"""
-    if not current_user.is_aluno():
+    """Dashboard do aluno (também acessível pelo professor, para seus próprios treinos)"""
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 @login_required
 def estatisticas():
     """Estatísticas detalhadas do aluno"""
-    if not current_user.is_aluno():
+    if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
