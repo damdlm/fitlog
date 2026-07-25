@@ -698,9 +698,10 @@
             <!-- Ação rápida + avatar (desktop e mobile) -->
             <div class="d-flex align-items-center gap-2 order-lg-2">
                 {% if current_user.pode_gerenciar_treino_proprio() %}
+                <!--
                 <a href="{{ url_for('register.registrar_treino') }}" class="btn btn-primary btn-sm d-none d-lg-inline-flex align-items-center gap-1 fw-semibold">
                     <i class="bi bi-plus-circle"></i> Registrar treino
-                </a>
+                </a> -->
                 {% endif %}
                 <div class="nav-item dropdown">
                     <button class="btn btn-avatar dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ current_user.username }}">
@@ -728,9 +729,9 @@
                 <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-sm">
                     <i class="bi bi-box-arrow-in-right"></i> Login
                 </a>
-                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">
+              <!--  <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">
                     <i class="bi bi-person-plus"></i> Registrar
-                </a>
+                </a> -->
             </div>
             {% endif %}
         </div>
