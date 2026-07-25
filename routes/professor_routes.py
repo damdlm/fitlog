@@ -1113,11 +1113,21 @@ def estatisticas_aluno(aluno_id):
             "volume_total": volume_total,
             "total_series": total_series
         }
+
+    musculo_destaque = None
+    if musculo_stats:
+        musculos_com_volume = {k: v for k, v in musculo_stats.items() if v['volume_total'] > 0}
+        if musculos_com_volume:
+            musculo_destaque = max(musculos_com_volume, key=lambda k: musculos_com_volume[k]['volume_total'])
+
+    volume_maximo_musculo = max((v['volume_total'] for v in musculo_stats.values()), default=0)
     
     return render_template('professor/estatisticas_aluno.html',
                          aluno=aluno,
                          musculo_stats=musculo_stats,
-                         treino_stats=treino_stats)
+                         treino_stats=treino_stats,
+                         musculo_destaque=musculo_destaque,
+                         volume_maximo_musculo=volume_maximo_musculo)
 
 
 # =============================================

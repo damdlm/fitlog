@@ -44,12 +44,22 @@ def estatisticas():
     
     musculo_stats = EstatisticaService.calcular_por_musculo()
     treino_stats = EstatisticaService.calcular_por_treino()
+
+    musculo_destaque = None
+    if musculo_stats:
+        musculos_com_volume = {k: v for k, v in musculo_stats.items() if v['volume_total'] > 0}
+        if musculos_com_volume:
+            musculo_destaque = max(musculos_com_volume, key=lambda k: musculos_com_volume[k]['volume_total'])
+
+    volume_maximo_musculo = max((v['volume_total'] for v in musculo_stats.values()), default=0)
     
     return render_template("stats/estatisticas.html",
                          musculo_stats=musculo_stats,
                          treino_stats=treino_stats,
                          treinos=treinos,
-                         musculos=musculos)
+                         musculos=musculos,
+                         musculo_destaque=musculo_destaque,
+                         volume_maximo_musculo=volume_maximo_musculo)
 
 
 @stats_bp.route("/visualizar/tabela")
