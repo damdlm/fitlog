@@ -35,6 +35,50 @@
         margin-bottom: 0;
     }
 
+    .dash-title-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: rgba(242, 140, 51, 0.12);
+        color: var(--primary-color);
+        font-size: 1rem;
+    }
+
+    .btn-treino-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--gradient-primary);
+        color: #fff !important;
+        font-weight: 600;
+        font-size: 0.88rem;
+        padding: 0.55rem 1.1rem;
+        border-radius: 999px;
+        box-shadow: 0 6px 16px rgba(242, 140, 51, 0.3);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-treino-cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(242, 140, 51, 0.38);
+        color: #fff !important;
+    }
+
+    .dash-card-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        background: rgba(242, 140, 51, 0.12);
+        color: var(--primary-color);
+        font-size: 0.95rem;
+        margin-right: 8px;
+    }
+
     .dash-card {
         border: 1px solid rgba(45, 45, 45, 0.06);
         border-radius: 16px;
@@ -146,16 +190,16 @@
     }
 
     .item-icon {
-        width: 30px;
-        height: 30px;
-        min-width: 30px;
-        border-radius: 9px;
-        background: rgba(242, 140, 51, 0.1);
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        border-radius: 10px;
+        background: rgba(242, 140, 51, 0.12);
         color: var(--primary-color);
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
     }
 
     .tip-text {
@@ -202,24 +246,21 @@
     <div>
         <div class="dash-eyebrow">Workout Journal</div>
         <h2 class="dash-title">
-            <i class="bi bi-bar-chart-fill" style="color: var(--primary-color);"></i>
+            <span class="dash-title-icon"><i class="bi bi-bar-chart-fill"></i></span>
              Train · Log · Analyze
         </h2>
-        <!-- O texto "FitLog" foi removido do cabeçalho. 
-             Caso ainda apareça, verifique no arquivo base.html e remova/edite a parte correspondente. -->
     </div>
-    <!--
     <a href="{{ url_for('register.registrar_treino') }}" class="nav-link btn-treino-cta">
         <i class="bi bi-plus-circle-fill"></i> Registrar treino
-    </a> -->
+    </a>
 </div>
 
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="card dash-card">
             <div class="dash-card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-graph-up me-2" style="color: var(--primary-color);"></i>
+                <h5 class="mb-0 d-flex align-items-center">
+                    <span class="dash-card-icon"><i class="bi bi-graph-up"></i></span>
                     Acompanhe sua evolução
                 </h5>
                 <div class="dash-filter-group">
@@ -247,8 +288,8 @@
     <div class="col-lg-4">
         <div class="card dash-card">
             <div class="dash-card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-lightbulb me-2" style="color: var(--primary-color);"></i>
+                <h5 class="mb-0 d-flex align-items-center">
+                    <span class="dash-card-icon"><i class="bi bi-lightbulb"></i></span>
                     Dicas de treino
                 </h5>
             </div>
