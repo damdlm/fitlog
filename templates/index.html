@@ -90,6 +90,27 @@
         box-shadow: 0 14px 36px rgba(45, 45, 45, 0.08);
     }
 
+    /* Variante sem fundo/borda destacada, para o card de Dicas de treino
+       ocupar menos peso visual e menos espaço na tela. */
+    .dash-card--plain {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+    .dash-card--plain:hover {
+        box-shadow: none;
+    }
+    .dash-card--plain .dash-card-header {
+        background: transparent;
+        border-bottom: 1px solid rgba(45, 45, 45, 0.08);
+        padding: 0.65rem 0.25rem;
+    }
+    .dash-card--plain .card-body {
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+        background: transparent;
+    }
+
     .dash-card-header {
         background: #fff;
         border-bottom: 1px solid rgba(45, 45, 45, 0.06);
@@ -132,15 +153,21 @@
     }
 
     /* Gráfico: altura controlada pelo container, não pelo atributo
-       height do <canvas>, para se ajustar bem em telas de celular. */
+       height do <canvas>, para se ajustar bem em telas de celular e
+       deixar o card de Dicas de treino visível sem precisar rolar tanto. */
     .dash-chart-wrap {
         position: relative;
         width: 100%;
         height: 300px;
     }
+    @media (max-width: 991.98px) {
+        .dash-chart-wrap {
+            height: 230px;
+        }
+    }
     @media (max-width: 576px) {
         .dash-chart-wrap {
-            height: 220px;
+            height: 190px;
         }
     }
 
@@ -250,9 +277,6 @@
              Train · Log · Analyze
         </h2>
     </div>
-    <a href="{{ url_for('register.registrar_treino') }}" class="nav-link btn-treino-cta">
-        <i class="bi bi-plus-circle-fill"></i> Registrar treino
-    </a>
 </div>
 
 <div class="row g-4">
@@ -286,14 +310,14 @@
     </div>
 
     <div class="col-lg-4">
-        <div class="card dash-card">
+        <div class="card dash-card dash-card--plain">
             <div class="dash-card-header">
                 <h5 class="mb-0 d-flex align-items-center">
                     <span class="dash-card-icon"><i class="bi bi-lightbulb"></i></span>
                     Dicas de treino
                 </h5>
             </div>
-            <div class="card-body">
+            <div class="card-body py-2">
                 <!-- Slide de dicas com efeito lateral -->
                 <div class="dash-tip-slide" id="tipSlide">
                     <div class="tip-wrapper" id="tipWrapper">
