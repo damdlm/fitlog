@@ -90,27 +90,6 @@
         box-shadow: 0 14px 36px rgba(45, 45, 45, 0.08);
     }
 
-    /* Variante sem fundo/borda destacada, para o card de Dicas de treino
-       ocupar menos peso visual e menos espaço na tela. */
-    .dash-card--plain {
-        background: transparent;
-        border: none;
-        box-shadow: none;
-    }
-    .dash-card--plain:hover {
-        box-shadow: none;
-    }
-    .dash-card--plain .dash-card-header {
-        background: transparent;
-        border-bottom: 1px solid rgba(45, 45, 45, 0.08);
-        padding: 0.65rem 0.25rem;
-    }
-    .dash-card--plain .card-body {
-        padding-left: 0.25rem;
-        padding-right: 0.25rem;
-        background: transparent;
-    }
-
     .dash-card-header {
         background: #fff;
         border-bottom: 1px solid rgba(45, 45, 45, 0.06);
@@ -184,7 +163,7 @@
         z-index: 2;
     }
 
-    .dash-empty-state i {
+    .dash-empty-state-icon {
         font-size: 2.5rem;
         color: rgba(242, 140, 51, 0.35);
         margin-bottom: 0.75rem;
@@ -296,7 +275,7 @@
             </div>
             <div class="card-body position-relative">
                 <div id="chartEmptyState" class="dash-empty-state d-none">
-                    <i class="bi bi-graph-up"></i>
+                    <i class="bi bi-graph-up dash-empty-state-icon"></i>
                     <p>Ainda não há treinos registrados para mostrar aqui.</p>
                     <a href="{{ url_for('register.registrar_treino') }}" class="nav-link btn-treino-cta">
                         <i class="bi bi-plus-circle-fill"></i> Registrar primeiro treino
@@ -310,7 +289,7 @@
     </div>
 
     <div class="col-lg-4">
-        <div class="card dash-card dash-card--plain">
+        <div class="card dash-card">
             <div class="dash-card-header">
                 <h5 class="mb-0 d-flex align-items-center">
                     <span class="dash-card-icon"><i class="bi bi-lightbulb"></i></span>
@@ -441,6 +420,19 @@
     // ---------- Gráfico (mantido) ----------
     let chart;
 
+    // Esconde o tooltip ao clicar em qualquer outra parte da tela
+    // (necessário principalmente no toque em dispositivos móveis, onde
+    // o tooltip fica "preso" até um novo toque no gráfico).
+    document.addEventListener('click', function(evento) {
+        if (!chart) return;
+        const canvas = document.getElementById('progressChart');
+        if (canvas && !canvas.contains(evento.target)) {
+            chart.setActiveElements([]);
+            chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+            chart.update();
+        }
+    });
+
     function atualizarGrafico(treinoId, botao) {
         document.querySelectorAll('.dash-filter-pill').forEach(b => b.classList.remove('active'));
         if (botao) botao.classList.add('active');
@@ -526,7 +518,8 @@
                                     label: function(context) {
                                         let label = context.dataset.label || '';
                                         if (label) label += ': ';
-                                        label += context.raw + ' kg';
+                                        const valor = Math.round((context.raw + Number.EPSILON) * 1000) / 1000;
+                                        label += valor + ' kg';
                                         return label;
                                     }
                                 }

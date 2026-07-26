@@ -109,89 +109,9 @@
         font-size: 1.4rem;
     }
 
-    .dash-registro-item {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 12px 0;
-        border-bottom: 1px solid rgba(0,0,0,0.05);
-    }
-    .dash-registro-item:last-child {
-        border-bottom: none;
-    }
-    .dash-registro-icon {
-        width: 40px;
-        height: 40px;
-        min-width: 40px;
-        border-radius: 10px;
-        background: rgba(242, 140, 51, 0.12);
-        color: var(--primary-color);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.1rem;
-    }
-    .dash-registro-info {
-        flex: 1;
-        min-width: 0;
-    }
-    .dash-registro-exercicio {
-        font-weight: 600;
-        color: var(--secondary-color);
-        overflow-wrap: break-word;
-    }
-    .dash-registro-item-clicavel {
-        cursor: pointer;
-        border-radius: 10px;
-        margin: 0 -8px;
-        padding-left: 8px;
-        padding-right: 8px;
-        transition: background-color 0.15s ease;
-    }
-    .dash-registro-item-clicavel:hover,
-    .dash-registro-item-clicavel:focus {
-        background-color: rgba(242, 140, 51, 0.06);
-        outline: none;
-    }
-    .dash-registro-exercicio-trunc {
-        border-bottom: 1px dashed #ccc;
-        display: inline-block;
-    }
-    .dash-registro-item-clicavel:hover .dash-registro-exercicio-trunc,
-    .dash-registro-item-clicavel:focus .dash-registro-exercicio-trunc {
-        color: var(--primary-color);
-        border-bottom-color: var(--primary-color);
-    }
-    .dash-registro-meta {
-        font-size: 0.8rem;
-        color: #8a8a8a;
-    }
-    .dash-registro-badges {
-        display: flex;
-        gap: 6px;
-        flex-shrink: 0;
-    }
-    .dash-badge {
-        background: #f2f2f2;
-        color: #555;
-        font-size: 0.78rem;
-        font-weight: 600;
-        padding: 4px 9px;
-        border-radius: 8px;
-        white-space: nowrap;
-    }
-
-    .dash-empty {
-        text-align: center;
-        padding: 40px 20px;
-        color: #999;
-    }
-    .dash-empty i {
-        font-size: 2.4rem;
-        color: #e0a877;
-        margin-bottom: 10px;
-        display: block;
-    }
+    /* .dash-registro-*, .dash-badge e .dash-empty ficam no CSS
+       global (base.html), pois agora são usados em mais de uma
+       tela (dashboard do aluno e "visualizar aluno" do professor). */
 </style>
 
 <!-- Cabeçalho com saudação -->
@@ -312,20 +232,22 @@
                     <i class="bi bi-check2"></i>
                 </div>
                 <div class="dash-registro-info">
-                    <div class="dash-registro-exercicio{{ ' dash-registro-exercicio-trunc' if nome_exercicio|length > 20 else '' }}">
-                        {{ nome_exercicio[:20] }}{{ '...' if nome_exercicio|length > 20 else '' }}
+                    <div class="dash-registro-top">
+                        <span class="dash-registro-exercicio{{ ' dash-registro-exercicio-trunc' if nome_exercicio|length > 20 else '' }}">
+                            {{ nome_exercicio[:20] }}{{ '...' if nome_exercicio|length > 20 else '' }}
+                        </span>
+                        <span class="dash-registro-meta">
+                            {{ registro.data_registro.strftime('%d/%m/%Y') }}
+                            {% if registro.treino_ref %} · {{ registro.treino_ref.codigo }}{% endif %}
+                        </span>
                     </div>
-                    <div class="dash-registro-meta">
-                        {{ registro.data_registro.strftime('%d/%m/%Y') }}
-                        {% if registro.treino_ref %} · {{ registro.treino_ref.codigo }}{% endif %}
+                    <div class="dash-registro-badges">
+                        {% if registro.series and registro.series|length > 0 %}
+                            <span class="dash-badge">{{ registro.series[0].carga }}kg</span>
+                            <span class="dash-badge">{{ registro.series[0].repeticoes }}x</span>
+                        {% endif %}
+                        <span class="dash-badge">{{ registro.series|length }} séries</span>
                     </div>
-                </div>
-                <div class="dash-registro-badges">
-                    {% if registro.series and registro.series|length > 0 %}
-                        <span class="dash-badge">{{ registro.series[0].carga }}kg</span>
-                        <span class="dash-badge">{{ registro.series[0].repeticoes }}x</span>
-                    {% endif %}
-                    <span class="dash-badge">{{ registro.series|length }} séries</span>
                 </div>
             </div>
             {% endfor %}

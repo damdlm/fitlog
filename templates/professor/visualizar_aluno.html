@@ -150,56 +150,47 @@
         </h5>
     </div>
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Treino</th>
-                        <th>Exercício</th>
-                        <th>Carga</th>
-                        <th>Repetições</th>
-                        <th>Séries</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for registro in ultimos_registros %}
-                    <tr>
-                        <td>{{ registro.data_registro.strftime('%d/%m/%Y') }}</td>
-                        <td>
-                            {% if registro.treino_ref %}
-                                {{ registro.treino_ref.codigo }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>{{ registro.exercicio.nome if registro.exercicio else registro.exercicio_base.nome if registro.exercicio_base else '-' }}</td>
-                        <td>
-                            {% if registro.series and registro.series|length > 0 %}
-                                {{ registro.series[0].carga }}kg
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if registro.series and registro.series|length > 0 %}
-                                {{ registro.series[0].repeticoes }}x
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>{{ registro.series|length }}</td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center text-muted">
-                            Nenhum registro encontrado
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        {% if ultimos_registros %}
+            {% for registro in ultimos_registros %}
+            {% set nome_exercicio = (registro.exercicio.nome if registro.exercicio else registro.exercicio_base.nome if registro.exercicio_base else 'Exercício') %}
+            <div class="dash-registro-item{{ ' dash-registro-item-clicavel' if nome_exercicio|length > 20 else '' }}"
+                 {% if nome_exercicio|length > 20 %}
+                 tabindex="0"
+                 role="button"
+                 data-bs-toggle="popover"
+                 data-bs-trigger="focus"
+                 data-bs-placement="top"
+                 data-bs-content="{{ nome_exercicio }}"
+                 {% endif %}>
+                <div class="dash-registro-icon">
+                    <i class="bi bi-check2"></i>
+                </div>
+                <div class="dash-registro-info">
+                    <div class="dash-registro-top">
+                        <span class="dash-registro-exercicio{{ ' dash-registro-exercicio-trunc' if nome_exercicio|length > 20 else '' }}">
+                            {{ nome_exercicio[:20] }}{{ '...' if nome_exercicio|length > 20 else '' }}
+                        </span>
+                        <span class="dash-registro-meta">
+                            {{ registro.data_registro.strftime('%d/%m/%Y') }}
+                            {% if registro.treino_ref %} · {{ registro.treino_ref.codigo }}{% endif %}
+                        </span>
+                    </div>
+                    <div class="dash-registro-badges">
+                        {% if registro.series and registro.series|length > 0 %}
+                            <span class="dash-badge">{{ registro.series[0].carga }}kg</span>
+                            <span class="dash-badge">{{ registro.series[0].repeticoes }}x</span>
+                        {% endif %}
+                        <span class="dash-badge">{{ registro.series|length }} séries</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="dash-empty">
+                <i class="bi bi-clipboard-x"></i>
+                Nenhum registro encontrado
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
