@@ -34,6 +34,15 @@
     .fc-day-today {
         background-color: rgba(242, 140, 51, 0.1) !important;
     }
+
+    .fc-daygrid-day-frame {
+        transition: background-color 0.15s ease;
+        border-radius: 8px;
+    }
+
+    .fc-daygrid-day:hover .fc-daygrid-day-frame {
+        background-color: rgba(242, 140, 51, 0.05);
+    }
     
     .fc-event {
         cursor: pointer;
@@ -197,23 +206,32 @@
 
     .legenda {
         display: flex;
-        gap: 20px;
+        gap: 10px;
         margin-top: 20px;
-        padding: 15px;
-        background: #f8f9fa;
-        border-radius: 10px;
+        padding: 4px;
+        flex-wrap: wrap;
     }
     
     .legenda-item {
         display: flex;
         align-items: center;
         gap: 8px;
+        background: #f8f9fa;
+        border-radius: 20px;
+        padding: 6px 14px 6px 8px;
     }
     
     .legenda-cor {
-        width: 20px;
-        height: 20px;
-        border-radius: 5px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+
+    .legenda-item span {
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: #666;
     }
     
     .volume-baixo { background-color: #90be6d; }
@@ -512,8 +530,8 @@
             padding: 12px 14px;
         }
 
-        .dia-total-strip {
-            padding: 12px 14px;
+        .skeleton-day {
+            height: 60px;
         }
     }
 
@@ -580,7 +598,7 @@
                 <div class="skeleton-weekday"></div>
             </div>
             <div class="skeleton-days">
-                {% for i in range(35) %}
+                {% for i in range(42) %}
                 <div class="skeleton-day"></div>
                 {% endfor %}
             </div>
@@ -662,6 +680,11 @@
         calendar = new FullCalendar.Calendar(calendarEl, {
             locale: 'pt-br',
             initialView: 'dayGridMonth',
+            // 'auto': a altura do calendário se ajusta ao conteúdo real
+            // (nº de linhas do mês). Sem isso, o FullCalendar calcula uma
+            // altura fixa via aspectRatio e, em meses com 6 semanas, a
+            // última linha fica cortada dentro do contêiner interno.
+            height: 'auto',
             headerToolbar: isMobile ? {
                 left: 'prev,next',
                 center: 'title',
