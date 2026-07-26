@@ -9,6 +9,11 @@ import logging
 calendar_bp = Blueprint('calendar', __name__)
 logger = logging.getLogger(__name__)
 
+# Cor única para os dias com treino registrado (mesma cor da marca).
+# Antes variava por volume (verde/amarelo/laranja/vermelho); simplificado
+# para um único indicador, sem precisar de legenda explicando níveis.
+COR_TREINO = '#F28C33'
+
 @calendar_bp.route("/calendario")
 @login_required
 def calendario():
@@ -104,9 +109,6 @@ def api_eventos():
         
         # Criar eventos para o calendário
         for data_str, dados in volumes_por_dia.items():
-            # Determinar cor baseada no volume
-            cor = _get_color_by_volume(dados['volume_total'])
-            
             # Título resumido
             titulo = f"{dados['exercicios']} ex • {dados['volume_total']:.0f}kg"
             
@@ -122,7 +124,7 @@ def api_eventos():
                 'title': titulo,
                 'start': data_str,
                 'end': data_str,
-                'color': cor,
+                'color': COR_TREINO,
                 'textColor': '#ffffff',
                 'extendedProps': {
                     'volume': dados['volume_total'],
@@ -200,15 +202,3 @@ def _estimar_data(periodo, semana):
     except:
         pass
     return None
-
-
-def _get_color_by_volume(volume):
-    """Retorna uma cor baseada no volume do treino"""
-    if volume < 1000:
-        return '#90be6d'  # Verde claro (volume baixo)
-    elif volume < 3000:
-        return '#f9c74f'  # Amarelo (volume médio)
-    elif volume < 6000:
-        return '#f9844a'  # Laranja (volume alto)
-    else:
-        return '#f94144'  # Vermelho (volume muito alto)

@@ -80,18 +80,25 @@
     }
 
     .grupo-treino {
-        background: #fff;
+        background: #fdfdfd;
         border: 1px solid #eee;
-        border-radius: 14px;
+        border-left: 4px solid #F28C33;
+        border-radius: 10px;
         padding: 14px 16px;
-        margin-bottom: 12px;
+        margin-bottom: 18px;
         box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    .grupo-treino:last-of-type {
+        margin-bottom: 0;
     }
 
     .grupo-treino-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 6px 10px;
         margin-bottom: 8px;
         padding-bottom: 10px;
         border-bottom: 1px solid #f2f2f2;
@@ -104,6 +111,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
+        overflow-wrap: anywhere;
     }
 
     .grupo-treino-nome i {
@@ -204,41 +212,6 @@
         color: #FFB366;
     }
 
-    .legenda {
-        display: flex;
-        gap: 10px;
-        margin-top: 20px;
-        padding: 4px;
-        flex-wrap: wrap;
-    }
-    
-    .legenda-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: #f8f9fa;
-        border-radius: 20px;
-        padding: 6px 14px 6px 8px;
-    }
-    
-    .legenda-cor {
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-    }
-
-    .legenda-item span {
-        font-size: 0.78rem;
-        font-weight: 500;
-        color: #666;
-    }
-    
-    .volume-baixo { background-color: #90be6d; }
-    .volume-medio { background-color: #f9c74f; }
-    .volume-alto { background-color: #f9844a; }
-    .volume-muito-alto { background-color: #f94144; }
-    
     /* Skeleton Loading */
     #calendar-skeleton {
         position: absolute;
@@ -300,8 +273,8 @@
 
     /* ==========================================================
        Responsivo - Calendário de Treinos no mobile
-       Conceito: no mobile, cada dia vira um indicador de volume
-       (pontinho colorido + nº de exercícios), sem tentar espremer
+       Conceito: no mobile, cada dia vira um indicador simples
+       (pontinho laranja + nº de exercícios), sem tentar espremer
        texto — e o modal de detalhes vira um bottom sheet, como um
        app nativo, em vez de uma janela centralizada.
        ========================================================== */
@@ -389,7 +362,7 @@
             font-weight: 700;
         }
 
-        /* Evento vira um indicador de volume: pontinho colorido + contagem,
+        /* Evento vira um indicador simples: pontinho laranja + contagem,
            em vez de tentar caber "3 ex • 2450kg" numa célula de 50px */
         .fc-daygrid-event-harness {
             margin-top: 1px !important;
@@ -431,44 +404,6 @@
 
         .fc-daygrid-day.fc-day-today .fc-event-count {
             color: #F28C33;
-        }
-
-        /* Legenda: chips compactos e roláveis em vez de itens que quebram linha */
-        .legenda {
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            gap: 8px;
-            margin-top: 16px;
-            padding: 10px 10px;
-            background: transparent;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-        }
-
-        .legenda::-webkit-scrollbar {
-            display: none;
-        }
-
-        .legenda-item {
-            flex: 0 0 auto;
-            gap: 6px;
-            background: #f8f9fa;
-            border-radius: 20px;
-            padding: 6px 12px 6px 8px;
-        }
-
-        .legenda-item span {
-            font-size: 0.72rem;
-            font-weight: 500;
-            color: #555;
-            white-space: nowrap;
-        }
-
-        .legenda-cor {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
         }
 
         /* Bottom sheet: o modal de detalhes desliza de baixo pra cima,
@@ -578,7 +513,6 @@
             <i class="bi bi-calendar-check me-2" style="color: #F28C33;"></i>
             Calendário de Treinos
         </h2>
-        <p class="text-muted mb-0">Visualize seus treinos realizados em cada dia</p>
     </div>
 </div>
 
@@ -606,26 +540,6 @@
         
         <!-- Calendário -->
         <div id="calendar"></div>
-        
-        <!-- Legenda -->
-        <div class="legenda">
-            <div class="legenda-item">
-                <div class="legenda-cor volume-baixo"></div>
-                <span>&lt; 1000kg</span>
-            </div>
-            <div class="legenda-item">
-                <div class="legenda-cor volume-medio"></div>
-                <span>1000kg - 3000kg</span>
-            </div>
-            <div class="legenda-item">
-                <div class="legenda-cor volume-alto"></div>
-                <span>3000kg - 6000kg</span>
-            </div>
-            <div class="legenda-item">
-                <div class="legenda-cor volume-muito-alto"></div>
-                <span>&gt; 6000kg</span>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -709,8 +623,8 @@
             eventContent: function(arg) {
                 // No mobile, a barra de evento com texto ("3 ex • 2450kg")
                 // não cabe direito numa célula de ~50px — em vez de espremer,
-                // vira um indicador de volume: um pontinho colorido (mesma
-                // cor da legenda) + a quantidade de exercícios do dia.
+                // vira um indicador simples: um pontinho laranja (cor única,
+                // sem variação por volume) + a quantidade de exercícios do dia.
                 if (window.innerWidth > 768) {
                     return; // desktop: mantém a renderização padrão
                 }
@@ -854,18 +768,22 @@
             const porTreino = {};
             event.extendedProps.treinos.forEach(t => {
                 if (!porTreino[t.treino_codigo]) {
-                    porTreino[t.treino_codigo] = { volume: 0, exercicios: [] };
+                    porTreino[t.treino_codigo] = { nome: t.treino_nome, volume: 0, exercicios: [] };
                 }
                 porTreino[t.treino_codigo].volume += t.volume;
                 porTreino[t.treino_codigo].exercicios.push(t);
             });
             
-            Object.keys(porTreino).forEach(codigo => {
+            const codigos = Object.keys(porTreino);
+            codigos.forEach((codigo, index) => {
                 const grupo = porTreino[codigo];
                 html += `
                     <div class="grupo-treino">
                         <div class="grupo-treino-header">
-                            <span class="grupo-treino-nome"><i class="bi bi-trophy-fill"></i>Treino ${codigo}</span>
+                            <span class="grupo-treino-nome">
+                                <i class="bi bi-trophy-fill"></i>
+                                Treino ${codigo}${grupo.nome && grupo.nome !== 'Treino' ? ` · ${grupo.nome}` : ''}
+                            </span>
                             <span class="grupo-treino-volume">${grupo.volume.toFixed(0)} kg</span>
                         </div>
                 `;
