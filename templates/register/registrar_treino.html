@@ -307,7 +307,7 @@
     .empty-state p {
         color: #8a8580;
         max-width: 360px;
-        margin: auto 0;
+        margin: 0 auto;
     }
 
     @keyframes pulse {
@@ -620,9 +620,7 @@
 {% if not erro_versao and not exercicios %}
 <div class="empty-state mb-4">
     <div class="empty-icon"><i class="bi bi-clipboard2-pulse"></i></div>
-    &nbsp;
     <h5>{% if treino_selecionado %}Nenhum exercício encontrado{% else %}Pronto para treinar?{% endif %}</h5>
-    &nbsp;
     <p>
         {% if treino_selecionado %}
         Não encontramos exercícios para este treino na data selecionada.
