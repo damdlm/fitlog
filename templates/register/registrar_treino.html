@@ -268,7 +268,7 @@
         border: 2px dashed var(--border-soft);
         background: var(--surface-muted);
     }
-    .empty-state {
+    .empty-state .empty-icon {
         width: 64px;
         height: 64px;
         border-radius: 50%;
@@ -277,40 +277,26 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.8rem;
         margin: 0 auto 16px;
-    }
-    .empty-icon {
-        width: 64px;
-        height: 64px;
-        border-radius: 50%;
-        background: linear-gradient(135deg,
-            rgba(242,140,51,.15),
-            rgba(255,179,102,.15));
-        color: var(--primary-orange);
-    
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 16px;
-    
         perspective: 800px;
     }
-    
-    .empty-icon i {
+
+    .empty-state .empty-icon i {
         font-size: 1.8rem;
         display: inline-block;
         transform-style: preserve-3d;
-        animation: rotate3d 3s linear infinite;
+        backface-visibility: hidden;
+        will-change: transform;
+        animation: clipboard3d 3s ease-in-out infinite;
     }
-    
-    @keyframes rotate3d {
-        0% {
-            transform: rotateY(0deg);
-        }
-        100% {
-            transform: rotateY(360deg);
-        }
+
+    @keyframes clipboard3d {
+        0% { transform: translateY(0) rotateY(0deg); }
+        20% { transform: translateY(-2px) rotateY(25deg); }
+        40% { transform: translateY(0) rotateY(0deg); }
+        60% { transform: translateY(-2px) rotateY(-25deg); }
+        80% { transform: translateY(0) rotateY(0deg); }
+        100% { transform: translateY(0) rotateY(360deg); }
     }
     .empty-state h5 {
         color: var(--dark-bg);
