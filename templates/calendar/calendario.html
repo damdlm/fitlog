@@ -43,6 +43,27 @@
     .fc-daygrid-day:hover .fc-daygrid-day-frame {
         background-color: rgba(242, 140, 51, 0.05);
     }
+
+    /* Número do dia em pastilha redonda cinza claro, número preto,
+       espaço entre pastilhas transparente (só a pastilha tem fundo) */
+    .fc-daygrid-day-number {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 6px;
+        border-radius: 50%;
+        background: #f0f0f0;
+        color: #2D2D2D !important;
+        font-weight: 500;
+    }
+
+    .fc-day-today .fc-daygrid-day-number {
+        background: #F28C33;
+        color: #fff !important;
+        font-weight: 700;
+    }
     
     .fc-event {
         cursor: pointer;
@@ -348,6 +369,8 @@
             align-items: center;
             justify-content: center;
             border-radius: 50%;
+            background: #f0f0f0;
+            color: #2D2D2D !important;
             font-weight: 500;
         }
 
