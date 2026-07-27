@@ -47,23 +47,38 @@
         .exercise-row { animation: none; }
     }
 
-    .exercicio-check {
-        display: inline-flex;
+    /* Ícone do exercício (mesmo lugar onde ficava o "check" circular):
+       agora mostra o botão de imagens do exercício, no padrão visual do
+       card "Último Treino" do dashboard (.dash-registro-icon). */
+    .exercicio-icon-box {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        border-radius: 10px;
+        background: rgba(242, 140, 51, 0.12);
+        color: var(--primary-orange);
+        display: flex;
         align-items: center;
         justify-content: center;
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        border: 2px solid #dcd6cd;
-        color: transparent;
-        font-size: 0.7rem;
+        font-size: 1.1rem;
         flex-shrink: 0;
-        transition: all 0.25s ease;
     }
-    .exercise-row.is-complete .exercicio-check {
-        background: var(--dark-bg);
-        border-color: var(--dark-bg);
-        color: #fff;
+    .exercicio-icon-box .btn-imagens-exercicio {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: transparent;
+        color: inherit;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        padding: 0;
+        border-radius: 10px;
+    }
+    .exercicio-icon-box .btn-imagens-exercicio:hover {
+        background: rgba(242, 140, 51, 0.22);
+        color: var(--primary-orange);
     }
 
     .ultima-carga {
@@ -177,26 +192,43 @@
         appearance: textfield;
     }
 
-    .historico-cargas {
-        font-size: 0.8rem;
-        color: #8a8580;
-        background: transparent;
-        padding: 0;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
+    /* Nome do exercício: trunca conforme a largura disponível (que varia
+       com o dispositivo/tela) e mostra o nome completo num popover ao
+       tocar/focar, só quando realmente não coube. */
+    .exercicio-nome-trunc {
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
         white-space: nowrap;
     }
-
-    .exercicio-meta {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.5rem;
+    .exercicio-nome-trunc.is-truncado {
+        cursor: pointer;
+        border-bottom: 1px dashed #ccc;
+    }
+    .exercicio-nome-trunc.is-truncado:hover,
+    .exercicio-nome-trunc.is-truncado:focus {
+        color: var(--primary-orange);
+        border-bottom-color: var(--primary-orange);
+        outline: none;
     }
 
-    .meta-dot {
-        color: #ced4da;
+    .exercicio-musculo-linha {
+        font-size: 0.85rem;
+        color: #8a8580;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 1px;
+    }
+
+    /* Badges com os valores do último treino, no mesmo padrão visual
+       do card "Último Treino" do dashboard (.dash-badge). */
+    .exercicio-ultimo-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
     }
 
     .versao-badge {
@@ -251,15 +283,6 @@
         font-weight: 600;
     }
 
-    .badge-musculo {
-        background: var(--surface-muted);
-        color: var(--dark-bg);
-        padding: 5px 10px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 500;
-    }
-
     /* Estado vazio (nenhum treino/data escolhido ainda) */
     .empty-state {
         text-align: center;
@@ -269,8 +292,8 @@
         background: var(--surface-muted);
     }
     .empty-state .empty-icon {
-        width: 84px;
-        height: 84px;
+        width: 104px;
+        height: 104px;
         border-radius: 50%;
         background: linear-gradient(135deg, rgba(242, 140, 51, 0.15), rgba(255, 179, 102, 0.15));
         color: var(--primary-orange);
@@ -283,7 +306,7 @@
     }
 
     .empty-state .empty-icon i {
-        font-size: 2.8rem;
+        font-size: 3.8rem;
         display: inline-block;
         transform-style: preserve-3d;
         backface-visibility: hidden;
@@ -391,24 +414,21 @@
             margin-bottom: 3px;
         }
 
-        /* Músculo + última carga viram uma única linha discreta, sem "pílulas" */
-        .exercicio-meta {
-            gap: 0.4rem;
+        /* Músculo + badges do último treino ficam mais discretos no mobile */
+        .exercicio-icon-box {
+            width: 34px;
+            height: 34px;
+            min-width: 34px;
+            border-radius: 9px;
+        }
+
+        .exercicio-musculo-linha {
             font-size: 0.76rem;
         }
 
-        .badge-musculo {
-            background: transparent;
-            border: none;
-            color: #6c757d;
-            padding: 0;
-            font-size: 0.76rem;
-            font-weight: 500;
-        }
-
-        .historico-cargas {
-            font-size: 0.76rem;
-            white-space: normal;
+        .exercicio-ultimo-badges .dash-badge {
+            font-size: 0.72rem;
+            padding: 3px 8px;
         }
 
         .volume-total {
@@ -677,25 +697,31 @@
                     <div class="col-12 col-md-3">
                         <div class="exercise-header">
                             <div class="d-flex align-items-start gap-2">
-                                <span class="exercicio-check mt-1" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
-                                <div>
-                                <h5 class="mb-1 fw-bold">
-                                    {{ ex.nome }}
-                                    {{ botao_imagens_exercicio(ex, extra_class='ms-1') }}
-                                </h5>
-                                <div class="exercicio-meta">
-                                    <span class="badge-musculo">
-                                        <i class="bi bi-braces d-none d-md-inline"></i>
-                                        {{ ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A' }}
-                                    </span>
-                                    {% if ultimas %}
-                                    <span class="meta-dot d-none d-sm-inline">•</span>
-                                    <span class="historico-cargas">
-                                        <i class="bi bi-clock-history"></i>
-                                        Última: {{ ultimas[0].carga }}kg × {{ ultimas[0].repeticoes }} · {{ ultimas|length }} série{{ 's' if ultimas|length != 1 }}
-                                    </span>
+                                <!-- Ícone: abre as imagens do exercício (posição inicial/execução).
+                                     Quando o exercício não tem imagens cadastradas, mostra um
+                                     ícone neutro no lugar (sem ação de clique). -->
+                                <span class="exercicio-icon-box" {% if not (ex.imagem_inicial or ex.imagem_execucao) %}aria-hidden="true"{% endif %}>
+                                    {% if ex.imagem_inicial or ex.imagem_execucao %}
+                                        {{ botao_imagens_exercicio(ex) }}
+                                    {% else %}
+                                        <i class="bi bi-activity"></i>
                                     {% endif %}
-                                </div>
+                                </span>
+                                <div class="flex-grow-1" style="min-width: 0;">
+                                    <h5 class="mb-0 fw-bold" style="min-width: 0;">
+                                        <span class="exercicio-nome-trunc" data-full-nome="{{ ex.nome }}">{{ ex.nome }}</span>
+                                    </h5>
+                                    <div class="exercicio-musculo-linha">
+                                        <i class="bi bi-braces"></i>
+                                        {{ ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A' }}
+                                    </div>
+                                    {% if ultimas %}
+                                    <div class="exercicio-ultimo-badges">
+                                        <span class="dash-badge"><i class="bi bi-clock-history"></i> {{ ultimas[0].carga }}kg</span>
+                                        <span class="dash-badge">{{ ultimas[0].repeticoes }}x</span>
+                                        <span class="dash-badge">{{ ultimas|length }} série{{ 's' if ultimas|length != 1 }}</span>
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
                             <!-- No mobile o volume aparece aqui, ao lado do nome -->
@@ -896,7 +922,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Estado inicial (útil ao "Carregar Último" na primeira renderização)
     atualizarResumo();
+
+    // Nome do exercício: só ativa o popover com o nome completo quando o
+    // texto realmente não coube na largura disponível (varia por dispositivo).
+    inicializarTruncamentoNomesExercicio();
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(inicializarTruncamentoNomesExercicio, 200);
+    });
 });
+
+function inicializarTruncamentoNomesExercicio() {
+    document.querySelectorAll('.exercicio-nome-trunc').forEach(function(el) {
+        // Descarta popover de uma avaliação anterior (ex: rotação de tela)
+        // antes de checar de novo, senão o popover antigo fica "grudado".
+        const instanciaAnterior = window.bootstrap && bootstrap.Popover.getInstance(el);
+        if (instanciaAnterior) instanciaAnterior.dispose();
+
+        const estaTruncado = el.scrollWidth > el.clientWidth + 1;
+        el.classList.toggle('is-truncado', estaTruncado);
+
+        if (estaTruncado) {
+            el.setAttribute('tabindex', '0');
+            el.setAttribute('role', 'button');
+            if (window.bootstrap) {
+                new bootstrap.Popover(el, {
+                    trigger: 'focus',
+                    placement: 'top',
+                    content: el.dataset.fullNome,
+                    container: 'body'
+                });
+            } else {
+                el.title = el.dataset.fullNome;
+            }
+        } else {
+            el.removeAttribute('tabindex');
+            el.removeAttribute('role');
+        }
+    });
+}
 
 function atualizarResumo() {
     let volumeTotal = 0;
