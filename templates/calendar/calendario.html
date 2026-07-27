@@ -64,6 +64,26 @@
         color: #fff !important;
         font-weight: 700;
     }
+
+    /* Remove a aparência de "tabela/planilha" do FullCalendar (linhas
+       de grade entre células, cabeçalho e bordas externas) — sobra só
+       a grade invisível com os números soltos em pastilhas, como no
+       calendário de referência. */
+    #calendar table,
+    #calendar td,
+    #calendar th,
+    #calendar .fc-scrollgrid,
+    #calendar .fc-scrollgrid-section > * {
+        border: none !important;
+    }
+
+    #calendar .fc-col-header-cell {
+        border: none !important;
+    }
+
+    #calendar .fc-daygrid-day-frame {
+        padding: 4px 0 !important;
+    }
     
     .fc-event {
         cursor: pointer;
