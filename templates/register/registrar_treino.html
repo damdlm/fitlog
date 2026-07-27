@@ -9,22 +9,66 @@
         --primary-orange: #F28C33;
         --light-orange: #FFB366;
         --dark-bg: #2D2D2D;
+        --success: #2FAE6B;
+        --surface: #ffffff;
+        --surface-muted: #f7f5f2;
+        --border-soft: #ece7e0;
+        --shadow-sm: 0 1px 3px rgba(45, 45, 45, 0.06);
+        --shadow-md: 0 8px 24px rgba(45, 45, 45, 0.08);
+        --shadow-orange: 0 6px 16px rgba(242, 140, 51, 0.18);
+        --radius-lg: 16px;
+        --radius-md: 12px;
+        --radius-sm: 8px;
     }
 
     .exercise-row {
-        background: #fff9f0;
-        padding: 16px 18px;
-        margin-bottom: 10px;
-        border-radius: 10px;
-        border-left: 5px solid var(--primary-orange);
-        transition: box-shadow 0.2s;
+        background: var(--surface);
+        padding: 18px 20px;
+        margin-bottom: 12px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-soft);
+        border-left: 4px solid var(--primary-orange);
+        box-shadow: var(--shadow-sm);
+        transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.15s ease;
+        animation: fadeSlideIn 0.35s ease both;
     }
     .exercise-row:hover {
-        box-shadow: 0 4px 12px rgba(242, 140, 51, 0.15);
+        box-shadow: var(--shadow-md);
     }
-    
+    .exercise-row.is-complete {
+        border-left-color: var(--success);
+        background: linear-gradient(180deg, rgba(47, 174, 107, 0.05), var(--surface) 40%);
+    }
+
+    @keyframes fadeSlideIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .exercise-row { animation: none; }
+    }
+
+    .exercicio-check {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid #dcd6cd;
+        color: transparent;
+        font-size: 0.7rem;
+        flex-shrink: 0;
+        transition: all 0.25s ease;
+    }
+    .exercise-row.is-complete .exercicio-check {
+        background: var(--success);
+        border-color: var(--success);
+        color: #fff;
+    }
+
     .ultima-carga {
-        background: #e9ecef;
+        background: var(--surface-muted);
         padding: 5px 12px;
         border-radius: 20px;
         font-size: 0.9rem;
@@ -33,64 +77,106 @@
         display: inline-block;
         border: 1px solid var(--primary-orange);
     }
-    
+
+    /* Grupo carga/reps com botões de passo (- valor +), pensado para dedos
+       suados de academia -- maior que digitar num teclado numérico */
+    .stepper-group {
+        display: flex;
+        align-items: stretch;
+        border: 2px solid var(--border-soft);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        background: var(--surface);
+        transition: border-color 0.2s, box-shadow 0.2s;
+        height: 100%;
+    }
+    .stepper-group:focus-within {
+        border-color: var(--primary-orange);
+        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12);
+    }
+    .stepper-btn {
+        border: none;
+        background: var(--surface-muted);
+        color: var(--dark-bg);
+        width: 34px;
+        flex-shrink: 0;
+        font-size: 1.1rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+        touch-action: manipulation;
+    }
+    .stepper-btn:hover, .stepper-btn:active {
+        background: var(--primary-orange);
+        color: #fff;
+    }
+    .stepper-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
     .carga-input, .reps-input {
         text-align: center;
-        font-weight: 600;
-        font-size: 1.2rem !important;
-        padding: 12px 5px !important;
+        font-weight: 700;
+        font-size: 1.15rem !important;
+        padding: 10px 2px !important;
         height: auto !important;
-        border: 2px solid #e9ecef;
-        transition: all 0.3s;
+        border: none !important;
+        box-shadow: none !important;
+        min-width: 0;
+        background: transparent;
     }
     .carga-input:focus, .reps-input:focus {
-        border-color: var(--primary-orange);
-        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.1);
+        outline: none;
     }
-    
+
     .volume-total {
         background: var(--dark-bg);
         color: white;
-        padding: 12px 25px;
+        padding: 10px 22px;
         border-radius: 25px;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         font-weight: bold;
         display: inline-block;
         transition: all 0.3s;
     }
-    .volume-total:hover {
-        transform: scale(1.05);
-    }
-    
-    .btn-load-last {
+    .volume-total.has-value {
         background: var(--primary-orange);
-        color: white;
-        border: none;
-        padding: 8px 20px;
+        box-shadow: var(--shadow-orange);
+    }
+
+    .btn-load-last {
+        background: var(--surface);
+        color: var(--primary-orange);
+        border: 2px solid var(--primary-orange);
+        padding: 8px 18px;
         border-radius: 25px;
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 600;
-        transition: all 0.3s;
+        transition: all 0.2s;
     }
     .btn-load-last:hover {
-        background: var(--dark-bg);
-        transform: scale(1.05);
+        background: var(--primary-orange);
+        color: white;
     }
-    
+
     /* Remove setas do input number */
-    input[type=number]::-webkit-inner-spin-button, 
-    input[type=number]::-webkit-outer-spin-button { 
-        -webkit-appearance: none; 
-        margin: 0; 
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
     }
     input[type=number] {
         -moz-appearance: textfield;
         appearance: textfield;
     }
-    
+
     .historico-cargas {
         font-size: 0.8rem;
-        color: #6c757d;
+        color: #8a8580;
         background: transparent;
         padding: 0;
         display: inline-flex;
@@ -109,16 +195,20 @@
     .meta-dot {
         color: #ced4da;
     }
-    
+
     .versao-badge {
         background: linear-gradient(135deg, var(--primary-orange) 0%, var(--light-orange) 100%);
         color: white;
         padding: 5px 15px;
         border-radius: 25px;
         font-weight: 600;
-        display: inline-block;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: var(--shadow-orange);
     }
-    
+
     .data-badge {
         background: var(--dark-bg);
         color: white;
@@ -126,50 +216,112 @@
         border-radius: 25px;
         font-weight: 600;
     }
-    
+
     .treino-card {
-        border-radius: 15px;
-        border: 2px solid transparent;
-        background: linear-gradient(white, white) padding-box,
-                    linear-gradient(135deg, var(--primary-orange), var(--light-orange)) border-box;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-soft);
+        box-shadow: var(--shadow-sm);
     }
-    
+
     .form-select-lg, .form-control-lg {
-        border-radius: 12px;
-        border: 2px solid #e9ecef;
+        border-radius: var(--radius-sm);
+        border: 2px solid var(--border-soft);
         padding: 12px;
     }
-    
+
     .form-select-lg:focus, .form-control-lg:focus {
         border-color: var(--primary-orange);
         box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.1);
     }
-    
+
     .alert-version {
         background: linear-gradient(135deg, rgba(242, 140, 51, 0.1), rgba(255, 179, 102, 0.1));
         border-left: 5px solid var(--primary-orange);
-        border-radius: 10px;
+        border-radius: var(--radius-sm);
     }
-    
+
+    .inputs-row-label {
+        font-size: 0.72rem;
+        color: #adb5bd;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        font-weight: 600;
+    }
+
     .badge-musculo {
-        background: #e9ecef;
+        background: var(--surface-muted);
         color: var(--dark-bg);
         padding: 5px 10px;
         border-radius: 20px;
         font-size: 0.85rem;
         font-weight: 500;
     }
-    
+
+    /* Progresso de preenchimento do treino */
+    .progress-tracker {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 160px;
+    }
+    .progress-tracker .progress {
+        flex: 1;
+        height: 8px;
+        border-radius: 10px;
+        background: var(--surface-muted);
+    }
+    .progress-tracker .progress-bar {
+        background: linear-gradient(90deg, var(--primary-orange), var(--success));
+        transition: width 0.35s ease;
+    }
+    .progress-tracker .progress-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--dark-bg);
+        white-space: nowrap;
+    }
+
+    /* Estado vazio (nenhum treino/data escolhido ainda) */
+    .empty-state {
+        text-align: center;
+        padding: 56px 24px;
+        border-radius: var(--radius-lg);
+        border: 2px dashed var(--border-soft);
+        background: var(--surface-muted);
+    }
+    .empty-state .empty-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(242, 140, 51, 0.15), rgba(255, 179, 102, 0.15));
+        color: var(--primary-orange);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        margin: 0 auto 16px;
+    }
+    .empty-state h5 {
+        color: var(--dark-bg);
+        font-weight: 700;
+    }
+    .empty-state p {
+        color: #8a8580;
+        max-width: 360px;
+        margin: 6px auto 0;
+    }
+
     @keyframes pulse {
         0% { transform: scale(1); }
         50% { transform: scale(1.05); }
         100% { transform: scale(1); }
     }
-    
+
     .btn-save {
         animation: pulse 2s infinite;
+        border-radius: 25px !important;
     }
-    
+
     /* Loading spinner */
     #global-loader {
         position: fixed;
@@ -177,14 +329,15 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(2px);
         z-index: 9999;
         display: none;
         justify-content: center;
         align-items: center;
         flex-direction: column;
     }
-    
+
     .loader-text {
         margin-top: 20px;
         color: var(--primary-orange);
@@ -287,17 +440,20 @@
             align-items: stretch;
         }
 
-        .inputs-row .input-group,
-        .inputs-row .carga-input,
-        .inputs-row .reps-input,
+        .inputs-row .stepper-group,
         .inputs-row .form-select {
-            height: 38px;
+            height: 40px;
+        }
+
+        .inputs-row .stepper-btn {
+            width: 28px;
+            font-size: 1rem;
         }
 
         .inputs-row .carga-input,
         .inputs-row .reps-input {
             font-size: 16px !important; /* evita zoom automatico no iOS */
-            padding: 0 4px !important;
+            padding: 0 2px !important;
         }
 
         .inputs-row .form-select {
@@ -305,6 +461,11 @@
             font-size: 0.85rem;
             background-position: right 6px center;
             background-size: 12px 10px;
+        }
+
+        .progress-tracker {
+            width: 100%;
+            min-width: 0;
         }
 
         .card-header.d-flex {
@@ -409,6 +570,17 @@
 
 <div class="card treino-card mb-4">
     <div class="card-body p-4">
+        {% if versao_info %}
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+            <span class="versao-badge">
+                <i class="bi bi-layers"></i>
+                Versão {{ versao_info.numero }}{% if versao_info.divisao %} · {{ versao_info.divisao }}{% endif %}
+            </span>
+            {% if versao_info.descricao %}
+            <span class="text-muted small">{{ versao_info.descricao }}</span>
+            {% endif %}
+        </div>
+        {% endif %}
         <form method="get" class="row g-2 g-md-3 align-items-end" id="formBusca">
             <div class="col-12 col-md-5">
                 <label class="form-label fw-bold">
@@ -455,15 +627,35 @@
 </div>
 {% endif %}
 
+{% if not erro_versao and not exercicios %}
+<div class="empty-state mb-4">
+    <div class="empty-icon"><i class="bi bi-clipboard2-pulse"></i></div>
+    <h5>{% if treino_selecionado %}Nenhum exercício encontrado{% else %}Pronto para registrar?{% endif %}</h5>
+    <p>
+        {% if treino_selecionado %}
+        Não encontramos exercícios para este treino na data selecionada.
+        {% else %}
+        Escolha um treino e a data acima para carregar os exercícios e começar a lançar suas cargas.
+        {% endif %}
+    </p>
+</div>
+{% endif %}
+
 {% from "macros/exercicio_imagens.html" import botao_imagens_exercicio %}
 {% if exercicios %}
 <div class="card">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center p-3">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center p-3 flex-wrap gap-3">
         <h4 class="mb-0">
             <i class="bi bi-list-check me-2" style="color: var(--primary-orange);"></i>
             Exercícios do Treino
             <span class="badge bg-secondary ms-2">{{ exercicios|length }} exercícios</span>
         </h4>
+        <div class="progress-tracker" id="progress-tracker">
+            <div class="progress" role="progressbar" aria-label="Progresso do treino" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+            </div>
+            <span class="progress-label" id="progress-label">0/{{ exercicios|length }} feitos</span>
+        </div>
         <div>
             <button type="button" class="btn-load-last me-2 me-md-2" onclick="carregarUltimoRegistro()">
                 <i class="bi bi-clock-history me-2"></i>Carregar Último
@@ -500,7 +692,9 @@
                 <div class="row align-items-center">
                     <div class="col-12 col-md-3">
                         <div class="exercise-header">
-                            <div>
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="exercicio-check mt-1" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
+                                <div>
                                 <h5 class="mb-1 fw-bold">
                                     {{ ex.nome }}
                                     {{ botao_imagens_exercicio(ex, extra_class='ms-1') }}
@@ -518,6 +712,7 @@
                                     </span>
                                     {% endif %}
                                 </div>
+                                </div>
                             </div>
                             <!-- No mobile o volume aparece aqui, ao lado do nome -->
                             <span class="volume-total d-inline-block d-md-none" id="volume-mobile-{{ chave_ex }}">
@@ -529,29 +724,38 @@
                     <!-- Carga / Reps / Séries: lado a lado tanto no mobile quanto no desktop -->
                     <div class="col-12 col-md-6">
                         <div class="inputs-row-label d-md-none">Carga (kg) · Repetições · Séries</div>
+                        <div class="row g-2 d-none d-md-flex mb-1">
+                            <div class="col-md-4"><span class="inputs-row-label mb-0" style="display:block;">Carga (kg)</span></div>
+                            <div class="col-md-4"><span class="inputs-row-label mb-0" style="display:block;">Repetições</span></div>
+                            <div class="col-md-4"><span class="inputs-row-label mb-0" style="display:block;">Séries</span></div>
+                        </div>
                         <div class="inputs-row row g-2">
                             <div class="col-md-4">
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light fw-bold d-none d-md-flex">kg</span>
-                                    <input type="number" name="carga_{{ chave_ex }}" 
-                                           class="form-control carga-input" 
-                                           placeholder="Carga" 
+                                <div class="stepper-group">
+                                    <button type="button" class="stepper-btn" data-step="-0.5" data-target="carga_{{ chave_ex }}" aria-label="Diminuir carga">&minus;</button>
+                                    <input type="number" name="carga_{{ chave_ex }}"
+                                           class="form-control carga-input"
+                                           placeholder="0"
                                            step="0.5" min="0"
                                            inputmode="decimal"
+                                           aria-label="Carga em quilos"
                                            value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].carga }}{% elif ultima_carga %}{{ ultima_carga }}{% endif %}">
+                                    <button type="button" class="stepper-btn" data-step="0.5" data-target="carga_{{ chave_ex }}" aria-label="Aumentar carga">&plus;</button>
                                 </div>
                                 <div class="text-center small text-muted d-md-none mt-1 unit-label-mobile">kg</div>
                             </div>
 
                             <div class="col-md-4">
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light fw-bold d-none d-md-flex">reps</span>
-                                    <input type="number" name="reps_{{ chave_ex }}" 
-                                           class="form-control reps-input" 
-                                           placeholder="Reps" 
+                                <div class="stepper-group">
+                                    <button type="button" class="stepper-btn" data-step="-1" data-target="reps_{{ chave_ex }}" aria-label="Diminuir repetições">&minus;</button>
+                                    <input type="number" name="reps_{{ chave_ex }}"
+                                           class="form-control reps-input"
+                                           placeholder="0"
                                            min="0" max="100"
                                            inputmode="numeric"
+                                           aria-label="Repetições"
                                            value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].repeticoes }}{% elif ultimas_reps %}{{ ultimas_reps }}{% endif %}">
+                                    <button type="button" class="stepper-btn" data-step="1" data-target="reps_{{ chave_ex }}" aria-label="Aumentar repetições">&plus;</button>
                                 </div>
                                 <div class="text-center small text-muted d-md-none mt-1 unit-label-mobile">reps</div>
                             </div>
@@ -685,22 +889,52 @@ document.addEventListener('DOMContentLoaded', function() {
         registroForm.addEventListener('change', atualizarResumo);
     }
 
+    // Botões de + / - (steppers) de carga e repetições
+    document.querySelectorAll('.stepper-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const input = document.querySelector(`[name="${this.dataset.target}"]`);
+            if (!input) return;
+            const step = parseFloat(this.dataset.step);
+            const min = parseFloat(input.min) || 0;
+            const max = input.max !== '' ? parseFloat(input.max) : Infinity;
+            const atual = parseFloat(input.value) || 0;
+            let novo = atual + step;
+            if (novo < min) novo = min;
+            if (novo > max) novo = max;
+            // Evita algo como 10.2000000004 por causa de ponto flutuante
+            input.value = Math.round(novo * 100) / 100;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+    });
+
     // Atualizar resumo periodicamente (garantia extra)
     setInterval(atualizarResumo, 1000);
+
+    // Estado inicial (útil ao "Carregar Último" na primeira renderização)
+    atualizarResumo();
 });
 
 function atualizarResumo() {
     let volumeTotal = 0;
-    
+    let completos = 0;
+    let totalExercicios = 0;
+
     document.querySelectorAll('.exercise-row').forEach(row => {
         const exId = row.dataset.exercicioId;
         if (!exId) return;
-        
-        const carga = parseFloat(row.querySelector('.carga-input')?.value) || 0;
-        const reps = parseInt(row.querySelector('.reps-input')?.value) || 0;
+        totalExercicios++;
+
+        const cargaInput = row.querySelector('.carga-input');
+        const repsInput = row.querySelector('.reps-input');
+        const carga = parseFloat(cargaInput?.value) || 0;
+        const reps = parseInt(repsInput?.value) || 0;
         const seriesSelect = document.getElementById(`series-select-${exId}`);
         const series = parseInt(seriesSelect?.value) || 3;
-        
+
+        const preenchido = cargaInput?.value !== '' && repsInput?.value !== '';
+        row.classList.toggle('is-complete', !!preenchido);
+        if (preenchido) completos++;
+
         const volumeExercicio = carga * reps * series;
         volumeTotal += volumeExercicio;
 
@@ -711,10 +945,10 @@ function atualizarResumo() {
         ].forEach(badge => {
             if (!badge) return;
             badge.innerHTML = `<i class="bi bi-bar-chart"></i> ${volumeExercicio} kg`;
-            badge.style.background = volumeExercicio > 0 ? '#2D2D2D' : '';
+            badge.classList.toggle('has-value', volumeExercicio > 0);
         });
     });
-    
+
     const resumoElement = document.getElementById('resumo-volume');
     if (resumoElement) {
         resumoElement.textContent = volumeTotal + ' kg';
@@ -723,6 +957,16 @@ function atualizarResumo() {
     const resumoMobileElement = document.getElementById('resumo-volume-mobile');
     if (resumoMobileElement) {
         resumoMobileElement.textContent = volumeTotal + ' kg';
+    }
+
+    // Barra de progresso de exercícios preenchidos
+    const progressBar = document.getElementById('progress-bar');
+    const progressLabel = document.getElementById('progress-label');
+    if (progressBar && progressLabel && totalExercicios > 0) {
+        const pct = Math.round((completos / totalExercicios) * 100);
+        progressBar.style.width = pct + '%';
+        progressBar.parentElement.setAttribute('aria-valuenow', pct);
+        progressLabel.textContent = `${completos}/${totalExercicios} feitos`;
     }
 }
 
