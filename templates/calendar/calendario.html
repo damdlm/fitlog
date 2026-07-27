@@ -44,8 +44,9 @@
         background-color: rgba(242, 140, 51, 0.05);
     }
 
-    /* Número do dia em pastilha redonda cinza claro, número preto,
-       espaço entre pastilhas transparente (só a pastilha tem fundo) */
+    /* Número do dia em quadro com bordas arredondadas cinza claro,
+       número preto, espaço entre eles transparente (só o quadro tem
+       fundo) */
     .fc-daygrid-day-number {
         width: 30px;
         height: 30px;
@@ -53,10 +54,11 @@
         align-items: center;
         justify-content: center;
         margin: 6px;
-        border-radius: 50%;
+        border-radius: 10px;
         background: #f0f0f0;
         color: #2D2D2D !important;
         font-weight: 500;
+        text-decoration: none !important;
     }
 
     .fc-day-today .fc-daygrid-day-number {
@@ -388,10 +390,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 50%;
+            border-radius: 8px;
             background: #f0f0f0;
             color: #2D2D2D !important;
             font-weight: 500;
+            text-decoration: none !important;
         }
 
         /* Dia de hoje: círculo cheio, como calendário nativo */
