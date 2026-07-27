@@ -279,6 +279,7 @@
         justify-content: center;
         margin: 0 auto 16px;
         perspective: 800px;
+        margin-bottom: 24px;
     }
 
     .empty-state .empty-icon i {
@@ -287,7 +288,7 @@
         transform-style: preserve-3d;
         backface-visibility: hidden;
         will-change: transform;
-        animation: clipboard3d 8s ease-in-out infinite;
+        animation: clipboard3d 5s ease-in-out infinite;
     }
 
     @keyframes clipboard3d {
@@ -301,11 +302,12 @@
     .empty-state h5 {
         color: var(--dark-bg);
         font-weight: 700;
+        margin-bottom: 16px;
     }
     .empty-state p {
         color: #8a8580;
         max-width: 360px;
-        margin: 6px auto 0;
+        margin: auto 0;
     }
 
     @keyframes pulse {
@@ -618,7 +620,9 @@
 {% if not erro_versao and not exercicios %}
 <div class="empty-state mb-4">
     <div class="empty-icon"><i class="bi bi-clipboard2-pulse"></i></div>
+    &nbsp;
     <h5>{% if treino_selecionado %}Nenhum exercício encontrado{% else %}Pronto para treinar?{% endif %}</h5>
+    &nbsp;
     <p>
         {% if treino_selecionado %}
         Não encontramos exercícios para este treino na data selecionada.
