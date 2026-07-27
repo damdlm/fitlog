@@ -9,7 +9,6 @@
         --primary-orange: #F28C33;
         --light-orange: #FFB366;
         --dark-bg: #2D2D2D;
-        --success: #2FAE6B;
         --surface: #ffffff;
         --surface-muted: #f7f5f2;
         --border-soft: #ece7e0;
@@ -36,8 +35,8 @@
         box-shadow: var(--shadow-md);
     }
     .exercise-row.is-complete {
-        border-left-color: var(--success);
-        background: linear-gradient(180deg, rgba(47, 174, 107, 0.05), var(--surface) 40%);
+        border-left-color: var(--dark-bg);
+        background: linear-gradient(180deg, rgba(45, 45, 45, 0.04), var(--surface) 40%);
     }
 
     @keyframes fadeSlideIn {
@@ -62,8 +61,8 @@
         transition: all 0.25s ease;
     }
     .exercise-row.is-complete .exercicio-check {
-        background: var(--success);
-        border-color: var(--success);
+        background: var(--dark-bg);
+        border-color: var(--dark-bg);
         color: #fff;
     }
 
