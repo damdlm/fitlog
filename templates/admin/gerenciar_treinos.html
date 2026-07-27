@@ -463,16 +463,19 @@
             gap: 8px;
         }
 
-        /* Barra fixa de salvar no rodapé */
+        /* Barra fixa de salvar no rodapé -- fica ACIMA da barra de navegação
+           inferior do app (.bottom-nav no base.html, z-index 1035), que
+           antes cobria/escondia esta barra por estarem as duas fixas no
+           bottom com a mesma z-index (1030 < 1035). */
         #mobile-save-bar {
             position: fixed;
-            bottom: 0;
+            bottom: 78px; /* altura aproximada da .bottom-nav do app (mesmo valor usado em body.has-bottom-nav) */
             left: 0;
             right: 0;
             background: #fff;
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
-            padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-            z-index: 1030;
+            padding: 10px 16px;
+            z-index: 1040;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -497,7 +500,7 @@
         }
 
         .mobile-save-spacer {
-            height: 88px;
+            height: 150px; /* cobre a nossa barra de salvar + a barra de navegação do app abaixo dela */
         }
 
         /* Resumo do treino: grid compacto de 3 colunas em vez de linha "solta" */
