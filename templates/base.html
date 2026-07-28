@@ -1010,7 +1010,11 @@
                             <video data-state="talking" src="{{ url_for('static', filename='videos/fitbot/bracos.mp4') }}" muted loop playsinline autoplay></video>
                             <video data-state="error" src="{{ url_for('static', filename='videos/fitbot/duvida.mp4') }}" muted loop playsinline autoplay></video>
                             <video data-state="bye" src="{{ url_for('static', filename='videos/fitbot/tchau.mp4') }}" muted loop playsinline autoplay></video>
-                            <video data-state="idle" id="fitbotIdleVideo" muted loop playsinline autoplay></video>
+                            <!-- Dois buffers para o idle: enquanto um toca, o outro já carrega o
+                                 próximo vídeo por baixo -- permite o crossfade suave em vez de
+                                 cortar a tela pra preto ao trocar o src de um único <video>. -->
+                            <video data-state="idle" id="fitbotIdleVideoA" muted loop playsinline autoplay></video>
+                            <video data-state="idle" id="fitbotIdleVideoB" muted loop playsinline autoplay></video>
                         </div>
                         <div class="fitbot-intro-text">
                             <strong>FitBot</strong>

@@ -76,18 +76,18 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: none;
+    opacity: 0;
+    transition: opacity .45s ease-in-out;
 }
 
-/* Máquina de estados: só o vídeo do estado atual fica visível.
-   O estado é controlado via classe no elemento pai .fitbot-widget */
-.fitbot-widget.is-greeting .fitbot-avatar-frame video[data-state="greeting"],
-.fitbot-widget.is-idle .fitbot-avatar-frame video[data-state="idle"],
-.fitbot-widget.is-thinking .fitbot-avatar-frame video[data-state="thinking"],
-.fitbot-widget.is-talking .fitbot-avatar-frame video[data-state="talking"],
-.fitbot-widget.is-error .fitbot-avatar-frame video[data-state="error"],
-.fitbot-widget.is-bye .fitbot-avatar-frame video[data-state="bye"] {
-    display: block;
+/* Máquina de estados: o vídeo ativo (marcado via JS com .is-active) fica
+   visível, com um crossfade suave em vez do corte seco de antes.
+   O vídeo nunca fica com display:none — só opacity:0 — para que a troca
+   não pegue um frame preto/parado no meio da transição. Para o estado
+   "idle" há dois vídeos com data-state="idle" (buffers A/B); só um deles
+   tem .is-active por vez -- ver sortearVideoIdle() no JS. */
+.fitbot-avatar-frame video.is-active {
+    opacity: 1;
 }
 
 .fitbot-intro {

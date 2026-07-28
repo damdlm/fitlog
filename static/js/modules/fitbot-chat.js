@@ -30,15 +30,26 @@
     var VIDEOS_POOL_IDLE = [
         'Agachamento.mp4', 'agua.mp4', 'arremesso.mp4', 'beijo.mp4',
         'celular.mp4', 'dancando.mp4', 'fortao.mp4', 'prancheta.mp4',
-        'stiff.mp4',
+        'stiff.mp4', 'coracao.mp4', 'boxe.mp4',
     ];
+    // "padrao.mp4" não entra no sorteio -- ele é intercalado manualmente
+    // entre os aleatórios (ver escolherProximoVideoIdle): aleatório,
+    // padrão, aleatório, padrão... sempre alternando.
+    var VIDEO_PADRAO_IDLE = 'padrao.mp4';
     var PASTA_VIDEOS = '/static/videos/fitbot/';
+    var CROSSFADE_DURACAO_MS = 450; // precisa bater com a transition do CSS
 
     var elWidget, elModal, elMessages, elForm, elTextarea, elSendBtn,
         elImageInput, elImageBtn, elImagePreview, elImagePreviewThumb,
-        elImageRemoveBtn, elTyping, elIdleVideo, elCloseBtn;
+        elImageRemoveBtn, elTyping, elIdleVideoA, elIdleVideoB, elCloseBtn;
 
-    var ultimoVideoIdle = null;
+    // elIdleAtivo é o buffer visível agora; elIdleInativo é onde o
+    // próximo vídeo é pré-carregado antes do crossfade (double buffer).
+    var elIdleAtivo = null;
+    var elIdleInativo = null;
+
+    var ultimoVideoAleatorioIdle = null;
+    var proximoIdleEhPadrao = false;
     var idleRotationTimeoutId = null;
     var DURACAO_ROTACAO_IDLE_FALLBACK_MS = 6000; // usado só se não der pra ler a duração do vídeo
 
@@ -66,7 +77,10 @@
         elImagePreviewThumb = byId('fitbotImagePreviewThumb');
         elImageRemoveBtn = byId('fitbotImageRemoveBtn');
         elTyping = byId('fitbotTyping');
-        elIdleVideo = byId('fitbotIdleVideo');
+        elIdleVideoA = byId('fitbotIdleVideoA');
+        elIdleVideoB = byId('fitbotIdleVideoB');
+        elIdleAtivo = elIdleVideoA;
+        elIdleInativo = elIdleVideoB;
         elCloseBtn = elModal.querySelector('[data-bs-dismiss="modal"]');
 
         setState('idle');
@@ -156,42 +170,97 @@
         var videos = elWidget.querySelectorAll('.fitbot-avatar-frame video');
         for (var i = 0; i < videos.length; i++) {
             var video = videos[i];
-            if (video.getAttribute('data-state') === estado) {
-                video.currentTime = 0;
-                var promessa = video.play();
-                if (promessa && promessa.catch) promessa.catch(function () {});
-            } else {
-                video.pause();
+            var ehDoEstadoAtual = video.getAttribute('data-state') === estado;
+
+            if (estado === 'idle' && ehDoEstadoAtual) {
+                // Os dois buffers de idle são geridos por sortearVideoIdle
+                // (play/pause/crossfade) -- não mexe neles aqui.
+                continue;
             }
+
+            if (!ehDoEstadoAtual) {
+                video.classList.remove('is-active');
+                video.pause();
+                continue;
+            }
+
+            video.classList.add('is-active');
+            video.currentTime = 0;
+            var promessa = video.play();
+            if (promessa && promessa.catch) promessa.catch(function () {});
         }
     }
 
-    function sortearVideoIdle() {
-        if (!elIdleVideo) return;
+    // Escolhe o próximo vídeo do estado idle, sempre alternando entre um
+    // aleatório do pool e o "padrao.mp4" -- ou seja, o padrão sempre roda
+    // entre dois vídeos aleatórios, nunca dois aleatórios seguidos.
+    function escolherProximoVideoIdle() {
+        if (proximoIdleEhPadrao) {
+            proximoIdleEhPadrao = false;
+            return VIDEO_PADRAO_IDLE;
+        }
+
+        proximoIdleEhPadrao = true;
         var opcoes = VIDEOS_POOL_IDLE;
-        if (opcoes.length > 1 && ultimoVideoIdle) {
-            opcoes = opcoes.filter(function (nome) { return nome !== ultimoVideoIdle; });
+        if (opcoes.length > 1 && ultimoVideoAleatorioIdle) {
+            opcoes = opcoes.filter(function (nome) { return nome !== ultimoVideoAleatorioIdle; });
         }
         var escolhido = opcoes[Math.floor(Math.random() * opcoes.length)];
-        ultimoVideoIdle = escolhido;
-        elIdleVideo.src = PASTA_VIDEOS + escolhido;
-        elIdleVideo.load();
+        ultimoVideoAleatorioIdle = escolhido;
+        return escolhido;
+    }
 
-        // Assim que soubermos a duração do vídeo sorteado, agenda a troca
-        // para o próximo -- dá pra trocar bem no fim de um loop, sem cortar
-        // o vídeo no meio. Se a duração não vier (erro de carregamento etc),
-        // cai no tempo fixo de fallback.
-        elIdleVideo.addEventListener('loadedmetadata', function aoCarregar() {
-            elIdleVideo.removeEventListener('loadedmetadata', aoCarregar);
+    function sortearVideoIdle() {
+        if (!elIdleInativo) return;
+
+        var proximoNome = escolherProximoVideoIdle();
+        var bufferAlvo = elIdleInativo; // carrega o próximo vídeo no buffer que está escondido agora
+
+        bufferAlvo.src = PASTA_VIDEOS + proximoNome;
+        bufferAlvo.load();
+
+        // Assim que soubermos a duração do vídeo sorteado, dá play nele
+        // (ainda invisível, opacity 0) e faz o crossfade com o buffer
+        // anterior -- só então agenda a próxima troca. Se a duração não
+        // vier (erro de carregamento etc), cai no tempo fixo de fallback.
+        bufferAlvo.addEventListener('loadedmetadata', function aoCarregar() {
+            bufferAlvo.removeEventListener('loadedmetadata', aoCarregar);
+
+            var promessa = bufferAlvo.play();
+            if (promessa && promessa.catch) promessa.catch(function () {});
+
+            var bufferAnterior = elIdleAtivo;
+
+            // Crossfade: o novo sobe de opacidade enquanto o antigo desce,
+            // ao mesmo tempo (CSS: transition de opacity em ambos) -- em
+            // vez do corte seco de antes.
+            bufferAlvo.classList.add('is-active');
+            if (bufferAnterior) bufferAnterior.classList.remove('is-active');
+
+            elIdleAtivo = bufferAlvo;
+            elIdleInativo = bufferAnterior;
+
+            // Só pausa o buffer antigo depois que o crossfade terminar,
+            // pra não "congelar" ele no meio da transição visível.
+            setTimeout(function () {
+                if (bufferAnterior && bufferAnterior !== elIdleAtivo) {
+                    bufferAnterior.pause();
+                }
+            }, CROSSFADE_DURACAO_MS);
+
             agendarProximaRotacaoIdle();
         });
     }
 
     function agendarProximaRotacaoIdle() {
         pararRotacaoIdle();
-        var duracaoMs = (elIdleVideo && elIdleVideo.duration && isFinite(elIdleVideo.duration) && elIdleVideo.duration > 0)
-            ? elIdleVideo.duration * 1000
+        var duracaoMs = (elIdleAtivo && elIdleAtivo.duration && isFinite(elIdleAtivo.duration) && elIdleAtivo.duration > 0)
+            ? elIdleAtivo.duration * 1000
             : DURACAO_ROTACAO_IDLE_FALLBACK_MS;
+
+        // Antecipa a troca em CROSSFADE_DURACAO_MS para que o crossfade
+        // termine bem no fim do loop do vídeo atual, sem cortar ele no meio.
+        var duracaoComMargem = Math.max(duracaoMs - CROSSFADE_DURACAO_MS, 500);
 
         idleRotationTimeoutId = setTimeout(function () {
             // só troca se ainda estiver parado -- se o usuário mandou uma
@@ -199,7 +268,7 @@
             if (elWidget.classList.contains('is-idle')) {
                 sortearVideoIdle();
             }
-        }, duracaoMs);
+        }, duracaoComMargem);
     }
 
     function pararRotacaoIdle() {
