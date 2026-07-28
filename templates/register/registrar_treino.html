@@ -349,11 +349,19 @@
             border-bottom-color: rgba(45, 45, 45, 0.22);
         }
 
-        /* Rótulos Carga/Repetições/Séries colados nos campos */
+        /* NOVO: Grid para alinhar perfeitamente os rótulos com os campos */
         .inputs-row-labels {
-            margin-bottom: 0 !important;
-            --bs-gutter-x: 0.4rem !important;
-            --bs-gutter-y: 0 !important;  /* g-2 herda gutter vertical do Bootstrap; zera para não afastar o rótulo do campo */
+            display: grid !important;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 2px !important;
+            --bs-gutter-x: 0 !important;
+            --bs-gutter-y: 0 !important;
+        }
+        .inputs-row-labels > span {
+            display: block;
+            padding: 0;
+            margin: 0;
         }
 
         .exercise-row .row.align-items-center {
@@ -650,10 +658,11 @@
 
                     <!-- Carga / Reps / Séries -->
                     <div class="col-12 col-md-8">
-                        <div class="row g-2 inputs-row-labels">
-                            <div class="col-4"><span class="inputs-row-label mb-0" style="display:block;">Carga</span></div>
-                            <div class="col-4"><span class="inputs-row-label mb-0" style="display:block;">Repetições</span></div>
-                            <div class="col-4"><span class="inputs-row-label mb-0" style="display:block;">Séries</span></div>
+                        <!-- NOVO: Substituído o antigo row Bootstrap por grid idêntico ao dos campos -->
+                        <div class="inputs-row-labels">
+                            <span class="inputs-row-label">Carga</span>
+                            <span class="inputs-row-label">Repetições</span>
+                            <span class="inputs-row-label">Séries</span>
                         </div>
                         <div class="inputs-row row g-2">
                             <div class="col-md-4">
