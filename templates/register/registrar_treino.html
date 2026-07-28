@@ -611,7 +611,7 @@
             {% set series_selecionadas = registro_atual.series|length if (registro_atual and registro_atual.series) else ultimas_series %}
             
             <!-- O select de séries agora vai até 10 -->
-            {% set max_opcoes = [10, series_selecionadas]|max %}
+            {% set max_opcoes = [6, series_selecionadas]|max %}
             
             <div class="exercise-row" data-exercicio-id="{{ chave_ex }}" 
                  data-ultima-carga="{{ ultima_carga }}"
