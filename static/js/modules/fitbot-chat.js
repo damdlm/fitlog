@@ -39,6 +39,8 @@
         elImageRemoveBtn, elTyping, elIdleVideo, elCloseBtn;
 
     var ultimoVideoIdle = null;
+    var idleRotationTimeoutId = null;
+    var DURACAO_ROTACAO_IDLE_FALLBACK_MS = 6000; // usado só se não der pra ler a duração do vídeo
 
     var historico = [];               // [{papel: 'usuario'|'bot', texto: '...'}]
     var imagemSelecionadaDataUrl = null; // dataURL completo (para preview)
@@ -128,6 +130,8 @@
         elWidget.classList.remove('is-idle', 'is-thinking', 'is-talking', 'is-error', 'is-greeting', 'is-bye');
         elWidget.classList.add('is-' + novoEstado);
 
+        pararRotacaoIdle(); // se estava girando os vídeos de idle, para -- reagenda de novo se o novo estado for idle
+
         if (novoEstado === 'thinking' && elTyping) {
             elMessages.appendChild(elTyping); // mantém o "digitando..." sempre por último
             elMessages.scrollTop = elMessages.scrollHeight;
@@ -172,6 +176,37 @@
         ultimoVideoIdle = escolhido;
         elIdleVideo.src = PASTA_VIDEOS + escolhido;
         elIdleVideo.load();
+
+        // Assim que soubermos a duração do vídeo sorteado, agenda a troca
+        // para o próximo -- dá pra trocar bem no fim de um loop, sem cortar
+        // o vídeo no meio. Se a duração não vier (erro de carregamento etc),
+        // cai no tempo fixo de fallback.
+        elIdleVideo.addEventListener('loadedmetadata', function aoCarregar() {
+            elIdleVideo.removeEventListener('loadedmetadata', aoCarregar);
+            agendarProximaRotacaoIdle();
+        });
+    }
+
+    function agendarProximaRotacaoIdle() {
+        pararRotacaoIdle();
+        var duracaoMs = (elIdleVideo && elIdleVideo.duration && isFinite(elIdleVideo.duration) && elIdleVideo.duration > 0)
+            ? elIdleVideo.duration * 1000
+            : DURACAO_ROTACAO_IDLE_FALLBACK_MS;
+
+        idleRotationTimeoutId = setTimeout(function () {
+            // só troca se ainda estiver parado -- se o usuário mandou uma
+            // mensagem nesse meio tempo, setState já limpou esse timer
+            if (elWidget.classList.contains('is-idle')) {
+                sortearVideoIdle();
+            }
+        }, duracaoMs);
+    }
+
+    function pararRotacaoIdle() {
+        if (idleRotationTimeoutId) {
+            clearTimeout(idleRotationTimeoutId);
+            idleRotationTimeoutId = null;
+        }
     }
 
     /* ------------------------------------------------------------
