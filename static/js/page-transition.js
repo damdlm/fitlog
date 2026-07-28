@@ -12,7 +12,7 @@
     'use strict';
 
     var OVERLAY_ID = 'flPageTransitionOverlay';
-    var NAV_DELAY_MS = 1000;
+    var NAV_DELAY_MS = 1300;
 
     function createOverlay() {
         var existing = document.getElementById(OVERLAY_ID);
