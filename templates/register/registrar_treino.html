@@ -79,63 +79,32 @@
         border: 1px solid var(--primary-orange);
     }
 
-    /* Grupo carga/reps com botões de passo (- valor +), pensado para dedos
-       suados de academia -- maior que digitar num teclado numérico */
-    .stepper-group {
-        display: flex;
-        align-items: stretch;
-        border: 2px solid var(--border-soft);
-        border-radius: var(--radius-sm);
-        overflow: hidden;
-        background: var(--surface);
-        transition: border-color 0.2s, box-shadow 0.2s;
-        height: 100%;
-        width: 100%;
-        min-width: 0;
-    }
-    .stepper-group:focus-within {
-        border-color: var(--primary-orange);
-        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12);
-    }
-    .stepper-btn {
-        border: none;
-        background: var(--surface-muted);
-        color: var(--dark-bg);
-        width: 34px;
-        flex-shrink: 0;
-        font-size: 1.1rem;
-        line-height: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: background 0.15s, color 0.15s;
-        touch-action: manipulation;
-    }
-    .stepper-btn:hover, .stepper-btn:active {
-        background: var(--primary-orange);
-        color: #fff;
-    }
-    .stepper-btn:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-    }
-
+    /* Campos de carga/reps: inputs simples (sem botões de passo), mais
+       baixos para caber mais conteúdo na tela sem rolar tanto. */
     .carga-input, .reps-input {
-        flex: 1 1 0%;
-        width: 0; /* trick do flexbox: força o input a dividir o espaço restante em vez de usar sua largura intrínseca */
+        width: 100%;
         min-width: 0;
         text-align: center;
         font-weight: 700;
-        font-size: 1.15rem !important;
-        padding: 10px 2px !important;
-        height: auto !important;
-        border: none !important;
+        font-size: 1.05rem !important;
+        padding: 6px 4px !important;
+        height: 38px !important;
+        border: 2px solid var(--border-soft) !important;
+        border-radius: var(--radius-sm) !important;
         box-shadow: none !important;
-        background: transparent;
+        background: var(--surface);
+        transition: border-color 0.2s, box-shadow 0.2s;
     }
     .carga-input:focus, .reps-input:focus {
         outline: none;
+        border-color: var(--primary-orange) !important;
+        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12) !important;
+    }
+
+    .inputs-row .form-select {
+        height: 38px;
+        padding-top: 6px;
+        padding-bottom: 6px;
     }
 
     .btn-load-last {
@@ -230,11 +199,12 @@
     }
 
     .inputs-row-label {
-        font-size: 0.72rem;
+        font-size: 0.65rem;
         color: #adb5bd;
         text-transform: uppercase;
         letter-spacing: 0.03em;
         font-weight: 600;
+        margin-bottom: 2px;
     }
 
     /* Estado vazio (nenhum treino/data escolhido ainda) */
@@ -378,25 +348,11 @@
             padding: 3px 8px;
         }
 
-        /* Um único rótulo acima do grupo, no lugar de 3 repetidos embaixo de cada campo */
-        .inputs-row-label {
-            font-size: 0.72rem;
-            color: #adb5bd;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            margin-top: 10px;
-            margin-bottom: 4px;
-        }
-
-        .unit-label-mobile {
-            display: none;
-        }
-
         .inputs-row {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 8px;
-            margin-top: 12px;
+            margin-top: 4px;
             align-items: stretch;
         }
 
@@ -404,23 +360,13 @@
             min-width: 0;
         }
 
-        .inputs-row .stepper-group,
-        .inputs-row .form-select {
-            height: 40px;
-        }
-
-        .inputs-row .stepper-btn {
-            width: 28px;
-            font-size: 1rem;
-        }
-
         .inputs-row .carga-input,
         .inputs-row .reps-input {
             font-size: 16px !important; /* evita zoom automatico no iOS */
-            padding: 0 2px !important;
         }
 
         .inputs-row .form-select {
+            height: 38px;
             padding: 0 22px 0 8px !important;
             font-size: 0.85rem;
             background-position: right 6px center;
@@ -650,59 +596,48 @@
                             <div class="dash-registro-info">
                                 <div class="dash-registro-top">
                                     <span class="dash-registro-exercicio exercicio-nome-trunc" data-full-nome="{{ ex.nome }}">{{ ex.nome }}</span>
-                                    <span class="dash-registro-meta">
-                                        <i class="bi bi-braces"></i>
-                                        {{ ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A' }}
-                                    </span>
                                 </div>
-                                {% if ultimas %}
                                 <div class="dash-registro-badges">
+                                    {% if ultimas %}
                                     <span class="dash-badge">{{ ultimas[0].carga }}kg</span>
                                     <span class="dash-badge">{{ ultimas[0].repeticoes }}x</span>
                                     <span class="dash-badge">{{ ultimas|length }} série{{ 's' if ultimas|length != 1 }}</span>
+                                    {% endif %}
+                                    <span class="dash-registro-meta">
+                                        <i class="bi bi-link-45deg"></i>
+                                        {{ ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A' }}
+                                    </span>
                                 </div>
-                                {% endif %}
                             </div>
                         </div>
                     </div>
 
                     <!-- Carga / Reps / Séries: lado a lado tanto no mobile quanto no desktop -->
                     <div class="col-12 col-md-8">
-                        <div class="inputs-row-label d-md-none">Carga (kg) · Repetições · Séries</div>
-                        <div class="row g-2 d-none d-md-flex mb-1">
-                            <div class="col-md-4"><span class="inputs-row-label mb-0" style="display:block;">Carga (kg)</span></div>
-                            <div class="col-md-4"><span class="inputs-row-label mb-0" style="display:block;">Repetições</span></div>
-                            <div class="col-md-4"><span class="inputs-row-label mb-0" style="display:block;">Séries</span></div>
+                        <div class="row g-2 mb-1">
+                            <div class="col-4"><span class="inputs-row-label mb-0" style="display:block;">Carga</span></div>
+                            <div class="col-4"><span class="inputs-row-label mb-0" style="display:block;">Repetições</span></div>
+                            <div class="col-4"><span class="inputs-row-label mb-0" style="display:block;">Séries</span></div>
                         </div>
                         <div class="inputs-row row g-2">
                             <div class="col-md-4">
-                                <div class="stepper-group">
-                                    <button type="button" class="stepper-btn" data-step="-0.5" data-target="carga_{{ chave_ex }}" aria-label="Diminuir carga">&minus;</button>
-                                    <input type="number" name="carga_{{ chave_ex }}"
-                                           class="form-control carga-input"
-                                           placeholder="0"
-                                           step="0.5" min="0"
-                                           inputmode="decimal"
-                                           aria-label="Carga em quilos"
-                                           value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].carga }}{% elif ultima_carga %}{{ ultima_carga }}{% endif %}">
-                                    <button type="button" class="stepper-btn" data-step="0.5" data-target="carga_{{ chave_ex }}" aria-label="Aumentar carga">&plus;</button>
-                                </div>
-                                <div class="text-center small text-muted d-md-none mt-1 unit-label-mobile">kg</div>
+                                <input type="number" name="carga_{{ chave_ex }}"
+                                       class="form-control carga-input"
+                                       placeholder="0"
+                                       step="0.5" min="0"
+                                       inputmode="decimal"
+                                       aria-label="Carga em quilos"
+                                       value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].carga }}{% elif ultima_carga %}{{ ultima_carga }}{% endif %}">
                             </div>
 
                             <div class="col-md-4">
-                                <div class="stepper-group">
-                                    <button type="button" class="stepper-btn" data-step="-1" data-target="reps_{{ chave_ex }}" aria-label="Diminuir repetições">&minus;</button>
-                                    <input type="number" name="reps_{{ chave_ex }}"
-                                           class="form-control reps-input"
-                                           placeholder="0"
-                                           min="0" max="100"
-                                           inputmode="numeric"
-                                           aria-label="Repetições"
-                                           value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].repeticoes }}{% elif ultimas_reps %}{{ ultimas_reps }}{% endif %}">
-                                    <button type="button" class="stepper-btn" data-step="1" data-target="reps_{{ chave_ex }}" aria-label="Aumentar repetições">&plus;</button>
-                                </div>
-                                <div class="text-center small text-muted d-md-none mt-1 unit-label-mobile">reps</div>
+                                <input type="number" name="reps_{{ chave_ex }}"
+                                       class="form-control reps-input"
+                                       placeholder="0"
+                                       min="0" max="100"
+                                       inputmode="numeric"
+                                       aria-label="Repetições"
+                                       value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].repeticoes }}{% elif ultimas_reps %}{{ ultimas_reps }}{% endif %}">
                             </div>
 
                             <div class="col-md-4">
@@ -717,7 +652,6 @@
                                     <option value="{{ n }}" {% if series_selecionadas == n %}selected{% endif %}>{{ n }} série{{ 's' if n != 1 }}</option>
                                     {% endfor %}
                                 </select>
-                                <div class="text-center small text-muted d-md-none mt-1 unit-label-mobile">séries</div>
                             </div>
                         </div>
                     </div>
@@ -826,24 +760,6 @@ document.addEventListener('DOMContentLoaded', function() {
         registroForm.addEventListener('input', atualizarResumo);
         registroForm.addEventListener('change', atualizarResumo);
     }
-
-    // Botões de + / - (steppers) de carga e repetições
-    document.querySelectorAll('.stepper-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const input = document.querySelector(`[name="${this.dataset.target}"]`);
-            if (!input) return;
-            const step = parseFloat(this.dataset.step);
-            const min = parseFloat(input.min) || 0;
-            const max = input.max !== '' ? parseFloat(input.max) : Infinity;
-            const atual = parseFloat(input.value) || 0;
-            let novo = atual + step;
-            if (novo < min) novo = min;
-            if (novo > max) novo = max;
-            // Evita algo como 10.2000000004 por causa de ponto flutuante
-            input.value = Math.round(novo * 100) / 100;
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-        });
-    });
 
     // Atualizar resumo periodicamente (garantia extra)
     setInterval(atualizarResumo, 1000);
