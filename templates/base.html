@@ -810,6 +810,13 @@
                                 <i class="bi bi-person"></i> Meu Perfil
                             </a>
                         </li>
+                        {% if current_user.is_aluno() %}
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('aluno.meu_professor') }}">
+                                <i class="bi bi-person-badge"></i> Meu Professor
+                            </a>
+                        </li>
+                        {% endif %}
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
@@ -901,7 +908,6 @@
                 <a class="mais-link" href="{{ url_for('aluno.versoes') }}"><i class="bi bi-clock-history"></i> Minhas Versões</a>
                 {% if current_user.is_aluno() %}
                 <a class="mais-link" href="{{ url_for('stats.visualizar_tabela') }}"><i class="bi bi-table"></i> Tabela de Progresso</a>
-                <a class="mais-link" href="{{ url_for('aluno.meu_professor') }}"><i class="bi bi-person-badge"></i> Meu Professor</a>
                 {% endif %}
             </div>
 
