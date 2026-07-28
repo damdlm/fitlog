@@ -63,12 +63,11 @@
 /* ---- Quadro do robô (canto superior esquerdo do chat) ---- */
 .fitbot-avatar-frame {
     position: relative;
-    width: 84px;
-    height: 84px;
+    width: 150px;
+    height: 150px;
     flex: 0 0 auto;
     border-radius: 16px;
     background: #12141a;
-    box-shadow: inset 0 0 0 2px rgba(242, 140, 51, 0.35);
     overflow: hidden;
 }
 
@@ -78,7 +77,6 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
-    padding: 4px;
     background: #12141a;
     display: none;
 }
