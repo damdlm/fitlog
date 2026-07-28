@@ -192,7 +192,7 @@ class FitBotService:
                 "modo": "imagem",
             }
 
-        modelo = current_app.config.get("GEMINI_MODEL", "gemini-1.5-flash")
+        modelo = current_app.config.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
         url = GEMINI_ENDPOINT.format(model=modelo)
 
         texto_usuario = (mensagem or "Identifique este equipamento de treino.").strip()

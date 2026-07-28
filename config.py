@@ -90,13 +90,18 @@ class Config:
     #
     # Estratégia de roteamento (pensada para os limites do plano gratuito):
     #   - Mensagem SEM foto  -> Groq (Llama), texto puro, limite bem mais folgado.
-    #   - Mensagem COM foto  -> Gemini 1.5 Flash, é o único dos dois com visão.
+    #   - Mensagem COM foto  -> Gemini (Flash-Lite), é o único dos dois com visão.
     #
     # Ambas as chaves ficam só no servidor — nunca são expostas ao navegador.
     # Se GEMINI_API_KEY ou GROQ_API_KEY não estiverem definidas, o FitBot
     # responde com uma mensagem de erro amigável em vez de quebrar.
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-    GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-1.5-flash')
+    # gemini-1.5-flash foi desativado pelo Google (todo o Gemini 1.5/1.0 já
+    # foi encerrado -- chamadas para ele retornam 404). gemini-2.5-flash-lite
+    # é a opção estável mais econômica da geração atual que ainda enxerga
+    # imagem. Se GEMINI_MODEL já estiver setada como env var no Railway
+    # apontando pro modelo antigo, atualize-a também.
+    GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash-lite')
 
     GROQ_API_KEY = os.getenv('GROQ_API_KEY')
     GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
