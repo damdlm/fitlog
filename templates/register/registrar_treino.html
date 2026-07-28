@@ -327,20 +327,58 @@
             vertical-align: middle;
         }
 
-        /* Card do exercício mais leve: borda fina, sem sombra */
+        /* ======================================================
+               Ajustes para aproximar os campos no mobile
+               ====================================================== */
         .exercise-row {
-            padding: 12px 14px;
-            margin-bottom: 10px;
+            padding: 8px 10px !important;        /* mais compacto */
+            margin-bottom: 8px !important;
             border-left-width: 3px;
             box-shadow: none !important;
         }
 
-        .exercise-row .row {
-            --bs-gutter-x: 0.5rem;
+        .exercise-row .row.align-items-center {
+            align-items: flex-start !important;   /* alinha ao topo */
+            --bs-gutter-y: 0.25rem;              /* reduz espaçamento vertical */
         }
 
-        /* No mobile, o card "dash-registro-item" reaproveitado aqui fica
-           mais compacto (ícone um pouco menor e badges mais discretos). */
+        .exercise-row .col-12.col-md-8 {
+            margin-top: 0 !important;
+            padding-top: 2px !important;
+        }
+
+        .inputs-row-label {
+            font-size: 0.55rem !important;
+            margin-bottom: 0 !important;
+        }
+
+        .inputs-row {
+            --bs-gutter-x: 0.4rem !important;
+            --bs-gutter-y: 0.2rem !important;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-top: 2px;
+            align-items: stretch;
+        }
+
+        .inputs-row > div {
+            min-width: 0;
+        }
+
+        .carga-input, .reps-input, .inputs-row .form-select {
+            height: 30px !important;
+            padding: 2px 4px !important;
+            font-size: 0.9rem !important;
+        }
+
+        .inputs-row .form-select {
+            background-position: right 6px center;
+            background-size: 12px 10px;
+            padding: 2px 20px 2px 6px !important;
+        }
+
+        /* Demais ajustes visuais */
         .dash-registro-icon {
             width: 34px;
             height: 34px;
@@ -361,28 +399,6 @@
             padding: 3px 8px;
         }
 
-        .inputs-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            margin-top: 4px;
-            align-items: stretch;
-        }
-
-        .inputs-row > div {
-            min-width: 0;
-        }
-
-        .inputs-row .carga-input,
-        .inputs-row .reps-input {
-            font-size: 16px !important; /* evita zoom automatico no iOS */
-        }
-
-        .inputs-row .form-select {
-            background-position: right 8px center;
-            background-size: 12px 10px;
-        }
-
         .card-header.d-flex {
             flex-direction: column;
             align-items: flex-start !important;
@@ -399,13 +415,10 @@
             gap: 8px;
         }
 
-        /* Barra fixa de salvar no rodapé -- fica ACIMA da barra de navegação
-           inferior do app (.bottom-nav no base.html, z-index 1035), que
-           antes cobria/escondia esta barra por estarem as duas fixas no
-           bottom com a mesma z-index (1030 < 1035). */
+        /* Barra fixa de salvar no rodapé */
         #mobile-save-bar {
             position: fixed;
-            bottom: 78px; /* altura aproximada da .bottom-nav do app (mesmo valor usado em body.has-bottom-nav) */
+            bottom: calc(78px + env(safe-area-inset-bottom, 0px)); /* adapta à notch */
             left: 0;
             right: 0;
             background: #fff;
@@ -436,10 +449,10 @@
         }
 
         .mobile-save-spacer {
-            height: 150px; /* cobre a nossa barra de salvar + a barra de navegação do app abaixo dela */
+            height: 150px;
         }
 
-        /* Resumo do treino: grid compacto de 3 colunas em vez de linha "solta" */
+        /* Resumo do treino: grid compacto de 3 colunas */
         .resumo-treino-box {
             padding: 0.75rem !important;
         }
@@ -576,14 +589,10 @@
             {% set ultima_carga = ultimas[0].carga if ultimas else '' %}
             {% set ultimas_reps = ultimas[0].repeticoes if ultimas else '' %}
             {% set ultimas_series = ultimas|length if ultimas else 3 %}
-            {# O registro já salvo (se existir) manda sempre. A sugestão de
-               histórico (ultimas_series) só é usada quando NÃO há registro
-               ainda — antes as duas condições eram combinadas com "or" nas
-               options abaixo, e como ultimas_series caía em 3 por padrão
-               sempre que não havia histórico recente, ela podia sobrepor
-               visualmente o valor realmente salvo (ex: registro com 2
-               séries aparecia marcado como 3 no dropdown). #}
             {% set series_selecionadas = registro_atual.series|length if (registro_atual and registro_atual.series) else ultimas_series %}
+            
+            <!-- O select de séries agora vai até 10 -->
+            {% set max_opcoes = [10, series_selecionadas]|max %}
             
             <div class="exercise-row" data-exercicio-id="{{ chave_ex }}" 
                  data-ultima-carga="{{ ultima_carga }}"
@@ -592,9 +601,7 @@
                 
                 <div class="row align-items-center">
                     <div class="col-12 col-md-4">
-                        <!-- Mesma estrutura visual do card "Último Treino" do dashboard
-                             (.dash-registro-item), só trocando o check pelo ícone de
-                             imagens e a data pelo músculo. -->
+                        <!-- Mesma estrutura visual do card "Último Treino" do dashboard -->
                         <div class="dash-registro-item" style="padding: 0; border-bottom: none; align-items: flex-start;">
                             <div class="dash-registro-icon" {% if not (ex.imagem_inicial or ex.imagem_execucao) %}aria-hidden="true"{% endif %}>
                                 {% if ex.imagem_inicial or ex.imagem_execucao %}
@@ -622,7 +629,7 @@
                         </div>
                     </div>
 
-                    <!-- Carga / Reps / Séries: lado a lado tanto no mobile quanto no desktop -->
+                    <!-- Carga / Reps / Séries -->
                     <div class="col-12 col-md-8">
                         <div class="row g-2" style="margin-bottom: 2px;">
                             <div class="col-4"><span class="inputs-row-label mb-0" style="display:block;">Carga</span></div>
@@ -651,11 +658,6 @@
                             </div>
 
                             <div class="col-md-4">
-                                {# O select precisa cobrir pelo menos até a quantidade real
-                                   de séries da última sessão -- antes ia fixo até 5, então uma
-                                   sessão anterior com 6+ séries não tinha opção correspondente
-                                   e o dropdown ficava sem nada marcado (ou marcado errado). #}
-                                {% set max_opcoes = [6, series_selecionadas]|max %}
                                 <select name="num_series_{{ chave_ex }}" id="series-select-{{ chave_ex }}" 
                                         class="form-select">
                                     {% for n in range(1, max_opcoes + 1) %}
@@ -700,7 +702,7 @@
                 </div>
             </div>
 
-            <!-- Espaço reservado no mobile para não ficar escondido atrás da barra fixa -->
+            <!-- Espaço reservado no mobile -->
             <div class="mobile-save-spacer d-md-none"></div>
         </form>
     </div>
@@ -730,7 +732,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Página de registro carregada');
     
-    // Inicializar módulo de registro
+    // Inicializar módulo de registro (se existir)
     if (typeof RegistrarTreino !== 'undefined') {
         RegistrarTreino.init();
     }
@@ -747,7 +749,7 @@ document.addEventListener('DOMContentLoaded', function() {
         dataInput.max = new Date().toISOString().split('T')[0];
     }
     
-    // Auto-submit quando mudar treino ou data (opcional)
+    // Auto-submit ao mudar treino ou data
     const treinoSelect = document.querySelector('select[name="treino"]');
     if (treinoSelect && dataInput) {
         treinoSelect.addEventListener('change', function() {
@@ -764,33 +766,58 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Atualizar resumo imediatamente ao digitar/mudar qualquer campo
+    // Atualizar resumo ao digitar/mudar
     const registroForm = document.getElementById('registroForm');
     if (registroForm) {
         registroForm.addEventListener('input', atualizarResumo);
         registroForm.addEventListener('change', atualizarResumo);
     }
-
-    // Atualizar resumo periodicamente (garantia extra)
+    
     setInterval(atualizarResumo, 1000);
-
-    // Estado inicial (útil ao "Carregar Último" na primeira renderização)
     atualizarResumo();
 
-    // Nome do exercício: só ativa o popover com o nome completo quando o
-    // texto realmente não coube na largura disponível (varia por dispositivo).
+    // Nome do exercício: truncamento com popover
     inicializarTruncamentoNomesExercicio();
     let resizeTimer;
     window.addEventListener('resize', function() {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(inicializarTruncamentoNomesExercicio, 200);
     });
+
+    // ====== Validação e loader ao enviar ======
+    const form = document.getElementById('registroForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Valida se campos não são negativos
+            let valid = true;
+            document.querySelectorAll('.carga-input, .reps-input').forEach(input => {
+                const val = parseFloat(input.value);
+                if (!isNaN(val) && val < 0) {
+                    valid = false;
+                    input.classList.add('is-invalid');
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+            });
+            if (!valid) {
+                e.preventDefault();
+                if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
+                    window.FitLogUtils.showToast('Valores não podem ser negativos.', 'danger');
+                } else {
+                    alert('Valores não podem ser negativos.');
+                }
+                return;
+            }
+
+            // Mostra loader
+            document.getElementById('global-loader').style.display = 'flex';
+        });
+    }
 });
 
+// Funções globais
 function inicializarTruncamentoNomesExercicio() {
     document.querySelectorAll('.exercicio-nome-trunc').forEach(function(el) {
-        // Descarta popover de uma avaliação anterior (ex: rotação de tela)
-        // antes de checar de novo, senão o popover antigo fica "grudado".
         const instanciaAnterior = window.bootstrap && bootstrap.Popover.getInstance(el);
         if (instanciaAnterior) instanciaAnterior.dispose();
 
@@ -885,7 +912,6 @@ function carregarUltimoRegistro() {
         }
     });
 
-    // Recalcula os volumes e o total após preencher os campos
     atualizarResumo();
 
     const mensagem = carregados > 0
