@@ -192,7 +192,7 @@ class FitBotService:
                 "modo": "imagem",
             }
 
-        modelo = current_app.config.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
+        modelo = current_app.config.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
         url = GEMINI_ENDPOINT.format(model=modelo)
 
         texto_usuario = (mensagem or "Identifique este equipamento de treino.").strip()
@@ -224,7 +224,10 @@ class FitBotService:
         try:
             resp = requests.post(
                 url,
-                params={"key": api_key},
+                headers={
+                    "x-goog-api-key": api_key,
+                    "Content-Type": "application/json",
+                },
                 json=payload,
                 timeout=REQUEST_TIMEOUT_SECONDS,
             )

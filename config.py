@@ -98,10 +98,11 @@ class Config:
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
     # gemini-1.5-flash foi desativado pelo Google (todo o Gemini 1.5/1.0 já
     # foi encerrado -- chamadas para ele retornam 404). gemini-2.5-flash-lite
-    # é a opção estável mais econômica da geração atual que ainda enxerga
-    # imagem. Se GEMINI_MODEL já estiver setada como env var no Railway
-    # apontando pro modelo antigo, atualize-a também.
-    GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash-lite')
+    # também parou de aceitar novos usuários/projetos. gemini-3.5-flash-lite
+    # é o modelo estável mais barato/rápido da geração atual (Gemini 3) que
+    # ainda enxerga imagem. Se GEMINI_MODEL já estiver setada como env var
+    # no Railway apontando pro modelo antigo, atualize-a também.
+    GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-3.5-flash-lite')
 
     GROQ_API_KEY = os.getenv('GROQ_API_KEY')
     GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
