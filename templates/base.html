@@ -23,6 +23,7 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/page-transition.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fitbot-chat.css') }}">
     
     <!-- CSS Personalizado -->
     <style>
@@ -800,6 +801,9 @@
                     <i class="bi bi-plus-circle"></i> Registrar treino
                 </a>
                 {% endif %}
+                <button type="button" class="fitbot-toggle-btn" data-bs-toggle="modal" data-bs-target="#fitbotModal" title="Falar com o FitBot" aria-label="Abrir chat com o FitBot">
+                    <i class="bi bi-robot" aria-hidden="true"></i>
+                </button>
                 <div class="nav-item dropdown">
                     <button class="btn btn-avatar dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ current_user.username }}">
                         <span class="avatar-circle">{{ current_user.username[0]|upper }}</span>
@@ -986,6 +990,66 @@
         </div>
     </div>
 
+    <!-- Modal do FitBot (chat com IA) -->
+    <div class="modal fade" id="fitbotModal" tabindex="-1" aria-labelledby="fitbotModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content fitbot-widget is-idle" id="fitbotWidget">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fitbotModalLabel">
+                        <i class="bi bi-robot"></i> FitBot
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Quadro do robô + status -->
+                    <div class="fitbot-intro">
+                        <div class="fitbot-avatar-frame">
+                            <video data-state="greeting" src="{{ url_for('static', filename='videos/fitbot/saudacao.mp4') }}" muted loop playsinline autoplay></video>
+                            <video data-state="thinking" src="{{ url_for('static', filename='videos/fitbot/pensando.mp4') }}" muted loop playsinline autoplay></video>
+                            <video data-state="talking" src="{{ url_for('static', filename='videos/fitbot/bracos.mp4') }}" muted loop playsinline autoplay></video>
+                            <video data-state="error" src="{{ url_for('static', filename='videos/fitbot/duvida.mp4') }}" muted loop playsinline autoplay></video>
+                            <video data-state="bye" src="{{ url_for('static', filename='videos/fitbot/tchau.mp4') }}" muted loop playsinline autoplay></video>
+                            <video data-state="idle" id="fitbotIdleVideo" muted loop playsinline autoplay></video>
+                        </div>
+                        <div class="fitbot-intro-text">
+                            <strong>FitBot</strong>
+                            <span>Seu personal trainer virtual</span>
+                        </div>
+                        <div class="fitbot-intro-status">
+                            <span class="dot"></span> assistente
+                        </div>
+                    </div>
+
+                    <!-- Mensagens -->
+                    <div class="fitbot-messages" id="fitbotMessages">
+                        <div class="fitbot-typing" id="fitbotTyping">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+
+                    <!-- Input -->
+                    <div class="fitbot-input-area">
+                        <div class="fitbot-image-preview" id="fitbotImagePreview">
+                            <img id="fitbotImagePreviewThumb" src="" alt="Prévia da foto">
+                            <span>Foto anexada</span>
+                            <button type="button" class="btn btn-sm btn-link text-danger ms-auto" id="fitbotImageRemoveBtn">Remover</button>
+                        </div>
+                        <form id="fitbotForm" class="fitbot-input-row">
+                            <input type="file" accept="image/*" capture="environment" id="fitbotImageInput" class="d-none">
+                            <button type="button" class="fitbot-btn-icon" id="fitbotImageBtn" title="Enviar foto do equipamento" aria-label="Enviar foto do equipamento">
+                                <i class="bi bi-camera" aria-hidden="true"></i>
+                            </button>
+                            <textarea id="fitbotTextarea" class="form-control" rows="1" placeholder="Pergunte sobre treino, execução de exercícios..."></textarea>
+                            <button type="submit" class="fitbot-btn-icon fitbot-btn-send" id="fitbotSendBtn" title="Enviar" aria-label="Enviar mensagem" data-fl-no-transition>
+                                <i class="bi bi-send-fill" aria-hidden="true"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -999,6 +1063,7 @@
 
     <!-- Modal de imagens do exercício -->
     <script src="{{ url_for('static', filename='js/modules/exercicio-imagens.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modules/fitbot-chat.js') }}"></script>
     
     <!-- Bloco para scripts específicos de cada página -->
     {% block scripts %}{% endblock %}

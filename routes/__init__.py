@@ -11,6 +11,7 @@ from .api_routes import api_bp
 from .calendar_routes import calendar_bp
 from .professor_routes import professor_bp
 from .aluno import aluno_bp          # ← módulo modular, não o arquivo antigo
+from .fitbot_routes import fitbot_bp
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ def register_all_routes(app):
         (stats_bp, '/estatisticas'),
         (version_bp, '/version'),
         (api_bp, '/api'),
+        (fitbot_bp, '/fitbot'),
     ]
     
     for blueprint, url_prefix in blueprints:

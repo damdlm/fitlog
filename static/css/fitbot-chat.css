@@ -1,0 +1,293 @@
+/* ============================================================
+   FitBot — botão no cabeçalho + modal de chat com IA
+   ============================================================ */
+
+/* ---- Botão no cabeçalho ---- */
+.fitbot-toggle-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-primary, linear-gradient(135deg, #F28C33 0%, #FFB366 100%));
+    color: #fff;
+    border: none;
+    font-size: 1.2rem;
+    box-shadow: 0 2px 8px rgba(242, 140, 51, 0.45);
+    position: relative;
+}
+
+.fitbot-toggle-btn:hover,
+.fitbot-toggle-btn:focus {
+    color: #fff;
+    filter: brightness(1.05);
+}
+
+/* Pontinho verde indicando que o assistente está disponível */
+.fitbot-toggle-btn::after {
+    content: "";
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #2ecc71;
+    border: 2px solid #fff;
+}
+
+/* ---- Modal ---- */
+#fitbotModal .modal-content {
+    border-radius: 20px;
+    overflow: hidden;
+    border: none;
+}
+
+#fitbotModal .modal-header {
+    background: var(--gradient-primary, linear-gradient(135deg, #F28C33 0%, #FFB366 100%));
+    color: #fff;
+    border-bottom: none;
+    padding: 0.9rem 1.1rem;
+}
+
+#fitbotModal .modal-header .btn-close {
+    filter: invert(1) grayscale(1) brightness(2);
+}
+
+#fitbotModal .modal-body {
+    padding: 0;
+    background: #f4f6f8;
+}
+
+/* ---- Quadro do robô (canto superior esquerdo do chat) ---- */
+.fitbot-avatar-frame {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    flex: 0 0 auto;
+    border-radius: 16px;
+    background: #12141a;
+    box-shadow: inset 0 0 0 2px rgba(242, 140, 51, 0.35);
+    overflow: hidden;
+}
+
+.fitbot-avatar-frame video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 4px;
+    background: #12141a;
+    display: none;
+}
+
+/* Máquina de estados: só o vídeo do estado atual fica visível.
+   O estado é controlado via classe no elemento pai .fitbot-widget */
+.fitbot-widget.is-greeting .fitbot-avatar-frame video[data-state="greeting"],
+.fitbot-widget.is-idle .fitbot-avatar-frame video[data-state="idle"],
+.fitbot-widget.is-thinking .fitbot-avatar-frame video[data-state="thinking"],
+.fitbot-widget.is-talking .fitbot-avatar-frame video[data-state="talking"],
+.fitbot-widget.is-error .fitbot-avatar-frame video[data-state="error"],
+.fitbot-widget.is-bye .fitbot-avatar-frame video[data-state="bye"] {
+    display: block;
+}
+
+.fitbot-intro {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: #fff;
+    border-bottom: 1px solid #e7e9ec;
+}
+
+.fitbot-intro-text strong {
+    display: block;
+    color: var(--secondary-color, #2D2D2D);
+    font-size: 0.95rem;
+}
+
+.fitbot-intro-text span {
+    font-size: 0.8rem;
+    color: #7a828c;
+}
+
+.fitbot-intro-status {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: #7a828c;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.fitbot-intro-status .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #b9c0c8;
+}
+
+.fitbot-widget.is-thinking .fitbot-intro-status .dot {
+    background: #F28C33;
+    animation: fitbot-blink 1s ease-in-out infinite;
+}
+
+@keyframes fitbot-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.25; }
+}
+
+/* ---- Área de mensagens ---- */
+.fitbot-messages {
+    height: 360px;
+    max-height: 55vh;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.fitbot-msg {
+    max-width: 78%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 0.92rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.fitbot-msg.from-bot {
+    align-self: flex-start;
+    background: #fff;
+    border: 1px solid #e7e9ec;
+    color: #2D2D2D;
+    border-bottom-left-radius: 4px;
+}
+
+.fitbot-msg.from-user {
+    align-self: flex-end;
+    background: var(--gradient-primary, linear-gradient(135deg, #F28C33 0%, #FFB366 100%));
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+
+.fitbot-msg.from-error {
+    align-self: flex-start;
+    background: #fdecea;
+    color: #a3312a;
+    border: 1px solid #f5c2bd;
+    border-bottom-left-radius: 4px;
+}
+
+.fitbot-msg img.fitbot-msg-thumb {
+    max-width: 160px;
+    border-radius: 10px;
+    display: block;
+    margin-top: 6px;
+}
+
+/* ---- Indicador "digitando" ---- */
+.fitbot-typing {
+    display: none;
+    align-self: flex-start;
+    gap: 4px;
+    padding: 10px 14px;
+    background: #fff;
+    border: 1px solid #e7e9ec;
+    border-radius: 16px;
+    border-bottom-left-radius: 4px;
+}
+
+.fitbot-widget.is-thinking .fitbot-typing {
+    display: inline-flex;
+}
+
+.fitbot-typing span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #b9c0c8;
+    animation: fitbot-typing-bounce 1.2s infinite ease-in-out;
+}
+
+.fitbot-typing span:nth-child(2) { animation-delay: 0.15s; }
+.fitbot-typing span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes fitbot-typing-bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* ---- Área de input ---- */
+.fitbot-input-area {
+    background: #fff;
+    border-top: 1px solid #e7e9ec;
+    padding: 10px 12px;
+}
+
+.fitbot-image-preview {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.82rem;
+    color: #555;
+}
+
+.fitbot-image-preview.is-visible {
+    display: flex;
+}
+
+.fitbot-image-preview img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.fitbot-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fitbot-input-row textarea {
+    resize: none;
+    max-height: 90px;
+}
+
+.fitbot-btn-icon {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e0e3e7;
+    background: #f4f6f8;
+    color: var(--secondary-color, #2D2D2D);
+}
+
+.fitbot-btn-send {
+    border: none;
+    background: var(--gradient-primary, linear-gradient(135deg, #F28C33 0%, #FFB366 100%));
+    color: #fff;
+}
+
+.fitbot-btn-icon:disabled {
+    opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fitbot-typing span,
+    .fitbot-widget.is-thinking .fitbot-intro-status .dot {
+        animation: none;
+    }
+}

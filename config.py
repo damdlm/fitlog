@@ -86,6 +86,21 @@ class Config:
     RESEND_API_KEY = os.getenv('RESEND_API_KEY')
     MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER', 'onboarding@resend.dev')
 
+    # FitBot — assistente virtual de treino (chat com IA)
+    #
+    # Estratégia de roteamento (pensada para os limites do plano gratuito):
+    #   - Mensagem SEM foto  -> Groq (Llama), texto puro, limite bem mais folgado.
+    #   - Mensagem COM foto  -> Gemini 1.5 Flash, é o único dos dois com visão.
+    #
+    # Ambas as chaves ficam só no servidor — nunca são expostas ao navegador.
+    # Se GEMINI_API_KEY ou GROQ_API_KEY não estiverem definidas, o FitBot
+    # responde com uma mensagem de erro amigável em vez de quebrar.
+    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+    GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-1.5-flash')
+
+    GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+    GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
