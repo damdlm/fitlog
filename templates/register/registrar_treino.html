@@ -353,6 +353,7 @@
         .inputs-row-labels {
             margin-bottom: 0 !important;
             --bs-gutter-x: 0.4rem !important;
+            --bs-gutter-y: 0 !important;  /* g-2 herda gutter vertical do Bootstrap; zera para não afastar o rótulo do campo */
         }
 
         .exercise-row .row.align-items-center {
@@ -376,7 +377,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 6px;
-            margin-top: 1px;
+            margin-top: 0;
             align-items: stretch;
         }
 
@@ -651,11 +652,7 @@
                     <div class="col-12 col-md-8">
                         <div class="row g-2 inputs-row-labels">
                             <div class="col-4"><span class="inputs-row-label mb-0" style="display:block;">Carga</span></div>
-                            <div class="col-4">
-                                <span class="inputs-row-label mb-0" style="display:block;">
-                                    <span class="d-none d-md-inline">Repetições</span><span class="d-md-none">Reps</span>
-                                </span>
-                            </div>
+                            <div class="col-4"><span class="inputs-row-label mb-0" style="display:block;">Repetições</span></div>
                             <div class="col-4"><span class="inputs-row-label mb-0" style="display:block;">Séries</span></div>
                         </div>
                         <div class="inputs-row row g-2">
