@@ -79,16 +79,16 @@
         border: 1px solid var(--primary-orange);
     }
 
-    /* Campos de carga/reps: inputs simples (sem botões de passo), mais
-       baixos para caber mais conteúdo na tela sem rolar tanto. */
+    /* Campos de carga/reps/séries: mesma borda, fonte e altura reduzida
+       para os três, sem botões de passo, otimizando espaço na tela. */
     .carga-input, .reps-input {
         width: 100%;
         min-width: 0;
         text-align: center;
         font-weight: 700;
-        font-size: 1.05rem !important;
-        padding: 6px 4px !important;
-        height: 38px !important;
+        font-size: 1rem !important;
+        padding: 4px !important;
+        height: 34px !important;
         border: 2px solid var(--border-soft) !important;
         border-radius: var(--radius-sm) !important;
         box-shadow: none !important;
@@ -102,9 +102,21 @@
     }
 
     .inputs-row .form-select {
-        height: 38px;
-        padding-top: 6px;
-        padding-bottom: 6px;
+        height: 34px !important;
+        padding: 4px 28px 4px 10px !important;
+        font-size: 0.95rem !important;
+        font-weight: 700 !important;
+        font-family: inherit !important;
+        color: var(--dark-bg) !important;
+        border: 2px solid var(--border-soft) !important;
+        border-radius: var(--radius-sm) !important;
+        box-shadow: none !important;
+        background-color: var(--surface) !important;
+    }
+    .inputs-row .form-select:focus {
+        outline: none;
+        border-color: var(--primary-orange) !important;
+        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12) !important;
     }
 
     .btn-load-last {
@@ -200,11 +212,12 @@
 
     .inputs-row-label {
         font-size: 0.65rem;
+        line-height: 1;
         color: #adb5bd;
         text-transform: uppercase;
         letter-spacing: 0.03em;
         font-weight: 600;
-        margin-bottom: 2px;
+        margin-bottom: 1px;
     }
 
     /* Estado vazio (nenhum treino/data escolhido ainda) */
@@ -366,10 +379,7 @@
         }
 
         .inputs-row .form-select {
-            height: 38px;
-            padding: 0 22px 0 8px !important;
-            font-size: 0.85rem;
-            background-position: right 6px center;
+            background-position: right 8px center;
             background-size: 12px 10px;
         }
 
@@ -614,7 +624,7 @@
 
                     <!-- Carga / Reps / Séries: lado a lado tanto no mobile quanto no desktop -->
                     <div class="col-12 col-md-8">
-                        <div class="row g-2 mb-1">
+                        <div class="row g-2" style="margin-bottom: 2px;">
                             <div class="col-4"><span class="inputs-row-label mb-0" style="display:block;">Carga</span></div>
                             <div class="col-4"><span class="inputs-row-label mb-0" style="display:block;">Repetições</span></div>
                             <div class="col-4"><span class="inputs-row-label mb-0" style="display:block;">Séries</span></div>
