@@ -47,23 +47,10 @@
         .exercise-row { animation: none; }
     }
 
-    /* Ícone do exercício (mesmo lugar onde ficava o "check" circular):
-       agora mostra o botão de imagens do exercício, no padrão visual do
-       card "Último Treino" do dashboard (.dash-registro-icon). */
-    .exercicio-icon-box {
-        width: 40px;
-        height: 40px;
-        min-width: 40px;
-        border-radius: 10px;
-        background: rgba(242, 140, 51, 0.12);
-        color: var(--primary-orange);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.1rem;
-        flex-shrink: 0;
-    }
-    .exercicio-icon-box .btn-imagens-exercicio {
+    /* O botão de imagens do exercício precisa preencher o quadrado
+       .dash-registro-icon (classe global, compartilhada com o card
+       "Último Treino" do dashboard) em vez do próprio tamanho padrão. */
+    .dash-registro-icon .btn-imagens-exercicio {
         width: 100%;
         height: 100%;
         border: none;
@@ -76,7 +63,7 @@
         padding: 0;
         border-radius: 10px;
     }
-    .exercicio-icon-box .btn-imagens-exercicio:hover {
+    .dash-registro-icon .btn-imagens-exercicio:hover {
         background: rgba(242, 140, 51, 0.22);
         color: var(--primary-orange);
     }
@@ -151,21 +138,6 @@
         outline: none;
     }
 
-    .volume-total {
-        background: var(--dark-bg);
-        color: white;
-        padding: 10px 22px;
-        border-radius: 25px;
-        font-size: 1.1rem;
-        font-weight: bold;
-        display: inline-block;
-        transition: all 0.3s;
-    }
-    .volume-total.has-value {
-        background: var(--primary-orange);
-        box-shadow: var(--shadow-orange);
-    }
-
     .btn-load-last {
         background: var(--surface);
         color: var(--primary-orange);
@@ -211,24 +183,6 @@
         color: var(--primary-orange);
         border-bottom-color: var(--primary-orange);
         outline: none;
-    }
-
-    .exercicio-musculo-linha {
-        font-size: 0.85rem;
-        color: #8a8580;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        margin-top: 1px;
-    }
-
-    /* Badges com os valores do último treino, no mesmo padrão visual
-       do card "Último Treino" do dashboard (.dash-badge). */
-    .exercicio-ultimo-badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 6px;
     }
 
     .versao-badge {
@@ -402,39 +356,26 @@
             --bs-gutter-x: 0.5rem;
         }
 
-        .exercise-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 8px;
-        }
-
-        .exercise-header h5 {
-            font-size: 0.98rem;
-            margin-bottom: 3px;
-        }
-
-        /* Músculo + badges do último treino ficam mais discretos no mobile */
-        .exercicio-icon-box {
+        /* No mobile, o card "dash-registro-item" reaproveitado aqui fica
+           mais compacto (ícone um pouco menor e badges mais discretos). */
+        .dash-registro-icon {
             width: 34px;
             height: 34px;
             min-width: 34px;
             border-radius: 9px;
         }
 
-        .exercicio-musculo-linha {
+        .dash-registro-exercicio {
+            font-size: 0.98rem;
+        }
+
+        .dash-registro-meta {
             font-size: 0.76rem;
         }
 
-        .exercicio-ultimo-badges .dash-badge {
+        .dash-registro-badges .dash-badge {
             font-size: 0.72rem;
             padding: 3px 8px;
-        }
-
-        .volume-total {
-            font-size: 0.85rem;
-            padding: 4px 12px;
-            white-space: nowrap;
         }
 
         /* Um único rótulo acima do grupo, no lugar de 3 repetidos embaixo de cada campo */
@@ -694,45 +635,39 @@
                  data-ultimas-series="{{ ultimas_series }}">
                 
                 <div class="row align-items-center">
-                    <div class="col-12 col-md-3">
-                        <div class="exercise-header">
-                            <div class="d-flex align-items-start gap-2">
-                                <!-- Ícone: abre as imagens do exercício (posição inicial/execução).
-                                     Quando o exercício não tem imagens cadastradas, mostra um
-                                     ícone neutro no lugar (sem ação de clique). -->
-                                <span class="exercicio-icon-box" {% if not (ex.imagem_inicial or ex.imagem_execucao) %}aria-hidden="true"{% endif %}>
-                                    {% if ex.imagem_inicial or ex.imagem_execucao %}
-                                        {{ botao_imagens_exercicio(ex) }}
-                                    {% else %}
-                                        <i class="bi bi-activity"></i>
-                                    {% endif %}
-                                </span>
-                                <div class="flex-grow-1" style="min-width: 0;">
-                                    <h5 class="mb-0 fw-bold" style="min-width: 0;">
-                                        <span class="exercicio-nome-trunc" data-full-nome="{{ ex.nome }}">{{ ex.nome }}</span>
-                                    </h5>
-                                    <div class="exercicio-musculo-linha">
+                    <div class="col-12 col-md-4">
+                        <!-- Mesma estrutura visual do card "Último Treino" do dashboard
+                             (.dash-registro-item), só trocando o check pelo ícone de
+                             imagens e a data pelo músculo. -->
+                        <div class="dash-registro-item" style="padding: 0; border-bottom: none; align-items: flex-start;">
+                            <div class="dash-registro-icon" {% if not (ex.imagem_inicial or ex.imagem_execucao) %}aria-hidden="true"{% endif %}>
+                                {% if ex.imagem_inicial or ex.imagem_execucao %}
+                                    {{ botao_imagens_exercicio(ex) }}
+                                {% else %}
+                                    <i class="bi bi-activity"></i>
+                                {% endif %}
+                            </div>
+                            <div class="dash-registro-info">
+                                <div class="dash-registro-top">
+                                    <span class="dash-registro-exercicio exercicio-nome-trunc" data-full-nome="{{ ex.nome }}">{{ ex.nome }}</span>
+                                    <span class="dash-registro-meta">
                                         <i class="bi bi-braces"></i>
                                         {{ ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A' }}
-                                    </div>
-                                    {% if ultimas %}
-                                    <div class="exercicio-ultimo-badges">
-                                        <span class="dash-badge"><i class="bi bi-clock-history"></i> {{ ultimas[0].carga }}kg</span>
-                                        <span class="dash-badge">{{ ultimas[0].repeticoes }}x</span>
-                                        <span class="dash-badge">{{ ultimas|length }} série{{ 's' if ultimas|length != 1 }}</span>
-                                    </div>
-                                    {% endif %}
+                                    </span>
                                 </div>
+                                {% if ultimas %}
+                                <div class="dash-registro-badges">
+                                    <span class="dash-badge">{{ ultimas[0].carga }}kg</span>
+                                    <span class="dash-badge">{{ ultimas[0].repeticoes }}x</span>
+                                    <span class="dash-badge">{{ ultimas|length }} série{{ 's' if ultimas|length != 1 }}</span>
+                                </div>
+                                {% endif %}
                             </div>
-                            <!-- No mobile o volume aparece aqui, ao lado do nome -->
-                            <span class="volume-total d-inline-block d-md-none" id="volume-mobile-{{ chave_ex }}">
-                                <i class="bi bi-bar-chart"></i> 0 kg
-                            </span>
                         </div>
                     </div>
 
                     <!-- Carga / Reps / Séries: lado a lado tanto no mobile quanto no desktop -->
-                    <div class="col-12 col-md-6">
+                    <div class="col-12 col-md-8">
                         <div class="inputs-row-label d-md-none">Carga (kg) · Repetições · Séries</div>
                         <div class="row g-2 d-none d-md-flex mb-1">
                             <div class="col-md-4"><span class="inputs-row-label mb-0" style="display:block;">Carga (kg)</span></div>
@@ -785,13 +720,6 @@
                                 <div class="text-center small text-muted d-md-none mt-1 unit-label-mobile">séries</div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- No desktop o volume aparece na coluna da direita -->
-                    <div class="col-md-3 text-end d-none d-md-block">
-                        <span class="volume-total" id="volume-{{ chave_ex }}">
-                            <i class="bi bi-bar-chart"></i> 0 kg
-                        </span>
                     </div>
                 </div>
             </div>
@@ -986,16 +914,6 @@ function atualizarResumo() {
 
         const volumeExercicio = carga * reps * series;
         volumeTotal += volumeExercicio;
-
-        // Atualiza o badge de volume do exercício (desktop e mobile)
-        [
-            document.getElementById(`volume-${exId}`),
-            document.getElementById(`volume-mobile-${exId}`)
-        ].forEach(badge => {
-            if (!badge) return;
-            badge.innerHTML = `<i class="bi bi-bar-chart"></i> ${volumeExercicio} kg`;
-            badge.classList.toggle('has-value', volumeExercicio > 0);
-        });
     });
 
     const resumoElement = document.getElementById('resumo-volume');
