@@ -16,12 +16,19 @@
     font-size: 1.2rem;
     box-shadow: 0 2px 8px rgba(242, 140, 51, 0.45);
     position: relative;
+    transition: transform .2s ease, filter .2s ease;
 }
 
 .fitbot-toggle-btn:hover,
-.fitbot-toggle-btn:focus {
+.fitbot-toggle-btn:focus-visible {
     color: #fff;
     filter: brightness(1.05);
+    transform: translateY(-1px);
+}
+
+.fitbot-toggle-btn:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
 }
 
 /* Pontinho verde indicando que o assistente está disponível */
@@ -55,16 +62,38 @@
     background: var(--gradient-primary, linear-gradient(135deg, #F28C33 0%, #FFB366 100%));
     color: #fff;
     border-bottom: none;
-    padding: 0.9rem 1.1rem;
+    padding: 0.9rem 1.25rem;
+    box-shadow: 0 2px 12px rgba(45, 45, 45, 0.15);
+    position: relative;
+    z-index: 6; /* fica acima do avatar flutuante e das mensagens */
+}
+
+#fitbotModal .modal-title {
+    font-weight: 600;
+    letter-spacing: -0.2px;
 }
 
 #fitbotModal .modal-header .btn-close {
     filter: invert(1) grayscale(1) brightness(2);
+    opacity: 0.85;
+    transition: opacity .2s ease, transform .2s ease;
+}
+
+#fitbotModal .modal-header .btn-close:hover {
+    opacity: 1;
+    transform: rotate(90deg);
+}
+
+#fitbotModal .modal-header .btn-close:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
 }
 
 #fitbotModal .modal-body {
     padding: 0;
-    background: #f4f6f8;
+    /* leve gradiente quente ao fundo em vez de cinza chapado — combina
+       com a paleta laranja da marca sem competir com as mensagens */
+    background: linear-gradient(180deg, #f7f5f2 0%, #f1f2f4 220px);
     position: relative; /* âncora para o avatar flutuante no canto */
     display: flex;
     flex-direction: column;
@@ -80,15 +109,43 @@
 }
 
 /* Isolado no cantinho superior direito, flutuando por cima das
-   mensagens -- sem nome, sem status, só a animação. */
+   mensagens -- sem nome, sem status, só a animação. O anel ao redor
+   (box-shadow) muda de cor/pulsa conforme o estado do robô -- é o
+   elemento de assinatura visual do chat. Tamanho cresce nos
+   breakpoints maiores (ver media queries no fim do arquivo). */
 .fitbot-avatar-corner {
     position: absolute;
-    top: 12px;
-    right: 14px;
-    width: 72px;
+    top: 10px;
+    right: 10px;
+    width: 58px;
     z-index: 5;
     border: 2px solid #fff;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18), 0 0 0 2px rgba(242, 140, 51, 0.25);
+    animation: fitbot-avatar-breathe 3s ease-in-out infinite;
+}
+
+@keyframes fitbot-avatar-breathe {
+    0%, 100% { box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18), 0 0 0 2px rgba(242, 140, 51, 0.25); }
+    50%      { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2), 0 0 0 5px rgba(242, 140, 51, 0.1); }
+}
+
+.fitbot-widget.is-thinking .fitbot-avatar-corner {
+    animation: fitbot-avatar-thinking 1.1s ease-in-out infinite;
+}
+
+@keyframes fitbot-avatar-thinking {
+    0%, 100% { box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(242, 140, 51, 0.55); }
+    50%      { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 0 6px rgba(242, 140, 51, 0.15); }
+}
+
+.fitbot-widget.is-talking .fitbot-avatar-corner {
+    animation: none;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(242, 140, 51, 0.55);
+}
+
+.fitbot-widget.is-error .fitbot-avatar-corner {
+    animation: none;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(211, 47, 47, 0.45);
 }
 
 .fitbot-avatar-frame video {
@@ -111,38 +168,42 @@
     opacity: 1;
 }
 
-/* Pontinho de "pensando" segue existindo via .fitbot-typing (bolhas
-   animadas abaixo) -- o indicador que ficava ao lado do nome/texto do
-   robô saiu junto com o bloco de texto do intro. */
-
 /* ---- Área de mensagens ---- */
 .fitbot-messages {
     flex: 1 1 auto; /* ocupa todo o espaço extra que sobrou do modal maior */
     min-height: 0; /* necessário pro overflow funcionar dentro de flex */
     overflow-y: auto;
     padding: 16px;
-    padding-top: 96px; /* abre espaço pro avatar flutuante no canto não tampar a 1ª mensagem */
+    padding-top: 82px; /* abre espaço pro avatar flutuante no canto não tampar a 1ª mensagem */
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
+    scroll-behavior: smooth;
 }
 
 .fitbot-msg {
-    max-width: 78%;
-    padding: 10px 14px;
-    border-radius: 16px;
-    font-size: 0.92rem;
-    line-height: 1.4;
+    max-width: 82%;
+    padding: 11px 15px;
+    border-radius: 18px;
+    font-size: 0.93rem;
+    line-height: 1.5;
     white-space: pre-wrap;
     word-wrap: break-word;
+    animation: fitbot-msg-in .25s ease-out;
+}
+
+@keyframes fitbot-msg-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .fitbot-msg.from-bot {
     align-self: flex-start;
     background: #fff;
-    border: 1px solid #e7e9ec;
+    border: 1px solid #ececec;
     color: #2D2D2D;
     border-bottom-left-radius: 4px;
+    box-shadow: 0 2px 8px rgba(45, 45, 45, 0.05);
 }
 
 .fitbot-msg.from-user {
@@ -150,6 +211,7 @@
     background: var(--gradient-primary, linear-gradient(135deg, #F28C33 0%, #FFB366 100%));
     color: #fff;
     border-bottom-right-radius: 4px;
+    box-shadow: 0 3px 10px rgba(242, 140, 51, 0.3);
 }
 
 .fitbot-msg.from-error {
@@ -161,8 +223,8 @@
 }
 
 .fitbot-msg img.fitbot-msg-thumb {
-    max-width: 160px;
-    border-radius: 10px;
+    max-width: 180px;
+    border-radius: 12px;
     display: block;
     margin-top: 6px;
 }
@@ -172,11 +234,12 @@
     display: none;
     align-self: flex-start;
     gap: 4px;
-    padding: 10px 14px;
+    padding: 12px 16px;
     background: #fff;
-    border: 1px solid #e7e9ec;
-    border-radius: 16px;
+    border: 1px solid #ececec;
+    border-radius: 18px;
     border-bottom-left-radius: 4px;
+    box-shadow: 0 2px 8px rgba(45, 45, 45, 0.05);
 }
 
 .fitbot-widget.is-thinking .fitbot-typing {
@@ -187,7 +250,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #b9c0c8;
+    background: #d8ac86;
     animation: fitbot-typing-bounce 1.2s infinite ease-in-out;
 }
 
@@ -202,8 +265,8 @@
 /* ---- Área de input ---- */
 .fitbot-input-area {
     background: #fff;
-    border-top: 1px solid #e7e9ec;
-    padding: 10px 12px;
+    border-top: 1px solid #ececec;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
     flex: 0 0 auto; /* nunca encolhe -- só a área de mensagens acima é que estica/rola */
 }
 
@@ -227,33 +290,77 @@
     border-radius: 8px;
 }
 
+/* Barra "pílula" -- textarea sem contorno próprio, mora dentro de um
+   invólucro arredondado junto com os botões, em vez dos três elementos
+   soltos lado a lado de antes. */
 .fitbot-input-row {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    align-items: flex-end;
+    gap: 6px;
+    background: #f4f6f8;
+    border: 1px solid #e7e9ec;
+    border-radius: 24px;
+    padding: 5px 5px 5px 16px;
+    transition: border-color .2s ease, box-shadow .2s ease;
 }
 
-.fitbot-input-row textarea {
+.fitbot-input-row:focus-within {
+    border-color: #F28C33;
+    box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.15);
+}
+
+.fitbot-input-row textarea.form-control {
     resize: none;
     max-height: 90px;
+    background: transparent;
+    border: none;
+    padding: 9px 4px;
+    font-size: 0.94rem;
+}
+
+.fitbot-input-row textarea.form-control:focus {
+    background: transparent;
+    border: none;
+    box-shadow: none;
 }
 
 .fitbot-btn-icon {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
     flex: 0 0 auto;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #e0e3e7;
-    background: #f4f6f8;
-    color: var(--secondary-color, #2D2D2D);
+    border: none;
+    background: transparent;
+    color: #7a828c;
+    transition: background-color .2s ease, color .2s ease, transform .1s ease;
+}
+
+.fitbot-btn-icon:hover:not(:disabled) {
+    background: #e9ecef;
+    color: #2D2D2D;
+}
+
+.fitbot-btn-icon:active:not(:disabled) {
+    transform: scale(0.94);
+}
+
+.fitbot-btn-icon:focus-visible {
+    outline: 2px solid #F28C33;
+    outline-offset: 2px;
 }
 
 .fitbot-btn-send {
-    border: none;
     background: var(--gradient-primary, linear-gradient(135deg, #F28C33 0%, #FFB366 100%));
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(242, 140, 51, 0.4);
+}
+
+.fitbot-btn-send:hover:not(:disabled) {
+    background: var(--gradient-primary, linear-gradient(135deg, #F28C33 0%, #FFB366 100%));
+    filter: brightness(1.05);
     color: #fff;
 }
 
@@ -261,9 +368,78 @@
     opacity: 0.5;
 }
 
+/* ============================================================
+   Responsivo — o quadro do robô cresce nos breakpoints maiores;
+   o resto (bolhas, input) só ganha um pouco mais de respiro.
+   ============================================================ */
+
+/* Tablet */
+@media (min-width: 576px) {
+    .fitbot-avatar-corner {
+        top: 14px;
+        right: 16px;
+        width: 76px;
+    }
+
+    .fitbot-messages {
+        padding: 20px 20px 16px;
+        padding-top: 102px;
+        gap: 14px;
+    }
+
+    .fitbot-msg {
+        max-width: 72%;
+    }
+}
+
+/* Desktop -- quadro do robô maior, como pedido */
+@media (min-width: 992px) {
+    .fitbot-avatar-corner {
+        top: 22px;
+        right: 28px;
+        width: 118px;
+    }
+
+    .fitbot-messages {
+        padding: 28px 32px 20px;
+        padding-top: 168px;
+        max-width: 900px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .fitbot-msg {
+        max-width: 62%;
+        font-size: 0.95rem;
+    }
+
+    .fitbot-input-area {
+        padding: 16px 0 20px;
+    }
+
+    .fitbot-input-row {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+}
+
+/* Telas bem grandes -- ainda um pouco maior */
+@media (min-width: 1400px) {
+    .fitbot-avatar-corner {
+        width: 132px;
+        right: 40px;
+    }
+
+    .fitbot-messages {
+        padding-top: 184px;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .fitbot-typing span,
-    .fitbot-widget.is-thinking .fitbot-intro-status .dot {
+    .fitbot-avatar-corner,
+    .fitbot-widget.is-thinking .fitbot-avatar-corner,
+    .fitbot-msg {
         animation: none;
     }
 }
