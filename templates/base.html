@@ -803,7 +803,8 @@
                 </a>
                 {% endif %}
                 <button type="button" class="fitbot-toggle-btn" data-bs-toggle="modal" data-bs-target="#fitbotModal" title="Falar com o FitBot" aria-label="Abrir chat com o FitBot">
-                    <i class="bi bi-robot" aria-hidden="true"></i>
+                <!--    <i class="bi bi-robot" aria-hidden="true"></i> -->
+                    <img src="{{ url_for('static', filename='images/fitbot_assist.png') }}" alt="FitBot" class="fitbot-toggle-icon">
                 </button>
                 <div class="nav-item dropdown">
                     <button class="btn btn-avatar dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ current_user.username }}">
