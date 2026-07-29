@@ -29,7 +29,7 @@
     // robô volta para o estado parado (idle).
     var VIDEOS_POOL_IDLE = [
         'Agachamento.mp4', 'agua.mp4', 'arremesso.mp4', 'beijo.mp4',
-        'celular.mp4', 'dancando.mp4', 'fortao.mp4',
+        'celular.mp4', 'dancando.mp4', 'fortao.mp4', 'prancheta.mp4',
         'stiff.mp4',
     ];
     // "padrao.mp4" não entra no sorteio -- ele é intercalado manualmente
