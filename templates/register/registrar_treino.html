@@ -221,9 +221,19 @@
     }
 
     /* Linha dos rótulos Carga/Repetições/Séries -- controlada à parte
-       do .inputs-row para poder colar rótulo e campo no mobile. */
+       do .inputs-row para poder colar rótulo e campo no mobile.
+       margin-top empurra o bloco de rótulos para baixo, deixando-o
+       mais próximo dos campos (margin-bottom já é mínimo). */
     .inputs-row-labels {
+        margin-top: 10px;
         margin-bottom: 2px;
+    }
+
+    /* Badges do treino anterior (carga/reps/séries) mais coladas no
+       nome do exercício -- sobrescreve o margin-top: 8px padrão de
+       .dash-registro-badges (definido em base.html) só nesta tela. */
+    .exercise-row .dash-registro-badges {
+        margin-top: 2px;
     }
 
     /* Estado vazio (nenhum treino/data escolhido ainda) */
