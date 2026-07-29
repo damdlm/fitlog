@@ -44,6 +44,17 @@
     border: none;
 }
 
+/* Modal maior -- mais espaço pra conversa. modal-xl já dá a largura;
+   aqui só travamos uma altura generosa e deixamos o corpo (mensagens)
+   esticar pra ocupar o espaço extra. */
+.fitbot-modal-dialog {
+    max-width: min(920px, 92vw);
+}
+
+.fitbot-modal-dialog .modal-content {
+    height: min(80vh, 760px);
+}
+
 #fitbotModal .modal-header {
     background: var(--gradient-primary, linear-gradient(135deg, #F28C33 0%, #FFB366 100%));
     color: #fff;
@@ -58,16 +69,30 @@
 #fitbotModal .modal-body {
     padding: 0;
     background: #f4f6f8;
+    position: relative; /* âncora para o avatar flutuante no canto */
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* permite o filho .fitbot-messages encolher/rolar dentro do flex */
 }
 
-/* ---- Quadro do robô (canto superior esquerdo do chat) ---- */
+/* ---- Quadro do robô ---- */
 .fitbot-avatar-frame {
     position: relative;
-    width: 100px;
     aspect-ratio: 2 / 3; /* mesma proporção dos vídeos (768x1152) — sem sobra de fundo nas laterais */
-    flex: 0 0 auto;
     border-radius: 16px;
     overflow: hidden;
+}
+
+/* Isolado no cantinho superior direito, flutuando por cima das
+   mensagens -- sem nome, sem status, só a animação. */
+.fitbot-avatar-corner {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    width: 72px;
+    z-index: 5;
+    border: 2px solid #fff;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
 }
 
 .fitbot-avatar-frame video {
@@ -90,59 +115,17 @@
     opacity: 1;
 }
 
-.fitbot-intro {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    background: #fff;
-    border-bottom: 1px solid #e7e9ec;
-}
-
-.fitbot-intro-text strong {
-    display: block;
-    color: var(--secondary-color, #2D2D2D);
-    font-size: 0.95rem;
-}
-
-.fitbot-intro-text span {
-    font-size: 0.8rem;
-    color: #7a828c;
-}
-
-.fitbot-intro-status {
-    margin-left: auto;
-    font-size: 0.75rem;
-    color: #7a828c;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-}
-
-.fitbot-intro-status .dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #b9c0c8;
-}
-
-.fitbot-widget.is-thinking .fitbot-intro-status .dot {
-    background: #F28C33;
-    animation: fitbot-blink 1s ease-in-out infinite;
-}
-
-@keyframes fitbot-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.25; }
-}
+/* Pontinho de "pensando" segue existindo via .fitbot-typing (bolhas
+   animadas abaixo) -- o indicador que ficava ao lado do nome/texto do
+   robô saiu junto com o bloco de texto do intro. */
 
 /* ---- Área de mensagens ---- */
 .fitbot-messages {
-    height: 360px;
-    max-height: 55vh;
+    flex: 1 1 auto; /* ocupa todo o espaço extra que sobrou do modal maior */
+    min-height: 0; /* necessário pro overflow funcionar dentro de flex */
     overflow-y: auto;
     padding: 16px;
+    padding-top: 96px; /* abre espaço pro avatar flutuante no canto não tampar a 1ª mensagem */
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -225,6 +208,7 @@
     background: #fff;
     border-top: 1px solid #e7e9ec;
     padding: 10px 12px;
+    flex: 0 0 auto; /* nunca encolhe -- só a área de mensagens acima é que estica/rola */
 }
 
 .fitbot-image-preview {

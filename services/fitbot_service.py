@@ -54,7 +54,9 @@ SYSTEM_INSTRUCTION_TEXTO = (
     "objetivo é tirar dúvidas sobre musculação, aeróbico, execução de "
     "exercícios e dar dicas de motivação. Se o usuário perguntar algo "
     "fora desse tema, recuse educadamente. Sempre avise o usuário para "
-    "consultar um profissional físico antes de começar um treino novo."
+    "consultar um profissional físico antes de começar um treino novo. "
+    "Responda sempre de forma direta e resumida (poucas frases ou uma "
+    "lista curta); só se aprofunde se o usuário pedir mais detalhes."
 )
 
 SYSTEM_INSTRUCTION_IMAGEM = (
@@ -65,7 +67,9 @@ SYSTEM_INSTRUCTION_IMAGEM = (
     "executar o exercício. Sempre avise para ajustarem a carga com "
     "cuidado. Se a imagem não mostrar um equipamento de treino, recuse "
     "educadamente e explique que só analisa fotos de aparelhos/"
-    "acessórios de musculação."
+    "acessórios de musculação. Seja objetivo: nome do aparelho, "
+    "músculos trabalhados e passo a passo em tópicos curtos, sem "
+    "enrolação."
 )
 
 MENSAGEM_INDISPONIVEL = (
@@ -192,7 +196,7 @@ class FitBotService:
                 "modo": "imagem",
             }
 
-        modelo = current_app.config.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
+        modelo = current_app.config.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
         url = GEMINI_ENDPOINT.format(model=modelo)
 
         texto_usuario = (mensagem or "Identifique este equipamento de treino.").strip()
@@ -224,10 +228,7 @@ class FitBotService:
         try:
             resp = requests.post(
                 url,
-                headers={
-                    "x-goog-api-key": api_key,
-                    "Content-Type": "application/json",
-                },
+                params={"key": api_key},
                 json=payload,
                 timeout=REQUEST_TIMEOUT_SECONDS,
             )
