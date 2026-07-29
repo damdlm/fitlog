@@ -37,7 +37,7 @@
     // padrão, aleatório, padrão... sempre alternando.
     var VIDEO_PADRAO_IDLE = 'padrao.mp4';
     var PASTA_VIDEOS = '/static/videos/fitbot/';
-    var CROSSFADE_DURACAO_MS = 450; // precisa bater com a transition do CSS
+    var CROSSFADE_DURACAO_MS = 0; // sem crossfade -- troca de vídeo é instantânea (ver CSS)
 
     var elWidget, elModal, elMessages, elForm, elTextarea, elSendBtn,
         elImageInput, elImageBtn, elImagePreview, elImagePreviewThumb,

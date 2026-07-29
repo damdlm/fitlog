@@ -195,11 +195,10 @@
     height: 100%;
     object-fit: cover;
     opacity: 0;
-    transition: opacity .45s ease-in-out;
 }
 
 /* Máquina de estados: o vídeo ativo (marcado via JS com .is-active) fica
-   visível, com um crossfade suave em vez do corte seco de antes.
+   visível, com troca imediata (sem crossfade) entre os vídeos.
    O vídeo nunca fica com display:none — só opacity:0 — para que a troca
    não pegue um frame preto/parado no meio da transição. Para o estado
    "idle" há dois vídeos com data-state="idle" (buffers A/B); só um deles
