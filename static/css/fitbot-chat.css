@@ -44,15 +44,11 @@
     border: none;
 }
 
-/* Modal maior -- mais espaço pra conversa. modal-xl já dá a largura;
-   aqui só travamos uma altura generosa e deixamos o corpo (mensagens)
-   esticar pra ocupar o espaço extra. */
-.fitbot-modal-dialog {
-    max-width: min(920px, 92vw);
-}
-
-.fitbot-modal-dialog .modal-content {
-    height: min(80vh, 760px);
+/* .modal-fullscreen (Bootstrap) já cuida de largura/altura/margem =
+   tela cheia. Só falta zerar o arredondado, que não faz sentido sem
+   moldura sobrando nas bordas. */
+#fitbotModal .fitbot-modal-dialog .modal-content {
+    border-radius: 0;
 }
 
 #fitbotModal .modal-header {
