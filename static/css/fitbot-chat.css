@@ -133,7 +133,7 @@
     padding: 0;
     /* leve gradiente quente ao fundo em vez de cinza chapado — combina
        com a paleta laranja da marca sem competir com as mensagens */
-    background: linear-gradient(180deg, #f7f5f2 0%, #f1f2f4 220px);
+    background: #fff;
     position: relative; /* âncora para o avatar flutuante no canto */
     display: flex;
     flex-direction: column;
@@ -157,16 +157,16 @@
     position: absolute;
     top: 10px;
     right: 10px;
-    width: 72px;
+    width: 90px;
     z-index: 5;
-    border: 2px solid #fff;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18), 0 0 0 2px rgba(242, 140, 51, 0.25);
+    border: none;
+    box-shadow: none;
     animation: fitbot-avatar-breathe 3s ease-in-out infinite;
 }
 
 @keyframes fitbot-avatar-breathe {
-    0%, 100% { box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18), 0 0 0 2px rgba(242, 140, 51, 0.25); }
-    50%      { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2), 0 0 0 5px rgba(242, 140, 51, 0.1); }
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.03); }
 }
 
 .fitbot-widget.is-thinking .fitbot-avatar-corner {
@@ -174,18 +174,19 @@
 }
 
 @keyframes fitbot-avatar-thinking {
-    0%, 100% { box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(242, 140, 51, 0.55); }
-    50%      { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 0 6px rgba(242, 140, 51, 0.15); }
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.04); opacity: 0.85; }
 }
 
 .fitbot-widget.is-talking .fitbot-avatar-corner {
     animation: none;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(242, 140, 51, 0.55);
+    box-shadow: none;
 }
 
 .fitbot-widget.is-error .fitbot-avatar-corner {
     animation: none;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(211, 47, 47, 0.45);
+    box-shadow: none;
+    opacity: 0.7;
 }
 
 .fitbot-avatar-frame video {
@@ -213,7 +214,7 @@
     min-height: 0; /* necessário pro overflow funcionar dentro de flex */
     overflow-y: auto;
     padding: 16px;
-    padding-top: 96px; /* abre espaço pro avatar flutuante no canto não tampar a 1ª mensagem */
+    padding-top: 116px; /* abre espaço pro avatar flutuante no canto não tampar a 1ª mensagem */
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -238,11 +239,11 @@
 
 .fitbot-msg.from-bot {
     align-self: flex-start;
-    background: #fff;
-    border: 1px solid #ececec;
-    color: #2D2D2D;
+    background: var(--gradient-primary, linear-gradient(135deg, #F28C33 0%, #FFB366 100%));
+    border: none;
+    color: #fff;
     border-bottom-left-radius: 4px;
-    box-shadow: 0 2px 8px rgba(45, 45, 45, 0.05);
+    box-shadow: 0 3px 10px rgba(242, 140, 51, 0.3);
 }
 
 .fitbot-msg.from-user {
@@ -274,11 +275,11 @@
     align-self: flex-start;
     gap: 4px;
     padding: 12px 16px;
-    background: #fff;
-    border: 1px solid #ececec;
+    background: var(--gradient-primary, linear-gradient(135deg, #F28C33 0%, #FFB366 100%));
+    border: none;
     border-radius: 18px;
     border-bottom-left-radius: 4px;
-    box-shadow: 0 2px 8px rgba(45, 45, 45, 0.05);
+    box-shadow: 0 3px 10px rgba(242, 140, 51, 0.3);
 }
 
 .fitbot-widget.is-thinking .fitbot-typing {
@@ -289,7 +290,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #d8ac86;
+    background: rgba(255, 255, 255, 0.8);
     animation: fitbot-typing-bounce 1.2s infinite ease-in-out;
 }
 
@@ -414,15 +415,19 @@
 
 /* Tablet */
 @media (min-width: 576px) {
+    #fitbotModal .modal-body {
+        background: linear-gradient(180deg, #2D2D2D 0%, #1a1a1a 220px);
+    }
+
     .fitbot-avatar-corner {
         top: 14px;
         right: 16px;
-        width: 76px;
+        width: 95px;
     }
 
     .fitbot-messages {
         padding: 20px 20px 16px;
-        padding-top: 102px;
+        padding-top: 122px;
         gap: 14px;
     }
 
@@ -436,12 +441,12 @@
     .fitbot-avatar-corner {
         top: 22px;
         right: 28px;
-        width: 118px;
+        width: 145px;
     }
 
     .fitbot-messages {
         padding: 28px 32px 20px;
-        padding-top: 168px;
+        padding-top: 196px;
         max-width: 900px;
         margin: 0 auto;
         width: 100%;
@@ -465,12 +470,12 @@
 /* Telas bem grandes -- ainda um pouco maior */
 @media (min-width: 1400px) {
     .fitbot-avatar-corner {
-        width: 132px;
+        width: 160px;
         right: 40px;
     }
 
     .fitbot-messages {
-        padding-top: 184px;
+        padding-top: 212px;
     }
 }
 
