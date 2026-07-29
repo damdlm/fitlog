@@ -621,6 +621,7 @@
                 height: 36px;
             }
         }
+
     </style>
     
     {% block extra_css %}{% endblock %}
@@ -881,8 +882,8 @@
             <span>Progresso</span>
         </a>
         <button type="button" class="bottom-nav-item" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMais" aria-controls="offcanvasMais">
-            <i class="bi bi-grid-3x3-gap"></i>
-            <span>Mais</span>
+            <i class="bi bi-gear"></i>
+            <span>Ajustes</span>
             {% if current_user.is_professor() and current_user.solicitacoes_pendentes_count > 0 %}
                 <span class="badge rounded-pill bg-danger bottom-nav-badge">{{ current_user.solicitacoes_pendentes_count }}</span>
             {% endif %}
@@ -892,7 +893,7 @@
     <!-- Painel "Mais" (offcanvas inferior, mobile) -->
     <div class="offcanvas offcanvas-bottom mais-sheet" tabindex="-1" id="offcanvasMais" aria-labelledby="offcanvasMaisLabel">
         <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="offcanvasMaisLabel">Mais opções</h5>
+            <h5 class="offcanvas-title" id="offcanvasMaisLabel">Ajustes</h5>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
         </div>
         <div class="offcanvas-body">
@@ -921,18 +922,13 @@
 
             <div class="mais-section">
                 <span class="mais-section-label">Treino</span>
+                {% if current_user.is_aluno() %}
+                <a class="mais-link" href="{{ url_for('aluno.meu_professor') }}"><i class="bi bi-person-badge"></i> Meu Professor</a>
+                <a class="mais-link" href="{{ url_for('stats.visualizar_tabela') }}"><i class="bi bi-table"></i> Tabela de Progresso</a>
+                {% endif %}
                 <a class="mais-link" href="{{ url_for('aluno.exercicios') }}"><i class="bi bi-list-check"></i> Meus Exercícios</a>
                 <a class="mais-link" href="{{ url_for('aluno.treinos') }}"><i class="bi bi-trophy"></i> Meus Treinos</a>
                 <a class="mais-link" href="{{ url_for('aluno.versoes') }}"><i class="bi bi-clock-history"></i> Minhas Versões</a>
-                {% if current_user.is_aluno() %}
-                <a class="mais-link" href="{{ url_for('stats.visualizar_tabela') }}"><i class="bi bi-table"></i> Tabela de Progresso</a>
-                {% endif %}
-            </div>
-
-            <div class="mais-section">
-                <span class="mais-section-label">Conta</span>
-                <a class="mais-link" href="{{ url_for('auth.profile') }}"><i class="bi bi-person"></i> Meu Perfil</a>
-                <a class="mais-link text-danger" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Sair</a>
             </div>
         </div>
     </div>
@@ -1007,11 +1003,14 @@
     <div class="modal fade" id="fitbotModal" tabindex="-1" aria-labelledby="fitbotModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-fullscreen fitbot-modal-dialog">
             <div class="modal-content fitbot-widget is-idle" id="fitbotWidget">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="fitbotModalLabel">
-                        <i class="bi bi-robot"></i> FitBot
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                <div class="modal-header fitbot-modal-header">
+                    <a href="{{ url_for('main.index') }}" class="fitbot-modal-brand" aria-label="Voltar para o início">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FitLog">
+                        <span class="modal-title" id="fitbotModalLabel">FitBot</span>
+                    </a>
+                    <button type="button" class="fitbot-close-btn" data-bs-dismiss="modal" aria-label="Fechar chat">
+                        <i class="bi bi-x-lg" aria-hidden="true"></i>
+                    </button>
                 </div>
                 <div class="modal-body">
                     <!-- Animação do robô, flutuando isolada no cantinho -- sem
@@ -1048,7 +1047,7 @@
                             <button type="button" class="fitbot-btn-icon" id="fitbotImageBtn" title="Enviar foto do equipamento" aria-label="Enviar foto do equipamento">
                                 <i class="bi bi-camera" aria-hidden="true"></i>
                             </button>
-                            <textarea id="fitbotTextarea" class="form-control" rows="1" placeholder="Pergunte sobre treino, execução de exercícios..."></textarea>
+                            <textarea id="fitbotTextarea" class="form-control" rows="2" placeholder="Pergunte sobre treino, execução de exercícios..."></textarea>
                             <button type="submit" class="fitbot-btn-icon fitbot-btn-send" id="fitbotSendBtn" title="Enviar" aria-label="Enviar mensagem" data-fl-no-transition>
                                 <i class="bi bi-send-fill" aria-hidden="true"></i>
                             </button>
