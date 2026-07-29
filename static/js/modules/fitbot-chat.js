@@ -219,37 +219,48 @@
         bufferAlvo.src = PASTA_VIDEOS + proximoNome;
         bufferAlvo.load();
 
-        // Assim que soubermos a duração do vídeo sorteado, dá play nele
-        // (ainda invisível, opacity 0) e faz o crossfade com o buffer
-        // anterior -- só então agenda a próxima troca. Se a duração não
-        // vier (erro de carregamento etc), cai no tempo fixo de fallback.
+        // Assim que os metadados chegarem, dá play no buffer invisível
+        // para decodificar o primeiro frame — assim quando tornarmos ele
+        // visível o browser já tem o frame pronto e a troca é instantânea
+        // sem piscar/frame preto.
         bufferAlvo.addEventListener('loadedmetadata', function aoCarregar() {
             bufferAlvo.removeEventListener('loadedmetadata', aoCarregar);
 
-            var promessa = bufferAlvo.play();
-            if (promessa && promessa.catch) promessa.catch(function () {});
-
-            var bufferAnterior = elIdleAtivo;
-
-            // Crossfade: o novo sobe de opacidade enquanto o antigo desce,
-            // ao mesmo tempo (CSS: transition de opacity em ambos) -- em
-            // vez do corte seco de antes.
-            bufferAlvo.classList.add('is-active');
-            if (bufferAnterior) bufferAnterior.classList.remove('is-active');
-
-            elIdleAtivo = bufferAlvo;
-            elIdleInativo = bufferAnterior;
-
-            // Só pausa o buffer antigo depois que o crossfade terminar,
-            // pra não "congelar" ele no meio da transição visível.
-            setTimeout(function () {
-                if (bufferAnterior && bufferAnterior !== elIdleAtivo) {
-                    bufferAnterior.pause();
-                }
-            }, CROSSFADE_DURACAO_MS);
+            // Play no buffer invisível para pré-aquecer o decoder
+            var promessaPreload = bufferAlvo.play();
+            if (promessaPreload && promessaPreload.then) {
+                promessaPreload.then(function () {
+                    // Aguarda dois frames pintados antes de fazer a troca,
+                    // garantindo que o primeiro frame do novo vídeo está
+                    // decodificado e pronto para exibição instantânea.
+                    requestAnimationFrame(function () {
+                        requestAnimationFrame(function () {
+                            fazerTrocaImediata(bufferAlvo);
+                        });
+                    });
+                }).catch(function () {
+                    fazerTrocaImediata(bufferAlvo);
+                });
+            } else {
+                fazerTrocaImediata(bufferAlvo);
+            }
 
             agendarProximaRotacaoIdle();
         });
+
+        function fazerTrocaImediata(bufferNovo) {
+            var bufferAnterior = elIdleAtivo;
+
+            // Troca instantânea: novo fica visível, antigo some imediatamente
+            bufferNovo.classList.add('is-active');
+            if (bufferAnterior && bufferAnterior !== bufferNovo) {
+                bufferAnterior.classList.remove('is-active');
+                bufferAnterior.pause();
+            }
+
+            elIdleAtivo = bufferNovo;
+            elIdleInativo = bufferAnterior;
+        }
     }
 
     function agendarProximaRotacaoIdle() {
