@@ -194,22 +194,104 @@
     }
 
     /* ================= CRONÔMETROS ================= */
+    .cronometros-card {
+        background: linear-gradient(180deg, #fffaf5 0%, #ffffff 140px);
+    }
+
+    .cronometros-heading {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .cronometros-heading > i {
+        width: 38px;
+        height: 38px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, rgba(242, 140, 51, 0.15), rgba(255, 179, 102, 0.15));
+        color: var(--primary-orange);
+        font-size: 1.15rem;
+    }
+
+    .cronometros-heading strong {
+        display: block;
+        font-size: 1rem;
+        color: var(--dark-bg);
+    }
+
+    .cronometros-heading span {
+        display: block;
+        font-size: 0.8rem;
+        color: #8a8580;
+    }
+
     .cronometros-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 16px;
+        align-items: stretch;
     }
 
     .cronometro-box {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 6px;
-        padding: 16px 14px;
-        border-radius: var(--radius-sm);
-        background: var(--surface-muted);
+        gap: 8px;
+        padding: 20px 16px;
+        border-radius: 18px;
+        background: #fff;
         border: 1px solid var(--border-soft);
+        box-shadow: 0 3px 14px rgba(45, 45, 45, 0.05);
         text-align: center;
+        transition: box-shadow .2s ease, border-color .2s ease;
+    }
+
+    .cronometro-box.is-rodando {
+        border-color: rgba(242, 140, 51, 0.4);
+        box-shadow: 0 6px 20px rgba(242, 140, 51, 0.14);
+    }
+
+    /* Selo circular com o ícone do cronômetro de treino + pontinho que
+       pulsa (verde) enquanto ele está rodando -- comunica "gravando"
+       de forma parecida com apps de corrida/fitness. */
+    .cronometro-icon-badge {
+        position: relative;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, rgba(242, 140, 51, 0.14), rgba(255, 179, 102, 0.14));
+        color: var(--primary-orange);
+        font-size: 1.3rem;
+        margin-bottom: 2px;
+    }
+
+    .cronometro-status-dot {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #cfd4d8;
+        border: 2px solid #fff;
+    }
+
+    .cronometro-box.is-rodando .cronometro-status-dot {
+        background: #2ecc71;
+        animation: cronometro-dot-pulso 1.4s ease-in-out infinite;
+    }
+
+    @keyframes cronometro-dot-pulso {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.55); }
+        50% { box-shadow: 0 0 0 5px rgba(46, 204, 113, 0); }
     }
 
     .cronometro-label {
@@ -227,12 +309,12 @@
 
     .cronometro-display {
         font-family: 'Courier New', ui-monospace, monospace;
-        font-size: 2.4rem;
+        font-size: 2.5rem;
         font-weight: 700;
         color: var(--dark-bg);
         letter-spacing: 1px;
         line-height: 1;
-        margin: 4px 0;
+        margin: 6px 0;
         font-variant-numeric: tabular-nums;
     }
 
@@ -248,23 +330,67 @@
         50% { transform: scale(1.12); }
     }
 
+    /* ---- Anel de progresso do intervalo ---- */
+    .cronometro-ring-wrap {
+        position: relative;
+        width: 148px;
+        height: 148px;
+        margin: 4px auto 6px;
+    }
+
+    .cronometro-ring {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg); /* começa às 12h em vez de 3h */
+    }
+
+    .cronometro-ring-bg {
+        fill: none;
+        stroke: var(--border-soft);
+        stroke-width: 8;
+    }
+
+    .cronometro-ring-progress {
+        fill: none;
+        stroke: url(#cronoRingGradient);
+        stroke-width: 8;
+        stroke-linecap: round;
+        stroke-dashoffset: 0;
+        transition: stroke-dashoffset 0.25s linear;
+    }
+
+    .cronometro-box.is-alerta .cronometro-ring-progress {
+        stroke: #d64545;
+    }
+
+    .cronometro-display-ring {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        font-size: 1.85rem;
+    }
+
     .cronometro-presets {
         display: flex;
         gap: 6px;
         flex-wrap: wrap;
         justify-content: center;
         margin-bottom: 4px;
+        max-width: 260px;
     }
 
     .btn-preset {
         border: 1px solid var(--border-soft);
         background: #fff;
         color: #6a6963;
-        font-size: 0.78rem;
+        font-size: 0.76rem;
         font-weight: 600;
         padding: 4px 10px;
         border-radius: 20px;
-        transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+        transition: background-color .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;
     }
 
     .btn-preset:hover {
@@ -272,9 +398,13 @@
         color: var(--primary-orange);
     }
 
+    .btn-preset:active {
+        transform: scale(0.94);
+    }
+
     .btn-preset.is-active {
-        background: var(--primary-orange);
-        border-color: var(--primary-orange);
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        border-color: transparent;
         color: #fff;
     }
 
@@ -282,6 +412,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
+        margin-top: 2px;
     }
 
     .btn-cronometro {
@@ -290,10 +421,10 @@
         gap: 6px;
         border: none;
         border-radius: 20px;
-        padding: 8px 18px;
+        padding: 9px 20px;
         font-weight: 600;
         font-size: 0.9rem;
-        transition: filter .15s ease, transform .1s ease;
+        transition: filter .15s ease, transform .1s ease, background-color .2s ease;
     }
 
     .btn-cronometro:active {
@@ -303,6 +434,7 @@
     .btn-cronometro-primary {
         background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
         color: #fff;
+        box-shadow: 0 3px 10px rgba(242, 140, 51, 0.35);
     }
 
     .btn-cronometro-primary:hover {
@@ -314,13 +446,14 @@
        pra diferenciar visualmente de "Iniciar" */
     .btn-cronometro-primary.is-rodando {
         background: var(--dark-bg, #2D2D2D);
+        box-shadow: 0 3px 10px rgba(45, 45, 45, 0.25);
     }
 
     .btn-cronometro-ghost {
         background: #fff;
         border: 1px solid var(--border-soft);
         color: #6a6963;
-        padding: 8px 12px;
+        padding: 9px 13px;
     }
 
     .btn-cronometro-ghost:hover {
@@ -334,7 +467,20 @@
         }
 
         .cronometro-display {
-            font-size: 2rem;
+            font-size: 2.1rem;
+        }
+
+        .cronometro-ring-wrap {
+            width: 132px;
+            height: 132px;
+        }
+
+        .cronometro-display-ring {
+            font-size: 1.65rem;
+        }
+
+        .cronometro-presets {
+            max-width: 100%;
         }
     }
 
@@ -681,13 +827,24 @@
     </div>
 </div>
 
-<div class="card treino-card mb-4">
+<div class="card treino-card cronometros-card mb-4">
     <div class="card-body p-3 p-md-4">
+        <div class="cronometros-heading">
+            <i class="bi bi-activity"></i>
+            <div>
+                <strong>Cronômetros</strong>
+                <span>Acompanhe o treino e os intervalos de descanso</span>
+            </div>
+        </div>
         <div class="cronometros-row">
             <!-- Cronômetro do treino: conta o tempo total desde que o
                  usuário aperta "Iniciar" até o fim do treino. -->
-            <div class="cronometro-box" id="cronoTreinoBox">
-                <span class="cronometro-label"><i class="bi bi-stopwatch"></i> Cronômetro do treino</span>
+            <div class="cronometro-box cronometro-treino" id="cronoTreinoBox">
+                <div class="cronometro-icon-badge">
+                    <i class="bi bi-stopwatch"></i>
+                    <span class="cronometro-status-dot"></span>
+                </div>
+                <span class="cronometro-label">Cronômetro do treino</span>
                 <span class="cronometro-display" id="cronoTreinoDisplay">00:00</span>
                 <div class="cronometro-actions">
                     <button type="button" class="btn-cronometro btn-cronometro-primary" id="cronoTreinoBtnIniciar">
@@ -699,17 +856,36 @@
                 </div>
             </div>
 
-            <!-- Cronômetro de intervalo: regressivo, para cronometrar o
-                 descanso entre séries. Toca um bipe e pisca ao zerar. -->
+            <!-- Cronômetro de intervalo: regressivo, com anel de progresso
+                 visual. Toca um bipe e pisca ao zerar. -->
             <div class="cronometro-box cronometro-intervalo" id="cronoIntervaloBox">
                 <span class="cronometro-label"><i class="bi bi-hourglass-split"></i> Intervalo entre séries</span>
-                <span class="cronometro-display" id="cronoIntervaloDisplay">01:30</span>
+
+                <div class="cronometro-ring-wrap">
+                    <svg class="cronometro-ring" viewBox="0 0 120 120">
+                        <defs>
+                            <linearGradient id="cronoRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#F28C33"/>
+                                <stop offset="100%" stop-color="#FFB366"/>
+                            </linearGradient>
+                        </defs>
+                        <circle class="cronometro-ring-bg" cx="60" cy="60" r="52"></circle>
+                        <circle class="cronometro-ring-progress" id="cronoIntervaloRing" cx="60" cy="60" r="52"></circle>
+                    </svg>
+                    <span class="cronometro-display cronometro-display-ring" id="cronoIntervaloDisplay">01:30</span>
+                </div>
+
                 <div class="cronometro-presets" id="cronoIntervaloPresets">
+                    <button type="button" class="btn-preset" data-segundos="15">15s</button>
                     <button type="button" class="btn-preset" data-segundos="30">30s</button>
+                    <button type="button" class="btn-preset" data-segundos="45">45s</button>
+                    <button type="button" class="btn-preset" data-segundos="60">1:00</button>
                     <button type="button" class="btn-preset is-active" data-segundos="90">1:30</button>
                     <button type="button" class="btn-preset" data-segundos="120">2:00</button>
                     <button type="button" class="btn-preset" data-segundos="180">3:00</button>
+                    <button type="button" class="btn-preset" data-segundos="300">5:00</button>
                 </div>
+
                 <div class="cronometro-actions">
                     <button type="button" class="btn-cronometro btn-cronometro-primary" id="cronoIntervaloBtnIniciar">
                         <i class="bi bi-play-fill"></i> <span>Iniciar</span>
@@ -1230,6 +1406,7 @@ function tocarBipe() {
         intervalId = setInterval(atualizarDisplay, 1000);
         elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i> <span>Pausar</span>';
         elBtnIniciar.classList.add('is-rodando');
+        elBox.classList.add('is-rodando');
     }
 
     function pausar() {
@@ -1238,6 +1415,7 @@ function tocarBipe() {
         clearInterval(intervalId);
         elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Continuar</span>';
         elBtnIniciar.classList.remove('is-rodando');
+        elBox.classList.remove('is-rodando');
     }
 
     elBtnIniciar.addEventListener('click', function () {
@@ -1256,6 +1434,7 @@ function tocarBipe() {
         atualizarDisplay();
         elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Iniciar</span>';
         elBtnIniciar.classList.remove('is-rodando');
+        elBox.classList.remove('is-rodando');
     });
 })();
 
@@ -1266,7 +1445,8 @@ function tocarBipe() {
     var elBtnIniciar = document.getElementById('cronoIntervaloBtnIniciar');
     var elBtnZerar = document.getElementById('cronoIntervaloBtnZerar');
     var elPresets = document.getElementById('cronoIntervaloPresets');
-    if (!elBox || !elDisplay || !elBtnIniciar || !elBtnZerar || !elPresets) return;
+    var elRing = document.getElementById('cronoIntervaloRing');
+    if (!elBox || !elDisplay || !elBtnIniciar || !elBtnZerar || !elPresets || !elRing) return;
 
     var duracaoPadraoSegundos = 90; // preset marcado como "is-active" no HTML
     var restanteSegundos = duracaoPadraoSegundos;
@@ -1274,14 +1454,27 @@ function tocarBipe() {
     var fimMs = null;
     var intervalId = null;
 
+    // Perímetro real do círculo (2πr) -- calculado a partir do próprio
+    // elemento em vez de fixo no código, assim continua correto mesmo
+    // se o raio do SVG mudar no futuro.
+    var perimetroAnel = elRing.getTotalLength();
+    elRing.style.strokeDasharray = perimetroAnel;
+
+    function atualizarAnel() {
+        var proporcao = duracaoPadraoSegundos > 0 ? restanteSegundos / duracaoPadraoSegundos : 0;
+        var offset = perimetroAnel * (1 - Math.max(0, Math.min(1, proporcao)));
+        elRing.style.strokeDashoffset = offset;
+    }
+
     function atualizarDisplay() {
         elDisplay.textContent = formatarTempo(restanteSegundos);
+        atualizarAnel();
     }
 
     function pararEZerar(novaDuracao) {
         rodando = false;
         clearInterval(intervalId);
-        elBox.classList.remove('is-alerta');
+        elBox.classList.remove('is-alerta', 'is-rodando');
         duracaoPadraoSegundos = novaDuracao;
         restanteSegundos = novaDuracao;
         atualizarDisplay();
@@ -1297,6 +1490,7 @@ function tocarBipe() {
             rodando = false;
             clearInterval(intervalId);
             elBox.classList.add('is-alerta');
+            elBox.classList.remove('is-rodando');
             tocarBipe();
             if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
                 window.FitLogUtils.showToast('Intervalo finalizado! Bora pra próxima série 💪', 'success');
@@ -1322,6 +1516,7 @@ function tocarBipe() {
         intervalId = setInterval(tick, 250);
         elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i> <span>Pausar</span>';
         elBtnIniciar.classList.add('is-rodando');
+        elBox.classList.add('is-rodando');
     }
 
     function pausar() {
@@ -1329,6 +1524,7 @@ function tocarBipe() {
         clearInterval(intervalId);
         elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Continuar</span>';
         elBtnIniciar.classList.remove('is-rodando');
+        elBox.classList.remove('is-rodando');
     }
 
     elBtnIniciar.addEventListener('click', function () {
