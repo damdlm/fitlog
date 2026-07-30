@@ -16,7 +16,16 @@
     font-size: 1.2rem;
     box-shadow: 0 2px 8px rgba(242, 140, 51, 0.45);
     position: relative;
+    overflow: hidden; /* garante que a imagem do ícone não estoure o círculo */
     transition: transform .2s ease, filter .2s ease;
+}
+
+/* Ícone customizado (imagem) do botão -- sem isso a <img> renderiza no
+   tamanho natural do arquivo e estoura o botão redondo de 40px. */
+.fitbot-toggle-icon {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
 }
 
 .fitbot-toggle-btn:hover,
