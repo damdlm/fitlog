@@ -461,26 +461,97 @@
         color: var(--primary-orange);
     }
 
-    @media (max-width: 575.98px) {
+    @media (max-width: 767.98px) {
+        .cronometros-card .card-body {
+            padding: 12px !important;
+        }
+
+        .cronometros-heading {
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .cronometros-heading > i {
+            width: 30px;
+            height: 30px;
+            font-size: 0.95rem;
+        }
+
+        .cronometros-heading strong {
+            font-size: 0.88rem;
+        }
+
+        /* Subtítulo some no mobile -- só ocupa espaço, o título já basta */
+        .cronometros-heading span {
+            display: none;
+        }
+
         .cronometros-row {
-            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .cronometro-box {
+            padding: 10px 8px;
+            gap: 4px;
+            border-radius: 14px;
+        }
+
+        .cronometro-icon-badge {
+            width: 34px;
+            height: 34px;
+            font-size: 1rem;
+            margin-bottom: 0;
+        }
+
+        .cronometro-status-dot {
+            width: 10px;
+            height: 10px;
+        }
+
+        .cronometro-label {
+            font-size: 0.68rem;
+            gap: 4px;
         }
 
         .cronometro-display {
-            font-size: 2.1rem;
+            font-size: 1.7rem;
+            margin: 2px 0;
         }
 
         .cronometro-ring-wrap {
-            width: 132px;
-            height: 132px;
+            width: 104px;
+            height: 104px;
+            margin: 2px auto 4px;
         }
 
         .cronometro-display-ring {
-            font-size: 1.65rem;
+            font-size: 1.3rem;
         }
 
         .cronometro-presets {
+            gap: 4px;
             max-width: 100%;
+            margin-bottom: 2px;
+        }
+
+        .btn-preset {
+            font-size: 0.68rem;
+            padding: 3px 7px;
+        }
+
+        .cronometro-actions {
+            gap: 6px;
+            margin-top: 0;
+        }
+
+        .btn-cronometro {
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            gap: 4px;
+        }
+
+        .btn-cronometro-ghost {
+            padding: 6px 10px;
         }
     }
 
