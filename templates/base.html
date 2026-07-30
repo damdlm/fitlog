@@ -229,6 +229,7 @@
 
         /* --- Avatar do perfil (substitui o antigo "usuário >") --- */
         .btn-avatar {
+            position: relative;
             background: none;
             border: none;
             padding: 0;
@@ -237,6 +238,15 @@
 
         .btn-avatar::after {
             display: none; /* remove a setinha padrão do Bootstrap */
+        }
+
+        /* Badge de notificação sobre o avatar (ex: solicitações pendentes) */
+        .btn-avatar .bottom-nav-badge {
+            position: absolute;
+            top: -2px;
+            right: -4px;
+            font-size: 0.55rem;
+            padding: 0.15em 0.4em;
         }
 
         .avatar-circle {
@@ -821,6 +831,9 @@
                 <div class="nav-item dropdown">
                     <button class="btn btn-avatar dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ current_user.username }}">
                         <span class="avatar-circle">{{ current_user.username[0]|upper }}</span>
+                        {% if current_user.is_professor() and current_user.solicitacoes_pendentes_count > 0 %}
+                            <span class="badge rounded-pill bg-danger bottom-nav-badge d-lg-none">{{ current_user.solicitacoes_pendentes_count }}</span>
+                        {% endif %}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><h6 class="dropdown-header">{{ current_user.username }}</h6></li>
@@ -829,6 +842,31 @@
                                 <i class="bi bi-person"></i> Meu Perfil
                             </a>
                         </li>
+                        {% if current_user.is_professor() %}
+                        <li class="d-lg-none">
+                            <a class="dropdown-item" href="{{ url_for('professor.dashboard') }}">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="d-lg-none">
+                            <a class="dropdown-item" href="{{ url_for('professor.listar_alunos') }}">
+                                <i class="bi bi-people"></i> Meus Alunos
+                            </a>
+                        </li>
+                        <li class="d-lg-none">
+                            <a class="dropdown-item" href="{{ url_for('professor.novo_aluno') }}">
+                                <i class="bi bi-person-plus"></i> Novo Aluno
+                            </a>
+                        </li>
+                        <li class="d-lg-none">
+                            <a class="dropdown-item" href="{{ url_for('professor.solicitacoes') }}">
+                                <i class="bi bi-bell"></i> Solicitações
+                                {% if current_user.solicitacoes_pendentes_count > 0 %}
+                                    <span class="badge bg-danger ms-1">{{ current_user.solicitacoes_pendentes_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        {% endif %}
                         {% if current_user.is_aluno() %}
                         <li>
                             <a class="dropdown-item" href="{{ url_for('aluno.meu_professor') }}">
@@ -889,9 +927,6 @@
         <button type="button" class="bottom-nav-item" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMais" aria-controls="offcanvasMais">
             <i class="bi bi-gear"></i>
             <span>Ajustes</span>
-            {% if current_user.is_professor() and current_user.solicitacoes_pendentes_count > 0 %}
-                <span class="badge rounded-pill bg-danger bottom-nav-badge">{{ current_user.solicitacoes_pendentes_count }}</span>
-            {% endif %}
         </button>
     </nav>
 
@@ -907,21 +942,6 @@
                 <span class="mais-section-label">Administração</span>
                 <a class="mais-link" href="{{ url_for('admin.gerenciar') }}"><i class="bi bi-database"></i> Catálogo Global</a>
                 <a class="mais-link" href="{{ url_for('version.gerenciar_versoes_global') }}"><i class="bi bi-clock-history"></i> Versões Globais</a>
-            </div>
-            {% endif %}
-
-            {% if current_user.is_professor() %}
-            <div class="mais-section">
-                <span class="mais-section-label">Professor</span>
-                <a class="mais-link" href="{{ url_for('professor.dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
-                <a class="mais-link" href="{{ url_for('professor.listar_alunos') }}"><i class="bi bi-people"></i> Meus Alunos</a>
-                <a class="mais-link" href="{{ url_for('professor.novo_aluno') }}"><i class="bi bi-person-plus"></i> Novo Aluno</a>
-                <a class="mais-link" href="{{ url_for('professor.solicitacoes') }}">
-                    <i class="bi bi-bell"></i> Solicitações
-                    {% if current_user.solicitacoes_pendentes_count > 0 %}
-                        <span class="badge bg-danger ms-1">{{ current_user.solicitacoes_pendentes_count }}</span>
-                    {% endif %}
-                </a>
             </div>
             {% endif %}
 
