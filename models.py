@@ -465,6 +465,36 @@ class ExercicioUsuario(db.Model):
         db.Index('idx_exercicio_usuario_musculo', 'musculo_id'),
     )
 
+class ExercicioSistema(db.Model):
+    """
+    Catálogo de exercícios importado de data/exercises.json.
+    Fonte separada do catálogo administrado manualmente (ExercicioBase) —
+    dataset externo (Gymvisual) usado como base ampliada de exercícios.
+    """
+    __tablename__ = 'exercicios_sistema'
+
+    id = db.Column(db.Integer, primary_key=True)
+    id_original = db.Column(db.String(50), unique=True, nullable=False)  # "id" do JSON, ex: "0001"
+    nome = db.Column(db.String(200), nullable=False)
+    categoria = db.Column(db.String(100))
+    parte_corpo = db.Column(db.String(100))
+    equipamento = db.Column(db.String(100))
+    instrucao_pt = db.Column(db.Text)
+    passos_pt = db.Column(db.JSON)               # lista de strings (instruction_steps.pt)
+    grupo_muscular = db.Column(db.String(100))
+    musculos_secundarios = db.Column(db.JSON)     # lista de strings
+    alvo = db.Column(db.String(100))
+    imagem = db.Column(db.String(300))
+    gif_url = db.Column(db.String(300))
+    media_id = db.Column(db.String(50))
+    data_criacao_original = db.Column(db.DateTime(timezone=True))  # "created_at" do JSON
+    atribuicao = db.Column(db.String(300))
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        db.Index('idx_exercicios_sistema_categoria', 'categoria'),
+        db.Index('idx_exercicios_sistema_grupo_muscular', 'grupo_muscular'),
+    )
 
 # Alias para compatibilidade com codigo existente
 ExercicioCustomizado = ExercicioUsuario
