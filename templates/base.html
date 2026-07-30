@@ -835,6 +835,11 @@
                                 <i class="bi bi-person-badge"></i> Meu Professor
                             </a>
                         </li>
+                        <li class="d-lg-none">
+                            <a class="dropdown-item" href="{{ url_for('stats.visualizar_tabela') }}">
+                                <i class="bi bi-table"></i> Tabela de Progresso
+                            </a>
+                        </li>
                         {% endif %}
                         <li><hr class="dropdown-divider"></li>
                         <li>
@@ -921,11 +926,7 @@
             {% endif %}
 
             <div class="mais-section">
-                <span class="mais-section-label">Treino</span>
-                {% if current_user.is_aluno() %}
-                <a class="mais-link" href="{{ url_for('aluno.meu_professor') }}"><i class="bi bi-person-badge"></i> Meu Professor</a>
-                <a class="mais-link" href="{{ url_for('stats.visualizar_tabela') }}"><i class="bi bi-table"></i> Tabela de Progresso</a>
-                {% endif %}
+            <!-- <span class="mais-section-label">Treino</span> -->
                 <a class="mais-link" href="{{ url_for('aluno.exercicios') }}"><i class="bi bi-list-check"></i> Meus Exercícios</a>
                 <a class="mais-link" href="{{ url_for('aluno.treinos') }}"><i class="bi bi-trophy"></i> Meus Treinos</a>
                 <a class="mais-link" href="{{ url_for('aluno.versoes') }}"><i class="bi bi-clock-history"></i> Minhas Versões</a>
