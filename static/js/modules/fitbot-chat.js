@@ -1,11 +1,10 @@
 /* ============================================================
    FitBot · Assistente virtual de treino (chat com IA)
    ============================================================
-   - Máquina de estados do robô: greeting (ao abrir) -> idle (com um
-     vídeo de humor sorteado) -> thinking (aguardando IA) -> talking
-     ou error -> idle de novo -> bye (ao fechar o modal). Cada estado
-     mostra um <video> diferente dentro de .fitbot-avatar-frame (ver
-     fitbot-chat.css).
+   - Máquina de estados do robô: idle (com um vídeo de humor sorteado)
+     -> thinking (aguardando IA) -> talking ou error -> idle de novo ->
+     bye (ao abrir ou fechar o modal). Cada estado mostra um <video>
+     diferente dentro de .fitbot-avatar-frame (ver fitbot-chat.css).
    - Antes de enviar uma foto, ela é redimensionada no navegador para
      no máximo 800x800px (canvas) e comprimida em JPEG, economizando
      a cota gratuita da API de visão (Gemini).
@@ -21,7 +20,6 @@
     var MAX_HISTORICO = 10;
     var DURACAO_ESTADO_TALKING_MS = 2500;
     var DURACAO_ESTADO_ERROR_MS = 3000;
-    var DURACAO_ESTADO_GREETING_MS = 2200;
     var DURACAO_ESTADO_BYE_MS = 1200;
     var DURACAO_ATRASO_ABERTURA_MS = 2000; // tempo que o quadro do robô fica escondido ao abrir o chat
 
@@ -90,7 +88,7 @@
 
         setState('idle');
 
-        elModal.addEventListener('shown.bs.modal', onModalShown);
+        elModal.addEventListener('show.bs.modal', onModalShown);
 
         if (elCloseBtn) {
             elCloseBtn.addEventListener('click', function (evt) {
@@ -143,16 +141,14 @@
             setState('bye'); // sempre inicia com o vídeo "tchau.mp4"
 
             aberturaTimeoutId = setTimeout(function () {
+                setState('idle');
                 if (primeiraVez) {
-                    setState('greeting');
                     adicionarMensagem(
                         'bot',
                         'Oi! Eu sou o FitBot 🤖, o personal trainer virtual do FitLog. ' +
                         'Pode me perguntar sobre musculação, aeróbico, execução de exercícios ' +
                         'ou me mandar uma foto de um equipamento que eu explico como usar.'
                     );
-                } else {
-                    setState('idle');
                 }
                 aberturaTimeoutId = null;
             }, DURACAO_ESTADO_BYE_MS);
@@ -176,7 +172,7 @@
             clearTimeout(estadoTimeoutId);
             estadoTimeoutId = null;
         }
-        elWidget.classList.remove('is-idle', 'is-thinking', 'is-talking', 'is-error', 'is-greeting', 'is-bye');
+        elWidget.classList.remove('is-idle', 'is-thinking', 'is-talking', 'is-error', 'is-bye');
         elWidget.classList.add('is-' + novoEstado);
 
         pararRotacaoIdle(); // se estava girando os vídeos de idle, para -- reagenda de novo se o novo estado for idle
@@ -190,8 +186,6 @@
             estadoTimeoutId = setTimeout(function () { setState('idle'); }, DURACAO_ESTADO_TALKING_MS);
         } else if (novoEstado === 'error') {
             estadoTimeoutId = setTimeout(function () { setState('idle'); }, DURACAO_ESTADO_ERROR_MS);
-        } else if (novoEstado === 'greeting') {
-            estadoTimeoutId = setTimeout(function () { setState('idle'); }, DURACAO_ESTADO_GREETING_MS);
         }
 
         if (novoEstado === 'idle') {

@@ -529,7 +529,7 @@
            dashboard do aluno e a tela "visualizar aluno" do
            professor.
         =================================================== */
-        .dash-hero {
+        .dash-hero-panel {
             background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
             border-radius: 18px;
             padding: 28px 32px;
@@ -538,7 +538,7 @@
             overflow: hidden;
             margin-bottom: 24px;
         }
-        .dash-hero::before {
+        .dash-hero-panel::before {
             content: '';
             position: absolute;
             top: -60px;
@@ -1138,7 +1138,6 @@
                     <!-- Animação do robô, flutuando isolada no cantinho -- sem
                          texto/status ao lado, só o vídeo mesmo. -->
                     <div class="fitbot-avatar-frame fitbot-avatar-corner">
-                        <video data-state="greeting" src="{{ url_for('static', filename='videos/fitbot/saudacao.mp4') }}" muted loop playsinline autoplay></video>
                         <video data-state="thinking" src="{{ url_for('static', filename='videos/fitbot/pensando.mp4') }}" muted loop playsinline autoplay></video>
                         <video data-state="talking" src="{{ url_for('static', filename='videos/fitbot/bracos.mp4') }}" muted loop playsinline autoplay></video>
                         <video data-state="error" src="{{ url_for('static', filename='videos/fitbot/duvida.mp4') }}" muted loop playsinline autoplay></video>

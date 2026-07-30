@@ -5,13 +5,13 @@
 
 {% block content %}
 <style>
-    /* .dash-hero, .dash-stat, .dash-quick-tile, .dash-registro-*, .dash-badge
+    /* .dash-hero-panel, .dash-stat, .dash-quick-tile, .dash-registro-*, .dash-badge
        e .dash-empty ficam no CSS global (base.html), pois agora são usados
        em mais de uma tela (dashboard do aluno e dashboard do aluno pelo professor). */
 </style>
 
 <!-- Cabeçalho com saudação -->
-<div class="dash-hero">
+<div class="dash-hero-panel">
     <div class="dash-hero-greeting">{{ saudacao }}</div>
     <div class="dash-hero-name">{{ current_user.nome_completo or current_user.username }} 👋</div>
     <span class="dash-streak-pill">
