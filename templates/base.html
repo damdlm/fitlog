@@ -529,6 +529,107 @@
            dashboard do aluno e a tela "visualizar aluno" do
            professor.
         =================================================== */
+        .dash-hero {
+            background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
+            border-radius: 18px;
+            padding: 28px 32px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+        .dash-hero::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            right: -60px;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(242,140,51,0.35) 0%, rgba(242,140,51,0) 70%);
+        }
+        .dash-hero-greeting {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 2px;
+        }
+        .dash-hero-name {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .dash-streak-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(242, 140, 51, 0.15);
+            border: 1px solid rgba(242, 140, 51, 0.35);
+            color: #FFB366;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .dash-stat {
+            border-radius: 16px;
+            padding: 20px;
+            height: 100%;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            position: relative;
+        }
+        .dash-stat:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+        }
+        .dash-stat-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.18);
+            font-size: 1.2rem;
+            margin-bottom: 14px;
+        }
+        .dash-stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+        .dash-stat-label {
+            font-size: 0.82rem;
+            opacity: 0.85;
+        }
+        .dash-quick-tile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            color: var(--secondary-color);
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 14px;
+            padding: 16px 10px;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            height: 100%;
+        }
+        .dash-quick-tile:hover {
+            color: white;
+            background: var(--gradient-primary);
+            border-color: transparent;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 18px rgba(242, 140, 51, 0.3);
+        }
+        .dash-quick-tile i {
+            font-size: 1.4rem;
+        }
         .dash-registro-item {
             display: flex;
             align-items: center;

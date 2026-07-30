@@ -34,14 +34,22 @@ def calendario():
 @login_required
 def api_eventos():
     """API para retornar os eventos do calendário"""
+    return jsonify(gerar_eventos_calendario(
+        user_id=current_user.id,
+        ano=request.args.get('ano', type=int),
+        mes=request.args.get('mes', type=int)
+    ))
+
+
+def gerar_eventos_calendario(user_id, ano=None, mes=None):
+    """Monta a lista de eventos do calendário para um usuário específico.
+
+    Extraído de api_eventos() para ser reutilizado também pelo professor
+    ao acompanhar o calendário de um aluno (rotas em professor_routes.py).
+    """
     try:
-        # Parâmetros opcionais de filtro
-        ano = request.args.get('ano', type=int)
-        mes = request.args.get('mes', type=int)
-        treino_id = request.args.get('treino_id')
-        
         # Buscar todos os registros do usuário
-        registros = RegistroService.get_all(load_series=True)
+        registros = RegistroService.get_all(user_id=user_id, load_series=True)
         
         eventos = []
         volumes_por_dia = {}
@@ -82,7 +90,7 @@ def api_eventos():
             
             # Adicionar detalhe do treino
             treino = None
-            for t in TreinoService.get_all():
+            for t in TreinoService.get_all(user_id=user_id):
                 if t.id == r.treino_id:
                     treino = t
                     break
@@ -134,11 +142,11 @@ def api_eventos():
                 }
             })
         
-        return jsonify(eventos)
+        return eventos
         
     except Exception as e:
         logger.error(f"Erro ao gerar eventos: {e}")
-        return jsonify([])
+        return []
 
 
 @calendar_bp.route("/api/evento/<int:registro_id>")
