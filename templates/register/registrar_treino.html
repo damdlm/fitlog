@@ -486,8 +486,11 @@
             display: none;
         }
 
+        /* Empilhado (treino em cima, intervalo embaixo) em vez de lado a
+           lado -- sobra largura pra deixar o cronômetro de intervalo maior. */
         .cronometros-row {
-            gap: 8px;
+            grid-template-columns: 1fr;
+            gap: 10px;
         }
 
         .cronometro-box {
@@ -496,11 +499,21 @@
             border-radius: 14px;
         }
 
-        .cronometro-icon-badge {
-            width: 34px;
-            height: 34px;
-            font-size: 1rem;
+        /* O cronômetro do treino é só números correndo -- fica enxuto */
+        .cronometro-treino {
+            padding: 8px 10px;
+        }
+
+        .cronometro-treino .cronometro-icon-badge {
+            width: 32px;
+            height: 32px;
+            font-size: 0.95rem;
             margin-bottom: 0;
+        }
+
+        .cronometro-treino .cronometro-display {
+            font-size: 1.6rem;
+            margin: 0;
         }
 
         .cronometro-status-dot {
@@ -518,36 +531,43 @@
             margin: 2px 0;
         }
 
+        /* O cronômetro de intervalo é o protagonista aqui -- anel maior
+           que até no desktop, já que agora ocupa a largura inteira do
+           card em vez de dividir espaço com o do treino. */
+        .cronometro-intervalo {
+            padding: 14px 10px 12px;
+        }
+
         .cronometro-ring-wrap {
-            width: 104px;
-            height: 104px;
-            margin: 2px auto 4px;
+            width: 176px;
+            height: 176px;
+            margin: 4px auto 8px;
         }
 
         .cronometro-display-ring {
-            font-size: 1.3rem;
+            font-size: 2.1rem;
         }
 
         .cronometro-presets {
-            gap: 4px;
+            gap: 6px;
             max-width: 100%;
-            margin-bottom: 2px;
+            margin-bottom: 6px;
         }
 
         .btn-preset {
-            font-size: 0.68rem;
-            padding: 3px 7px;
+            font-size: 0.75rem;
+            padding: 5px 11px;
         }
 
         .cronometro-actions {
-            gap: 6px;
-            margin-top: 0;
+            gap: 8px;
+            margin-top: 2px;
         }
 
         .btn-cronometro {
-            padding: 6px 14px;
-            font-size: 0.8rem;
-            gap: 4px;
+            padding: 8px 18px;
+            font-size: 0.85rem;
+            gap: 5px;
         }
 
         .btn-cronometro-ghost {
