@@ -168,7 +168,16 @@
     z-index: 5;
     border: none;
     box-shadow: none;
+    opacity: 1;
+    transition: opacity .4s ease;
     animation: fitbot-avatar-breathe 3s ease-in-out infinite;
+}
+
+/* Estado inicial ao abrir o chat -- fica invisível por alguns segundos
+   antes do quadro (já tocando "tchau.mp4") aparecer. Ver
+   DURACAO_ATRASO_ABERTURA_MS no JS. */
+.fitbot-avatar-corner.is-hidden-inicio {
+    opacity: 0;
 }
 
 @keyframes fitbot-avatar-breathe {

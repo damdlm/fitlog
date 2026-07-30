@@ -23,6 +23,7 @@
     var DURACAO_ESTADO_ERROR_MS = 3000;
     var DURACAO_ESTADO_GREETING_MS = 2200;
     var DURACAO_ESTADO_BYE_MS = 1200;
+    var DURACAO_ATRASO_ABERTURA_MS = 2000; // tempo que o quadro do robô fica escondido ao abrir o chat
 
     // Vídeos "de humor" do FitBot — sem significado fixo, só para
     // deixar a espera mais divertida. Um é sorteado toda vez que o
@@ -43,7 +44,8 @@
 
     var elWidget, elModal, elMessages, elForm, elTextarea, elSendBtn,
         elImageInput, elImageBtn, elImagePreview, elImagePreviewThumb,
-        elImageRemoveBtn, elTyping, elIdleVideoA, elIdleVideoB, elCloseBtn;
+        elImageRemoveBtn, elTyping, elIdleVideoA, elIdleVideoB, elCloseBtn,
+        elAvatarCorner;
 
     // elIdleAtivo é o buffer visível agora; elIdleInativo é onde o
     // próximo vídeo é pré-carregado antes do crossfade (double buffer).
@@ -84,6 +86,7 @@
         elIdleAtivo = elIdleVideoA;
         elIdleInativo = elIdleVideoB;
         elCloseBtn = elModal.querySelector('[data-bs-dismiss="modal"]');
+        elAvatarCorner = elWidget.querySelector('.fitbot-avatar-corner');
 
         setState('idle');
 
@@ -114,16 +117,46 @@
         elImageRemoveBtn.addEventListener('click', limparImagemSelecionada);
     }
 
+    var aberturaTimeoutId = null;
+
     function onModalShown() {
-        if (conversaIniciada) return;
+        var primeiraVez = !conversaIniciada;
         conversaIniciada = true;
-        setState('greeting');
-        adicionarMensagem(
-            'bot',
-            'Oi! Eu sou o FitBot 🤖, o personal trainer virtual do FitLog. ' +
-            'Pode me perguntar sobre musculação, aeróbico, execução de exercícios ' +
-            'ou me mandar uma foto de um equipamento que eu explico como usar.'
-        );
+
+        // Some quaisquer timers de uma abertura anterior que não deu
+        // tempo de terminar (usuário fechou e reabriu rápido).
+        if (aberturaTimeoutId) {
+            clearTimeout(aberturaTimeoutId);
+            aberturaTimeoutId = null;
+        }
+
+        // O quadro do robô fica escondido por um tempo antes de aparecer.
+        if (elAvatarCorner) {
+            elAvatarCorner.classList.add('is-hidden-inicio');
+        }
+
+        aberturaTimeoutId = setTimeout(function () {
+            if (elAvatarCorner) {
+                elAvatarCorner.classList.remove('is-hidden-inicio');
+            }
+
+            setState('bye'); // sempre inicia com o vídeo "tchau.mp4"
+
+            aberturaTimeoutId = setTimeout(function () {
+                if (primeiraVez) {
+                    setState('greeting');
+                    adicionarMensagem(
+                        'bot',
+                        'Oi! Eu sou o FitBot 🤖, o personal trainer virtual do FitLog. ' +
+                        'Pode me perguntar sobre musculação, aeróbico, execução de exercícios ' +
+                        'ou me mandar uma foto de um equipamento que eu explico como usar.'
+                    );
+                } else {
+                    setState('idle');
+                }
+                aberturaTimeoutId = null;
+            }, DURACAO_ESTADO_BYE_MS);
+        }, DURACAO_ATRASO_ABERTURA_MS);
     }
 
     function despedirEFechar() {
