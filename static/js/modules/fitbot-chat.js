@@ -28,9 +28,11 @@
     // deixar a espera mais divertida. Um é sorteado toda vez que o
     // robô volta para o estado parado (idle).
     var VIDEOS_POOL_IDLE = [
-        'Agachamento.mp4', 'agua.mp4', 'arremesso.mp4', 'beijo.mp4',
-        'celular.mp4', 'dancando.mp4', 'dancando2.mp4', 'fortao.mp4', 'prancheta.mp4',
-        'stiff.mp4', 'pulso.mp4', 'mao.mp4', 'alo.mp4', 'prancheta.mp4', 
+
+        'Agachamento.mp4', 'agua.mp4', 'alo.mp4', 'arremesso.mp4', 'beijo.mp4',
+        'bracos.mp4', 'celular.mp4', 'dancando.mp4', 'dancando2.mp4', 'duvida.mp4',
+        'fortao.mp4', 'mao.mp4', 'pensando.mp4', 'prancheta.mp4', 'pulso.mp4', 
+        'saudacao.mp4', 'stiff.mp4', 'tchau.mp4',
     ];
     // "padrao.mp4" não entra no sorteio -- ele é intercalado manualmente
     // entre os aleatórios (ver escolherProximoVideoIdle): aleatório,
