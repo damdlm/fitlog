@@ -193,6 +193,151 @@
         box-shadow: var(--shadow-sm);
     }
 
+    /* ================= CRONÔMETROS ================= */
+    .cronometros-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .cronometro-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 16px 14px;
+        border-radius: var(--radius-sm);
+        background: var(--surface-muted);
+        border: 1px solid var(--border-soft);
+        text-align: center;
+    }
+
+    .cronometro-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6a6963;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .cronometro-label i {
+        color: var(--primary-orange);
+    }
+
+    .cronometro-display {
+        font-family: 'Courier New', ui-monospace, monospace;
+        font-size: 2.4rem;
+        font-weight: 700;
+        color: var(--dark-bg);
+        letter-spacing: 1px;
+        line-height: 1;
+        margin: 4px 0;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Pulsa em vermelho quando o intervalo chega a zero -- chama
+       atenção mesmo com o celular fora do campo de visão direto. */
+    .cronometro-box.is-alerta .cronometro-display {
+        color: #d64545;
+        animation: cronometro-pulso 0.6s ease-in-out 3;
+    }
+
+    @keyframes cronometro-pulso {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.12); }
+    }
+
+    .cronometro-presets {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-bottom: 4px;
+    }
+
+    .btn-preset {
+        border: 1px solid var(--border-soft);
+        background: #fff;
+        color: #6a6963;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+        transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+    }
+
+    .btn-preset:hover {
+        border-color: var(--primary-orange);
+        color: var(--primary-orange);
+    }
+
+    .btn-preset.is-active {
+        background: var(--primary-orange);
+        border-color: var(--primary-orange);
+        color: #fff;
+    }
+
+    .cronometro-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-cronometro {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: none;
+        border-radius: 20px;
+        padding: 8px 18px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: filter .15s ease, transform .1s ease;
+    }
+
+    .btn-cronometro:active {
+        transform: scale(0.96);
+    }
+
+    .btn-cronometro-primary {
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        color: #fff;
+    }
+
+    .btn-cronometro-primary:hover {
+        filter: brightness(1.05);
+        color: #fff;
+    }
+
+    /* Enquanto rodando, o botão principal vira "Pausar" -- cor neutra
+       pra diferenciar visualmente de "Iniciar" */
+    .btn-cronometro-primary.is-rodando {
+        background: var(--dark-bg, #2D2D2D);
+    }
+
+    .btn-cronometro-ghost {
+        background: #fff;
+        border: 1px solid var(--border-soft);
+        color: #6a6963;
+        padding: 8px 12px;
+    }
+
+    .btn-cronometro-ghost:hover {
+        border-color: var(--primary-orange);
+        color: var(--primary-orange);
+    }
+
+    @media (max-width: 575.98px) {
+        .cronometros-row {
+            grid-template-columns: 1fr;
+        }
+
+        .cronometro-display {
+            font-size: 2rem;
+        }
+    }
+
     .form-select-lg, .form-control-lg {
         border-radius: var(--radius-sm);
         border: 2px solid var(--border-soft);
@@ -533,6 +678,48 @@
             <i class="bi bi-plus-circle me-2" style="color: var(--primary-orange);"></i>
             Registrar Treino
         </h2>
+    </div>
+</div>
+
+<div class="card treino-card mb-4">
+    <div class="card-body p-3 p-md-4">
+        <div class="cronometros-row">
+            <!-- Cronômetro do treino: conta o tempo total desde que o
+                 usuário aperta "Iniciar" até o fim do treino. -->
+            <div class="cronometro-box" id="cronoTreinoBox">
+                <span class="cronometro-label"><i class="bi bi-stopwatch"></i> Cronômetro do treino</span>
+                <span class="cronometro-display" id="cronoTreinoDisplay">00:00</span>
+                <div class="cronometro-actions">
+                    <button type="button" class="btn-cronometro btn-cronometro-primary" id="cronoTreinoBtnIniciar">
+                        <i class="bi bi-play-fill"></i> <span>Iniciar</span>
+                    </button>
+                    <button type="button" class="btn-cronometro btn-cronometro-ghost" id="cronoTreinoBtnZerar" title="Zerar">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cronômetro de intervalo: regressivo, para cronometrar o
+                 descanso entre séries. Toca um bipe e pisca ao zerar. -->
+            <div class="cronometro-box cronometro-intervalo" id="cronoIntervaloBox">
+                <span class="cronometro-label"><i class="bi bi-hourglass-split"></i> Intervalo entre séries</span>
+                <span class="cronometro-display" id="cronoIntervaloDisplay">01:30</span>
+                <div class="cronometro-presets" id="cronoIntervaloPresets">
+                    <button type="button" class="btn-preset" data-segundos="30">30s</button>
+                    <button type="button" class="btn-preset is-active" data-segundos="90">1:30</button>
+                    <button type="button" class="btn-preset" data-segundos="120">2:00</button>
+                    <button type="button" class="btn-preset" data-segundos="180">3:00</button>
+                </div>
+                <div class="cronometro-actions">
+                    <button type="button" class="btn-cronometro btn-cronometro-primary" id="cronoIntervaloBtnIniciar">
+                        <i class="bi bi-play-fill"></i> <span>Iniciar</span>
+                    </button>
+                    <button type="button" class="btn-cronometro btn-cronometro-ghost" id="cronoIntervaloBtnZerar" title="Reiniciar">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -963,5 +1150,210 @@ function carregarUltimoRegistro() {
         alert(mensagem);
     }
 }
+
+/* ================= CRONÔMETROS ================= */
+
+function formatarTempo(totalSegundos) {
+    var s = Math.max(0, Math.round(totalSegundos));
+    var horas = Math.floor(s / 3600);
+    var minutos = Math.floor((s % 3600) / 60);
+    var segundos = s % 60;
+    var doisDigitos = function (n) { return n < 10 ? '0' + n : '' + n; };
+    if (horas > 0) {
+        return horas + ':' + doisDigitos(minutos) + ':' + doisDigitos(segundos);
+    }
+    return doisDigitos(minutos) + ':' + doisDigitos(segundos);
+}
+
+/* Bipe curto via Web Audio API -- sem precisar de nenhum arquivo de
+   áudio externo. Criado sob demanda porque navegadores só liberam
+   áudio depois de alguma interação do usuário (o clique em "Iniciar"
+   já conta). */
+var cronoAudioCtx = null;
+function tocarBipe() {
+    try {
+        if (!cronoAudioCtx) {
+            var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) return;
+            cronoAudioCtx = new AudioContextClass();
+        }
+        var tocarNota = function (delaySegundos) {
+            var osc = cronoAudioCtx.createOscillator();
+            var ganho = cronoAudioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = 880;
+            var inicio = cronoAudioCtx.currentTime + delaySegundos;
+            ganho.gain.setValueAtTime(0.0001, inicio);
+            ganho.gain.exponentialRampToValueAtTime(0.25, inicio + 0.02);
+            ganho.gain.exponentialRampToValueAtTime(0.0001, inicio + 0.28);
+            osc.connect(ganho);
+            ganho.connect(cronoAudioCtx.destination);
+            osc.start(inicio);
+            osc.stop(inicio + 0.3);
+        };
+        tocarNota(0);
+        tocarNota(0.35);
+    } catch (e) {
+        // Áudio é só um "extra" -- se falhar (navegador bloqueou, etc.)
+        // o cronômetro continua funcionando normalmente.
+    }
+    if (window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate([180, 90, 180]);
+    }
+}
+
+/* ---- Cronômetro do treino (conta pra cima) ---- */
+(function () {
+    var elBox = document.getElementById('cronoTreinoBox');
+    var elDisplay = document.getElementById('cronoTreinoDisplay');
+    var elBtnIniciar = document.getElementById('cronoTreinoBtnIniciar');
+    var elBtnZerar = document.getElementById('cronoTreinoBtnZerar');
+    if (!elBox || !elDisplay || !elBtnIniciar || !elBtnZerar) return;
+
+    var rodando = false;
+    var inicioMs = null;        // timestamp de quando o cronômetro começou a rodar
+    var acumuladoSegundos = 0;  // tempo já contabilizado antes da pausa atual
+    var intervalId = null;
+
+    function segundosAtuais() {
+        if (!rodando) return acumuladoSegundos;
+        return acumuladoSegundos + (Date.now() - inicioMs) / 1000;
+    }
+
+    function atualizarDisplay() {
+        elDisplay.textContent = formatarTempo(segundosAtuais());
+    }
+
+    function iniciar() {
+        rodando = true;
+        inicioMs = Date.now();
+        intervalId = setInterval(atualizarDisplay, 1000);
+        elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i> <span>Pausar</span>';
+        elBtnIniciar.classList.add('is-rodando');
+    }
+
+    function pausar() {
+        rodando = false;
+        acumuladoSegundos = segundosAtuais();
+        clearInterval(intervalId);
+        elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Continuar</span>';
+        elBtnIniciar.classList.remove('is-rodando');
+    }
+
+    elBtnIniciar.addEventListener('click', function () {
+        if (rodando) {
+            pausar();
+        } else {
+            iniciar();
+        }
+    });
+
+    elBtnZerar.addEventListener('click', function () {
+        rodando = false;
+        clearInterval(intervalId);
+        acumuladoSegundos = 0;
+        inicioMs = null;
+        atualizarDisplay();
+        elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Iniciar</span>';
+        elBtnIniciar.classList.remove('is-rodando');
+    });
+})();
+
+/* ---- Cronômetro de intervalo (regressivo) ---- */
+(function () {
+    var elBox = document.getElementById('cronoIntervaloBox');
+    var elDisplay = document.getElementById('cronoIntervaloDisplay');
+    var elBtnIniciar = document.getElementById('cronoIntervaloBtnIniciar');
+    var elBtnZerar = document.getElementById('cronoIntervaloBtnZerar');
+    var elPresets = document.getElementById('cronoIntervaloPresets');
+    if (!elBox || !elDisplay || !elBtnIniciar || !elBtnZerar || !elPresets) return;
+
+    var duracaoPadraoSegundos = 90; // preset marcado como "is-active" no HTML
+    var restanteSegundos = duracaoPadraoSegundos;
+    var rodando = false;
+    var fimMs = null;
+    var intervalId = null;
+
+    function atualizarDisplay() {
+        elDisplay.textContent = formatarTempo(restanteSegundos);
+    }
+
+    function pararEZerar(novaDuracao) {
+        rodando = false;
+        clearInterval(intervalId);
+        elBox.classList.remove('is-alerta');
+        duracaoPadraoSegundos = novaDuracao;
+        restanteSegundos = novaDuracao;
+        atualizarDisplay();
+        elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Iniciar</span>';
+        elBtnIniciar.classList.remove('is-rodando');
+    }
+
+    function tick() {
+        restanteSegundos = Math.round((fimMs - Date.now()) / 1000);
+        if (restanteSegundos <= 0) {
+            restanteSegundos = 0;
+            atualizarDisplay();
+            rodando = false;
+            clearInterval(intervalId);
+            elBox.classList.add('is-alerta');
+            tocarBipe();
+            if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
+                window.FitLogUtils.showToast('Intervalo finalizado! Bora pra próxima série 💪', 'success');
+            }
+            elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Iniciar</span>';
+            elBtnIniciar.classList.remove('is-rodando');
+            // Deixa o "piscar" vermelho por um tempo e já prepara o
+            // próximo intervalo com a mesma duração escolhida.
+            setTimeout(function () {
+                elBox.classList.remove('is-alerta');
+                restanteSegundos = duracaoPadraoSegundos;
+                atualizarDisplay();
+            }, 2200);
+            return;
+        }
+        atualizarDisplay();
+    }
+
+    function iniciar() {
+        if (restanteSegundos <= 0) restanteSegundos = duracaoPadraoSegundos;
+        rodando = true;
+        fimMs = Date.now() + restanteSegundos * 1000;
+        intervalId = setInterval(tick, 250);
+        elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i> <span>Pausar</span>';
+        elBtnIniciar.classList.add('is-rodando');
+    }
+
+    function pausar() {
+        rodando = false;
+        clearInterval(intervalId);
+        elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Continuar</span>';
+        elBtnIniciar.classList.remove('is-rodando');
+    }
+
+    elBtnIniciar.addEventListener('click', function () {
+        if (rodando) {
+            pausar();
+        } else {
+            iniciar();
+        }
+    });
+
+    elBtnZerar.addEventListener('click', function () {
+        pararEZerar(duracaoPadraoSegundos);
+    });
+
+    elPresets.querySelectorAll('.btn-preset').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            elPresets.querySelectorAll('.btn-preset').forEach(function (b) {
+                b.classList.remove('is-active');
+            });
+            btn.classList.add('is-active');
+            pararEZerar(parseInt(btn.dataset.segundos, 10));
+        });
+    });
+
+    atualizarDisplay();
+})();
 </script>
 {% endblock %}
