@@ -39,7 +39,7 @@
     // padrão, aleatório, padrão... sempre alternando.
     var VIDEO_PADRAO_IDLE = 'padrao.mp4';
     var PASTA_VIDEOS = '/static/videos/fitbot/';
-    var CROSSFADE_DURACAO_MS = 0; // sem crossfade -- troca de vídeo é instantânea (ver CSS)
+    var CROSSFADE_DURACAO_MS = 420; // duração do fade suave entre os vídeos (precisa bater com o CSS)
 
     var elWidget, elModal, elMessages, elForm, elTextarea, elSendBtn,
         elImageInput, elImageBtn, elImagePreview, elImagePreviewThumb,
@@ -222,46 +222,58 @@
         bufferAlvo.load();
 
         // Assim que os metadados chegarem, dá play no buffer invisível
-        // para decodificar o primeiro frame — assim quando tornarmos ele
-        // visível o browser já tem o frame pronto e a troca é instantânea
-        // sem piscar/frame preto.
+        // para decodificar o primeiro frame -- assim quando começarmos o
+        // crossfade o browser já tem frame pra mostrar (sem isso, o fade
+        // acontece sobre um quadro preto/parado, que é outra forma de
+        // "piscar").
         bufferAlvo.addEventListener('loadedmetadata', function aoCarregar() {
             bufferAlvo.removeEventListener('loadedmetadata', aoCarregar);
 
-            // Play no buffer invisível para pré-aquecer o decoder
             var promessaPreload = bufferAlvo.play();
             if (promessaPreload && promessaPreload.then) {
                 promessaPreload.then(function () {
-                    // Aguarda dois frames pintados antes de fazer a troca,
-                    // garantindo que o primeiro frame do novo vídeo está
-                    // decodificado e pronto para exibição instantânea.
+                    // Aguarda dois frames pintados antes de iniciar o fade,
+                    // garantindo que o primeiro frame do novo vídeo já
+                    // está decodificado e visível assim que a opacidade
+                    // começar a subir.
                     requestAnimationFrame(function () {
                         requestAnimationFrame(function () {
-                            fazerTrocaImediata(bufferAlvo);
+                            iniciarCrossfade(bufferAlvo);
                         });
                     });
                 }).catch(function () {
-                    fazerTrocaImediata(bufferAlvo);
+                    iniciarCrossfade(bufferAlvo);
                 });
             } else {
-                fazerTrocaImediata(bufferAlvo);
+                iniciarCrossfade(bufferAlvo);
             }
 
             agendarProximaRotacaoIdle();
         });
 
-        function fazerTrocaImediata(bufferNovo) {
+        function iniciarCrossfade(bufferNovo) {
             var bufferAnterior = elIdleAtivo;
 
-            // Troca instantânea: novo fica visível, antigo some imediatamente
+            // Crossfade: o novo sobe de opacidade enquanto o antigo desce,
+            // ao mesmo tempo (CSS: transition de opacity em ambos) -- em
+            // vez do corte seco que causava o "piscar".
             bufferNovo.classList.add('is-active');
             if (bufferAnterior && bufferAnterior !== bufferNovo) {
                 bufferAnterior.classList.remove('is-active');
-                bufferAnterior.pause();
             }
 
             elIdleAtivo = bufferNovo;
             elIdleInativo = bufferAnterior;
+
+            // Só pausa o buffer antigo depois que o fade terminar, pra não
+            // "congelar" ele no meio da transição visível.
+            if (bufferAnterior && bufferAnterior !== bufferNovo) {
+                setTimeout(function () {
+                    if (bufferAnterior !== elIdleAtivo) {
+                        bufferAnterior.pause();
+                    }
+                }, CROSSFADE_DURACAO_MS);
+            }
         }
     }
 

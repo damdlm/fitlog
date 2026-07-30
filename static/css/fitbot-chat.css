@@ -23,8 +23,8 @@
 /* Ícone customizado (imagem) do botão -- sem isso a <img> renderiza no
    tamanho natural do arquivo e estoura o botão redondo de 40px. */
 .fitbot-toggle-icon {
-    width: 26px;
-    height: 26px;
+    width: 50px;
+    height: 50px;
     object-fit: contain;
 }
 
@@ -205,10 +205,12 @@
     height: 100%;
     object-fit: cover;
     opacity: 0;
+    transition: opacity .42s ease-in-out;
 }
 
 /* Máquina de estados: o vídeo ativo (marcado via JS com .is-active) fica
-   visível, com troca imediata (sem crossfade) entre os vídeos.
+   visível, com um crossfade suave em vez do corte seco de antes (que
+   causava o efeito de "piscar" entre um vídeo e outro).
    O vídeo nunca fica com display:none — só opacity:0 — para que a troca
    não pegue um frame preto/parado no meio da transição. Para o estado
    "idle" há dois vídeos com data-state="idle" (buffers A/B); só um deles
