@@ -145,7 +145,8 @@
                 if (primeiraVez) {
                     adicionarMensagem(
                         'bot',
-                        'Oi! Eu sou o FitBot 🤖, o personal trainer virtual do FitLog. ' +
+                        'Oi! Eu sou o FitBot 🤖!\n\n' +
+                        'Seu personal trainer virtual aqui no FitLog.\n\n' +
                         'Pode me perguntar sobre musculação, aeróbico, execução de exercícios ' +
                         'ou me mandar uma foto de um equipamento que eu explico como usar.'
                     );
