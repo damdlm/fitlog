@@ -3,117 +3,208 @@
 {% block page_icon %}<i class="bi bi-person-circle" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}{{ aluno.nome_completo or aluno.username }}{% endblock %}
 
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="d-none d-md-block">
-        <i class="bi bi-person-circle me-2" style="color: #F28C33;"></i>
-        {{ aluno.nome_completo or aluno.username }}
-    </h2>
-    <div>
-        <div class="btn-group me-2">
-            {% if current_user.is_admin %}
-            <a href="{{ url_for('professor.editar_aluno', aluno_id=aluno.id) }}" 
-               class="btn btn-warning">
-                <i class="bi bi-pencil"></i> Editar
-            </a>
-            {% if aluno.ativo %}
-            <form action="{{ url_for('professor.desativar_aluno', aluno_id=aluno.id) }}" method="post"
-                  class="d-inline" onsubmit="return confirm('Desativar este aluno?')">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <button type="submit" class="btn btn-danger">
-                    <i class="bi bi-person-x"></i> Desativar
-                </button>
-            </form>
-            {% else %}
-            <form action="{{ url_for('professor.reativar_aluno', aluno_id=aluno.id) }}" method="post"
-                  class="d-inline" onsubmit="return confirm('Reativar este aluno?')">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <button type="submit" class="btn btn-success">
-                    <i class="bi bi-person-check"></i> Reativar
-                </button>
-            </form>
-            {% endif %}
-            {% else %}
-            <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post"
-                  class="d-inline" onsubmit="return confirm('Remover vínculo com {{ aluno.nome_completo or aluno.username }}?')">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <button type="submit" class="btn btn-outline-danger">
-                    <i class="bi bi-link-45deg"></i> Remover vínculo
-                </button>
-            </form>
-            {% endif %}
-        </div>
-        <a href="{{ url_for('professor.listar_alunos') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Voltar
-        </a>
-    </div>
-</div>
+{% block extra_css %}
+<style>
+    .va-profile-card {
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .va-avatar {
+        width: 64px;
+        height: 64px;
+        min-width: 64px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--gradient-primary);
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.4rem;
+        box-shadow: 0 6px 16px rgba(242, 140, 51, 0.35);
+    }
+    .va-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 18px;
+        font-size: 0.88rem;
+        color: #6c757d;
+    }
+    .va-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .va-meta i {
+        color: var(--primary-color);
+    }
+    .va-stat-card {
+        border-radius: 16px;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+    }
+    .va-stat-card .card-body {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 18px;
+    }
+    .va-stat-icon {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+    }
+    .va-stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1.1;
+    }
+    .va-stat-label {
+        font-size: 0.78rem;
+        color: rgba(255, 255, 255, 0.75);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    @media (max-width: 767.98px) {
+        .va-actions {
+            width: 100%;
+        }
+        .va-actions .btn-group,
+        .va-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
 
-<!-- Informações do Aluno -->
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="text-muted">Nome Completo</h6>
-                <h5>{{ aluno.nome_completo or 'Não informado' }}</h5>
+{% block content %}
+{% set nome_exibicao = aluno.nome_completo or aluno.username %}
+{% set partes = nome_exibicao.split() %}
+{% set iniciais = (partes[0][0] ~ (partes[1][0] if partes|length > 1 else ''))|upper %}
+{% set pode_gerenciar = current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id) %}
+
+<!-- Cabeçalho do perfil -->
+<div class="card va-profile-card mb-4">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="va-avatar">{{ iniciais }}</div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h4 class="mb-0">{{ nome_exibicao }}</h4>
+                        {% if aluno.ativo %}
+                            <span class="badge bg-success">Ativo</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inativo</span>
+                        {% endif %}
+                    </div>
+                    <div class="va-meta mt-1">
+                        <span><i class="bi bi-envelope"></i> {{ aluno.email }}</span>
+                        <span><i class="bi bi-telephone"></i> {{ aluno.telefone or 'Não informado' }}</span>
+                        {% if aluno.created_at %}
+                        <span><i class="bi bi-calendar3"></i> Na plataforma desde {{ aluno.created_at.strftime('%m/%Y') }}</span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="text-muted">E-mail</h6>
-                <h5>{{ aluno.email }}</h5>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="text-muted">Telefone</h6>
-                <h5>{{ aluno.telefone or 'Não informado' }}</h5>
+
+            <div class="d-flex flex-column flex-md-row gap-2 va-actions">
+                {% if pode_gerenciar %}
+                <div class="btn-group">
+                    <a href="{{ url_for('professor.editar_aluno', aluno_id=aluno.id) }}"
+                       class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    {% if aluno.ativo %}
+                    <form action="{{ url_for('professor.desativar_aluno', aluno_id=aluno.id) }}" method="post"
+                          class="d-inline" onsubmit="return confirm('Desativar este aluno?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-person-x"></i> Desativar
+                        </button>
+                    </form>
+                    {% else %}
+                    <form action="{{ url_for('professor.reativar_aluno', aluno_id=aluno.id) }}" method="post"
+                          class="d-inline" onsubmit="return confirm('Reativar este aluno?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-person-check"></i> Reativar
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% if not current_user.is_admin %}
+                <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post"
+                      onsubmit="return confirm('Remover vínculo com {{ nome_exibicao }}?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="bi bi-link-45deg"></i> Remover vínculo
+                    </button>
+                </form>
+                {% endif %}
+                <a href="{{ url_for('professor.listar_alunos') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Voltar
+                </a>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Cards de Estatísticas -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card stats-card" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);">
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card va-stat-card" style="background: var(--gradient-primary);">
             <div class="card-body">
-                <h6 class="text-white-50">Treinos</h6>
-                <h3 class="text-white mb-0">{{ treinos|length }}</h3>
+                <div class="va-stat-icon"><i class="bi bi-trophy"></i></div>
+                <div>
+                    <div class="va-stat-value">{{ treinos|length }}</div>
+                    <div class="va-stat-label">Treinos</div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card stats-card" style="background: #2D2D2D;">
+    <div class="col-6 col-md-3">
+        <div class="card va-stat-card" style="background: var(--secondary-color);">
             <div class="card-body">
-                <h6 class="text-white-50">Exercícios</h6>
-                <h3 class="text-white mb-0">{{ exercicios|length }}</h3>
+                <div class="va-stat-icon"><i class="bi bi-list-check"></i></div>
+                <div>
+                    <div class="va-stat-value">{{ exercicios|length }}</div>
+                    <div class="va-stat-label">Exercícios</div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card stats-card" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%);">
+    <div class="col-6 col-md-3">
+        <div class="card va-stat-card" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%);">
             <div class="card-body">
-                <h6 class="text-white-50">Registros</h6>
-                <h3 class="text-white mb-0">{{ registros }}</h3>
+                <div class="va-stat-icon"><i class="bi bi-clipboard2-check"></i></div>
+                <div>
+                    <div class="va-stat-value">{{ registros }}</div>
+                    <div class="va-stat-label">Registros</div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card stats-card" style="background: #2D2D2D;">
+    <div class="col-6 col-md-3">
+        <div class="card va-stat-card" style="background: var(--secondary-color);">
             <div class="card-body">
-                <h6 class="text-white-50">Versão Ativa</h6>
-                <h3 class="text-white mb-0">
-                    {% if versao_ativa %}
-                        v{{ versao_ativa.numero_versao }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </h3>
+                <div class="va-stat-icon"><i class="bi bi-bookmark-check"></i></div>
+                <div>
+                    <div class="va-stat-value">
+                        {% if versao_ativa %}v{{ versao_ativa.numero_versao }}{% else %}-{% endif %}
+                    </div>
+                    <div class="va-stat-label">Versão Ativa</div>
+                </div>
             </div>
         </div>
     </div>
@@ -126,11 +217,6 @@
             <div class="card-body">
                 <h5 class="card-title mb-3">Acompanhamento</h5>
                 <div class="row g-2">
-                    <div class="col-6 col-md-4 col-lg">
-                        <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" class="dash-quick-tile">
-                            <i class="bi bi-speedometer2"></i> Dashboard
-                        </a>
-                    </div>
                     <div class="col-6 col-md-4 col-lg">
                         <a href="{{ url_for('professor.treinos_aluno', aluno_id=aluno.id) }}" class="dash-quick-tile">
                             <i class="bi bi-trophy"></i> Treinos
@@ -151,6 +237,13 @@
                             <i class="bi bi-calendar"></i> Calendário
                         </a>
                     </div>
+                    {% if pode_gerenciar %}
+                    <div class="col-6 col-md-4 col-lg">
+                        <a href="{{ url_for('professor.editar_aluno', aluno_id=aluno.id) }}" class="dash-quick-tile">
+                            <i class="bi bi-pencil-square"></i> Editar Dados
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
