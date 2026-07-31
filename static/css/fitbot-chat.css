@@ -424,7 +424,7 @@
 /* Ícone da câmera um pouco maior que o padrão -- fica pequeno demais
    dentro do círculo de 40px com o tamanho herdado. */
 #fitbotImageBtn i {
-    font-size: 1.2rem;
+    font-size: 1.8rem;
 }
 
 .fitbot-btn-send {
