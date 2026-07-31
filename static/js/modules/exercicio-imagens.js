@@ -57,17 +57,26 @@
 
     window.abrirModalInstrucoesExercicio = function (btn) {
         const nome = btn.dataset.nome || 'Exercício';
-        const instrucao = btn.dataset.instrucao || '';
-
-        if (!instrucao) return;
+        let passos = [];
+        try {
+            passos = JSON.parse(btn.dataset.passos || '[]');
+        } catch (e) {
+            passos = [];
+        }
+        if (!Array.isArray(passos) || !passos.length) return;
 
         const tituloEl = document.getElementById('modalInstrucoesExercicioLabel');
-        const textoEl = document.getElementById('modalInstrucoesExercicioTexto');
+        const listaEl = document.getElementById('modalInstrucoesExercicioLista');
         const modalEl = document.getElementById('modalInstrucoesExercicio');
-        if (!modalEl) return;
+        if (!modalEl || !listaEl) return;
 
         tituloEl.textContent = nome;
-        textoEl.textContent = instrucao;
+        listaEl.innerHTML = '';
+        passos.forEach(function (passo) {
+            const li = document.createElement('li');
+            li.textContent = passo;
+            listaEl.appendChild(li);
+        });
 
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
     };

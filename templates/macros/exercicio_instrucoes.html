@@ -1,10 +1,10 @@
 {#
   Macro: botao_instrucoes_exercicio
   ---------------------------------
-  Renderiza um ícone "i" que abre um modal com as instruções do
-  exercício (campo instrucao_pt de ExercicioSistema).
+  Renderiza um ícone "i" que abre um modal com o passo a passo do
+  exercício (campo passos_pt de ExercicioSistema — lista de passos).
 
-  Só é exibido se o exercício tiver instrucao_pt cadastrado. Exercícios
+  Só é exibido se o exercício tiver passos_pt cadastrado. Exercícios
   criados pelo próprio aluno (ExercicioUsuario) não têm esse campo,
   então o ícone simplesmente não aparece pra eles.
 
@@ -13,12 +13,12 @@
     {{ botao_instrucoes_exercicio(exercicio) }}
 #}
 {% macro botao_instrucoes_exercicio(ex, extra_class='') %}
-{% if ex and ex.instrucao_pt %}
+{% if ex and ex.passos_pt %}
 <button type="button"
         class="btn btn-sm btn-outline-secondary btn-instrucoes-exercicio {{ extra_class }}"
-        title="Ver instruções do exercício"
+        title="Ver passo a passo do exercício"
         data-nome="{{ ex.nome }}"
-        data-instrucao="{{ ex.instrucao_pt }}"
+        data-passos="{{ ex.passos_pt | tojson }}"
         onclick="abrirModalInstrucoesExercicio(this)">
     <i class="bi bi-info-lg"></i>
 </button>
