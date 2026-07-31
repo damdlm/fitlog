@@ -403,7 +403,7 @@
     justify-content: center;
     border: none;
     background: transparent;
-    color: #7a828c;
+    color: #53585e;
     transition: background-color .2s ease, color .2s ease, transform .1s ease;
 }
 
