@@ -67,6 +67,23 @@
         background: rgba(242, 140, 51, 0.22);
         color: var(--primary-orange);
     }
+    .dash-registro-icon .btn-instrucoes-exercicio {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: transparent;
+        color: inherit;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        padding: 0;
+        border-radius: 10px;
+    }
+    .dash-registro-icon .btn-instrucoes-exercicio:hover {
+        background: rgba(242, 140, 51, 0.22);
+        color: var(--primary-orange);
+    }
 
     .ultima-carga {
         background: var(--surface-muted);
@@ -786,6 +803,7 @@
 {% endif %}
 
 {% from "macros/exercicio_imagens.html" import botao_imagens_exercicio %}
+{% from "macros/exercicio_instrucoes.html" import botao_instrucoes_exercicio %}
 {% if exercicios %}
 <div class="card">
     <div class="card-header bg-white d-flex justify-content-between align-items-center p-3 flex-wrap gap-3">
@@ -850,6 +868,11 @@
                                     </span>
                                 </div>
                             </div>
+                            {% if ex.instrucao_pt %}
+                            <div class="dash-registro-icon">
+                                {{ botao_instrucoes_exercicio(ex) }}
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
 

@@ -54,4 +54,21 @@
         modalInstance = bootstrap.Modal.getOrCreateInstance(els.modalEl);
         modalInstance.show();
     };
+
+    window.abrirModalInstrucoesExercicio = function (btn) {
+        const nome = btn.dataset.nome || 'Exercício';
+        const instrucao = btn.dataset.instrucao || '';
+
+        if (!instrucao) return;
+
+        const tituloEl = document.getElementById('modalInstrucoesExercicioLabel');
+        const textoEl = document.getElementById('modalInstrucoesExercicioTexto');
+        const modalEl = document.getElementById('modalInstrucoesExercicio');
+        if (!modalEl) return;
+
+        tituloEl.textContent = nome;
+        textoEl.textContent = instrucao;
+
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    };
 })();
