@@ -212,7 +212,8 @@
     height: 100%;
     object-fit: cover;
     opacity: 0;
-    transition: opacity .42s ease-in-out;
+    /* Precisa bater com CROSSFADE_DURACAO_MS no fitbot-chat.js */
+    transition: opacity 1s ease-in-out;
 }
 
 /* Máquina de estados: o vídeo ativo (marcado via JS com .is-active) fica
@@ -373,7 +374,11 @@
     background: transparent;
     border: none;
     padding: 9px 4px;
-    font-size: 0.94rem;
+    /* 16px é o mínimo -- abaixo disso, o Safari no iOS dá zoom
+       automático na página inteira ao focar o campo, o que "empurra"
+       visualmente os botões de foto/enviar (parece bug de posição,
+       mas é o viewport inteiro que muda de escala). */
+    font-size: 16px;
 }
 
 .fitbot-input-row textarea.form-control:focus {

@@ -38,7 +38,7 @@
     // padrão, aleatório, padrão... sempre alternando.
     var VIDEO_PADRAO_IDLE = 'padrao.mp4';
     var PASTA_VIDEOS = '/static/videos/fitbot/';
-    var CROSSFADE_DURACAO_MS = 420; // duração do fade suave entre os vídeos (precisa bater com o CSS)
+    var CROSSFADE_DURACAO_MS = 1000; // duração do fade suave entre os vídeos, em ms (precisa bater com o CSS)
 
     // Saudações iniciais do FitBot -- uma é sorteada e mostrada só na
     // primeira vez que o chat é aberto (ver onModalShown / primeiraVez).
@@ -255,8 +255,19 @@
             }
 
             if (!ehDoEstadoAtual) {
-                video.classList.remove('is-active');
-                video.pause();
+                if (video.classList.contains('is-active')) {
+                    video.classList.remove('is-active');
+                    // Só pausa depois que o fade (CROSSFADE_DURACAO_MS) terminar --
+                    // pausar na hora congela o quadro no meio da transição visível
+                    // e ainda deixa o vídeo "frio" (precisando decodificar de novo)
+                    // na próxima vez que ele for reativado, o que causava o
+                    // intervalo/piscada entre um vídeo e outro.
+                    (function (v) {
+                        setTimeout(function () {
+                            if (!v.classList.contains('is-active')) v.pause();
+                        }, CROSSFADE_DURACAO_MS);
+                    })(video);
+                }
                 continue;
             }
 
