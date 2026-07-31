@@ -330,12 +330,22 @@
         50% { transform: scale(1.12); }
     }
 
-    /* ---- Anel de progresso do intervalo ---- */
+    /* ---- Mostrador do intervalo: anel no centro + presets ao redor ---- */
+    .cronometro-dial-wrap {
+        position: relative;
+        width: 260px;
+        height: 260px;
+        margin: 4px auto 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        --crono-dial-radius: 96px; /* distância do centro até cada preset */
+    }
+
     .cronometro-ring-wrap {
         position: relative;
         width: 148px;
         height: 148px;
-        margin: 4px auto 6px;
     }
 
     .cronometro-ring {
@@ -373,13 +383,15 @@
         font-size: 1.85rem;
     }
 
-    .cronometro-presets {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        justify-content: center;
-        margin-bottom: 4px;
-        max-width: 260px;
+    /* Cada preset é posicionado como um número de relógio: --ux/--uy são
+       as coordenadas de um círculo unitário (definidas inline em cada
+       botão no HTML), multiplicadas pelo raio do mostrador. */
+    .cronometro-dial-wrap .btn-preset {
+        position: absolute;
+        top: calc(50% + (var(--uy, 0) * var(--crono-dial-radius)));
+        left: calc(50% + (var(--ux, 0) * var(--crono-dial-radius)));
+        transform: translate(-50%, -50%);
+        z-index: 2;
     }
 
     .btn-preset {
@@ -390,7 +402,9 @@
         font-weight: 600;
         padding: 4px 10px;
         border-radius: 20px;
-        transition: background-color .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;
+        white-space: nowrap;
+        box-shadow: 0 2px 6px rgba(45, 45, 45, 0.08);
+        transition: background-color .15s ease, color .15s ease, border-color .15s ease, transform .15s ease;
     }
 
     .btn-preset:hover {
@@ -398,14 +412,17 @@
         color: var(--primary-orange);
     }
 
-    .btn-preset:active {
-        transform: scale(0.94);
+    /* Combinado com o translate(-50%,-50%) da posição no mostrador --
+       sem isso o botão "pularia" pro canto ao ser clicado. */
+    .cronometro-dial-wrap .btn-preset:active {
+        transform: translate(-50%, -50%) scale(0.94);
     }
 
     .btn-preset.is-active {
         background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
         border-color: transparent;
         color: #fff;
+        box-shadow: 0 3px 10px rgba(242, 140, 51, 0.35);
     }
 
     .cronometro-actions {
@@ -531,32 +548,32 @@
             margin: 2px 0;
         }
 
-        /* O cronômetro de intervalo é o protagonista aqui -- anel maior
-           que até no desktop, já que agora ocupa a largura inteira do
-           card em vez de dividir espaço com o do treino. */
+        /* O cronômetro de intervalo é o protagonista aqui -- mostrador
+           maior que até no desktop, já que agora ocupa a largura inteira
+           do card em vez de dividir espaço com o do treino. */
         .cronometro-intervalo {
-            padding: 14px 10px 12px;
+            padding: 14px 6px 12px;
+        }
+
+        .cronometro-dial-wrap {
+            width: 272px;
+            height: 272px;
+            margin: 4px auto 10px;
+            --crono-dial-radius: 104px;
         }
 
         .cronometro-ring-wrap {
-            width: 176px;
-            height: 176px;
-            margin: 4px auto 8px;
+            width: 168px;
+            height: 168px;
         }
 
         .cronometro-display-ring {
-            font-size: 2.1rem;
-        }
-
-        .cronometro-presets {
-            gap: 6px;
-            max-width: 100%;
-            margin-bottom: 6px;
+            font-size: 2rem;
         }
 
         .btn-preset {
-            font-size: 0.75rem;
-            padding: 5px 11px;
+            font-size: 0.72rem;
+            padding: 5px 10px;
         }
 
         .cronometro-actions {
@@ -952,29 +969,33 @@
             <div class="cronometro-box cronometro-intervalo" id="cronoIntervaloBox">
                 <span class="cronometro-label"><i class="bi bi-hourglass-split"></i> Intervalo entre séries</span>
 
-                <div class="cronometro-ring-wrap">
-                    <svg class="cronometro-ring" viewBox="0 0 120 120">
-                        <defs>
-                            <linearGradient id="cronoRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#F28C33"/>
-                                <stop offset="100%" stop-color="#FFB366"/>
-                            </linearGradient>
-                        </defs>
-                        <circle class="cronometro-ring-bg" cx="60" cy="60" r="52"></circle>
-                        <circle class="cronometro-ring-progress" id="cronoIntervaloRing" cx="60" cy="60" r="52"></circle>
-                    </svg>
-                    <span class="cronometro-display cronometro-display-ring" id="cronoIntervaloDisplay">01:30</span>
-                </div>
+                <!-- "Mostrador": o anel de progresso no centro e os presets
+                     de tempo posicionados ao redor, como números de
+                     relógio (posição de cada um definida por --ux/--uy,
+                     coordenadas de círculo unitário -- ver CSS). -->
+                <div class="cronometro-dial-wrap" id="cronoIntervaloPresets">
+                    <div class="cronometro-ring-wrap">
+                        <svg class="cronometro-ring" viewBox="0 0 120 120">
+                            <defs>
+                                <linearGradient id="cronoRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#F28C33"/>
+                                    <stop offset="100%" stop-color="#FFB366"/>
+                                </linearGradient>
+                            </defs>
+                            <circle class="cronometro-ring-bg" cx="60" cy="60" r="52"></circle>
+                            <circle class="cronometro-ring-progress" id="cronoIntervaloRing" cx="60" cy="60" r="52"></circle>
+                        </svg>
+                        <span class="cronometro-display cronometro-display-ring" id="cronoIntervaloDisplay">01:30</span>
+                    </div>
 
-                <div class="cronometro-presets" id="cronoIntervaloPresets">
-                    <button type="button" class="btn-preset" data-segundos="15">15s</button>
-                    <button type="button" class="btn-preset" data-segundos="30">30s</button>
-                    <button type="button" class="btn-preset" data-segundos="45">45s</button>
-                    <button type="button" class="btn-preset" data-segundos="60">1:00</button>
-                    <button type="button" class="btn-preset is-active" data-segundos="90">1:30</button>
-                    <button type="button" class="btn-preset" data-segundos="120">2:00</button>
-                    <button type="button" class="btn-preset" data-segundos="180">3:00</button>
-                    <button type="button" class="btn-preset" data-segundos="300">5:00</button>
+                    <button type="button" class="btn-preset" style="--ux: 0; --uy: -1;" data-segundos="15">15s</button>
+                    <button type="button" class="btn-preset" style="--ux: 0.707; --uy: -0.707;" data-segundos="30">30s</button>
+                    <button type="button" class="btn-preset" style="--ux: 1; --uy: 0;" data-segundos="45">45s</button>
+                    <button type="button" class="btn-preset" style="--ux: 0.707; --uy: 0.707;" data-segundos="60">1:00</button>
+                    <button type="button" class="btn-preset is-active" style="--ux: 0; --uy: 1;" data-segundos="90">1:30</button>
+                    <button type="button" class="btn-preset" style="--ux: -0.707; --uy: 0.707;" data-segundos="120">2:00</button>
+                    <button type="button" class="btn-preset" style="--ux: -1; --uy: 0;" data-segundos="180">3:00</button>
+                    <button type="button" class="btn-preset" style="--ux: -0.707; --uy: -0.707;" data-segundos="300">5:00</button>
                 </div>
 
                 <div class="cronometro-actions">
