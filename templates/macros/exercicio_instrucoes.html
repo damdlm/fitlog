@@ -18,7 +18,7 @@
         class="btn btn-sm btn-outline-secondary btn-instrucoes-exercicio {{ extra_class }}"
         title="Ver passo a passo do exercício"
         data-nome="{{ ex.nome }}"
-        data-passos="{{ ex.passos_pt | tojson }}"
+        data-passos="{{ ex.passos_pt | tojson | forceescape }}"
         onclick="abrirModalInstrucoesExercicio(this)">
     <i class="bi bi-info-lg"></i>
 </button>
