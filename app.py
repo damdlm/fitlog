@@ -193,6 +193,20 @@ def create_app(config_class=None):
         response.headers["Service-Worker-Allowed"] = "/"
         return response
 
+    # =============================================================
+    # MÍDIA DOS EXERCÍCIOS (VOLUME DO RAILWAY)
+    # =============================================================
+    # O volume "exercicios" é montado em /app/exercicios em produção
+    # (fora da pasta static/, que vem do repo). gif_url/imagem em
+    # exercicios_sistema guardam caminhos relativos tipo
+    # "videos/0001-2gPfomN.gif" dentro dessa pasta.
+    EXERCICIOS_MEDIA_DIR = os.environ.get("EXERCICIOS_MEDIA_DIR", "/app/exercicios")
+
+    @app.route("/exercicios-media/<path:caminho>")
+    def exercicios_media(caminho):
+        from flask import send_from_directory
+        return send_from_directory(EXERCICIOS_MEDIA_DIR, caminho)
+
     return app  # ← estava faltando isso!
 
 

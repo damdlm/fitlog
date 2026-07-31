@@ -1,18 +1,18 @@
 /**
- * Modal de imagens do exercício.
+ * Modal de gif do exercício.
  *
- * Cada botão ".btn-imagens-exercicio" carrega nos data-attributes o(s)
- * caminho(s) relativo(s) das imagens (ex: "Ab_Crunch_Machine/0.jpg"),
- * salvos nos campos imagem_inicial / imagem_execucao de ExercicioBase.
- * As imagens ficam em static/exercicios/<pasta>/<arquivo>.
+ * Cada botão ".btn-imagens-exercicio" carrega no data-attribute "gif" o
+ * caminho relativo do gif (ex: "videos/0001-2gPfomN.gif"), salvo no
+ * campo gif_url de ExercicioSistema.
+ *
+ * Os arquivos ficam num volume do Railway montado em /app/exercicios,
+ * servido pela rota /exercicios-media/<caminho> (ver app.py).
  */
 (function () {
     'use strict';
 
-    const BASE_PATH = '/static/exercicios/';
+    const BASE_PATH = '/exercicios-media/';
 
-    let imagens = [];
-    let indiceAtual = 0;
     let modalInstance = null;
 
     function getModalEls() {
@@ -22,9 +22,6 @@
             legenda: document.getElementById('modalImagensExercicioLegenda'),
             titulo: document.getElementById('modalImagensExercicioLabel'),
             contador: document.getElementById('modalImagensExercicioContador'),
-            btnAlternar: document.getElementById('btnImgExercicioAlternar'),
-            btnAlternarTexto: document.getElementById('btnImgExercicioAlternarTexto'),
-            btnAlternarIcone: document.getElementById('btnImgExercicioAlternarIcone'),
         };
     }
 
@@ -33,58 +30,26 @@
         return BASE_PATH + String(caminho).replace(/^\/+/, '');
     }
 
-    function atualizarTela() {
-        const els = getModalEls();
-        if (!els.modalEl || !imagens.length) return;
-
-        const atual = imagens[indiceAtual];
-        els.img.src = atual.url;
-        els.img.alt = atual.label;
-        els.legenda.textContent = atual.label;
-
-        const temMaisDeUma = imagens.length > 1;
-        els.btnAlternar.classList.toggle('d-none', !temMaisDeUma);
-        els.contador.classList.toggle('d-none', !temMaisDeUma);
-
-        if (temMaisDeUma) {
-            els.contador.textContent = (indiceAtual + 1) + ' / ' + imagens.length;
-
-            // Na primeira imagem mostra "Próxima"; na última mostra "Anterior".
-            const naUltima = indiceAtual === imagens.length - 1;
-            els.btnAlternarTexto.textContent = naUltima ? 'Anterior' : 'Próxima';
-            els.btnAlternarIcone.className = naUltima ? 'bi bi-chevron-left' : 'bi bi-chevron-right';
-        }
-    }
-
-    window.alternarImagemExercicio = function () {
-        if (imagens.length < 2) return;
-        const direcao = indiceAtual === imagens.length - 1 ? -1 : 1;
-        indiceAtual = (indiceAtual + direcao + imagens.length) % imagens.length;
-        atualizarTela();
-    };
-
     window.abrirModalImagensExercicio = function (btn) {
         const nome = btn.dataset.nome || 'Exercício';
-        const inicial = montarUrl(btn.dataset.imgInicial);
-        const execucao = montarUrl(btn.dataset.imgExecucao);
+        const gif = montarUrl(btn.dataset.gif);
 
-        imagens = [];
-        if (inicial) imagens.push({ url: inicial, label: 'Posição inicial' });
-        if (execucao) imagens.push({ url: execucao, label: 'Execução' });
-
-        if (!imagens.length) return;
-
-        indiceAtual = 0;
+        if (!gif) return;
 
         const els = getModalEls();
         if (!els.modalEl) return;
+
         els.titulo.textContent = nome;
+        els.img.src = gif;
+        els.img.alt = nome;
+        els.legenda.textContent = '';
+
+        // Modal agora mostra um único gif
+        if (els.contador) els.contador.classList.add('d-none');
 
         els.img.onerror = function () {
-            els.legenda.textContent = 'Não foi possível carregar esta imagem.';
+            els.legenda.textContent = 'Não foi possível carregar este gif.';
         };
-
-        atualizarTela();
 
         modalInstance = bootstrap.Modal.getOrCreateInstance(els.modalEl);
         modalInstance.show();
