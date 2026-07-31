@@ -175,9 +175,15 @@
 
 /* Estado inicial ao abrir o chat -- fica invisível por alguns segundos
    antes do quadro (já tocando "tchau.mp4") aparecer. Ver
-   DURACAO_ATRASO_ABERTURA_MS no JS. */
+   DURACAO_ATRASO_ABERTURA_MS no JS.
+   transition: none aqui é proposital -- o container aparece/some na
+   hora, e quem faz o fade suave é só o <video> por baixo (ver
+   .fitbot-avatar-frame video). Duas transições de opacidade
+   sobrepostas com durações diferentes (essa + a do vídeo) causavam
+   um efeito de "pisca duas vezes" ao abrir o chat. */
 .fitbot-avatar-corner.is-hidden-inicio {
     opacity: 0;
+    transition: none;
 }
 
 @keyframes fitbot-avatar-breathe {
@@ -354,7 +360,7 @@
    soltos lado a lado de antes. */
 .fitbot-input-row {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     gap: 6px;
     background: #f4f6f8;
     border: 1px solid #e7e9ec;
@@ -413,6 +419,12 @@
 .fitbot-btn-icon:focus-visible {
     outline: 2px solid #F28C33;
     outline-offset: 2px;
+}
+
+/* Ícone da câmera um pouco maior que o padrão -- fica pequeno demais
+   dentro do círculo de 40px com o tamanho herdado. */
+#fitbotImageBtn i {
+    font-size: 1.2rem;
 }
 
 .fitbot-btn-send {

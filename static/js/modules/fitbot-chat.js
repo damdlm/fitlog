@@ -271,11 +271,46 @@
                 continue;
             }
 
-            video.classList.add('is-active');
-            video.currentTime = 0;
-            var promessa = video.play();
-            if (promessa && promessa.catch) promessa.catch(function () {});
+            ativarVideoComPreload(video);
         }
+    }
+
+    // Ativa um vídeo de estado (bye/talking/error/thinking) só depois que
+    // o frame no início dele já está decodificado -- evita o flash/pulo
+    // que acontecia quando o vídeo estava pausado numa posição antiga
+    // (ex.: "tchau.mp4" da última vez que o chat foi aberto) e a gente
+    // tentava mostrar ele já em fade antes do navegador ter o frame pronto.
+    function ativarVideoComPreload(video) {
+        if (video.classList.contains('is-active')) return;
+
+        function tocarEEsmaecer() {
+            var promessa = video.play();
+            function esmaecer() {
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(function () {
+                        video.classList.add('is-active');
+                    });
+                });
+            }
+            if (promessa && promessa.then) {
+                promessa.then(esmaecer).catch(esmaecer);
+            } else {
+                esmaecer();
+            }
+        }
+
+        // Já está exatamente no frame 0 e com dado suficiente decodificado?
+        // Pode tocar direto, sem esperar por "seeked".
+        if (video.currentTime === 0 && video.readyState >= 2) {
+            tocarEEsmaecer();
+            return;
+        }
+
+        video.addEventListener('seeked', function aoBuscarFrame() {
+            video.removeEventListener('seeked', aoBuscarFrame);
+            tocarEEsmaecer();
+        });
+        video.currentTime = 0;
     }
 
     // Escolhe o próximo vídeo do estado idle, sempre alternando entre um
