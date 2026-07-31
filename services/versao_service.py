@@ -354,7 +354,7 @@ class VersaoService(BaseService):
     def get_exercicios(versao_id, treino_codigo=None, user_id=None):
         """Retorna exercícios de uma versão (para registro de treino) - UNIFICADO"""
         try:
-            from models import ExercicioCustomizado, ExercicioBase
+            from models import ExercicioCustomizado, ExercicioSistema
             from sqlalchemy.orm import joinedload
             
             user_id = user_id or BaseService.get_current_user_id()
@@ -401,7 +401,7 @@ class VersaoService(BaseService):
             
             exercicios = []
 
-            # "musculo_nome" é coluna REAL em ExercicioBase — atribuir aqui
+            # "musculo_nome" é property real (baseada em grupo_muscular) — atribuir aqui
             # dentro de uma leitura marca o objeto como sujo e o autoflush da
             # próxima query tenta gravar isso no catálogo global, disputando
             # locks com outras requisições (ver correção equivalente em
@@ -423,15 +423,15 @@ class VersaoService(BaseService):
                         exercicios.append(ex)
 
                 if base_ids:
-                    ex_base = ExercicioBase.query.filter(
-                        ExercicioBase.id.in_(base_ids)
-                    ).options(joinedload(ExercicioBase.musculo_ref)).all()
+                    ex_base = ExercicioSistema.query.filter(
+                        ExercicioSistema.id.in_(base_ids)
+                    ).all()
 
                     for ex in ex_base:
                         ex.tipo = 'base'
                         ex.prefixo = 'b_'
-                        ex.musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
-                        ex.musculo = ex.musculo_nome
+                        # musculo_nome já é property (= grupo_muscular)
+                        ex.musculo = ex.grupo_muscular or 'N/A'
                         db.session.expunge(ex)
                         exercicios.append(ex)
 
@@ -446,7 +446,7 @@ class VersaoService(BaseService):
     @staticmethod
     def get_exercicios_para_edicao(user_id, treino_versao):
         """Retorna (exercicios_display, exercicios_atuais) para o template de edição."""
-        from models import ExercicioCustomizado, ExercicioBase
+        from models import ExercicioCustomizado, ExercicioSistema
         from sqlalchemy.orm import joinedload
         
         exercicios_usuario = ExercicioCustomizado.query\
@@ -454,9 +454,8 @@ class VersaoService(BaseService):
             .options(joinedload(ExercicioCustomizado.musculo_ref))\
             .order_by(ExercicioCustomizado.nome).all()
         
-        exercicios_base = ExercicioBase.query\
-            .options(joinedload(ExercicioBase.musculo_ref))\
-            .order_by(ExercicioBase.nome).all()
+        exercicios_base = ExercicioSistema.query\
+            .order_by(ExercicioSistema.nome).all()
         
         exercicios_display = []
         
@@ -472,7 +471,7 @@ class VersaoService(BaseService):
             })
         
         for ex in exercicios_base:
-            musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
+            musculo_nome = ex.grupo_muscular or 'N/A'
             exercicios_display.append({
                 'id': ex.id,
                 'nome': ex.nome,
@@ -703,11 +702,11 @@ class VersaoService(BaseService):
     @staticmethod
     def _get_exercicio_fk(exercicio_id):
         """Retorna dicionário com a FK apropriada"""
-        from models import ExercicioUsuario, ExercicioBase
+        from models import ExercicioUsuario, ExercicioSistema
         ex_user = ExercicioUsuario.query.get(exercicio_id)
         if ex_user:
             return {'exercicio_usuario_id': exercicio_id}
-        ex_base = ExercicioBase.query.get(exercicio_id)
+        ex_base = ExercicioSistema.query.get(exercicio_id)
         if ex_base:
             return {'exercicio_base_id': exercicio_id}
         raise ValueError(f"Exercício com ID {exercicio_id} não encontrado em nenhuma tabela")
@@ -725,7 +724,7 @@ class VersaoService(BaseService):
     @staticmethod
     def processar_exercicios_formulario(exercicios_raw, user_id):
         """Processa a lista de exercícios vindos do formulário"""
-        from models import ExercicioCustomizado, ExercicioBase
+        from models import ExercicioCustomizado, ExercicioSistema
         
         usuarios_ids = []
         bases_ids = []
@@ -761,8 +760,8 @@ class VersaoService(BaseService):
         
         bases_ids_validos = []
         if bases_ids:
-            exercicios = ExercicioBase.query.filter(
-                ExercicioBase.id.in_(bases_ids)
+            exercicios = ExercicioSistema.query.filter(
+                ExercicioSistema.id.in_(bases_ids)
             ).all()
             bases_ids_validos = [ex.id for ex in exercicios]
         

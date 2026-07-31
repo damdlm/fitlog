@@ -34,22 +34,14 @@ def calendario():
 @login_required
 def api_eventos():
     """API para retornar os eventos do calendário"""
-    return jsonify(gerar_eventos_calendario(
-        user_id=current_user.id,
-        ano=request.args.get('ano', type=int),
-        mes=request.args.get('mes', type=int)
-    ))
-
-
-def gerar_eventos_calendario(user_id, ano=None, mes=None):
-    """Monta a lista de eventos do calendário para um usuário específico.
-
-    Extraído de api_eventos() para ser reutilizado também pelo professor
-    ao acompanhar o calendário de um aluno (rotas em professor_routes.py).
-    """
     try:
+        # Parâmetros opcionais de filtro
+        ano = request.args.get('ano', type=int)
+        mes = request.args.get('mes', type=int)
+        treino_id = request.args.get('treino_id')
+        
         # Buscar todos os registros do usuário
-        registros = RegistroService.get_all(user_id=user_id, load_series=True)
+        registros = RegistroService.get_all(load_series=True)
         
         eventos = []
         volumes_por_dia = {}
@@ -90,7 +82,7 @@ def gerar_eventos_calendario(user_id, ano=None, mes=None):
             
             # Adicionar detalhe do treino
             treino = None
-            for t in TreinoService.get_all(user_id=user_id):
+            for t in TreinoService.get_all():
                 if t.id == r.treino_id:
                     treino = t
                     break
@@ -142,11 +134,11 @@ def gerar_eventos_calendario(user_id, ano=None, mes=None):
                 }
             })
         
-        return eventos
+        return jsonify(eventos)
         
     except Exception as e:
         logger.error(f"Erro ao gerar eventos: {e}")
-        return []
+        return jsonify([])
 
 
 @calendar_bp.route("/api/evento/<int:registro_id>")
@@ -168,13 +160,15 @@ def api_evento_detalhe(registro_id):
 
     # Buscar exercício (do catálogo do usuário ou global) e suas séries
     exercicio_obj = registro.exercicio if registro.exercicio_usuario_id else registro.exercicio_base
-    musculo = exercicio_obj.musculo_ref if exercicio_obj else None
+    musculo_nome = exercicio_obj.musculo_nome if exercicio_obj and hasattr(exercicio_obj, 'musculo_nome') else (
+        exercicio_obj.musculo_ref.nome_exibicao if exercicio_obj and exercicio_obj.musculo_ref else None
+    )
 
     exercicios = []
     for serie in registro.series:
         exercicios.append({
             'nome': exercicio_obj.nome if exercicio_obj else 'Desconhecido',
-            'musculo': musculo.nome_exibicao if musculo else 'N/A',
+            'musculo': musculo_nome or 'N/A',
             'carga': float(serie.carga),
             'repeticoes': serie.repeticoes,
             'volume': float(serie.carga) * serie.repeticoes

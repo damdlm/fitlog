@@ -6,7 +6,7 @@ from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
 from services.musculo_service import MusculoService
 from services.catalogo_service import CatalogoService
-from models import db, TreinoVersao, VersaoExercicio, ExercicioCustomizado, ExercicioBase
+from models import db, TreinoVersao, VersaoExercicio, ExercicioCustomizado, ExercicioSistema
 from utils.format_utils import formatar_data
 import logging
 
@@ -249,9 +249,9 @@ def editar_treino_na_versao(versao_id, treino_codigo):
             return redirect(request.url)
         
         # Validar IDs
-        from models import ExercicioUsuario, ExercicioBase
+        from models import ExercicioUsuario, ExercicioSistema
         usuarios_ids_validos = [eid for eid in usuarios_ids if ExercicioUsuario.query.get(eid)]
-        bases_ids_validos = [eid for eid in bases_ids if ExercicioBase.query.get(eid)]
+        bases_ids_validos = [eid for eid in bases_ids if ExercicioSistema.query.get(eid)]
         
         try:
             versao = VersaoService.get_by_id(versao_id, user_id=current_user.id, load_relations=True)

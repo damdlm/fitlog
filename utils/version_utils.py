@@ -325,7 +325,7 @@ def verificar_exercicio_em_versoes(exercicio_id, tipo_exercicio=None):
         exercicio_id: ID do exercício
         tipo_exercicio: 'usuario' ou 'base' (se None, busca em ambos)
     """
-    from models import VersaoExercicio, Treino, ExercicioUsuario, ExercicioBase
+    from models import VersaoExercicio, Treino, ExercicioUsuario, ExercicioSistema
     
     resultados = []
     

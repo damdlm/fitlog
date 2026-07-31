@@ -88,7 +88,7 @@ def visualizar_tabela():
         
         # Filtro por músculo
         if musculo_selecionado:
-            musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else ""
+            musculo_nome = ex.musculo_nome or ""
             if musculo_nome != musculo_selecionado:
                 continue
         

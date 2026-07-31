@@ -263,16 +263,18 @@ class VersaoExercicio(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     treino_versao_id = db.Column(db.Integer, db.ForeignKey('treinos_versao.id', ondelete='CASCADE'), nullable=False)
 
-    # Duas FKs: uma para exercícios do usuário, outra para exercícios base (catálogo)
+    # Duas FKs: uma para exercícios do usuário, outra para exercícios do catálogo
+    # (exercicio_base_id aponta hoje para exercicios_sistema — nome mantido por
+    # compatibilidade com código/templates existentes que já usam esse nome)
     exercicio_usuario_id = db.Column(db.Integer, db.ForeignKey('exercicios_usuario.id', ondelete='CASCADE'))
-    exercicio_base_id = db.Column(db.Integer, db.ForeignKey('exercicios_base.id', ondelete='CASCADE'))
+    exercicio_base_id = db.Column(db.Integer, db.ForeignKey('exercicios_sistema.id', ondelete='CASCADE'))
 
     ordem = db.Column(db.Integer, default=0)
 
     # Relacionamentos
     treino_versao = db.relationship('TreinoVersao', back_populates='exercicios')
     exercicio_usuario = db.relationship('ExercicioUsuario', foreign_keys=[exercicio_usuario_id])
-    exercicio_base = db.relationship('ExercicioBase', foreign_keys=[exercicio_base_id])
+    exercicio_base = db.relationship('ExercicioSistema', foreign_keys=[exercicio_base_id])
 
     # Validação: exatamente uma das FKs deve ser preenchida
     __table_args__ = (
@@ -325,7 +327,7 @@ class RegistroTreino(db.Model):
 
     exercicio_base_id = db.Column(
         db.Integer,
-        db.ForeignKey('exercicios_base.id', ondelete='CASCADE'),
+        db.ForeignKey('exercicios_sistema.id', ondelete='CASCADE'),
         nullable=True
     )
 
@@ -353,7 +355,7 @@ class RegistroTreino(db.Model):
     )
 
     exercicio_base = db.relationship(
-        'ExercicioBase',
+        'ExercicioSistema',
         foreign_keys=[exercicio_base_id],
         backref='registros'
     )
@@ -408,37 +410,10 @@ class Musculo(db.Model):
     descricao = db.Column(db.Text)
 
 
-class ExercicioBase(db.Model):
-    """
-    Catálogo global de exercícios — gerenciado apenas pelo admin.
-    Populado a partir do arquivo exercises-ptbr-full-translation.json.
-    """
-    __tablename__ = 'exercicios_base'
-
-    id               = db.Column(db.Integer, primary_key=True)
-    id_original      = db.Column(db.String(200), unique=True)
-    nome             = db.Column(db.String(200), nullable=False)
-    musculo_id       = db.Column(db.Integer, db.ForeignKey('musculos.id'))
-    musculo_nome     = db.Column(db.String(100))
-    musculos_secundarios = db.Column(db.JSON)
-    equipamento      = db.Column(db.String(100))
-    nivel            = db.Column(db.String(50))
-    forca            = db.Column(db.String(50))
-    mecanica         = db.Column(db.String(50))
-    categoria        = db.Column(db.String(50))
-    instrucoes       = db.Column(db.JSON)
-    imagem_inicial   = db.Column(db.String(300))
-    imagem_execucao  = db.Column(db.String(300))
-    created_at       = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-
-    musculo_ref = db.relationship('Musculo', foreign_keys=[musculo_id], backref='exercicios_base')
-
-    __table_args__ = (
-        db.Index('idx_exercicio_base_nome',    'nome'),
-        db.Index('idx_exercicio_base_musculo', 'musculo_id'),
-        db.Index('idx_exercicio_base_nivel',   'nivel'),
-        db.Index('idx_exercicio_base_id_orig', 'id_original'),
-    )
+# NOTA: ExercicioBase (tabela exercicios_base) foi descontinuado — o catálogo
+# global de exercícios agora vem de ExercicioSistema (tabela exercicios_sistema,
+# importada de data/exercises.json). A tabela exercicios_base ainda existe no
+# banco (não foi apagada), mas o app não lê/escreve mais nela.
 
 
 class ExercicioUsuario(db.Model):
@@ -495,6 +470,47 @@ class ExercicioSistema(db.Model):
         db.Index('idx_exercicios_sistema_categoria', 'categoria'),
         db.Index('idx_exercicios_sistema_grupo_muscular', 'grupo_muscular'),
     )
+
+    # ============================================================
+    # PROPERTIES DE COMPATIBILIDADE COM O ANTIGO ExercicioBase
+    # ============================================================
+    # exercicios_sistema não tem FK para musculos (grupo_muscular já vem
+    # como texto pronto do dataset) nem os campos nivel/forca/mecanica.
+    # Essas properties existem só pra reduzir a área de código/templates
+    # que precisa mudar — NÃO são colunas reais nem aceitam joinedload().
+
+    @property
+    def musculo_nome(self):
+        """Compat: em ExercicioBase isso era coluna real; aqui é o próprio grupo_muscular."""
+        return self.grupo_muscular
+
+    @property
+    def musculo_ref(self):
+        """Compat: exercicios_sistema não tem FK para musculos — sempre None."""
+        return None
+
+    @property
+    def instrucoes(self):
+        """Compat: junta instrucao_pt (texto) e passos_pt (lista) em uma lista única."""
+        passos = list(self.passos_pt) if self.passos_pt else []
+        if self.instrucao_pt and self.instrucao_pt not in passos:
+            return [self.instrucao_pt] + passos
+        return passos
+
+    @property
+    def imagem_inicial(self):
+        """Compat: exercicios_sistema guarda uma imagem só (imagem/gif_url)."""
+        return self.imagem
+
+    @property
+    def imagem_execucao(self):
+        """Compat: usa o gif (se houver) como imagem de execução, senão a mesma imagem."""
+        return self.gif_url or self.imagem
+
+    # nivel, forca e mecanica não existem no dataset de exercicios_sistema
+    nivel = None
+    forca = None
+    mecanica = None
 
 # Alias para compatibilidade com codigo existente
 ExercicioCustomizado = ExercicioUsuario

@@ -1,9 +1,9 @@
 """
 Serviço para gerenciar o catálogo de exercícios - AGORA USA O BANCO DE DADOS
+(catálogo global = exercicios_sistema, importado de data/exercises.json)
 """
 from .base_service import BaseService
-from models import db, ExercicioBase, Musculo
-from sqlalchemy import or_
+from models import db, ExercicioSistema
 import logging
 from utils.exercise_utils import remover_acentos
 
@@ -23,9 +23,9 @@ class CatalogoService:
         Retorna todos os exercícios do catálogo (do banco)
         """
         try:
-            exercicios = ExercicioBase.query.options(
-                db.joinedload(ExercicioBase.musculo_ref)
-            ).order_by(ExercicioBase.nome).limit(limite).all()
+            exercicios = ExercicioSistema.query.order_by(
+                ExercicioSistema.nome
+            ).limit(limite).all()
             
             if not exercicios:
                 return []
@@ -35,11 +35,11 @@ class CatalogoService:
                 resultados.append({
                     "id": ex.id,
                     "nome": ex.nome,
-                    "musculo": ex.musculo_ref.nome_exibicao if ex.musculo_ref else "Não especificado",
-                    "musculo_original": ex.musculo_nome or "",
+                    "musculo": ex.grupo_muscular or "Não especificado",
+                    "musculo_original": ex.grupo_muscular or "",
                     "equipment": ex.equipamento or "",
-                    "level": ex.nivel or "",
-                    "force": ex.forca or "",
+                    "level": "",
+                    "force": "",
                     "instructions": ex.instrucoes or []
                 })
             
@@ -55,19 +55,15 @@ class CatalogoService:
         Busca exercícios no BANCO por termo e/ou músculo
         """
         try:
-            query = ExercicioBase.query.options(
-                db.joinedload(ExercicioBase.musculo_ref)
-            )
+            query = ExercicioSistema.query
             
             if termo:
-                query = query.filter(ExercicioBase.nome.ilike(f'%{termo}%'))
+                query = query.filter(ExercicioSistema.nome.ilike(f'%{termo}%'))
             
             if musculo:
-                query = query.join(ExercicioBase.musculo_ref).filter(
-                    Musculo.nome_exibicao == musculo
-                )
+                query = query.filter(ExercicioSistema.grupo_muscular == musculo)
             
-            exercicios = query.order_by(ExercicioBase.nome).limit(limite).all()
+            exercicios = query.order_by(ExercicioSistema.nome).limit(limite).all()
             
             if not exercicios:
                 return []
@@ -77,11 +73,11 @@ class CatalogoService:
                 resultados.append({
                     "id": ex.id,
                     "nome": ex.nome,
-                    "musculo": ex.musculo_ref.nome_exibicao if ex.musculo_ref else "Não especificado",
-                    "musculo_original": ex.musculo_nome or "",
+                    "musculo": ex.grupo_muscular or "Não especificado",
+                    "musculo_original": ex.grupo_muscular or "",
                     "equipment": ex.equipamento or "",
-                    "level": ex.nivel or "",
-                    "force": ex.forca or "",
+                    "level": "",
+                    "force": "",
                     "instructions": ex.instrucoes or []
                 })
             
@@ -93,11 +89,13 @@ class CatalogoService:
     
     @classmethod
     def get_musculos_disponiveis(cls):
-        """Retorna lista de músculos disponíveis no catálogo"""
+        """Retorna lista de grupos musculares disponíveis no catálogo"""
         try:
-            resultados = db.session.query(Musculo.nome_exibicao).join(
-                ExercicioBase, ExercicioBase.musculo_id == Musculo.id
-            ).distinct().order_by(Musculo.nome_exibicao).all()
+            resultados = db.session.query(ExercicioSistema.grupo_muscular)\
+                .filter(ExercicioSistema.grupo_muscular.isnot(None))\
+                .distinct()\
+                .order_by(ExercicioSistema.grupo_muscular)\
+                .all()
             
             return [r[0] for r in resultados]
             
@@ -109,9 +107,9 @@ class CatalogoService:
     def get_exercicio_por_nome(cls, nome):
         """Busca um exercício específico pelo nome no banco"""
         try:
-            exercicio = ExercicioBase.query.options(
-                db.joinedload(ExercicioBase.musculo_ref)
-            ).filter(ExercicioBase.nome.ilike(nome)).first()
+            exercicio = ExercicioSistema.query.filter(
+                ExercicioSistema.nome.ilike(nome)
+            ).first()
             
             if not exercicio:
                 return None
@@ -119,7 +117,7 @@ class CatalogoService:
             return {
                 "id": exercicio.id,
                 "nome": exercicio.nome,
-                "musculo": exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else "Não especificado",
+                "musculo": exercicio.grupo_muscular or "Não especificado",
                 "equipment": exercicio.equipamento or "",
                 "instructions": exercicio.instrucoes or []
             }

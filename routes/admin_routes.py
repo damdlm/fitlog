@@ -5,7 +5,7 @@ from services.exercicio_service import ExercicioService
 from services.musculo_service import MusculoService
 from services.versao_service import VersaoService
 from utils.exercise_utils import buscar_musculo_no_catalogo
-from models import db, ExercicioCustomizado, ExercicioUsuario, Musculo, RegistroTreino, HistoricoTreino, ExercicioBase
+from models import db, ExercicioCustomizado, ExercicioUsuario, Musculo, RegistroTreino, HistoricoTreino, ExercicioSistema
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
 import logging
@@ -302,7 +302,7 @@ def exercicio_detalhes(exercicio_id):
         exercicio = exercicio_usuario
         exercicio.tipo = 'usuario'
     else:
-        exercicio_base = ExercicioBase.query.get(exercicio_id)
+        exercicio_base = ExercicioSistema.query.get(exercicio_id)
         if exercicio_base:
             exercicio = exercicio_base
             exercicio.tipo = 'base'

@@ -16,8 +16,7 @@ def buscar_musculo_no_catalogo(nome_exercicio):
     Busca o músculo primário de um exercício no catálogo do BANCO DE DADOS.
     Retorna o nome do músculo em português ou None se não encontrar.
     """
-    from models import ExercicioBase, Musculo
-    from sqlalchemy.orm import joinedload
+    from models import ExercicioSistema
     from utils.exercise_utils import remover_acentos
     
     print(f"🔍 Buscando músculo para: '{nome_exercicio}'")
@@ -26,67 +25,36 @@ def buscar_musculo_no_catalogo(nome_exercicio):
     nome_busca = remover_acentos(nome_exercicio.lower().strip())
     print(f"🔤 Termo de busca normalizado: '{nome_busca}'")
     
-    # Mapeamento de músculos em inglês para português (caso o banco ainda tenha nomes em inglês)
-    mapa_musculos = {
-        'abdominais': 'Abdômen',
-        'abductors': 'Abdutores',
-        'adductors': 'Adutores',
-        'biceps': 'Bíceps',
-        'calves': 'Panturrilhas',
-        'chest': 'Peitoral',
-        'forearms': 'Antebraços',
-        'glutes': 'Glúteos',
-        'hamstrings': 'Posterior de Coxa',
-        'lats': 'Dorsal',
-        'lower back': 'Lombar',
-        'middle back': 'Costas',
-        'neck': 'Pescoço',
-        'quadriceps': 'Quadríceps',
-        'shoulders': 'Ombros',
-        'traps': 'Trapézio',
-        'triceps': 'Tríceps'
-    }
-    
     try:
         # 1. Correspondência exata
-        exercicio = ExercicioBase.query.options(
-            joinedload(ExercicioBase.musculo_ref)
-        ).filter(ExercicioBase.nome.ilike(nome_exercicio)).first()
+        exercicio = ExercicioSistema.query.filter(
+            ExercicioSistema.nome.ilike(nome_exercicio)
+        ).first()
         
-        if exercicio and exercicio.musculo_ref:
-            musculo = exercicio.musculo_ref.nome_exibicao
+        if exercicio and exercicio.grupo_muscular:
+            musculo = exercicio.grupo_muscular
             print(f"✅ Correspondência exata encontrada: {musculo}")
             return musculo
         
         # 2. Nome do catálogo CONTÉM o nome buscado
-        exercicios = ExercicioBase.query.options(
-            joinedload(ExercicioBase.musculo_ref)
-        ).filter(ExercicioBase.nome.ilike(f'%{nome_exercicio}%')).limit(10).all()
+        exercicios = ExercicioSistema.query.filter(
+            ExercicioSistema.nome.ilike(f'%{nome_exercicio}%')
+        ).limit(10).all()
         
         for ex in exercicios:
             nome_catalogo = remover_acentos(ex.nome.lower())
-            if nome_busca in nome_catalogo and ex.musculo_ref:
-                musculo = ex.musculo_ref.nome_exibicao
+            if nome_busca in nome_catalogo and ex.grupo_muscular:
+                musculo = ex.grupo_muscular
                 print(f"✅ Correspondência parcial: {musculo}")
                 return musculo
         
         # 3. Nome buscado CONTÉM o nome do catálogo
         for ex in exercicios:
             nome_catalogo = remover_acentos(ex.nome.lower())
-            if nome_catalogo in nome_busca and ex.musculo_ref:
-                musculo = ex.musculo_ref.nome_exibicao
+            if nome_catalogo in nome_busca and ex.grupo_muscular:
+                musculo = ex.grupo_muscular
                 print(f"✅ Correspondência inversa: {musculo}")
                 return musculo
-        
-        # 4. Fallback: tentar pelo nome do músculo original (se existir no banco)
-        exercicio = ExercicioBase.query.options(
-            joinedload(ExercicioBase.musculo_ref)
-        ).filter(ExercicioBase.musculo_nome.ilike(f'%{nome_busca}%')).first()
-        
-        if exercicio and exercicio.musculo_ref:
-            musculo = exercicio.musculo_ref.nome_exibicao
-            print(f"✅ Correspondência pelo nome do músculo: {musculo}")
-            return musculo
         
         print(f"❌ Nenhum músculo encontrado para '{nome_exercicio}'")
         

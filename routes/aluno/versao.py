@@ -1,7 +1,7 @@
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from . import aluno_bp
-from models import db, TreinoVersao, VersaoExercicio, ExercicioCustomizado, ExercicioBase, Musculo
+from models import db, TreinoVersao, VersaoExercicio, ExercicioCustomizado, ExercicioSistema, Musculo
 from services.versao_service import VersaoService
 from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
@@ -200,7 +200,7 @@ def editar_treino_versao(versao_id, treino_codigo):
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
-    from models import VersaoExercicio, ExercicioCustomizado, ExercicioBase
+    from models import VersaoExercicio, ExercicioCustomizado, ExercicioSistema
     import traceback
 
     versao = VersaoService.get_by_id(versao_id, user_id=current_user.id, load_relations=True)
@@ -276,7 +276,7 @@ def editar_treino_versao(versao_id, treino_codigo):
         # Validar IDs de base
         bases_ids_validos = []
         for ex_id in bases_ids:
-            exercicio = ExercicioBase.query.get(ex_id)
+            exercicio = ExercicioSistema.query.get(ex_id)
             if exercicio:
                 bases_ids_validos.append(ex_id)
         
@@ -329,8 +329,8 @@ def editar_treino_versao(versao_id, treino_codigo):
         .all()
     
     # Buscar exercícios da base
-    exercicios_base = ExercicioBase.query\
-        .order_by(ExercicioBase.nome)\
+    exercicios_base = ExercicioSistema.query\
+        .order_by(ExercicioSistema.nome)\
         .all()
     
     # Montar lista para template (COM PREFIXO)
@@ -349,7 +349,7 @@ def editar_treino_versao(versao_id, treino_codigo):
         exercicios_display.append({
             'id': ex.id,
             'nome': ex.nome,
-            'musculo': ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A',
+            'musculo': ex.grupo_muscular or 'N/A',
             'tipo': 'base',
             'prefixo': 'b_'
         })

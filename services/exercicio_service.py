@@ -1,6 +1,6 @@
 """Serviço para operações com exercícios - Versão com tabelas base compartilhadas"""
 
-from models import db, ExercicioBase, ExercicioUsuario, ExercicioCustomizado, Musculo, VersaoExercicio
+from models import db, ExercicioSistema, ExercicioUsuario, ExercicioCustomizado, Musculo, VersaoExercicio
 from sqlalchemy.orm import joinedload
 from sqlalchemy import text, func
 from .base_service import BaseService   # ← importação direta
@@ -17,11 +17,9 @@ class ExercicioService(BaseService):
     
     @staticmethod
     def get_all_base(limite=500):
-        """Retorna todos os exercícios do catálogo base"""
+        """Retorna todos os exercícios do catálogo base (exercicios_sistema)"""
         try:
-            return ExercicioBase.query.options(
-                joinedload(ExercicioBase.musculo_ref)
-            ).order_by(ExercicioBase.nome).limit(limite).all()
+            return ExercicioSistema.query.order_by(ExercicioSistema.nome).limit(limite).all()
         except Exception as e:
             BaseService.handle_error(e, "Erro ao buscar exercícios base")
             return []
@@ -30,9 +28,7 @@ class ExercicioService(BaseService):
     def get_base_by_id(exercicio_base_id):
         """Retorna um exercício base por ID"""
         try:
-            return ExercicioBase.query.options(
-                joinedload(ExercicioBase.musculo_ref)
-            ).get(exercicio_base_id)
+            return ExercicioSistema.query.get(exercicio_base_id)
         except Exception as e:
             BaseService.handle_error(e, f"Erro ao buscar exercício base {exercicio_base_id}")
             return None
@@ -41,17 +37,15 @@ class ExercicioService(BaseService):
     def search_base(termo, musculo=None, limite=50):
         """Busca exercícios no catálogo base"""
         try:
-            query = ExercicioBase.query.options(joinedload(ExercicioBase.musculo_ref))
+            query = ExercicioSistema.query
             
             if termo:
-                query = query.filter(ExercicioBase.nome.ilike(f'%{termo}%'))
+                query = query.filter(ExercicioSistema.nome.ilike(f'%{termo}%'))
             
             if musculo:
-                query = query.join(ExercicioBase.musculo_ref).filter(
-                    Musculo.nome_exibicao == musculo
-                )
+                query = query.filter(ExercicioSistema.grupo_muscular == musculo)
             
-            return query.order_by(ExercicioBase.nome).limit(limite).all()
+            return query.order_by(ExercicioSistema.nome).limit(limite).all()
         except Exception as e:
             BaseService.handle_error(e, f"Erro ao buscar exercícios base com termo {termo}")
             return []
@@ -103,9 +97,7 @@ class ExercicioService(BaseService):
                 user_id = BaseService.get_current_user_id()
     
             # Buscar no catálogo global
-            query_base = ExercicioBase.query
-            if load_relations:
-                query_base = query_base.options(joinedload(ExercicioBase.musculo_ref))
+            query_base = ExercicioSistema.query
             
             with db.session.no_autoflush:
                 exercicio_base = query_base.get(exercicio_id)
@@ -114,11 +106,8 @@ class ExercicioService(BaseService):
                     exercicio_base.tipo = 'base'
                     exercicio_base.prefixo = 'b_'
                     exercicio_base.is_custom = False
-                    if exercicio_base.musculo_ref:
-                        # musculo_nome é coluna real em ExercicioBase — não deixamos
-                        # esse objeto sujo ir para uma flush (ver get_exercicios_completos).
-                        exercicio_base.musculo_nome = exercicio_base.musculo_ref.nome_exibicao
-                        exercicio_base.musculo = exercicio_base.musculo_nome
+                    # grupo_muscular já vem pronto como texto em exercicios_sistema
+                    exercicio_base.musculo = exercicio_base.grupo_muscular or 'Não especificado'
                     db.session.expunge(exercicio_base)
                     return exercicio_base
 
@@ -175,20 +164,15 @@ class ExercicioService(BaseService):
             # normalmente nos templates, só que o SQLAlchemy nunca mais tenta
             # gravar essas mudanças no banco.
             with db.session.no_autoflush:
-                # Exercícios base (catálogo global)
-                exercicios_base = ExercicioBase.query.options(
-                    joinedload(ExercicioBase.musculo_ref)
-                ).order_by(ExercicioBase.nome).all()
+                # Exercícios base (catálogo global — exercicios_sistema)
+                exercicios_base = ExercicioSistema.query.order_by(ExercicioSistema.nome).all()
 
                 for ex in exercicios_base:
                     ex.tipo = 'base'
                     ex.prefixo = 'b_'
                     ex.is_custom = False
-                    musculo_ref = ex.musculo_ref
-                    if not musculo_ref and ex.musculo_id:
-                        musculo_ref = Musculo.query.get(ex.musculo_id)
-                    ex.musculo_nome = musculo_ref.nome_exibicao if musculo_ref else 'Não especificado'
-                    ex.musculo = ex.musculo_nome
+                    # musculo_nome já é property (= grupo_muscular); só setamos "musculo"
+                    ex.musculo = ex.grupo_muscular or 'Não especificado'
                     db.session.expunge(ex)
 
                 # Exercícios do usuário (customizados)
@@ -291,9 +275,9 @@ class ExercicioService(BaseService):
                         exercicios.append(ex)
 
                 if base_map:
-                    ex_base = ExercicioBase.query.filter(
-                        ExercicioBase.id.in_(base_map.keys())
-                    ).options(joinedload(ExercicioBase.musculo_ref)).all()
+                    ex_base = ExercicioSistema.query.filter(
+                        ExercicioSistema.id.in_(base_map.keys())
+                    ).all()
 
                     for ex in ex_base:
                         ex.tipo = 'base'
@@ -301,11 +285,7 @@ class ExercicioService(BaseService):
                         ex.is_custom = False
                         ex.treino_id = base_map.get(ex.id, "")
                         ex.treino_ref = treinos_by_id.get(ex.treino_id)
-                        musculo_ref = ex.musculo_ref
-                        if not musculo_ref and ex.musculo_id:
-                            musculo_ref = Musculo.query.get(ex.musculo_id)
-                        ex.musculo_nome = musculo_ref.nome_exibicao if musculo_ref else 'Não especificado'
-                        ex.musculo = ex.musculo_nome
+                        ex.musculo = ex.grupo_muscular or 'Não especificado'
                         db.session.expunge(ex)
                         exercicios.append(ex)
 

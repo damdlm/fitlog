@@ -158,9 +158,9 @@ class RegistroService(BaseService):
                 data_registro = datetime.now(timezone.utc)
             
             # Determinar tipo do exercício
-            from models import ExercicioUsuario, ExercicioBase
+            from models import ExercicioUsuario, ExercicioSistema
             is_usuario = db.session.get(ExercicioUsuario, exercicio_id) is not None
-            is_base = db.session.get(ExercicioBase, exercicio_id) is not None if not is_usuario else False
+            is_base = db.session.get(ExercicioSistema, exercicio_id) is not None if not is_usuario else False
             
             if not is_usuario and not is_base:
                 logger.warning(f"Exercício {exercicio_id} não encontrado em nenhuma tabela")

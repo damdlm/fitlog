@@ -185,7 +185,7 @@ def api_versao_exercicios(versao_id):
     
     resultado = []
     for ex in exercicios:
-        musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else "Não especificado"
+        musculo_nome = ex.musculo_nome or "Não especificado"
         resultado.append({
             "id": ex.id,
             "nome": ex.nome,

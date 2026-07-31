@@ -1,13 +1,13 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from models import db, User, AlunoProfessor, Treino, ExercicioCustomizado, RegistroTreino, SolicitacaoVinculo, TreinoVersao, VersaoExercicio, ExercicioBase, ExercicioUsuario, VersaoGlobal, HistoricoTreino, Musculo
+from models import db, User, AlunoProfessor, Treino, ExercicioCustomizado, RegistroTreino, SolicitacaoVinculo, TreinoVersao, VersaoExercicio, ExercicioSistema, ExercicioUsuario, VersaoGlobal, HistoricoTreino, Musculo
 from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
 from services.versao_service import VersaoService
 from services.estatistica_service import EstatisticaService
 from services.seed_service import SeedService
 from services.musculo_service import MusculoService
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func, and_
 import logging
@@ -566,105 +566,6 @@ def excluir_versao_aluno(aluno_id, versao_id):
         flash('Erro ao excluir versão!', 'danger')
     
     return redirect(url_for('professor.versoes_aluno', aluno_id=aluno.id))
-
-
-# =============================================
-# DASHBOARD E CALENDÁRIO DO ALUNO (visão do professor)
-# =============================================
-
-def _pode_acessar_aluno(aluno):
-    """Confere se o professor logado (ou admin) pode ver os dados deste aluno"""
-    return current_user.is_admin or (
-        current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id
-    )
-
-
-@professor_bp.route('/aluno/<int:aluno_id>/dashboard')
-@login_required
-def dashboard_aluno(aluno_id):
-    """Dashboard do aluno, no formato somente-leitura para o professor"""
-    aluno = User.query.get_or_404(aluno_id)
-
-    if not _pode_acessar_aluno(aluno):
-        flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
-
-    total_treinos = Treino.query.filter_by(user_id=aluno.id).count()
-    total_exercicios = ExercicioCustomizado.query.filter_by(usuario_id=aluno.id).count()
-    total_versoes = VersaoGlobal.query.filter_by(user_id=aluno.id).count()
-    total_registros = RegistroTreino.query.filter_by(user_id=aluno.id).count()
-
-    ultimos_registros = RegistroTreino.query.filter_by(user_id=aluno.id)\
-        .order_by(RegistroTreino.data_registro.desc())\
-        .limit(5).all()
-
-    hoje = datetime.now(timezone.utc).date()
-    inicio_semana = hoje - timedelta(days=6)
-    registros_semana = RegistroTreino.query.filter(
-        RegistroTreino.user_id == aluno.id,
-        RegistroTreino.data_registro >= inicio_semana
-    ).all()
-    contagem_por_dia = {}
-    for registro in registros_semana:
-        dia = registro.data_registro.date()
-        contagem_por_dia[dia] = contagem_por_dia.get(dia, 0) + 1
-
-    dias_semana_labels = []
-    dias_semana_valores = []
-    nomes_dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
-    for i in range(7):
-        dia = inicio_semana + timedelta(days=i)
-        dias_semana_labels.append(nomes_dias[dia.weekday()])
-        dias_semana_valores.append(contagem_por_dia.get(dia, 0))
-
-    dias_treinados_semana = sum(1 for v in dias_semana_valores if v > 0)
-
-    return render_template('professor/dashboard_aluno.html',
-                         aluno=aluno,
-                         total_treinos=total_treinos,
-                         total_exercicios=total_exercicios,
-                         total_versoes=total_versoes,
-                         total_registros=total_registros,
-                         ultimos_registros=ultimos_registros,
-                         dias_semana_labels=dias_semana_labels,
-                         dias_semana_valores=dias_semana_valores,
-                         dias_treinados_semana=dias_treinados_semana)
-
-
-@professor_bp.route('/aluno/<int:aluno_id>/calendario')
-@login_required
-def calendario_aluno(aluno_id):
-    """Calendário de treinos do aluno, no formato somente-leitura para o professor"""
-    aluno = User.query.get_or_404(aluno_id)
-
-    if not _pode_acessar_aluno(aluno):
-        flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
-
-    data_atual = datetime.now(timezone.utc)
-
-    return render_template('calendar/calendario.html',
-                         treinos=TreinoService.get_all(user_id=aluno.id),
-                         data_atual=data_atual,
-                         aluno=aluno,
-                         eventos_api_url=url_for('professor.api_eventos_aluno', aluno_id=aluno.id))
-
-
-@professor_bp.route('/aluno/<int:aluno_id>/api/eventos')
-@login_required
-def api_eventos_aluno(aluno_id):
-    """API de eventos do calendário do aluno, para o professor"""
-    aluno = User.query.get_or_404(aluno_id)
-
-    if not _pode_acessar_aluno(aluno):
-        return jsonify([]), 403
-
-    from routes.calendar_routes import gerar_eventos_calendario
-    return jsonify(gerar_eventos_calendario(
-        user_id=aluno.id,
-        ano=request.args.get('ano', type=int),
-        mes=request.args.get('mes', type=int)
-    ))
 
 
 # =============================================
