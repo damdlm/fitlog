@@ -35,13 +35,20 @@ def calendario():
 def api_eventos():
     """API para retornar os eventos do calendário"""
     try:
+        from services.base_service import BaseService
+
         # Parâmetros opcionais de filtro
         ano = request.args.get('ano', type=int)
         mes = request.args.get('mes', type=int)
         treino_id = request.args.get('treino_id')
-        
-        # Buscar todos os registros do usuário
-        registros = RegistroService.get_all(load_series=True)
+        aluno_id = request.args.get('aluno_id', type=int)
+
+        # get_target_user_id já valida: se aluno_id não pertencer a este
+        # professor (nem for admin), cai de volta para o próprio usuário.
+        target_user_id = BaseService.get_target_user_id(aluno_id)
+
+        # Buscar todos os registros do usuário (ou do aluno, se professor consultando)
+        registros = RegistroService.get_all(user_id=target_user_id, load_series=True)
         
         eventos = []
         volumes_por_dia = {}
@@ -82,7 +89,7 @@ def api_eventos():
             
             # Adicionar detalhe do treino
             treino = None
-            for t in TreinoService.get_all():
+            for t in TreinoService.get_all(user_id=target_user_id):
                 if t.id == r.treino_id:
                     treino = t
                     break
@@ -146,14 +153,24 @@ def api_eventos():
 def api_evento_detalhe(registro_id):
     """Retorna detalhes de um evento (um exercício registrado) específico"""
     from models import db, RegistroTreino
+    from services.base_service import BaseService
 
     registro = db.session.get(RegistroTreino, registro_id)
-    if not registro or registro.user_id != current_user.id:
+    if not registro:
+        return jsonify({"error": "Registro não encontrado"}), 404
+
+    # Dono do registro, admin, ou professor vinculado ao dono podem ver
+    pode_acessar = (
+        registro.user_id == current_user.id
+        or current_user.is_admin
+        or BaseService.get_target_user_id(registro.user_id) == registro.user_id
+    )
+    if not pode_acessar:
         return jsonify({"error": "Registro não encontrado"}), 404
 
     # Buscar treino
     treino = None
-    for t in TreinoService.get_all():
+    for t in TreinoService.get_all(user_id=registro.user_id):
         if t.id == registro.treino_id:
             treino = t
             break

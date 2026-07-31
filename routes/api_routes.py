@@ -252,7 +252,8 @@ def api_criar_exercicio():
     if not data or not data.get("nome"):
         return jsonify({"success": False, "error": "Nome é obrigatório"}), 400
     
-    novo_exercicio = ExercicioService.create(
+    novo_exercicio = ExercicioService.criar_exercicio_customizado(
+        user_id=current_user.id,
         nome=data["nome"],
         musculo_nome=data.get("musculo", "Outros"),
         treino_id=data.get("treino")

@@ -207,10 +207,10 @@ def visualizar_aluno(aluno_id):
 @professor_bp.route('/aluno/desativar/<int:aluno_id>', methods=['POST'])
 @login_required
 def desativar_aluno(aluno_id):
-    """Desativa um aluno — ação restrita ao admin"""
+    """Desativa um aluno — admin ou o professor vinculado a ele"""
     aluno = User.query.get_or_404(aluno_id)
     
-    if not current_user.is_admin:
+    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para desativar este aluno.', 'danger')
         return redirect(url_for('professor.dashboard'))
     
@@ -223,10 +223,10 @@ def desativar_aluno(aluno_id):
 @professor_bp.route('/aluno/reativar/<int:aluno_id>', methods=['POST'])
 @login_required
 def reativar_aluno(aluno_id):
-    """Reativa um aluno — ação restrita ao admin"""
+    """Reativa um aluno — admin ou o professor vinculado a ele"""
     aluno = User.query.get_or_404(aluno_id)
     
-    if not current_user.is_admin:
+    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para reativar este aluno.', 'danger')
         return redirect(url_for('professor.dashboard'))
     
@@ -258,10 +258,10 @@ def remover_vinculo(aluno_id):
 @professor_bp.route('/aluno/editar/<int:aluno_id>', methods=['GET', 'POST'])
 @login_required
 def editar_aluno(aluno_id):
-    """Edita os dados de um aluno — ação restrita ao admin"""
+    """Edita os dados de um aluno — admin ou o professor vinculado a ele"""
     aluno = User.query.get_or_404(aluno_id)
     
-    if not current_user.is_admin:
+    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para editar este aluno.', 'danger')
         return redirect(url_for('professor.dashboard'))
     
@@ -1056,6 +1056,30 @@ def excluir_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
 # =============================================
 # ESTATÍSTICAS DO ALUNO
 # =============================================
+
+@professor_bp.route('/aluno/<int:aluno_id>/calendario')
+@login_required
+def calendario_aluno(aluno_id):
+    """Calendário de treinos de um aluno específico — admin ou o professor vinculado a ele"""
+    from datetime import datetime, timezone
+
+    aluno = User.query.get_or_404(aluno_id)
+
+    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
+        flash('Você não tem permissão para ver o calendário deste aluno.', 'danger')
+        return redirect(url_for('professor.dashboard'))
+
+    treinos = TreinoService.get_all(user_id=aluno.id)
+    data_atual = datetime.now(timezone.utc)
+
+    return render_template(
+        'calendar/calendario.html',
+        treinos=treinos,
+        data_atual=data_atual,
+        aluno=aluno,
+        eventos_api_url=url_for('calendar.api_eventos', aluno_id=aluno.id)
+    )
+
 
 @professor_bp.route('/aluno/<int:aluno_id>/estatisticas')
 @login_required

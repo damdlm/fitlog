@@ -42,6 +42,30 @@ def gerenciar_versoes_global():
                          treinos=treinos,
                          musculos=musculos)
 
+@version_bp.route("/salvar-exercicio-global", methods=["POST"])
+@login_required
+def salvar_exercicio_global():
+    nome = request.form.get("nome", "").strip()
+    musculo = request.form.get("musculo", "").strip() or "Outros"
+
+    if not nome:
+        flash("Nome do exercício é obrigatório.", "danger")
+        return redirect(url_for("version.gerenciar_versoes_global"))
+
+    novo_exercicio = ExercicioService.criar_exercicio_customizado(
+        user_id=current_user.id,
+        nome=nome,
+        musculo_nome=musculo
+    )
+
+    if novo_exercicio:
+        logger.info(f"Exercício '{nome}' criado via gerenciar-versoes-global")
+        flash(f"Exercício '{nome}' criado com sucesso!", "success")
+    else:
+        flash("Erro ao criar exercício.", "danger")
+
+    return redirect(url_for("version.gerenciar_versoes_global"))
+
 @version_bp.route("/salvar/versao", methods=["POST"])
 @login_required
 def salvar_versao_global():
