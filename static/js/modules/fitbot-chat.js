@@ -40,6 +40,58 @@
     var PASTA_VIDEOS = '/static/videos/fitbot/';
     var CROSSFADE_DURACAO_MS = 420; // duração do fade suave entre os vídeos (precisa bater com o CSS)
 
+    // Saudações iniciais do FitBot -- uma é sorteada e mostrada só na
+    // primeira vez que o chat é aberto (ver onModalShown / primeiraVez).
+    var SAUDACOES_INICIAIS = [
+        '🤖 Olá! Eu sou o FitBot, seu parceiro de treino.\n\n' +
+        'Prometo uma coisa: nunca vou dizer "só mais uma" quando ainda faltarem cinco. 😅\n\n' +
+        'Posso explicar exercícios, sugerir treinos, identificar equipamentos por foto e tirar suas dúvidas para você treinar com mais segurança.\n\n' +
+        'Então... qual vai ser o desafio de hoje? 💪',
+
+        '👋 Olá! Eu sou o FitBot.\n\n' +
+        'Não substituo seu personal... mas também não fico olhando o celular entre uma série e outra. 😏\n\n' +
+        'Pergunte sobre exercícios, técnicas, treinos ou envie uma foto de um equipamento da academia.',
+
+        '🤖 Bem-vindo! Eu sou o FitBot.\n\n' +
+        'Pode perguntar qualquer coisa sobre treino. Só não me peça para fazer burpees... 😂\n\n' +
+        'Também posso analisar fotos de equipamentos e explicar como utilizá-los.',
+
+        '💪 Oi! Eu sou o FitBot.\n\n' +
+        'Seu treino pode até falhar... eu não. 😎\n\n' +
+        'Estou pronto para responder dúvidas, explicar exercícios e mostrar como usar os equipamentos da academia.',
+
+        '🤖 E aí! Eu sou o FitBot.\n\n' +
+        'Prometo que não vou pedir 100 flexões como aquecimento. 😅\n\n' +
+        'Posso ajudar com exercícios, treinos, equipamentos da academia e até analisar uma foto para explicar como usar um aparelho.\n\n' +
+        'Bora treinar? 💪',
+
+        '🏋️ Olá! Eu sou o FitBot, seu personal trainer virtual com inteligência artificial.\n\n' +
+        'Posso explicar a execução correta dos exercícios, sugerir treinos, esclarecer dúvidas sobre musculação e cardio, além de identificar equipamentos por foto e mostrar como utilizá-los com segurança.\n\n' +
+        'Como posso ajudar você hoje?',
+
+        '🤖 Bem-vindo! Eu sou o FitBot.\n\n' +
+        'Estou aqui para deixar seus treinos mais fáceis e eficientes.\n\n' +
+        'Pergunte sobre qualquer exercício, peça sugestões de treino, tire dúvidas ou envie uma foto de um equipamento da academia para que eu explique como usá-lo.',
+
+        '👋 Olá! Eu sou o FitBot, seu assistente no FitLog.\n\n' +
+        '💪 Posso ajudar com:\n' +
+        '• Exercícios e execução correta\n' +
+        '• Treinos de musculação e cardio\n' +
+        '• Dúvidas sobre equipamentos da academia\n' +
+        '• Dicas para melhorar seus resultados\n\n' +
+        '📸 Você também pode enviar uma foto de um equipamento ou exercício que eu explico como utilizá-lo.',
+
+        'Oi! Eu sou o FitBot 🤖\n' +
+        'Seu personal trainer virtual aqui no FitLog.\n' +
+        'Pode me perguntar sobre musculação, aeróbico, execução de exercícios ' +
+        'ou me mandar uma foto de um equipamento que eu explico como usar.'
+    ];
+
+    function sortearSaudacaoInicial() {
+        var indice = Math.floor(Math.random() * SAUDACOES_INICIAIS.length);
+        return SAUDACOES_INICIAIS[indice];
+    }
+
     var elWidget, elModal, elMessages, elForm, elTextarea, elSendBtn,
         elImageInput, elImageBtn, elImagePreview, elImagePreviewThumb,
         elImageRemoveBtn, elTyping, elIdleVideoA, elIdleVideoB, elCloseBtn,
@@ -143,13 +195,7 @@
             aberturaTimeoutId = setTimeout(function () {
                 setState('idle');
                 if (primeiraVez) {
-                    adicionarMensagem(
-                        'bot',
-                        'Oi! Eu sou o FitBot 🤖\n' +
-                        'Seu personal trainer virtual aqui no FitLog.\n' +
-                        'Pode me perguntar sobre musculação, aeróbico, execução de exercícios ' +
-                        'ou me mandar uma foto de um equipamento que eu explico como usar.'
-                    );
+                    adicionarMensagem('bot', sortearSaudacaoInicial());
                 }
                 aberturaTimeoutId = null;
             }, DURACAO_ESTADO_BYE_MS);
