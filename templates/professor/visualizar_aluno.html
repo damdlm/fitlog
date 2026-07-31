@@ -90,7 +90,7 @@
 {% set nome_exibicao = aluno.nome_completo or aluno.username %}
 {% set partes = nome_exibicao.split() %}
 {% set iniciais = (partes[0][0] ~ (partes[1][0] if partes|length > 1 else ''))|upper %}
-{% set pode_gerenciar = current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id) %}
+{% set pode_gerenciar = current_user.is_admin %}
 
 <!-- Cabeçalho do perfil -->
 <div class="card va-profile-card mb-4">

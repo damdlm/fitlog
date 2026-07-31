@@ -51,7 +51,8 @@ def professor_com_aluno(app):
 
 
 class TestEditarAluno:
-    def test_professor_pode_editar_proprio_aluno(self, client, professor_com_aluno):
+    def test_professor_nao_pode_editar_proprio_aluno(self, client, professor_com_aluno):
+        """Editar é restrito ao admin -- mesmo o professor vinculado não pode."""
         _login(client, 'prof1')
         resp = client.post(
             f"/professor/aluno/editar/{professor_com_aluno['aluno_id']}",
@@ -61,7 +62,7 @@ class TestEditarAluno:
         assert resp.status_code == 200
         with client.application.app_context():
             aluno = db.session.get(User, professor_com_aluno['aluno_id'])
-            assert aluno.nome_completo == 'Novo Nome'
+            assert aluno.nome_completo != 'Novo Nome'
 
     def test_professor_nao_pode_editar_aluno_de_outro_professor(self, client, professor_com_aluno):
         _login(client, 'prof1')
@@ -75,9 +76,24 @@ class TestEditarAluno:
             aluno = db.session.get(User, professor_com_aluno['aluno_de_outro_id'])
             assert aluno.nome_completo != 'Hackeado'
 
+    def test_admin_pode_editar_qualquer_aluno(self, client, professor_com_aluno):
+        with client.application.app_context():
+            admin = _criar_usuario('admin_teste', 'admin', is_admin=True)
+        _login(client, 'admin_teste')
+        resp = client.post(
+            f"/professor/aluno/editar/{professor_com_aluno['aluno_id']}",
+            data={'nome_completo': 'Editado Pelo Admin', 'email': 'aluno1@teste.com', 'telefone': ''},
+            follow_redirects=True,
+        )
+        assert resp.status_code == 200
+        with client.application.app_context():
+            aluno = db.session.get(User, professor_com_aluno['aluno_id'])
+            assert aluno.nome_completo == 'Editado Pelo Admin'
+
 
 class TestDesativarReativarAluno:
-    def test_professor_pode_desativar_proprio_aluno(self, client, professor_com_aluno):
+    def test_professor_nao_pode_desativar_proprio_aluno(self, client, professor_com_aluno):
+        """Desativar é restrito ao admin -- mesmo o professor vinculado não pode."""
         _login(client, 'prof1')
         resp = client.post(
             f"/professor/aluno/desativar/{professor_com_aluno['aluno_id']}",
@@ -86,7 +102,7 @@ class TestDesativarReativarAluno:
         assert resp.status_code == 200
         with client.application.app_context():
             aluno = db.session.get(User, professor_com_aluno['aluno_id'])
-            assert aluno.ativo is False
+            assert aluno.ativo is True
 
     def test_professor_nao_pode_desativar_aluno_de_outro_professor(self, client, professor_com_aluno):
         _login(client, 'prof1')
@@ -94,6 +110,15 @@ class TestDesativarReativarAluno:
         with client.application.app_context():
             aluno = db.session.get(User, professor_com_aluno['aluno_de_outro_id'])
             assert aluno.ativo is True
+
+    def test_admin_pode_desativar_aluno(self, client, professor_com_aluno):
+        with client.application.app_context():
+            admin = _criar_usuario('admin_teste2', 'admin', is_admin=True)
+        _login(client, 'admin_teste2')
+        client.post(f"/professor/aluno/desativar/{professor_com_aluno['aluno_id']}")
+        with client.application.app_context():
+            aluno = db.session.get(User, professor_com_aluno['aluno_id'])
+            assert aluno.ativo is False
 
 
 class TestCalendarioAluno:
