@@ -639,7 +639,55 @@
         .alert-version .fs-6 { font-size: 0.8rem !important; }
     }
 
+    /* Barra fixa de salvar no topo -- fica "grudada" logo abaixo da
+       navbar (sticky) enquanto o usuário rola a tela, com o cronômetro
+       do treino ao lado do botão, do mesmo jeito que o volume total
+       ficava ao lado do botão na antiga barra do rodapé. */
+    #top-save-bar {
+        position: sticky;
+        top: var(--navbar-height, 64px);
+        z-index: 1020;
+        background: #fff;
+        box-shadow: 0 4px 16px rgba(45, 45, 45, 0.10);
+        border-radius: var(--radius-md);
+        padding: 10px 16px;
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
 
+    #top-save-bar .top-save-bar-crono {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    #top-save-bar .top-save-bar-crono i {
+        color: var(--primary-orange);
+        font-size: 1.1rem;
+    }
+
+    #top-save-bar .top-save-bar-crono-label {
+        font-size: 0.75rem;
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    #top-save-bar .top-save-bar-crono-value {
+        font-family: 'Courier New', ui-monospace, monospace;
+        font-variant-numeric: tabular-nums;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--dark-bg);
+    }
+
+    #top-save-bar .btn-save {
+        padding: 10px 24px;
+        white-space: nowrap;
+    }
 </style>
 
 <!-- Loading Spinner -->
@@ -651,9 +699,15 @@
 </div>
 
 {% if exercicios %}
-<!-- Botão de salvar no topo (mobile) -->
-<div class="mb-3 d-md-none">
-    <button type="submit" name="salvar" form="registroForm" class="btn btn-save w-100"
+<div id="top-save-bar">
+    <div class="top-save-bar-crono">
+        <i class="bi bi-stopwatch"></i>
+        <span>
+            <span class="top-save-bar-crono-label d-block">Cronômetro</span>
+            <span class="top-save-bar-crono-value" id="cronoTreinoDisplay">00:00</span>
+        </span>
+    </div>
+    <button type="submit" name="salvar" form="registroForm" class="btn btn-save"
             style="background: #2D2D2D; color: white; border: none;">
         <i class="bi bi-check-circle me-2"></i>Salvar Treino
     </button>
@@ -661,17 +715,11 @@
 {% endif %}
 
 <div class="row mb-4 d-none d-md-flex">
-    <div class="col-12 d-flex justify-content-between align-items-center">
-        <h2 class="display-6 fw-bold mb-0">
+    <div class="col-12">
+        <h2 class="display-6 fw-bold">
             <i class="bi bi-plus-circle me-2" style="color: var(--primary-orange);"></i>
             Registrar Treino
         </h2>
-        {% if exercicios %}
-        <button type="submit" name="salvar" form="registroForm" class="btn btn-lg btn-save px-5"
-                style="background: #2D2D2D; color: white; border: none;">
-            <i class="bi bi-check-circle me-2"></i>Salvar Treino
-        </button>
-        {% endif %}
     </div>
 </div>
 
@@ -899,8 +947,8 @@
                             <div class="fw-bold fs-5">{{ exercicios|length }}</div>
                         </div>
                         <div>
-                            <div class="text-muted small"><i class="bi bi-stopwatch"></i> Cronômetro</div>
-                            <div class="fw-bold fs-5" id="cronoTreinoDisplay">00:00</div>
+                            <div class="text-muted small">Volume total</div>
+                            <div class="fw-bold fs-5" id="resumo-volume">0 kg</div>
                         </div>
                         <div>
                             <div class="text-muted small">Data</div>
@@ -930,6 +978,12 @@
 // Inicialização quando a página carrega
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Página de registro carregada');
+
+    // Ajusta a barra fixa de salvar para grudar logo abaixo da navbar
+    const navbar = document.querySelector('.navbar');
+    if (navbar) {
+        document.documentElement.style.setProperty('--navbar-height', navbar.offsetHeight + 'px');
+    }
     
     // Inicializar módulo de registro (se existir)
     if (typeof RegistrarTreino !== 'undefined') {
@@ -1044,16 +1098,29 @@ function inicializarTruncamentoNomesExercicio() {
 }
 
 function atualizarResumo() {
+    let volumeTotal = 0;
+
     document.querySelectorAll('.exercise-row').forEach(row => {
         const exId = row.dataset.exercicioId;
         if (!exId) return;
 
         const cargaInput = row.querySelector('.carga-input');
         const repsInput = row.querySelector('.reps-input');
+        const carga = parseFloat(cargaInput?.value) || 0;
+        const reps = parseInt(repsInput?.value) || 0;
+        const seriesSelect = document.getElementById(`series-select-${exId}`);
+        const series = parseInt(seriesSelect?.value) || 3;
 
         const preenchido = cargaInput?.value !== '' && repsInput?.value !== '';
         row.classList.toggle('is-complete', !!preenchido);
+
+        volumeTotal += carga * reps * series;
     });
+
+    const resumoElement = document.getElementById('resumo-volume');
+    if (resumoElement) {
+        resumoElement.textContent = volumeTotal + ' kg';
+    }
 }
 
 function carregarUltimoRegistro() {
