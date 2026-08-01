@@ -1,7 +1,7 @@
 """Serviço para cálculos estatísticos"""
 
 from datetime import datetime, timedelta, timezone
-from models import db, Musculo, ExercicioCustomizado, RegistroTreino, HistoricoTreino
+from models import db, Musculo, ExercicioCustomizado, ExercicioSistema, RegistroTreino, HistoricoTreino
 from sqlalchemy import func, and_
 from .base_service import BaseService
 import logging
@@ -13,13 +13,29 @@ class EstatisticaService(BaseService):
     
     @staticmethod
     def calcular_por_musculo(user_id=None):
-        """Calcula estatísticas por músculo"""
+        """
+        Calcula estatísticas por músculo, somando as duas origens possíveis
+        de exercício em RegistroTreino:
+
+          - exercicio_usuario_id -> exercícios personalizados, cujo músculo
+            vem da tabela Musculo (musculo_id em ExercicioUsuario);
+          - exercicio_base_id -> exercícios do catálogo do sistema, cujo
+            músculo vem direto de ExercicioSistema.grupo_muscular (essa
+            tabela não tem FK para Musculo).
+
+        As duas taxonomias de nome de músculo não são idênticas (a tabela
+        Musculo usa grupos amplos em pt-BR; grupo_muscular do catálogo é
+        mais granular), então o resultado mescla as duas por nome -- cada
+        nome de músculo que aparecer em qualquer uma das origens vira uma
+        chave do dicionário retornado.
+        """
         try:
             user_id = user_id or BaseService.get_current_user_id()
             if not user_id:
                 return {}
-            
-            resultado = db.session.query(
+
+            # --- Exercícios personalizados (via tabela Musculo) ---
+            personalizados = db.session.query(
                 Musculo.nome_exibicao.label('musculo'),
                 db.func.count(db.distinct(ExercicioCustomizado.id)).label('qtd_exercicios'),
                 db.func.count(db.distinct(RegistroTreino.id)).label('qtd_registros'),
@@ -27,19 +43,46 @@ class EstatisticaService(BaseService):
                 db.func.coalesce(db.func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume_total')
             ).select_from(Musculo)\
              .outerjoin(ExercicioCustomizado, and_(ExercicioCustomizado.musculo_id == Musculo.id, ExercicioCustomizado.usuario_id == user_id))\
-             .outerjoin(RegistroTreino, and_(RegistroTreino.exercicio_id == ExercicioCustomizado.id, RegistroTreino.user_id == user_id))\
+             .outerjoin(RegistroTreino, and_(RegistroTreino.exercicio_usuario_id == ExercicioCustomizado.id, RegistroTreino.user_id == user_id))\
              .outerjoin(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
              .group_by(Musculo.id, Musculo.nome_exibicao)\
              .all()
-            
+
+            # --- Exercícios do catálogo do sistema (via grupo_muscular) ---
+            do_catalogo = db.session.query(
+                ExercicioSistema.grupo_muscular.label('musculo'),
+                db.func.count(db.distinct(ExercicioSistema.id)).label('qtd_exercicios'),
+                db.func.count(db.distinct(RegistroTreino.id)).label('qtd_registros'),
+                db.func.count(HistoricoTreino.id).label('total_series'),
+                db.func.coalesce(db.func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume_total')
+            ).select_from(RegistroTreino)\
+             .join(ExercicioSistema, ExercicioSistema.id == RegistroTreino.exercicio_base_id)\
+             .outerjoin(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
+             .filter(RegistroTreino.user_id == user_id)\
+             .group_by(ExercicioSistema.grupo_muscular)\
+             .all()
+
             stats = {}
-            for r in resultado:
+            for r in personalizados:
                 stats[r.musculo] = {
                     'qtd_exercicios': r.qtd_exercicios,
                     'qtd_registros': r.qtd_registros,
                     'total_series': r.total_series,
                     'volume_total': float(r.volume_total)
                 }
+
+            for r in do_catalogo:
+                nome = r.musculo or 'Não especificado'
+                atual = stats.get(nome, {
+                    'qtd_exercicios': 0, 'qtd_registros': 0,
+                    'total_series': 0, 'volume_total': 0.0
+                })
+                atual['qtd_exercicios'] += r.qtd_exercicios
+                atual['qtd_registros'] += r.qtd_registros
+                atual['total_series'] += r.total_series
+                atual['volume_total'] += float(r.volume_total)
+                stats[nome] = atual
+
             return stats
         except Exception as e:
             BaseService.handle_error(e, "Erro ao calcular estatísticas por músculo")

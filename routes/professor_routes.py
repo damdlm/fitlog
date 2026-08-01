@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from models import db, User, AlunoProfessor, Treino, ExercicioCustomizado, RegistroTreino, SolicitacaoVinculo, TreinoVersao, VersaoExercicio, ExercicioSistema, ExercicioUsuario, VersaoGlobal, HistoricoTreino, Musculo
+from models import db, User, AlunoProfessor, Treino, RegistroTreino, SolicitacaoVinculo, TreinoVersao, VersaoExercicio, ExercicioSistema, ExercicioUsuario, VersaoGlobal, HistoricoTreino
 from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
 from services.versao_service import VersaoService
@@ -9,7 +9,7 @@ from services.seed_service import SeedService
 from services.musculo_service import MusculoService
 from datetime import datetime, timezone
 from sqlalchemy.orm import joinedload
-from sqlalchemy import func, and_
+from sqlalchemy import func
 import logging
 import json
 
@@ -1057,30 +1057,6 @@ def excluir_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
 # ESTATÍSTICAS DO ALUNO
 # =============================================
 
-@professor_bp.route('/aluno/<int:aluno_id>/calendario')
-@login_required
-def calendario_aluno(aluno_id):
-    """Calendário de treinos de um aluno específico — admin ou o professor vinculado a ele"""
-    from datetime import datetime, timezone
-
-    aluno = User.query.get_or_404(aluno_id)
-
-    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
-        flash('Você não tem permissão para ver o calendário deste aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
-
-    treinos = TreinoService.get_all(user_id=aluno.id)
-    data_atual = datetime.now(timezone.utc)
-
-    return render_template(
-        'calendar/calendario.html',
-        treinos=treinos,
-        data_atual=data_atual,
-        aluno=aluno,
-        eventos_api_url=url_for('calendar.api_eventos', aluno_id=aluno.id)
-    )
-
-
 @professor_bp.route('/aluno/<int:aluno_id>/estatisticas')
 @login_required
 def estatisticas_aluno(aluno_id):
@@ -1091,27 +1067,7 @@ def estatisticas_aluno(aluno_id):
         flash('Você não tem permissão para ver as estatísticas deste aluno.', 'danger')
         return redirect(url_for('professor.dashboard'))
     
-    musculo_stats_raw = db.session.query(
-        Musculo.nome_exibicao.label('musculo'),
-        func.count(func.distinct(ExercicioCustomizado.id)).label('qtd_exercicios'),
-        func.count(func.distinct(RegistroTreino.id)).label('qtd_registros'),
-        func.count(HistoricoTreino.id).label('total_series'),
-        func.coalesce(func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume_total')
-    ).select_from(Musculo)\
-     .outerjoin(ExercicioCustomizado, and_(ExercicioCustomizado.musculo_id == Musculo.id, ExercicioCustomizado.usuario_id == aluno.id))\
-     .outerjoin(RegistroTreino, and_(RegistroTreino.exercicio_id == ExercicioCustomizado.id, RegistroTreino.user_id == aluno.id))\
-     .outerjoin(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
-     .group_by(Musculo.id, Musculo.nome_exibicao)\
-     .all()
-    
-    musculo_stats = {}
-    for r in musculo_stats_raw:
-        musculo_stats[r.musculo] = {
-            'qtd_exercicios': r.qtd_exercicios,
-            'qtd_registros': r.qtd_registros,
-            'total_series': r.total_series,
-            'volume_total': float(r.volume_total)
-        }
+    musculo_stats = EstatisticaService.calcular_por_musculo(user_id=aluno.id)
     
     treinos = TreinoService.get_all(user_id=aluno.id)
     registros = RegistroTreino.query.filter_by(user_id=aluno.id).all()

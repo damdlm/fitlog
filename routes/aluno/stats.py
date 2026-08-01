@@ -1,9 +1,9 @@
 from flask import render_template, redirect, url_for, flash, jsonify, request
 from flask_login import login_required, current_user
 from . import aluno_bp
-from models import db, User, Musculo, ExercicioCustomizado, RegistroTreino, HistoricoTreino
+from models import User, RegistroTreino
 from services.treino_service import TreinoService
-from sqlalchemy import func, and_
+from services.estatistica_service import EstatisticaService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -16,25 +16,7 @@ def estatisticas():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
-    musculo_stats_raw = db.session.query(
-        Musculo.nome_exibicao.label('musculo'),
-        func.count(func.distinct(ExercicioCustomizado.id)).label('qtd_exercicios'),
-        func.count(func.distinct(RegistroTreino.id)).label('qtd_registros'),
-        func.count(HistoricoTreino.id).label('total_series'),
-        func.coalesce(func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume_total')
-    ).select_from(Musculo)\
-     .outerjoin(ExercicioCustomizado, and_(ExercicioCustomizado.musculo_id == Musculo.id, ExercicioCustomizado.usuario_id == current_user.id))\
-     .outerjoin(RegistroTreino, and_(RegistroTreino.exercicio_usuario_id == ExercicioCustomizado.id, RegistroTreino.user_id == current_user.id))\
-     .outerjoin(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
-     .group_by(Musculo.id, Musculo.nome_exibicao)\
-     .all()
-    
-    musculo_stats = {r.musculo: {
-        'qtd_exercicios': r.qtd_exercicios,
-        'qtd_registros': r.qtd_registros,
-        'total_series': r.total_series,
-        'volume_total': float(r.volume_total)
-    } for r in musculo_stats_raw}
+    musculo_stats = EstatisticaService.calcular_por_musculo(user_id=current_user.id)
     
     treinos = TreinoService.get_all(user_id=current_user.id)
     registros = RegistroTreino.query.filter_by(user_id=current_user.id).all()
