@@ -703,7 +703,7 @@
     <div class="top-save-bar-crono">
         <i class="bi bi-stopwatch"></i>
         <span>
-            <span class="top-save-bar-crono-label d-block">Cronômetro</span>
+            <span class="top-save-bar-crono-label d-block">Tempo de treino</span>
             <span class="top-save-bar-crono-value" id="cronoTreinoDisplay">00:00</span>
         </span>
     </div>
@@ -771,7 +771,7 @@
                 </select>
             </div>
             
-            <div class="col-8 col-md-5">
+            <div class="col-12 col-md-5">
                 <label class="form-label fw-bold">
                     <i class="bi bi-calendar" style="color: var(--primary-orange);"></i>
                     Data do Treino
@@ -781,15 +781,15 @@
                        min="2020-01-01" max="{{ data_atual_iso() }}" required>
                 <div class="cronometro-actions mt-2" id="cronoTreinoBox">
                     <button type="button" class="btn-cronometro btn-cronometro-primary flex-fill justify-content-center" id="cronoTreinoBtnIniciar">
-                        <i class="bi bi-play-fill"></i> <span>Iniciar</span>
+                        <i class="bi bi-play-fill"></i> <span>Iniciar treino</span>
                     </button>
-                    <button type="button" class="btn-cronometro btn-cronometro-ghost" id="cronoTreinoBtnZerar" title="Zerar cronômetro">
+                    <button type="button" class="btn-cronometro btn-cronometro-ghost d-none d-md-inline-flex" id="cronoTreinoBtnZerar" title="Zerar cronômetro">
                         <i class="bi bi-arrow-counterclockwise"></i>
                     </button>
                 </div>
             </div>
             
-            <div class="col-4 col-md-2">
+            <div class="col-4 col-md-2 d-none d-md-block">
                 <button type="submit" class="btn w-100" 
                         style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none; padding: 6px;">
                     <i class="bi bi-search d-md-me-2"></i><span class="d-none d-md-inline">Carregar</span>
@@ -1272,7 +1272,7 @@ function tocarBipe() {
         acumuladoSegundos = 0;
         inicioMs = null;
         atualizarDisplay();
-        elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Iniciar</span>';
+        elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Iniciar treino</span>';
         elBtnIniciar.classList.remove('is-rodando');
     });
 })();
