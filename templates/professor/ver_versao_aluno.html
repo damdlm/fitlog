@@ -295,7 +295,7 @@
                                     {{ botao_imagens_exercicio(exercicio, extra_class='ms-1') }}
                                     <br>
                                     <span class="badge-musculo">
-                                        {{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}
+                                        {{ exercicio.musculo or 'N/A' }}
                                     </span>
                                 </div>
                                 <small class="text-muted">

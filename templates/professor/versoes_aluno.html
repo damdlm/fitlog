@@ -514,7 +514,7 @@
                                     <i class="bi bi-dot me-2" style="color: #F28C33;"></i>
                                     {{ exercicio.nome }}
                                     <small class="text-muted">
-                                        ({{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }})
+                                        ({{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else (exercicio.musculo_nome or 'N/A') }})
                                     </small>
                                 </li>
                                 {% endif %}

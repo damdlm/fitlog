@@ -232,13 +232,13 @@
                     <tr>
                         <td data-nome="{{ exercicio.nome }}"
                             data-treino="{{ exercicio.treino_ref.codigo if exercicio.treino_ref else 'N/A' }}"
-                            data-musculo="{{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}">
+                            data-musculo="{{ exercicio.musculo or 'N/A' }}">
                             <strong>{{ exercicio.nome }}</strong>
                             <div class="exercicio-cell-badges">
                                 <span class="badge" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
                                     {{ exercicio.treino_ref.codigo if exercicio.treino_ref else 'N/A' }}
                                 </span>
-                                <span class="badge bg-secondary">{{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}</span>
+                                <span class="badge bg-secondary">{{ exercicio.musculo or 'N/A' }}</span>
                             </div>
                         </td>
                         

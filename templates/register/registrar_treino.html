@@ -865,7 +865,7 @@
                                     {% endif %}
                                     <span class="dash-registro-meta">
                                         <i class="bi bi-link-45deg"></i>
-                                        {{ ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A' }}
+                                        {{ ex.musculo or 'N/A' }}
                                     </span>
                                 </div>
                             </div>

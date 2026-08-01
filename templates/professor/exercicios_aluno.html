@@ -65,7 +65,7 @@
                 <tbody>
                     {% for exercicio in exercicios %}
                     <tr data-nome="{{ exercicio.nome|lower }}" 
-                        data-musculo="{{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else '' }}"
+                        data-musculo="{{ exercicio.musculo or '' }}"
                         data-treino="{{ exercicio.treino_id }}">
                         <td>
                             {% if exercicio.treino_ref %}
@@ -77,7 +77,7 @@
                         <td><strong>{{ exercicio.nome }}</strong></td>
                         <td>
                             <span class="badge bg-info">
-                                {{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}
+                                {{ exercicio.musculo or 'N/A' }}
                             </span>
                         </td>
                         <td>
