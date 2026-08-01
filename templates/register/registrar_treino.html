@@ -212,9 +212,13 @@
 
     /* ================= CRONÔMETROS ================= */
     .cronometros-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: flex;
+        justify-content: center;
         gap: 16px;
+    }
+    .cronometros-row .cronometro-box {
+        width: 100%;
+        max-width: 420px;
     }
 
     .cronometro-box {
@@ -346,10 +350,6 @@
     }
 
     @media (max-width: 575.98px) {
-        .cronometros-row {
-            grid-template-columns: 1fr;
-        }
-
         .cronometro-display {
             font-size: 2rem;
         }
@@ -614,43 +614,6 @@
             gap: 8px;
         }
 
-        /* Barra fixa de salvar no rodapé */
-        #mobile-save-bar {
-            position: fixed;
-            bottom: calc(78px + env(safe-area-inset-bottom, 0px)); /* adapta à notch */
-            left: 0;
-            right: 0;
-            background: #fff;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
-            padding: 10px 16px;
-            z-index: 1040;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
-
-        #mobile-save-bar .mobile-volume-label {
-            font-size: 0.75rem;
-            color: #6c757d;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        #mobile-save-bar .mobile-volume-value {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: var(--dark-bg);
-        }
-
-        #mobile-save-bar .btn-save {
-            padding: 12px 28px;
-        }
-
-        .mobile-save-spacer {
-            height: 150px;
-        }
-
         /* Resumo do treino: grid compacto de 3 colunas */
         .resumo-treino-box {
             padding: 0.75rem !important;
@@ -676,9 +639,7 @@
         .alert-version .fs-6 { font-size: 0.8rem !important; }
     }
 
-    @media (min-width: 768px) {
-        #mobile-save-bar { display: none !important; }
-    }
+
 </style>
 
 <!-- Loading Spinner -->
@@ -689,33 +650,34 @@
     <div class="loader-text">Salvando treino...</div>
 </div>
 
+{% if exercicios %}
+<!-- Botão de salvar no topo (mobile) -->
+<div class="mb-3 d-md-none">
+    <button type="submit" name="salvar" form="registroForm" class="btn btn-save w-100"
+            style="background: #2D2D2D; color: white; border: none;">
+        <i class="bi bi-check-circle me-2"></i>Salvar Treino
+    </button>
+</div>
+{% endif %}
+
 <div class="row mb-4 d-none d-md-flex">
-    <div class="col-12">
-        <h2 class="display-6 fw-bold">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h2 class="display-6 fw-bold mb-0">
             <i class="bi bi-plus-circle me-2" style="color: var(--primary-orange);"></i>
             Registrar Treino
         </h2>
+        {% if exercicios %}
+        <button type="submit" name="salvar" form="registroForm" class="btn btn-lg btn-save px-5"
+                style="background: #2D2D2D; color: white; border: none;">
+            <i class="bi bi-check-circle me-2"></i>Salvar Treino
+        </button>
+        {% endif %}
     </div>
 </div>
 
 <div class="card treino-card mb-4">
     <div class="card-body p-3 p-md-4">
         <div class="cronometros-row">
-            <!-- Cronômetro do treino: conta o tempo total desde que o
-                 usuário aperta "Iniciar" até o fim do treino. -->
-            <div class="cronometro-box" id="cronoTreinoBox">
-                <span class="cronometro-label"><i class="bi bi-stopwatch"></i> Cronômetro do treino</span>
-                <span class="cronometro-display" id="cronoTreinoDisplay">00:00</span>
-                <div class="cronometro-actions">
-                    <button type="button" class="btn-cronometro btn-cronometro-primary" id="cronoTreinoBtnIniciar">
-                        <i class="bi bi-play-fill"></i> <span>Iniciar</span>
-                    </button>
-                    <button type="button" class="btn-cronometro btn-cronometro-ghost" id="cronoTreinoBtnZerar" title="Zerar">
-                        <i class="bi bi-arrow-counterclockwise"></i>
-                    </button>
-                </div>
-            </div>
-
             <!-- Cronômetro de intervalo: regressivo, para cronometrar o
                  descanso entre séries. Toca um bipe e pisca ao zerar. -->
             <div class="cronometro-box cronometro-intervalo" id="cronoIntervaloBox">
@@ -769,6 +731,14 @@
                 <input type="date" name="data" class="form-control" 
                        value="{{ data_selecionada_str or data_atual_iso() }}" 
                        min="2020-01-01" max="{{ data_atual_iso() }}" required>
+                <div class="cronometro-actions mt-2" id="cronoTreinoBox">
+                    <button type="button" class="btn-cronometro btn-cronometro-primary flex-fill justify-content-center" id="cronoTreinoBtnIniciar">
+                        <i class="bi bi-play-fill"></i> <span>Iniciar</span>
+                    </button>
+                    <button type="button" class="btn-cronometro btn-cronometro-ghost" id="cronoTreinoBtnZerar" title="Zerar cronômetro">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </button>
+                </div>
             </div>
             
             <div class="col-4 col-md-2">
@@ -929,8 +899,8 @@
                             <div class="fw-bold fs-5">{{ exercicios|length }}</div>
                         </div>
                         <div>
-                            <div class="text-muted small">Volume total</div>
-                            <div class="fw-bold fs-5" id="resumo-volume">0 kg</div>
+                            <div class="text-muted small"><i class="bi bi-stopwatch"></i> Cronômetro</div>
+                            <div class="fw-bold fs-5" id="cronoTreinoDisplay">00:00</div>
                         </div>
                         <div>
                             <div class="text-muted small">Data</div>
@@ -939,34 +909,14 @@
                     </div>
                 </div>
                 <div class="col-md-6 text-end d-none d-md-block">
-                    <button type="submit" name="salvar" class="btn btn-lg btn-save px-5" 
-                            style="background: #2D2D2D; color: white; border: none;">
-                        <i class="bi bi-check-circle me-2"></i>Salvar Treino
-                    </button>
-                    <br>
                     <small class="text-muted">
                         <i class="bi bi-shield-check"></i>
                         Os dados serão salvos permanentemente
                     </small>
                 </div>
             </div>
-
-            <!-- Espaço reservado no mobile -->
-            <div class="mobile-save-spacer d-md-none"></div>
         </form>
     </div>
-</div>
-
-<!-- Barra fixa de salvar (somente mobile) -->
-<div id="mobile-save-bar" class="d-md-none">
-    <div>
-        <div class="mobile-volume-label">Volume total</div>
-        <div class="mobile-volume-value" id="resumo-volume-mobile">0 kg</div>
-    </div>
-    <button type="submit" name="salvar" form="registroForm" class="btn btn-save"
-            style="background: #2D2D2D; color: white; border: none;">
-        <i class="bi bi-check-circle me-2"></i>Salvar
-    </button>
 </div>
 {% endif %}
 
@@ -1094,39 +1044,16 @@ function inicializarTruncamentoNomesExercicio() {
 }
 
 function atualizarResumo() {
-    let volumeTotal = 0;
-    let completos = 0;
-    let totalExercicios = 0;
-
     document.querySelectorAll('.exercise-row').forEach(row => {
         const exId = row.dataset.exercicioId;
         if (!exId) return;
-        totalExercicios++;
 
         const cargaInput = row.querySelector('.carga-input');
         const repsInput = row.querySelector('.reps-input');
-        const carga = parseFloat(cargaInput?.value) || 0;
-        const reps = parseInt(repsInput?.value) || 0;
-        const seriesSelect = document.getElementById(`series-select-${exId}`);
-        const series = parseInt(seriesSelect?.value) || 3;
 
         const preenchido = cargaInput?.value !== '' && repsInput?.value !== '';
         row.classList.toggle('is-complete', !!preenchido);
-        if (preenchido) completos++;
-
-        const volumeExercicio = carga * reps * series;
-        volumeTotal += volumeExercicio;
     });
-
-    const resumoElement = document.getElementById('resumo-volume');
-    if (resumoElement) {
-        resumoElement.textContent = volumeTotal + ' kg';
-    }
-
-    const resumoMobileElement = document.getElementById('resumo-volume-mobile');
-    if (resumoMobileElement) {
-        resumoMobileElement.textContent = volumeTotal + ' kg';
-    }
 }
 
 function carregarUltimoRegistro() {
