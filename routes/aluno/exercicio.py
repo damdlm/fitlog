@@ -98,6 +98,10 @@ def editar_exercicio(exercicio_id):
     if not exercicio:
         flash('Exercício não encontrado!', 'danger')
         return redirect(url_for('aluno.exercicios'))
+
+    if not (hasattr(exercicio, 'is_custom') and exercicio.is_custom):
+        flash('Este exercício faz parte do catálogo geral e não pode ser editado. Crie um exercício personalizado se quiser algo diferente.', 'warning')
+        return redirect(url_for('aluno.exercicios'))
     
     if request.method == 'POST':
         nome = request.form.get('nome')
@@ -105,22 +109,13 @@ def editar_exercicio(exercicio_id):
         descricao = request.form.get('descricao', '')
         
         musculo_obj = MusculoService.get_or_create(musculo)
-        if hasattr(exercicio, 'is_custom') and exercicio.is_custom:
-            exercicio_atualizado = ExercicioService.update_exercicio_customizado(
-                exercicio_custom_id=exercicio_id,
-                user_id=current_user.id,
-                nome=nome,
-                descricao=descricao,
-                musculo_id=musculo_obj.id if musculo_obj else None
-            )
-        else:
-            exercicio_atualizado = ExercicioService.update_exercicio_usuario(
-                exercicio_usuario_id=exercicio_id,
-                user_id=current_user.id,
-                nome_personalizado=nome,
-                descricao_personalizada=descricao,
-                musculo_personalizado_id=musculo_obj.id if musculo_obj else None
-            )
+        exercicio_atualizado = ExercicioService.update_exercicio_customizado(
+            exercicio_custom_id=exercicio_id,
+            user_id=current_user.id,
+            nome=nome,
+            descricao=descricao,
+            musculo_id=musculo_obj.id if musculo_obj else None
+        )
         
         if exercicio_atualizado:
             flash('Exercício atualizado!', 'success')
@@ -144,16 +139,17 @@ def excluir_exercicio(exercicio_id):
     if not exercicio:
         flash('Exercício não encontrado!', 'danger')
         return redirect(url_for('aluno.exercicios'))
+
+    if not (hasattr(exercicio, 'is_custom') and exercicio.is_custom):
+        flash('Este exercício faz parte do catálogo geral e não pode ser excluído.', 'warning')
+        return redirect(url_for('aluno.exercicios'))
     
     confirmado = request.args.get('confirmar', 'false').lower() == 'true'
     if not confirmado:
         flash(f'⚠️ Clique novamente para confirmar a exclusão de "{exercicio.nome}".', 'warning')
         return redirect(url_for('aluno.exercicios'))
     
-    if hasattr(exercicio, 'is_custom') and exercicio.is_custom:
-        sucesso = ExercicioService.delete_exercicio_customizado(exercicio_id, user_id=current_user.id)
-    else:
-        sucesso = ExercicioService.delete_exercicio_usuario(exercicio_id, user_id=current_user.id)
+    sucesso = ExercicioService.delete_exercicio_customizado(exercicio_id, user_id=current_user.id)
     
     if sucesso:
         flash(f'Exercício "{exercicio.nome}" excluído!', 'success')
