@@ -5,7 +5,6 @@ from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
 from services.versao_service import VersaoService
 from services.estatistica_service import EstatisticaService
-from services.seed_service import SeedService
 from services.musculo_service import MusculoService
 from datetime import datetime, timezone
 from sqlalchemy.orm import joinedload
@@ -163,8 +162,6 @@ def novo_aluno():
             ativo=True
         )
         db.session.add(vinculo)
-        
-        SeedService.create_minimal_workouts(aluno.id)
         
         db.session.commit()
         

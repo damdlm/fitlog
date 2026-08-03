@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User
-from services.seed_service import SeedService
 from extensions import limiter   # <-- importa de extensions, nunca de app
 from datetime import datetime, timezone
 import logging
@@ -212,11 +211,7 @@ def register():
         db.session.flush()
 
         if user.tipo_usuario == 'aluno':
-            treinos_criados = SeedService.create_minimal_workouts(user.id)
-            if treinos_criados:
-                flash(f'Conta criada com {len(treinos_criados)} treinos básicos!', 'success')
-            else:
-                flash('Conta criada, mas houve erro ao configurar treinos básicos.', 'warning')
+            flash('Conta criada com sucesso!', 'success')
         else:
             flash('Conta de professor criada com sucesso!', 'success')
 
