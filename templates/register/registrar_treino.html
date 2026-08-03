@@ -762,37 +762,79 @@
     }
 
     #top-save-bar .btn-save {
-        padding: 10px 24px;
+        padding: 11px 26px;
         white-space: nowrap;
+        font-weight: 600;
+        letter-spacing: .2px;
+        background: var(--success-gradient, #2D2D2D);
+        color: #fff;
+        border: none;
+        box-shadow: 0 4px 14px rgba(45, 45, 45, 0.28);
+        transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    }
+
+    #top-save-bar .btn-save:hover,
+    #top-save-bar .btn-save:focus {
+        filter: brightness(1.08);
+        box-shadow: 0 6px 18px rgba(45, 45, 45, 0.34);
+        color: #fff;
+    }
+
+    #top-save-bar .btn-save:active {
+        transform: scale(0.97);
     }
 
     #top-save-bar .top-save-bar-actions {
         display: flex;
         align-items: center;
         gap: 8px;
+        flex-shrink: 0;
     }
 
     #top-save-bar .btn-cancel-treino {
         background: #fff;
         color: var(--bs-danger, #dc3545);
         border: 1.5px solid var(--bs-danger, #dc3545);
-        padding: 10px 18px;
+        padding: 11px 20px;
         white-space: nowrap;
         font-weight: 600;
-        border-radius: var(--radius-sm, 8px);
-        transition: background-color .15s ease, color .15s ease;
+        border-radius: 999px;
+        transition: background-color .15s ease, color .15s ease, transform .15s ease, box-shadow .15s ease;
     }
 
     #top-save-bar .btn-cancel-treino:hover,
     #top-save-bar .btn-cancel-treino:focus {
         background: var(--bs-danger, #dc3545);
         color: #fff;
+        box-shadow: 0 4px 14px rgba(220, 53, 69, 0.28);
     }
 
+    #top-save-bar .btn-cancel-treino:active {
+        transform: scale(0.97);
+    }
+
+    /* Abaixo de ~576px, cronômetro + os 2 botões numa linha só não cabem
+       na largura da tela -- é por isso que "Finalizar" ficava cortado.
+       Aqui o cronômetro passa a ocupar sua própria linha e os botões
+       ganham a linha de baixo inteira, cada um com espaço garantido
+       pro texto completo (e mais fáceis de tocar). */
     @media (max-width: 575.98px) {
+        #top-save-bar {
+            flex-wrap: wrap;
+            row-gap: 10px;
+        }
+        #top-save-bar .top-save-bar-crono {
+            flex: 1 1 100%;
+            justify-content: center;
+        }
+        #top-save-bar .top-save-bar-actions {
+            flex: 1 1 100%;
+        }
         #top-save-bar .btn-save,
         #top-save-bar .btn-cancel-treino {
-            padding: 10px 14px;
+            flex: 1 1 0;
+            padding: 11px 12px;
+            font-size: 0.92rem;
         }
     }
 
@@ -873,8 +915,7 @@
             <button type="button" id="btnCancelarTreino" class="btn btn-cancel-treino">
                 <i class="bi bi-x-circle me-2"></i>Cancelar
             </button>
-            <button type="submit" name="salvar" form="registroForm" class="btn btn-save"
-                    style="background: #2D2D2D; color: white; border: none;">
+            <button type="submit" name="salvar" form="registroForm" class="btn btn-save">
                 <i class="bi bi-check-circle me-2"></i>Finalizar
             </button>
         </div>
