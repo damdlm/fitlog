@@ -666,20 +666,13 @@
 
     #top-save-bar .top-save-bar-crono i {
         color: var(--primary-orange);
-        font-size: 1.1rem;
-    }
-
-    #top-save-bar .top-save-bar-crono-label {
-        font-size: 0.75rem;
-        color: #6c757d;
-        font-weight: 600;
-        text-transform: uppercase;
+        font-size: 1.4rem;
     }
 
     #top-save-bar .top-save-bar-crono-value {
         font-family: 'Courier New', ui-monospace, monospace;
         font-variant-numeric: tabular-nums;
-        font-size: 1.15rem;
+        font-size: 1.6rem;
         font-weight: 700;
         color: var(--dark-bg);
     }
@@ -702,14 +695,11 @@
 <div id="top-save-bar">
     <div class="top-save-bar-crono">
         <i class="bi bi-stopwatch"></i>
-        <span>
-            <span class="top-save-bar-crono-label d-block">Tempo de treino</span>
-            <span class="top-save-bar-crono-value" id="cronoTreinoDisplay">00:00</span>
-        </span>
+        <span class="top-save-bar-crono-value" id="cronoTreinoDisplay">00:00</span>
     </div>
     <button type="submit" name="salvar" form="registroForm" class="btn btn-save"
             style="background: #2D2D2D; color: white; border: none;">
-        <i class="bi bi-check-circle me-2"></i>Salvar Treino
+        <i class="bi bi-check-circle me-2"></i>Finalizar
     </button>
 </div>
 {% endif %}
@@ -774,7 +764,7 @@
             <div class="col-12 col-md-5">
                 <label class="form-label fw-bold">
                     <i class="bi bi-calendar" style="color: var(--primary-orange);"></i>
-                    Data do Treino
+                    Data
                 </label>
                 <input type="date" name="data" class="form-control" 
                        value="{{ data_selecionada_str or data_atual_iso() }}" 
@@ -838,11 +828,6 @@
             Exercícios do Treino
             <span class="badge bg-secondary ms-2">{{ exercicios|length }} exercícios</span>
         </h4>
-        <div>
-            <button type="button" class="btn-load-last me-2 me-md-2" onclick="carregarUltimoRegistro()">
-                <i class="bi bi-clock-history me-2"></i>Carregar Último
-            </button>
-        </div>
     </div>
     <div class="card-body p-4">
         <form method="post" id="registroForm">
