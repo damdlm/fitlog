@@ -211,16 +211,6 @@
     }
 
     /* ================= CRONÔMETROS ================= */
-    .cronometros-row {
-        display: flex;
-        justify-content: center;
-        gap: 16px;
-    }
-    .cronometros-row .cronometro-box {
-        width: 100%;
-        max-width: 420px;
-    }
-
     .cronometro-box {
         display: flex;
         flex-direction: column;
@@ -639,19 +629,30 @@
         .alert-version .fs-6 { font-size: 0.8rem !important; }
     }
 
-    /* Barra fixa de salvar no topo -- fica "grudada" logo abaixo da
-       navbar (sticky) enquanto o usuário rola a tela, com o cronômetro
-       do treino ao lado do botão, do mesmo jeito que o volume total
-       ficava ao lado do botão na antiga barra do rodapé. */
-    #top-save-bar {
+    /* Barra fixa no topo -- fica "grudada" logo abaixo da navbar (sticky)
+       enquanto o usuário rola a tela. Agrupa duas fileiras que sobem e
+       descem juntas: o cronômetro do treino + botão Finalizar (quando
+       há exercícios carregados) e o cronômetro de intervalo entre
+       séries, sempre visível, em formato compacto/horizontal. */
+    #top-sticky-bar {
         position: sticky;
         top: var(--navbar-height, 64px);
         z-index: 1020;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 1.25rem;
+    }
+
+    #top-save-bar,
+    #cronoIntervaloBox {
         background: #fff;
         box-shadow: 0 4px 16px rgba(45, 45, 45, 0.10);
         border-radius: var(--radius-md);
         padding: 10px 16px;
-        margin-bottom: 1.25rem;
+    }
+
+    #top-save-bar {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -681,6 +682,63 @@
         padding: 10px 24px;
         white-space: nowrap;
     }
+
+    /* Cronômetro de intervalo -- versão compacta/horizontal para caber
+       na barra fixa. Some do jeito "card grande" que tinha antes. */
+    #cronoIntervaloBox.cronometro-box {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        text-align: left;
+        border: none;
+    }
+
+    #cronoIntervaloBox .cronometro-label {
+        flex-shrink: 0;
+        font-size: 0.72rem;
+    }
+
+    #cronoIntervaloBox .cronometro-display {
+        font-size: 1.5rem;
+        margin: 0;
+        flex-shrink: 0;
+        min-width: 3.4ch;
+    }
+
+    #cronoIntervaloBox .cronometro-presets {
+        margin-bottom: 0;
+        flex: 1 1 auto;
+        justify-content: flex-start;
+    }
+
+    #cronoIntervaloBox .btn-preset {
+        padding: 3px 9px;
+        font-size: 0.72rem;
+    }
+
+    #cronoIntervaloBox .cronometro-actions {
+        flex-shrink: 0;
+        gap: 6px;
+    }
+
+    #cronoIntervaloBox .btn-cronometro {
+        padding: 6px 14px;
+        font-size: 0.82rem;
+    }
+
+    #cronoIntervaloBox .btn-cronometro-ghost {
+        padding: 6px 10px;
+    }
+
+    @media (max-width: 575.98px) {
+        #cronoIntervaloBox .cronometro-presets {
+            order: 3;
+            flex-basis: 100%;
+        }
+    }
 </style>
 
 <!-- Loading Spinner -->
@@ -691,18 +749,43 @@
     <div class="loader-text">Salvando treino...</div>
 </div>
 
-{% if exercicios %}
-<div id="top-save-bar">
-    <div class="top-save-bar-crono">
-        <i class="bi bi-stopwatch"></i>
-        <span class="top-save-bar-crono-value" id="cronoTreinoDisplay">00:00</span>
+<div id="top-sticky-bar">
+    {% if exercicios %}
+    <div id="top-save-bar">
+        <div class="top-save-bar-crono">
+            <i class="bi bi-stopwatch"></i>
+            <span class="top-save-bar-crono-value" id="cronoTreinoDisplay">00:00</span>
+        </div>
+        <button type="submit" name="salvar" form="registroForm" class="btn btn-save"
+                style="background: #2D2D2D; color: white; border: none;">
+            <i class="bi bi-check-circle me-2"></i>Finalizar
+        </button>
     </div>
-    <button type="submit" name="salvar" form="registroForm" class="btn btn-save"
-            style="background: #2D2D2D; color: white; border: none;">
-        <i class="bi bi-check-circle me-2"></i>Finalizar
-    </button>
+    {% endif %}
+
+    <!-- Cronômetro de intervalo: regressivo, para cronometrar o descanso
+         entre séries. Toca um bipe e pisca ao zerar. Fica na mesma barra
+         fixa do cronômetro de treino, sempre visível ao rolar a página. -->
+    <div class="cronometro-box cronometro-intervalo" id="cronoIntervaloBox">
+        <span class="cronometro-label"><i class="bi bi-hourglass-split"></i> Intervalo</span>
+        <span class="cronometro-display" id="cronoIntervaloDisplay">01:30</span>
+        <div class="cronometro-presets" id="cronoIntervaloPresets">
+            <button type="button" class="btn-preset" data-segundos="30">30s</button>
+            <button type="button" class="btn-preset" data-segundos="60">1:00</button>
+            <button type="button" class="btn-preset is-active" data-segundos="90">1:30</button>
+            <button type="button" class="btn-preset" data-segundos="120">2:00</button>
+            <button type="button" class="btn-preset" data-segundos="180">3:00</button>
+        </div>
+        <div class="cronometro-actions">
+            <button type="button" class="btn-cronometro btn-cronometro-primary" id="cronoIntervaloBtnIniciar">
+                <i class="bi bi-play-fill"></i> <span>Iniciar</span>
+            </button>
+            <button type="button" class="btn-cronometro btn-cronometro-ghost" id="cronoIntervaloBtnZerar" title="Reiniciar">
+                <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+        </div>
+    </div>
 </div>
-{% endif %}
 
 <div class="row mb-4 d-none d-md-flex">
     <div class="col-12">
@@ -710,34 +793,6 @@
             <i class="bi bi-plus-circle me-2" style="color: var(--primary-orange);"></i>
             Registrar Treino
         </h2>
-    </div>
-</div>
-
-<div class="card treino-card mb-4">
-    <div class="card-body p-3 p-md-4">
-        <div class="cronometros-row">
-            <!-- Cronômetro de intervalo: regressivo, para cronometrar o
-                 descanso entre séries. Toca um bipe e pisca ao zerar. -->
-            <div class="cronometro-box cronometro-intervalo" id="cronoIntervaloBox">
-                <span class="cronometro-label"><i class="bi bi-hourglass-split"></i> Intervalo entre séries</span>
-                <span class="cronometro-display" id="cronoIntervaloDisplay">01:30</span>
-                <div class="cronometro-presets" id="cronoIntervaloPresets">
-                    <button type="button" class="btn-preset" data-segundos="30">30s</button>
-                    <button type="button" class="btn-preset" data-segundos="60">1:00</button>
-                    <button type="button" class="btn-preset is-active" data-segundos="90">1:30</button>
-                    <button type="button" class="btn-preset" data-segundos="120">2:00</button>
-                    <button type="button" class="btn-preset" data-segundos="180">3:00</button>
-                </div>
-                <div class="cronometro-actions">
-                    <button type="button" class="btn-cronometro btn-cronometro-primary" id="cronoIntervaloBtnIniciar">
-                        <i class="bi bi-play-fill"></i> <span>Iniciar</span>
-                    </button>
-                    <button type="button" class="btn-cronometro btn-cronometro-ghost" id="cronoIntervaloBtnZerar" title="Reiniciar">
-                        <i class="bi bi-arrow-counterclockwise"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -1333,10 +1388,35 @@ function tocarBipe() {
         liberarWakeLock();
     }
 
+    var elTreinoSelect = document.querySelector('select[name="treino"]');
+
+    function treinoSelecionadoValido() {
+        return !!(elTreinoSelect && elTreinoSelect.value);
+    }
+
+    function mostrarErroTreinoNaoSelecionado() {
+        if (elTreinoSelect) {
+            elTreinoSelect.classList.add('is-invalid');
+            elTreinoSelect.addEventListener('change', function onChange() {
+                elTreinoSelect.classList.remove('is-invalid');
+                elTreinoSelect.removeEventListener('change', onChange);
+            });
+        }
+        if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
+            window.FitLogUtils.showToast('Selecione um treino antes de iniciar o cronômetro.', 'danger');
+        } else {
+            alert('Selecione um treino antes de iniciar o cronômetro.');
+        }
+    }
+
     elBtnIniciar.addEventListener('click', function () {
         if (rodando) {
             pausar();
         } else {
+            if (!treinoSelecionadoValido()) {
+                mostrarErroTreinoNaoSelecionado();
+                return;
+            }
             iniciar();
         }
     });
