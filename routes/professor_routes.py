@@ -1105,6 +1105,33 @@ def estatisticas_aluno(aluno_id):
                          volume_maximo_musculo=volume_maximo_musculo)
 
 
+@professor_bp.route('/aluno/<int:aluno_id>/calendario')
+@login_required
+def calendario_aluno(aluno_id):
+    """Calendário de treinos de um aluno específico.
+
+    Reaproveita o template calendar/calendario.html (já preparado para
+    receber `aluno` e `eventos_api_url`) em vez de duplicar o HTML —
+    só troca a URL da API de eventos para incluir aluno_id, e a própria
+    /calendar/api/eventos já valida (via BaseService.get_target_user_id)
+    se este professor tem vínculo ativo com o aluno.
+    """
+    aluno = User.query.get_or_404(aluno_id)
+
+    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
+        flash('Você não tem permissão para ver o calendário deste aluno.', 'danger')
+        return redirect(url_for('professor.dashboard'))
+
+    data_atual = datetime.now(timezone.utc)
+
+    return render_template(
+        'calendar/calendario.html',
+        aluno=aluno,
+        data_atual=data_atual,
+        eventos_api_url=url_for('calendar.api_eventos', aluno_id=aluno.id),
+    )
+
+
 # =============================================
 # API PARA PROFESSORES
 # =============================================

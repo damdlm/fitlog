@@ -1,0 +1,13 @@
+[run]
+omit =
+    tests/*
+    migrations/*
+    venv/*
+    .venv/*
+    */__pycache__/*
+
+[report]
+# Ordena os arquivos com menor cobertura primeiro, pra facilitar achar
+# o que priorizar ao escrever novos testes.
+sort = Cover
+skip_covered = False

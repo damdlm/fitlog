@@ -36,6 +36,14 @@
 
 ## Testes
 
-Execute os testes antes de commitar:
+Execute os testes antes de commitar (cobertura já é medida automaticamente
+via `pytest.ini`):
 ```bash
-pytest tests/
+pytest
+```
+
+## Alterando o schema do banco (models.py)
+
+Veja [MIGRATIONS.md](./MIGRATIONS.md) antes de alterar `models.py` —
+mudanças que vão rodar contra o banco de produção existente precisam de
+uma migração Alembic, não só da alteração no model.
