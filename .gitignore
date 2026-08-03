@@ -44,6 +44,13 @@ logs/
 .DS_Store
 Thumbs.db
 
+# Testes / cobertura
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.pytest_cache/
+
 # Arquivos de backup
 *.bak
 *.backup
