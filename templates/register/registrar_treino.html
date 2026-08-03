@@ -787,6 +787,13 @@
                         <i class="bi bi-arrow-counterclockwise"></i>
                     </button>
                 </div>
+                <!-- Vídeo mudo/invisível usado como fallback para manter a tela
+                     acesa em iOS quando a Wake Lock API nativa não está disponível
+                     (ex: PWA instalado em versões do iOS anteriores à 18.4).
+                     Técnica clássica também usada pela lib NoSleep.js. -->
+                <video id="cronoTreinoWakeVideo" muted playsinline loop
+                       style="position:fixed; top:0; left:0; width:1px; height:1px; opacity:0.01; pointer-events:none;"
+                       src="data:video/mp4;base64,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"></video>
             </div>
             
             <div class="col-4 col-md-2 d-none d-md-block">
@@ -1233,6 +1240,7 @@ function tocarBipe() {
     var elDisplay = document.getElementById('cronoTreinoDisplay');
     var elBtnIniciar = document.getElementById('cronoTreinoBtnIniciar');
     var elBtnZerar = document.getElementById('cronoTreinoBtnZerar');
+    var elWakeVideo = document.getElementById('cronoTreinoWakeVideo');
     if (!elBox || !elDisplay || !elBtnIniciar || !elBtnZerar) return;
 
     var rodando = false;
@@ -1241,26 +1249,50 @@ function tocarBipe() {
     var intervalId = null;
 
     /* ---- Wake Lock: mantém a tela acesa enquanto o cronômetro roda ----
-       Funciona no navegador e também no PWA instalado. O navegador libera
-       o wake lock automaticamente quando a aba perde o foco (troca de
-       app, tela bloqueada), então readquirimos ao voltar a ficar visível
-       se o cronômetro ainda estiver rodando. Em navegadores sem suporte
-       (Safari/iOS mais antigos), o cronômetro continua funcionando
-       normalmente -- só não impede a hibernação da tela. */
+       Tenta primeiro a Wake Lock API nativa (funciona em Android, desktop
+       e no Safari em aba normal desde o iOS 16.4; e também em PWA
+       instalado a partir do iOS/iPadOS 18.4). Se não estiver disponível
+       ou a chamada falhar -- caso de iPhones/iPads com PWA instalado em
+       versões de iOS anteriores à 18.4 -- caímos no truque clássico de
+       tocar um vídeo mudo e invisível em loop, que também impede a tela
+       de hibernar (mesma técnica usada pela lib NoSleep.js). */
     var wakeLock = null;
+    var usandoFallbackVideo = false;
 
     async function pedirWakeLock() {
-        if (!('wakeLock' in navigator)) return;
-        try {
-            wakeLock = await navigator.wakeLock.request('screen');
-            wakeLock.addEventListener('release', function () {
+        if ('wakeLock' in navigator) {
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                wakeLock.addEventListener('release', function () {
+                    wakeLock = null;
+                });
+                return;
+            } catch (e) {
                 wakeLock = null;
-            });
-        } catch (e) {
-            // Pode falhar se a página não estiver visível, bateria baixa
-            // (em alguns navegadores) etc. -- não é crítico.
-            wakeLock = null;
+                // cai para o fallback de vídeo abaixo
+            }
         }
+        iniciarFallbackVideo();
+    }
+
+    function iniciarFallbackVideo() {
+        if (!elWakeVideo || usandoFallbackVideo) return;
+        var p = elWakeVideo.play();
+        if (p && typeof p.catch === 'function') {
+            p.catch(function () {
+                // Autoplay pode falhar se não houver interação do usuário
+                // ainda -- o clique em "Iniciar treino" já conta como
+                // interação, então normalmente funciona.
+            });
+        }
+        usandoFallbackVideo = true;
+    }
+
+    function pararFallbackVideo() {
+        if (!elWakeVideo || !usandoFallbackVideo) return;
+        elWakeVideo.pause();
+        elWakeVideo.currentTime = 0;
+        usandoFallbackVideo = false;
     }
 
     async function liberarWakeLock() {
@@ -1272,6 +1304,7 @@ function tocarBipe() {
             }
             wakeLock = null;
         }
+        pararFallbackVideo();
     }
 
     document.addEventListener('visibilitychange', function () {
