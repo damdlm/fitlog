@@ -766,6 +766,36 @@
         white-space: nowrap;
     }
 
+    #top-save-bar .top-save-bar-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    #top-save-bar .btn-cancel-treino {
+        background: #fff;
+        color: var(--bs-danger, #dc3545);
+        border: 1.5px solid var(--bs-danger, #dc3545);
+        padding: 10px 18px;
+        white-space: nowrap;
+        font-weight: 600;
+        border-radius: var(--radius-sm, 8px);
+        transition: background-color .15s ease, color .15s ease;
+    }
+
+    #top-save-bar .btn-cancel-treino:hover,
+    #top-save-bar .btn-cancel-treino:focus {
+        background: var(--bs-danger, #dc3545);
+        color: #fff;
+    }
+
+    @media (max-width: 575.98px) {
+        #top-save-bar .btn-save,
+        #top-save-bar .btn-cancel-treino {
+            padding: 10px 14px;
+        }
+    }
+
     /* Cronômetro de intervalo -- versão compacta/horizontal para caber
        na barra fixa. Some do jeito "card grande" que tinha antes. */
     #cronoIntervaloBox.cronometro-box {
@@ -834,15 +864,20 @@
 
 <div id="top-sticky-bar">
     {% if exercicios %}
-    <div id="top-save-bar">
+    <div id="top-save-bar" class="d-none">
         <div class="top-save-bar-crono">
             <i class="bi bi-stopwatch"></i>
             <span class="top-save-bar-crono-value" id="cronoTreinoDisplay">00:00</span>
         </div>
-        <button type="submit" name="salvar" form="registroForm" class="btn btn-save"
-                style="background: #2D2D2D; color: white; border: none;">
-            <i class="bi bi-check-circle me-2"></i>Finalizar
-        </button>
+        <div class="top-save-bar-actions">
+            <button type="button" id="btnCancelarTreino" class="btn btn-cancel-treino">
+                <i class="bi bi-x-circle me-2"></i>Cancelar
+            </button>
+            <button type="submit" name="salvar" form="registroForm" class="btn btn-save"
+                    style="background: #2D2D2D; color: white; border: none;">
+                <i class="bi bi-check-circle me-2"></i>Finalizar
+            </button>
+        </div>
     </div>
     {% endif %}
 
@@ -956,10 +991,18 @@
 </div>
 {% endif %}
 
+{% if exercicios %}
+<div class="empty-state mb-4" id="exerciciosProntoState">
+    <div class="empty-icon"><i class="bi bi-play-circle"></i></div>
+    <h5>Tudo pronto!</h5>
+    <p>{{ exercicios|length }} exercício{{ 's' if exercicios|length != 1 }} carregado{{ 's' if exercicios|length != 1 }}. Clique em <strong>Iniciar treino</strong> para começar a registrar.</p>
+</div>
+{% endif %}
+
 {% from "macros/exercicio_imagens.html" import botao_imagens_exercicio %}
 {% from "macros/exercicio_instrucoes.html" import botao_instrucoes_exercicio %}
 {% if exercicios %}
-<div class="card">
+<div class="card d-none" id="exerciciosCard">
     <div class="card-header bg-white d-flex justify-content-between align-items-center p-3 flex-wrap gap-3">
         <h4 class="mb-0">
             <i class="bi bi-list-check me-2" style="color: var(--primary-orange);"></i>
@@ -1116,6 +1159,27 @@
 
 {% block scripts %}
 <script>
+// Estado compartilhado entre os blocos de script desta página: controla se
+// o treino está "em andamento" (Iniciar treino já foi clicado e ainda não
+// foi Finalizado/Cancelado), usado para revelar os exercícios, mostrar o
+// aviso de saída (beforeunload) e limpar os dados ao cancelar/sair.
+window.FitLogTreinoState = (function () {
+    var emAndamento = false;
+    return {
+        iniciar: function () { emAndamento = true; },
+        finalizar: function () { emAndamento = false; },
+        emAndamento: function () { return emAndamento; }
+    };
+})();
+
+window.addEventListener('beforeunload', function (e) {
+    if (window.FitLogTreinoState.emAndamento()) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+    }
+});
+
 // Inicialização quando a página carrega
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Página de registro carregada');
@@ -1212,6 +1276,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (tempoTreinoInput && window.FitLogCronoTreino) {
                 tempoTreinoInput.value = window.FitLogCronoTreino.segundosAtuais();
             }
+
+            // Envio legítimo (Finalizar) -- não precisa mais avisar ao sair
+            window.FitLogTreinoState.finalizar();
 
             // Mostra loader
             document.getElementById('global-loader').style.display = 'flex';
@@ -1511,6 +1578,19 @@ function tocarBipe() {
         }
     };
 
+    function revelarExercicios() {
+        var exerciciosCard = document.getElementById('exerciciosCard');
+        var topSaveBar = document.getElementById('top-save-bar');
+        var prontoState = document.getElementById('exerciciosProntoState');
+        if (exerciciosCard) exerciciosCard.classList.remove('d-none');
+        if (topSaveBar) topSaveBar.classList.remove('d-none');
+        if (prontoState) prontoState.classList.add('d-none');
+        if (window.FitLogTreinoState) window.FitLogTreinoState.iniciar();
+        if (exerciciosCard) {
+            exerciciosCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
     function iniciar() {
         rodando = true;
         inicioMs = Date.now();
@@ -1518,6 +1598,7 @@ function tocarBipe() {
         elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i> <span>Pausar</span>';
         elBtnIniciar.classList.add('is-rodando');
         pedirWakeLock();
+        revelarExercicios();
     }
 
     function pausar() {
@@ -1572,6 +1653,21 @@ function tocarBipe() {
         elBtnIniciar.classList.remove('is-rodando');
         liberarWakeLock();
     });
+
+    // Cancelar treino: pede confirmação e, se confirmado, descarta tudo
+    // (exercícios, valores digitados, cronômetros) recarregando a página
+    // limpa, sem o treino/data selecionados.
+    var elBtnCancelar = document.getElementById('btnCancelarTreino');
+    if (elBtnCancelar) {
+        elBtnCancelar.addEventListener('click', function () {
+            var confirmado = confirm(
+                'Tem certeza que deseja cancelar este treino? Todos os dados preenchidos serão perdidos.'
+            );
+            if (!confirmado) return;
+            if (window.FitLogTreinoState) window.FitLogTreinoState.finalizar();
+            window.location.href = window.location.pathname;
+        });
+    }
 })();
 
 /* ---- Cronômetro de intervalo (regressivo) ---- */
