@@ -1240,6 +1240,46 @@ function tocarBipe() {
     var acumuladoSegundos = 0;  // tempo já contabilizado antes da pausa atual
     var intervalId = null;
 
+    /* ---- Wake Lock: mantém a tela acesa enquanto o cronômetro roda ----
+       Funciona no navegador e também no PWA instalado. O navegador libera
+       o wake lock automaticamente quando a aba perde o foco (troca de
+       app, tela bloqueada), então readquirimos ao voltar a ficar visível
+       se o cronômetro ainda estiver rodando. Em navegadores sem suporte
+       (Safari/iOS mais antigos), o cronômetro continua funcionando
+       normalmente -- só não impede a hibernação da tela. */
+    var wakeLock = null;
+
+    async function pedirWakeLock() {
+        if (!('wakeLock' in navigator)) return;
+        try {
+            wakeLock = await navigator.wakeLock.request('screen');
+            wakeLock.addEventListener('release', function () {
+                wakeLock = null;
+            });
+        } catch (e) {
+            // Pode falhar se a página não estiver visível, bateria baixa
+            // (em alguns navegadores) etc. -- não é crítico.
+            wakeLock = null;
+        }
+    }
+
+    async function liberarWakeLock() {
+        if (wakeLock) {
+            try {
+                await wakeLock.release();
+            } catch (e) {
+                // ignora
+            }
+            wakeLock = null;
+        }
+    }
+
+    document.addEventListener('visibilitychange', function () {
+        if (rodando && document.visibilityState === 'visible' && !wakeLock) {
+            pedirWakeLock();
+        }
+    });
+
     function segundosAtuais() {
         if (!rodando) return acumuladoSegundos;
         return acumuladoSegundos + (Date.now() - inicioMs) / 1000;
@@ -1263,6 +1303,7 @@ function tocarBipe() {
         intervalId = setInterval(atualizarDisplay, 1000);
         elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i> <span>Pausar</span>';
         elBtnIniciar.classList.add('is-rodando');
+        pedirWakeLock();
     }
 
     function pausar() {
@@ -1271,6 +1312,7 @@ function tocarBipe() {
         clearInterval(intervalId);
         elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Continuar</span>';
         elBtnIniciar.classList.remove('is-rodando');
+        liberarWakeLock();
     }
 
     elBtnIniciar.addEventListener('click', function () {
@@ -1289,6 +1331,7 @@ function tocarBipe() {
         atualizarDisplay();
         elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Iniciar treino</span>';
         elBtnIniciar.classList.remove('is-rodando');
+        liberarWakeLock();
     });
 })();
 
