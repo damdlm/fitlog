@@ -33,9 +33,17 @@ def dashboard():
     total_treinos = 0
     total_registros = 0
     
-    for aluno in alunos:
-        total_treinos += Treino.query.filter_by(user_id=aluno.id).count()
-        total_registros += RegistroTreino.query.filter_by(user_id=aluno.id).count()
+    # Antes: 2 queries .count() por aluno em loop (N+1). Agora: 2 queries
+    # agregadas com IN + GROUP BY, mesmo padrão já usado em listar_alunos()
+    # nesta mesma tela (linhas ~90-98).
+    aluno_ids = [aluno.id for aluno in alunos]
+    if aluno_ids:
+        total_treinos = (db.session.query(func.count(Treino.id))
+                          .filter(Treino.user_id.in_(aluno_ids))
+                          .scalar()) or 0
+        total_registros = (db.session.query(func.count(RegistroTreino.id))
+                            .filter(RegistroTreino.user_id.in_(aluno_ids))
+                            .scalar()) or 0
     
     return render_template('professor/dashboard.html',
                          alunos=alunos,
