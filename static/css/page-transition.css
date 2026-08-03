@@ -27,7 +27,8 @@ button,
 .btn-light .fl-ripple,
 .btn-outline-secondary .fl-ripple,
 .nav-link .fl-ripple,
-.list-group-item-action .fl-ripple {
+.list-group-item-action .fl-ripple,
+.bottom-nav-item .fl-ripple {
     background: rgba(242, 140, 51, 0.35);
 }
 

@@ -37,7 +37,15 @@ import requests
 
 from flask import current_app
 
+from services.base_service import BaseService
+from services.versao_service import VersaoService
+
 logger = logging.getLogger(__name__)
+
+# Quantos exercícios listar por treino no contexto enviado à IA — só
+# para não deixar o payload grande à toa (treinos normalmente têm bem
+# menos que isso).
+MAX_EXERCICIOS_POR_TREINO_CONTEXTO = 15
 
 GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
@@ -117,6 +125,64 @@ class FitBotService:
         return FitBotService._responder_com_texto(mensagem, historico)
 
     # ------------------------------------------------------------------
+    # Contexto do usuário logado (treino atual)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _montar_contexto_treino():
+        """
+        Monta um contexto mínimo (nome do usuário + treino atual) para o
+        FitBot poder responder sobre o treino de quem está logado.
+
+        Reutiliza inteiramente os services já existentes — nunca faz
+        query própria. O usuário vem exclusivamente de
+        BaseService.get_current_user() (== flask_login.current_user),
+        nunca de um user_id vindo do front-end, então o isolamento entre
+        usuários é garantido pelo próprio mecanismo de login já em uso.
+
+        Se qualquer etapa falhar ou não houver dados, retorna None — o
+        FitBot simplesmente não recebe contexto extra e continua
+        respondendo perguntas gerais normalmente.
+        """
+        try:
+            usuario = BaseService.get_current_user()
+            if not usuario:
+                return None
+
+            versao_ativa = VersaoService.get_ativa()
+            if not versao_ativa:
+                return None
+
+            treinos = VersaoService.get_treinos(versao_ativa.id)
+            if not treinos:
+                return None
+
+            nome_usuario = usuario.nome_completo or usuario.username
+            linhas = [f"Usuário: {nome_usuario}", ""]
+
+            for codigo, dados in treinos.items():
+                nome_treino = dados.get("nome") or codigo
+                exercicios = VersaoService.get_exercicios(versao_ativa.id, treino_codigo=codigo)
+                if not exercicios:
+                    continue
+                nomes_exercicios = [
+                    ex.nome for ex in exercicios[:MAX_EXERCICIOS_POR_TREINO_CONTEXTO] if getattr(ex, "nome", None)
+                ]
+                if not nomes_exercicios:
+                    continue
+                linhas.append(f"Treino {codigo} ({nome_treino}):")
+                linhas.extend(f"- {nome}" for nome in nomes_exercicios)
+                linhas.append("")
+
+            if len(linhas) <= 2:
+                # Achou versão/treinos mas nenhum exercício resolvido — não envia contexto pela metade
+                return None
+
+            return "\n".join(linhas).strip()
+        except Exception as e:
+            logger.warning("FitBot: falha ao montar contexto de treino (seguindo sem contexto): %s", e)
+            return None
+
+    # ------------------------------------------------------------------
     # Groq (Llama) — conversas de texto
     # ------------------------------------------------------------------
     @staticmethod
@@ -129,6 +195,18 @@ class FitBotService:
         modelo = current_app.config.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
         mensagens = [{"role": "system", "content": SYSTEM_INSTRUCTION_TEXTO}]
+
+        contexto_treino = FitBotService._montar_contexto_treino()
+        if contexto_treino:
+            mensagens.append({
+                "role": "system",
+                "content": (
+                    "Dados reais do usuário autenticado nesta conversa — use-os "
+                    "somente se a pergunta for sobre o treino/exercícios dele; "
+                    "ignore para perguntas gerais:\n\n" + contexto_treino
+                ),
+            })
+
         for item in historico:
             papel = "assistant" if item.get("papel") == "bot" else "user"
             texto = (item.get("texto") or "").strip()

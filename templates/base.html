@@ -957,20 +957,20 @@
     <!-- BARRA INFERIOR (mobile, < lg)              -->
     <!-- ========================================= -->
     <nav class="bottom-nav d-lg-none" aria-label="Navegação principal">
-        <a href="{{ url_for('aluno.dashboard') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'aluno.dashboard' else '' }}">
+        <a href="{{ url_for('aluno.dashboard') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'aluno.dashboard' else '' }}" data-fl-click-feedback>
             <i class="bi bi-house{{ '-fill' if request.endpoint == 'aluno.dashboard' else '' }}"></i>
             <span>Início</span>
         </a>
-        <a href="{{ url_for('calendar.calendario') }}" class="bottom-nav-item {{ 'active' if request.blueprint == 'calendar' else '' }}">
+        <a href="{{ url_for('calendar.calendario') }}" class="bottom-nav-item {{ 'active' if request.blueprint == 'calendar' else '' }}" data-fl-click-feedback>
             <i class="bi bi-calendar{{ '-fill' if request.blueprint == 'calendar' else '' }}"></i>
             <span>Calendário</span>
         </a>
         {% if current_user.pode_gerenciar_treino_proprio() %}
-        <a href="{{ url_for('register.registrar_treino') }}" class="bottom-nav-cta" aria-label="Registrar treino">
+        <a href="{{ url_for('register.registrar_treino') }}" class="bottom-nav-cta" aria-label="Registrar treino" data-fl-click-feedback>
             <i class="bi bi-plus-lg"></i>
         </a>
         {% endif %}
-        <a href="{{ url_for('aluno.estatisticas') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'aluno.estatisticas' else '' }}">
+        <a href="{{ url_for('aluno.estatisticas') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'aluno.estatisticas' else '' }}" data-fl-click-feedback>
             <i class="bi bi-graph-up-arrow"></i>
             <span>Progresso</span>
         </a>
