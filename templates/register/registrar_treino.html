@@ -813,28 +813,53 @@
         transform: scale(0.97);
     }
 
-    /* Abaixo de ~576px, cronômetro + os 2 botões numa linha só não cabem
-       na largura da tela -- é por isso que "Finalizar" ficava cortado.
-       Aqui o cronômetro passa a ocupar sua própria linha e os botões
-       ganham a linha de baixo inteira, cada um com espaço garantido
-       pro texto completo (e mais fáceis de tocar). */
+    /* Abaixo de ~576px, cronômetro + os 2 botões continuam na mesma
+       linha (era assim que já funcionava) -- só ficam mais compactos:
+       barra mais enxuta, cronômetro menor, botões com padding/fonte/
+       ícone reduzidos. É esse aperto que garante que "Finalizar" caiba
+       inteiro sem cortar, sem precisar quebrar linha. */
     @media (max-width: 575.98px) {
         #top-save-bar {
-            flex-wrap: wrap;
-            row-gap: 10px;
+            padding: 8px 10px;
+            gap: 8px;
         }
         #top-save-bar .top-save-bar-crono {
-            flex: 1 1 100%;
-            justify-content: center;
+            gap: 5px;
+        }
+        #top-save-bar .top-save-bar-crono i {
+            font-size: 1.05rem;
+        }
+        #top-save-bar .top-save-bar-crono-value {
+            font-size: 1rem;
         }
         #top-save-bar .top-save-bar-actions {
-            flex: 1 1 100%;
+            gap: 6px;
         }
         #top-save-bar .btn-save,
         #top-save-bar .btn-cancel-treino {
-            flex: 1 1 0;
-            padding: 11px 12px;
+            padding: 8px 12px;
+            font-size: 0.76rem;
+        }
+        #top-save-bar .btn-save i,
+        #top-save-bar .btn-cancel-treino i {
+            margin-right: 4px !important;
+            font-size: 0.82rem;
+        }
+    }
+
+    /* Telas bem estreitas (celulares pequenos) -- aperta mais um pouco */
+    @media (max-width: 360px) {
+        #top-save-bar {
+            padding: 7px 8px;
+            gap: 6px;
+        }
+        #top-save-bar .top-save-bar-crono-value {
             font-size: 0.92rem;
+        }
+        #top-save-bar .btn-save,
+        #top-save-bar .btn-cancel-treino {
+            padding: 7px 9px;
+            font-size: 0.7rem;
         }
     }
 
