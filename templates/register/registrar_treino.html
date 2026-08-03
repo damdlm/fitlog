@@ -39,6 +39,55 @@
         background: linear-gradient(180deg, rgba(45, 45, 45, 0.04), var(--surface) 40%);
     }
 
+    /* Exercício desmarcado (não vai ser treinado hoje): fica visualmente
+       apagado, mas o switch continua ativo/clicável para o usuário poder
+       reverter a decisão. Os campos de carga/reps/séries ficam disabled
+       -- e campos disabled não são enviados no POST, então o backend
+       nunca recebe (e portanto nunca salva) dados desse exercício. */
+    .exercise-row.is-desativado {
+        opacity: 0.5;
+        filter: grayscale(0.4);
+        border-left-color: var(--border-soft);
+    }
+    .exercise-row.is-desativado .inputs-row,
+    .exercise-row.is-desativado .dash-registro-badges,
+    .exercise-row.is-desativado .exercicio-nome-trunc {
+        pointer-events: none;
+    }
+
+    .exercicio-switch-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+    .exercicio-switch-wrap .form-check-input {
+        width: 2.4em;
+        height: 1.3em;
+        cursor: pointer;
+        accent-color: var(--primary-orange);
+    }
+    .exercicio-switch-wrap .form-check-input:checked {
+        background-color: var(--primary-orange);
+        border-color: var(--primary-orange);
+    }
+    .exercicio-switch-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--dark-bg);
+        white-space: nowrap;
+    }
+    .exercise-row.is-desativado .exercicio-switch-label {
+        color: #999;
+    }
+    /* Override local do alinhamento herdado de .dash-registro-top (base.html,
+       compartilhado com dashboard/professor) só nesta tela, para o switch
+       ficar centralizado com o nome do exercício em vez de baseline. */
+    .exercise-row .dash-registro-top {
+        align-items: center;
+        justify-content: space-between;
+    }
+
     @keyframes fadeSlideIn {
         from { opacity: 0; transform: translateY(6px); }
         to { opacity: 1; transform: translateY(0); }
@@ -103,9 +152,9 @@
         min-width: 0;
         text-align: center;
         font-weight: 700;
-        font-size: 1rem !important;
-        padding: 4px !important;
-        height: 34px !important;
+        font-size: 0.9rem !important;
+        padding: 3px !important;
+        height: 30px !important;
         border: 2px solid var(--border-soft) !important;
         border-radius: var(--radius-sm) !important;
         box-shadow: none !important;
@@ -119,9 +168,9 @@
     }
 
     .inputs-row .form-select {
-        height: 34px !important;
-        padding: 4px 28px 4px 10px !important;
-        font-size: 0.95rem !important;
+        height: 30px !important;
+        padding: 3px 24px 3px 8px !important;
+        font-size: 0.85rem !important;
         font-weight: 700 !important;
         font-family: inherit !important;
         color: var(--dark-bg) !important;
@@ -556,9 +605,9 @@
         }
 
         .carga-input, .reps-input, .inputs-row .form-select {
-            height: 30px !important;
+            height: 27px !important;
             padding: 2px 4px !important;
-            font-size: 0.9rem !important;
+            font-size: 0.82rem !important;
         }
 
         .inputs-row .form-select {
@@ -945,42 +994,56 @@
 
                     <!-- Carga / Reps / Séries -->
                     <div class="col-12 col-md-8">
-                        <!-- NOVO: Substituído o antigo row Bootstrap por grid idêntico ao dos campos -->
-                        <div class="inputs-row-labels">
-                            <span class="inputs-row-label">Carga</span>
-                            <span class="inputs-row-label">Repetições</span>
-                            <span class="inputs-row-label">Séries</span>
-                        </div>
-                        <div class="inputs-row row g-2">
-                            <div class="col-md-4">
-                                <input type="number" name="carga_{{ chave_ex }}"
-                                       class="form-control carga-input"
-                                       placeholder="0"
-                                       step="0.5" min="0"
-                                       inputmode="decimal"
-                                       aria-label="Carga em quilos"
-                                       value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].carga }}{% elif ultima_carga %}{{ ultima_carga }}{% endif %}">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="exercicio-switch-wrap">
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input exercicio-switch" type="checkbox"
+                                           role="switch"
+                                           id="ativo-{{ chave_ex }}"
+                                           data-target-exercicio="{{ chave_ex }}"
+                                           checked
+                                           aria-label="Vou treinar {{ ex.nome }} hoje">
+                                </div>
                             </div>
+                            <div class="flex-grow-1" style="min-width: 0;">
+                                <!-- NOVO: Substituído o antigo row Bootstrap por grid idêntico ao dos campos -->
+                                <div class="inputs-row-labels">
+                                    <span class="inputs-row-label">Carga</span>
+                                    <span class="inputs-row-label">Repetições</span>
+                                    <span class="inputs-row-label">Séries</span>
+                                </div>
+                                <div class="inputs-row row g-2">
+                                    <div class="col-md-4">
+                                        <input type="number" name="carga_{{ chave_ex }}"
+                                               class="form-control carga-input"
+                                               placeholder="0"
+                                               step="0.5" min="0"
+                                               inputmode="decimal"
+                                               aria-label="Carga em quilos"
+                                               value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].carga }}{% elif ultima_carga %}{{ ultima_carga }}{% endif %}">
+                                    </div>
 
-                            <div class="col-md-4">
-                                <input type="number" name="reps_{{ chave_ex }}"
-                                       class="form-control reps-input"
-                                       placeholder="0"
-                                       min="0" max="100"
-                                       inputmode="numeric"
-                                       aria-label="Repetições"
-                                       value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].repeticoes }}{% elif ultimas_reps %}{{ ultimas_reps }}{% endif %}">
-                            </div>
+                                    <div class="col-md-4">
+                                        <input type="number" name="reps_{{ chave_ex }}"
+                                               class="form-control reps-input"
+                                               placeholder="0"
+                                               min="0" max="100"
+                                               inputmode="numeric"
+                                               aria-label="Repetições"
+                                               value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].repeticoes }}{% elif ultimas_reps %}{{ ultimas_reps }}{% endif %}">
+                                    </div>
 
-                            <div class="col-md-4">
-                                <select name="num_series_{{ chave_ex }}" id="series-select-{{ chave_ex }}" 
-                                        class="form-select">
-                                    {% for n in range(1, max_opcoes + 1) %}
-                                    <option value="{{ n }}" {% if series_selecionadas == n %}selected{% endif %}>{{ n }} série{{ 's' if n != 1 }}</option>
-                                    {% endfor %}
+                                    <div class="col-md-4">
+                                        <select name="num_series_{{ chave_ex }}" id="series-select-{{ chave_ex }}" 
+                                                class="form-select">
+                                            {% for n in range(1, max_opcoes + 1) %}
+                                            <option value="{{ n }}" {% if series_selecionadas == n %}selected{% endif %}>{{ n }} série{{ 's' if n != 1 }}</option>
+                                            {% endfor %}
                                 </select>
                             </div>
                         </div>
+                    </div>
+                    </div>
                     </div>
                 </div>
             </div>
@@ -1037,6 +1100,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof RegistrarTreino !== 'undefined') {
         RegistrarTreino.init();
     }
+
+    // Liga/desliga por exercício ("vou treinar hoje?")
+    inicializarSwitchesExercicio();
+    atualizarResumo();
     
     // Configurar data atual se vazia
     const dataInput = document.querySelector('input[name="data"]');
@@ -1158,6 +1225,10 @@ function atualizarResumo() {
         const exId = row.dataset.exercicioId;
         if (!exId) return;
 
+        // Exercício desmarcado: não entra no volume nem no contador de
+        // "completo", já que seus campos estão disabled e não serão salvos.
+        if (row.classList.contains('is-desativado')) return;
+
         const cargaInput = row.querySelector('.carga-input');
         const repsInput = row.querySelector('.reps-input');
         const carga = parseFloat(cargaInput?.value) || 0;
@@ -1177,6 +1248,42 @@ function atualizarResumo() {
     }
 }
 
+/* Liga/desliga um exercício: quando desmarcado, os campos de carga,
+   repetições e séries ficam "disabled" -- e campos disabled não são
+   enviados no submit do form, então o backend nunca recebe dado
+   nenhum desse exercício (não precisa de tratamento extra no POST).
+   O switch em si nunca fica disabled, para o usuário poder reverter. */
+function aplicarEstadoExercicio(row, ativo) {
+    row.classList.toggle('is-desativado', !ativo);
+
+    const cargaInput = row.querySelector('.carga-input');
+    const repsInput = row.querySelector('.reps-input');
+    const seriesSelect = row.querySelector('select[name^="num_series_"]');
+
+    [cargaInput, repsInput, seriesSelect].forEach(el => {
+        if (el) el.disabled = !ativo;
+    });
+
+    if (!ativo) {
+        row.classList.remove('is-complete');
+    }
+}
+
+function inicializarSwitchesExercicio() {
+    document.querySelectorAll('.exercicio-switch').forEach(switchEl => {
+        const row = switchEl.closest('.exercise-row');
+        if (!row) return;
+
+        // Estado inicial: todos vêm marcados (checked) por padrão.
+        aplicarEstadoExercicio(row, switchEl.checked);
+
+        switchEl.addEventListener('change', function () {
+            aplicarEstadoExercicio(row, this.checked);
+            atualizarResumo();
+        });
+    });
+}
+
 function carregarUltimoRegistro() {
     let carregados = 0;
     let totalExercicios = 0;
@@ -1184,6 +1291,10 @@ function carregarUltimoRegistro() {
     document.querySelectorAll('.exercise-row').forEach(row => {
         const exId = row.dataset.exercicioId;
         if (!exId) return;
+
+        // Não carrega dados anteriores em exercícios que o usuário
+        // desmarcou (não vai treinar hoje).
+        if (row.classList.contains('is-desativado')) return;
 
         totalExercicios++;
 
