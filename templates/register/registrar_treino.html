@@ -39,20 +39,21 @@
         background: linear-gradient(180deg, rgba(45, 45, 45, 0.04), var(--surface) 40%);
     }
 
-    /* Exercício desmarcado (não vai ser treinado hoje): fica visualmente
-       apagado, mas o switch continua ativo/clicável para o usuário poder
-       reverter a decisão. Os campos de carga/reps/séries ficam disabled
-       -- e campos disabled não são enviados no POST, então o backend
-       nunca recebe (e portanto nunca salva) dados desse exercício. */
+    /* Exercício desmarcado (não vai ser treinado hoje): o card inteiro
+       fica apagado e bloqueado para clique/toque -- só o checkbox
+       continua ativo, pra dar pro usuário reverter a decisão. Os campos
+       de carga/reps/séries também ficam disabled -- e campos disabled
+       não são enviados no POST, então o backend nunca recebe (e
+       portanto nunca salva) dados desse exercício. */
     .exercise-row.is-desativado {
         opacity: 0.5;
         filter: grayscale(0.4);
         border-left-color: var(--border-soft);
-    }
-    .exercise-row.is-desativado .inputs-row,
-    .exercise-row.is-desativado .dash-registro-badges,
-    .exercise-row.is-desativado .exercicio-nome-trunc {
         pointer-events: none;
+    }
+    .exercise-row.is-desativado .exercicio-switch-wrap,
+    .exercise-row.is-desativado .exercicio-switch-wrap * {
+        pointer-events: auto;
     }
 
     .exercicio-switch-wrap {
@@ -60,6 +61,29 @@
         align-items: center;
         gap: 8px;
         flex-shrink: 0;
+    }
+
+    /* Grid de 2 colunas x 2 linhas: coluna 1 é o checkbox (só aparece
+       na linha 2, a dos campos de valor -- a linha 1/coluna 1 fica
+       vazia, o que empurra o checkbox pra baixo e o alinha exatamente
+       com Carga/Repetições/Séries, não com a linha de rótulos). */
+    .exercicio-valores-grid {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto;
+        column-gap: 8px;
+    }
+    .exercicio-valores-grid .inputs-row-labels {
+        grid-column: 2;
+        grid-row: 1;
+    }
+    .exercicio-valores-grid .exercicio-switch-wrap {
+        grid-column: 1;
+        grid-row: 2;
+    }
+    .exercicio-valores-grid .inputs-row {
+        grid-column: 2;
+        grid-row: 2;
     }
     .exercicio-switch-wrap .form-check-input {
         width: 1.35em;
@@ -1004,7 +1028,12 @@
 
                     <!-- Carga / Reps / Séries -->
                     <div class="col-12 col-md-8">
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="exercicio-valores-grid">
+                            <div class="inputs-row-labels">
+                                <span class="inputs-row-label">Carga</span>
+                                <span class="inputs-row-label">Repetições</span>
+                                <span class="inputs-row-label">Séries</span>
+                            </div>
                             <div class="exercicio-switch-wrap">
                                 <div class="form-check mb-0">
                                     <input class="form-check-input exercicio-switch" type="checkbox"
@@ -1014,22 +1043,15 @@
                                            aria-label="Vou treinar {{ ex.nome }} hoje">
                                 </div>
                             </div>
-                            <div class="flex-grow-1" style="min-width: 0;">
-                                <!-- NOVO: Substituído o antigo row Bootstrap por grid idêntico ao dos campos -->
-                                <div class="inputs-row-labels">
-                                    <span class="inputs-row-label">Carga</span>
-                                    <span class="inputs-row-label">Repetições</span>
-                                    <span class="inputs-row-label">Séries</span>
-                                </div>
-                                <div class="inputs-row">
-                                    <div>
-                                        <input type="number" name="carga_{{ chave_ex }}"
-                                               class="form-control carga-input"
-                                               placeholder="0"
-                                               step="0.5" min="0"
-                                               inputmode="decimal"
-                                               aria-label="Carga em quilos"
-                                               value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].carga }}{% elif ultima_carga %}{{ ultima_carga }}{% endif %}">
+                            <div class="inputs-row">
+                                <div>
+                                    <input type="number" name="carga_{{ chave_ex }}"
+                                           class="form-control carga-input"
+                                           placeholder="0"
+                                           step="0.5" min="0"
+                                           inputmode="decimal"
+                                           aria-label="Carga em quilos"
+                                           value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].carga }}{% elif ultima_carga %}{{ ultima_carga }}{% endif %}">
                                     </div>
 
                                     <div>
@@ -1051,7 +1073,6 @@
                                 </select>
                             </div>
                         </div>
-                    </div>
                     </div>
                     </div>
                 </div>
