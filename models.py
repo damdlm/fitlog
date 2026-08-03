@@ -390,6 +390,7 @@ class HistoricoTreino(db.Model):
     carga = db.Column(db.Numeric(5,1), nullable=False)
     repeticoes = db.Column(db.Integer, nullable=False)
     ordem = db.Column(db.Integer, default=0)
+    tempo_treino = db.Column(db.Integer, nullable=True)  # Duração total do treino em segundos (cronômetro do topo)
     
     __table_args__ = (
         db.Index('idx_historico_registro', 'registro_id'),

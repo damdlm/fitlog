@@ -126,6 +126,15 @@ def salvar_registro():
     """
     treino_id = request.form.get("treino")
     data_registro = request.form.get("data")
+
+    # Tempo total do treino (cronômetro do topo), em segundos
+    tempo_treino_raw = request.form.get("tempo_treino")
+    try:
+        tempo_treino = int(float(tempo_treino_raw)) if tempo_treino_raw else None
+        if tempo_treino is not None and tempo_treino < 0:
+            tempo_treino = None
+    except (ValueError, TypeError):
+        tempo_treino = None
     
     # Validações básicas
     if not treino_id or not data_registro:
@@ -205,7 +214,8 @@ def salvar_registro():
             versao_id=versao_ativa.id,
             periodo=periodo,
             semana=semana,
-            dados_exercicios=dados_exercicios
+            dados_exercicios=dados_exercicios,
+            tempo_treino=tempo_treino
         ):
             logger.info(f"Treino {treino_id} salvo para {data_registro} (versão {versao_ativa.numero_versao})")
             flash(f"✅ Treino salvo para {data_obj.strftime('%d/%m/%Y')}!", "success")

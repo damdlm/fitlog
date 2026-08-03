@@ -89,8 +89,14 @@ class RegistroService(BaseService):
             return []
     
     @staticmethod
-    def salvar_registros(treino_id, versao_id, periodo, semana, dados_exercicios, user_id=None):
-        """Salva múltiplos registros de uma sessão de treino"""
+    def salvar_registros(treino_id, versao_id, periodo, semana, dados_exercicios, user_id=None, tempo_treino=None):
+        """Salva múltiplos registros de uma sessão de treino
+
+        Args:
+            tempo_treino: duração total do treino em segundos (cronômetro do
+                topo da página), gravada em cada série de historico_treino
+                referente a esta sessão.
+        """
         try:
             if user_id is None:
                 user_id = BaseService.get_current_user_id()
@@ -133,7 +139,8 @@ class RegistroService(BaseService):
                             registro_id=registro.id,
                             carga=dados['carga'],
                             repeticoes=dados['repeticoes'],
-                            ordem=i+1
+                            ordem=i+1,
+                            tempo_treino=tempo_treino
                         )
                         db.session.add(serie)
             

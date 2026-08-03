@@ -842,6 +842,7 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input type="hidden" name="treino" value="{{ treino_selecionado }}">
             <input type="hidden" name="data" value="{{ data_selecionada_str or data_atual_iso() }}">
+            <input type="hidden" name="tempo_treino" id="tempoTreinoInput" value="0">
 
             {% for ex in exercicios %}
             {% set chave_ex = ex.prefixo ~ ex.id %}
@@ -1062,6 +1063,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            // Preenche o tempo total do treino (em segundos) antes de enviar
+            const tempoTreinoInput = document.getElementById('tempoTreinoInput');
+            if (tempoTreinoInput && window.FitLogCronoTreino) {
+                tempoTreinoInput.value = window.FitLogCronoTreino.segundosAtuais();
+            }
+
             // Mostra loader
             document.getElementById('global-loader').style.display = 'flex';
         });
@@ -1241,6 +1248,14 @@ function tocarBipe() {
     function atualizarDisplay() {
         elDisplay.textContent = formatarTempo(segundosAtuais());
     }
+
+    // Exposto globalmente para o handler de submit do formulário conseguir
+    // ler o tempo total decorrido (em segundos inteiros) na hora de salvar.
+    window.FitLogCronoTreino = {
+        segundosAtuais: function () {
+            return Math.round(segundosAtuais());
+        }
+    };
 
     function iniciar() {
         rodando = true;
