@@ -1172,7 +1172,7 @@
     <!-- Cronômetro de intervalo: regressivo, para cronometrar o descanso
          entre séries. Toca um bipe e pisca ao zerar. Fica na mesma barra
          fixa do cronômetro de treino, sempre visível ao rolar a página. -->
-    <div class="cronometro-box cronometro-intervalo" id="cronoIntervaloBox">
+    <div class="cronometro-box cronometro-intervalo d-none" id="cronoIntervaloBox">
         <span class="cronometro-label"><i class="bi bi-hourglass-split"></i> Intervalo</span>
         <span class="cronometro-display" id="cronoIntervaloDisplay">01:30</span>
         <div class="cronometro-presets" id="cronoIntervaloPresets">
@@ -1205,7 +1205,7 @@
 <div class="card treino-card mb-4">
     <div class="card-body p-4">
         <form method="get" class="row g-2 g-md-3 align-items-end" id="formBusca">
-            <div class="col-12 col-md-5">
+            <div class="col-12 col-md-5" id="linhaTreinoSelect">
                 <label class="form-label fw-bold">
                     <i class="bi bi-trophy" style="color: var(--primary-orange);"></i>
                     Treino
@@ -1223,13 +1223,15 @@
             </div>
             
             <div class="col-12 col-md-5">
-                <label class="form-label fw-bold">
-                    <i class="bi bi-calendar" style="color: var(--primary-orange);"></i>
-                    Data
-                </label>
-                <input type="date" name="data" class="form-control" 
-                       value="{{ data_selecionada_str or data_atual_iso() }}" 
-                       min="2020-01-01" max="{{ data_atual_iso() }}" required>
+                <div id="campoDataTreino">
+                    <label class="form-label fw-bold">
+                        <i class="bi bi-calendar" style="color: var(--primary-orange);"></i>
+                        Data
+                    </label>
+                    <input type="date" name="data" class="form-control" 
+                           value="{{ data_selecionada_str or data_atual_iso() }}" 
+                           min="2020-01-01" max="{{ data_atual_iso() }}" required>
+                </div>
                 <div class="cronometro-actions mt-2" id="cronoTreinoBox">
                     <button type="button" class="btn-cronometro btn-cronometro-primary flex-fill justify-content-center" id="cronoTreinoBtnIniciar">
                         <i class="bi bi-play-fill"></i> <span>Iniciar treino</span>
@@ -1897,9 +1899,17 @@ function tocarBipe() {
         var exerciciosCard = document.getElementById('exerciciosCard');
         var topSaveBar = document.getElementById('top-save-bar');
         var prontoState = document.getElementById('exerciciosProntoState');
+        var linhaTreinoSelect = document.getElementById('linhaTreinoSelect');
+        var campoDataTreino = document.getElementById('campoDataTreino');
+        var cronoIntervaloBox = document.getElementById('cronoIntervaloBox');
         if (exerciciosCard) exerciciosCard.classList.remove('d-none');
         if (topSaveBar) topSaveBar.classList.remove('d-none');
         if (prontoState) prontoState.classList.add('d-none');
+        // Treino e data já foram escolhidos -- somem daqui pra frente, dando
+        // lugar visualmente para os cronômetros (de treino e de intervalo).
+        if (linhaTreinoSelect) linhaTreinoSelect.classList.add('d-none');
+        if (campoDataTreino) campoDataTreino.classList.add('d-none');
+        if (cronoIntervaloBox) cronoIntervaloBox.classList.remove('d-none');
         if (window.FitLogTreinoState) window.FitLogTreinoState.iniciar();
         if (exerciciosCard) {
             exerciciosCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
