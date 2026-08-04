@@ -37,14 +37,25 @@ def chat():
         {
             "mensagem": "texto digitado pelo usuário",
             "imagem_base64": "opcional, já comprimida pelo front-end",
-            "historico": [{"papel": "usuario"|"bot", "texto": "..."}]
+            "historico": [{"papel": "usuario"|"bot", "texto": "..."}],
+            "aluno_id": "opcional, só relevante para professores"
         }
+
+    "aluno_id" nunca é usado diretamente como fonte da consulta -- o
+    service sempre revalida a permissão (vínculo professor/aluno ativo,
+    ou admin) contra a sessão autenticada antes de usar esse valor.
     """
     dados = request.get_json(silent=True) or {}
 
     mensagem = (dados.get("mensagem") or "").strip()
     imagem_base64 = dados.get("imagem_base64")
     historico = dados.get("historico") or []
+
+    aluno_id = dados.get("aluno_id")
+    try:
+        aluno_id = int(aluno_id) if aluno_id is not None else None
+    except (TypeError, ValueError):
+        aluno_id = None
 
     if not mensagem and not imagem_base64:
         return jsonify({"ok": False, "resposta": "Digite uma pergunta ou envie uma foto do equipamento."}), 400
@@ -62,6 +73,7 @@ def chat():
         mensagem=mensagem,
         imagem_base64=imagem_base64,
         historico=historico,
+        aluno_id=aluno_id,
     )
 
     status = 200 if resultado.get("ok") else 503

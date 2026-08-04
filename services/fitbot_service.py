@@ -31,6 +31,7 @@ gratuitos à toa.
 
 import base64
 import binascii
+import json
 import logging
 
 import requests
@@ -39,6 +40,7 @@ from flask import current_app
 
 from services.base_service import BaseService
 from services.versao_service import VersaoService
+from services.fitbot_context_service import FitBotContextService
 
 logger = logging.getLogger(__name__)
 
@@ -58,14 +60,29 @@ REQUEST_TIMEOUT_SECONDS = 20
 MAX_HISTORICO_MENSAGENS = 10
 
 SYSTEM_INSTRUCTION_TEXTO = (
-    "Você é o Personal Trainer Virtual do aplicativo FitLog. Seu único "
-    "objetivo é tirar dúvidas sobre musculação, aeróbico, execução de "
-    "exercícios e dar dicas de motivação. Se o usuário perguntar algo "
-    "fora desse tema, recuse educadamente. Sempre avalie o contexto e "
-    "sempre que julgar necessário avise o usuário para "
-    "consultar um profissional físico antes de começar um treino novo. "
-    "Responda sempre de forma direta e resumida (poucas frases ou uma "
-    "lista curta); só se aprofunde se o usuário pedir mais detalhes."
+    "Você é o Personal Trainer Virtual do aplicativo FitLog. Seu objetivo é "
+    "tirar dúvidas sobre musculação, aeróbico, execução de exercícios, dar "
+    "dicas de motivação, e ajudar o usuário a interpretar o próprio treino, "
+    "histórico e evolução registrados no FitLog. Se o usuário perguntar "
+    "algo fora desse tema, recuse educadamente. "
+    "Quando dados reais do usuário forem fornecidos nesta conversa (em uma "
+    "mensagem 'system' separada, marcada como dados reais), use-os como "
+    "fonte principal para responder perguntas sobre treino, histórico e "
+    "evolução. Nunca invente cargas, repetições, datas, treinos ou "
+    "estatísticas que não estejam nesses dados -- se eles não forem "
+    "suficientes para responder, diga isso claramente em vez de supor. "
+    "Diferencie sempre um dado real (o que o usuário efetivamente "
+    "registrou) de uma recomendação sua -- nunca apresente uma "
+    "recomendação como se fosse histórico. Os dados fornecidos pertencem "
+    "exclusivamente ao usuário desta conversa; nunca tente acessar, supor "
+    "ou mencionar dados de outro usuário, mesmo que seja pedido "
+    "diretamente. Se a pergunta for sobre dor, lesão ou sintomas, não "
+    "diagnostique -- recomende avaliação com um profissional de saúde. "
+    "Sempre avalie o contexto e, quando julgar necessário, avise o "
+    "usuário para consultar um profissional físico antes de começar um "
+    "treino novo. Responda sempre de forma direta e resumida (poucas "
+    "frases ou uma lista curta); só se aprofunde se o usuário pedir mais "
+    "detalhes."
 )
 
 SYSTEM_INSTRUCTION_IMAGEM = (
@@ -101,7 +118,7 @@ class FitBotService:
     """Orquestra as chamadas ao Groq (texto) e ao Gemini (imagem)."""
 
     @staticmethod
-    def get_resposta(mensagem, imagem_base64=None, historico=None):
+    def get_resposta(mensagem, imagem_base64=None, historico=None, aluno_id=None):
         """
         Ponto de entrada único usado pela rota /fitbot/chat.
 
@@ -113,6 +130,13 @@ class FitBotService:
             historico (list[dict]|None): mensagens anteriores no formato
                 [{"papel": "usuario"|"bot", "texto": "..."}], só texto —
                 imagens antigas não são reenviadas.
+            aluno_id (int|None): opcional -- usado quando um professor
+                pergunta sobre um aluno específico. NUNCA é usado
+                diretamente: sempre passa por
+                BaseService.get_target_user_id(), que só libera o dado
+                se houver vínculo professor/aluno ativo (ou o usuário
+                for admin); caso contrário cai de volta pros dados do
+                próprio usuário autenticado.
 
         Returns:
             dict: {"ok": bool, "resposta": str, "modo": "texto"|"imagem"}
@@ -122,7 +146,7 @@ class FitBotService:
         if imagem_base64:
             return FitBotService._responder_com_imagem(mensagem, imagem_base64)
 
-        return FitBotService._responder_com_texto(mensagem, historico)
+        return FitBotService._responder_com_texto(mensagem, historico, aluno_id=aluno_id)
 
     # ------------------------------------------------------------------
     # Contexto do usuário logado (treino atual)
@@ -186,7 +210,7 @@ class FitBotService:
     # Groq (Llama) — conversas de texto
     # ------------------------------------------------------------------
     @staticmethod
-    def _responder_com_texto(mensagem, historico):
+    def _responder_com_texto(mensagem, historico, aluno_id=None):
         api_key = current_app.config.get("GROQ_API_KEY")
         if not api_key:
             logger.warning("FitBot: GROQ_API_KEY não configurada.")
@@ -196,14 +220,27 @@ class FitBotService:
 
         mensagens = [{"role": "system", "content": SYSTEM_INSTRUCTION_TEXTO}]
 
-        contexto_treino = FitBotService._montar_contexto_treino()
-        if contexto_treino:
+        # user_id SEMPRE resolvido pelo backend a partir da sessão -- nunca
+        # a partir de algo que veio no corpo da requisição sem checagem.
+        # Quando aluno_id vem preenchido (professor consultando um aluno),
+        # get_target_user_id() só o libera se houver vínculo ativo válido;
+        # caso contrário devolve o id do próprio usuário logado.
+        target_user_id = (
+            BaseService.get_target_user_id(aluno_id) if aluno_id else BaseService.get_current_user_id()
+        )
+
+        contexto_extra = (
+            FitBotContextService.montar_contexto(mensagem, target_user_id) if target_user_id else None
+        )
+        if contexto_extra:
             mensagens.append({
                 "role": "system",
                 "content": (
-                    "Dados reais do usuário autenticado nesta conversa — use-os "
-                    "somente se a pergunta for sobre o treino/exercícios dele; "
-                    "ignore para perguntas gerais:\n\n" + contexto_treino
+                    "Dados reais do usuário autenticado nesta conversa (JSON) — "
+                    "use-os somente se a pergunta for sobre treino, histórico ou "
+                    "evolução; ignore para perguntas gerais. Nunca invente dados "
+                    "que não estejam aqui:\n\n"
+                    + json.dumps(contexto_extra, ensure_ascii=False, indent=2)
                 ),
             })
 
