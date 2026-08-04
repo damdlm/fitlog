@@ -2278,7 +2278,25 @@ function tocarBipe() {
 
     async function gerarImagemCard() {
         const cardEl = document.getElementById('shareCard');
-        const canvas = await html2canvas(cardEl, { backgroundColor: '#2D2D2D', scale: 2, useCORS: true });
+        const modalBody = cardEl.closest('.modal-body');
+        if (modalBody) modalBody.scrollTop = 0;
+
+        // Passa altura/largura explícitas (scrollWidth/scrollHeight do
+        // próprio card): sem isso o html2canvas limita a captura ao
+        // tamanho da viewport visível e corta exercícios que ficam
+        // "abaixo da dobra" em telas menores, mesmo o card tendo mais
+        // conteúdo do que cabe na tela.
+        const largura = cardEl.scrollWidth;
+        const altura = cardEl.scrollHeight;
+        const canvas = await html2canvas(cardEl, {
+            backgroundColor: '#333333',
+            scale: 2,
+            useCORS: true,
+            width: largura,
+            height: altura,
+            windowWidth: largura,
+            windowHeight: altura
+        });
         return new Promise(function (resolve) {
             canvas.toBlob(function (blob) {
                 resolve(blob);
