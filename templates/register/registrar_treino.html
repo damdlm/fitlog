@@ -1030,6 +1030,8 @@
         padding: 20px 18px 16px;
         text-align: center;
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
     }
 
     .share-card::before {
@@ -1172,6 +1174,88 @@
         font-size: 0.62rem;
     }
 
+    .share-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 0.68rem;
+        color: #9a9a9a;
+        letter-spacing: 0.3px;
+    }
+
+    .share-card-footer-brand {
+        font-weight: 800;
+        color: var(--light-orange);
+    }
+
+    /* ====== Versão de exportação do card (usada apenas para gerar a
+       imagem final, fora da tela) ======
+       Diferente da prévia no modal (que só tem a altura do conteúdo),
+       aqui o card nasce com a altura exata do formato do Instagram
+       escolhido (Feed 4:5 ou Story 9:16). Em vez de sobrar uma faixa
+       vazia colada por fora do card quando o treino tem poucos
+       exercícios, o próprio conteúdo se distribui dentro do quadro:
+       cabeçalho/estatísticas no topo, exercícios centralizados no
+       meio (crescendo se precisar), marca no rodapé. */
+    .share-card-export {
+        justify-content: space-between;
+        padding: 40px 30px 26px;
+        border-radius: 0;
+    }
+
+    .share-card-export .share-card-exercicios {
+        flex: 1;
+        justify-content: center;
+        gap: 10px;
+        margin: 24px 0;
+    }
+
+    .share-card-export .share-card-exercicio-item {
+        padding: 12px 16px;
+    }
+
+    .share-card-export .share-card-exercicio-nome {
+        font-size: 1.02rem;
+    }
+
+    .share-card-export .share-card-exercicio-tag {
+        font-size: 0.78rem;
+        padding: 4px 10px;
+    }
+
+    .share-card-export .share-card-logo {
+        height: 46px;
+    }
+
+    .share-card-export .share-card-user {
+        font-size: 1.5rem;
+    }
+
+    .share-card-export .share-card-subtitle {
+        font-size: 1rem;
+    }
+
+    .share-card-export .share-card-stats {
+        padding: 16px 10px;
+    }
+
+    .share-card-export .share-card-stat-value {
+        font-size: 1.3rem;
+    }
+
+    .share-card-export .share-card-stat-label {
+        font-size: 0.75rem;
+    }
+
+    .share-card-export .share-card-footer {
+        font-size: 0.9rem;
+        margin-top: 0;
+    }
+
     .btn-sair-resumo {
         display: inline-flex;
         align-items: center;
@@ -1225,33 +1309,40 @@
         <div class="modal-content resumo-modal-content">
             <div class="modal-body p-3 p-md-4">
                 <div id="shareCard" class="share-card">
-                    <div class="share-card-header">
-                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FitLog" class="share-card-logo">
-                    </div>
-
-                    <div class="share-card-user" id="shareCardUser">Usuário</div>
-                    <div class="share-card-subtitle" id="shareCardSubtitle">Treino • Data</div>
-
-                    <div class="share-card-stats">
-                        <div class="share-card-stat">
-                            <i class="bi bi-stopwatch share-card-stat-icon"></i>
-                            <div class="share-card-stat-value" id="shareCardTempo">00:00</div>
-                            <div class="share-card-stat-label">Tempo</div>
+                    <div class="share-card-top">
+                        <div class="share-card-header">
+                            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FitLog" class="share-card-logo">
                         </div>
-                        <div class="share-card-stat">
-                            <i class="bi bi-list-check share-card-stat-icon"></i>
-                            <div class="share-card-stat-value" id="shareCardQtdExercicios">0</div>
-                            <div class="share-card-stat-label">Exercícios</div>
-                        </div>
-                        <div class="share-card-stat">
-                            <i class="bi bi-lightning-charge-fill share-card-stat-icon"></i>
-                            <div class="share-card-stat-value" id="shareCardVolume">0 kg</div>
-                            <div class="share-card-stat-label">Volume</div>
+
+                        <div class="share-card-user" id="shareCardUser">Usuário</div>
+                        <div class="share-card-subtitle" id="shareCardSubtitle">Treino • Data</div>
+
+                        <div class="share-card-stats">
+                            <div class="share-card-stat">
+                                <i class="bi bi-stopwatch share-card-stat-icon"></i>
+                                <div class="share-card-stat-value" id="shareCardTempo">00:00</div>
+                                <div class="share-card-stat-label">Tempo</div>
+                            </div>
+                            <div class="share-card-stat">
+                                <i class="bi bi-list-check share-card-stat-icon"></i>
+                                <div class="share-card-stat-value" id="shareCardQtdExercicios">0</div>
+                                <div class="share-card-stat-label">Exercícios</div>
+                            </div>
+                            <div class="share-card-stat">
+                                <i class="bi bi-lightning-charge-fill share-card-stat-icon"></i>
+                                <div class="share-card-stat-value" id="shareCardVolume">0 kg</div>
+                                <div class="share-card-stat-label">Volume</div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="share-card-exercicios" id="shareCardExercicios">
                         <!-- preenchido via JS -->
+                    </div>
+
+                    <div class="share-card-footer">
+                        <span class="share-card-footer-brand">FitLog</span>
+                        <span>· registre o seu treino também</span>
                     </div>
                 </div>
 
@@ -2439,55 +2530,53 @@ function tocarBipe() {
         const modalBody = cardEl.closest('.modal-body');
         if (modalBody) modalBody.scrollTop = 0;
 
-        // Passa altura/largura explícitas (scrollWidth/scrollHeight do
-        // próprio card): sem isso o html2canvas limita a captura ao
-        // tamanho da viewport visível e corta exercícios que ficam
-        // "abaixo da dobra" em telas menores, mesmo o card tendo mais
-        // conteúdo do que cabe na tela.
-        const largura = cardEl.scrollWidth;
-        const altura = cardEl.scrollHeight;
-        const cardCanvas = await html2canvas(cardEl, {
-            backgroundColor: '#1e1e1e',
-            scale: 2,
-            useCORS: true,
-            width: largura,
-            height: altura,
-            windowWidth: largura,
-            windowHeight: altura
-        });
-
-        // Monta a imagem final no tamanho padrão do Instagram escolhido
-        // pelo usuário no modal: Feed (4:5, 1080x1350) ou Story (9:16,
-        // 1080x1920). Sem isso, a imagem sai do tamanho exato do card e
-        // aparece pequena, "sobrando" tela ao redor, quando compartilhada.
+        // Gera a imagem a partir de um CLONE do card, fora da tela, já
+        // no tamanho exato do formato do Instagram escolhido (Feed 4:5
+        // ou Story 9:16). Antes, o card era capturado do tamanho dele
+        // no modal e depois encolhido/colado no centro de um canvas
+        // maior -- sobrava uma faixa vazia de fundo em volta e a
+        // imagem ficava pequena dentro do quadro. Agora o próprio
+        // conteúdo nasce distribuído para preencher o quadro inteiro
+        // (classe .share-card-export cuida disso via CSS).
         const formato = formatoSelecionado();
+        const SCALE = 2;
         const FINAL_W = 1080;
         const FINAL_H = formato === 'story' ? 1920 : 1350;
-        const margem = formato === 'story' ? 90 : 70;
+        const cloneWidthCss = FINAL_W / SCALE;
+        const cloneMinHeightCss = FINAL_H / SCALE;
 
-        const finalCanvas = document.createElement('canvas');
-        finalCanvas.width = FINAL_W;
-        finalCanvas.height = FINAL_H;
-        const ctx = finalCanvas.getContext('2d');
+        const clone = cardEl.cloneNode(true);
+        clone.removeAttribute('id');
+        clone.classList.add('share-card-export');
+        clone.style.width = cloneWidthCss + 'px';
+        clone.style.minHeight = cloneMinHeightCss + 'px';
 
-        const fundo = ctx.createLinearGradient(0, 0, 0, FINAL_H);
-        fundo.addColorStop(0, '#3a3a3a');
-        fundo.addColorStop(1, '#141414');
-        ctx.fillStyle = fundo;
-        ctx.fillRect(0, 0, FINAL_W, FINAL_H);
+        const holder = document.createElement('div');
+        holder.style.position = 'fixed';
+        holder.style.top = '0';
+        holder.style.left = '-9999px';
+        holder.appendChild(clone);
+        document.body.appendChild(holder);
 
-        const larguraMax = FINAL_W - margem * 2;
-        const alturaMax = FINAL_H - margem * 2;
-        const escala = Math.min(larguraMax / cardCanvas.width, alturaMax / cardCanvas.height, 1.8);
-        const wFinal = cardCanvas.width * escala;
-        const hFinal = cardCanvas.height * escala;
-        ctx.drawImage(
-            cardCanvas,
-            (FINAL_W - wFinal) / 2,
-            (FINAL_H - hFinal) / 2,
-            wFinal,
-            hFinal
-        );
+        let finalCanvas;
+        try {
+            // Se o treino tiver muitos exercícios e não couber na altura
+            // padrão, o clone cresce (min-height só define o mínimo) --
+            // por isso lê a altura real depois de montado, em vez de
+            // travar em FINAL_H e cortar conteúdo.
+            const alturaReal = Math.max(clone.scrollHeight, cloneMinHeightCss);
+            finalCanvas = await html2canvas(clone, {
+                backgroundColor: '#1e1e1e',
+                scale: SCALE,
+                useCORS: true,
+                width: cloneWidthCss,
+                height: alturaReal,
+                windowWidth: cloneWidthCss,
+                windowHeight: alturaReal
+            });
+        } finally {
+            holder.remove();
+        }
 
         return new Promise(function (resolve) {
             finalCanvas.toBlob(function (blob) {
