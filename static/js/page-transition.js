@@ -13,6 +13,10 @@
 
     var OVERLAY_ID = 'flPageTransitionOverlay';
     var NAV_DELAY_MS = 1300;
+    // Atraso antes da própria película começar a aparecer quando o clique
+    // parte do menu mobile (barra inferior / painel "Mais") -- dá tempo do
+    // usuário ver o feedback de ripple no botão antes da tela escurecer.
+    var MENU_MOBILE_DELAY_MS = 300;
 
     function createOverlay() {
         var existing = document.getElementById(OVERLAY_ID);
@@ -40,6 +44,15 @@
         // mesmo se a película já tiver sido criada/escondida antes.
         void overlay.offsetWidth;
         overlay.classList.add('fl-loader-visible');
+    }
+
+    function hideOverlay() {
+        var overlay = document.getElementById(OVERLAY_ID);
+        if (overlay) overlay.classList.remove('fl-loader-visible');
+    }
+
+    function isMobileMenuTarget(el) {
+        return !!el.closest('.bottom-nav, .mais-sheet');
     }
 
     function addRipple(el, evt) {
@@ -100,10 +113,16 @@
         if (link && isInternalNavigableLink(link)) {
             evt.preventDefault();
             var href = link.getAttribute('href');
-            showOverlay();
+            // Nos botões do menu mobile (barra inferior / painel "Mais"),
+            // espera 0,3s antes de a película de transição começar a
+            // aparecer, para o ripple do clique ficar visível primeiro.
+            var atrasoInicial = isMobileMenuTarget(link) ? MENU_MOBILE_DELAY_MS : 0;
             window.setTimeout(function () {
-                window.location.href = href;
-            }, NAV_DELAY_MS);
+                showOverlay();
+                window.setTimeout(function () {
+                    window.location.href = href;
+                }, NAV_DELAY_MS);
+            }, atrasoInicial);
             return;
         }
 
@@ -128,7 +147,15 @@
     // Garante que a película não fique visível se o usuário voltar
     // pelo histórico do navegador (bfcache).
     window.addEventListener('pageshow', function () {
-        var overlay = document.getElementById(OVERLAY_ID);
-        if (overlay) overlay.classList.remove('fl-loader-visible');
+        hideOverlay();
     });
+
+    // Expõe show/hide para outras telas chamarem a mesma película em
+    // transições que não são navegação de página (ex: entrar no modo
+    // treino em tela cheia ao clicar em "Iniciar treino").
+    window.FitLogPageTransition = {
+        show: showOverlay,
+        hide: hideOverlay,
+        NAV_DELAY_MS: NAV_DELAY_MS
+    };
 })();

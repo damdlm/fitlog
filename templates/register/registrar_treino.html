@@ -2129,7 +2129,20 @@ function tocarBipe() {
         elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i> <span>Pausar</span>';
         elBtnIniciar.classList.add('is-rodando');
         pedirWakeLock();
-        revelarExercicios();
+
+        // Reaproveita a mesma película de transição usada na navegação
+        // entre páginas, para a entrada no modo treino em tela cheia
+        // parecer uma troca de "página" -- só troca de tela de fato
+        // depois que a película já cobriu o conteúdo.
+        if (window.FitLogPageTransition) {
+            window.FitLogPageTransition.show();
+            window.setTimeout(function () {
+                revelarExercicios();
+                window.FitLogPageTransition.hide();
+            }, window.FitLogPageTransition.NAV_DELAY_MS);
+        } else {
+            revelarExercicios();
+        }
     }
 
     function pausar() {
