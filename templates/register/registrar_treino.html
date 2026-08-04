@@ -969,7 +969,7 @@
 
     .share-card {
         position: relative;
-        background: radial-gradient(circle at top, #6b6b6b 0%, #4a4a4a 55%, #333333 100%);
+        background: radial-gradient(circle at top, #3a3a3a 0%, #1e1e1e 55%, #141414 100%);
         color: #fff;
         border-radius: 18px;
         padding: 20px 18px 16px;
@@ -1019,7 +1019,7 @@
         justify-content: space-around;
         align-items: center;
         gap: 4px;
-        background: rgba(0, 0, 0, 0.16);
+        background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 14px;
         padding: 9px 6px;
@@ -1079,13 +1079,17 @@
         gap: 4px;
         padding: 7px 10px;
         border-radius: 10px;
-        background: rgba(0, 0, 0, 0.16);
+        background: rgba(255, 255, 255, 0.045);
         font-size: 0.8rem;
     }
 
     .share-card-exercicio-nome {
+        display: block;
+        width: 100%;
         font-weight: 700;
-        white-space: normal;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
         line-height: 1.15;
         font-size: 0.82rem;
     }
@@ -1111,6 +1115,34 @@
 
     .share-card-exercicio-tag i {
         font-size: 0.62rem;
+    }
+
+    .btn-sair-resumo {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        padding: 10px 18px;
+        margin-top: 4px;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        background: transparent;
+        color: #6b6b6b;
+        font-weight: 600;
+        font-size: 0.88rem;
+        transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn-sair-resumo i {
+        font-size: 0.85rem;
+    }
+
+    .btn-sair-resumo:hover,
+    .btn-sair-resumo:focus {
+        background: rgba(0, 0, 0, 0.05);
+        border-color: rgba(0, 0, 0, 0.22);
+        color: var(--dark-bg);
     }
 
     .resumo-modal-actions {
@@ -1180,8 +1212,8 @@
                             <i class="bi bi-whatsapp me-1"></i>WhatsApp
                         </button>
                     </div>
-                    <button type="button" id="btnSairResumo" class="btn btn-link w-100">
-                        Sair
+                    <button type="button" id="btnSairResumo" class="btn-sair-resumo">
+                        <i class="bi bi-box-arrow-right"></i>Sair
                     </button>
                 </div>
             </div>
@@ -2289,7 +2321,7 @@ function tocarBipe() {
         const largura = cardEl.scrollWidth;
         const altura = cardEl.scrollHeight;
         const canvas = await html2canvas(cardEl, {
-            backgroundColor: '#333333',
+            backgroundColor: '#1e1e1e',
             scale: 2,
             useCORS: true,
             width: largura,
