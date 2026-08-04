@@ -2320,7 +2320,7 @@ function tocarBipe() {
         // conteúdo do que cabe na tela.
         const largura = cardEl.scrollWidth;
         const altura = cardEl.scrollHeight;
-        const canvas = await html2canvas(cardEl, {
+        const cardCanvas = await html2canvas(cardEl, {
             backgroundColor: '#1e1e1e',
             scale: 2,
             useCORS: true,
@@ -2329,8 +2329,40 @@ function tocarBipe() {
             windowWidth: largura,
             windowHeight: altura
         });
+
+        // Monta a imagem final no formato de story (9:16, 1080x1920).
+        // Sem isso, a imagem sai do tamanho exato do card e aparece
+        // pequena, "sobrando" tela ao redor, quando compartilhada no
+        // Instagram Stories (que preenche a tela toda nesse formato).
+        const STORY_W = 1080;
+        const STORY_H = 1920;
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = STORY_W;
+        finalCanvas.height = STORY_H;
+        const ctx = finalCanvas.getContext('2d');
+
+        const fundo = ctx.createLinearGradient(0, 0, 0, STORY_H);
+        fundo.addColorStop(0, '#3a3a3a');
+        fundo.addColorStop(1, '#141414');
+        ctx.fillStyle = fundo;
+        ctx.fillRect(0, 0, STORY_W, STORY_H);
+
+        const margem = 90;
+        const larguraMax = STORY_W - margem * 2;
+        const alturaMax = STORY_H - margem * 2;
+        const escala = Math.min(larguraMax / cardCanvas.width, alturaMax / cardCanvas.height, 1.8);
+        const wFinal = cardCanvas.width * escala;
+        const hFinal = cardCanvas.height * escala;
+        ctx.drawImage(
+            cardCanvas,
+            (STORY_W - wFinal) / 2,
+            (STORY_H - hFinal) / 2,
+            wFinal,
+            hFinal
+        );
+
         return new Promise(function (resolve) {
-            canvas.toBlob(function (blob) {
+            finalCanvas.toBlob(function (blob) {
                 resolve(blob);
             }, 'image/png');
         });
