@@ -39,16 +39,19 @@
         background: linear-gradient(180deg, rgba(45, 45, 45, 0.04), var(--surface) 40%);
     }
 
-    /* Exercício desmarcado (não vai ser treinado hoje): o card inteiro
-       fica apagado e bloqueado para clique/toque -- só o checkbox
-       continua ativo, pra dar pro usuário reverter a decisão. Os campos
-       de carga/reps/séries também ficam disabled -- e campos disabled
-       não são enviados no POST, então o backend nunca recebe (e
-       portanto nunca salva) dados desse exercício. */
+    /* Exercício desmarcado (não vai ser treinado hoje): o card fica
+       cinza claro e "achatado" (sem sombra), sinalizando visualmente
+       que está desativado -- só o checkbox continua clicável, pra dar
+       pro usuário reverter a decisão. Os campos de carga/reps/séries
+       também ficam disabled -- e campos disabled não são enviados no
+       POST, então o backend nunca recebe (e portanto nunca salva)
+       dados desse exercício. */
     .exercise-row.is-desativado {
-        opacity: 0.5;
-        filter: grayscale(0.4);
+        background: #ececec;
         border-left-color: var(--border-soft);
+        color: #9a9a9a;
+        filter: grayscale(0.5);
+        box-shadow: none;
         pointer-events: none;
     }
     .exercise-row.is-desativado .exercicio-switch-wrap,
