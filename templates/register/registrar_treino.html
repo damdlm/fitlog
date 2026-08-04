@@ -960,6 +960,61 @@
         }
     }
 
+    /* ====== Modo treino em tela cheia ====== */
+    .modo-treino-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1900;
+        background: #f2f2f2;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modo-treino-header {
+        flex: 0 0 auto;
+        background: #fff;
+        box-shadow: 0 2px 10px rgba(45, 45, 45, 0.10);
+        padding: 10px 14px;
+        padding-top: max(10px, env(safe-area-inset-top));
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .modo-treino-body {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 16px 14px 24px;
+    }
+
+    .modo-treino-footer {
+        flex: 0 0 auto;
+        background: #fff;
+        box-shadow: 0 -2px 10px rgba(45, 45, 45, 0.10);
+        padding: 10px 14px;
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+
+    /* Dentro do modo tela cheia, esses componentes perdem a própria
+       sombra/raio/padding -- o cabeçalho/rodapé do overlay já cuidam
+       da aparência, então evita "caixa dentro de caixa". */
+    .modo-treino-header #top-save-bar,
+    .modo-treino-footer #cronoIntervaloBox.cronometro-box {
+        box-shadow: none;
+        border-radius: 0;
+        padding: 0;
+    }
+
+    .modo-treino-header #cronoTreinoBox {
+        margin-top: 0 !important;
+    }
+
+    .modo-treino-body #exerciciosCard {
+        border: none;
+        box-shadow: none;
+    }
+
     /* ====== Modal de resumo / compartilhamento do treino ====== */
     .resumo-modal-content {
         border-radius: var(--radius-lg);
@@ -1261,6 +1316,19 @@
             </button>
         </div>
     </div>
+</div>
+
+<!-- Modo treino em tela cheia: abre quando o cronômetro do treino é
+     iniciado. O cronômetro principal fica fixo no cabeçalho, o
+     cronômetro de intervalo fixo no rodapé, e a lista de exercícios
+     ocupa o meio, com rolagem própria. São exatamente os MESMOS
+     elementos do resto da página -- só são movidos pra dentro daqui
+     via JS quando o treino começa -- então toda a lógica (submit,
+     cronômetros, validação) continua funcionando sem duplicação. -->
+<div id="modoTreinoOverlay" class="modo-treino-overlay d-none">
+    <div class="modo-treino-header" id="modoTreinoHeader"></div>
+    <div class="modo-treino-body" id="modoTreinoBody"></div>
+    <div class="modo-treino-footer" id="modoTreinoFooter"></div>
 </div>
 
 <div class="row mb-4 d-none d-md-flex">
@@ -1633,6 +1701,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 urlAposSalvar = resposta.url;
                 window.FitLogTreinoState.finalizar();
                 document.getElementById('global-loader').style.display = 'none';
+                if (window.FitLogFecharModoTreinoTelaCheia) {
+                    window.FitLogFecharModoTreinoTelaCheia();
+                }
                 if (window.FitLogResumoTreino) {
                     window.FitLogResumoTreino.abrir();
                 }
@@ -1996,23 +2067,50 @@ function tocarBipe() {
     function revelarExercicios() {
         var exerciciosCard = document.getElementById('exerciciosCard');
         var topSaveBar = document.getElementById('top-save-bar');
+        var cronoTreinoBoxEl = document.getElementById('cronoTreinoBox');
         var prontoState = document.getElementById('exerciciosProntoState');
         var linhaTreinoSelect = document.getElementById('linhaTreinoSelect');
         var campoDataTreino = document.getElementById('campoDataTreino');
         var cronoIntervaloBox = document.getElementById('cronoIntervaloBox');
-        if (exerciciosCard) exerciciosCard.classList.remove('d-none');
-        if (topSaveBar) topSaveBar.classList.remove('d-none');
+
+        var overlay = document.getElementById('modoTreinoOverlay');
+        var header = document.getElementById('modoTreinoHeader');
+        var body = document.getElementById('modoTreinoBody');
+        var footer = document.getElementById('modoTreinoFooter');
+
         if (prontoState) prontoState.classList.add('d-none');
-        // Treino e data já foram escolhidos -- somem daqui pra frente, dando
-        // lugar visualmente para os cronômetros (de treino e de intervalo).
+        // Treino e data já foram escolhidos -- somem daqui pra frente.
         if (linhaTreinoSelect) linhaTreinoSelect.classList.add('d-none');
         if (campoDataTreino) campoDataTreino.classList.add('d-none');
+
+        if (exerciciosCard) exerciciosCard.classList.remove('d-none');
+        if (topSaveBar) topSaveBar.classList.remove('d-none');
         if (cronoIntervaloBox) cronoIntervaloBox.classList.remove('d-none');
-        if (window.FitLogTreinoState) window.FitLogTreinoState.iniciar();
-        if (exerciciosCard) {
-            exerciciosCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        // Move os MESMOS elementos (mantendo seus listeners) pro
+        // cabeçalho/corpo/rodapé do modo treino em tela cheia: cronômetro
+        // principal + ações no cabeçalho, exercícios no corpo (rolável),
+        // cronômetro de intervalo no rodapé.
+        if (overlay && header && body && footer) {
+            if (topSaveBar) header.appendChild(topSaveBar);
+            if (cronoTreinoBoxEl) header.appendChild(cronoTreinoBoxEl);
+            if (exerciciosCard) body.appendChild(exerciciosCard);
+            if (cronoIntervaloBox) footer.appendChild(cronoIntervaloBox);
+
+            overlay.classList.remove('d-none');
+            document.body.style.overflow = 'hidden';
+            body.scrollTop = 0;
         }
+
+        if (window.FitLogTreinoState) window.FitLogTreinoState.iniciar();
     }
+
+    function fecharModoTreinoTelaCheia() {
+        var overlay = document.getElementById('modoTreinoOverlay');
+        if (overlay) overlay.classList.add('d-none');
+        document.body.style.overflow = '';
+    }
+    window.FitLogFecharModoTreinoTelaCheia = fecharModoTreinoTelaCheia;
 
     function iniciar() {
         rodando = true;
@@ -2347,7 +2445,7 @@ function tocarBipe() {
         ctx.fillStyle = fundo;
         ctx.fillRect(0, 0, STORY_W, STORY_H);
 
-        const margem = 70;
+        const margem = 90;
         const larguraMax = STORY_W - margem * 2;
         const alturaMax = STORY_H - margem * 2;
         const escala = Math.min(larguraMax / cardCanvas.width, alturaMax / cardCanvas.height, 1.8);
