@@ -98,9 +98,15 @@ class EstatisticaService(BaseService):
             treinos = TreinoService.get_all(user_id)
             registros = RegistroService.get_all(user_id=user_id, load_series=True)
 
+            # Agrupar registros por treino uma única vez (O(R)) em vez de
+            # percorrer todos os registros para cada treino (O(T x R)).
+            registros_por_treino = {}
+            for r in registros:
+                registros_por_treino.setdefault(r.treino_id, []).append(r)
+
             treino_stats = {}
             for t in treinos:
-                registros_treino = [r for r in registros if r.treino_id == t.id]
+                registros_treino = registros_por_treino.get(t.id, [])
 
                 volume_total = 0
                 total_series = 0

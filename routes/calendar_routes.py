@@ -49,7 +49,12 @@ def api_eventos():
 
         # Buscar todos os registros do usuário (ou do aluno, se professor consultando)
         registros = RegistroService.get_all(user_id=target_user_id, load_series=True)
-        
+
+        # Buscar os treinos do usuário uma única vez (evita repetir a query
+        # dentro do loop de registros abaixo — antes TreinoService.get_all()
+        # era chamado a cada iteração).
+        treinos_por_id = {t.id: t for t in TreinoService.get_all(user_id=target_user_id)}
+
         eventos = []
         volumes_por_dia = {}
         
@@ -88,11 +93,7 @@ def api_eventos():
             volumes_por_dia[data_str]['exercicios'] += 1
             
             # Adicionar detalhe do treino
-            treino = None
-            for t in TreinoService.get_all(user_id=target_user_id):
-                if t.id == r.treino_id:
-                    treino = t
-                    break
+            treino = treinos_por_id.get(r.treino_id)
             
             # Nome do exercício (pode ser do catálogo do usuário ou global)
             exercicio_obj = r.exercicio if r.exercicio_usuario_id else r.exercicio_base
