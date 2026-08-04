@@ -959,6 +959,123 @@
             flex-basis: 100%;
         }
     }
+
+    /* ====== Modal de resumo / compartilhamento do treino ====== */
+    .resumo-modal-content {
+        border-radius: var(--radius-lg);
+        border: none;
+        overflow: hidden;
+    }
+
+    .share-card {
+        background: linear-gradient(160deg, var(--dark-bg) 0%, #1a1a1a 100%);
+        color: #fff;
+        border-radius: var(--radius-md);
+        padding: 24px 20px;
+        text-align: center;
+    }
+
+    .share-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .share-card-logo {
+        height: 32px;
+        width: auto;
+    }
+
+    .share-card-brand {
+        font-weight: 700;
+        font-size: 1.1rem;
+        letter-spacing: 0.5px;
+        color: var(--light-orange);
+    }
+
+    .share-card-user {
+        font-size: 1.3rem;
+        font-weight: 700;
+    }
+
+    .share-card-subtitle {
+        color: #cfcfcf;
+        font-size: 0.9rem;
+        margin-bottom: 16px;
+        text-transform: capitalize;
+    }
+
+    .share-card-stats {
+        display: flex;
+        justify-content: center;
+        gap: 18px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: var(--radius-sm);
+        padding: 12px 8px;
+        margin-bottom: 16px;
+    }
+
+    .share-card-stat-value {
+        font-weight: 700;
+        font-size: 1.15rem;
+        color: var(--primary-orange);
+    }
+
+    .share-card-stat-label {
+        font-size: 0.72rem;
+        color: #b8b8b8;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .share-card-exercicios {
+        text-align: left;
+        margin-bottom: 16px;
+        max-height: 260px;
+        overflow-y: auto;
+    }
+
+    .share-card-exercicio-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 4px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 0.88rem;
+    }
+
+    .share-card-exercicio-item:last-child {
+        border-bottom: none;
+    }
+
+    .share-card-exercicio-nome {
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1;
+    }
+
+    .share-card-exercicio-valores {
+        color: #cfcfcf;
+        white-space: nowrap;
+        font-size: 0.82rem;
+    }
+
+    .share-card-frase {
+        font-style: italic;
+        color: #ffd9ad;
+        font-size: 0.92rem;
+        padding-top: 12px;
+        border-top: 1px dashed rgba(255, 255, 255, 0.18);
+    }
+
+    .resumo-modal-actions {
+        margin-top: 18px;
+    }
 </style>
 
 <!-- Loading Spinner -->
@@ -967,6 +1084,71 @@
         <span class="visually-hidden">Carregando...</span>
     </div>
     <div class="loader-text">Salvando treino...</div>
+</div>
+
+<!-- Dados para o card de resumo/compartilhamento (preenchidos pelo servidor) -->
+<div id="fitlogShareData"
+     data-user="{{ (current_user.nome_completo or current_user.username) }}"
+     data-logo="{{ url_for('static', filename='images/fitlog-logo.png') }}"
+     hidden></div>
+
+<!-- Modal: resumo do treino finalizado, com opção de compartilhar -->
+<div class="modal fade" id="modalResumoTreino" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content resumo-modal-content">
+            <div class="modal-body p-3 p-md-4">
+                <div id="shareCard" class="share-card">
+                    <div class="share-card-header">
+                        <img src="{{ url_for('static', filename='images/fitlog-logo.png') }}" alt="FitLog" class="share-card-logo">
+                        <div class="share-card-brand">FitLog</div>
+                    </div>
+
+                    <div class="share-card-user" id="shareCardUser">Usuário</div>
+                    <div class="share-card-subtitle" id="shareCardSubtitle">Treino • Data</div>
+
+                    <div class="share-card-stats">
+                        <div class="share-card-stat">
+                            <div class="share-card-stat-value" id="shareCardTempo">00:00</div>
+                            <div class="share-card-stat-label">Tempo</div>
+                        </div>
+                        <div class="share-card-stat">
+                            <div class="share-card-stat-value" id="shareCardQtdExercicios">0</div>
+                            <div class="share-card-stat-label">Exercícios</div>
+                        </div>
+                        <div class="share-card-stat">
+                            <div class="share-card-stat-value" id="shareCardVolume">0 kg</div>
+                            <div class="share-card-stat-label">Volume</div>
+                        </div>
+                    </div>
+
+                    <div class="share-card-exercicios" id="shareCardExercicios">
+                        <!-- preenchido via JS -->
+                    </div>
+
+                    <div class="share-card-frase" id="shareCardFrase">
+                        "Cada treino é um passo mais perto do seu melhor."
+                    </div>
+                </div>
+
+                <div class="resumo-modal-actions">
+                    <button type="button" id="btnCompartilharResumo" class="btn btn-save w-100 mb-2">
+                        <i class="bi bi-share-fill me-2"></i>Compartilhar
+                    </button>
+                    <div class="d-flex gap-2 mb-2">
+                        <button type="button" id="btnBaixarResumo" class="btn btn-outline-secondary flex-fill">
+                            <i class="bi bi-download me-1"></i>Baixar imagem
+                        </button>
+                        <button type="button" id="btnWhatsappResumo" class="btn btn-outline-success flex-fill">
+                            <i class="bi bi-whatsapp me-1"></i>WhatsApp
+                        </button>
+                    </div>
+                    <button type="button" id="btnContinuarResumo" class="btn btn-link w-100">
+                        Continuar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div id="top-sticky-bar">
@@ -1354,6 +1536,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ====== Validação e loader ao enviar ======
     const form = document.getElementById('registroForm');
+    let treinoConfirmadoParaEnvio = false; // true só depois que o usuário fecha o modal de resumo
     if (form) {
         form.addEventListener('submit', function(e) {
             // Valida se campos não são negativos
@@ -1383,11 +1566,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 tempoTreinoInput.value = window.FitLogCronoTreino.segundosAtuais();
             }
 
+            // Primeiro clique em "Finalizar": mostra o resumo/compartilhamento
+            // e só envia o treino de fato quando o usuário confirmar no modal.
+            if (!treinoConfirmadoParaEnvio) {
+                e.preventDefault();
+                if (window.FitLogResumoTreino) {
+                    window.FitLogResumoTreino.abrir();
+                }
+                return;
+            }
+
             // Envio legítimo (Finalizar) -- não precisa mais avisar ao sair
             window.FitLogTreinoState.finalizar();
 
             // Mostra loader
             document.getElementById('global-loader').style.display = 'flex';
+        });
+    }
+
+    // Botão "Continuar" do modal de resumo: confirma e envia o treino de fato
+    const btnContinuarResumo = document.getElementById('btnContinuarResumo');
+    if (btnContinuarResumo && form) {
+        btnContinuarResumo.addEventListener('click', function () {
+            treinoConfirmadoParaEnvio = true;
+            const modalEl = document.getElementById('modalResumoTreino');
+            const modalInstancia = window.bootstrap && bootstrap.Modal.getInstance(modalEl);
+            if (modalInstancia) modalInstancia.hide();
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
         });
     }
 });
@@ -1871,6 +2080,249 @@ function tocarBipe() {
     });
 
     atualizarDisplay();
+})();
+</script>
+
+<!-- html2canvas: usado só para gerar a imagem do resumo do treino para compartilhar -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<script>
+/* ====== Modal de resumo do treino: montagem do card + compartilhamento ====== */
+(function () {
+    const FRASES_MOTIVACIONAIS = [
+        'Cada treino é um passo mais perto do seu melhor.',
+        'Disciplina vence a preguiça todos os dias.',
+        'Hoje é mais um tijolo na construção do seu resultado.',
+        'Suor de hoje, orgulho de amanhã.',
+        'Você não terminou o treino, você venceu ele.',
+        'Consistência é o verdadeiro segredo.',
+        'Seu único limite é o que você aceita.',
+        'Mais um treino, mais perto da melhor versão de você.',
+        'O corpo alcança o que a mente acredita.',
+        'Foco no processo, o resultado é consequência.',
+        'Ninguém disse que seria fácil, mas vale muito a pena.',
+        'Feito é melhor que perfeito -- e hoje foi feito.'
+    ];
+
+    const dataEl = document.getElementById('fitlogShareData');
+    const nomeUsuario = dataEl ? dataEl.dataset.user : '';
+
+    function formatarTempo(segundos) {
+        segundos = Math.max(0, Math.round(segundos || 0));
+        const h = Math.floor(segundos / 3600);
+        const m = Math.floor((segundos % 3600) / 60);
+        const s = segundos % 60;
+        const mm = String(m).padStart(2, '0');
+        const ss = String(s).padStart(2, '0');
+        return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+    }
+
+    function formatarDataExtenso(isoStr) {
+        if (!isoStr) return '';
+        const [ano, mes, dia] = isoStr.split('-').map(Number);
+        const dt = new Date(ano, (mes || 1) - 1, dia || 1);
+        const diasSemana = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+        const diaSemana = diasSemana[dt.getDay()];
+        const dd = String(dia).padStart(2, '0');
+        const mm = String(mes).padStart(2, '0');
+        return `${diaSemana}, ${dd}/${mm}/${ano}`;
+    }
+
+    function nomeTreinoSelecionado() {
+        const select = document.querySelector('#formBusca select[name="treino"]');
+        const opt = select && select.options[select.selectedIndex];
+        return opt ? opt.textContent.trim() : 'Treino';
+    }
+
+    function coletarExercicios() {
+        const linhas = [];
+        let volumeTotal = 0;
+        document.querySelectorAll('.exercise-row').forEach(function (row) {
+            if (row.classList.contains('is-desativado')) return;
+
+            const exId = row.dataset.exercicioId;
+            const nomeEl = row.querySelector('.exercicio-nome-trunc');
+            const nome = nomeEl ? (nomeEl.dataset.fullNome || nomeEl.textContent.trim()) : 'Exercício';
+
+            const cargaInput = row.querySelector('.carga-input');
+            const repsInput = row.querySelector('.reps-input');
+            const seriesSelect = document.getElementById(`series-select-${exId}`);
+
+            const carga = cargaInput ? cargaInput.value : '';
+            const reps = repsInput ? repsInput.value : '';
+            const series = seriesSelect ? seriesSelect.value : '';
+
+            if (carga === '' && reps === '') return; // exercício não preenchido, não entra no resumo
+
+            volumeTotal += (parseFloat(carga) || 0) * (parseInt(reps) || 0) * (parseInt(series) || 0);
+
+            linhas.push({ nome: nome, carga: carga, reps: reps, series: series });
+        });
+        return { linhas: linhas, volumeTotal: volumeTotal };
+    }
+
+    function montarResumoTreino() {
+        const dataInput = document.querySelector('input[name="data"]');
+        const dataIso = dataInput ? dataInput.value : '';
+        const tempoSegundos = window.FitLogCronoTreino ? window.FitLogCronoTreino.segundosAtuais() : 0;
+        const { linhas, volumeTotal } = coletarExercicios();
+
+        return {
+            usuario: nomeUsuario,
+            treino: nomeTreinoSelecionado(),
+            dataExtenso: formatarDataExtenso(dataIso),
+            tempo: formatarTempo(tempoSegundos),
+            exercicios: linhas,
+            volumeTotal: volumeTotal
+        };
+    }
+
+    function preencherCard(resumo) {
+        document.getElementById('shareCardUser').textContent = resumo.usuario;
+        document.getElementById('shareCardSubtitle').textContent = `${resumo.treino} • ${resumo.dataExtenso}`;
+        document.getElementById('shareCardTempo').textContent = resumo.tempo;
+        document.getElementById('shareCardQtdExercicios').textContent = resumo.exercicios.length;
+        document.getElementById('shareCardVolume').textContent = `${resumo.volumeTotal} kg`;
+
+        const listaEl = document.getElementById('shareCardExercicios');
+        listaEl.innerHTML = '';
+        resumo.exercicios.forEach(function (ex) {
+            const item = document.createElement('div');
+            item.className = 'share-card-exercicio-item';
+            const partes = [];
+            if (ex.carga !== '') partes.push(`${ex.carga}kg`);
+            if (ex.reps !== '') partes.push(`${ex.reps}x`);
+            if (ex.series !== '') partes.push(`${ex.series} séries`);
+            item.innerHTML = `
+                <span class="share-card-exercicio-nome">${ex.nome}</span>
+                <span class="share-card-exercicio-valores">${partes.join(' · ')}</span>
+            `;
+            listaEl.appendChild(item);
+        });
+
+        const frase = FRASES_MOTIVACIONAIS[Math.floor(Math.random() * FRASES_MOTIVACIONAIS.length)];
+        document.getElementById('shareCardFrase').textContent = `"${frase}"`;
+    }
+
+    function abrir() {
+        preencherCard(montarResumoTreino());
+        const modalEl = document.getElementById('modalResumoTreino');
+        if (!modalEl || !window.bootstrap) return;
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+
+    async function gerarImagemCard() {
+        const cardEl = document.getElementById('shareCard');
+        const canvas = await html2canvas(cardEl, { backgroundColor: '#2D2D2D', scale: 2, useCORS: true });
+        return new Promise(function (resolve) {
+            canvas.toBlob(function (blob) {
+                resolve(blob);
+            }, 'image/png');
+        });
+    }
+
+    function baixarBlob(blob, nomeArquivo) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = nomeArquivo;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    }
+
+    function mostrarToast(msg, tipo) {
+        if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
+            window.FitLogUtils.showToast(msg, tipo || 'info');
+        }
+    }
+
+    function init() {
+        const btnCompartilhar = document.getElementById('btnCompartilharResumo');
+        const btnBaixar = document.getElementById('btnBaixarResumo');
+        const btnWhatsapp = document.getElementById('btnWhatsappResumo');
+
+        if (btnCompartilhar) {
+            btnCompartilhar.addEventListener('click', async function () {
+                btnCompartilhar.disabled = true;
+                try {
+                    const blob = await gerarImagemCard();
+                    const arquivo = new File([blob], 'fitlog-treino.png', { type: 'image/png' });
+
+                    // Web Share API com arquivo: no celular abre o menu nativo
+                    // de compartilhamento (Instagram, WhatsApp, etc.).
+                    if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+                        await navigator.share({
+                            files: [arquivo],
+                            title: 'Meu treino no FitLog'
+                        });
+                    } else {
+                        // Sem suporte (ex: desktop): baixa a imagem para o
+                        // usuário compartilhar manualmente.
+                        baixarBlob(blob, 'fitlog-treino.png');
+                        mostrarToast('Imagem baixada! Anexe ela no Instagram ou WhatsApp.', 'success');
+                    }
+                } catch (err) {
+                    if (err && err.name !== 'AbortError') {
+                        mostrarToast('Não foi possível compartilhar a imagem.', 'danger');
+                    }
+                } finally {
+                    btnCompartilhar.disabled = false;
+                }
+            });
+        }
+
+        if (btnBaixar) {
+            btnBaixar.addEventListener('click', async function () {
+                btnBaixar.disabled = true;
+                try {
+                    const blob = await gerarImagemCard();
+                    baixarBlob(blob, 'fitlog-treino.png');
+                } catch (err) {
+                    mostrarToast('Não foi possível gerar a imagem.', 'danger');
+                } finally {
+                    btnBaixar.disabled = false;
+                }
+            });
+        }
+
+        if (btnWhatsapp) {
+            btnWhatsapp.addEventListener('click', async function () {
+                btnWhatsapp.disabled = true;
+                try {
+                    const blob = await gerarImagemCard();
+                    const arquivo = new File([blob], 'fitlog-treino.png', { type: 'image/png' });
+
+                    if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+                        // No celular, o próprio menu nativo já lista o WhatsApp
+                        await navigator.share({ files: [arquivo], title: 'Meu treino no FitLog' });
+                        return;
+                    }
+
+                    // Fallback: baixa a imagem e abre o WhatsApp Web com uma
+                    // mensagem pronta (a imagem precisa ser anexada manualmente,
+                    // pois o link do WhatsApp não aceita arquivo por URL).
+                    baixarBlob(blob, 'fitlog-treino.png');
+                    const resumo = montarResumoTreino();
+                    const texto = encodeURIComponent(
+                        `Treino finalizado no FitLog! 💪\n${resumo.treino} - ${resumo.dataExtenso}\nTempo: ${resumo.tempo} | Volume: ${resumo.volumeTotal}kg`
+                    );
+                    window.open(`https://wa.me/?text=${texto}`, '_blank');
+                    mostrarToast('Imagem baixada! Anexe ela na conversa do WhatsApp.', 'success');
+                } catch (err) {
+                    mostrarToast('Não foi possível preparar o compartilhamento.', 'danger');
+                } finally {
+                    btnWhatsapp.disabled = false;
+                }
+            });
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    window.FitLogResumoTreino = { abrir: abrir };
 })();
 </script>
 {% endblock %}
