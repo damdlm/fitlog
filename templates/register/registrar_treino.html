@@ -968,87 +968,131 @@
     }
 
     .share-card {
-        background: linear-gradient(160deg, var(--dark-bg) 0%, #1a1a1a 100%);
+        position: relative;
+        background: radial-gradient(circle at top, #3a3a3a 0%, #1e1e1e 55%, #141414 100%);
         color: #fff;
-        border-radius: var(--radius-md);
-        padding: 24px 20px;
+        border-radius: 20px;
+        padding: 30px 22px 24px;
         text-align: center;
+        overflow: hidden;
+    }
+
+    .share-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-orange), var(--light-orange));
     }
 
     .share-card-header {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        margin-bottom: 14px;
+        margin-bottom: 18px;
     }
 
     .share-card-logo {
-        height: 32px;
+        height: 48px;
         width: auto;
+        filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.35));
     }
 
-    .share-card-brand {
+    .share-card-eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 1.6px;
+        font-size: 0.66rem;
         font-weight: 700;
-        font-size: 1.1rem;
-        letter-spacing: 0.5px;
         color: var(--light-orange);
+        margin-bottom: 6px;
     }
 
     .share-card-user {
-        font-size: 1.3rem;
-        font-weight: 700;
+        font-size: 1.4rem;
+        font-weight: 800;
+        letter-spacing: 0.2px;
     }
 
     .share-card-subtitle {
-        color: #cfcfcf;
-        font-size: 0.9rem;
-        margin-bottom: 16px;
+        color: #c9c9c9;
+        font-size: 0.85rem;
+        margin-top: 3px;
+        margin-bottom: 22px;
         text-transform: capitalize;
     }
 
     .share-card-stats {
         display: flex;
-        justify-content: center;
-        gap: 18px;
-        background: rgba(255, 255, 255, 0.06);
-        border-radius: var(--radius-sm);
-        padding: 12px 8px;
-        margin-bottom: 16px;
+        justify-content: space-around;
+        align-items: center;
+        gap: 4px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 14px 6px;
+        margin-bottom: 20px;
+    }
+
+    .share-card-stat {
+        flex: 1;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .share-card-stat:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1px;
+        height: 26px;
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    .share-card-stat-icon {
+        font-size: 0.95rem;
+        color: var(--primary-orange);
+        margin-bottom: 1px;
     }
 
     .share-card-stat-value {
         font-weight: 700;
-        font-size: 1.15rem;
-        color: var(--primary-orange);
+        font-size: 1.1rem;
+        color: #fff;
     }
 
     .share-card-stat-label {
-        font-size: 0.72rem;
-        color: #b8b8b8;
+        font-size: 0.68rem;
+        color: #a8a8a8;
         text-transform: uppercase;
         letter-spacing: 0.4px;
     }
 
     .share-card-exercicios {
         text-align: left;
-        margin-bottom: 16px;
+        margin-bottom: 20px;
         max-height: 260px;
         overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
     }
 
     .share-card-exercicio-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 8px;
-        padding: 8px 4px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.045);
         font-size: 0.88rem;
-    }
-
-    .share-card-exercicio-item:last-child {
-        border-bottom: none;
     }
 
     .share-card-exercicio-nome {
@@ -1060,17 +1104,29 @@
     }
 
     .share-card-exercicio-valores {
-        color: #cfcfcf;
+        color: var(--light-orange);
+        font-weight: 600;
         white-space: nowrap;
-        font-size: 0.82rem;
+        font-size: 0.76rem;
+        background: rgba(242, 140, 51, 0.14);
+        padding: 4px 9px;
+        border-radius: 20px;
+    }
+
+    .share-card-frase-divider {
+        width: 34px;
+        height: 3px;
+        margin: 0 auto 14px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, var(--primary-orange), var(--light-orange));
     }
 
     .share-card-frase {
         font-style: italic;
-        color: #ffd9ad;
+        color: #ffe3c2;
         font-size: 0.92rem;
-        padding-top: 12px;
-        border-top: 1px dashed rgba(255, 255, 255, 0.18);
+        line-height: 1.45;
+        padding: 0 4px;
     }
 
     .resumo-modal-actions {
@@ -1089,7 +1145,7 @@
 <!-- Dados para o card de resumo/compartilhamento (preenchidos pelo servidor) -->
 <div id="fitlogShareData"
      data-user="{{ (current_user.nome_completo or current_user.username) }}"
-     data-logo="{{ url_for('static', filename='images/fitlog-logo.png') }}"
+     data-logo="{{ url_for('static', filename='images/logo.png') }}"
      hidden></div>
 
 <!-- Modal: resumo do treino finalizado, com opção de compartilhar -->
@@ -1099,23 +1155,26 @@
             <div class="modal-body p-3 p-md-4">
                 <div id="shareCard" class="share-card">
                     <div class="share-card-header">
-                        <img src="{{ url_for('static', filename='images/fitlog-logo.png') }}" alt="FitLog" class="share-card-logo">
-                        <div class="share-card-brand">FitLog</div>
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FitLog" class="share-card-logo">
                     </div>
 
+                    <div class="share-card-eyebrow">Treino finalizado</div>
                     <div class="share-card-user" id="shareCardUser">Usuário</div>
                     <div class="share-card-subtitle" id="shareCardSubtitle">Treino • Data</div>
 
                     <div class="share-card-stats">
                         <div class="share-card-stat">
+                            <i class="bi bi-stopwatch share-card-stat-icon"></i>
                             <div class="share-card-stat-value" id="shareCardTempo">00:00</div>
                             <div class="share-card-stat-label">Tempo</div>
                         </div>
                         <div class="share-card-stat">
+                            <i class="bi bi-list-check share-card-stat-icon"></i>
                             <div class="share-card-stat-value" id="shareCardQtdExercicios">0</div>
                             <div class="share-card-stat-label">Exercícios</div>
                         </div>
                         <div class="share-card-stat">
+                            <i class="bi bi-lightning-charge-fill share-card-stat-icon"></i>
                             <div class="share-card-stat-value" id="shareCardVolume">0 kg</div>
                             <div class="share-card-stat-label">Volume</div>
                         </div>
@@ -1125,6 +1184,7 @@
                         <!-- preenchido via JS -->
                     </div>
 
+                    <div class="share-card-frase-divider"></div>
                     <div class="share-card-frase" id="shareCardFrase">
                         "Cada treino é um passo mais perto do seu melhor."
                     </div>
