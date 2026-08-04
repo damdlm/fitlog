@@ -1347,16 +1347,6 @@
                 </div>
 
                 <div class="resumo-modal-actions">
-                    <div class="btn-group w-100 mb-2" role="group" aria-label="Formato da imagem">
-                        <input type="radio" class="btn-check" name="formatoResumo" id="formatoFeed" value="feed" checked>
-                        <label class="btn btn-outline-secondary" for="formatoFeed">
-                            <i class="bi bi-square me-1"></i>Feed (4:5)
-                        </label>
-                        <input type="radio" class="btn-check" name="formatoResumo" id="formatoStory" value="story">
-                        <label class="btn btn-outline-secondary" for="formatoStory">
-                            <i class="bi bi-phone me-1"></i>Story (9:16)
-                        </label>
-                    </div>
                     <button type="button" id="btnCompartilharResumo" class="btn btn-save w-100 mb-2">
                         <i class="bi bi-share-fill me-2"></i>Compartilhar
                     </button>
@@ -2520,28 +2510,22 @@ function tocarBipe() {
         modal.show();
     }
 
-    function formatoSelecionado() {
-        const radio = document.querySelector('input[name="formatoResumo"]:checked');
-        return (radio && radio.value === 'story') ? 'story' : 'feed';
-    }
-
     async function gerarImagemCard() {
         const cardEl = document.getElementById('shareCard');
         const modalBody = cardEl.closest('.modal-body');
         if (modalBody) modalBody.scrollTop = 0;
 
         // Gera a imagem a partir de um CLONE do card, fora da tela, já
-        // no tamanho exato do formato do Instagram escolhido (Feed 4:5
-        // ou Story 9:16). Antes, o card era capturado do tamanho dele
-        // no modal e depois encolhido/colado no centro de um canvas
-        // maior -- sobrava uma faixa vazia de fundo em volta e a
-        // imagem ficava pequena dentro do quadro. Agora o próprio
-        // conteúdo nasce distribuído para preencher o quadro inteiro
-        // (classe .share-card-export cuida disso via CSS).
-        const formato = formatoSelecionado();
+        // no tamanho padrão do Instagram Stories (9:16, 1080x1920).
+        // Antes, o card era capturado do tamanho dele no modal e depois
+        // encolhido/colado no centro de um canvas maior -- sobrava uma
+        // faixa vazia de fundo em volta e a imagem ficava pequena
+        // dentro do quadro. Agora o próprio conteúdo nasce distribuído
+        // para preencher o quadro inteiro (classe .share-card-export
+        // cuida disso via CSS).
         const SCALE = 2;
         const FINAL_W = 1080;
-        const FINAL_H = formato === 'story' ? 1920 : 1350;
+        const FINAL_H = 1920;
         const cloneWidthCss = FINAL_W / SCALE;
         const cloneMinHeightCss = FINAL_H / SCALE;
 
