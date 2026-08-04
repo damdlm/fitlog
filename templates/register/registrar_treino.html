@@ -1086,31 +1086,42 @@
 
     .share-card-exercicio-item {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 12px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 12px 14px;
         border-radius: 12px;
         background: rgba(255, 255, 255, 0.045);
         font-size: 0.88rem;
     }
 
     .share-card-exercicio-nome {
-        font-weight: 600;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        flex: 1;
+        font-weight: 700;
+        white-space: normal;
+        line-height: 1.25;
     }
 
-    .share-card-exercicio-valores {
+    .share-card-exercicio-detalhes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .share-card-exercicio-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
         color: var(--light-orange);
         font-weight: 600;
         white-space: nowrap;
-        font-size: 0.76rem;
+        font-size: 0.72rem;
         background: rgba(242, 140, 51, 0.14);
         padding: 4px 9px;
         border-radius: 20px;
+    }
+
+    .share-card-exercicio-tag i {
+        font-size: 0.7rem;
     }
 
     .share-card-frase-divider {
@@ -1202,8 +1213,8 @@
                             <i class="bi bi-whatsapp me-1"></i>WhatsApp
                         </button>
                     </div>
-                    <button type="button" id="btnContinuarResumo" class="btn btn-link w-100">
-                        Continuar
+                    <button type="button" id="btnSairResumo" class="btn btn-link w-100">
+                        Sair
                     </button>
                 </div>
             </div>
@@ -1596,11 +1607,60 @@ document.addEventListener('DOMContentLoaded', function() {
         resizeTimer = setTimeout(inicializarTruncamentoNomesExercicio, 200);
     });
 
-    // ====== Validação e loader ao enviar ======
+    // ====== Validação e envio (salva antes de exibir o resumo) ======
     const form = document.getElementById('registroForm');
-    let treinoConfirmadoParaEnvio = false; // true só depois que o usuário fecha o modal de resumo
+    let treinoJaSalvo = false;
+    let urlAposSalvar = "{{ url_for('main.index') }}";
+
+    async function salvarTreino() {
+        const btnFinalizar = form.querySelector('button[name="salvar"]');
+        if (btnFinalizar) btnFinalizar.disabled = true;
+        document.getElementById('global-loader').style.display = 'flex';
+
+        try {
+            const resposta = await fetch(form.action || window.location.href, {
+                method: 'POST',
+                body: new FormData(form),
+                credentials: 'same-origin'
+            });
+
+            // O backend sempre responde com redirect: para a própria página
+            // de registro em caso de erro de validação, ou para o dashboard
+            // quando salva com sucesso.
+            const salvouComSucesso = resposta.ok && !resposta.url.includes('/registrar-treino');
+
+            if (salvouComSucesso) {
+                treinoJaSalvo = true;
+                urlAposSalvar = resposta.url;
+                window.FitLogTreinoState.finalizar();
+                document.getElementById('global-loader').style.display = 'none';
+                if (window.FitLogResumoTreino) {
+                    window.FitLogResumoTreino.abrir();
+                }
+            } else {
+                document.getElementById('global-loader').style.display = 'none';
+                if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
+                    window.FitLogUtils.showToast('Não foi possível salvar o treino. Confira os dados e tente novamente.', 'danger');
+                } else {
+                    alert('Não foi possível salvar o treino. Confira os dados e tente novamente.');
+                }
+            }
+        } catch (err) {
+            document.getElementById('global-loader').style.display = 'none';
+            if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
+                window.FitLogUtils.showToast('Falha de conexão ao salvar o treino.', 'danger');
+            } else {
+                alert('Falha de conexão ao salvar o treino.');
+            }
+        } finally {
+            if (btnFinalizar) btnFinalizar.disabled = false;
+        }
+    }
+
     if (form) {
         form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
             // Valida se campos não são negativos
             let valid = true;
             document.querySelectorAll('.carga-input, .reps-input').forEach(input => {
@@ -1613,7 +1673,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             if (!valid) {
-                e.preventDefault();
                 if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
                     window.FitLogUtils.showToast('Valores não podem ser negativos.', 'danger');
                 } else {
@@ -1628,37 +1687,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 tempoTreinoInput.value = window.FitLogCronoTreino.segundosAtuais();
             }
 
-            // Primeiro clique em "Finalizar": mostra o resumo/compartilhamento
-            // e só envia o treino de fato quando o usuário confirmar no modal.
-            if (!treinoConfirmadoParaEnvio) {
-                e.preventDefault();
-                if (window.FitLogResumoTreino) {
-                    window.FitLogResumoTreino.abrir();
-                }
-                return;
-            }
-
-            // Envio legítimo (Finalizar) -- não precisa mais avisar ao sair
-            window.FitLogTreinoState.finalizar();
-
-            // Mostra loader
-            document.getElementById('global-loader').style.display = 'flex';
+            // Salva o treino de verdade; o resumo/compartilhamento só
+            // aparece depois que o salvamento é confirmado.
+            salvarTreino();
         });
     }
 
-    // Botão "Continuar" do modal de resumo: confirma e envia o treino de fato
-    const btnContinuarResumo = document.getElementById('btnContinuarResumo');
-    if (btnContinuarResumo && form) {
-        btnContinuarResumo.addEventListener('click', function () {
-            treinoConfirmadoParaEnvio = true;
-            const modalEl = document.getElementById('modalResumoTreino');
-            const modalInstancia = window.bootstrap && bootstrap.Modal.getInstance(modalEl);
-            if (modalInstancia) modalInstancia.hide();
-            if (typeof form.requestSubmit === 'function') {
-                form.requestSubmit();
-            } else {
-                form.submit();
-            }
+    // Botão "Sair" do modal de resumo: treino já foi salvo, só navega embora
+    const btnSairResumo = document.getElementById('btnSairResumo');
+    if (btnSairResumo) {
+        btnSairResumo.addEventListener('click', function () {
+            window.location.href = urlAposSalvar;
         });
     }
 });
@@ -2259,13 +2298,19 @@ function tocarBipe() {
         resumo.exercicios.forEach(function (ex) {
             const item = document.createElement('div');
             item.className = 'share-card-exercicio-item';
-            const partes = [];
-            if (ex.carga !== '') partes.push(`${ex.carga}kg`);
-            if (ex.reps !== '') partes.push(`${ex.reps}x`);
-            if (ex.series !== '') partes.push(`${ex.series} séries`);
+            const tags = [];
+            if (ex.series !== '') {
+                tags.push(`<span class="share-card-exercicio-tag"><i class="bi bi-layers"></i>${ex.series} ${ex.series == 1 ? 'série' : 'séries'}</span>`);
+            }
+            if (ex.reps !== '') {
+                tags.push(`<span class="share-card-exercicio-tag"><i class="bi bi-arrow-repeat"></i>${ex.reps} ${ex.reps == 1 ? 'repetição' : 'repetições'}</span>`);
+            }
+            if (ex.carga !== '') {
+                tags.push(`<span class="share-card-exercicio-tag"><i class="bi bi-speedometer2"></i>${ex.carga} kg</span>`);
+            }
             item.innerHTML = `
                 <span class="share-card-exercicio-nome">${ex.nome}</span>
-                <span class="share-card-exercicio-valores">${partes.join(' · ')}</span>
+                <div class="share-card-exercicio-detalhes">${tags.join('')}</div>
             `;
             listaEl.appendChild(item);
         });
