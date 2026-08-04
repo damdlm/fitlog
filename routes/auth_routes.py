@@ -160,6 +160,13 @@ def register():
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
         tipo_usuario = request.form.get('tipo_usuario', 'aluno')
+        if tipo_usuario not in ('aluno', 'professor'):
+            # O formulário só envia 'aluno' ou 'professor' (radio buttons),
+            # mas um POST manual poderia mandar qualquer string. Sem essa
+            # checagem, um tipo_usuario inválido deixa o usuário sem acesso
+            # a nenhuma área (is_professor() e is_aluno() ficam False).
+            flash('Tipo de usuário inválido', 'danger')
+            return redirect(url_for('auth.register'))
         nome_completo = request.form.get('nome_completo', '').strip()
         telefone = request.form.get('telefone', '').strip()
 
