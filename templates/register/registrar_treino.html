@@ -1256,6 +1256,16 @@
                 </div>
 
                 <div class="resumo-modal-actions">
+                    <div class="btn-group w-100 mb-2" role="group" aria-label="Formato da imagem">
+                        <input type="radio" class="btn-check" name="formatoResumo" id="formatoFeed" value="feed" checked>
+                        <label class="btn btn-outline-secondary" for="formatoFeed">
+                            <i class="bi bi-square me-1"></i>Feed (4:5)
+                        </label>
+                        <input type="radio" class="btn-check" name="formatoResumo" id="formatoStory" value="story">
+                        <label class="btn btn-outline-secondary" for="formatoStory">
+                            <i class="bi bi-phone me-1"></i>Story (9:16)
+                        </label>
+                    </div>
                     <button type="button" id="btnCompartilharResumo" class="btn btn-save w-100 mb-2">
                         <i class="bi bi-share-fill me-2"></i>Compartilhar
                     </button>
@@ -2406,6 +2416,11 @@ function tocarBipe() {
         modal.show();
     }
 
+    function formatoSelecionado() {
+        const radio = document.querySelector('input[name="formatoResumo"]:checked');
+        return (radio && radio.value === 'story') ? 'story' : 'feed';
+    }
+
     async function gerarImagemCard() {
         const cardEl = document.getElementById('shareCard');
         const modalBody = cardEl.closest('.modal-body');
@@ -2428,33 +2443,35 @@ function tocarBipe() {
             windowHeight: altura
         });
 
-        // Monta a imagem final no formato de story (9:16, 1080x1920).
-        // Sem isso, a imagem sai do tamanho exato do card e aparece
-        // pequena, "sobrando" tela ao redor, quando compartilhada no
-        // Instagram Stories (que preenche a tela toda nesse formato).
-        const STORY_W = 1080;
-        const STORY_H = 1920;
+        // Monta a imagem final no tamanho padrão do Instagram escolhido
+        // pelo usuário no modal: Feed (4:5, 1080x1350) ou Story (9:16,
+        // 1080x1920). Sem isso, a imagem sai do tamanho exato do card e
+        // aparece pequena, "sobrando" tela ao redor, quando compartilhada.
+        const formato = formatoSelecionado();
+        const FINAL_W = 1080;
+        const FINAL_H = formato === 'story' ? 1920 : 1350;
+        const margem = formato === 'story' ? 90 : 70;
+
         const finalCanvas = document.createElement('canvas');
-        finalCanvas.width = STORY_W;
-        finalCanvas.height = STORY_H;
+        finalCanvas.width = FINAL_W;
+        finalCanvas.height = FINAL_H;
         const ctx = finalCanvas.getContext('2d');
 
-        const fundo = ctx.createLinearGradient(0, 0, 0, STORY_H);
+        const fundo = ctx.createLinearGradient(0, 0, 0, FINAL_H);
         fundo.addColorStop(0, '#3a3a3a');
         fundo.addColorStop(1, '#141414');
         ctx.fillStyle = fundo;
-        ctx.fillRect(0, 0, STORY_W, STORY_H);
+        ctx.fillRect(0, 0, FINAL_W, FINAL_H);
 
-        const margem = 90;
-        const larguraMax = STORY_W - margem * 2;
-        const alturaMax = STORY_H - margem * 2;
+        const larguraMax = FINAL_W - margem * 2;
+        const alturaMax = FINAL_H - margem * 2;
         const escala = Math.min(larguraMax / cardCanvas.width, alturaMax / cardCanvas.height, 1.8);
         const wFinal = cardCanvas.width * escala;
         const hFinal = cardCanvas.height * escala;
         ctx.drawImage(
             cardCanvas,
-            (STORY_W - wFinal) / 2,
-            (STORY_H - hFinal) / 2,
+            (FINAL_W - wFinal) / 2,
+            (FINAL_H - hFinal) / 2,
             wFinal,
             hFinal
         );
