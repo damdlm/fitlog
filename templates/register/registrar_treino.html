@@ -969,7 +969,7 @@
 
     .share-card {
         position: relative;
-        background: radial-gradient(circle at top, #3a3a3a 0%, #1e1e1e 55%, #141414 100%);
+        background: radial-gradient(circle at top, #6b6b6b 0%, #4a4a4a 55%, #333333 100%);
         color: #fff;
         border-radius: 18px;
         padding: 20px 18px 16px;
@@ -1000,15 +1000,6 @@
         filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.35));
     }
 
-    .share-card-eyebrow {
-        text-transform: uppercase;
-        letter-spacing: 1.4px;
-        font-size: 0.6rem;
-        font-weight: 700;
-        color: var(--light-orange);
-        margin-bottom: 3px;
-    }
-
     .share-card-user {
         font-size: 1.12rem;
         font-weight: 800;
@@ -1028,7 +1019,7 @@
         justify-content: space-around;
         align-items: center;
         gap: 4px;
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(0, 0, 0, 0.16);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 14px;
         padding: 9px 6px;
@@ -1076,7 +1067,6 @@
 
     .share-card-exercicios {
         text-align: left;
-        margin-bottom: 12px;
         display: flex;
         flex-direction: column;
         gap: 4px;
@@ -1089,7 +1079,7 @@
         gap: 4px;
         padding: 7px 10px;
         border-radius: 10px;
-        background: rgba(255, 255, 255, 0.045);
+        background: rgba(0, 0, 0, 0.16);
         font-size: 0.8rem;
     }
 
@@ -1123,22 +1113,6 @@
         font-size: 0.62rem;
     }
 
-    .share-card-frase-divider {
-        width: 30px;
-        height: 3px;
-        margin: 0 auto 8px;
-        border-radius: 2px;
-        background: linear-gradient(90deg, var(--primary-orange), var(--light-orange));
-    }
-
-    .share-card-frase {
-        font-style: italic;
-        color: #ffe3c2;
-        font-size: 0.8rem;
-        line-height: 1.35;
-        padding: 0 4px;
-    }
-
     .resumo-modal-actions {
         margin-top: 18px;
     }
@@ -1168,7 +1142,6 @@
                         <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FitLog" class="share-card-logo">
                     </div>
 
-                    <div class="share-card-eyebrow">Treino finalizado</div>
                     <div class="share-card-user" id="shareCardUser">Usuário</div>
                     <div class="share-card-subtitle" id="shareCardSubtitle">Treino • Data</div>
 
@@ -1192,11 +1165,6 @@
 
                     <div class="share-card-exercicios" id="shareCardExercicios">
                         <!-- preenchido via JS -->
-                    </div>
-
-                    <div class="share-card-frase-divider"></div>
-                    <div class="share-card-frase" id="shareCardFrase">
-                        "Cada treino é um passo mais perto do seu melhor."
                     </div>
                 </div>
 
@@ -2197,21 +2165,6 @@ function tocarBipe() {
 <script>
 /* ====== Modal de resumo do treino: montagem do card + compartilhamento ====== */
 (function () {
-    const FRASES_MOTIVACIONAIS = [
-        'Cada treino é um passo mais perto do seu melhor.',
-        'Disciplina vence a preguiça todos os dias.',
-        'Hoje é mais um tijolo na construção do seu resultado.',
-        'Suor de hoje, orgulho de amanhã.',
-        'Você não terminou o treino, você venceu ele.',
-        'Consistência é o verdadeiro segredo.',
-        'Seu único limite é o que você aceita.',
-        'Mais um treino, mais perto da melhor versão de você.',
-        'O corpo alcança o que a mente acredita.',
-        'Foco no processo, o resultado é consequência.',
-        'Ninguém disse que seria fácil, mas vale muito a pena.',
-        'Feito é melhor que perfeito -- e hoje foi feito.'
-    ];
-
     const dataEl = document.getElementById('fitlogShareData');
     const nomeUsuario = dataEl ? dataEl.dataset.user : '';
 
@@ -2313,9 +2266,6 @@ function tocarBipe() {
             `;
             listaEl.appendChild(item);
         });
-
-        const frase = FRASES_MOTIVACIONAIS[Math.floor(Math.random() * FRASES_MOTIVACIONAIS.length)];
-        document.getElementById('shareCardFrase').textContent = `"${frase}"`;
     }
 
     function abrir() {
