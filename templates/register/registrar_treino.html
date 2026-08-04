@@ -535,6 +535,43 @@
         margin: 0 auto;
     }
 
+    /* Card "Pronto para treinar?" mais compacto em telas menores --
+       o padding/ícone fixos deixavam o card alto demais em celular. */
+    @media (max-width: 575.98px) {
+        .empty-state {
+            padding: 32px 16px;
+        }
+        .empty-state .empty-icon {
+            width: 72px;
+            height: 72px;
+            margin-bottom: 16px;
+        }
+        .empty-state .empty-icon i {
+            font-size: 2.6rem;
+        }
+        .empty-state h5 {
+            font-size: 1.05rem;
+            margin-bottom: 10px;
+        }
+        .empty-state p {
+            font-size: 0.9rem;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .empty-state {
+            padding: 24px 12px;
+        }
+        .empty-state .empty-icon {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 12px;
+        }
+        .empty-state .empty-icon i {
+            font-size: 2.1rem;
+        }
+    }
+
     @keyframes pulse {
         0% { transform: scale(1); }
         50% { transform: scale(1.05); }
@@ -881,7 +918,7 @@
 
     #cronoIntervaloBox .cronometro-label {
         flex-shrink: 0;
-        font-size: 0.82rem;
+        font-size: 0.72rem;
     }
 
     #cronoIntervaloBox .cronometro-display {
