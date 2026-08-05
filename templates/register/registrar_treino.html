@@ -317,11 +317,18 @@
         color: var(--primary-orange);
     }
 
-    /* Ampulheta girando no lugar da palavra "Intervalo" */
+    /* Ampulheta girando no lugar da palavra "Intervalo" -- fica parada
+       por padrão e só gira enquanto o cronômetro de intervalo está
+       rodando (classe .is-rodando aplicada na caixa pelo JS). */
     .cronometro-label .cronometro-ampulheta {
         display: inline-block;
         font-size: 1.1rem;
-        animation: ampulheta-girar 1.8s linear infinite;
+        animation: ampulheta-girar 3.2s linear infinite;
+        animation-play-state: paused;
+    }
+
+    #cronoIntervaloBox.is-rodando .cronometro-label .cronometro-ampulheta {
+        animation-play-state: running;
     }
 
     @keyframes ampulheta-girar {
@@ -831,13 +838,19 @@
     #top-save-bar .top-save-bar-actions .btn-pausar-treino {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 5px;
         padding: 9px 14px;
         font-size: 0.92rem;
         white-space: nowrap;
         font-weight: 600;
         letter-spacing: .1px;
-        border-radius: 999px;
+        /* !important pra vencer a classe global .btn-save (usada em outros
+           botões do site), que trazia border-radius diferente (25px) e
+           uma animação de pulso infinita -- deixavam o Finalizar com
+           tamanho/altura "pulsando" e fora do padrão dos outros dois. */
+        border-radius: 999px !important;
+        animation: none !important;
         border: none;
         transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
     }
@@ -898,6 +911,10 @@
        do estilo grande e passa a usar este aqui. */
     #top-save-bar .top-save-bar-actions .btn-pausar-treino {
         flex: 0 0 auto;
+        /* Largura fixa baseada na palavra mais longa que o botão exibe
+           ("Retomar") -- assim ele não muda de tamanho ao alternar entre
+           "Pausar" e "Retomar". */
+        min-width: 112px;
         background: #F5A623;
         color: #2D2D2D;
         box-shadow: 0 4px 14px rgba(245, 166, 35, 0.30);
@@ -937,6 +954,9 @@
             font-size: 0.82rem;
             gap: 4px;
         }
+        #top-save-bar .btn-pausar-treino {
+            min-width: 96px;
+        }
         #top-save-bar .btn-save i,
         #top-save-bar .btn-cancel-treino i,
         #top-save-bar .btn-pausar-treino i {
@@ -961,55 +981,60 @@
             gap: 3px;
         }
         /* Com 3 botões + cronômetro nessa largura, o texto "Pausar"/
-           "Continuar" é o mais dispensável -- vira só ícone pra garantir
+           "Retomar" é o mais dispensável -- vira só ícone pra garantir
            que os outros dois continuem legíveis. */
         #top-save-bar .btn-pausar-treino span {
             display: none;
+        }
+        #top-save-bar .btn-pausar-treino {
+            min-width: 0;
         }
         #top-save-bar .btn-pausar-treino i {
             font-size: 0.95rem;
         }
     }
 
-    /* Cronômetro de intervalo -- versão compacta/horizontal para caber
-       na barra fixa. Some do jeito "card grande" que tinha antes. */
+    /* Cronômetro de intervalo -- versão maior, centralizada no meio do
+       rodapé (antes era uma barrinha compacta alinhada à esquerda). */
     #cronoIntervaloBox.cronometro-box {
         display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
+        flex-direction: column;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
         gap: 10px;
-        text-align: left;
+        text-align: center;
         border: none;
+        max-width: 420px;
+        margin: 0 auto;
     }
 
     #cronoIntervaloBox .cronometro-label {
-        flex-shrink: 0;
-        font-size: 0.72rem;
+        font-size: 0.85rem;
     }
 
     #cronoIntervaloBox .cronometro-display {
-        font-size: 1.5rem;
+        font-size: 3rem;
         margin: 0;
-        flex-shrink: 0;
-        min-width: 3.4ch;
     }
 
     #cronoIntervaloBox .cronometro-presets {
         margin-bottom: 0;
-        flex: 1 1 auto;
-        justify-content: flex-start;
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
     }
 
     #cronoIntervaloBox .btn-preset {
-        padding: 3px 9px;
-        font-size: 0.72rem;
+        width: 100%;
+        padding: 6px 2px;
+        font-size: 0.78rem;
+        text-align: center;
     }
 
     #cronoIntervaloBox .cronometro-actions {
-        flex-shrink: 0;
-        gap: 6px;
+        gap: 12px;
+        justify-content: center;
     }
 
     #cronoIntervaloBox .btn-cronometro {
@@ -1021,31 +1046,22 @@
         padding: 6px 10px;
     }
 
-    /* Iniciar (play) e Zerar do intervalo ficam redondos, só com ícone,
-       mesmo dentro da versão compacta do rodapé. */
+    /* Iniciar (play) e Zerar do intervalo ficam redondos, só com ícone --
+       um pouco maiores aqui, acompanhando o resto do cronômetro maior. */
     #cronoIntervaloBox .btn-cronometro.btn-cronometro-icon {
-        width: 34px;
-        height: 34px;
+        width: 44px;
+        height: 44px;
         padding: 0;
-        font-size: 0.82rem;
+        font-size: 1rem;
     }
 
-    @media (max-width: 575.98px) {
-        #cronoIntervaloBox .cronometro-presets {
-            order: 3;
-            flex-basis: 100%;
-            /* Grid com 1 coluna por preset -- ocupam a largura toda da
-               tela, cada um com o mesmo tamanho, sem sobra de espaço
-               desigual nas pontas. */
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
-            width: 100%;
+    @media (max-width: 380px) {
+        #cronoIntervaloBox .cronometro-display {
+            font-size: 2.4rem;
         }
-        #cronoIntervaloBox .btn-preset {
-            width: 100%;
-            padding: 6px 2px;
-            text-align: center;
+        #cronoIntervaloBox .btn-cronometro.btn-cronometro-icon {
+            width: 38px;
+            height: 38px;
         }
     }
 
@@ -1075,6 +1091,9 @@
         flex: 0 0 auto;
         background: #fff;
         box-shadow: 0 2px 10px rgba(45, 45, 45, 0.10);
+        /* Linha laranja marcando onde o cabeçalho termina e o corpo
+           (lista de exercícios, rolável) começa. */
+        border-bottom: 3px solid var(--primary-orange);
         padding: 10px 14px;
         padding-top: max(10px, env(safe-area-inset-top));
         display: flex;
@@ -1093,6 +1112,9 @@
         flex: 0 0 auto;
         background: #fff;
         box-shadow: 0 -2px 10px rgba(45, 45, 45, 0.10);
+        /* Mesma linha laranja, agora marcando onde o corpo termina e o
+           rodapé (cronômetro de intervalo) começa. */
+        border-top: 3px solid var(--primary-orange);
         padding: 10px 14px;
         padding-bottom: max(10px, env(safe-area-inset-bottom));
     }
@@ -2579,7 +2601,7 @@ function tocarBipe() {
         rodando = false;
         acumuladoSegundos = segundosAtuais();
         clearInterval(intervalId);
-        elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i><span>Continuar</span>';
+        elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i><span>Retomar</span>';
         elBtnIniciar.classList.remove('is-rodando');
         liberarWakeLock();
     }
@@ -2665,6 +2687,7 @@ function tocarBipe() {
         rodando = false;
         clearInterval(intervalId);
         elBox.classList.remove('is-alerta');
+        elBox.classList.remove('is-rodando');
         duracaoPadraoSegundos = novaDuracao;
         restanteSegundos = novaDuracao;
         atualizarDisplay();
@@ -2682,6 +2705,7 @@ function tocarBipe() {
             rodando = false;
             clearInterval(intervalId);
             elBox.classList.add('is-alerta');
+            elBox.classList.remove('is-rodando');
             tocarBipe();
             if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
                 window.FitLogUtils.showToast('Intervalo finalizado! Bora pra próxima série 💪', 'success');
@@ -2711,6 +2735,7 @@ function tocarBipe() {
         elBtnIniciar.setAttribute('aria-label', 'Pausar intervalo');
         elBtnIniciar.title = 'Pausar';
         elBtnIniciar.classList.add('is-rodando');
+        elBox.classList.add('is-rodando');
     }
 
     function pausar() {
@@ -2720,6 +2745,7 @@ function tocarBipe() {
         elBtnIniciar.setAttribute('aria-label', 'Continuar intervalo');
         elBtnIniciar.title = 'Continuar';
         elBtnIniciar.classList.remove('is-rodando');
+        elBox.classList.remove('is-rodando');
     }
 
     elBtnIniciar.addEventListener('click', function () {
