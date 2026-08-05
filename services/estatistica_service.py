@@ -200,14 +200,25 @@ class EstatisticaService(BaseService):
         """Prepara dados para a tabela de visualização"""
         try:
             # Criar dicionário de registros por exercício
+            # Não usar só ex.id como chave: um ExercicioUsuario e um
+            # ExercicioSistema podem ter o mesmo id numérico (tabelas
+            # diferentes, sequências independentes) -- ex.tipo ('usuario'
+            # ou 'base', setado em ExercicioService.get_exercicios_completos)
+            # desambigua, no mesmo espírito da correção já feita em
+            # calcular_por_treino/aluno/stats.py/professor_routes.py.
+            # Chave em string (não tupla) para o template conseguir montar
+            # a mesma chave com `exercicio.tipo ~ '_' ~ exercicio.id`.
             registros_por_exercicio = {}
             for ex in exercicios:
-                registros_por_exercicio[ex.id] = {}
-            
+                registros_por_exercicio[f"{ex.tipo}_{ex.id}"] = {}
+
             for r in registros:
-                if r.exercicio_id in registros_por_exercicio:
+                tipo_registro = 'base' if r.exercicio_base_id else 'usuario'
+                id_registro = r.exercicio_base_id or r.exercicio_usuario_id
+                chave_exercicio = f"{tipo_registro}_{id_registro}"
+                if chave_exercicio in registros_por_exercicio:
                     key = f"{r.periodo}_{r.semana}"
-                    registros_por_exercicio[r.exercicio_id][key] = {
+                    registros_por_exercicio[chave_exercicio][key] = {
                         'id': r.id,
                         'series': [{'carga': float(s.carga), 'repeticoes': s.repeticoes} for s in r.series],
                         'periodo': r.periodo,

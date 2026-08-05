@@ -360,7 +360,18 @@ class VersaoService(BaseService):
             user_id = user_id or BaseService.get_current_user_id()
             if not user_id:
                 return []
-            
+
+            # IDOR: TreinoVersao não tem coluna user_id própria (só
+            # versao_id), então sem este check qualquer usuário autenticado
+            # podia passar um versao_id de outro usuário e ver a estrutura
+            # dessa versão (treinos/exercícios). Confirma que a versão
+            # pertence a user_id antes de buscar seus treinos/exercícios.
+            versao_pertence_ao_usuario = VersaoGlobal.query.filter_by(
+                id=versao_id, user_id=user_id
+            ).first()
+            if not versao_pertence_ao_usuario:
+                return []
+
             query_tv = TreinoVersao.query.filter_by(versao_id=versao_id)
             if treino_codigo:
                 treino = TreinoService.get_by_codigo(treino_codigo, user_id)

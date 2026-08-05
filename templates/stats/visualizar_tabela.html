@@ -243,7 +243,8 @@
                         </td>
                         
                         {% for semana in semanas %}
-                            {% set registro = registros_por_exercicio[exercicio.id].get(semana.key) if exercicio.id in registros_por_exercicio else None %}
+                            {% set chave_exercicio = exercicio.tipo ~ '_' ~ exercicio.id %}
+                            {% set registro = registros_por_exercicio[chave_exercicio].get(semana.key) if chave_exercicio in registros_por_exercicio else None %}
                             
                             {% if registro and registro.series and registro.series|length > 0 %}
                                 {% set primeira_serie = registro.series[0] %}

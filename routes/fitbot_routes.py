@@ -3,7 +3,7 @@
 import logging
 
 from flask import Blueprint, jsonify, request
-from flask_login import login_required
+from flask_login import current_user, login_required
 
 from extensions import limiter
 from services.fitbot_service import FitBotService
@@ -25,9 +25,20 @@ def _chave_global_fitbot():
     return "fitbot-chat-global"
 
 
+# O limite global acima protege a cota da API, mas sozinho não impede
+# que um único usuário consuma as 12 requisições/minuto disponíveis
+# para todo mundo. Este segundo limite, por usuário, garante que
+# ninguém sozinho tome o espaço dos demais -- sem mudar o limite
+# global nem nada do comportamento do FitBot em si (modelo, prompt,
+# resposta).
+def _chave_por_usuario_fitbot():
+    return f"fitbot-chat-user-{current_user.id}"
+
+
 @fitbot_bp.route("/chat", methods=["POST"])
 @login_required
 @limiter.limit("12 per minute", key_func=_chave_global_fitbot)
+@limiter.limit("4 per minute", key_func=_chave_por_usuario_fitbot)
 def chat():
     """
     Recebe uma mensagem (e opcionalmente uma foto em base64) e devolve
