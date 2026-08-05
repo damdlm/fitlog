@@ -994,15 +994,17 @@
         }
     }
 
-    /* Cronômetro de intervalo -- versão maior, centralizada no meio do
-       rodapé (antes era uma barrinha compacta alinhada à esquerda). */
+    /* Cronômetro de intervalo -- barra compacta no rodapé: ampulheta +
+       tempo à esquerda, botões de ação à direita (como era antes); os
+       atalhos de tempo (30s/1:00/...) ficam numa linha própria abaixo,
+       ocupando a largura toda. */
     #cronoIntervaloBox.cronometro-box {
         display: flex;
-        flex-direction: column;
+        flex-wrap: wrap;
+        flex-direction: row;
         align-items: center;
-        justify-content: center;
-        gap: 10px;
-        text-align: center;
+        gap: 10px 14px;
+        text-align: left;
         border: none;
         max-width: 420px;
         margin: 0 auto;
@@ -1010,16 +1012,20 @@
 
     #cronoIntervaloBox .cronometro-label {
         font-size: 0.85rem;
+        order: 1;
     }
 
     #cronoIntervaloBox .cronometro-display {
-        font-size: 3rem;
+        font-size: 2.4rem;
         margin: 0;
+        margin-right: auto;
+        order: 2;
     }
 
     #cronoIntervaloBox .cronometro-presets {
         margin-bottom: 0;
         width: 100%;
+        order: 4;
         display: grid;
         grid-template-columns: repeat(5, 1fr);
         gap: 8px;
@@ -1034,7 +1040,8 @@
 
     #cronoIntervaloBox .cronometro-actions {
         gap: 12px;
-        justify-content: center;
+        justify-content: flex-end;
+        order: 3;
     }
 
     #cronoIntervaloBox .btn-cronometro {
@@ -1057,7 +1064,7 @@
 
     @media (max-width: 380px) {
         #cronoIntervaloBox .cronometro-display {
-            font-size: 2.4rem;
+            font-size: 2rem;
         }
         #cronoIntervaloBox .btn-cronometro.btn-cronometro-icon {
             width: 38px;
@@ -1740,7 +1747,7 @@
                            value="{{ data_selecionada_str or data_atual_iso() }}"
                            data-min="2020-01-01" data-max="{{ data_atual_iso() }}" required>
                 </div>
-                <div class="cronometro-actions mt-2" id="cronoTreinoBox">
+                <div class="cronometro-actions mt-2 {% if not exercicios %}d-none{% endif %}" id="cronoTreinoBox">
                     <button type="button" class="btn-cronometro btn-cronometro-primary flex-fill justify-content-center" id="cronoTreinoBtnIniciar">
                         <i class="bi bi-play-fill"></i> <span>Iniciar treino</span>
                     </button>
@@ -2070,11 +2077,19 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarSwitchesExercicio();
     atualizarResumo();
     
-    // Configurar data atual se vazia
+    // Garantir que o campo de data sempre comece preenchido com o dia
+    // atual quando vier vazio. Setar dataInput.value direto não é
+    // suficiente aqui: com o flatpickr (altInput: true) o que o usuário
+    // vê é um campo visual separado, que só é atualizado através da API
+    // do flatpickr -- por isso usamos setDate() quando a instância existe.
     const dataInput = document.querySelector('input[name="data"]');
     if (dataInput && !dataInput.value) {
         const hoje = new Date().toISOString().split('T')[0];
-        dataInput.value = hoje;
+        if (dataInput._flatpickr) {
+            dataInput._flatpickr.setDate(hoje, true);
+        } else {
+            dataInput.value = hoje;
+        }
     }
     
     // Não permitir datas futuras (usa a data local do navegador, não a do
