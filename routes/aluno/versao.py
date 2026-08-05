@@ -183,9 +183,9 @@ def novo_treino_versao(versao_id):
             db.session.commit()
             flash(f'Treino {treino.codigo} adicionado!', 'success')
             return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            logger.error(f"Erro ao adicionar treino à versão: {e}")
+            logger.exception("Erro ao adicionar treino à versão")
             flash('Erro ao adicionar treino.', 'danger')
     treinos_disponiveis = TreinoService.get_all(user_id=current_user.id)
     treinos_na_versao = [tv.treino_id for tv in versao.treinos]

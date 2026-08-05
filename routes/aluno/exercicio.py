@@ -45,8 +45,8 @@ def exercicios():
                              exercicios=exercicios,
                              ultimas_cargas=ultimas_cargas,
                              treinos=treinos)
-    except Exception as e:
-        logger.error(f"Erro ao carregar exercícios: {e}")
+    except Exception:
+        logger.exception("Erro ao carregar exercícios")
         flash(f'Erro ao carregar exercícios.', 'danger')
         return redirect(url_for('aluno.dashboard'))
 

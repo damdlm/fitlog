@@ -60,8 +60,8 @@ class BaseRepository:
                 query = query.order_by(order_by)
             
             return query.all()
-        except Exception as e:
-            logger.error(f"Erro em get_all ({self.model_class.__name__}): {e}")
+        except Exception:
+            logger.exception("Erro em get_all ({self.model_class.__name__})")
             return []
     
     def get_by_id(self, id, user_id=None):
@@ -79,8 +79,8 @@ class BaseRepository:
             query = self.model_class.query.filter_by(id=id)
             query = self.filter_by_user(query, user_id)
             return query.first()
-        except Exception as e:
-            logger.error(f"Erro em get_by_id {id} ({self.model_class.__name__}): {e}")
+        except Exception:
+            logger.exception("Erro em get_by_id {id} ({self.model_class.__name__})")
             return None
     
     def create(self, **kwargs):
@@ -104,9 +104,9 @@ class BaseRepository:
             
             logger.info(f"Registro criado em {self.model_class.__name__}: ID {instance.id}")
             return instance
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            logger.error(f"Erro em create ({self.model_class.__name__}): {e}")
+            logger.exception("Erro em create ({self.model_class.__name__})")
             return None
     
     def update(self, instance, **kwargs):
@@ -128,9 +128,9 @@ class BaseRepository:
             db.session.commit()
             logger.info(f"Registro atualizado em {self.model_class.__name__}: ID {instance.id}")
             return instance
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            logger.error(f"Erro em update ({self.model_class.__name__}): {e}")
+            logger.exception("Erro em update ({self.model_class.__name__})")
             return None
     
     def delete(self, instance):
@@ -148,9 +148,9 @@ class BaseRepository:
             db.session.commit()
             logger.info(f"Registro excluído em {self.model_class.__name__}: ID {instance.id}")
             return True
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            logger.error(f"Erro em delete ({self.model_class.__name__}): {e}")
+            logger.exception("Erro em delete ({self.model_class.__name__})")
             return False
     
     def delete_by_id(self, id, user_id=None):
@@ -183,8 +183,8 @@ class BaseRepository:
             query = self.model_class.query
             query = self.filter_by_user(query, user_id)
             return query.count()
-        except Exception as e:
-            logger.error(f"Erro em count ({self.model_class.__name__}): {e}")
+        except Exception:
+            logger.exception("Erro em count ({self.model_class.__name__})")
             return 0
     
     def exists(self, id, user_id=None):
@@ -222,9 +222,9 @@ class BaseRepository:
             
             logger.info(f"Bulk create em {self.model_class.__name__}: {len(instances)} registros")
             return instances
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            logger.error(f"Erro em bulk_create ({self.model_class.__name__}): {e}")
+            logger.exception("Erro em bulk_create ({self.model_class.__name__})")
             return []
     
     def get_or_create(self, defaults=None, **kwargs):

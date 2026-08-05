@@ -19,8 +19,8 @@ class ExercicioRepository(BaseRepository):
             query = self.model_class.query.filter_by(treino_id=treino_id)
             query = self.filter_by_user(query, user_id)
             return query.all()
-        except Exception as e:
-            logger.error(f"Erro ao buscar exercícios do treino {treino_id}: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar exercícios do treino {treino_id}")
             return []
     
     def get_with_relations(self, exercicio_id, user_id=None):
@@ -32,8 +32,8 @@ class ExercicioRepository(BaseRepository):
             ).filter_by(id=exercicio_id)
             query = self.filter_by_user(query, user_id)
             return query.first()
-        except Exception as e:
-            logger.error(f"Erro ao buscar exercício com relações {exercicio_id}: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar exercício com relações {exercicio_id}")
             return None
     
     def get_ultima_carga(self, exercicio_id, user_id=None):
@@ -49,8 +49,8 @@ class ExercicioRepository(BaseRepository):
                 primeira_serie = registro.series[0]
                 return float(primeira_serie.carga)
             return None
-        except Exception as e:
-            logger.error(f"Erro ao buscar última carga {exercicio_id}: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar última carga {exercicio_id}")
             return None
     
     def get_ultimas_series(self, exercicio_id, versao_id=None, limite=1, user_id=None):
@@ -76,8 +76,8 @@ class ExercicioRepository(BaseRepository):
                 })
             
             return resultado
-        except Exception as e:
-            logger.error(f"Erro ao buscar últimas séries {exercicio_id}: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar últimas séries {exercicio_id}")
             return []
     
     def search_by_nome(self, termo, user_id=None, limite=50):
@@ -88,6 +88,6 @@ class ExercicioRepository(BaseRepository):
             )
             query = self.filter_by_user(query, user_id)
             return query.limit(limite).all()
-        except Exception as e:
-            logger.error(f"Erro ao buscar exercícios por nome {termo}: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar exercícios por nome {termo}")
             return []

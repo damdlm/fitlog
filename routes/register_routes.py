@@ -267,5 +267,5 @@ def api_treinos_por_data():
         })
         
     except Exception as e:
-        logger.error(f"Erro na API treinos-por-data: {e}")
+        logger.exception("Erro na API treinos-por-data")
         return jsonify({"success": False, "error": str(e)}), 500

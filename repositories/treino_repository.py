@@ -18,8 +18,8 @@ class TreinoRepository(BaseRepository):
             query = self.model_class.query.filter_by(codigo=codigo.upper())
             query = self.filter_by_user(query, user_id)
             return query.first()
-        except Exception as e:
-            logger.error(f"Erro ao buscar treino por código {codigo}: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar treino por código {codigo}")
             return None
     
     def get_with_exercicios(self, treino_id, user_id=None):
@@ -31,8 +31,8 @@ class TreinoRepository(BaseRepository):
             ).filter_by(id=treino_id)
             query = self.filter_by_user(query, user_id)
             return query.first()
-        except Exception as e:
-            logger.error(f"Erro ao buscar treino com exercícios {treino_id}: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar treino com exercícios {treino_id}")
             return None
     
     def get_all_with_counts(self, user_id=None):
@@ -51,6 +51,6 @@ class TreinoRepository(BaseRepository):
             query = self.filter_by_user(query, user_id)
             
             return query.group_by(Treino.id).order_by(Treino.codigo).all()
-        except Exception as e:
-            logger.error(f"Erro ao buscar treinos com contagens: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar treinos com contagens")
             return []

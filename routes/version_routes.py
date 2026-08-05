@@ -311,7 +311,7 @@ def editar_treino_na_versao(versao_id, treino_codigo):
             return redirect(url_for("version.ver_versao", versao_id=versao_id))
         except Exception as e:
             db.session.rollback()
-            logger.error(f"Erro ao editar treino: {e}")
+            logger.exception("Erro ao editar treino")
             flash(str(e), "danger")
             return redirect(request.url)
     

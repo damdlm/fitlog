@@ -1,6 +1,9 @@
 import json
+import logging
 from pathlib import Path
 import unicodedata
+
+logger = logging.getLogger(__name__)
 
 def remover_acentos(texto):
     """Remove acentos de uma string"""
@@ -58,10 +61,8 @@ def buscar_musculo_no_catalogo(nome_exercicio):
         
         print(f"❌ Nenhum músculo encontrado para '{nome_exercicio}'")
         
-    except Exception as e:
-        print(f"❌ Erro ao buscar no catálogo: {e}")
-        import traceback
-        traceback.print_exc()
+    except Exception:
+        logger.exception("Erro ao buscar no catálogo")
     
     return None
 

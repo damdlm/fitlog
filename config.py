@@ -48,6 +48,21 @@ def get_config():
             "Configure a variável SECRET_KEY antes de subir a aplicação."
         )
 
+    if config_class is ProductionConfig and not os.getenv('REDIS_URL'):
+        # Em dev/testes, storage_uri='memory://' (ver extensions.py) é
+        # aceitável -- um único processo. Em produção o Gunicorn roda
+        # múltiplos workers (ver gunicorn.conf.py), cada um com sua
+        # própria memória; rate limit em memory:// nesse caso conta
+        # separadamente por worker, o que não protege de verdade.
+        # Exigimos REDIS_URL explicitamente, como já fazemos com
+        # SECRET_KEY acima.
+        raise RuntimeError(
+            "REDIS_URL não definida em produção. O rate limiting "
+            "(Flask-Limiter) precisa de armazenamento compartilhado entre "
+            "os workers do Gunicorn -- configure REDIS_URL antes de subir "
+            "a aplicação."
+        )
+
     logger.debug("get_config() -> FLASK_ENV=%s -> %s", env, config_class.__name__)
     return config_class
 
@@ -107,6 +122,11 @@ class Config:
     GROQ_API_KEY = os.getenv('GROQ_API_KEY')
     GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
 
+    # Cache (Flask-Caching) — SimpleCache (em memória do processo) é
+    # suficiente em dev/testes. ProductionConfig sobrescreve para Redis,
+    # já que o Gunicorn roda múltiplos workers com memórias separadas.
+    CACHE_TYPE = 'SimpleCache'
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
@@ -124,6 +144,12 @@ class ProductionConfig(Config):
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
+
+    # Redis é exigido em produção (ver validação em get_config() acima) —
+    # reaproveitamos a mesma REDIS_URL do Flask-Limiter para o cache
+    # distribuído, em vez de exigir uma segunda variável de ambiente.
+    CACHE_TYPE = 'RedisCache'
+    CACHE_REDIS_URL = os.getenv('REDIS_URL')
 
     # 'connect_timeout' é específico do psycopg2 (Postgres) — por isso fica
     # só aqui, e não na Config base (SQLite não aceita esse argumento).

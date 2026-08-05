@@ -583,8 +583,8 @@ class ExercicioService(BaseService):
                 primeira_serie = registro.series[0]
                 return float(primeira_serie.carga)
             return None
-        except Exception as e:
-            logger.error(f"Erro ao buscar última carga do exercício {exercicio_id}: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar última carga do exercício {exercicio_id}")
             return None
     
     @staticmethod
@@ -633,8 +633,8 @@ class ExercicioService(BaseService):
                 })
             
             return resultado
-        except Exception as e:
-            logger.error(f"Erro ao buscar últimas séries: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar últimas séries")
             return []
 
     @staticmethod
@@ -686,8 +686,8 @@ class ExercicioService(BaseService):
                 {'carga': float(s.carga), 'repeticoes': s.repeticoes}
                 for s in series_ordenadas
             ]
-        except Exception as e:
-            logger.error(f"Erro ao buscar última sessão de séries: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar última sessão de séries")
             return []
     
     # =============================================
@@ -700,8 +700,8 @@ class ExercicioService(BaseService):
         try:
             musculo = Musculo.query.filter_by(nome_exibicao=nome_musculo).first()
             return musculo.id if musculo else None
-        except Exception as e:
-            logger.error(f"Erro ao buscar ID do músculo {nome_musculo}: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar ID do músculo {nome_musculo}")
             return None
     
     @staticmethod
@@ -798,8 +798,8 @@ class ExercicioService(BaseService):
         try:
             musculos = ExercicioService.get_all_musculos()
             return [m.nome_exibicao for m in musculos]
-        except Exception as e:
-            logger.error(f"Erro ao buscar nomes dos músculos: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar nomes dos músculos")
             return []
     
     @staticmethod

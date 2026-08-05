@@ -207,8 +207,8 @@ class VersaoService(BaseService):
                 db.session.flush()
                 logger.info(f"Músculo criado: {nome_exibicao}")
             return musculo
-        except Exception as e:
-            logger.error(f"Erro ao criar/obter músculo {nome_exibicao}: {e}")
+        except Exception:
+            logger.exception("Erro ao criar/obter músculo {nome_exibicao}")
             raise
 
     @staticmethod

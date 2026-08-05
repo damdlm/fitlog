@@ -144,8 +144,8 @@ def api_eventos():
         
         return jsonify(eventos)
         
-    except Exception as e:
-        logger.error(f"Erro ao gerar eventos: {e}")
+    except Exception:
+        logger.exception("Erro ao gerar eventos")
         return jsonify([])
 
 

@@ -35,5 +35,5 @@ def register_all_routes(app):
         try:
             app.register_blueprint(blueprint, url_prefix=url_prefix)
             app.logger.info(f"Blueprint {blueprint.name} registrado em {url_prefix or '/'}")
-        except Exception as e:
-            app.logger.error(f"Erro ao registrar {blueprint.name}: {e}")
+        except Exception:
+            app.logger.exception(f"Erro ao registrar {blueprint.name}")

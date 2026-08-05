@@ -13,6 +13,11 @@ requests==2.33.0
 psycopg2==2.9.9
 
 # =========================
+# MIGRATIONS (usado via Procfile: alembic upgrade head)
+# =========================
+alembic==1.18.5
+
+# =========================
 # AUTENTICAÇÃO
 # =========================
 Flask-Login==0.6.3

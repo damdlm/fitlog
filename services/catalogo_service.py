@@ -45,8 +45,8 @@ class CatalogoService:
             
             return resultados
             
-        except Exception as e:
-            logger.error(f"Erro ao buscar exercícios: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar exercícios")
             return []
     
     @classmethod
@@ -83,8 +83,8 @@ class CatalogoService:
             
             return resultados
             
-        except Exception as e:
-            logger.error(f"Erro ao buscar exercícios: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar exercícios")
             return []
     
     @classmethod
@@ -99,8 +99,8 @@ class CatalogoService:
             
             return [r[0] for r in resultados]
             
-        except Exception as e:
-            logger.error(f"Erro ao buscar músculos: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar músculos")
             return []
     
     @classmethod
@@ -122,6 +122,6 @@ class CatalogoService:
                 "instructions": exercicio.instrucoes or []
             }
             
-        except Exception as e:
-            logger.error(f"Erro ao buscar exercício por nome: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar exercício por nome")
             return None

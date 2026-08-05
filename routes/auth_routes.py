@@ -267,9 +267,9 @@ def update_profile():
         db.session.commit()
 
         flash('Perfil atualizado com sucesso!', 'success')
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        logger.error(f"Erro ao atualizar perfil: {e}")
+        logger.exception("Erro ao atualizar perfil")
         flash('Erro ao atualizar perfil. Tente novamente.', 'danger')
 
     return redirect(url_for('auth.profile'))

@@ -14,8 +14,8 @@ class MusculoService(BaseService):
         """Retorna todos os músculos"""
         try:
             return Musculo.query.order_by(Musculo.nome_exibicao).all()
-        except Exception as e:
-            logger.error(f"Erro ao buscar músculos: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar músculos")
             return []
 
     @staticmethod
@@ -23,8 +23,8 @@ class MusculoService(BaseService):
         """Retorna lista com nomes de exibição dos músculos"""
         try:
             return [m.nome_exibicao for m in MusculoService.get_all()]
-        except Exception as e:
-            logger.error(f"Erro ao buscar nomes dos músculos: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar nomes dos músculos")
             return []
 
     @staticmethod
@@ -32,8 +32,8 @@ class MusculoService(BaseService):
         """Retorna músculo por ID"""
         try:
             return db.session.get(Musculo, musculo_id)
-        except Exception as e:
-            logger.error(f"Erro ao buscar músculo {musculo_id}: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar músculo {musculo_id}")
             return None
 
     @staticmethod
@@ -41,8 +41,8 @@ class MusculoService(BaseService):
         """Retorna músculo pelo nome de exibição"""
         try:
             return Musculo.query.filter_by(nome_exibicao=nome_exibicao).first()
-        except Exception as e:
-            logger.error(f"Erro ao buscar músculo {nome_exibicao}: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar músculo {nome_exibicao}")
             return None
 
     @staticmethod
@@ -50,8 +50,8 @@ class MusculoService(BaseService):
         """Retorna músculo pelo nome (lowercase)"""
         try:
             return Musculo.query.filter_by(nome=nome.lower()).first()
-        except Exception as e:
-            logger.error(f"Erro ao buscar músculo {nome}: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar músculo {nome}")
             return None
 
     @staticmethod
@@ -69,6 +69,6 @@ class MusculoService(BaseService):
                 db.session.flush()
                 logger.info(f"Músculo criado: {nome_exibicao}")
             return musculo
-        except Exception as e:
-            logger.error(f"Erro ao criar/obter músculo {nome_exibicao}: {e}")
+        except Exception:
+            logger.exception("Erro ao criar/obter músculo {nome_exibicao}")
             return None

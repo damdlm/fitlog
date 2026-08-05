@@ -159,8 +159,8 @@ def api_buscar_exercicios():
         
         return jsonify(resultados)
         
-    except Exception as e:
-        logger.error(f"Erro ao buscar catálogo: {e}")
+    except Exception:
+        logger.exception("Erro ao buscar catálogo")
         return jsonify([])
 
 
@@ -280,8 +280,8 @@ def api_catalogo_todos():
         limite = request.args.get("limite", 500, type=int)
         exercicios = CatalogoService.get_todos_exercicios(limite=limite)
         return jsonify(exercicios)
-    except Exception as e:
-        logger.error(f"Erro ao buscar catálogo: {e}")
+    except Exception:
+        logger.exception("Erro ao buscar catálogo")
         return jsonify([])
 
 
@@ -300,8 +300,8 @@ def api_catalogo_buscar():
             musculo=musculo if musculo else None
         )
         return jsonify(resultados)
-    except Exception as e:
-        logger.error(f"Erro ao buscar no catálogo: {e}")
+    except Exception:
+        logger.exception("Erro ao buscar no catálogo")
         return jsonify([])
 
 
@@ -314,8 +314,8 @@ def api_catalogo_musculos():
     try:
         musculos = CatalogoService.get_musculos_disponiveis()
         return jsonify(musculos)
-    except Exception as e:
-        logger.error(f"Erro ao buscar músculos do catálogo: {e}")
+    except Exception:
+        logger.exception("Erro ao buscar músculos do catálogo")
         return jsonify([])
 
 
@@ -356,7 +356,7 @@ def api_reordenar_exercicios():
             return jsonify({"success": False, "error": "Erro ao reordenar"}), 500
         
     except Exception as e:
-        logger.error(f"Erro na API reordenar-exercicios: {e}")
+        logger.exception("Erro na API reordenar-exercicios")
         return jsonify({"success": False, "error": str(e)}), 500
 
 

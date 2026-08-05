@@ -275,8 +275,8 @@ class RegistroService(BaseService):
                     volume_por_semana[key] += float(serie.carga) * serie.repeticoes
             
             return volume_por_semana
-        except Exception as e:
-            logger.error(f"Erro ao calcular volume por semana: {e}")
+        except Exception:
+            logger.exception("Erro ao calcular volume por semana")
             return {}
     
     @staticmethod

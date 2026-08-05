@@ -38,8 +38,8 @@ class RegistroRepository(BaseRepository):
                     query = query.filter_by(versao_id=filtros['versao_id'])
             
             return query.order_by(RegistroTreino.data_registro.desc()).all()
-        except Exception as e:
-            logger.error(f"Erro ao buscar registros com filtros: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar registros com filtros")
             return []
     
     def get_by_sessao(self, treino_id, periodo, semana, versao_id, user_id=None):
@@ -54,8 +54,8 @@ class RegistroRepository(BaseRepository):
             
             query = self.filter_by_user(query, user_id)
             return query.all()
-        except Exception as e:
-            logger.error(f"Erro ao buscar sessão: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar sessão")
             return []
     
     def salvar_sessao(self, treino_id, versao_id, periodo, semana, dados_exercicios, user_id=None):
@@ -100,9 +100,9 @@ class RegistroRepository(BaseRepository):
             
             db.session.commit()
             return True
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            logger.error(f"Erro ao salvar sessão: {e}")
+            logger.exception("Erro ao salvar sessão")
             return False
     
     def get_periodos_distintos(self, user_id=None):
@@ -116,8 +116,8 @@ class RegistroRepository(BaseRepository):
             
             resultados = query.all()
             return sorted([r[0] for r in resultados], reverse=True)
-        except Exception as e:
-            logger.error(f"Erro ao buscar períodos distintos: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar períodos distintos")
             return []
     
     def get_agregado_por_semana(self, treino_id=None, user_id=None):
@@ -140,6 +140,6 @@ class RegistroRepository(BaseRepository):
             ).order_by(
                 RegistroTreino.periodo, RegistroTreino.semana
             ).all()
-        except Exception as e:
-            logger.error(f"Erro ao buscar agregados por semana: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar agregados por semana")
             return []

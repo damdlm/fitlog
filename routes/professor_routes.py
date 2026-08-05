@@ -934,7 +934,7 @@ def novo_treino_versao_aluno(aluno_id, versao_id):
             
         except Exception as e:
             db.session.rollback()
-            logger.error(f"Erro ao adicionar treino à versão: {str(e)}")
+            logger.exception("Erro ao adicionar treino à versão")
             flash(f'Erro ao adicionar treino: {str(e)}', 'danger')
             return redirect(url_for('professor.novo_treino_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
     
@@ -1009,7 +1009,7 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
             return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
         except Exception as e:
             db.session.rollback()
-            logger.error(f"Erro ao salvar: {str(e)}")
+            logger.exception("Erro ao salvar")
             flash(f'Erro ao atualizar treino: {str(e)}', 'danger')
             return redirect(request.url)
     
@@ -1047,7 +1047,7 @@ def excluir_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
         VersaoService.excluir_treino_versao(versao_id, treino_codigo, aluno.id, current_user)
         flash(f'Treino {treino_codigo} removido da versão!', 'success')
     except Exception as e:
-        logger.error(f"Erro ao excluir treino da versão: {e}")
+        logger.exception("Erro ao excluir treino da versão")
         flash(str(e), 'danger')
     
     return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))

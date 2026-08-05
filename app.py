@@ -39,6 +39,19 @@ def setup_logging(app):
     file_handler.setLevel(logging.INFO)
 
     app.logger.addHandler(file_handler)
+
+    # RotatingFileHandler sozinho não é suficiente no Railway: o volume
+    # onde logs/fitlog.log é escrito não é coletado pela plataforma, só
+    # stdout/stderr do processo do Gunicorn são. Sem um handler para
+    # stream, logger.exception(...) e afins não aparecem no painel de
+    # logs do Railway -- só localmente, no arquivo.
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+    stream_handler.setLevel(logging.INFO)
+    app.logger.addHandler(stream_handler)
+
     app.logger.setLevel(logging.INFO)
     app.logger.info('FitLog iniciado')
 
@@ -93,8 +106,8 @@ def _criar_admin_inicial(app):
         db.session.add(admin)
         db.session.commit()
 
-    except Exception as e:
-        app.logger.error(f"Erro ao criar admin inicial: {e}")
+    except Exception:
+        app.logger.exception("Erro ao criar admin inicial")
 
 
 # =============================================================
@@ -138,11 +151,11 @@ def create_app(config_class=None):
             try:
                 if User.query.first() is None:
                     _criar_admin_inicial(app)
-            except Exception as e:
-                app.logger.error(f"Erro ao verificar admin: {e}")
+            except Exception:
+                app.logger.exception("Erro ao verificar admin")
 
-        except Exception as e:
-            app.logger.error(f"Erro DB no startup: {e}")
+        except Exception:
+            app.logger.exception("Erro DB no startup")
 
     with app.app_context():
         init_db()
@@ -180,6 +193,44 @@ def create_app(config_class=None):
     @app.route("/health")
     def health():
         return {"status": "ok"}, 200
+
+    @app.route("/health/db")
+    def health_db():
+        from sqlalchemy import text
+        try:
+            db.session.execute(text("SELECT 1"))
+            return {"status": "ok", "database": "ok"}, 200
+        except Exception:
+            # Não expor host/usuário/senha/DATABASE_URL nem o traceback
+            # completo na resposta HTTP -- só no log interno.
+            app.logger.exception("Health check do banco falhou (/health/db)")
+            return {"status": "error", "database": "unavailable"}, 503
+
+    # =============================================================
+    # HEADERS DE SEGURANÇA
+    # =============================================================
+    # Mesmo critério de "estamos em produção?" já usado em
+    # _criar_admin_inicial() acima, para manter consistência.
+    em_producao = not (app.config.get('DEBUG', False) or app.config.get('TESTING', False))
+
+    @app.after_request
+    def add_security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+        # HSTS só faz sentido (e só é seguro) quando servido via HTTPS,
+        # ou seja, em produção -- em dev/testes, servido por http://
+        # localhost, o navegador não deve ser instruído a forçar HTTPS.
+        # CSP fica de fora propositalmente nesta fase: o FitLog usa
+        # scripts/estilos inline e recursos externos, e uma CSP mal
+        # configurada quebraria a aplicação -- tratar em tarefa própria.
+        if em_producao:
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains"
+            )
+
+        return response
 
     # =============================================================
     # SERVICE WORKER (PWA) — precisa ficar na raiz "/" para poder

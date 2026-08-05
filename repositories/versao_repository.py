@@ -32,8 +32,8 @@ class VersaoRepository(BaseRepository):
             
             query = self.filter_by_user(query, user_id)
             return query.order_by(self.model_class.data_inicio.desc()).first()
-        except Exception as e:
-            logger.error(f"Erro ao buscar versão ativa: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar versão ativa")
             return None
     
     def get_with_treinos(self, versao_id, user_id=None):
@@ -45,8 +45,8 @@ class VersaoRepository(BaseRepository):
             ).filter_by(id=versao_id)
             query = self.filter_by_user(query, user_id)
             return query.first()
-        except Exception as e:
-            logger.error(f"Erro ao buscar versão com treinos {versao_id}: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar versão com treinos {versao_id}")
             return None
     
     def get_proximo_numero(self, user_id=None):
@@ -59,8 +59,8 @@ class VersaoRepository(BaseRepository):
             ultima = db.session.query(func.max(self.model_class.numero_versao))\
                 .filter_by(user_id=user_id).scalar() or 0
             return ultima + 1
-        except Exception as e:
-            logger.error(f"Erro ao buscar próximo número de versão: {e}")
+        except Exception:
+            logger.exception("Erro ao buscar próximo número de versão")
             return 1
     
     def adicionar_treino(self, versao_id, treino_id, nome_treino, descricao_treino, 
@@ -100,9 +100,9 @@ class VersaoRepository(BaseRepository):
             
             db.session.commit()
             return True
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            logger.error(f"Erro ao adicionar treino à versão: {e}")
+            logger.exception("Erro ao adicionar treino à versão")
             return False
     
     def remover_treino(self, versao_id, treino_id, user_id=None):
@@ -117,7 +117,7 @@ class VersaoRepository(BaseRepository):
                 db.session.commit()
                 return True
             return False
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            logger.error(f"Erro ao remover treino da versão: {e}")
+            logger.exception("Erro ao remover treino da versão")
             return False
