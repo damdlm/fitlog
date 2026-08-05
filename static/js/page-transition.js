@@ -102,6 +102,15 @@
         }
     }
 
+    function navegarComTransicao(href, atrasoInicial) {
+        window.setTimeout(function () {
+            showOverlay();
+            window.setTimeout(function () {
+                window.location.href = href;
+            }, NAV_DELAY_MS);
+        }, atrasoInicial || 0);
+    }
+
     document.addEventListener('click', function (evt) {
         var feedbackTarget = getClickFeedbackTarget(evt.target);
         if (feedbackTarget) {
@@ -117,12 +126,21 @@
             // espera 0,3s antes de a película de transição começar a
             // aparecer, para o ripple do clique ficar visível primeiro.
             var atrasoInicial = isMobileMenuTarget(link) ? MENU_MOBILE_DELAY_MS : 0;
-            window.setTimeout(function () {
-                showOverlay();
-                window.setTimeout(function () {
-                    window.location.href = href;
-                }, NAV_DELAY_MS);
-            }, atrasoInicial);
+
+            // Gancho opcional: uma página pode registrar
+            // window.FitLogBeforeNavigate para interceptar a navegação
+            // antes dela acontecer (ex: avisar que um treino em
+            // andamento será perdido). Retornando false, ela assume a
+            // responsabilidade de chamar "prosseguir" quando o usuário
+            // confirmar -- a navegação normal não acontece agora.
+            if (typeof window.FitLogBeforeNavigate === 'function') {
+                var podeSeguir = window.FitLogBeforeNavigate(href, function () {
+                    navegarComTransicao(href, atrasoInicial);
+                });
+                if (podeSeguir === false) return;
+            }
+
+            navegarComTransicao(href, atrasoInicial);
             return;
         }
 

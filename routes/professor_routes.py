@@ -1079,7 +1079,11 @@ def estatisticas_aluno(aluno_id):
         total_series = 0
         exercicios_ids = set()
         for r in registros_treino:
-            exercicios_ids.add(r.exercicio_id)
+            # Mesmo cuidado de services/estatistica_service.py: usar o
+            # par (usuario_id, base_id) em vez de r.exercicio_id, que
+            # colide quando um exercício personalizado e um do catálogo
+            # do sistema têm o mesmo número de ID em tabelas diferentes.
+            exercicios_ids.add((r.exercicio_usuario_id, r.exercicio_base_id))
             for s in r.series:
                 volume_total += float(s.carga) * s.repeticoes
                 total_series += 1

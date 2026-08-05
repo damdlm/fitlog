@@ -1,4 +1,4 @@
-"""Testes de regressão para /api/eventos (routes/calendar_routes.py).
+"""Testes de regressão para /calendar/api/eventos (routes/calendar_routes.py).
 
 Cobrem o comportamento da API antes/depois da correção do N+1 (Fase 3):
 TreinoService.get_all() passou a ser chamado uma única vez por request,
@@ -39,7 +39,12 @@ def _criar_exercicio(user):
 def _criar_treino(user, codigo='A'):
     treino = Treino(user_id=user.id, codigo=codigo, nome=f'Treino {codigo}', descricao='desc')
     db.session.add(treino)
-    versao = VersaoGlobal(numero_versao=1, descricao='V1', divisao='ABC',
+    # numero_versao é único por (user_id, numero_versao) -- conta quantas
+    # versões esse usuário já tem para não colidir quando o teste chama
+    # _criar_treino mais de uma vez para o mesmo usuário (ex: dois
+    # treinos diferentes no mesmo teste).
+    numero_versao = VersaoGlobal.query.filter_by(user_id=user.id).count() + 1
+    versao = VersaoGlobal(numero_versao=numero_versao, descricao=f'V{numero_versao}', divisao='ABC',
                            data_inicio=datetime.now(timezone.utc).date(), user_id=user.id)
     db.session.add(versao)
     db.session.commit()
@@ -64,7 +69,7 @@ def test_eventos_usuario_sem_registros(client, app):
         user_id = u.id
     _login(client, User.query.get(user_id))
 
-    resp = client.get('/api/eventos')
+    resp = client.get('/calendar/api/eventos')
     assert resp.status_code == 200
     assert resp.get_json() == []
 
@@ -79,7 +84,7 @@ def test_eventos_um_registro(client, app):
         user_id = u.id
 
     _login(client, User.query.get(user_id))
-    resp = client.get('/api/eventos')
+    resp = client.get('/calendar/api/eventos')
     eventos = resp.get_json()
 
     assert resp.status_code == 200
@@ -102,7 +107,7 @@ def test_eventos_varios_registros_mesmo_treino(client, app):
         user_id = u.id
 
     _login(client, User.query.get(user_id))
-    resp = client.get('/api/eventos')
+    resp = client.get('/calendar/api/eventos')
     eventos = resp.get_json()
 
     assert len(eventos) == 1  # mesmo dia -> um único evento
@@ -125,7 +130,7 @@ def test_eventos_varios_treinos(client, app):
         user_id = u.id
 
     _login(client, User.query.get(user_id))
-    resp = client.get('/api/eventos')
+    resp = client.get('/calendar/api/eventos')
     eventos = resp.get_json()
 
     codigos = sorted(t['treino_codigo'] for t in eventos[0]['extendedProps']['treinos'])
@@ -143,12 +148,12 @@ def test_eventos_filtro_por_ano_e_mes(client, app):
 
     _login(client, User.query.get(user_id))
 
-    resp_2025 = client.get('/api/eventos?ano=2025')
+    resp_2025 = client.get('/calendar/api/eventos?ano=2025')
     eventos_2025 = resp_2025.get_json()
     assert len(eventos_2025) == 1
     assert eventos_2025[0]['start'] == '2025-03-15'
 
-    resp_mes = client.get('/api/eventos?ano=2026&mes=7')
+    resp_mes = client.get('/calendar/api/eventos?ano=2026&mes=7')
     eventos_mes = resp_mes.get_json()
     assert len(eventos_mes) == 1
     assert eventos_mes[0]['start'] == '2026-07-10'
@@ -170,7 +175,7 @@ def test_eventos_professor_consultando_aluno(client, app):
         aluno_id = aluno.id
 
     _login(client, User.query.get(professor_id))
-    resp = client.get(f'/api/eventos?aluno_id={aluno_id}')
+    resp = client.get(f'/calendar/api/eventos?aluno_id={aluno_id}')
     eventos = resp.get_json()
 
     assert len(eventos) == 1
@@ -193,7 +198,7 @@ def test_eventos_professor_sem_vinculo_cai_para_proprios_dados(client, app):
     # get_target_user_id cai de volta para o próprio professor quando o
     # aluno não está vinculado -- o professor não tem registros, então
     # a lista de eventos deve vir vazia (não deve vazar dados do aluno).
-    resp = client.get(f'/api/eventos?aluno_id={outro_aluno_id}')
+    resp = client.get(f'/calendar/api/eventos?aluno_id={outro_aluno_id}')
     assert resp.get_json() == []
 
 
@@ -220,7 +225,7 @@ def test_eventos_com_exercicio_do_catalogo_sistema(client, app):
         user_id = u.id
 
     _login(client, User.query.get(user_id))
-    resp = client.get('/api/eventos')
+    resp = client.get('/calendar/api/eventos')
     eventos = resp.get_json()
 
     assert len(eventos) == 1

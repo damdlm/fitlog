@@ -112,7 +112,14 @@ class EstatisticaService(BaseService):
                 total_series = 0
                 exercicios_ids = set()
                 for r in registros_treino:
-                    exercicios_ids.add(r.exercicio_id)
+                    # Não usar r.exercicio_id (coalesce entre as duas
+                    # origens) aqui: um exercício personalizado e um do
+                    # catálogo do sistema têm sequências de ID
+                    # independentes e podem colidir no mesmo número,
+                    # fazendo o set() contar como um exercício só quando
+                    # na verdade são dois. O par abaixo distingue a
+                    # origem e nunca colide.
+                    exercicios_ids.add((r.exercicio_usuario_id, r.exercicio_base_id))
                     for s in r.series:
                         volume_total += float(s.carga) * s.repeticoes
                         total_series += 1

@@ -22,7 +22,11 @@ def estatisticas():
     registros = RegistroTreino.query.filter_by(user_id=current_user.id).all()
     treino_stats = {t.id: {
         "codigo": t.codigo, "nome": t.nome, "descricao": t.descricao,
-        "qtd_exercicios": len(set(r.exercicio_id for r in registros if r.treino_id == t.id)),
+        # Usa o par (usuario_id, base_id) em vez de r.exercicio_id: um
+        # exercício personalizado e um do catálogo do sistema podem ter
+        # o mesmo número de ID (tabelas diferentes, sequências
+        # independentes), o que faria o set() contar como um só.
+        "qtd_exercicios": len(set((r.exercicio_usuario_id, r.exercicio_base_id) for r in registros if r.treino_id == t.id)),
         "qtd_registros": len([r for r in registros if r.treino_id == t.id]),
         "volume_total": sum(float(s.carga) * s.repeticoes for r in registros if r.treino_id == t.id for s in r.series),
         "total_series": sum(1 for r in registros if r.treino_id == t.id for s in r.series)

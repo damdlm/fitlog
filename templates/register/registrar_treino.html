@@ -3,6 +3,10 @@
 {% block page_icon %}<i class="bi bi-plus-circle" style="color: var(--primary-orange);"></i>{% endblock %}
 {% block page_title %}Registrar Treino{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+{% endblock %}
+
 {% block content %}
 <style>
     :root {
@@ -1287,6 +1291,134 @@
     .resumo-modal-actions {
         margin-top: 18px;
     }
+
+    /* ====== Calendário estilizado (flatpickr) no campo Data ====== */
+    .flatpickr-calendar {
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border-soft);
+    }
+
+    .flatpickr-calendar.arrowTop:before,
+    .flatpickr-calendar.arrowTop:after {
+        border-bottom-color: var(--dark-bg);
+    }
+
+    .flatpickr-months,
+    .flatpickr-weekdays {
+        background: var(--dark-bg);
+    }
+
+    .flatpickr-months .flatpickr-month {
+        background: var(--dark-bg);
+        color: #fff;
+        fill: #fff;
+        border-radius: var(--radius-md) var(--radius-md) 0 0;
+    }
+
+    .flatpickr-current-month .flatpickr-monthDropdown-months {
+        background: var(--dark-bg);
+        color: #fff;
+    }
+
+    .flatpickr-current-month input.cur-year {
+        color: #fff;
+    }
+
+    .flatpickr-weekday {
+        background: var(--dark-bg);
+        color: rgba(255, 255, 255, 0.75);
+    }
+
+    .flatpickr-months .flatpickr-prev-month,
+    .flatpickr-months .flatpickr-next-month {
+        fill: #fff;
+    }
+
+    .flatpickr-months .flatpickr-prev-month:hover svg,
+    .flatpickr-months .flatpickr-next-month:hover svg {
+        fill: var(--primary-orange);
+    }
+
+    .flatpickr-day.selected,
+    .flatpickr-day.selected:hover,
+    .flatpickr-day.selected:focus {
+        background: var(--primary-orange);
+        border-color: var(--primary-orange);
+    }
+
+    .flatpickr-day.today {
+        border-color: var(--primary-orange);
+    }
+
+    .flatpickr-day.today:hover,
+    .flatpickr-day.today:focus {
+        background: var(--primary-orange);
+        border-color: var(--primary-orange);
+        color: #fff;
+    }
+
+    .flatpickr-day:hover {
+        background: rgba(242, 140, 51, 0.15);
+    }
+
+    .flatpickr-day.flatpickr-disabled,
+    .flatpickr-day.flatpickr-disabled:hover {
+        color: rgba(45, 45, 45, 0.25);
+    }
+
+    /* ====== Modal de confirmação ao cancelar/sair com treino em
+       andamento ====== */
+    .confirmar-cancelamento-content {
+        border: none;
+        border-radius: var(--radius-lg);
+    }
+
+    .confirmar-cancelamento-icone {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(220, 53, 69, 0.12);
+        color: var(--bs-danger, #dc3545);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin: 0 auto 14px;
+    }
+
+    .confirmar-cancelamento-titulo {
+        font-weight: 700;
+        color: var(--dark-bg);
+        margin-bottom: 8px;
+    }
+
+    .confirmar-cancelamento-texto {
+        color: #6c757d;
+        font-size: 0.92rem;
+        margin-bottom: 20px;
+    }
+
+    .btn-confirmar-cancelamento {
+        background: var(--bs-danger, #dc3545);
+        color: #fff;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 11px 20px;
+        border: none;
+        transition: filter .15s ease, transform .15s ease;
+    }
+
+    .btn-confirmar-cancelamento:hover,
+    .btn-confirmar-cancelamento:focus {
+        background: var(--bs-danger, #dc3545);
+        color: #fff;
+        filter: brightness(0.92);
+    }
+
+    .btn-confirmar-cancelamento:active {
+        transform: scale(0.97);
+    }
 </style>
 
 <!-- Loading Spinner -->
@@ -1360,6 +1492,33 @@
                     </div>
                     <button type="button" id="btnSairResumo" class="btn-sair-resumo">
                         <i class="bi bi-box-arrow-right"></i>Sair
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmação ao cancelar o treino ou sair da tela com o
+     treino em andamento -- substitui o confirm() nativo do navegador
+     (sem estilo nenhum) por um aviso com a cara do app. -->
+<div class="modal fade" id="modalConfirmarCancelamento" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content confirmar-cancelamento-content">
+            <div class="modal-body text-center p-4">
+                <div class="confirmar-cancelamento-icone">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <h5 class="confirmar-cancelamento-titulo">Cancelar treino?</h5>
+                <p class="confirmar-cancelamento-texto">
+                    O progresso registrado até agora será perdido e não pode ser recuperado.
+                </p>
+                <div class="d-grid gap-2">
+                    <button type="button" id="btnConfirmarCancelamentoSim" class="btn btn-confirmar-cancelamento w-100">
+                        Sim, cancelar treino
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary w-100" data-bs-dismiss="modal">
+                        Continuar treino
                     </button>
                 </div>
             </div>
@@ -1457,9 +1616,9 @@
                         <i class="bi bi-calendar" style="color: var(--primary-orange);"></i>
                         Data
                     </label>
-                    <input type="date" name="data" class="form-control" 
-                           value="{{ data_selecionada_str or data_atual_iso() }}" 
-                           min="2020-01-01" max="{{ data_atual_iso() }}" required>
+                    <input type="text" name="data" id="inputDataTreino" class="form-control"
+                           value="{{ data_selecionada_str or data_atual_iso() }}"
+                           data-min="2020-01-01" data-max="{{ data_atual_iso() }}" required>
                 </div>
                 <div class="cronometro-actions mt-2" id="cronoTreinoBox">
                     <button type="button" class="btn-cronometro btn-cronometro-primary flex-fill justify-content-center" id="cronoTreinoBtnIniciar">
@@ -1677,6 +1836,30 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/pt.js"></script>
+<script>
+// Calendário estilizado (flatpickr) no campo Data -- troca o seletor nativo
+// do navegador por um calendário com as cores do app. Mantém o valor real
+// (ISO, "Y-m-d") no input original (name="data", que é o que o form
+// envia) e mostra pro usuário uma data amigável (dd/mm/aaaa) num campo
+// visual separado (altInput).
+(function () {
+    var elData = document.getElementById('inputDataTreino');
+    if (!elData || typeof flatpickr === 'undefined') return;
+    flatpickr(elData, {
+        locale: 'pt',
+        dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'd/m/Y',
+        minDate: elData.dataset.min,
+        maxDate: elData.dataset.max,
+        defaultDate: elData.value,
+        disableMobile: true,
+        allowInput: false
+    });
+})();
+</script>
 <script>
 // Estado compartilhado entre os blocos de script desta página: controla se
 // o treino está "em andamento" (Iniciar treino já foi clicado e ainda não
@@ -1698,6 +1881,55 @@ window.addEventListener('beforeunload', function (e) {
         return '';
     }
 });
+
+// Modal de confirmação (substitui o confirm() nativo do navegador) usado
+// tanto pelo botão "Cancelar" quanto pela navegação pelo menu mobile
+// enquanto o treino está em andamento. Se não houver treino em
+// andamento, executa direto sem perguntar nada.
+window.FitLogConfirmarSaidaTreino = function (onConfirmar) {
+    if (!window.FitLogTreinoState.emAndamento()) {
+        onConfirmar();
+        return;
+    }
+    var elModal = document.getElementById('modalConfirmarCancelamento');
+    var elBtnSim = document.getElementById('btnConfirmarCancelamentoSim');
+    if (!elModal || !elBtnSim || typeof bootstrap === 'undefined') {
+        // Sem Bootstrap/modal disponível por algum motivo -- não trava o
+        // usuário, deixa prosseguir.
+        onConfirmar();
+        return;
+    }
+    var modal = bootstrap.Modal.getOrCreateInstance(elModal);
+
+    // Remove um eventual handler de uma chamada anterior (ex: usuário
+    // abriu o aviso, clicou em "Continuar treino" e tentou sair de novo
+    // por outro caminho depois) para não empilhar callbacks no botão.
+    if (elBtnSim._fitLogHandler) {
+        elBtnSim.removeEventListener('click', elBtnSim._fitLogHandler);
+    }
+    var aoConfirmar = function () {
+        elBtnSim.removeEventListener('click', aoConfirmar);
+        elBtnSim._fitLogHandler = null;
+        modal.hide();
+        onConfirmar();
+    };
+    elBtnSim._fitLogHandler = aoConfirmar;
+    elBtnSim.addEventListener('click', aoConfirmar);
+    modal.show();
+};
+
+// Gancho lido pelo page-transition.js: intercepta cliques no menu mobile
+// (barra inferior / painel "Mais") enquanto o treino está em andamento,
+// pra mostrar o mesmo aviso do botão Cancelar em vez de deixar o
+// navegador disparar o beforeunload nativo (sem estilo nenhum).
+window.FitLogBeforeNavigate = function (href, prosseguir) {
+    if (!window.FitLogTreinoState.emAndamento()) return true;
+    window.FitLogConfirmarSaidaTreino(function () {
+        window.FitLogTreinoState.finalizar();
+        prosseguir();
+    });
+    return false;
+};
 
 // Inicialização quando a página carrega
 document.addEventListener('DOMContentLoaded', function() {
@@ -1725,9 +1957,14 @@ document.addEventListener('DOMContentLoaded', function() {
         dataInput.value = hoje;
     }
     
-    // Não permitir datas futuras
+    // Não permitir datas futuras (usa a data local do navegador, não a do
+    // servidor, para evitar divergência de fuso perto da meia-noite).
     if (dataInput) {
-        dataInput.max = new Date().toISOString().split('T')[0];
+        if (dataInput._flatpickr) {
+            dataInput._flatpickr.set('maxDate', new Date());
+        } else {
+            dataInput.max = new Date().toISOString().split('T')[0];
+        }
     }
     
     // Auto-submit ao mudar treino ou data
@@ -2285,12 +2522,10 @@ function tocarBipe() {
     var elBtnCancelar = document.getElementById('btnCancelarTreino');
     if (elBtnCancelar) {
         elBtnCancelar.addEventListener('click', function () {
-            var confirmado = confirm(
-                'Tem certeza que deseja cancelar este treino? Todos os dados preenchidos serão perdidos.'
-            );
-            if (!confirmado) return;
-            if (window.FitLogTreinoState) window.FitLogTreinoState.finalizar();
-            window.location.href = window.location.pathname;
+            window.FitLogConfirmarSaidaTreino(function () {
+                window.FitLogTreinoState.finalizar();
+                window.location.href = window.location.pathname;
+            });
         });
     }
 })();
