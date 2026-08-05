@@ -317,6 +317,18 @@
         color: var(--primary-orange);
     }
 
+    /* Ampulheta girando no lugar da palavra "Intervalo" */
+    .cronometro-label .cronometro-ampulheta {
+        display: inline-block;
+        font-size: 1.1rem;
+        animation: ampulheta-girar 1.8s linear infinite;
+    }
+
+    @keyframes ampulheta-girar {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
     .cronometro-display {
         font-family: 'Courier New', ui-monospace, monospace;
         font-size: 2.4rem;
@@ -418,6 +430,20 @@
     .btn-cronometro-ghost:hover {
         border-color: var(--primary-orange);
         color: var(--primary-orange);
+    }
+
+    /* Botão redondo só com ícone (ex: play do intervalo, sem o texto "Iniciar") */
+    .btn-cronometro-icon {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .btn-cronometro-icon i {
+        font-size: 1rem;
     }
 
     @media (max-width: 575.98px) {
@@ -810,17 +836,18 @@
         white-space: nowrap;
         font-weight: 600;
         letter-spacing: .2px;
-        background: var(--success-gradient, #2D2D2D);
+        /* Verde -- ação de concluir/salvar o treino (semáforo: finalizar = verde) */
+        background: linear-gradient(135deg, #2FA84F 0%, #4CC26B 100%);
         color: #fff;
         border: none;
-        box-shadow: 0 4px 14px rgba(45, 45, 45, 0.28);
+        box-shadow: 0 4px 14px rgba(47, 168, 79, 0.30);
         transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
     }
 
     #top-save-bar .btn-save:hover,
     #top-save-bar .btn-save:focus {
         filter: brightness(1.08);
-        box-shadow: 0 6px 18px rgba(45, 45, 45, 0.34);
+        box-shadow: 0 6px 18px rgba(47, 168, 79, 0.38);
         color: #fff;
     }
 
@@ -835,25 +862,56 @@
         flex-shrink: 0;
     }
 
+    /* Vermelho -- ação de descartar o treino (semáforo: cancelar = vermelho) */
     #top-save-bar .btn-cancel-treino {
-        background: #fff;
-        color: var(--bs-danger, #dc3545);
-        border: 1.5px solid var(--bs-danger, #dc3545);
+        background: var(--bs-danger, #dc3545);
+        color: #fff;
+        border: none;
         padding: 11px 20px;
         white-space: nowrap;
         font-weight: 600;
         border-radius: 999px;
-        transition: background-color .15s ease, color .15s ease, transform .15s ease, box-shadow .15s ease;
+        box-shadow: 0 4px 14px rgba(220, 53, 69, 0.28);
+        transition: filter .15s ease, transform .15s ease, box-shadow .15s ease;
     }
 
     #top-save-bar .btn-cancel-treino:hover,
     #top-save-bar .btn-cancel-treino:focus {
-        background: var(--bs-danger, #dc3545);
+        filter: brightness(1.08);
         color: #fff;
-        box-shadow: 0 4px 14px rgba(220, 53, 69, 0.28);
+        box-shadow: 0 6px 18px rgba(220, 53, 69, 0.38);
     }
 
     #top-save-bar .btn-cancel-treino:active {
+        transform: scale(0.97);
+    }
+
+    /* Amarelo -- ação de pausar o cronômetro (semáforo: pausar = amarelo).
+       É o MESMO botão #cronoTreinoBtnIniciar que existe antes de o treino
+       começar (lá com o visual grande de "Iniciar treino") -- ao iniciar,
+       o JS o move pra cá, entre Cancelar e Finalizar, e essa classe some
+       do estilo grande e passa a usar este aqui. */
+    #top-save-bar .top-save-bar-actions .btn-pausar-treino {
+        flex: 0 0 auto;
+        background: #F5A623;
+        color: #2D2D2D;
+        border: none;
+        padding: 11px 20px;
+        white-space: nowrap;
+        font-weight: 600;
+        border-radius: 999px;
+        box-shadow: 0 4px 14px rgba(245, 166, 35, 0.30);
+        transition: filter .15s ease, transform .15s ease, box-shadow .15s ease;
+    }
+
+    #top-save-bar .top-save-bar-actions .btn-pausar-treino:hover,
+    #top-save-bar .top-save-bar-actions .btn-pausar-treino:focus {
+        filter: brightness(1.06);
+        color: #2D2D2D;
+        box-shadow: 0 6px 18px rgba(245, 166, 35, 0.40);
+    }
+
+    #top-save-bar .top-save-bar-actions .btn-pausar-treino:active {
         transform: scale(0.97);
     }
 
@@ -880,12 +938,14 @@
             gap: 6px;
         }
         #top-save-bar .btn-save,
-        #top-save-bar .btn-cancel-treino {
+        #top-save-bar .btn-cancel-treino,
+        #top-save-bar .btn-pausar-treino {
             padding: 8px 12px;
             font-size: 0.86rem;
         }
         #top-save-bar .btn-save i,
-        #top-save-bar .btn-cancel-treino i {
+        #top-save-bar .btn-cancel-treino i,
+        #top-save-bar .btn-pausar-treino i {
             margin-right: 4px !important;
             font-size: 0.80rem;
         }
@@ -901,9 +961,20 @@
             font-size: 0.92rem;
         }
         #top-save-bar .btn-save,
-        #top-save-bar .btn-cancel-treino {
+        #top-save-bar .btn-cancel-treino,
+        #top-save-bar .btn-pausar-treino {
             padding: 7px 9px;
             font-size: 0.7rem;
+        }
+        /* Com 3 botões + cronômetro nessa largura, o texto "Pausar"/
+           "Continuar" é o mais dispensável -- vira só ícone pra garantir
+           que os outros dois continuem legíveis. */
+        #top-save-bar .btn-pausar-treino span {
+            display: none;
+        }
+        #top-save-bar .btn-pausar-treino i {
+            margin-right: 0 !important;
+            font-size: 0.95rem;
         }
     }
 
@@ -957,10 +1028,31 @@
         padding: 6px 10px;
     }
 
+    /* Iniciar (play) e Zerar do intervalo ficam redondos, só com ícone,
+       mesmo dentro da versão compacta do rodapé. */
+    #cronoIntervaloBox .btn-cronometro.btn-cronometro-icon {
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        font-size: 0.82rem;
+    }
+
     @media (max-width: 575.98px) {
         #cronoIntervaloBox .cronometro-presets {
             order: 3;
             flex-basis: 100%;
+            /* Grid com 1 coluna por preset -- ocupam a largura toda da
+               tela, cada um com o mesmo tamanho, sem sobra de espaço
+               desigual nas pontas. */
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            width: 100%;
+        }
+        #cronoIntervaloBox .btn-preset {
+            width: 100%;
+            padding: 6px 2px;
+            text-align: center;
         }
     }
 
@@ -1548,7 +1640,9 @@
          entre séries. Toca um bipe e pisca ao zerar. Fica na mesma barra
          fixa do cronômetro de treino, sempre visível ao rolar a página. -->
     <div class="cronometro-box cronometro-intervalo d-none" id="cronoIntervaloBox">
-        <span class="cronometro-label"><i class="bi bi-hourglass-split"></i> Intervalo</span>
+        <span class="cronometro-label" aria-label="Intervalo" title="Intervalo">
+            <i class="bi bi-hourglass-split cronometro-ampulheta"></i>
+        </span>
         <span class="cronometro-display" id="cronoIntervaloDisplay">01:30</span>
         <div class="cronometro-presets" id="cronoIntervaloPresets">
             <button type="button" class="btn-preset" data-segundos="30">30s</button>
@@ -1558,10 +1652,10 @@
             <button type="button" class="btn-preset" data-segundos="180">3:00</button>
         </div>
         <div class="cronometro-actions">
-            <button type="button" class="btn-cronometro btn-cronometro-primary" id="cronoIntervaloBtnIniciar">
-                <i class="bi bi-play-fill"></i> <span>Iniciar</span>
+            <button type="button" class="btn-cronometro btn-cronometro-primary btn-cronometro-icon" id="cronoIntervaloBtnIniciar" aria-label="Iniciar intervalo" title="Iniciar">
+                <i class="bi bi-play-fill"></i>
             </button>
-            <button type="button" class="btn-cronometro btn-cronometro-ghost" id="cronoIntervaloBtnZerar" title="Reiniciar">
+            <button type="button" class="btn-cronometro btn-cronometro-ghost btn-cronometro-icon" id="cronoIntervaloBtnZerar" title="Reiniciar">
                 <i class="bi bi-arrow-counterclockwise"></i>
             </button>
         </div>
@@ -2421,9 +2515,23 @@ function tocarBipe() {
         // cronômetro de intervalo no rodapé.
         if (overlay && header && body && footer) {
             if (topSaveBar) header.appendChild(topSaveBar);
-            if (cronoTreinoBoxEl) header.appendChild(cronoTreinoBoxEl);
             if (exerciciosCard) body.appendChild(exerciciosCard);
             if (cronoIntervaloBox) footer.appendChild(cronoIntervaloBox);
+
+            // Move o próprio botão de Iniciar/Pausar (mesmo elemento, mesmos
+            // listeners -- só muda de lugar e de estilo) pra dentro da barra
+            // de ações, entre Cancelar e Finalizar. Assim o cronômetro
+            // principal e os 3 botões ficam todos na mesma linha, alinhados.
+            var acoesTopBar = topSaveBar ? topSaveBar.querySelector('.top-save-bar-actions') : null;
+            var btnFinalizarEl = topSaveBar ? topSaveBar.querySelector('.btn-save') : null;
+            if (acoesTopBar && elBtnIniciar && btnFinalizarEl) {
+                elBtnIniciar.classList.add('btn-pausar-treino');
+                acoesTopBar.insertBefore(elBtnIniciar, btnFinalizarEl);
+            }
+            // O que sobrou (botão de zerar) some -- não faz mais sentido
+            // zerar o cronômetro no meio do treino, e "Cancelar" já cobre
+            // o caso de desistir e recomeçar do zero.
+            if (cronoTreinoBoxEl) cronoTreinoBoxEl.classList.add('d-none');
 
             overlay.classList.remove('d-none');
             document.body.style.overflow = 'hidden';
@@ -2556,7 +2664,9 @@ function tocarBipe() {
         duracaoPadraoSegundos = novaDuracao;
         restanteSegundos = novaDuracao;
         atualizarDisplay();
-        elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Iniciar</span>';
+        elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i>';
+        elBtnIniciar.setAttribute('aria-label', 'Iniciar intervalo');
+        elBtnIniciar.title = 'Iniciar';
         elBtnIniciar.classList.remove('is-rodando');
     }
 
@@ -2572,7 +2682,9 @@ function tocarBipe() {
             if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
                 window.FitLogUtils.showToast('Intervalo finalizado! Bora pra próxima série 💪', 'success');
             }
-            elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Iniciar</span>';
+            elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i>';
+            elBtnIniciar.setAttribute('aria-label', 'Iniciar intervalo');
+            elBtnIniciar.title = 'Iniciar';
             elBtnIniciar.classList.remove('is-rodando');
             // Deixa o "piscar" vermelho por um tempo e já prepara o
             // próximo intervalo com a mesma duração escolhida.
@@ -2591,14 +2703,18 @@ function tocarBipe() {
         rodando = true;
         fimMs = Date.now() + restanteSegundos * 1000;
         intervalId = setInterval(tick, 250);
-        elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i> <span>Pausar</span>';
+        elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i>';
+        elBtnIniciar.setAttribute('aria-label', 'Pausar intervalo');
+        elBtnIniciar.title = 'Pausar';
         elBtnIniciar.classList.add('is-rodando');
     }
 
     function pausar() {
         rodando = false;
         clearInterval(intervalId);
-        elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Continuar</span>';
+        elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i>';
+        elBtnIniciar.setAttribute('aria-label', 'Continuar intervalo');
+        elBtnIniciar.title = 'Continuar';
         elBtnIniciar.classList.remove('is-rodando');
     }
 
