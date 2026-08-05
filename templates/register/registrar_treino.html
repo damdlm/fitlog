@@ -815,33 +815,44 @@
     #top-save-bar .top-save-bar-crono {
         display: flex;
         align-items: center;
-        gap: 8px;
-    }
-
-    #top-save-bar .top-save-bar-crono i {
-        color: var(--primary-orange);
-        font-size: 1.4rem;
     }
 
     #top-save-bar .top-save-bar-crono-value {
         font-family: 'Courier New', ui-monospace, monospace;
         font-variant-numeric: tabular-nums;
-        font-size: 1.6rem;
+        font-size: 1.85rem;
         font-weight: 700;
+        line-height: 1;
         color: var(--dark-bg);
     }
 
-    #top-save-bar .btn-save {
-        padding: 11px 26px;
+    #top-save-bar .btn-save,
+    #top-save-bar .btn-cancel-treino,
+    #top-save-bar .top-save-bar-actions .btn-pausar-treino {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 9px 14px;
+        font-size: 0.92rem;
         white-space: nowrap;
         font-weight: 600;
-        letter-spacing: .2px;
+        letter-spacing: .1px;
+        border-radius: 999px;
+        border: none;
+        transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    }
+
+    #top-save-bar .btn-save i,
+    #top-save-bar .btn-cancel-treino i,
+    #top-save-bar .top-save-bar-actions .btn-pausar-treino i {
+        font-size: 0.95rem;
+    }
+
+    #top-save-bar .btn-save {
         /* Verde -- ação de concluir/salvar o treino (semáforo: finalizar = verde) */
         background: linear-gradient(135deg, #2FA84F 0%, #4CC26B 100%);
         color: #fff;
-        border: none;
         box-shadow: 0 4px 14px rgba(47, 168, 79, 0.30);
-        transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
     }
 
     #top-save-bar .btn-save:hover,
@@ -858,7 +869,7 @@
     #top-save-bar .top-save-bar-actions {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         flex-shrink: 0;
     }
 
@@ -866,13 +877,7 @@
     #top-save-bar .btn-cancel-treino {
         background: var(--bs-danger, #dc3545);
         color: #fff;
-        border: none;
-        padding: 11px 20px;
-        white-space: nowrap;
-        font-weight: 600;
-        border-radius: 999px;
         box-shadow: 0 4px 14px rgba(220, 53, 69, 0.28);
-        transition: filter .15s ease, transform .15s ease, box-shadow .15s ease;
     }
 
     #top-save-bar .btn-cancel-treino:hover,
@@ -895,13 +900,7 @@
         flex: 0 0 auto;
         background: #F5A623;
         color: #2D2D2D;
-        border: none;
-        padding: 11px 20px;
-        white-space: nowrap;
-        font-weight: 600;
-        border-radius: 999px;
         box-shadow: 0 4px 14px rgba(245, 166, 35, 0.30);
-        transition: filter .15s ease, transform .15s ease, box-shadow .15s ease;
     }
 
     #top-save-bar .top-save-bar-actions .btn-pausar-treino:hover,
@@ -925,14 +924,8 @@
             padding: 8px 10px;
             gap: 8px;
         }
-        #top-save-bar .top-save-bar-crono {
-            gap: 5px;
-        }
-        #top-save-bar .top-save-bar-crono i {
-            font-size: 1.25rem;
-        }
         #top-save-bar .top-save-bar-crono-value {
-            font-size: 1.55rem;
+            font-size: 1.65rem;
         }
         #top-save-bar .top-save-bar-actions {
             gap: 6px;
@@ -940,14 +933,14 @@
         #top-save-bar .btn-save,
         #top-save-bar .btn-cancel-treino,
         #top-save-bar .btn-pausar-treino {
-            padding: 8px 12px;
-            font-size: 0.86rem;
+            padding: 8px 11px;
+            font-size: 0.82rem;
+            gap: 4px;
         }
         #top-save-bar .btn-save i,
         #top-save-bar .btn-cancel-treino i,
         #top-save-bar .btn-pausar-treino i {
-            margin-right: 4px !important;
-            font-size: 0.80rem;
+            font-size: 0.78rem;
         }
     }
 
@@ -958,13 +951,14 @@
             gap: 6px;
         }
         #top-save-bar .top-save-bar-crono-value {
-            font-size: 0.92rem;
+            font-size: 1.3rem;
         }
         #top-save-bar .btn-save,
         #top-save-bar .btn-cancel-treino,
         #top-save-bar .btn-pausar-treino {
-            padding: 7px 9px;
+            padding: 7px 8px;
             font-size: 0.7rem;
+            gap: 3px;
         }
         /* Com 3 botões + cronômetro nessa largura, o texto "Pausar"/
            "Continuar" é o mais dispensável -- vira só ícone pra garantir
@@ -973,7 +967,6 @@
             display: none;
         }
         #top-save-bar .btn-pausar-treino i {
-            margin-right: 0 !important;
             font-size: 0.95rem;
         }
     }
@@ -1064,6 +1057,18 @@
         background: #f2f2f2;
         display: flex;
         flex-direction: column;
+    }
+
+    /* O aviso de "Cancelar treino?" pode abrir durante o modo treino em
+       tela cheia (z-index 1900 acima). Sem isso, o modal e o fundo escuro
+       apareciam ATRÁS do overlay -- ou seja, invisíveis -- dando a
+       impressão de que o botão Cancelar não fazia nada. */
+    #modalConfirmarCancelamento {
+        z-index: 2000;
+    }
+
+    .modal-backdrop {
+        z-index: 1950;
     }
 
     .modo-treino-header {
@@ -1622,15 +1627,14 @@
     {% if exercicios %}
     <div id="top-save-bar" class="d-none">
         <div class="top-save-bar-crono">
-            <i class="bi bi-stopwatch"></i>
             <span class="top-save-bar-crono-value" id="cronoTreinoDisplay">00:00</span>
         </div>
         <div class="top-save-bar-actions">
             <button type="button" id="btnCancelarTreino" class="btn btn-cancel-treino">
-                <i class="bi bi-x-circle me-2"></i>Cancelar
+                <i class="bi bi-x-circle"></i>Cancelar
             </button>
             <button type="submit" name="salvar" form="registroForm" class="btn btn-save" data-fl-no-transition>
-                <i class="bi bi-check-circle me-2"></i>Finalizar
+                <i class="bi bi-check-circle"></i>Finalizar
             </button>
         </div>
     </div>
@@ -2552,7 +2556,7 @@ function tocarBipe() {
         rodando = true;
         inicioMs = Date.now();
         intervalId = setInterval(atualizarDisplay, 1000);
-        elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i> <span>Pausar</span>';
+        elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i><span>Pausar</span>';
         elBtnIniciar.classList.add('is-rodando');
         pedirWakeLock();
 
@@ -2575,7 +2579,7 @@ function tocarBipe() {
         rodando = false;
         acumuladoSegundos = segundosAtuais();
         clearInterval(intervalId);
-        elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i> <span>Continuar</span>';
+        elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i><span>Continuar</span>';
         elBtnIniciar.classList.remove('is-rodando');
         liberarWakeLock();
     }
