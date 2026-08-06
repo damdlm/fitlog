@@ -315,8 +315,51 @@ def editar_treino_na_versao(versao_id, treino_codigo):
             flash(str(e), "danger")
             return redirect(request.url)
     
-    # GET - exibir formulário (mantenha o código existente, mas ajuste para incluir 'tipo' nos exercícios)
-    # ... (código GET já existente, apenas garanta que 'tipo' está sendo passado)
+    # GET - exibir formulário
+    versao = VersaoService.get_by_id(versao_id, user_id=current_user.id, load_relations=True)
+    if not versao:
+        flash("Versão não encontrada!", "danger")
+        return redirect(url_for("version.gerenciar_versoes_global"))
+
+    treino_ref = TreinoService.get_by_codigo(treino_codigo, user_id=current_user.id)
+    if not treino_ref:
+        flash("Treino não encontrado!", "danger")
+        return redirect(url_for("version.ver_versao", versao_id=versao_id))
+
+    treino_versao = None
+    for tv in versao.treinos:
+        if tv.treino_id == treino_ref.id:
+            treino_versao = tv
+            break
+    if not treino_versao:
+        flash("Treino não encontrado nesta versão!", "danger")
+        return redirect(url_for("version.ver_versao", versao_id=versao_id))
+
+    exercicios_catalogo, exercicios_atuais = VersaoService.get_exercicios_para_edicao(
+        current_user.id, treino_versao
+    )
+
+    versao_dict = {
+        "id": versao.id,
+        "versao": versao.numero_versao,
+        "data_inicio_formatada": formatar_data(versao.data_inicio.isoformat() if versao.data_inicio else None),
+        "data_fim_formatada": formatar_data(versao.data_fim.isoformat() if versao.data_fim else None),
+    }
+    treino_dict = {
+        "nome": treino_versao.nome_treino,
+        "descricao": treino_versao.descricao_treino,
+        "exercicios": exercicios_atuais,
+    }
+    musculos_catalogo = MusculoService.get_all_nomes()
+
+    return render_template(
+        "version/editar_treino_versao.html",
+        versao=versao_dict,
+        treino=treino_dict,
+        treino_id=treino_codigo,
+        exercicios_catalogo=exercicios_catalogo,
+        musculos_catalogo=musculos_catalogo,
+    )
 
 @version_bp.route("/versao/<int:versao_id>/treino/<string:treino_codigo>/excluir")
 @login_required

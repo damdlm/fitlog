@@ -93,11 +93,11 @@
                                 <input class="form-check-input exercicio-checkbox" 
                                        type="checkbox" 
                                        name="exercicios[]" 
-                                       value="{{ ex.id }}" 
-                                       id="ex_{{ ex.id }}"
-                                       {% if ex.id in treino.exercicios %}checked{% endif %}
+                                       value="{{ ex.prefixo }}{{ ex.id }}" 
+                                       id="ex_{{ ex.prefixo }}{{ ex.id }}"
+                                       {% if (ex.prefixo ~ ex.id) in treino.exercicios %}checked{% endif %}
                                        onchange="atualizarContador()">
-                                <label class="form-check-label" for="ex_{{ ex.id }}">
+                                <label class="form-check-label" for="ex_{{ ex.prefixo }}{{ ex.id }}">
                                     <strong>{{ ex.nome }}</strong>
                                     <br><small class="text-muted">{{ musculo_nome }}</small>
                                 </label>
