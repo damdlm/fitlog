@@ -682,6 +682,205 @@
             }
         }
 
+        /* ====================================================
+           Modais globais de mídia/instruções do exercício
+           (usados em qualquer tela que liste exercícios, ex:
+           registrar treino) — visual mais moderno, alinhado à
+           identidade laranja do app, com mais respiro entre os
+           passos das instruções.
+           ==================================================== */
+        #modalImagensExercicio .modal-content,
+        #modalInstrucoesExercicio .modal-content {
+            border: none;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(45, 45, 45, 0.25);
+        }
+
+        #modalImagensExercicio .modal-header,
+        #modalInstrucoesExercicio .modal-header {
+            background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+            border-bottom: none;
+            padding: 16px 20px;
+        }
+
+        #modalImagensExercicio .modal-title,
+        #modalInstrucoesExercicio .modal-title {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #modalImagensExercicio .modal-title i,
+        #modalInstrucoesExercicio .modal-title i {
+            font-size: 1.1rem;
+        }
+
+        #modalImagensExercicio .btn-close,
+        #modalInstrucoesExercicio .btn-close {
+            filter: brightness(0) invert(1);
+            opacity: 0.9;
+        }
+
+        /* ---- Modal de mídia (gif/vídeo) do exercício ---- */
+        #modalImagensExercicio .modal-body {
+            padding: 18px;
+            background: #fafafa;
+        }
+
+        .exmodal-media-frame {
+            position: relative;
+            background: #1e1e1e;
+            border-radius: 14px;
+            overflow: hidden;
+            min-height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .exmodal-media-frame img,
+        .exmodal-media-frame video {
+            display: block;
+            width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+            background: #1e1e1e;
+        }
+
+        .exmodal-media-spinner {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #1e1e1e;
+        }
+
+        .exmodal-media-spinner.d-none {
+            display: none;
+        }
+
+        .exmodal-media-error {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #f1b0b0;
+            background: #1e1e1e;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9rem;
+        }
+
+        .exmodal-media-error.is-visible {
+            display: flex;
+        }
+
+        .exmodal-media-error i {
+            font-size: 1.6rem;
+        }
+
+        .exmodal-media-caption {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 12px;
+            padding: 0 2px;
+        }
+
+        .exmodal-media-caption-label {
+            font-size: 0.82rem;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .exmodal-media-caption-label i {
+            color: #F28C33;
+        }
+
+        /* ---- Modal de instruções (passo a passo) ---- */
+        #modalInstrucoesExercicio .modal-body {
+            padding: 22px 24px 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .exmodal-steps {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .exmodal-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            position: relative;
+            /* Mais respiro entre um passo e outro. */
+            padding-bottom: 26px;
+        }
+
+        /* Linha conectando os números dos passos, tipo "stepper" --
+           some no último item (via :last-child abaixo). */
+        .exmodal-step::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 34px;
+            bottom: 2px;
+            width: 2px;
+            background: #f1d9c2;
+        }
+
+        .exmodal-step:last-child::before {
+            display: none;
+        }
+
+        .exmodal-step:last-child {
+            padding-bottom: 2px;
+        }
+
+        .exmodal-step-num {
+            flex: 0 0 auto;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 8px rgba(242, 140, 51, 0.35);
+            position: relative;
+            z-index: 1;
+        }
+
+        .exmodal-step-text {
+            padding-top: 4px;
+            color: #2D2D2D;
+            font-size: 0.95rem;
+            line-height: 1.55;
+        }
+
+        .exmodal-steps-empty {
+            text-align: center;
+            color: #6c757d;
+            padding: 20px 0;
+            font-size: 0.9rem;
+        }
+
     </style>
     
     {% block extra_css %}{% endblock %}
@@ -1045,18 +1244,40 @@
         </div>
     </footer> -->
     
-    <!-- Modal global do gif do exercício -->
+    <!-- Modal global do gif/vídeo de demonstração do exercício -->
     <div class="modal fade" id="modalImagensExercicio" tabindex="-1" aria-labelledby="modalImagensExercicioLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalImagensExercicioLabel">Exercício</h5>
+                    <h5 class="modal-title" id="modalImagensExercicioLabel">
+                        <i class="bi bi-play-circle-fill"></i>
+                        <span id="modalImagensExercicioNome">Exercício</span>
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
-                <div class="modal-body text-center">
-                    <img id="modalImagensExercicioImg" src="" alt="" class="img-fluid rounded" style="max-height: 85vh; width: 100%; object-fit: contain;">
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <span id="modalImagensExercicioLegenda" class="text-muted small"></span>
+                <div class="modal-body">
+                    <div class="exmodal-media-frame">
+                        <div class="exmodal-media-spinner" id="modalImagensExercicioSpinner">
+                            <div class="spinner-border text-light" role="status">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                        </div>
+                        <!-- Um dos dois é usado por vez, dependendo da extensão do
+                             arquivo (gif_url pode apontar tanto pra um .gif quanto
+                             pra um vídeo .mp4/.webm dentro da pasta "videos/" do
+                             volume) -- o outro fica com d-none. -->
+                        <img id="modalImagensExercicioImg" src="" alt="" class="d-none">
+                        <video id="modalImagensExercicioVideo" class="d-none" autoplay loop muted playsinline controls></video>
+                        <div class="exmodal-media-error" id="modalImagensExercicioErro">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <span>Não foi possível carregar a demonstração deste exercício.</span>
+                        </div>
+                    </div>
+                    <div class="exmodal-media-caption">
+                        <span class="exmodal-media-caption-label">
+                            <i class="bi bi-info-circle"></i>
+                            Demonstração do exercício
+                        </span>
                         <span id="modalImagensExercicioContador" class="badge bg-secondary d-none"></span>
                     </div>
                 </div>
@@ -1064,16 +1285,19 @@
         </div>
     </div>
 
-    <!-- Modal global das instruções do exercício (instrucao_pt) -->
+    <!-- Modal global das instruções (passo a passo) do exercício -->
     <div class="modal fade" id="modalInstrucoesExercicio" tabindex="-1" aria-labelledby="modalInstrucoesExercicioLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalInstrucoesExercicioLabel">Exercício</h5>
+                    <h5 class="modal-title" id="modalInstrucoesExercicioLabel">
+                        <i class="bi bi-list-ol"></i>
+                        <span id="modalInstrucoesExercicioNome">Exercício</span>
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
-                    <ol id="modalInstrucoesExercicioLista" class="mb-0 ps-3"></ol>
+                    <ol id="modalInstrucoesExercicioLista" class="exmodal-steps"></ol>
                 </div>
             </div>
         </div>
