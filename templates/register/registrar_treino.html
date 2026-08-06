@@ -217,6 +217,25 @@
         box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12) !important;
     }
 
+    /* A partir do breakpoint md (tablet/desktop), a coluna de valores
+       (agora .col-md-6, mais estreita do que o .col-md-8 de antes)
+       ainda sobra espaço de sobra para os 3 campos -- sem um limite,
+       eles viram caixas enormes e vazias (um número de 2-3 dígitos não
+       precisa de uma caixa de 150px+). Um max-width contido e centrado
+       resolve isso sem afetar o celular, onde a largura total já é
+       naturalmente pequena e os campos precisam aproveitar cada pixel
+       disponível como touch target. */
+    @media (min-width: 768px) {
+        .carga-input, .reps-input, .inputs-row .form-select {
+            max-width: 110px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .inputs-row-label {
+            text-align: center;
+        }
+    }
+
     .btn-load-last {
         background: var(--surface);
         color: var(--primary-orange);
@@ -699,7 +718,7 @@
             --bs-gutter-y: 0.1rem;                /* aproxima o bloco de campos da descrição do exercício */
         }
 
-        .exercise-row .col-12.col-md-8 {
+        .exercise-row .col-12.col-md-6:last-child {
             margin-top: 0 !important;
             padding-top: 0 !important;
         }
@@ -1189,18 +1208,12 @@
         box-shadow: none;
     }
 
-    /* Em telas largas (tablet/desktop), o modo treino em tela cheia
-       ocupa a largura inteira da viewport -- sem um limite, o
-       cronômetro/botões do cabeçalho ficam esticados nas pontas com um
-       vão enorme no meio, e a lista de exercícios fica "rala", com muito
-       espaço vazio nas laterais. Limitar e centralizar o conteúdo do
-       cabeçalho/corpo/rodapé resolve os dois: o vão ao lado do
-       cronômetro fica contido, e os exercícios ganham uma coluna mais
-       compacta em vez de se espalharem pela largura toda. Em celulares
-       (viewport menor que o limite) isso não muda nada, já que o
-       max-width nunca chega a ser aplicado. */
+    /* Cabeçalho/rodapé do modo tela cheia: em telas largas, cronômetro e
+       botões (Pausar/Cancelar/Salvar) ficavam esticados nas pontas com
+       um vão enorme no meio. Limitar e centralizar só essas duas faixas
+       resolve isso sem mexer na largura da lista de exercícios (que fica
+       livre no .modo-treino-body, ver mais abaixo). */
     .modo-treino-header > *,
-    .modo-treino-body > *,
     .modo-treino-footer > * {
         max-width: 640px;
         width: 100%;
@@ -1915,7 +1928,7 @@
                  data-ultimas-series="{{ ultimas_series }}">
                 
                 <div class="row align-items-center">
-                    <div class="col-12 col-md-4">
+                    <div class="col-12 col-md-6">
                         <!-- Mesma estrutura visual do card "Último Treino" do dashboard -->
                         <div class="dash-registro-item" style="padding: 0; border-bottom: none; align-items: flex-start;">
                             <div class="dash-registro-icon" {% if not ex.gif_url %}aria-hidden="true"{% endif %}>
@@ -1950,7 +1963,7 @@
                     </div>
 
                     <!-- Carga / Reps / Séries -->
-                    <div class="col-12 col-md-8">
+                    <div class="col-12 col-md-6">
                         <div class="exercicio-valores-grid">
                             <div class="inputs-row-labels">
                                 <span class="inputs-row-label">Carga</span>
