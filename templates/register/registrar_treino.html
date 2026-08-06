@@ -839,9 +839,9 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 5px;
+        gap: 4px;
         height: 38px;
-        padding: 0 10px;
+        padding: 0 8px;
         font-size: 0.92rem;
         white-space: nowrap;
         font-weight: 600;
@@ -887,7 +887,7 @@
     #top-save-bar .top-save-bar-actions {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 4px;
         flex-shrink: 0;
     }
 
@@ -919,7 +919,7 @@
         /* Largura fixa baseada na palavra mais longa que o botão exibe
            ("Retomar") -- assim ele não muda de tamanho ao alternar entre
            "Pausar" e "Retomar". */
-        min-width: 112px;
+        min-width: 96px;
         background: #F5A623;
         color: #2D2D2D;
         box-shadow: 0 4px 14px rgba(245, 166, 35, 0.30);
@@ -943,24 +943,27 @@
        inteiro sem cortar, sem precisar quebrar linha. */
     @media (max-width: 575.98px) {
         #top-save-bar {
-            padding: 8px 10px;
-            gap: 8px;
+            padding: 8px 8px;
+            gap: 6px;
         }
         #top-save-bar .top-save-bar-crono-value {
             font-size: 1.65rem;
         }
         #top-save-bar .top-save-bar-actions {
-            gap: 6px;
+            gap: 4px;
         }
+        /* Margens laterais dos 3 botões reduzidas (padding horizontal
+           menor) SEM mexer na fonte -- é isso que garante que
+           "Finalizar" caiba inteiro sem cortar nas telas mais estreitas. */
         #top-save-bar .btn-save,
         #top-save-bar .btn-cancel-treino,
         #top-save-bar .btn-pausar-treino {
-            padding: 8px 11px;
+            padding: 8px 7px;
             font-size: 0.82rem;
             gap: 4px;
         }
         #top-save-bar .btn-pausar-treino {
-            min-width: 96px;
+            min-width: 84px;
         }
         #top-save-bar .btn-save i,
         #top-save-bar .btn-cancel-treino i,
@@ -972,16 +975,19 @@
     /* Telas bem estreitas (celulares pequenos) -- aperta mais um pouco */
     @media (max-width: 360px) {
         #top-save-bar {
-            padding: 7px 8px;
-            gap: 6px;
+            padding: 7px 6px;
+            gap: 5px;
         }
         #top-save-bar .top-save-bar-crono-value {
             font-size: 1.3rem;
         }
+        #top-save-bar .top-save-bar-actions {
+            gap: 3px;
+        }
         #top-save-bar .btn-save,
         #top-save-bar .btn-cancel-treino,
         #top-save-bar .btn-pausar-treino {
-            padding: 7px 8px;
+            padding: 7px 6px;
             font-size: 0.7rem;
             gap: 3px;
         }
@@ -1091,10 +1097,22 @@
        tela cheia (z-index 1900 acima). Sem isso, o modal e o fundo escuro
        apareciam ATRÁS do overlay -- ou seja, invisíveis -- dando a
        impressão de que o botão Cancelar não fazia nada. */
-    #modalConfirmarCancelamento {
+    #modalConfirmarCancelamento,
+    #modalResumoTreino {
         z-index: 2000;
     }
 
+    /* O backdrop (fundo escuro) precisa ficar ACIMA do modo treino em tela
+       cheia (1900) só que, como .modal-backdrop é uma classe genérica do
+       Bootstrap compartilhada por TODOS os modais da página, empurrar seu
+       z-index pra 1950 sem também subir os próprios modais deixava o
+       backdrop por CIMA de modais que ficaram no z-index padrão do
+       Bootstrap (bem menor que 1950) -- caso do modal de resumo/
+       compartilhamento do treino, cujos botões (Compartilhar, Baixar
+       imagem, WhatsApp, Sair) ficavam cobertos pelo próprio fundo escuro
+       e paravam de responder a clique, embora visualmente tudo
+       parecesse normal. Por isso os modais acima também têm z-index
+       explícito (2000), sempre maior que o do backdrop (1950). */
     .modal-backdrop {
         z-index: 1950;
     }
@@ -1752,14 +1770,6 @@
                            value="{{ data_selecionada_str or data_atual_iso() }}"
                            data-min="2020-01-01" data-max="{{ data_atual_iso() }}" required>
                 </div>
-                <div class="cronometro-actions mt-2 {% if not exercicios %}d-none{% endif %}" id="cronoTreinoBox">
-                    <button type="button" class="btn-cronometro btn-cronometro-primary flex-fill justify-content-center" id="cronoTreinoBtnIniciar">
-                        <i class="bi bi-play-fill"></i> <span>Iniciar treino</span>
-                    </button>
-                    <button type="button" class="btn-cronometro btn-cronometro-ghost d-none d-md-inline-flex" id="cronoTreinoBtnZerar" title="Zerar cronômetro">
-                        <i class="bi bi-arrow-counterclockwise"></i>
-                    </button>
-                </div>
                 <!-- Vídeo mudo/invisível usado como fallback para manter a tela
                      acesa em iOS quando a Wake Lock API nativa não está disponível
                      (ex: PWA instalado em versões do iOS anteriores à 18.4).
@@ -1806,6 +1816,17 @@
     <div class="empty-icon"><i class="bi bi-play-circle"></i></div>
     <h5>Tudo pronto!</h5>
     <p>{{ exercicios|length }} exercício{{ 's' if exercicios|length != 1 }} carregado{{ 's' if exercicios|length != 1 }}. Clique em <strong>Iniciar treino</strong> para começar a registrar.</p>
+</div>
+{% endif %}
+
+{% if exercicios %}
+<div class="cronometro-actions mt-0 mb-4" id="cronoTreinoBox">
+    <button type="button" class="btn-cronometro btn-cronometro-primary flex-fill justify-content-center" id="cronoTreinoBtnIniciar">
+        <i class="bi bi-play-fill"></i> <span>Iniciar treino</span>
+    </button>
+    <button type="button" class="btn-cronometro btn-cronometro-ghost d-none d-md-inline-flex" id="cronoTreinoBtnZerar" title="Zerar cronômetro">
+        <i class="bi bi-arrow-counterclockwise"></i>
+    </button>
 </div>
 {% endif %}
 
@@ -2594,6 +2615,8 @@ function tocarBipe() {
     }
     window.FitLogFecharModoTreinoTelaCheia = fecharModoTreinoTelaCheia;
 
+    var jaRevelouExercicios = false;
+
     function iniciar() {
         rodando = true;
         inicioMs = Date.now();
@@ -2601,6 +2624,14 @@ function tocarBipe() {
         elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i><span>Pausar</span>';
         elBtnIniciar.classList.add('is-rodando');
         pedirWakeLock();
+
+        // revelarExercicios() (entrar no modo treino em tela cheia) só faz
+        // sentido na PRIMEIRA vez que o treino é iniciado. Em "Retomar"
+        // (depois de uma pausa) já estamos no modo treino -- chamar de novo
+        // reabria a película de transição de página e resetava o scroll
+        // da lista de exercícios toda vez que o usuário pausava/retomava.
+        if (jaRevelouExercicios) return;
+        jaRevelouExercicios = true;
 
         // Reaproveita a mesma película de transição usada na navegação
         // entre páginas, para a entrada no modo treino em tela cheia
@@ -2618,8 +2649,14 @@ function tocarBipe() {
     }
 
     function pausar() {
-        rodando = false;
+        // IMPORTANTE: precisa calcular o tempo decorrido ANTES de marcar
+        // rodando = false -- segundosAtuais() usa esse flag pra decidir
+        // se soma o tempo em andamento ou só devolve o acumulado antigo.
+        // Se a ordem for invertida, o cronômetro "esquece" o tempo rodado
+        // desde o último início/retomada e volta pro valor anterior (na
+        // primeira pausa, isso significa voltar a 00:00).
         acumuladoSegundos = segundosAtuais();
+        rodando = false;
         clearInterval(intervalId);
         elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i><span>Retomar</span>';
         elBtnIniciar.classList.remove('is-rodando');
