@@ -47,8 +47,32 @@ def api_eventos():
         # professor (nem for admin), cai de volta para o próprio usuário.
         target_user_id = BaseService.get_target_user_id(aluno_id)
 
-        # Buscar todos os registros do usuário (ou do aluno, se professor consultando)
-        registros = RegistroService.get_all(user_id=target_user_id, load_series=True)
+        # Buscar registros do usuário (ou do aluno, se professor consultando).
+        # Quando ano/mes são passados, filtra no banco por intervalo de data
+        # (usa o índice idx_registro_user_data), em vez de carregar todo o
+        # histórico e filtrar em Python. Hoje o frontend do calendário busca
+        # tudo de uma vez de propósito (ver comentário em calendario.html:
+        # permite navegar entre meses sem nova requisição), então isto não
+        # muda o comportamento atual — só evita carregar histórico inteiro
+        # quando algum chamador (ex: app mobile futuro, professor filtrando
+        # aluno por mês específico) passar ano/mes.
+        data_inicio = data_fim_exclusiva = None
+        if ano and mes:
+            data_inicio = datetime(ano, mes, 1, tzinfo=timezone.utc)
+            data_fim_exclusiva = datetime(ano + 1, 1, 1, tzinfo=timezone.utc) if mes == 12 \
+                else datetime(ano, mes + 1, 1, tzinfo=timezone.utc)
+        elif ano and not mes:
+            data_inicio = datetime(ano, 1, 1, tzinfo=timezone.utc)
+            data_fim_exclusiva = datetime(ano + 1, 1, 1, tzinfo=timezone.utc)
+        # "mes" sem "ano" é ambíguo (mesmo mês em anos diferentes) — mantém
+        # comportamento antigo (filtro em Python) só para esse caso raro.
+
+        registros = RegistroService.get_all(
+            user_id=target_user_id,
+            load_series=True,
+            data_inicio=data_inicio,
+            data_fim=data_fim_exclusiva,
+        )
 
         # Buscar os treinos do usuário uma única vez (evita repetir a query
         # dentro do loop de registros abaixo — antes TreinoService.get_all()

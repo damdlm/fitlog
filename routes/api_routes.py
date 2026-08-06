@@ -93,23 +93,51 @@ def api_buscar_musculo():
         })
 
 
+_CATALOGO_EXERCICIOS_CACHE = None
+
+
+def _get_catalogo_exercicios():
+    """
+    Carrega e cacheia em memória o catálogo de exercícios (JSON estático,
+    somente leitura). Antes, o arquivo era reaberto e re-parseado do disco
+    em TODA chamada a /buscar-exercicios — medido em ~215ms de parse só
+    pra abrir o arquivo (catálogo de referência de ~1300 itens/2.2MB usado
+    como proxy, já que o arquivo real de produção não está neste
+    checkout), fora o loop de comparação de string sobre o catálogo
+    inteiro a cada tecla digitada numa busca type-ahead.
+
+    Cada worker do Gunicorn mantém sua própria cópia em memória (arquivo é
+    estático e pequeno o bastante pra isso ser trivial — não precisa de
+    Redis/Postgres pra um catálogo somente-leitura que não muda em
+    runtime).
+    """
+    global _CATALOGO_EXERCICIOS_CACHE
+    if _CATALOGO_EXERCICIOS_CACHE is not None:
+        return _CATALOGO_EXERCICIOS_CACHE
+
+    catalogo_path = Path("storage/exercises-ptbr-full-translation.json")
+    if not catalogo_path.exists():
+        logger.error(f"Catálogo não encontrado: {catalogo_path}")
+        return []
+
+    with open(catalogo_path, 'r', encoding='utf-8') as f:
+        _CATALOGO_EXERCICIOS_CACHE = json.load(f)
+    return _CATALOGO_EXERCICIOS_CACHE
+
+
 @api_bp.route("/buscar-exercicios")
 @login_required
 def api_buscar_exercicios():
     """API para buscar exercícios no catálogo"""
     termo = request.args.get("termo", "").strip()
-    
-    catalogo_path = Path("storage/exercises-ptbr-full-translation.json")
+
     termo_normalizado = remover_acentos(termo.lower())
-    
-    if not catalogo_path.exists():
-        logger.error(f"Catálogo não encontrado: {catalogo_path}")
-        return jsonify([])
-    
+
     try:
-        with open(catalogo_path, 'r', encoding='utf-8') as f:
-            catalogo = json.load(f)
-        
+        catalogo = _get_catalogo_exercicios()
+        if not catalogo:
+            return jsonify([])
+
         resultados = []
         
         mapa_musculos = {

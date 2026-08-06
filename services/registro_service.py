@@ -1,7 +1,7 @@
 """Serviço para operações com registros de treino"""
 
 from models import db, RegistroTreino, HistoricoTreino
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import selectinload
 from sqlalchemy import or_  # ✅ ADICIONADO
 from datetime import datetime, timezone
 from .base_service import BaseService
@@ -13,8 +13,15 @@ class RegistroService(BaseService):
     """Gerencia operações relacionadas a registros de treino"""
     
     @staticmethod
-    def get_all(filtros=None, user_id=None, load_series=False):
-        """Retorna registros com filtros opcionais"""
+    def get_all(filtros=None, user_id=None, load_series=False, data_inicio=None, data_fim=None):
+        """Retorna registros com filtros opcionais
+
+        data_inicio/data_fim: filtro por intervalo em data_registro, usado
+        no banco (aproveita o índice idx_registro_user_data) em vez de
+        carregar todo o histórico e filtrar em Python. data_fim é exclusivo
+        (data_registro < data_fim), então para "agosto/2026" passe
+        data_inicio=2026-08-01 e data_fim=2026-09-01.
+        """
         try:
             user_id = user_id or BaseService.get_current_user_id()
             if not user_id:
@@ -23,7 +30,12 @@ class RegistroService(BaseService):
             query = RegistroTreino.query.filter_by(user_id=user_id)
             
             if load_series:
-                query = query.options(joinedload(RegistroTreino.series))
+                query = query.options(selectinload(RegistroTreino.series))
+
+            if data_inicio is not None:
+                query = query.filter(RegistroTreino.data_registro >= data_inicio)
+            if data_fim is not None:
+                query = query.filter(RegistroTreino.data_registro < data_fim)
             
             if filtros:
                 if 'treino_id' in filtros and filtros['treino_id']:
@@ -289,7 +301,7 @@ class RegistroService(BaseService):
             
             # ✅ CORRIGIDO: usa or_ com as colunas reais
             query = RegistroTreino.query.options(
-                joinedload(RegistroTreino.series)
+                selectinload(RegistroTreino.series)
             ).filter(
                 RegistroTreino.user_id == user_id,
                 or_(
@@ -315,7 +327,7 @@ class RegistroService(BaseService):
                 return []
             
             return RegistroTreino.query.options(
-                joinedload(RegistroTreino.series)
+                selectinload(RegistroTreino.series)
             ).filter_by(
                 periodo=periodo,
                 user_id=user_id
@@ -333,7 +345,7 @@ class RegistroService(BaseService):
                 return []
             
             return RegistroTreino.query.options(
-                joinedload(RegistroTreino.series)
+                selectinload(RegistroTreino.series)
             ).filter_by(
                 periodo=periodo,
                 semana=semana,
@@ -353,7 +365,7 @@ class RegistroService(BaseService):
             
             # ✅ CORRIGIDO: usa or_ com as colunas reais
             return RegistroTreino.query.options(
-                joinedload(RegistroTreino.series)
+                selectinload(RegistroTreino.series)
             ).filter(
                 RegistroTreino.user_id == user_id,
                 or_(

@@ -263,22 +263,23 @@ def editar_treino_versao(versao_id, treino_codigo):
             flash('Selecione pelo menos um exercício!', 'danger')
             return redirect(request.url)
         
-        # Validar IDs de usuário
+        # Validar IDs de usuário e de base em lote (era 1 query por ID)
         usuarios_ids_validos = []
-        for ex_id in usuarios_ids:
-            exercicio = ExercicioCustomizado.query.filter_by(
-                id=ex_id,
-                usuario_id=current_user.id
-            ).first()
-            if exercicio:
-                usuarios_ids_validos.append(ex_id)
-        
-        # Validar IDs de base
+        if usuarios_ids:
+            usuarios_ids_validos = [
+                row.id for row in ExercicioCustomizado.query.filter(
+                    ExercicioCustomizado.id.in_(usuarios_ids),
+                    ExercicioCustomizado.usuario_id == current_user.id
+                ).with_entities(ExercicioCustomizado.id).all()
+            ]
+
         bases_ids_validos = []
-        for ex_id in bases_ids:
-            exercicio = ExercicioSistema.query.get(ex_id)
-            if exercicio:
-                bases_ids_validos.append(ex_id)
+        if bases_ids:
+            bases_ids_validos = [
+                row.id for row in ExercicioSistema.query.filter(
+                    ExercicioSistema.id.in_(bases_ids)
+                ).with_entities(ExercicioSistema.id).all()
+            ]
         
         # Atualizar treino
         treino_versao.nome_treino = nome_treino

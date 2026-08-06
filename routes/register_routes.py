@@ -94,15 +94,14 @@ def registrar_treino():
                 
                 # Buscar histórico da ÚLTIMA sessão completa (carga, reps E
                 # número real de séries -- não uma janela fixa que pode
-                # misturar sessões diferentes, ver get_ultima_sessao_series)
-                for ex in exercicios:
-                    ultimas = ExercicioService.get_ultima_sessao_series(
-                        ex.id,
-                        tipo=ex.tipo,
-                        versao_id=versao_ativa.id
-                    )
-                    if ultimas:
-                        historico_series[f"{ex.prefixo}{ex.id}"] = ultimas
+                # misturar sessões diferentes, ver get_ultima_sessao_series).
+                # Em lote: antes, 1 chamada (2 queries) por exercício —
+                # medido em 26 queries pra 8 exercícios. Agora 1 chamada
+                # pra todos de uma vez.
+                historico_series = ExercicioService.get_ultima_sessao_series_em_lote(
+                    exercicios,
+                    versao_id=versao_ativa.id
+                )
     
     return render_template(
         "register/registrar_treino.html",

@@ -185,9 +185,15 @@ class FitBotContextService:
         if not treinos:
             return None
 
+        # Antes: 1 VersaoService.get_exercicios() por treino dentro do loop
+        # (mesmo N+1 do professor/aluno — ver VersaoService.get_exercicios_
+        # agrupados_por_treino). Toda mensagem do FitBot passa por aqui,
+        # então isso rodava a cada mensagem enviada.
+        exercicios_por_treino_id = VersaoService.get_exercicios_agrupados_por_treino(user_id=user_id)
+
         treinos_ctx = []
         for codigo, dados in treinos.items():
-            exercicios = VersaoService.get_exercicios(versao_ativa.id, treino_codigo=codigo, user_id=user_id)
+            exercicios = exercicios_por_treino_id.get(dados.get("id"), [])
             if not exercicios:
                 continue
             exercicios_ctx = [

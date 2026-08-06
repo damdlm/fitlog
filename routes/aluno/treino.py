@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from . import aluno_bp
 from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
+from services.versao_service import VersaoService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -16,9 +17,11 @@ def treinos():
         return redirect(url_for('main.index'))
     
     treinos = TreinoService.get_all(user_id=current_user.id)
-    exercicios_por_treino = {}
-    for treino in treinos:
-        exercicios_por_treino[treino.id] = ExercicioService.get_by_treino(treino.id, user_id=current_user.id)
+    # Antes: um ExercicioService.get_by_treino() por treino (N+1). Agora:
+    # 1 chamada que busca tudo da versão ativa de uma vez e agrupa por
+    # treino_id (ver VersaoService.get_exercicios_agrupados_por_treino).
+    exercicios_agrupados = VersaoService.get_exercicios_agrupados_por_treino(user_id=current_user.id)
+    exercicios_por_treino = {treino.id: exercicios_agrupados.get(treino.id, []) for treino in treinos}
     
     return render_template('aluno/treinos.html',
                          treinos=treinos,

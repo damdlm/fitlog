@@ -589,9 +589,11 @@ def treinos_aluno(aluno_id):
     
     treinos = TreinoService.get_all(user_id=aluno.id)
     
-    exercicios_por_treino = {}
-    for treino in treinos:
-        exercicios_por_treino[treino.id] = ExercicioService.get_by_treino(treino.id, user_id=aluno.id)
+    # Antes: um ExercicioService.get_by_treino() por treino (N+1 — medido em
+    # 82 queries para 5 treinos/4 exercícios). Agora: 1 chamada que busca
+    # tudo da versão ativa de uma vez e agrupa por treino_id.
+    exercicios_agrupados = VersaoService.get_exercicios_agrupados_por_treino(user_id=aluno.id)
+    exercicios_por_treino = {treino.id: exercicios_agrupados.get(treino.id, []) for treino in treinos}
     
     return render_template('professor/treinos_aluno.html',
                          aluno=aluno,

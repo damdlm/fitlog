@@ -2,7 +2,8 @@
 
 from models import db, ExercicioSistema, ExercicioUsuario, ExercicioCustomizado, Musculo, VersaoExercicio, RegistroTreino
 from sqlalchemy.orm import joinedload
-from sqlalchemy import text, func
+from sqlalchemy.orm.attributes import set_committed_value
+from sqlalchemy import text, func, or_
 from .base_service import BaseService   # ← importação direta
 import logging
 
@@ -189,7 +190,7 @@ class ExercicioService(BaseService):
                     ex.is_custom = False
                     # musculo_nome já é property (= grupo_muscular); só setamos "musculo"
                     ex.musculo = ex.grupo_muscular or 'Não especificado'
-                    ex.registros = registros_base_map.get(ex.id, [])
+                    set_committed_value(ex, 'registros', registros_base_map.get(ex.id, []))
                     db.session.expunge(ex)
 
                 # Exercícios do usuário (customizados)
@@ -216,7 +217,7 @@ class ExercicioService(BaseService):
                         musculo_ref = Musculo.query.get(ex.musculo_id)
                     ex.musculo_nome = musculo_ref.nome_exibicao if musculo_ref else 'Não especificado'
                     ex.musculo = ex.musculo_nome
-                    ex.registros = registros_usuario_map.get(ex.id, [])
+                    set_committed_value(ex, 'registros', registros_usuario_map.get(ex.id, []))
                     db.session.expunge(ex)
 
             resultado = exercicios_base + exercicios_usuario
@@ -717,6 +718,89 @@ class ExercicioService(BaseService):
         except Exception:
             logger.exception("Erro ao buscar última sessão de séries")
             return []
+
+    @staticmethod
+    def get_ultima_sessao_series_em_lote(exercicios, versao_id, user_id=None):
+        """
+        Versão em lote de get_ultima_sessao_series(): busca a última sessão
+        de TODOS os exercícios passados em poucas queries, em vez de uma
+        chamada (2 queries: registro + series) por exercício.
+
+        Usada em routes/register_routes.py (tela de registrar treino) —
+        medido na prática: 8 exercícios = 26 queries antes, virou ~5 depois.
+
+        Retorna dict {f"{prefixo}{id}": [{'carga':..., 'repeticoes':...}, ...]}
+        — mesmo shape que o chamador já espera (historico_series[f"{ex.prefixo}{ex.id}"]).
+        """
+        try:
+            from models import RegistroTreino, HistoricoTreino
+
+            if user_id is None:
+                user_id = BaseService.get_current_user_id()
+            if not user_id:
+                return {}
+
+            usuario_ids = [ex.id for ex in exercicios if ex.tipo == 'usuario']
+            base_ids = [ex.id for ex in exercicios if ex.tipo == 'base']
+            if not usuario_ids and not base_ids:
+                return {}
+
+            query = RegistroTreino.query.filter(RegistroTreino.user_id == user_id)
+            if versao_id:
+                query = query.filter(RegistroTreino.versao_id == versao_id)
+
+            condicoes = []
+            if usuario_ids:
+                condicoes.append(RegistroTreino.exercicio_usuario_id.in_(usuario_ids))
+            if base_ids:
+                condicoes.append(RegistroTreino.exercicio_base_id.in_(base_ids))
+            query = query.filter(or_(*condicoes))
+
+            # Mais recente primeiro: o primeiro registro encontrado por
+            # (tipo, exercicio_id) já é o "último" que queremos.
+            registros = query.order_by(RegistroTreino.data_registro.desc()).all()
+
+            ultimo_registro_por_chave = {}
+            for r in registros:
+                if r.exercicio_usuario_id is not None:
+                    chave = ('usuario', r.exercicio_usuario_id)
+                else:
+                    chave = ('base', r.exercicio_base_id)
+                if chave not in ultimo_registro_por_chave:
+                    ultimo_registro_por_chave[chave] = r
+
+            if not ultimo_registro_por_chave:
+                return {}
+
+            registro_ids = [r.id for r in ultimo_registro_por_chave.values()]
+            series = HistoricoTreino.query.filter(
+                HistoricoTreino.registro_id.in_(registro_ids)
+            ).order_by(HistoricoTreino.ordem).all()
+
+            series_por_registro_id = {}
+            for s in series:
+                series_por_registro_id.setdefault(s.registro_id, []).append(s)
+
+            resultado = {}
+            for ex in exercicios:
+                chave = (ex.tipo, ex.id)
+                registro = ultimo_registro_por_chave.get(chave)
+                if not registro:
+                    continue
+                series_do_registro = sorted(
+                    series_por_registro_id.get(registro.id, []),
+                    key=lambda s: (s.ordem or 0)
+                )
+                if series_do_registro:
+                    resultado[f"{ex.prefixo}{ex.id}"] = [
+                        {'carga': float(s.carga), 'repeticoes': s.repeticoes}
+                        for s in series_do_registro
+                    ]
+
+            return resultado
+        except Exception:
+            logger.exception("Erro ao buscar última sessão de séries em lote")
+            return {}
     
     # =============================================
     # MÉTODOS DE UTILIDADE

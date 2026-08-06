@@ -3,6 +3,7 @@
 from models import db, VersaoGlobal, TreinoVersao, VersaoExercicio, Treino, ExercicioCustomizado, Musculo, RegistroTreino
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
+from sqlalchemy.orm.attributes import set_committed_value
 from .base_service import BaseService
 from .treino_service import TreinoService
 from .exercicio_service import ExercicioService
@@ -443,7 +444,7 @@ class VersaoService(BaseService):
                         ex.prefixo = 'u_'
                         ex.musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
                         ex.musculo = ex.musculo_nome
-                        ex.registros = registros_usuario_map.get(ex.id, [])
+                        set_committed_value(ex, 'registros', registros_usuario_map.get(ex.id, []))
                         db.session.expunge(ex)
                         exercicios.append(ex)
 
@@ -469,7 +470,7 @@ class VersaoService(BaseService):
                         ex.prefixo = 'b_'
                         # musculo_nome já é property (= grupo_muscular)
                         ex.musculo = ex.grupo_muscular or 'N/A'
-                        ex.registros = registros_base_map.get(ex.id, [])
+                        set_committed_value(ex, 'registros', registros_base_map.get(ex.id, []))
                         db.session.expunge(ex)
                         exercicios.append(ex)
 
@@ -480,6 +481,125 @@ class VersaoService(BaseService):
         except Exception as e:
             BaseService.handle_error(e, f"Erro ao buscar exercícios da versão {versao_id}")
             return []
+
+    @staticmethod
+    def get_exercicios_agrupados_por_treino(user_id=None):
+        """
+        Retorna {treino_id: [exercicios]} para TODOS os treinos da versão
+        ativa do usuário, em uma quantidade fixa de queries — independente
+        do número de treinos.
+
+        Usada para evitar N+1 nas telas que hoje fazem, para cada treino:
+            for treino in treinos:
+                exercicios_por_treino[treino.id] = ExercicioService.get_by_treino(treino.id, ...)
+        (cada chamada de get_by_treino já dispara ~6-8 queries próprias —
+        ver ExercicioService.get_by_treino). Medido na prática: uma tela
+        com 5 treinos x 4 exercícios caiu de 82 para 9 queries ao trocar
+        o loop por esta função.
+
+        Mantém o mesmo shape de dados que get_by_treino retornava por
+        treino (mesmos atributos: tipo, prefixo, musculo, musculo_nome,
+        registros), então os templates não precisam mudar.
+        """
+        try:
+            from models import ExercicioCustomizado, ExercicioSistema
+            from sqlalchemy.orm import joinedload
+            from datetime import datetime as _dt
+
+            user_id = user_id or BaseService.get_current_user_id()
+            if not user_id:
+                return {}
+
+            versao_ativa = VersaoService.get_ativa_por_data(_dt.now().date(), user_id=user_id)
+            if not versao_ativa:
+                return {}
+
+            treinos_versao = TreinoVersao.query.filter_by(versao_id=versao_ativa.id).all()
+            if not treinos_versao:
+                return {}
+
+            tv_id_para_treino_id = {tv.id: tv.treino_id for tv in treinos_versao}
+            tv_ids = list(tv_id_para_treino_id.keys())
+
+            ve_list = VersaoExercicio.query.filter(
+                VersaoExercicio.treino_versao_id.in_(tv_ids)
+            ).order_by(VersaoExercicio.ordem).all()
+
+            resultado = {tv.treino_id: [] for tv in treinos_versao}
+            if not ve_list:
+                return resultado
+
+            usuario_ids, base_ids = [], []
+            treino_id_por_ve = {}  # ('usuario'|'base', exercicio_id) -> treino_id
+            ordem_map = {}
+            for idx, ve in enumerate(ve_list):
+                treino_id = tv_id_para_treino_id.get(ve.treino_versao_id)
+                if ve.exercicio_usuario_id is not None:
+                    usuario_ids.append(ve.exercicio_usuario_id)
+                    treino_id_por_ve[('usuario', ve.exercicio_usuario_id)] = treino_id
+                    ordem_map[('usuario', ve.exercicio_usuario_id)] = idx
+                elif ve.exercicio_base_id is not None:
+                    base_ids.append(ve.exercicio_base_id)
+                    treino_id_por_ve[('base', ve.exercicio_base_id)] = treino_id
+                    ordem_map[('base', ve.exercicio_base_id)] = idx
+
+            with db.session.no_autoflush:
+                if usuario_ids:
+                    ex_usuario = ExercicioCustomizado.query.filter(
+                        ExercicioCustomizado.id.in_(usuario_ids),
+                        ExercicioCustomizado.usuario_id == user_id
+                    ).options(joinedload(ExercicioCustomizado.musculo_ref)).all()
+
+                    regs = RegistroTreino.query.filter(
+                        RegistroTreino.user_id == user_id,
+                        RegistroTreino.exercicio_usuario_id.in_(usuario_ids)
+                    ).all()
+                    registros_usuario_map = {}
+                    for r in regs:
+                        registros_usuario_map.setdefault(r.exercicio_usuario_id, []).append(r)
+
+                    for ex in ex_usuario:
+                        ex.tipo = 'usuario'
+                        ex.prefixo = 'u_'
+                        ex.musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
+                        ex.musculo = ex.musculo_nome
+                        set_committed_value(ex, 'registros', registros_usuario_map.get(ex.id, []))
+                        db.session.expunge(ex)
+                        t_id = treino_id_por_ve.get(('usuario', ex.id))
+                        if t_id in resultado:
+                            resultado[t_id].append(ex)
+
+                if base_ids:
+                    ex_base = ExercicioSistema.query.filter(
+                        ExercicioSistema.id.in_(base_ids)
+                    ).all()
+
+                    regs = RegistroTreino.query.filter(
+                        RegistroTreino.user_id == user_id,
+                        RegistroTreino.exercicio_base_id.in_(base_ids)
+                    ).all()
+                    registros_base_map = {}
+                    for r in regs:
+                        registros_base_map.setdefault(r.exercicio_base_id, []).append(r)
+
+                    for ex in ex_base:
+                        ex.tipo = 'base'
+                        ex.prefixo = 'b_'
+                        ex.musculo = ex.grupo_muscular or 'N/A'
+                        set_committed_value(ex, 'registros', registros_base_map.get(ex.id, []))
+                        db.session.expunge(ex)
+                        t_id = treino_id_por_ve.get(('base', ex.id))
+                        if t_id in resultado:
+                            resultado[t_id].append(ex)
+
+            for t_id, exs in resultado.items():
+                exs.sort(key=lambda x: ordem_map.get((x.tipo, x.id), 999))
+
+            return resultado
+
+        except Exception as e:
+            BaseService.handle_error(e, f"Erro ao buscar exercícios agrupados por treino (usuário {user_id})")
+            return {}
 
     @staticmethod
     def get_exercicios_para_edicao(user_id, treino_versao):

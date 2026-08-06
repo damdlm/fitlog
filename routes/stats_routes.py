@@ -35,8 +35,12 @@ def _get_treino_codigo(exercicio):
 @login_required
 def estatisticas():
     """Página de estatísticas"""
-    registros = RegistroService.get_all(load_series=True)
-    exercicios = ExercicioService.get_exercicios_completos()
+    # `registros` e `exercicios` eram buscados aqui (histórico inteiro +
+    # séries, e o catálogo completo de exercícios) mas nenhum dos dois era
+    # usado nesta função nem passado ao template —
+    # calcular_por_musculo()/calcular_por_treino() buscam seus próprios
+    # dados internamente. Eram duas queries completas descartadas em toda
+    # visita à página.
     treinos = TreinoService.get_all()
     
     musculos_obj = MusculoService.get_all()
