@@ -694,7 +694,7 @@ class VersaoService(BaseService):
             versao = VersaoService.get_by_id(versao_id, user_id)
             if not versao:
                 return False
-            treino = TreinoService.get_by_codigo(treino_codigo, user_id)
+            treino = TreinoService.get_or_create(treino_codigo, nome_treino, descricao_treino, user_id)
             if not treino:
                 return False
             if any(tv.treino_id == treino.id for tv in versao.treinos):

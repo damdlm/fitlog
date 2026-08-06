@@ -68,6 +68,37 @@ class TreinoService(BaseService):
             return None
     
     @staticmethod
+    def get_or_create(codigo, nome=None, descricao='', user_id=None):
+        """Retorna o Treino (letra) já existente para o usuário ou cria um novo
+        automaticamente. Usado para não exigir um cadastro manual prévio de
+        'Treino' antes de vincular a letra a uma versão."""
+        try:
+            if user_id is None:
+                user_id = BaseService.get_current_user_id()
+            if not user_id:
+                logger.warning("Tentativa de get_or_create treino sem usuário logado")
+                return None
+
+            codigo = codigo.upper()
+            treino = TreinoService.get_by_codigo(codigo, user_id)
+            if treino:
+                return treino
+
+            treino = Treino(
+                codigo=codigo,
+                nome=nome or f'Treino {codigo}',
+                descricao=descricao or '',
+                user_id=user_id
+            )
+            db.session.add(treino)
+            db.session.commit()
+            logger.info(f"Treino {codigo} criado automaticamente para usuário {user_id}")
+            return treino
+        except Exception as e:
+            BaseService.handle_error(e, f"Erro ao obter/criar treino {codigo}")
+            return None
+
+    @staticmethod
     def update(treino_id, codigo=None, nome=None, descricao=None, user_id=None):
         try:
             treino = TreinoService.get_by_id(treino_id, user_id)

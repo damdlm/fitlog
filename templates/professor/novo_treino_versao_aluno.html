@@ -202,20 +202,20 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <div class="nt-field">
-                <label>Treino</label>
-                <select name="treino_id" class="form-select form-select-lg" required {% if not treinos %}disabled{% endif %}>
-                    <option value="">Selecione um treino...</option>
-                    {% for treino in treinos %}
-                    <option value="{{ treino.id }}">{{ treino.codigo }} - {{ treino.nome }}</option>
+                <label>Letra do treino</label>
+                <div class="d-flex gap-2 flex-wrap">
+                    {% for letra in letras %}
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="treino_id" value="{{ letra }}" id="letra-{{ letra }}" required>
+                        <label class="form-check-label" for="letra-{{ letra }}">{{ letra }}</label>
+                    </div>
                     {% endfor %}
-                </select>
-                {% if not treinos %}
+                </div>
+                <small>Letras disponíveis na divisão {{ versao.divisao }} que ainda não foram usadas nesta versão.</small>
+                {% if not letras %}
                 <div class="nt-info-box mt-2">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <span>
-                        Não há treinos disponíveis para adicionar.
-                        <a href="{{ url_for('professor.novo_treino_aluno', aluno_id=aluno.id) }}" class="alert-link">Criar novo treino</a>
-                    </span>
+                    <span>Todas as letras da divisão {{ versao.divisao }} já foram usadas nesta versão.</span>
                 </div>
                 {% endif %}
             </div>
@@ -239,7 +239,7 @@
             </div>
 
             <div class="nt-actions">
-                <button type="submit" class="btn btn-success btn-lg" {% if not treinos %}disabled{% endif %}>
+                <button type="submit" class="btn btn-success btn-lg" {% if not letras %}disabled{% endif %}>
                     <i class="bi bi-check-circle"></i> Adicionar à versão
                 </button>
                 <a href="{{ url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" class="btn btn-outline-secondary btn-lg">
@@ -247,55 +247,6 @@
                 </a>
             </div>
         </form>
-
-        <div class="nt-preview" id="previewExercicios">
-            <hr class="my-4">
-            <div class="nt-card-header px-0" style="border: none;">
-                <i class="bi bi-list-check me-2" style="color: #F28C33;"></i>Exercícios do treino selecionado
-            </div>
-            <div class="nt-preview-grid" id="listaExerciciosPreview"></div>
-        </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const selectTreino = document.querySelector('select[name="treino_id"]');
-        const previewDiv = document.getElementById('previewExercicios');
-        const listaPreview = document.getElementById('listaExerciciosPreview');
-
-        if (selectTreino) {
-            selectTreino.addEventListener('change', function() {
-                const treinoId = this.value;
-
-                if (!treinoId) {
-                    previewDiv.style.display = 'none';
-                    return;
-                }
-
-                fetch(`/api/versao-exercicios/${treinoId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.length > 0) {
-                            listaPreview.innerHTML = '';
-                            data.forEach(ex => {
-                                listaPreview.innerHTML += `
-                                    <div class="nt-preview-item">
-                                        <strong>${ex.nome}</strong>
-                                        <small>${ex.musculo}</small>
-                                    </div>
-                                `;
-                            });
-                        } else {
-                            listaPreview.innerHTML = '<p class="text-muted mb-0">Este treino não tem exercícios cadastrados.</p>';
-                        }
-                        previewDiv.style.display = 'block';
-                    })
-                    .catch(error => {
-                        console.error('Erro ao buscar exercícios:', error);
-                    });
-            });
-        }
-    });
-</script>
 {% endblock %}
