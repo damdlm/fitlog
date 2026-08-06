@@ -33,6 +33,8 @@ import base64
 import binascii
 import json
 import logging
+import random
+import time
 
 import requests
 
@@ -53,6 +55,46 @@ GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{mode
 GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
 
 REQUEST_TIMEOUT_SECONDS = 20
+
+# Erros transitórios (rede/infra do provedor) valem 1 nova tentativa —
+# 429 fica de fora de propósito (rate limit: repetir na hora só piora;
+# já tem mensagem própria pro usuário) e erros 4xx "normais" também
+# (payload/autenticação inválidos não se resolvem tentando de novo).
+STATUS_RETRYAVEIS = {502, 503, 504}
+MAX_RETRIES_LLM = 1
+BACKOFF_BASE_SEGUNDOS = 0.5
+
+
+def _post_llm_com_retry(url, **kwargs):
+    """
+    POST com até MAX_RETRIES_LLM tentativas extras, só para timeout,
+    erro de rede/conexão ou status 502/503/504 (transitórios). Backoff
+    curto com jitter entre tentativas -- nada de retry imediato em loop.
+
+    Retorna a Response (mesmo se ainda vier com erro após as tentativas)
+    ou levanta requests.exceptions.RequestException se toda tentativa
+    falhar por erro de rede.
+    """
+    ultima_excecao = None
+    for tentativa in range(MAX_RETRIES_LLM + 1):
+        try:
+            resp = requests.post(url, **kwargs)
+        except requests.exceptions.RequestException as e:
+            ultima_excecao = e
+            resp = None
+
+        if resp is not None and resp.status_code not in STATUS_RETRYAVEIS:
+            return resp
+
+        if tentativa < MAX_RETRIES_LLM:
+            espera = BACKOFF_BASE_SEGUNDOS * (2 ** tentativa) + random.uniform(0, 0.2)
+            motivo = f"status {resp.status_code}" if resp is not None else f"erro de rede ({ultima_excecao})"
+            logger.warning("FitBot: tentativa %s falhou (%s), tentando de novo em %.2fs", tentativa + 1, motivo, espera)
+            time.sleep(espera)
+
+    if resp is not None:
+        return resp
+    raise ultima_excecao
 
 # Quantas mensagens anteriores (usuário + bot) mandamos junto como
 # contexto. Mantém a conversa coerente sem deixar o payload/tokens
@@ -263,7 +305,7 @@ class FitBotService:
         }
 
         try:
-            resp = requests.post(
+            resp = _post_llm_com_retry(
                 GROQ_ENDPOINT, json=payload, headers=headers,
                 timeout=REQUEST_TIMEOUT_SECONDS,
             )
@@ -342,7 +384,7 @@ class FitBotService:
         }
 
         try:
-            resp = requests.post(
+            resp = _post_llm_com_retry(
                 url,
                 params={"key": api_key},
                 json=payload,

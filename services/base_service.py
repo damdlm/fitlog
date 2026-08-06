@@ -28,14 +28,40 @@ class CacheService:
 
     @classmethod
     def invalidate_pattern(cls, pattern: str):
+        """
+        Invalida todas as chaves que contêm `pattern`.
+
+        Não está em uso em nenhum lugar do projeto hoje (só
+        estatísticas do FitBot são cacheadas, com TTL curto e chave
+        única — não precisam de invalidação por padrão). Mesmo assim,
+        corrigido pra não virar uma armadilha se alguém vier a usar:
+        a versão antiga acessava `flask_cache.cache._cache.keys()` —
+        além de depender de um atributo privado do Flask-Caching, em
+        produção (RedisCache) isso executa um KEYS * sem padrão no
+        Redis inteiro, o que pode bloquear o servidor com muitas
+        chaves (ver docs do Redis sobre KEYS vs SCAN). Usa SCAN
+        (iteração, não bloqueante) quando o backend é Redis de
+        verdade; para SimpleCache (dev/testes) usa o dict interno,
+        que é local e barato.
+        """
         try:
-            flask_cache.delete_many(*[
-                k for k in (flask_cache.cache._cache.keys()
-                             if hasattr(flask_cache, 'cache') else [])
-                if pattern in str(k)
-            ])
+            redis_client = getattr(getattr(flask_cache, 'cache', None), '_write_client', None) \
+                or getattr(getattr(flask_cache, 'cache', None), '_read_client', None)
+            if redis_client is not None:
+                prefixo = getattr(flask_cache.cache, 'key_prefix', '') or ''
+                chaves_para_apagar = [
+                    k for k in redis_client.scan_iter(match=f"*{pattern}*", count=100)
+                ]
+                if chaves_para_apagar:
+                    redis_client.delete(*chaves_para_apagar)
+                return
+
+            # SimpleCache (dev/testes): dict local, sem risco de bloquear nada.
+            cache_interno = getattr(getattr(flask_cache, 'cache', None), '_cache', None)
+            if cache_interno is not None:
+                flask_cache.delete_many(*[k for k in cache_interno.keys() if pattern in str(k)])
         except Exception:
-            pass
+            logger.warning("CacheService.invalidate_pattern falhou para pattern=%s", pattern, exc_info=True)
 
 
 def cached(ttl_seconds: int = 300, key_prefix: str = ''):
