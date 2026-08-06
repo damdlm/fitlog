@@ -5,7 +5,7 @@ from services.exercicio_service import ExercicioService
 from services.musculo_service import MusculoService
 from services.versao_service import VersaoService
 from utils.exercise_utils import buscar_musculo_no_catalogo
-from models import db, ExercicioCustomizado, ExercicioUsuario, Musculo, RegistroTreino, HistoricoTreino, ExercicioSistema
+from models import db, ExercicioCustomizado, ExercicioUsuario, Musculo, RegistroTreino, HistoricoTreino, ExercicioSistema, TreinoVersao, VersaoExercicio
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
 import logging
@@ -32,17 +32,34 @@ def gerenciar():
     ).filter_by(usuario_id=current_user.id).order_by(ExercicioCustomizado.nome).all()
 
     # Exercícios da base adicionados pelo usuário
-    exercicios_usuario = ExercicioUsuario.query.options(
-        joinedload(ExercicioUsuario.exercicio_base_ref)
-    ).filter_by(usuario_id=current_user.id).order_by(ExercicioUsuario.id).all()
+    exercicios_usuario = ExercicioUsuario.query.filter_by(
+        usuario_id=current_user.id
+    ).order_by(ExercicioUsuario.id).all()
 
     musculos = MusculoService.get_all_nomes()
 
-    # Contagem de exercícios por treino
+    # Mapa exercicio_id -> treino_id, derivado da versão ativa do usuário
+    # (ExercicioUsuario/ExercicioCustomizado não têm mais treino_id direto;
+    # a associação exercício-treino agora vive em VersaoExercicio, por versão)
+    exercicio_treino_map = {}
+    versao_ativa = VersaoService.get_ativa(user_id=current_user.id)
+    if versao_ativa:
+        treinos_versao_ativa = TreinoVersao.query.filter_by(versao_id=versao_ativa.id).all()
+        tv_id_para_treino_id = {tv.id: tv.treino_id for tv in treinos_versao_ativa}
+        if tv_id_para_treino_id:
+            versao_exercicios = VersaoExercicio.query.filter(
+                VersaoExercicio.treino_versao_id.in_(tv_id_para_treino_id.keys())
+            ).all()
+            for ve in versao_exercicios:
+                if ve.exercicio_usuario_id:
+                    exercicio_treino_map[ve.exercicio_usuario_id] = tv_id_para_treino_id[ve.treino_versao_id]
+
+    # Contagem de exercícios por treino (baseada na versão ativa)
     exercicios_por_treino = {}
     for ex in exercicios_custom:
-        if ex.treino_id:
-            exercicios_por_treino[ex.treino_id] = exercicios_por_treino.get(ex.treino_id, 0) + 1
+        t_id = exercicio_treino_map.get(ex.id)
+        if t_id:
+            exercicios_por_treino[t_id] = exercicios_por_treino.get(t_id, 0) + 1
 
     # Últimas cargas
     ultimas_cargas = {}
@@ -77,6 +94,7 @@ def gerenciar():
         exercicios_usuario=exercicios_usuario,
         musculos=musculos,
         exercicios_por_treino=exercicios_por_treino,
+        exercicio_treino_map=exercicio_treino_map,
         ultimas_cargas=ultimas_cargas
     )
 

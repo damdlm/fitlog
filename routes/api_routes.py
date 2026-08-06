@@ -189,8 +189,7 @@ def api_versao_exercicios(versao_id):
         resultado.append({
             "id": ex.id,
             "nome": ex.nome,
-            "musculo": musculo_nome,
-            "treino": ex.treino_id
+            "musculo": musculo_nome
         })
     
     return jsonify(resultado)

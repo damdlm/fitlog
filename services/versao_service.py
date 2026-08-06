@@ -1,6 +1,6 @@
 """Serviço para operações com versões de treino"""
 
-from models import db, VersaoGlobal, TreinoVersao, VersaoExercicio, Treino, ExercicioCustomizado, Musculo
+from models import db, VersaoGlobal, TreinoVersao, VersaoExercicio, Treino, ExercicioCustomizado, Musculo, RegistroTreino
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from .base_service import BaseService
@@ -425,11 +425,25 @@ class VersaoService(BaseService):
                         ExercicioCustomizado.usuario_id == user_id
                     ).options(joinedload(ExercicioCustomizado.musculo_ref)).all()
 
+                    # Templates (ex: professor/treinos_aluno.html) leem
+                    # exercicio.registros|length. É lazy, então o expunge()
+                    # abaixo quebraria essa leitura com DetachedInstanceError
+                    # (ver mesma correção em ExercicioService.get_exercicios_completos).
+                    registros_usuario_map = {}
+                    if usuario_ids:
+                        regs = RegistroTreino.query.filter(
+                            RegistroTreino.user_id == user_id,
+                            RegistroTreino.exercicio_usuario_id.in_(usuario_ids)
+                        ).all()
+                        for r in regs:
+                            registros_usuario_map.setdefault(r.exercicio_usuario_id, []).append(r)
+
                     for ex in ex_usuario:
                         ex.tipo = 'usuario'
                         ex.prefixo = 'u_'
                         ex.musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
                         ex.musculo = ex.musculo_nome
+                        ex.registros = registros_usuario_map.get(ex.id, [])
                         db.session.expunge(ex)
                         exercicios.append(ex)
 
@@ -438,11 +452,24 @@ class VersaoService(BaseService):
                         ExercicioSistema.id.in_(base_ids)
                     ).all()
 
+                    # Idem: filtrado por user_id — exercicios_sistema é
+                    # catálogo global, sem o filtro contaria registros de
+                    # todos os usuários.
+                    registros_base_map = {}
+                    if base_ids:
+                        regs = RegistroTreino.query.filter(
+                            RegistroTreino.user_id == user_id,
+                            RegistroTreino.exercicio_base_id.in_(base_ids)
+                        ).all()
+                        for r in regs:
+                            registros_base_map.setdefault(r.exercicio_base_id, []).append(r)
+
                     for ex in ex_base:
                         ex.tipo = 'base'
                         ex.prefixo = 'b_'
                         # musculo_nome já é property (= grupo_muscular)
                         ex.musculo = ex.grupo_muscular or 'N/A'
+                        ex.registros = registros_base_map.get(ex.id, [])
                         db.session.expunge(ex)
                         exercicios.append(ex)
 

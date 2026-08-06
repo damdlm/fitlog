@@ -306,7 +306,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for ex in exercicios if ex.treino_id == t.id %}
+                                    {% for ex in exercicios if exercicio_treino_map.get(ex.id) == t.id %}
                                     <tr class="exercicio-item">
                                         <td>
                                             <strong>{{ ex.nome }}</strong>
@@ -337,7 +337,7 @@
                                                     <i class="bi bi-info-circle"></i>
                                                 </a>
                                                 <button class="btn btn-outline-warning" 
-                                                        onclick="editarExercicio({{ ex.id }}, '{{ ex.nome }}', '{{ ex.musculo_ref.nome_exibicao if ex.musculo_ref else '' }}', '{{ ex.treino_id }}', '{{ ex.descricao or '' }}')"
+                                                        onclick="editarExercicio({{ ex.id }}, '{{ ex.nome }}', '{{ ex.musculo_ref.nome_exibicao if ex.musculo_ref else '' }}', '{{ exercicio_treino_map.get(ex.id, '') }}', '{{ ex.descricao or '' }}')"
                                                         title="Editar">
                                                     <i class="bi bi-pencil"></i>
                                                 </button>

@@ -1,6 +1,6 @@
 """Serviço para operações com exercícios - Versão com tabelas base compartilhadas"""
 
-from models import db, ExercicioSistema, ExercicioUsuario, ExercicioCustomizado, Musculo, VersaoExercicio
+from models import db, ExercicioSistema, ExercicioUsuario, ExercicioCustomizado, Musculo, VersaoExercicio, RegistroTreino
 from sqlalchemy.orm import joinedload
 from sqlalchemy import text, func
 from .base_service import BaseService   # ← importação direta
@@ -167,18 +167,45 @@ class ExercicioService(BaseService):
                 # Exercícios base (catálogo global — exercicios_sistema)
                 exercicios_base = ExercicioSistema.query.order_by(ExercicioSistema.nome).all()
 
+                # Templates fazem exercicio.registros|length. Como isso é lazy,
+                # o expunge() logo abaixo quebraria essa leitura com
+                # DetachedInstanceError. Carregamos aqui manualmente, já
+                # filtrado por user_id — importante para exercicios_base, que
+                # é catálogo global: sem esse filtro, exercicio.registros
+                # contaria registros de TODOS os usuários, não só deste.
+                base_ids = [ex.id for ex in exercicios_base]
+                registros_base_map = {}
+                if base_ids:
+                    regs = RegistroTreino.query.filter(
+                        RegistroTreino.user_id == user_id,
+                        RegistroTreino.exercicio_base_id.in_(base_ids)
+                    ).all()
+                    for r in regs:
+                        registros_base_map.setdefault(r.exercicio_base_id, []).append(r)
+
                 for ex in exercicios_base:
                     ex.tipo = 'base'
                     ex.prefixo = 'b_'
                     ex.is_custom = False
                     # musculo_nome já é property (= grupo_muscular); só setamos "musculo"
                     ex.musculo = ex.grupo_muscular or 'Não especificado'
+                    ex.registros = registros_base_map.get(ex.id, [])
                     db.session.expunge(ex)
 
                 # Exercícios do usuário (customizados)
                 exercicios_usuario = ExercicioUsuario.query.options(
                     joinedload(ExercicioUsuario.musculo_ref)
                 ).filter_by(usuario_id=user_id).order_by(ExercicioUsuario.nome).all()
+
+                usuario_ids = [ex.id for ex in exercicios_usuario]
+                registros_usuario_map = {}
+                if usuario_ids:
+                    regs = RegistroTreino.query.filter(
+                        RegistroTreino.user_id == user_id,
+                        RegistroTreino.exercicio_usuario_id.in_(usuario_ids)
+                    ).all()
+                    for r in regs:
+                        registros_usuario_map.setdefault(r.exercicio_usuario_id, []).append(r)
 
                 for ex in exercicios_usuario:
                     ex.tipo = 'usuario'
@@ -189,6 +216,7 @@ class ExercicioService(BaseService):
                         musculo_ref = Musculo.query.get(ex.musculo_id)
                     ex.musculo_nome = musculo_ref.nome_exibicao if musculo_ref else 'Não especificado'
                     ex.musculo = ex.musculo_nome
+                    ex.registros = registros_usuario_map.get(ex.id, [])
                     db.session.expunge(ex)
 
             resultado = exercicios_base + exercicios_usuario
