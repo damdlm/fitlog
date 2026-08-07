@@ -1,0 +1,476 @@
+/* ==========================================================
+   Editar Treino na Versão — estilos compartilhados
+   Usado por: templates/version/, templates/aluno/,
+              templates/professor/editar_treino_versao*.html
+   Reaproveita os tokens definidos em static/css/style.css
+   (--primary-orange, --light-orange, --dark-bg, --card-shadow).
+   ========================================================== */
+
+.etv-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+}
+
+.etv-eyebrow {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9a9a9a;
+    margin-bottom: 2px;
+}
+
+.etv-title {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Barra de metadados (período, aluno, etc) */
+.etv-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 1.25rem;
+}
+
+.etv-meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid #eee;
+    box-shadow: var(--card-shadow);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    color: #4a4a4a;
+}
+
+.etv-meta-pill i {
+    color: var(--primary-orange);
+}
+
+.etv-meta-pill strong {
+    color: #2D2D2D;
+}
+
+/* Campos do formulário */
+.etv-field-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #9a9a9a;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.etv-panel {
+    border: none;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+}
+
+/* Barra de busca/filtro, fixa no topo da área de rolagem */
+.etv-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #fafafa;
+    padding: 12px 0 10px;
+    margin: -15px -15px 12px;
+    padding-left: 15px;
+    padding-right: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.etv-toolbar-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.etv-toolbar-row:last-child {
+    margin-bottom: 0;
+}
+
+.etv-search {
+    flex: 1 1 260px;
+}
+
+/* Chips de músculo — substitui o <select> por uma faixa de filtros */
+.etv-chip-row {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+    flex: 1 1 100%;
+}
+
+.etv-chip-row::-webkit-scrollbar {
+    height: 5px;
+}
+
+.etv-chip-row::-webkit-scrollbar-thumb {
+    background: #e0e0e0;
+    border-radius: 10px;
+}
+
+.etv-chip {
+    flex: 0 0 auto;
+    border: 1.5px solid #e2e2e2;
+    background: #fff;
+    color: #6c757d;
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all .15s ease;
+}
+
+.etv-chip:hover {
+    border-color: var(--light-orange);
+    color: var(--primary-orange);
+}
+
+.etv-chip.is-active {
+    background: var(--primary-gradient);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(242, 140, 51, .3);
+}
+
+.etv-bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.etv-count-badge {
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--dark-bg);
+    color: #fff;
+}
+
+.etv-count-badge .etv-count-num {
+    color: var(--light-orange);
+}
+
+/* Bandeja de selecionados */
+.etv-tray {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+    padding: 10px;
+    border-radius: 12px;
+    background: #fff8f1;
+    border: 1px dashed #ffd7ad;
+}
+
+.etv-tray:empty {
+    display: none;
+}
+
+.etv-tray.is-empty {
+    display: none;
+}
+
+.etv-tray-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid #ffd7ad;
+    border-radius: 999px;
+    padding: 4px 6px 4px 12px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #2D2D2D;
+}
+
+.etv-tray-chip button {
+    border: none;
+    background: #f1f1f1;
+    color: #6c757d;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: all .15s ease;
+}
+
+.etv-tray-chip button:hover {
+    background: #e4462f;
+    color: #fff;
+}
+
+/* Grid de exercícios */
+.etv-scroll {
+    max-height: 55vh;
+    min-height: 260px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    padding: 15px;
+    border-radius: 14px;
+    background: #fafafa;
+}
+
+.etv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+    gap: 12px;
+}
+
+@media (min-width: 992px) {
+    .etv-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
+
+.etv-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #fff;
+    border: 2px solid #e9ecef;
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease, transform .1s ease;
+}
+
+.etv-card:hover {
+    border-color: var(--light-orange);
+    box-shadow: 0 3px 10px rgba(242, 140, 51, .18);
+}
+
+.etv-card:active {
+    transform: scale(0.98);
+}
+
+.etv-card.is-selected {
+    border-color: var(--primary-orange);
+    background: #FFF8F1;
+    box-shadow: 0 3px 10px rgba(242, 140, 51, .25);
+}
+
+.etv-card:focus-within {
+    outline: 3px solid var(--primary-orange);
+    outline-offset: 2px;
+}
+
+.etv-card-img {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: #eef0f2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.etv-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0;
+    transition: opacity .25s ease;
+}
+
+.etv-card-img img.is-loaded {
+    opacity: 1;
+}
+
+.etv-card-img.is-loading::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, #eef0f2 25%, #f7f7f7 50%, #eef0f2 75%);
+    background-size: 200% 100%;
+    animation: etv-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes etv-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.etv-card-img i.bi-dumbbell {
+    color: #b0b6bc;
+    font-size: 1.9rem;
+    position: relative;
+    z-index: 1;
+}
+
+.etv-tipo-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(45, 45, 45, .65);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .65rem;
+    z-index: 2;
+}
+
+.etv-check-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    transition: all .15s ease;
+    z-index: 2;
+}
+
+.etv-card.is-selected .etv-check-badge {
+    background: var(--primary-gradient);
+    border-color: var(--primary-orange);
+    color: #fff;
+    transform: scale(1.08);
+}
+
+.etv-card-body {
+    padding: 8px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.etv-card-nome {
+    font-weight: 600;
+    font-size: .85rem;
+    color: #2D2D2D;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.etv-card-musculo {
+    align-self: flex-start;
+    background-color: #eef0f2;
+    color: #6c757d;
+    font-weight: 500;
+    font-size: .68rem;
+}
+
+.etv-card-desc {
+    margin: 2px 0 0;
+    font-size: .72rem;
+    color: #6c757d;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+@media (max-width: 576px) {
+    .etv-card-desc { display: none; }
+}
+
+.etv-empty-state {
+    text-align: center;
+    color: #6c757d;
+    padding: 40px 0;
+    grid-column: 1 / -1;
+}
+
+/* Barra de ações fixa no rodapé do painel */
+.etv-footer-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 1.25rem;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, .92);
+    backdrop-filter: blur(6px);
+    border: 1px solid #eee;
+    border-radius: 14px;
+}
+
+.etv-footer-status {
+    font-size: 0.85rem;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.etv-btn-save {
+    background: var(--primary-gradient);
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 14px rgba(242, 140, 51, .3);
+}
+
+.etv-btn-save:hover {
+    color: #fff;
+    filter: brightness(1.03);
+}
+
+.etv-btn-save:disabled {
+    opacity: .75;
+}
+
+/* Animação de entrada dos cards (respeita prefers-reduced-motion) */
+@media (prefers-reduced-motion: no-preference) {
+    .etv-card {
+        animation: etv-card-in .25s ease both;
+    }
+}
+
+@keyframes etv-card-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .etv-card, .etv-card-img img, .etv-chip, .etv-check-badge {
+        transition: none !important;
+        animation: none !important;
+    }
+}

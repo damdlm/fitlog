@@ -3,257 +3,163 @@
 {% block page_icon %}<i class="bi bi-pencil-square" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Editar Treino {{ treino_id }} na Versão {{ versao.versao }}{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/editar-treino-versao.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="d-none d-md-block">
-        <i class="bi bi-pencil-square me-2" style="color: #F28C33;"></i>
-        Editar Treino {{ treino_id }} na Versão {{ versao.versao }}
-    </h2>
+<div class="etv-header">
+    <div>
+        <span class="etv-eyebrow d-none d-md-block">Versão {{ versao.versao }}</span>
+        <h2 class="etv-title d-none d-md-flex">
+            <i class="bi bi-pencil-square" style="color: #F28C33;"></i>
+            Editar Treino {{ treino_id }}
+        </h2>
+    </div>
     <a href="{{ url_for('version.ver_versao', versao_id=versao.id) }}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Voltar
     </a>
 </div>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <p class="mb-0"><strong>Período da Versão:</strong> {{ versao.data_inicio_formatada }} até {{ versao.data_fim_formatada or 'Atual' }}</p>
-    </div>
+<div class="etv-meta">
+    <span class="etv-meta-pill">
+        <i class="bi bi-calendar-range"></i>
+        <strong>{{ versao.data_inicio_formatada }}</strong> até <strong>{{ versao.data_fim_formatada or 'Atual' }}</strong>
+    </span>
 </div>
 
-<div class="card">
+<div class="card etv-panel">
     <div class="card-body">
         <form method="post" id="formEditarTreino">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
-            <div class="row mb-3">
+            <div class="row mb-4">
                 <div class="col-md-4">
-                    <label class="form-label fw-bold">ID do Treino</label>
+                    <label class="etv-field-label">ID do Treino</label>
                     <input type="text" class="form-control" value="{{ treino_id }}" disabled readonly>
                     <small class="text-muted">O ID não pode ser alterado</small>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label fw-bold">Nome do Treino</label>
+                    <label class="etv-field-label">Nome do Treino</label>
                     <input type="text" name="nome_treino" class="form-control"
                            value="{{ treino.nome }}" required>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label fw-bold">Descrição</label>
+                    <label class="etv-field-label">Descrição</label>
                     <input type="text" name="descricao_treino" class="form-control"
                            value="{{ treino.descricao }}">
                 </div>
             </div>
 
-            <!-- Seleção de exercícios do catálogo -->
-            <div class="mb-3">
-                <label class="form-label fw-bold">Todos os Exercícios do Catálogo</label>
+            <label class="etv-field-label">Exercícios do catálogo</label>
 
-                <!-- Filtros -->
-                <div class="row mb-3 g-2 align-items-center">
-                    <div class="col-md-8">
-                        <div class="input-group">
+            <div class="etv-scroll">
+                <div class="etv-toolbar">
+                    <div class="etv-toolbar-row">
+                        <div class="etv-search input-group">
                             <span class="input-group-text"><i class="bi bi-search"></i></span>
-                            <input type="text" id="buscaExercicios" class="form-control"
+                            <input type="text" id="etvBusca" class="form-control"
                                    placeholder="Digite para filtrar exercícios..." autocomplete="off">
-                            <button class="btn btn-outline-secondary" type="button" onclick="limparFiltro()">
+                            <button class="btn btn-outline-secondary" type="button" id="etvLimparFiltro">
                                 <i class="bi bi-x"></i> Limpar
                             </button>
                         </div>
-                        <small class="text-muted" id="contadorVisiveis">{{ exercicios_catalogo|length }} exercícios disponíveis</small>
                     </div>
-                    <div class="col-md-4">
-                        <select id="filtroMusculo" class="form-select">
-                            <option value="">Todos os músculos</option>
+                    <div class="etv-toolbar-row">
+                        <div class="etv-chip-row" id="etvChipsMusculo">
+                            <button type="button" class="etv-chip is-active" data-musculo="">Todos</button>
                             {% for m in musculos_catalogo %}
-                            <option value="{{ m }}">{{ m }}</option>
+                            <button type="button" class="etv-chip" data-musculo="{{ m }}">{{ m }}</button>
                             {% endfor %}
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Botões de seleção em massa -->
-                <div class="mb-2 d-flex align-items-center flex-wrap gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selecionarTodosVisiveis()">
-                        <i class="bi bi-check-all"></i> Selecionar Visíveis
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limparTodos()">
-                        <i class="bi bi-x"></i> Limpar Todos
-                    </button>
-                    <span id="contadorSelecionados" class="badge bg-info">0 selecionados</span>
-                </div>
-
-                <!-- Grid de exercícios -->
-                <div class="exercicios-scroll">
-                    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3" id="listaExercicios">
-                        {% for ex in exercicios_catalogo %}
-                        {% set musculo_nome = ex.musculo %}
-                        {% set marcado = (ex.prefixo ~ ex.id|string) in treino.exercicios %}
-                        <div class="col exercicio-item"
-                             data-nome="{{ ex.nome|lower }}"
-                             data-musculo="{{ musculo_nome }}">
-                            <label class="exercicio-card {% if marcado %}selecionado{% endif %}" for="ex_{{ ex.prefixo }}{{ ex.id }}">
-                                <input class="form-check-input exercicio-checkbox visually-hidden"
-                                       type="checkbox"
-                                       name="exercicios[]"
-                                       value="{{ ex.prefixo }}{{ ex.id }}"
-                                       id="ex_{{ ex.prefixo }}{{ ex.id }}"
-                                       {% if marcado %}checked{% endif %}
-                                       onchange="onCheckboxChange(this)">
-
-                                <div class="exercicio-card-img">
-                                    {% if ex.imagem %}
-                                    <img src="{{ url_for('exercicios_media', caminho=ex.imagem) }}"
-                                         alt="{{ ex.nome }}" loading="lazy"
-                                         onerror="this.closest('.exercicio-card-img').classList.add('sem-imagem'); this.remove();">
-                                    {% else %}
-                                    <i class="bi bi-dumbbell"></i>
-                                    {% endif %}
-                                    {% if ex.tipo == 'usuario' %}
-                                    <span class="exercicio-tipo-badge" title="Exercício personalizado">
-                                        <i class="bi bi-person-fill"></i>
-                                    </span>
-                                    {% endif %}
-                                    <span class="exercicio-check-badge"><i class="bi bi-check-lg"></i></span>
-                                </div>
-
-                                <div class="exercicio-card-body">
-                                    <div class="exercicio-nome" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ ex.nome }}">
-                                        {{ ex.nome }}
-                                    </div>
-                                    <span class="badge exercicio-musculo-badge">{{ musculo_nome }}</span>
-                                    {% if ex.descricao %}
-                                    <p class="exercicio-desc" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ ex.descricao }}">
-                                        {{ ex.descricao }}
-                                    </p>
-                                    {% endif %}
-                                </div>
-                            </label>
                         </div>
-                        {% endfor %}
                     </div>
-                    <div class="text-center text-muted py-4 d-none" id="semResultados">
-                        <i class="bi bi-search display-6 d-block mb-2"></i>
-                        Nenhum exercício encontrado para esse filtro.
+                    <div class="etv-toolbar-row">
+                        <div class="etv-bulk-actions">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="etvSelecionarVisiveis">
+                                <i class="bi bi-check-all"></i> Selecionar visíveis
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="etvLimparTodos">
+                                <i class="bi bi-x"></i> Limpar todos
+                            </button>
+                            <span class="etv-count-badge">
+                                <span class="etv-count-num" data-etv-contador-selecionados>0</span> selecionado(s)
+                            </span>
+                            <small class="text-muted ms-auto" id="etvContadorVisiveis">{{ exercicios_catalogo|length }} exercícios disponíveis</small>
+                        </div>
                     </div>
+                </div>
+
+                <div class="etv-tray is-empty" id="etvTray" aria-live="polite"></div>
+
+                <div class="etv-grid" id="etvGrid">
+                    {% for ex in exercicios_catalogo %}
+                    {% set marcado = (ex.prefixo ~ ex.id|string) in treino.exercicios %}
+                    <label class="etv-card {% if marcado %}is-selected{% endif %}"
+                           for="ex_{{ ex.prefixo }}{{ ex.id }}"
+                           data-nome="{{ ex.nome|lower }}"
+                           data-nome-display="{{ ex.nome }}"
+                           data-musculo="{{ ex.musculo }}">
+                        <input class="form-check-input etv-checkbox visually-hidden"
+                               type="checkbox"
+                               name="exercicios[]"
+                               value="{{ ex.prefixo }}{{ ex.id }}"
+                               id="ex_{{ ex.prefixo }}{{ ex.id }}"
+                               {% if marcado %}checked{% endif %}>
+
+                        <div class="etv-card-img">
+                            {% if ex.imagem %}
+                            <img data-etv-img src="{{ url_for('exercicios_media', caminho=ex.imagem) }}"
+                                 alt="{{ ex.nome }}" loading="lazy"
+                                 onerror="this.closest('.etv-card-img').classList.add('sem-imagem'); this.remove();">
+                            {% else %}
+                            <i class="bi bi-dumbbell"></i>
+                            {% endif %}
+                            {% if ex.tipo == 'usuario' %}
+                            <span class="etv-tipo-badge" title="Exercício personalizado">
+                                <i class="bi bi-person-fill"></i>
+                            </span>
+                            {% endif %}
+                            <span class="etv-check-badge"><i class="bi bi-check-lg"></i></span>
+                        </div>
+
+                        <div class="etv-card-body">
+                            <div class="etv-card-nome" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ ex.nome }}">
+                                {{ ex.nome }}
+                            </div>
+                            <span class="badge etv-card-musculo">{{ ex.musculo }}</span>
+                            {% if ex.descricao %}
+                            <p class="etv-card-desc" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ ex.descricao }}">
+                                {{ ex.descricao }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+
+                <div class="text-center text-muted py-4 d-none" id="etvSemResultados">
+                    <i class="bi bi-search display-6 d-block mb-2"></i>
+                    Nenhum exercício encontrado para esse filtro.
                 </div>
             </div>
 
-            <div class="mt-4">
-                <button type="submit" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
-                    <i class="bi bi-save"></i> Salvar Alterações
-                </button>
-                <a href="{{ url_for('version.ver_versao', versao_id=versao.id) }}" class="btn btn-secondary">
-                    Cancelar
-                </a>
+            <div class="etv-footer-bar">
+                <div class="etv-footer-status">
+                    <i class="bi bi-info-circle"></i>
+                    <span><span data-etv-contador-selecionados>0</span> exercício(s) selecionado(s)</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('version.ver_versao', versao_id=versao.id) }}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn etv-btn-save">
+                        <i class="bi bi-save"></i> Salvar Alterações
+                    </button>
+                </div>
             </div>
         </form>
     </div>
 </div>
-
-<script>
-    const buscaInput = document.getElementById('buscaExercicios');
-    const filtroMusculo = document.getElementById('filtroMusculo');
-    const contadorVisiveis = document.getElementById('contadorVisiveis');
-    const semResultados = document.getElementById('semResultados');
-
-    function filtrarExercicios() {
-        const termo = buscaInput.value.toLowerCase().trim();
-        const musculo = filtroMusculo.value;
-        let visiveis = 0;
-
-        document.querySelectorAll('.exercicio-item').forEach(item => {
-            const nome = item.dataset.nome;
-            const itemMusculo = item.dataset.musculo;
-
-            let mostrar = true;
-            if (termo && !nome.includes(termo)) mostrar = false;
-            if (musculo && itemMusculo !== musculo) mostrar = false;
-
-            item.classList.toggle('d-none', !mostrar);
-            if (mostrar) visiveis++;
-        });
-
-        if (contadorVisiveis) {
-            contadorVisiveis.textContent = visiveis + ' exercício(s) encontrado(s)';
-        }
-        if (semResultados) {
-            semResultados.classList.toggle('d-none', visiveis !== 0);
-        }
-
-        atualizarContador();
-    }
-
-    function limparFiltro() {
-        buscaInput.value = '';
-        filtroMusculo.value = '';
-        filtrarExercicios();
-    }
-
-    function selecionarTodosVisiveis() {
-        document.querySelectorAll('.exercicio-item:not(.d-none) .exercicio-checkbox').forEach(cb => {
-            cb.checked = true;
-            sincronizarCard(cb);
-        });
-        atualizarContador();
-    }
-
-    function limparTodos() {
-        document.querySelectorAll('.exercicio-checkbox').forEach(cb => {
-            cb.checked = false;
-            sincronizarCard(cb);
-        });
-        atualizarContador();
-    }
-
-    function sincronizarCard(checkbox) {
-        const card = checkbox.closest('.exercicio-card');
-        if (card) card.classList.toggle('selecionado', checkbox.checked);
-    }
-
-    function onCheckboxChange(checkbox) {
-        sincronizarCard(checkbox);
-        atualizarContador();
-    }
-
-    function atualizarContador() {
-        const total = document.querySelectorAll('.exercicio-checkbox:checked').length;
-        const contador = document.getElementById('contadorSelecionados');
-        if (contador) {
-            contador.textContent = total + ' selecionados';
-        }
-    }
-
-    if (buscaInput) {
-        buscaInput.addEventListener('input', filtrarExercicios);
-    }
-
-    if (filtroMusculo) {
-        filtroMusculo.addEventListener('change', filtrarExercicios);
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        atualizarContador();
-
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl, { trigger: 'hover' });
-        });
-    });
-
-    document.getElementById('formEditarTreino')?.addEventListener('submit', function(e) {
-        const checkboxes = document.querySelectorAll('.exercicio-checkbox:checked');
-        if (checkboxes.length === 0) {
-            e.preventDefault();
-            alert('Selecione pelo menos um exercício para o treino!');
-            return false;
-        }
-
-        const btn = this.querySelector('button[type="submit"]');
-        if (btn) {
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Salvando...';
-            btn.disabled = true;
-        }
-    });
-</script>
 
 <style>
     .btn-outline-primary {
@@ -265,145 +171,9 @@
         border-color: #F28C33;
         color: white;
     }
-
-    #contadorSelecionados {
-        font-size: 0.85rem;
-        padding: 6px 10px;
-    }
-
-    .exercicios-scroll {
-        max-height: 640px;
-        overflow-y: auto;
-        border: 1px solid #dee2e6;
-        padding: 15px;
-        border-radius: 8px;
-        background: #fafafa;
-    }
-
-    /* Card de exercício */
-    .exercicio-card {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        background: #fff;
-        border: 2px solid #e9ecef;
-        border-radius: 10px;
-        overflow: hidden;
-        cursor: pointer;
-        transition: border-color .15s ease, box-shadow .15s ease, transform .1s ease;
-    }
-    .exercicio-card:hover {
-        border-color: #FFB366;
-        box-shadow: 0 3px 10px rgba(242, 140, 51, .18);
-    }
-    .exercicio-card:active {
-        transform: scale(0.98);
-    }
-    .exercicio-card.selecionado {
-        border-color: #F28C33;
-        background: #FFF8F1;
-        box-shadow: 0 3px 10px rgba(242, 140, 51, .25);
-    }
-
-    .exercicio-card-img {
-        position: relative;
-        width: 100%;
-        aspect-ratio: 4 / 3;
-        background: #eef0f2;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-    }
-    .exercicio-card-img img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-    .exercicio-card-img.sem-imagem,
-    .exercicio-card-img i.bi-dumbbell {
-        color: #b0b6bc;
-        font-size: 1.9rem;
-    }
-
-    .exercicio-tipo-badge {
-        position: absolute;
-        top: 6px;
-        left: 6px;
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        background: rgba(45, 45, 45, .65);
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: .65rem;
-    }
-
-    .exercicio-check-badge {
-        position: absolute;
-        top: 6px;
-        right: 6px;
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        background: #fff;
-        border: 2px solid #dee2e6;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: transparent;
-        transition: all .15s ease;
-    }
-    .exercicio-card.selecionado .exercicio-check-badge {
-        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
-        border-color: #F28C33;
-        color: #fff;
-    }
-
-    .exercicio-card-body {
-        padding: 8px 10px 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        flex: 1;
-    }
-
-    /* Nome: usa toda a largura do card, sem quebrar linha, com tooltip */
-    .exercicio-nome {
-        font-weight: 600;
-        font-size: .85rem;
-        color: #2D2D2D;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
-    }
-
-    .exercicio-musculo-badge {
-        align-self: flex-start;
-        background-color: #eef0f2;
-        color: #6c757d;
-        font-weight: 500;
-        font-size: .68rem;
-    }
-
-    /* Descrição: até 2 linhas, com tooltip para o texto completo */
-    .exercicio-desc {
-        margin: 2px 0 0;
-        font-size: .72rem;
-        color: #6c757d;
-        line-height: 1.3;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    @media (max-width: 576px) {
-        .exercicio-desc { display: none; }
-    }
 </style>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/editar-treino-versao.js') }}"></script>
 {% endblock %}

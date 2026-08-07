@@ -236,139 +236,49 @@ def editar_treino_versao(versao_id, treino_codigo):
     # MÉTODO POST - SALVAR
     # ==========================================================
     if request.method == 'POST':
-        nome_treino = request.form.get('nome_treino')
-        descricao_treino = request.form.get('descricao_treino', '')
-        
+        nome_treino = request.form.get('nome_treino', '').strip()
+        descricao_treino = request.form.get('descricao_treino', '').strip()
+
         exercicios_raw = request.form.getlist('exercicios[]')
-        
-        # Separar IDs por tipo
-        usuarios_ids = []
-        bases_ids = []
-        
-        for item in exercicios_raw:
-            if item and item.strip():
-                if item.startswith('u_'):
-                    try:
-                        usuarios_ids.append(int(item[2:]))
-                    except ValueError:
-                        pass
-                elif item.startswith('b_'):
-                    try:
-                        bases_ids.append(int(item[2:]))
-                    except ValueError:
-                        pass
-        
-        usuarios_ids = list(set(usuarios_ids))
-        bases_ids = list(set(bases_ids))
-        
-        if not usuarios_ids and not bases_ids:
+
+        # Método compartilhado com a rota do professor (routes/professor_routes.py)
+        # -- mesma validação/parsing, evita duas implementações divergentes.
+        usuarios_ids_validos, bases_ids_validos = VersaoService.processar_exercicios_formulario(
+            exercicios_raw, current_user.id
+        )
+
+        if not usuarios_ids_validos and not bases_ids_validos:
             flash('Selecione pelo menos um exercício!', 'danger')
             return redirect(request.url)
-        
-        # Validar IDs de usuário e de base em lote (era 1 query por ID)
-        usuarios_ids_validos = []
-        if usuarios_ids:
-            usuarios_ids_validos = [
-                row.id for row in ExercicioCustomizado.query.filter(
-                    ExercicioCustomizado.id.in_(usuarios_ids),
-                    ExercicioCustomizado.usuario_id == current_user.id
-                ).with_entities(ExercicioCustomizado.id).all()
-            ]
 
-        bases_ids_validos = []
-        if bases_ids:
-            bases_ids_validos = [
-                row.id for row in ExercicioSistema.query.filter(
-                    ExercicioSistema.id.in_(bases_ids)
-                ).with_entities(ExercicioSistema.id).all()
-            ]
-        
-        # Atualizar treino
         treino_versao.nome_treino = nome_treino
         treino_versao.descricao_treino = descricao_treino
-        
-        # Remover antigos
-        VersaoExercicio.query.filter_by(treino_versao_id=treino_versao.id).delete()
-        
-        ordem = 0
-        
-        # Adicionar exercícios do usuário
-        for ex_id in usuarios_ids_validos:
-            ve = VersaoExercicio(
-                treino_versao_id=treino_versao.id,
-                exercicio_usuario_id=ex_id,
-                ordem=ordem
-            )
-            db.session.add(ve)
-            ordem += 1
-        
-        # Adicionar exercícios da base
-        for ex_id in bases_ids_validos:
-            ve = VersaoExercicio(
-                treino_versao_id=treino_versao.id,
-                exercicio_base_id=ex_id,
-                ordem=ordem
-            )
-            db.session.add(ve)
-            ordem += 1
-        
+
         try:
+            VersaoService.adicionar_exercicios_a_treino_versao(
+                treino_versao.id, usuarios_ids_validos, bases_ids_validos
+            )
             db.session.commit()
             flash(f'Treino {treino_codigo} atualizado!', 'success')
             return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
         except Exception as e:
             db.session.rollback()
+            logger.exception("Erro ao salvar treino da versão (aluno)")
             flash(f'Erro: {str(e)}', 'danger')
             return redirect(request.url)
-    
+
     # ==========================================================
     # MÉTODO GET - CARREGAR FORMULÁRIO
     # ==========================================================
-    
-    # Buscar exercícios do usuário
-    exercicios_usuario = ExercicioCustomizado.query\
-        .filter_by(usuario_id=current_user.id)\
-        .order_by(ExercicioCustomizado.nome)\
-        .all()
-    
-    # Buscar exercícios da base
-    exercicios_base = ExercicioSistema.query\
-        .order_by(ExercicioSistema.nome)\
-        .all()
-    
-    # Montar lista para template (COM PREFIXO)
-    exercicios_display = []
-    
-    for ex in exercicios_usuario:
-        exercicios_display.append({
-            'id': ex.id,
-            'nome': ex.nome,
-            'musculo': ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A',
-            'tipo': 'usuario',
-            'prefixo': 'u_'
-        })
-    
-    for ex in exercicios_base:
-        exercicios_display.append({
-            'id': ex.id,
-            'nome': ex.nome,
-            'musculo': ex.grupo_muscular or 'N/A',
-            'tipo': 'base',
-            'prefixo': 'b_'
-        })
-    
-    exercicios_display.sort(key=lambda x: x['nome'])
-    
-    # Buscar exercícios já salvos na versão (COM PREFIXO)
-    exercicios_atuais = []
-    for ve in treino_versao.exercicios:
-        if ve.exercicio_usuario_id:
-            exercicios_atuais.append(f"u_{ve.exercicio_usuario_id}")
-        elif ve.exercicio_base_id:
-            exercicios_atuais.append(f"b_{ve.exercicio_base_id}")
-    
+    # Mesmo serviço usado pela visão do professor (routes/professor_routes.py) --
+    # já traz imagem/descrição de cada exercício, o que a montagem manual
+    # anterior aqui não trazia.
+    exercicios_display, exercicios_atuais = VersaoService.get_exercicios_para_edicao(
+        current_user.id, treino_versao
+    )
+
     musculos = MusculoService.get_all_nomes()
-    
+
     return render_template('aluno/editar_treino_versao.html',
                          versao=versao,
                          treino_id=treino_codigo,
