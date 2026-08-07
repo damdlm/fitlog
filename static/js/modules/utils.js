@@ -34,12 +34,13 @@ const FitLogUtils = (function() {
         
         toast.innerHTML = `
             <div class="d-flex">
-                <div class="toast-body">
-                    ${message}
-                </div>
+                <div class="toast-body toast-message-text"></div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
             </div>
         `;
+        // Mesma razão do outro toast (fitlog-utils.js): textContent em vez
+        // de interpolar no innerHTML evita XSS se message vier do servidor.
+        toast.querySelector('.toast-message-text').textContent = message;
         
         toastContainer.appendChild(toast);
         

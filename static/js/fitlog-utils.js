@@ -56,9 +56,13 @@ const FitLogUtils = (function() {
         toast.innerHTML = `
             <div style="display: flex; align-items: center;">
                 <i class="bi ${icons[type]}" style="font-size: 1.2rem; margin-right: 10px;"></i>
-                <span>${message}</span>
+                <span class="toast-message-text"></span>
             </div>
         `;
+        // message pode conter texto vindo do servidor (ex: erro de outra
+        // API) -- setar via textContent em vez de interpolar no innerHTML
+        // evita XSS caso essa mensagem algum dia inclua dado de usuário.
+        toast.querySelector('.toast-message-text').textContent = message;
         
         container.appendChild(toast);
         

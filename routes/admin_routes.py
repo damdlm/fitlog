@@ -224,6 +224,22 @@ def salvar_exercicio():
 @login_required
 def editar_exercicio():
     """Edita um exercício do usuário atual (customizado ou da base)"""
+    # O template gerenciar_treinos.html chama essa rota via fetch() e
+    # espera response.json() com {success, message} -- mas a rota sempre
+    # fazia redirect() (resposta HTML), então response.json() sempre
+    # lançava um erro de parse no JS e a edição parecia "não fazer nada"
+    # silenciosamente. eh_ajax detecta isso pelo header que o próprio JS
+    # já envia (X-Requested-With), e só nesse caso responde JSON -- mantém
+    # o comportamento antigo (redirect + flash) para qualquer chamador
+    # que não seja essa tela.
+    eh_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+    def responder(sucesso, mensagem, categoria):
+        if eh_ajax:
+            return jsonify({"success": sucesso, "message": mensagem})
+        flash(mensagem, categoria)
+        return redirect(url_for("admin.gerenciar"))
+
     exercicio_id = request.form.get("id", "").strip()
     nome_exercicio = request.form.get("nome", "").strip()
     musculo_nome = request.form.get("musculo", "").strip()
@@ -231,17 +247,19 @@ def editar_exercicio():
     descricao = request.form.get("descricao", "").strip()
 
     if not exercicio_id or not nome_exercicio:
-        flash("Dados inválidos para edição.", "danger")
-        return redirect(url_for("admin.gerenciar"))
+        return responder(False, "Dados inválidos para edição.", "danger")
 
     exercicio_id = int(exercicio_id)
 
     # Auto-detect músculo se não informado
+    musculo_auto_detectado = None
     if not musculo_nome:
         musculo_encontrado = buscar_musculo_no_catalogo(nome_exercicio)
         if musculo_encontrado:
             musculo_nome = musculo_encontrado
-            flash(f"Músculo atualizado para '{musculo_nome}'", "info")
+            musculo_auto_detectado = musculo_nome
+            if not eh_ajax:
+                flash(f"Músculo atualizado para '{musculo_nome}'", "info")
 
     # Resolver/criar músculo no banco
     musculo_obj = None
@@ -264,8 +282,10 @@ def editar_exercicio():
             exercicio.musculo_id = musculo_obj.id
         db.session.commit()
         logger.info(f"Exercício customizado {exercicio_id} atualizado pelo usuário {current_user.id}")
-        flash("Exercício atualizado com sucesso!", "success")
-        return redirect(url_for("admin.gerenciar"))
+        mensagem = "Exercício atualizado com sucesso!"
+        if musculo_auto_detectado:
+            mensagem += f" (músculo detectado automaticamente: {musculo_auto_detectado})"
+        return responder(True, mensagem, "success")
 
     # Tenta como exercício da base (personalização)
     exercicio_usuario = ExercicioUsuario.query.filter_by(
@@ -273,17 +293,24 @@ def editar_exercicio():
     ).first()
 
     if exercicio_usuario:
-        exercicio_usuario.nome_personalizado = nome_exercicio
-        exercicio_usuario.descricao_personalizada = descricao
+        # BUG encontrado ao escrever teste para este fix: o código
+        # gravava em .nome_personalizado/.descricao_personalizada, que
+        # não existem no modelo ExercicioUsuario (ele só tem .nome,
+        # .descricao, .musculo_id -- ver models.py). Como não são
+        # colunas reais, o commit() não dava erro nenhum, só não salvava
+        # nada: o usuário editava e a edição desaparecia silenciosamente.
+        exercicio_usuario.nome = nome_exercicio
+        exercicio_usuario.descricao = descricao
         if musculo_obj:
-            exercicio_usuario.musculo_personalizado_id = musculo_obj.id
+            exercicio_usuario.musculo_id = musculo_obj.id
         db.session.commit()
         logger.info(f"Exercício usuário {exercicio_id} atualizado pelo usuário {current_user.id}")
-        flash("Exercício atualizado com sucesso!", "success")
-        return redirect(url_for("admin.gerenciar"))
+        mensagem = "Exercício atualizado com sucesso!"
+        if musculo_auto_detectado:
+            mensagem += f" (músculo detectado automaticamente: {musculo_auto_detectado})"
+        return responder(True, mensagem, "success")
 
-    flash("Exercício não encontrado ou sem permissão.", "danger")
-    return redirect(url_for("admin.gerenciar"))
+    return responder(False, "Exercício não encontrado ou sem permissão.", "danger")
 
 
 @admin_bp.route("/excluir/exercicio/<int:exercicio_id>", methods=["POST"])

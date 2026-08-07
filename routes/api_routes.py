@@ -170,7 +170,7 @@ def api_buscar_exercicios():
             
             if termo:
                 if termo_normalizado in nome_normalizado:
-                    id_hash = int(hashlib.md5(nome.encode()).hexdigest()[:8], 16)
+                    id_hash = int(hashlib.md5(nome.encode(), usedforsecurity=False).hexdigest()[:8], 16)
                     resultados.append({
                         "id": id_hash,
                         "nome": nome,
@@ -178,7 +178,7 @@ def api_buscar_exercicios():
                     })
             else:
                 if len(resultados) < 200:
-                    id_hash = int(hashlib.md5(nome.encode()).hexdigest()[:8], 16)
+                    id_hash = int(hashlib.md5(nome.encode(), usedforsecurity=False).hexdigest()[:8], 16)
                     resultados.append({
                         "id": id_hash,
                         "nome": nome,

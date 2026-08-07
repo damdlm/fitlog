@@ -22,17 +22,29 @@ def exercicios():
             .order_by(ExercicioCustomizado.nome) \
             .all()
 
+        # Esta página só lista ExercicioCustomizado, então "ultimas_cargas"
+        # precisa ser calculado só a partir de registros contra exercícios
+        # do próprio usuário -- usar RegistroTreino.exercicio_id (hybrid
+        # property = COALESCE(exercicio_usuario_id, exercicio_base_id))
+        # aqui é um bug real: como ExercicioCustomizado e ExercicioSistema
+        # têm sequências de ID independentes, um exercício de sistema pode
+        # colidir numericamente com um exercício customizado do usuário, e
+        # a carga de um "vaza" pro outro no dict (confirmado com teste).
+        # Usar direto a coluna exercicio_usuario_id evita a ambiguidade.
         subq = db.session.query(
-            RegistroTreino.exercicio_id,
+            RegistroTreino.exercicio_usuario_id,
             func.max(RegistroTreino.data_registro).label('max_data')
-        ).filter_by(user_id=current_user.id).group_by(RegistroTreino.exercicio_id).subquery()
+        ).filter(
+            RegistroTreino.user_id == current_user.id,
+            RegistroTreino.exercicio_usuario_id.isnot(None)
+        ).group_by(RegistroTreino.exercicio_usuario_id).subquery()
 
         cargas_query = db.session.query(
-            RegistroTreino.exercicio_id,
+            RegistroTreino.exercicio_usuario_id,
             HistoricoTreino.carga
         ).join(
             subq,
-            (RegistroTreino.exercicio_id == subq.c.exercicio_id) &
+            (RegistroTreino.exercicio_usuario_id == subq.c.exercicio_usuario_id) &
             (RegistroTreino.data_registro == subq.c.max_data)
         ).join(
             HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id

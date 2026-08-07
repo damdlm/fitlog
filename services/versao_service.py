@@ -625,9 +625,7 @@ class VersaoService(BaseService):
                 'musculo': musculo_nome,
                 'musculo_nome': musculo_nome,
                 'tipo': 'usuario',
-                'prefixo': 'u_',
-                'imagem': None,
-                'descricao': (ex.descricao or '').strip()
+                'prefixo': 'u_'
             })
         
         for ex in exercicios_base:
@@ -638,9 +636,7 @@ class VersaoService(BaseService):
                 'musculo': musculo_nome,
                 'musculo_nome': musculo_nome,
                 'tipo': 'base',
-                'prefixo': 'b_',
-                'imagem': ex.imagem,
-                'descricao': (ex.instrucao_pt or '').strip()
+                'prefixo': 'b_'
             })
         
         exercicios_display.sort(key=lambda x: x['nome'].lower())
@@ -663,7 +659,7 @@ class VersaoService(BaseService):
         bases_ids = bases_ids or []
         
       #  if not usuarios_ids and not bases_ids:
-      #     raise ValueError("Pelo menos um exercício é obrigatório")
+      #      raise ValueError("Pelo menos um exercício é obrigatório")
         
         VersaoExercicio.query.filter_by(treino_versao_id=treino_versao_id).delete()
         db.session.flush()
@@ -698,7 +694,7 @@ class VersaoService(BaseService):
             versao = VersaoService.get_by_id(versao_id, user_id)
             if not versao:
                 return False
-            treino = TreinoService.get_or_create(treino_codigo, nome_treino, descricao_treino, user_id)
+            treino = TreinoService.get_by_codigo(treino_codigo, user_id)
             if not treino:
                 return False
             if any(tv.treino_id == treino.id for tv in versao.treinos):

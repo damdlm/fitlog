@@ -156,15 +156,12 @@ def novo_treino_versao(versao_id):
         flash('Esta versão está arquivada e não pode ser alterada.', 'warning')
         return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
     if request.method == 'POST':
-        treino_codigo = request.form.get('treino_id', '').strip().upper()
+        treino_id = request.form.get('treino_id')
         nome_treino = request.form.get('nome_treino')
         descricao_treino = request.form.get('descricao_treino', '')
-        if not treino_codigo or not treino_codigo.isalpha() or len(treino_codigo) != 1:
-            flash('Selecione uma letra válida para o treino.', 'danger')
-            return redirect(url_for('aluno.novo_treino_versao', versao_id=versao_id))
-        treino = TreinoService.get_or_create(treino_codigo, nome_treino, descricao_treino, user_id=current_user.id)
+        treino = TreinoService.get_by_id(treino_id, user_id=current_user.id)
         if not treino:
-            flash('Erro ao criar treino!', 'danger')
+            flash('Treino não encontrado!', 'danger')
             return redirect(url_for('aluno.novo_treino_versao', versao_id=versao_id))
         existe = TreinoVersao.query.filter_by(versao_id=versao_id, treino_id=treino.id).first()
         if existe:
@@ -190,9 +187,10 @@ def novo_treino_versao(versao_id):
             db.session.rollback()
             logger.exception("Erro ao adicionar treino à versão")
             flash('Erro ao adicionar treino.', 'danger')
-    letras_em_uso = {tv.treino_ref.codigo for tv in versao.treinos}
-    letras_disponiveis = [l for l in versao.divisao if l not in letras_em_uso]
-    return render_template('aluno/novo_treino_versao.html', versao=versao, letras=letras_disponiveis)
+    treinos_disponiveis = TreinoService.get_all(user_id=current_user.id)
+    treinos_na_versao = [tv.treino_id for tv in versao.treinos]
+    treinos_livres = [t for t in treinos_disponiveis if t.id not in treinos_na_versao]
+    return render_template('aluno/novo_treino_versao.html', versao=versao, treinos=treinos_livres)
 
 @aluno_bp.route('/versao/<int:versao_id>/treino/<string:treino_codigo>/editar', methods=['GET', 'POST'])
 @login_required
