@@ -894,18 +894,18 @@ def novo_treino_versao_aluno(aluno_id, versao_id):
         return redirect(url_for('professor.versoes_aluno', aluno_id=aluno.id))
     
     if request.method == 'POST':
-        treino_id = request.form.get('treino_id')
+        treino_codigo = request.form.get('treino_id', '').strip().upper()
         nome_treino = request.form.get('nome_treino')
         descricao_treino = request.form.get('descricao_treino', '')
         
-        if not treino_id or not nome_treino:
+        if not treino_codigo or not treino_codigo.isalpha() or len(treino_codigo) != 1 or not nome_treino:
             flash('Todos os campos são obrigatórios!', 'danger')
             return redirect(url_for('professor.novo_treino_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
         
-        treino = TreinoService.get_by_id(treino_id, user_id=aluno.id)
+        treino = TreinoService.get_or_create(treino_codigo, nome_treino, descricao_treino, user_id=aluno.id)
         
         if not treino:
-            flash('Treino não encontrado!', 'danger')
+            flash('Erro ao criar treino!', 'danger')
             return redirect(url_for('professor.novo_treino_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
         
         existe = TreinoVersao.query.filter_by(versao_id=versao_id, treino_id=treino.id).first()
@@ -940,14 +940,13 @@ def novo_treino_versao_aluno(aluno_id, versao_id):
             flash(f'Erro ao adicionar treino: {str(e)}', 'danger')
             return redirect(url_for('professor.novo_treino_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
     
-    treinos_disponiveis = TreinoService.get_all(user_id=aluno.id)
-    treinos_na_versao = [tv.treino_id for tv in versao.treinos]
-    treinos_livres = [t for t in treinos_disponiveis if t.id not in treinos_na_versao]
+    letras_em_uso = {tv.treino_ref.codigo for tv in versao.treinos}
+    letras_disponiveis = [l for l in versao.divisao if l not in letras_em_uso]
     
     return render_template('professor/novo_treino_versao_aluno.html',
                          aluno=aluno,
                          versao=versao,
-                         treinos=treinos_livres)
+                         letras=letras_disponiveis)
 
 
 # ==========================================================
