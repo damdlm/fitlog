@@ -627,6 +627,7 @@ class VersaoService(BaseService):
                 'tipo': 'usuario',
                 'prefixo': 'u_',
                 'imagem': None,
+                'gif_url': None,
                 'descricao': (ex.descricao or '').strip()
             })
         
@@ -640,6 +641,7 @@ class VersaoService(BaseService):
                 'tipo': 'base',
                 'prefixo': 'b_',
                 'imagem': ex.imagem,
+                'gif_url': ex.gif_url,
                 'descricao': (ex.instrucao_pt or '').strip()
             })
         

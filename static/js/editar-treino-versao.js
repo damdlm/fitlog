@@ -154,24 +154,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // -----------------------------------------------------
-    // Skeleton de carregamento das imagens
-    // -----------------------------------------------------
-    grid?.querySelectorAll('img[data-etv-img]').forEach(img => {
-        const wrapper = img.closest('.etv-card-img');
-        wrapper?.classList.add('is-loading');
-        const finalizar = () => wrapper?.classList.remove('is-loading');
-
-        if (img.complete && img.naturalWidth > 0) {
-            img.classList.add('is-loaded');
-            finalizar();
-        } else {
-            img.addEventListener('load', () => { img.classList.add('is-loaded'); finalizar(); });
-            img.addEventListener('error', finalizar);
-        }
-    });
-
-    // -----------------------------------------------------
-    // Tooltips (Bootstrap)
+    // Tooltips (Bootstrap) — descrição completa do exercício
     // -----------------------------------------------------
     if (window.bootstrap) {
         grid?.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {

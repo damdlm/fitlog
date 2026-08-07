@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block page_icon %}<i class="bi bi-pencil-square" style="color: #F28C33;"></i>{% endblock %}
-{% block page_title %}Editar Treino {{ treino_id }} na Versão {{ versao.versao }}{% endblock %}
+{% block page_title %}Editar Treino {{ treino_id }}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/editar-treino-versao.css') }}">
@@ -9,23 +9,13 @@
 
 {% block content %}
 <div class="etv-header">
-    <div>
-        <span class="etv-eyebrow d-none d-md-block">Versão {{ versao.versao }}</span>
-        <h2 class="etv-title d-none d-md-flex">
-            <i class="bi bi-pencil-square" style="color: #F28C33;"></i>
-            Editar Treino {{ treino_id }}
-        </h2>
-    </div>
+    <h2 class="etv-title d-none d-md-flex">
+        <i class="bi bi-pencil-square" style="color: #F28C33;"></i>
+        Editar Treino {{ treino_id }}
+    </h2>
     <a href="{{ url_for('version.ver_versao', versao_id=versao.id) }}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Voltar
     </a>
-</div>
-
-<div class="etv-meta">
-    <span class="etv-meta-pill">
-        <i class="bi bi-calendar-range"></i>
-        <strong>{{ versao.data_inicio_formatada }}</strong> até <strong>{{ versao.data_fim_formatada or 'Atual' }}</strong>
-    </span>
 </div>
 
 <div class="card etv-panel">
@@ -34,17 +24,12 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
             <div class="row mb-4">
-                <div class="col-md-4">
-                    <label class="etv-field-label">ID do Treino</label>
-                    <input type="text" class="form-control" value="{{ treino_id }}" disabled readonly>
-                    <small class="text-muted">O ID não pode ser alterado</small>
-                </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label class="etv-field-label">Nome do Treino</label>
                     <input type="text" name="nome_treino" class="form-control"
                            value="{{ treino.nome }}" required>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label class="etv-field-label">Descrição</label>
                     <input type="text" name="descricao_treino" class="form-control"
                            value="{{ treino.descricao }}">
@@ -99,40 +84,35 @@
                            data-nome="{{ ex.nome|lower }}"
                            data-nome-display="{{ ex.nome }}"
                            data-musculo="{{ ex.musculo }}">
-                        <input class="form-check-input etv-checkbox visually-hidden"
+                        <input class="etv-checkbox"
                                type="checkbox"
                                name="exercicios[]"
                                value="{{ ex.prefixo }}{{ ex.id }}"
                                id="ex_{{ ex.prefixo }}{{ ex.id }}"
                                {% if marcado %}checked{% endif %}>
 
-                        <div class="etv-card-img">
-                            {% if ex.imagem %}
-                            <img data-etv-img src="{{ url_for('exercicios_media', caminho=ex.imagem) }}"
-                                 alt="{{ ex.nome }}" loading="lazy"
-                                 onerror="this.closest('.etv-card-img').classList.add('sem-imagem'); this.remove();">
-                            {% else %}
-                            <i class="bi bi-dumbbell"></i>
-                            {% endif %}
-                            {% if ex.tipo == 'usuario' %}
-                            <span class="etv-tipo-badge" title="Exercício personalizado">
-                                <i class="bi bi-person-fill"></i>
-                            </span>
-                            {% endif %}
-                            <span class="etv-check-badge"><i class="bi bi-check-lg"></i></span>
-                        </div>
-
                         <div class="etv-card-body">
-                            <div class="etv-card-nome" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ ex.nome }}">
+                            <div class="etv-card-nome" data-bs-toggle="tooltip" data-bs-placement="top"
+                                 title="{{ ex.descricao or ex.nome }}">
                                 {{ ex.nome }}
                             </div>
                             <span class="badge etv-card-musculo">{{ ex.musculo }}</span>
-                            {% if ex.descricao %}
-                            <p class="etv-card-desc" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ ex.descricao }}">
-                                {{ ex.descricao }}
-                            </p>
-                            {% endif %}
                         </div>
+
+                        {% if ex.tipo == 'usuario' %}
+                        <span class="etv-tipo-badge" title="Exercício personalizado">
+                            <i class="bi bi-person-fill"></i>
+                        </span>
+                        {% endif %}
+
+                        <button type="button" class="btn btn-outline-secondary etv-video-btn"
+                                title="{{ 'Ver vídeo do exercício' if ex.gif_url else 'Sem vídeo disponível' }}"
+                                data-nome="{{ ex.nome }}"
+                                data-gif="{{ ex.gif_url or '' }}"
+                                onclick="event.stopPropagation(); abrirModalImagensExercicio(this)"
+                                {% if not ex.gif_url %}disabled{% endif %}>
+                            <i class="bi bi-play-circle"></i>
+                        </button>
                     </label>
                     {% endfor %}
                 </div>
