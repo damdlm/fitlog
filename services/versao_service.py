@@ -625,7 +625,9 @@ class VersaoService(BaseService):
                 'musculo': musculo_nome,
                 'musculo_nome': musculo_nome,
                 'tipo': 'usuario',
-                'prefixo': 'u_'
+                'prefixo': 'u_',
+                'imagem': None,
+                'descricao': (ex.descricao or '').strip()
             })
         
         for ex in exercicios_base:
@@ -636,7 +638,9 @@ class VersaoService(BaseService):
                 'musculo': musculo_nome,
                 'musculo_nome': musculo_nome,
                 'tipo': 'base',
-                'prefixo': 'b_'
+                'prefixo': 'b_',
+                'imagem': ex.imagem,
+                'descricao': (ex.instrucao_pt or '').strip()
             })
         
         exercicios_display.sort(key=lambda x: x['nome'].lower())
