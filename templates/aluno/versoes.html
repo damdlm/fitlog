@@ -130,32 +130,27 @@
     }
     .vc-search.has-value .vc-search-clear { display: inline-flex; }
 
-    .vc-filter-group {
+    .vc-filter-toggle {
         display: inline-flex;
-        gap: 4px;
-        background: var(--vc-bg-soft);
-        border: 1px solid var(--vc-line);
-        border-radius: 12px;
-        padding: 4px;
+        align-items: center;
+        gap: 7px;
         flex-shrink: 0;
-    }
-    .vc-filter-btn {
-        border: none;
-        background: none;
-        padding: 7px 14px;
-        border-radius: 9px;
-        font-size: 0.82rem;
-        font-weight: 600;
+        border: 1px solid var(--vc-line);
+        background: white;
         color: var(--vc-muted);
+        padding: 9px 16px;
+        border-radius: 12px;
+        font-size: 0.82rem;
+        font-weight: 700;
         transition: all 0.15s ease;
         white-space: nowrap;
     }
-    .vc-filter-btn.is-active {
-        background: white;
+    .vc-filter-toggle:hover { border-color: var(--vc-orange-light); color: var(--vc-ink); }
+    .vc-filter-toggle[aria-pressed="true"] {
+        background: rgba(242, 140, 51, 0.1);
+        border-color: var(--vc-orange);
         color: var(--vc-orange);
-        box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
     }
-    .vc-filter-btn:hover:not(.is-active) { color: var(--vc-ink); }
 
     .vc-result-count {
         font-size: 0.8rem;
@@ -344,28 +339,51 @@
 
     .vc-actions {
         display: flex;
+        align-items: center;
         gap: 6px;
         flex-wrap: wrap;
         margin-left: auto;
     }
-    .vc-icon-btn {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
+    .vc-action-btn {
+        --tint-bg: rgba(107, 114, 128, 0.1);
+        --tint-color: var(--vc-muted);
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        border: 1px solid var(--vc-line);
-        background: white;
-        color: var(--vc-muted);
-        transition: all 0.15s ease;
-        font-size: 0.95rem;
+        gap: 7px;
+        height: 38px;
+        padding: 0 13px;
+        border-radius: 10px;
+        border: none;
+        background: var(--tint-bg);
+        color: var(--tint-color);
+        font-size: 0.8rem;
+        font-weight: 700;
+        line-height: 1;
+        transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+        white-space: nowrap;
     }
-    .vc-icon-btn:hover { transform: translateY(-1px); color: white; }
-    .vc-icon-btn.btn-view:hover { background: #3B82F6; border-color: #3B82F6; }
-    .vc-icon-btn.btn-finish:hover { background: #F59E0B; border-color: #F59E0B; }
-    .vc-icon-btn.btn-clone:hover { background: #0EA5E9; border-color: #0EA5E9; }
-    .vc-icon-btn.btn-delete:hover { background: #EF4444; border-color: #EF4444; }
+    .vc-action-btn i { font-size: 0.98rem; }
+    .vc-action-btn:hover {
+        background: var(--tint-color);
+        color: white;
+        box-shadow: 0 6px 14px -4px rgba(0, 0, 0, 0.28);
+    }
+    .vc-action-btn:active { transform: scale(0.93); }
+    .vc-action-btn.variant-view   { --tint-color: #3B82F6; }
+    .vc-action-btn.variant-finish { --tint-color: #F59E0B; }
+    .vc-action-btn.variant-clone  { --tint-color: #0EA5E9; }
+    .vc-action-btn.variant-delete {
+        --tint-color: #EF4444;
+        margin-left: 8px;
+        padding-left: 15px;
+        border-left: 1px dashed var(--vc-line);
+        border-radius: 0 10px 10px 0;
+    }
+    @media (max-width: 575.98px) {
+        .vc-action-btn { width: 38px; padding: 0; }
+        .vc-action-label { display: none; }
+    }
 
     /* Corpo: treinos */
     .vc-body {
@@ -549,11 +567,9 @@
             <i class="bi bi-x-circle-fill"></i>
         </button>
     </div>
-    <div class="vc-filter-group" role="group" aria-label="Filtrar por status">
-        <button type="button" class="vc-filter-btn is-active" data-filter="all">Todas</button>
-        <button type="button" class="vc-filter-btn" data-filter="active">Ativas</button>
-        <button type="button" class="vc-filter-btn" data-filter="archived">Arquivadas</button>
-    </div>
+    <button type="button" class="vc-filter-toggle" id="vcFilterAtiva" aria-pressed="false">
+        <i class="bi bi-check-circle"></i> Ativa
+    </button>
 </div>
 
 <p class="vc-result-count" id="vcResultCount"></p>
@@ -597,37 +613,40 @@
             </div>
             <div class="vc-actions">
                 <a href="{{ url_for('aluno.ver_versao', versao_id=versao.id) }}"
-                   class="vc-icon-btn btn-view" title="Visualizar/Editar">
-                    <i class="bi bi-eye"></i>
+                   class="vc-action-btn variant-view" title="Visualizar / editar treinos desta versão">
+                    <i class="bi bi-eye"></i><span class="vc-action-label">Ver</span>
                 </a>
                 {% if is_atual %}
                 <a href="{{ url_for('aluno.finalizar_versao', versao_id=versao.id) }}"
-                   class="vc-icon-btn btn-finish" title="Finalizar"
+                   class="vc-action-btn variant-finish" title="Finalizar e arquivar esta versão"
+                   data-fl-no-transition
                    data-confirm-title="Finalizar esta versão?"
                    data-confirm-text="Ela será arquivada e sairá da lista de versões ativas."
                    data-confirm-variant="warning"
                    data-confirm-icon="bi-calendar-x"
                    data-confirm-label="Finalizar">
-                    <i class="bi bi-calendar-x"></i>
+                    <i class="bi bi-calendar-x"></i><span class="vc-action-label">Finalizar</span>
                 </a>
                 {% endif %}
                 <a href="{{ url_for('aluno.clonar_versao', versao_id=versao.id) }}"
-                   class="vc-icon-btn btn-clone" title="Clonar"
+                   class="vc-action-btn variant-clone" title="Clonar treinos e exercícios para uma nova versão"
+                   data-fl-no-transition
                    data-confirm-title="Clonar esta versão?"
                    data-confirm-text="Uma nova versão será criada com os mesmos treinos e exercícios desta."
                    data-confirm-variant="info"
                    data-confirm-icon="bi-copy"
                    data-confirm-label="Clonar">
-                    <i class="bi bi-copy"></i>
+                    <i class="bi bi-copy"></i><span class="vc-action-label">Clonar</span>
                 </a>
                 <a href="{{ url_for('aluno.excluir_versao', versao_id=versao.id, confirmar='false') }}"
-                   class="vc-icon-btn btn-delete" title="Excluir"
+                   class="vc-action-btn variant-delete" title="Excluir permanentemente esta versão"
+                   data-fl-no-transition
                    data-confirm-title="Excluir esta versão?"
                    data-confirm-text="Essa ação não pode ser desfeita. Todos os treinos e exercícios ligados a esta versão serão removidos."
                    data-confirm-variant="danger"
                    data-confirm-icon="bi-trash"
                    data-confirm-label="Excluir">
-                    <i class="bi bi-trash"></i>
+                    <i class="bi bi-trash"></i><span class="vc-action-label">Excluir</span>
                 </a>
             </div>
         </div>
@@ -745,7 +764,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var searchInput = document.getElementById('vcSearchInput');
     var searchWrap = document.getElementById('vcSearchWrap');
     var searchClear = document.getElementById('vcSearchClear');
-    var filterBtns = Array.prototype.slice.call(document.querySelectorAll('.vc-filter-btn'));
+    var filterToggle = document.getElementById('vcFilterAtiva');
     var resultCount = document.getElementById('vcResultCount');
     var noResults = document.getElementById('vcNoResults');
     var resetBtn = document.getElementById('vcResetFilters');
@@ -781,25 +800,25 @@ document.addEventListener('DOMContentLoaded', function () {
         searchInput.focus();
     });
 
-    filterBtns.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            filterBtns.forEach(function (b) { b.classList.remove('is-active'); });
-            btn.classList.add('is-active');
-            currentFilter = btn.dataset.filter;
+    if (filterToggle) {
+        filterToggle.addEventListener('click', function () {
+            var pressed = filterToggle.getAttribute('aria-pressed') === 'true';
+            filterToggle.setAttribute('aria-pressed', String(!pressed));
+            currentFilter = pressed ? 'all' : 'active';
             applyFilters();
         });
-    });
+    }
 
     if (resetBtn) {
         resetBtn.addEventListener('click', function () {
             searchInput.value = '';
             currentFilter = 'all';
-            filterBtns.forEach(function (b) { b.classList.toggle('is-active', b.dataset.filter === 'all'); });
+            if (filterToggle) filterToggle.setAttribute('aria-pressed', 'false');
             applyFilters();
         });
     }
 
-    // Modal de confirmação estilizado no lugar do window.confirm() nativo 
+    // Modal de confirmação estilizado no lugar do window.confirm() nativo
     var confirmModalEl = document.getElementById('vcConfirmModal');
     var confirmModal = new bootstrap.Modal(confirmModalEl);
     var confirmTitle = document.getElementById('vcConfirmTitle');
@@ -810,7 +829,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.querySelectorAll('[data-confirm-title]').forEach(function (link) {
         link.addEventListener('click', function (e) {
+            // preventDefault() sozinho não bastava: o script global de
+            // transição de página (page-transition.js) escuta clique em
+            // qualquer link interno lá em cima, no document, e navegava por
+            // conta própria antes do usuário decidir no modal. stopPropagation()
+            // impede esse listener global de rodar; data-fl-no-transition nos
+            // links (ver HTML) é o segundo reforço, caso outro script escute
+            // diretamente sem passar pelo document.
             e.preventDefault();
+            e.stopPropagation();
+
+            var tooltip = bootstrap.Tooltip.getInstance(link);
+            if (tooltip) tooltip.hide();
+
             confirmTitle.textContent = link.dataset.confirmTitle || 'Confirmar ação?';
             confirmText.textContent = link.dataset.confirmText || '';
             var variant = link.dataset.confirmVariant || 'warning';
@@ -821,6 +852,11 @@ document.addEventListener('DOMContentLoaded', function () {
             confirmActionBtn.href = link.getAttribute('href');
             confirmModal.show();
         });
+    });
+
+    // Tooltips modernos nos botões de ação (Ver / Finalizar / Clonar / Excluir)
+    document.querySelectorAll('.vc-action-btn[title]').forEach(function (btn) {
+        new bootstrap.Tooltip(btn, { placement: 'top', trigger: 'hover focus' });
     });
 });
 </script>
