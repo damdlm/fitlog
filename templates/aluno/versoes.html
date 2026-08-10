@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block page_icon %}<i class="bi bi-clock-history" style="color: #F28C33;"></i>{% endblock %}
-{% block page_title %}Minhas Versões de Treino{% endblock %}
+{% block page_title %}Minhas Versões{% endblock %}
 
 {% block content %}
 <style>
@@ -150,6 +150,22 @@
         background: rgba(242, 140, 51, 0.1);
         border-color: var(--vc-orange);
         color: var(--vc-orange);
+    }
+    .vc-filter-group {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    /* Rodapé com as ações principais (Nova Versão / Voltar) */
+    .vc-footer-actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid var(--vc-line);
     }
 
     .vc-result-count {
@@ -513,16 +529,8 @@
 <div class="vc-header">
     <h1 class="d-none d-md-block">
         <i class="bi bi-clock-history me-2" style="color: #F28C33;"></i>
-        Minhas Versões de Treino
+        Minhas Versões
     </h1>
-    <div class="vc-header-actions">
-        <a href="{{ url_for('aluno.nova_versao') }}" class="btn btn-success">
-            <i class="bi bi-plus-circle"></i> Nova Versão
-        </a>
-        <a href="{{ url_for('aluno.dashboard') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Voltar
-        </a>
-    </div>
 </div>
 
 {% if versoes %}
@@ -567,9 +575,14 @@
             <i class="bi bi-x-circle-fill"></i>
         </button>
     </div>
-    <button type="button" class="vc-filter-toggle" id="vcFilterAtiva" aria-pressed="false">
-        <i class="bi bi-check-circle"></i> Ativa
-    </button>
+    <div class="vc-filter-group" role="group" aria-label="Filtrar por status">
+        <button type="button" class="vc-filter-toggle" id="vcFilterAtiva" aria-pressed="false" data-filter-value="active">
+            <i class="bi bi-check-circle"></i> Versão Ativa
+        </button>
+        <button type="button" class="vc-filter-toggle" id="vcFilterArquivadas" aria-pressed="false" data-filter-value="archived">
+            <i class="bi bi-archive"></i> Versões Arquivadas
+        </button>
+    </div>
 </div>
 
 <p class="vc-result-count" id="vcResultCount"></p>
@@ -734,6 +747,15 @@
 </div>
 {% endif %}
 
+<div class="vc-footer-actions">
+    <a href="{{ url_for('aluno.nova_versao') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Nova Versão
+    </a>
+    <a href="{{ url_for('aluno.dashboard') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+</div>
+
 <!-- Modal de confirmação (substitui o window.confirm nativo nas ações Finalizar/Clonar/Excluir) -->
 <div class="modal fade" id="vcConfirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 380px;">
@@ -764,7 +786,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var searchInput = document.getElementById('vcSearchInput');
     var searchWrap = document.getElementById('vcSearchWrap');
     var searchClear = document.getElementById('vcSearchClear');
-    var filterToggle = document.getElementById('vcFilterAtiva');
+    var filterButtons = Array.prototype.slice.call(document.querySelectorAll('.vc-filter-group .vc-filter-toggle'));
     var resultCount = document.getElementById('vcResultCount');
     var noResults = document.getElementById('vcNoResults');
     var resetBtn = document.getElementById('vcResetFilters');
@@ -800,20 +822,27 @@ document.addEventListener('DOMContentLoaded', function () {
         searchInput.focus();
     });
 
-    if (filterToggle) {
-        filterToggle.addEventListener('click', function () {
-            var pressed = filterToggle.getAttribute('aria-pressed') === 'true';
-            filterToggle.setAttribute('aria-pressed', String(!pressed));
-            currentFilter = pressed ? 'all' : 'active';
+    filterButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var value = btn.dataset.filterValue;
+            var alreadyPressed = btn.getAttribute('aria-pressed') === 'true';
+
+            // Mutuamente exclusivos: clicar num desmarca o outro.
+            filterButtons.forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+
+            // Clicar de novo no que já estava ativo volta a mostrar tudo.
+            currentFilter = alreadyPressed ? 'all' : value;
+            btn.setAttribute('aria-pressed', String(!alreadyPressed));
+
             applyFilters();
         });
-    }
+    });
 
     if (resetBtn) {
         resetBtn.addEventListener('click', function () {
             searchInput.value = '';
             currentFilter = 'all';
-            if (filterToggle) filterToggle.setAttribute('aria-pressed', 'false');
+            filterButtons.forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
             applyFilters();
         });
     }
