@@ -6,224 +6,446 @@
 
 {% block content %}
 <style>
-    .versao-card {
-        transition: all 0.3s ease;
-        border-left: 4px solid transparent;
+    :root {
+        --vv-orange: #F28C33;
+        --vv-orange-light: #FFB366;
+        --vv-ink: #1F2937;
+        --vv-muted: #6B7280;
+        --vv-line: #EEF0F3;
+        --vv-bg-soft: #F9FAFB;
+    }
+
+    /* Paleta de identificação por treino (A, B, C, D, E) -- não é decoração:
+       ajuda a reconhecer de relance qual treino é qual, tanto no indicador
+       de progresso quanto no card correspondente. */
+    .vv-accent-0 { --accent: #F28C33; --accent-soft: rgba(242, 140, 51, 0.12); }
+    .vv-accent-1 { --accent: #3B82F6; --accent-soft: rgba(59, 130, 246, 0.12); }
+    .vv-accent-2 { --accent: #10B981; --accent-soft: rgba(16, 185, 129, 0.12); }
+    .vv-accent-3 { --accent: #8B5CF6; --accent-soft: rgba(139, 92, 246, 0.12); }
+    .vv-accent-4 { --accent: #EC4899; --accent-soft: rgba(236, 72, 153, 0.12); }
+
+    @media (prefers-reduced-motion: reduce) {
+        * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+
+    /* ===== Header ===== */
+    .vv-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
         margin-bottom: 20px;
     }
-    
-    .treino-card {
-        transition: all 0.3s ease;
-        margin-bottom: 20px;
-        border: 1px solid #dee2e6;
-        border-radius: 10px;
-    }
-    
-    .treino-card:hover {
-        box-shadow: 0 5px 15px rgba(242, 140, 51, 0.1);
-    }
-    
-    .treino-header {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-radius: 10px 10px 0 0;
-        border-bottom: 2px solid #F28C33;
-        cursor: pointer;
-    }
-    
-    .treino-header:hover {
-        background-color: #fff3e0;
-    }
-    
-    .exercicio-item {
-        background-color: #f8f9fa;
-        padding: 10px 15px;
-        border-radius: 5px;
-        margin-bottom: 8px;
-        border-left: 3px solid #F28C33;
-        transition: all 0.2s;
+    .vv-header h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--vv-ink);
+        margin: 0;
         display: flex;
         align-items: center;
-    }
-    
-    .exercicio-item:hover {
-        background-color: #fff3e0;
-    }
-    
-    .drag-handle {
-        cursor: grab;
-        margin-right: 15px;
-        color: #999;
-        font-size: 1.2rem;
-    }
-    
-    .drag-handle:active {
-        cursor: grabbing;
-    }
-    
-    .exercicio-item.sortable-drag {
-        opacity: 0.5;
-    }
-    
-    .exercicio-item.sortable-ghost {
-        opacity: 0.3;
-        background-color: #F28C33;
-    }
-    
-    .divisao-badge {
-        font-size: 1rem;
-        padding: 5px 15px;
-        border-radius: 25px;
-        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
-        color: white;
-        font-weight: bold;
-        display: inline-block;
-    }
-    
-    .progresso-divisao {
-        height: 8px;
-        background-color: #e9ecef;
-        border-radius: 4px;
-        overflow: hidden;
-        flex-grow: 1;
-    }
-    
-    .progresso-divisao-bar {
-        height: 100%;
-        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
-        border-radius: 4px;
-    }
-    
-    .edit-section {
-        background-color: #f8f9fa;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 30px;
-        border-left: 5px solid #F28C33;
-    }
-    
-    .action-buttons {
-        display: flex;
-        gap: 5px;
+        gap: 10px;
         flex-wrap: wrap;
     }
-    
-    .badge-musculo {
-        background-color: #e9ecef;
-        color: #495057;
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-size: 0.8rem;
+    .vv-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 4px 11px;
+        border-radius: 999px;
     }
-    
-    .btn-save-order {
+    .vv-status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .vv-status-pill.is-active { background: #E9F9EF; color: #16A34A; }
+    .vv-status-pill.is-archived { background: #F1F2F4; color: #6B7280; }
+
+    .vv-icon-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .vv-icon-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        border: 1px solid var(--vv-line);
+        background: white;
+        color: var(--vv-muted);
+        padding: 9px 15px;
+        border-radius: 12px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.15s ease;
+    }
+    .vv-icon-btn:hover { border-color: var(--vv-orange-light); color: var(--vv-orange); background: #FFF8F2; }
+
+    /* ===== Hero ===== */
+    .vv-hero {
+        background: white;
+        border: 1px solid var(--vv-line);
+        border-radius: 18px;
+        padding: 24px;
+        margin-bottom: 20px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 20px;
+        align-items: center;
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+    }
+    @media (max-width: 768px) {
+        .vv-hero { grid-template-columns: 1fr; }
+    }
+    .vv-hero-desc { font-size: 1.15rem; font-weight: 700; color: var(--vv-ink); margin-bottom: 10px; }
+    .vv-hero-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--vv-muted); }
+    .vv-hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
+    .vv-divisao-tag {
+        background: linear-gradient(135deg, var(--vv-orange) 0%, var(--vv-orange-light) 100%);
+        color: white;
+        font-weight: 700;
+        padding: 3px 12px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        letter-spacing: 0.03em;
+    }
+
+    /* Indicador segmentado de progresso -- elemento de assinatura da tela:
+       cada bolinha é um treino da divisão (A, B, C...); preenchida = montado,
+       vazia = falta montar. Clicável: leva direto pro treino ou pra criação. */
+    .vv-progress-seq { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .vv-progress-dots { display: flex; gap: 8px; }
+    .vv-progress-dot {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: transform 0.15s ease;
+        border: 2px dashed var(--vv-line);
+        color: var(--vv-muted);
+    }
+    .vv-progress-dot:hover { transform: translateY(-2px); }
+    .vv-progress-dot.is-filled {
+        border: none;
+        background: var(--accent);
+        color: white;
+        box-shadow: 0 4px 12px var(--accent-soft);
+    }
+    .vv-progress-label { font-size: 0.72rem; color: var(--vv-muted); font-weight: 600; }
+
+    /* ===== Painel de edição (recolhido por padrão) ===== */
+    .vv-edit-toggle {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: white;
+        border: 1px solid #E3E6EB;
+        border-radius: 14px;
+        padding: 14px 18px;
+        margin-bottom: 12px;
+        font-weight: 700;
+        color: var(--vv-ink);
+        font-size: 0.92rem;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .vv-edit-toggle:hover { border-color: var(--vv-orange-light); box-shadow: 0 4px 14px rgba(242, 140, 51, 0.12); }
+    .vv-edit-toggle .bi-chevron-down { transition: transform 0.2s ease; color: var(--vv-muted); }
+    .vv-edit-toggle[aria-expanded="true"] .bi-chevron-down { transform: rotate(180deg); }
+
+    .vv-edit-panel {
+        background: var(--vv-bg-soft);
+        border: 1px solid var(--vv-line);
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 24px;
+    }
+    .vv-edit-panel label { font-weight: 700; font-size: 0.82rem; color: var(--vv-ink); }
+    .vv-danger-zone {
+        margin-top: 20px;
+        padding-top: 18px;
+        border-top: 1px dashed #D1D5DB;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    /* ===== Seção de treinos ===== */
+    .vv-section-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .vv-section-title h2 {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--vv-ink);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .vv-treino-card {
+        background: white;
+        border: 1px solid var(--vv-line);
+        border-radius: 16px;
+        margin-bottom: 16px;
+        overflow: hidden;
+        border-left: 4px solid var(--accent);
+    }
+    .vv-treino-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 16px 18px;
+        cursor: pointer;
+        user-select: none;
+    }
+    .vv-treino-header:hover { background: var(--vv-bg-soft); }
+    .vv-treino-heading { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .vv-treino-badge {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: var(--accent);
+        color: white;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .vv-treino-nome { font-weight: 700; color: var(--vv-ink); }
+    .vv-count-chip {
+        background: var(--vv-bg-soft);
+        color: var(--vv-muted);
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 999px;
+    }
+    .vv-archived-chip {
+        background: #F1F2F4;
+        color: #6B7280;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .vv-treino-actions { display: flex; gap: 6px; align-items: center; }
+    .vv-icon-action {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        border: 1px solid var(--vv-line);
+        background: white;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--vv-muted);
+        transition: all 0.15s ease;
+    }
+    .vv-icon-action:hover { border-color: var(--vv-orange); color: var(--vv-orange); }
+    .vv-icon-action.variant-danger:hover { border-color: #EF4444; color: #EF4444; background: #FDECEC; }
+    .vv-treino-collapse-icon { color: var(--vv-muted); transition: transform 0.2s ease; }
+    .vv-treino-card.is-collapsed .vv-treino-collapse-icon { transform: rotate(-90deg); }
+
+    .vv-treino-body { padding: 4px 18px 18px; }
+    .vv-treino-card.is-collapsed .vv-treino-body { display: none; }
+    .vv-treino-desc { color: var(--vv-muted); font-size: 0.85rem; margin-bottom: 12px; }
+
+    .vv-exercicios-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .vv-exercicios-toolbar h6 {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--vv-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .vv-save-order-btn {
+        display: none;
+        align-items: center;
+        gap: 6px;
+        border: none;
+        background: var(--accent);
+        color: white;
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding: 6px 13px;
+        border-radius: 9px;
+    }
+
+    .vv-exercicio-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--vv-bg-soft);
+        border: 1px solid transparent;
+        border-radius: 12px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .vv-exercicio-item:hover { border-color: var(--vv-line); background: white; }
+    .vv-exercicio-item.sortable-drag { opacity: 0.4; }
+    .vv-exercicio-item.sortable-ghost { opacity: 0.5; background: var(--accent-soft); }
+    .vv-drag-handle { cursor: grab; color: #B0B5BD; font-size: 1.1rem; flex-shrink: 0; touch-action: none; }
+    .vv-drag-handle:active { cursor: grabbing; }
+    .vv-exercicio-nome { font-weight: 700; color: var(--vv-ink); font-size: 0.92rem; }
+    .vv-exercicio-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+    .vv-tag {
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 2px 9px;
+        border-radius: 999px;
+    }
+    .vv-tag.variant-meu { background: var(--accent-soft); color: var(--accent); }
+    .vv-tag.variant-catalogo { background: #EEF0F3; color: var(--vv-muted); }
+    .vv-tag.variant-musculo { background: white; border: 1px solid var(--vv-line); color: var(--vv-muted); }
+
+    /* ===== Estado vazio ===== */
+    .vv-empty {
+        text-align: center;
+        padding: 48px 20px;
+        border: 1.5px dashed #D1D5DB;
+        border-radius: 16px;
+        background: var(--vv-bg-soft);
+    }
+    .vv-empty i { font-size: 2.2rem; color: var(--vv-orange-light); margin-bottom: 10px; display: inline-block; }
+    .vv-empty p { color: var(--vv-muted); margin-bottom: 14px; }
+
+    /* ===== Botão flutuante ===== */
+    .vv-fab {
         position: fixed;
-        bottom: 20px;
-        right: 20px;
+        bottom: 24px;
+        right: 24px;
         z-index: 1000;
-        border-radius: 50px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: none;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        background: linear-gradient(135deg, var(--vv-orange) 0%, var(--vv-orange-light) 100%);
+        color: white;
+        font-weight: 700;
+        padding: 13px 22px;
+        border-radius: 999px;
+        box-shadow: 0 8px 24px rgba(242, 140, 51, 0.35);
+    }
+
+    .vv-footer-actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid var(--vv-line);
     }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="d-none d-md-block">
-        <i class="bi bi-pencil-square me-2" style="color: #F28C33;"></i>
+<div class="vv-header">
+    <h1>
+        <i class="bi bi-pencil-square" style="color: #F28C33;"></i>
         Versão {{ versao.numero_versao }}
-    </h2>
-    <div>
-        <a href="{{ url_for('aluno.versoes') }}" class="btn btn-outline-secondary me-2">
-            <i class="bi bi-arrow-left"></i> Voltar
-        </a>
-        <a href="{{ url_for('aluno.dashboard') }}" class="btn btn-outline-info">
-            <i class="bi bi-speedometer2"></i> Dashboard
+        {% if versao.data_fim %}
+        <span class="vv-status-pill is-archived"><span class="dot"></span>Arquivada</span>
+        {% else %}
+        <span class="vv-status-pill is-active"><span class="dot"></span>Ativa</span>
+        {% endif %}
+    </h1>
+    <div class="vv-icon-actions">
+        <a href="{{ url_for('aluno.versoes') }}" class="vv-icon-btn">
+            <i class="bi bi-arrow-left"></i> Minhas Versões
         </a>
     </div>
 </div>
 
-<!-- Informações da Versão -->
-<div class="row mb-4 g-2 g-md-3">
-    <div class="col-6 col-md-3">
-        <div class="card h-100">
-            <div class="card-body">
-                <h6 class="text-muted">Número</h6>
-                <h4>v{{ versao.numero_versao }}</h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card h-100">
-            <div class="card-body">
-                <h6 class="text-muted">Divisão</h6>
-                <h4><span class="divisao-badge">{{ versao.divisao }}</span></h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card h-100">
-            <div class="card-body">
-                <h6 class="text-muted">Período</h6>
-                <h5>{{ versao.data_inicio.strftime('%d/%m/%Y') if versao.data_inicio else '?' }}</h5>
-                <h5>até {{ versao.data_fim.strftime('%d/%m/%Y') if versao.data_fim else 'Atual' }}</h5>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card h-100">
-            <div class="card-body">
-                <h6 class="text-muted">Status</h6>
-                <h4>
-                    {% if versao.data_fim %}
-                        <span class="badge bg-secondary">Finalizada</span>
-                    {% else %}
-                        <span class="badge bg-success">Ativa</span>
-                    {% endif %}
-                </h4>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Progresso da Divisão -->
 {% set total_treinos = treinos|length %}
 {% set max_treinos = 3 if versao.divisao == 'ABC' else 4 if versao.divisao == 'ABCD' else 5 %}
-{% set percentual = (total_treinos / max_treinos * 100) if max_treinos > 0 else 0 %}
+{% set letras = ['A', 'B', 'C', 'D', 'E'] %}
 
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="d-flex align-items-center flex-wrap gap-2">
-            <span class="fw-bold">Progresso da Divisão:</span>
-            <div class="progresso-divisao flex-grow-1" style="min-width: 100px;">
-                <div class="progresso-divisao-bar" style="width: {{ percentual }}%;"></div>
-            </div>
-            <span class="badge bg-primary">{{ total_treinos }}/{{ max_treinos }} treinos</span>
-            {% if not versao.data_fim and total_treinos < max_treinos %}
-            <a href="{{ url_for('aluno.novo_treino_versao', versao_id=versao.id) }}" 
-               class="btn btn-sm btn-success ms-auto">
-                <i class="bi bi-plus-circle"></i> Adicionar Treino
-            </a>
-            {% endif %}
+<!-- ===== Hero: dados principais + indicador de progresso ===== -->
+<div class="vv-hero">
+    <div>
+        <div class="vv-hero-desc">{{ versao.descricao }}</div>
+        <div class="vv-hero-meta">
+            <span><span class="vv-divisao-tag">{{ versao.divisao }}</span></span>
+            <span>
+                <i class="bi bi-calendar3"></i>
+                {{ versao.data_inicio.strftime('%d/%m/%Y') if versao.data_inicio else '?' }}
+                até {{ versao.data_fim.strftime('%d/%m/%Y') if versao.data_fim else 'hoje' }}
+            </span>
+            <span><i class="bi bi-list-check"></i>
+                {% set total_ex = namespace(value=0) %}
+                {% for treino in treinos.values() %}
+                    {% set total_ex.value = total_ex.value + treino.exercicios|length %}
+                {% endfor %}
+                {{ total_ex.value }} exercício{{ 's' if total_ex.value != 1 else '' }} no total
+            </span>
         </div>
+    </div>
+
+    <div class="vv-progress-seq">
+        <div class="vv-progress-dots">
+            {% for i in range(max_treinos) %}
+                {% set letra = letras[i] %}
+                {% set preenchido = letra in treinos %}
+                {% if preenchido %}
+                <a href="#treino-{{ letra }}" class="vv-progress-dot vv-accent-{{ i % 5 }} is-filled" title="Treino {{ letra }}: montado">{{ letra }}</a>
+                {% else %}
+                    {% if not versao.data_fim %}
+                    <a href="{{ url_for('aluno.novo_treino_versao', versao_id=versao.id) }}" class="vv-progress-dot vv-accent-{{ i % 5 }}" title="Treino {{ letra }}: ainda não montado, clique para adicionar">{{ letra }}</a>
+                    {% else %}
+                    <span class="vv-progress-dot vv-accent-{{ i % 5 }}" title="Treino {{ letra }}: não montado">{{ letra }}</span>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="vv-progress-label">{{ total_treinos }} de {{ max_treinos }} treinos montados</div>
     </div>
 </div>
 
-<!-- SEÇÃO DE EDIÇÃO DA VERSÃO -->
-<div class="edit-section">
-    <h5 class="mb-3">
-        <i class="bi bi-tag" style="color: #F28C33;"></i> 
-        Editar Dados da Versão
-    </h5>
+<!-- ===== Painel de edição da versão (recolhido por padrão) ===== -->
+<button type="button" class="vv-edit-toggle" id="vvEditToggle" aria-expanded="false" aria-controls="vvEditPanel">
+    <span><i class="bi bi-sliders me-2" style="color:#F28C33;"></i>Editar dados da versão</span>
+    <i class="bi bi-chevron-down"></i>
+</button>
+
+<div class="vv-edit-panel" id="vvEditPanel" style="display: none;">
     <form method="post">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <div class="row">
             <div class="col-md-6 mb-3">
-                <label class="form-label fw-bold">Descrição</label>
-                <input type="text" name="descricao" class="form-control" 
+                <label class="form-label">Descrição</label>
+                <input type="text" name="descricao" class="form-control"
                        value="{{ versao.descricao }}" required>
             </div>
-            
             <div class="col-md-6 mb-3">
-                <label class="form-label fw-bold">Divisão (Split)</label>
+                <label class="form-label">Divisão (Split)</label>
                 <select name="divisao" class="form-select">
                     <option value="ABC" {% if versao.divisao == 'ABC' %}selected{% endif %}>ABC (3 treinos)</option>
                     <option value="ABCD" {% if versao.divisao == 'ABCD' %}selected{% endif %}>ABCD (4 treinos)</option>
@@ -234,38 +456,36 @@
         </div>
         <div class="row">
             <div class="col-md-6 mb-3">
-                <label class="form-label fw-bold">Data de Início</label>
-                <input type="date" name="data_inicio" class="form-control" 
+                <label class="form-label">Data de Início</label>
+                <input type="date" name="data_inicio" class="form-control"
                        value="{{ versao.data_inicio }}" required>
             </div>
             <div class="col-md-6 mb-3">
-                <label class="form-label fw-bold">Data de Fim</label>
-                <input type="date" name="data_fim" class="form-control" 
+                <label class="form-label">Data de Fim</label>
+                <input type="date" name="data_fim" class="form-control"
                        value="{{ versao.data_fim or '' }}">
                 <small class="text-muted">Deixe em branco se for a versão atual</small>
             </div>
         </div>
-        <div class="mt-2">
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-save"></i> Salvar Alterações da Versão
-            </button>
-            
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Salvar Alterações da Versão
+        </button>
+
+        <div class="vv-danger-zone">
             {% if not versao.data_fim %}
-            <a href="{{ url_for('aluno.finalizar_versao', versao_id=versao.id) }}" 
-               class="btn btn-warning"
+            <a href="{{ url_for('aluno.finalizar_versao', versao_id=versao.id) }}"
+               class="btn btn-outline-warning btn-sm"
                onclick="return confirm('Finalizar esta versão?')">
                 <i class="bi bi-calendar-x"></i> Finalizar Versão
             </a>
             {% endif %}
-            
-            <a href="{{ url_for('aluno.clonar_versao', versao_id=versao.id) }}" 
-               class="btn btn-info"
+            <a href="{{ url_for('aluno.clonar_versao', versao_id=versao.id) }}"
+               class="btn btn-outline-info btn-sm"
                onclick="return confirm('Criar uma nova versão baseada nesta?')">
                 <i class="bi bi-copy"></i> Clonar Versão
             </a>
-            
-            <a href="{{ url_for('aluno.excluir_versao', versao_id=versao.id, confirmar='false') }}" 
-               class="btn btn-danger"
+            <a href="{{ url_for('aluno.excluir_versao', versao_id=versao.id, confirmar='false') }}"
+               class="btn btn-outline-danger btn-sm"
                onclick="return confirm('Tem certeza que deseja excluir esta versão? Esta ação não pode ser desfeita.')">
                 <i class="bi bi-trash"></i> Excluir Versão
             </a>
@@ -273,60 +493,55 @@
     </form>
 </div>
 
-<!-- Lista de Treinos da Versão -->
-<h4 class="mb-3">
-    <i class="bi bi-trophy me-2" style="color: #F28C33;"></i>
-    Treinos da Versão ({{ total_treinos }})
-</h4>
+<!-- ===== Treinos da versão ===== -->
+<div class="vv-section-title">
+    <h2><i class="bi bi-trophy" style="color:#F28C33;"></i> Treinos da Versão ({{ total_treinos }})</h2>
+    {% if not versao.data_fim and total_treinos < max_treinos %}
+    <a href="{{ url_for('aluno.novo_treino_versao', versao_id=versao.id) }}" class="btn btn-success btn-sm">
+        <i class="bi bi-plus-circle"></i> Adicionar Treino
+    </a>
+    {% endif %}
+</div>
 
 {% if treinos %}
     {% for treino_id, treino in treinos.items() %}
-    <div class="treino-card" data-treino-codigo="{{ treino_id }}">
-        <div class="treino-header d-flex justify-content-between align-items-center flex-wrap gap-2" 
-             onclick="toggleTreino(this)">
-            <div>
-                <span class="badge me-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); font-size: 1rem;">
-                    {{ treino_id }}
-                </span>
-                <strong>{{ treino.nome }}</strong>
-                <span class="badge bg-secondary ms-2">{{ treino.exercicios|length }} exercícios</span>
+    <div class="vv-treino-card vv-accent-{{ loop.index0 % 5 }}" id="treino-{{ treino_id }}" data-treino-codigo="{{ treino_id }}">
+        <div class="vv-treino-header" onclick="toggleTreino(this.closest('.vv-treino-card'))">
+            <div class="vv-treino-heading">
+                <span class="vv-treino-badge">{{ treino_id }}</span>
+                <span class="vv-treino-nome">{{ treino.nome }}</span>
+                <span class="vv-count-chip">{{ treino.exercicios|length }} exercício{{ 's' if treino.exercicios|length != 1 else '' }}</span>
             </div>
-            <div class="action-buttons" onclick="event.stopPropagation()">
+            <div class="vv-treino-actions" onclick="event.stopPropagation()">
                 {% if not versao.data_fim %}
-                <a href="{{ url_for('aluno.editar_treino_versao', 
-                      versao_id=versao.id, 
-                      treino_codigo=treino_id) }}" 
-                   class="btn btn-sm btn-warning" title="Editar treino">
+                <a href="{{ url_for('aluno.editar_treino_versao', versao_id=versao.id, treino_codigo=treino_id) }}"
+                   class="vv-icon-action" title="Editar treino">
                     <i class="bi bi-pencil"></i>
                 </a>
-                <a href="{{ url_for('aluno.excluir_treino_versao', 
-                      versao_id=versao.id, 
-                      treino_codigo=treino_id) }}" 
-                   class="btn btn-sm btn-danger" title="Remover da versão"
+                <a href="{{ url_for('aluno.excluir_treino_versao', versao_id=versao.id, treino_codigo=treino_id) }}"
+                   class="vv-icon-action variant-danger" title="Remover da versão"
                    onclick="return confirm('Remover este treino da versão? Os exercícios não serão excluídos do catálogo.')">
                     <i class="bi bi-trash"></i>
                 </a>
                 {% else %}
-                <span class="badge bg-secondary" title="Versão arquivada: somente leitura">
-                    <i class="bi bi-lock"></i> Arquivada
-                </span>
+                <span class="vv-archived-chip"><i class="bi bi-lock"></i> Arquivada</span>
                 {% endif %}
+                <i class="bi bi-chevron-down vv-treino-collapse-icon"></i>
             </div>
         </div>
-        <div class="card-body treino-body" style="display: block;">
-            <p class="text-muted small">{{ treino.descricao }}</p>
-            
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="mb-0">
-                    <i class="bi bi-list-check" style="color: #F28C33;"></i>
-                    Exercícios (arraste para reordenar):
-                </h6>
-                <button type="button" class="btn btn-sm btn-outline-primary save-order-btn" 
-                        data-treino-codigo="{{ treino_id }}">
+
+        <div class="vv-treino-body">
+            {% if treino.descricao %}
+            <p class="vv-treino-desc">{{ treino.descricao }}</p>
+            {% endif %}
+
+            <div class="vv-exercicios-toolbar">
+                <h6><i class="bi bi-grip-vertical"></i> Arraste para reordenar</h6>
+                <button type="button" class="vv-save-order-btn save-order-btn" data-treino-codigo="{{ treino_id }}">
                     <i class="bi bi-save"></i> Salvar ordem
                 </button>
             </div>
-            
+
             <div class="exercicios-container" data-treino-codigo="{{ treino_id }}">
                 {% for ex_id_completo in treino.exercicios %}
                     {% if ex_id_completo is string and ex_id_completo.startswith('u_') %}
@@ -337,24 +552,21 @@
                                 {% set exercicio_encontrado.obj = ex %}
                             {% endif %}
                         {% endfor %}
-                        
+
                         {% if exercicio_encontrado.obj %}
-                        <div class="exercicio-item" data-exercicio-id="{{ ex_id_completo }}">
-                            <div class="drag-handle">
-                                <i class="bi bi-grip-vertical"></i>
-                            </div>
+                        <div class="vv-exercicio-item" data-exercicio-id="{{ ex_id_completo }}">
+                            <div class="vv-drag-handle"><i class="bi bi-grip-vertical"></i></div>
                             <div class="flex-grow-1">
-                                <strong>{{ exercicio_encontrado.obj.nome }}</strong>
+                                <span class="vv-exercicio-nome">{{ exercicio_encontrado.obj.nome }}</span>
                                 {{ botao_imagens_exercicio(exercicio_encontrado.obj, extra_class='ms-1') }}
-                                <br>
-                                <span class="badge bg-primary">Meu exercício</span>
-                                <span class="badge-musculo">
-                                    {{ exercicio_encontrado.obj.musculo_nome or exercicio_encontrado.obj.musculo or 'N/A' }}
-                                </span>
+                                <div class="vv-exercicio-tags">
+                                    <span class="vv-tag variant-meu">Meu exercício</span>
+                                    <span class="vv-tag variant-musculo">{{ exercicio_encontrado.obj.musculo_nome or exercicio_encontrado.obj.musculo or 'N/A' }}</span>
+                                </div>
                             </div>
                         </div>
                         {% endif %}
-                        
+
                     {% elif ex_id_completo is string and ex_id_completo.startswith('b_') %}
                         {% set ex_id = ex_id_completo[2:]|int %}
                         {% set exercicio_encontrado = namespace(obj=None) %}
@@ -363,30 +575,27 @@
                                 {% set exercicio_encontrado.obj = ex %}
                             {% endif %}
                         {% endfor %}
-                        
+
                         {% if exercicio_encontrado.obj %}
-                        <div class="exercicio-item" data-exercicio-id="{{ ex_id_completo }}">
-                            <div class="drag-handle">
-                                <i class="bi bi-grip-vertical"></i>
-                            </div>
+                        <div class="vv-exercicio-item" data-exercicio-id="{{ ex_id_completo }}">
+                            <div class="vv-drag-handle"><i class="bi bi-grip-vertical"></i></div>
                             <div class="flex-grow-1">
-                                <strong>{{ exercicio_encontrado.obj.nome }}</strong>
+                                <span class="vv-exercicio-nome">{{ exercicio_encontrado.obj.nome }}</span>
                                 {{ botao_imagens_exercicio(exercicio_encontrado.obj, extra_class='ms-1') }}
-                                <br>
-                                <span class="badge bg-secondary">Catálogo</span>
-                                <span class="badge-musculo">
-                                    {{ exercicio_encontrado.obj.musculo_nome or exercicio_encontrado.obj.musculo or 'N/A' }}
-                                </span>
+                                <div class="vv-exercicio-tags">
+                                    <span class="vv-tag variant-catalogo">Catálogo</span>
+                                    <span class="vv-tag variant-musculo">{{ exercicio_encontrado.obj.musculo_nome or exercicio_encontrado.obj.musculo or 'N/A' }}</span>
+                                </div>
                             </div>
                         </div>
                         {% endif %}
                     {% endif %}
                 {% endfor %}
             </div>
-            
+
             {% set treino_base = treinos_disponiveis|selectattr('id', 'equalto', treino_id)|first if treinos_disponiveis else None %}
             {% if treino_base %}
-            <div class="mt-3">
+            <div class="mt-2">
                 <small class="text-muted">
                     <i class="bi bi-info-circle"></i>
                     Treino base: {{ treino_base.codigo }} - {{ treino_base.nome }}
@@ -397,104 +606,52 @@
     </div>
     {% endfor %}
 {% else %}
-<div class="alert alert-info">
-    <i class="bi bi-info-circle me-2"></i>
-    Nenhum treino cadastrado nesta versão.
-    <a href="{{ url_for('aluno.novo_treino_versao', versao_id=versao.id) }}" class="alert-link">
-        Adicionar primeiro treino
+<div class="vv-empty">
+    <i class="bi bi-trophy"></i>
+    <p>Nenhum treino cadastrado nesta versão ainda.</p>
+    {% if not versao.data_fim %}
+    <a href="{{ url_for('aluno.novo_treino_versao', versao_id=versao.id) }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Adicionar primeiro treino
     </a>
+    {% endif %}
 </div>
 {% endif %}
 
-<!-- Resumo da Versão -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-bar-chart me-2" style="color: #F28C33;"></i>
-                    Resumo da Versão
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="text-center">
-                            <h3>{{ total_treinos }}</h3>
-                            <small class="text-muted">Treinos</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="text-center">
-                            <h3>
-                                {% set total_ex = namespace(value=0) %}
-                                {% for treino in treinos.values() %}
-                                    {% set total_ex.value = total_ex.value + treino.exercicios|length %}
-                                {% endfor %}
-                                {{ total_ex.value }}
-                            </h3>
-                            <small class="text-muted">Exercícios</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="text-center">
-                            <h3>{{ max_treinos - total_treinos }}</h3>
-                            <small class="text-muted">Vagas restantes</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="text-center">
-                            <h3>
-                                {% if versao.data_fim %}
-                                    Finalizada
-                                {% else %}
-                                    Ativa
-                                {% endif %}
-                            </h3>
-                            <small class="text-muted">Status</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="vv-footer-actions">
+    <a href="{{ url_for('aluno.versoes') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Minhas Versões
+    </a>
+    <a href="{{ url_for('aluno.dashboard') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
 </div>
 
 <!-- Botão flutuante para salvar ordem -->
-<button id="globalSaveOrderBtn" class="btn btn-primary btn-save-order" style="display: none;">
+<button id="globalSaveOrderBtn" class="vv-fab">
     <i class="bi bi-save"></i> Salvar todas as ordens
 </button>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
-// Armazenar instâncias do Sortable por treino
 let sortableInstances = {};
 
-function toggleTreino(header) {
-    const body = header.nextElementSibling;
-    if (body.style.display === 'none') {
-        body.style.display = 'block';
-    } else {
-        body.style.display = 'none';
-    }
+function toggleTreino(card) {
+    card.classList.toggle('is-collapsed');
 }
 
 function inicializarSortable() {
     document.querySelectorAll('.exercicios-container').forEach(container => {
         const treinoCodigo = container.dataset.treinoCodigo;
-        
+
         sortableInstances[treinoCodigo] = new Sortable(container, {
             animation: 300,
-            handle: '.drag-handle',
+            handle: '.vv-drag-handle',
             ghostClass: 'sortable-ghost',
             dragClass: 'sortable-drag',
             onEnd: function() {
-                // Mostrar botão de salvar para este treino
                 const saveBtn = document.querySelector(`.save-order-btn[data-treino-codigo="${treinoCodigo}"]`);
-                if (saveBtn) saveBtn.style.display = 'inline-block';
-                
-                // Mostrar botão global
-                document.getElementById('globalSaveOrderBtn').style.display = 'block';
+                if (saveBtn) saveBtn.style.display = 'inline-flex';
+                document.getElementById('globalSaveOrderBtn').style.display = 'inline-flex';
             }
         });
     });
@@ -502,16 +659,16 @@ function inicializarSortable() {
 
 async function salvarOrdem(treinoCodigo) {
     const container = document.querySelector(`.exercicios-container[data-treino-codigo="${treinoCodigo}"]`);
-    const itens = container.querySelectorAll('.exercicio-item');
+    const itens = container.querySelectorAll('.vv-exercicio-item');
     const novaOrdem = [];
-    
+
     itens.forEach(item => {
         const exId = item.dataset.exercicioId;
         if (exId) novaOrdem.push(exId);
     });
-    
+
     if (novaOrdem.length === 0) return false;
-    
+
     try {
         const response = await fetch('{{ url_for("api.api_reordenar_exercicios") }}', {
             method: 'POST',
@@ -525,14 +682,13 @@ async function salvarOrdem(treinoCodigo) {
                 nova_ordem: novaOrdem
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
-            // Esconder botão de salvar deste treino
             const saveBtn = document.querySelector(`.save-order-btn[data-treino-codigo="${treinoCodigo}"]`);
             if (saveBtn) saveBtn.style.display = 'none';
-            
+
             if (typeof FitLogUtils !== 'undefined') {
                 FitLogUtils.showToast('Ordem salva!', 'success');
             }
@@ -555,25 +711,23 @@ async function salvarOrdem(treinoCodigo) {
 async function salvarTodasOrdens() {
     const botoes = document.querySelectorAll('.save-order-btn');
     let salvos = 0;
-    
+
     for (const btn of botoes) {
-        if (btn.style.display === 'inline-block') {
+        if (btn.style.display === 'inline-flex') {
             const treinoCodigo = btn.dataset.treinoCodigo;
             const sucesso = await salvarOrdem(treinoCodigo);
             if (sucesso) salvos++;
         }
     }
-    
+
     if (salvos > 0) {
         document.getElementById('globalSaveOrderBtn').style.display = 'none';
     }
 }
 
-// Inicializar quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', function() {
     inicializarSortable();
-    
-    // Configurar botões de salvar por treino
+
     document.querySelectorAll('.save-order-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -581,13 +735,24 @@ document.addEventListener('DOMContentLoaded', function() {
             salvarOrdem(treinoCodigo);
         });
     });
-    
-    // Configurar botão global
+
     document.getElementById('globalSaveOrderBtn')?.addEventListener('click', function() {
         salvarTodasOrdens();
     });
-    
-    // Inicializar tooltips
+
+    // Painel de edição da versão: recolhido por padrão
+    const editToggle = document.getElementById('vvEditToggle');
+    const editPanel = document.getElementById('vvEditPanel');
+    if (editToggle && editPanel) {
+        editToggle.addEventListener('click', function() {
+            const expanded = editToggle.getAttribute('aria-expanded') === 'true';
+            editToggle.setAttribute('aria-expanded', String(!expanded));
+            editPanel.style.display = expanded ? 'none' : 'block';
+            // Se o form tinha erro de validação recém-submetido, o navegador
+            // já cuida de focar o campo -- não precisamos reabrir manualmente.
+        });
+    }
+
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function(tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
