@@ -32,6 +32,18 @@
             --primary-color: #F28C33;
             --secondary-color: #2D2D2D;
             --gradient-primary: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+
+            /* Aliases: static/css/editar-treino-versao.css (usado nas telas de
+               editar treino na versão) espera esses nomes, mas eles só existiam
+               em static/css/style.css -- arquivo que nenhum template carrega.
+               Reaproveitando os mesmos valores já definidos acima em vez de
+               religar style.css inteiro (evita efeito colateral em outras
+               páginas que não usam esse arquivo há tempos). */
+            --primary-orange: #F28C33;
+            --light-orange: #FFB366;
+            --dark-bg: #2D2D2D;
+            --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+            --primary-gradient: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
         }
         
         body {
