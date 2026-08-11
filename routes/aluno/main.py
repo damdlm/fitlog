@@ -27,6 +27,15 @@ def dashboard():
         .order_by(RegistroTreino.data_registro.desc())\
         .limit(5).all()
 
+    # Tempo do último treino (cronômetro do topo) — é o mesmo valor pra
+    # todos os exercícios da sessão, então mostramos uma vez só, no
+    # cabeçalho da lista, em vez de repetir em cada item.
+    tempo_ultimo_treino = None
+    if ultimos_registros and ultimos_registros[0].series:
+        tt = ultimos_registros[0].series[0].tempo_treino
+        if tt:
+            tempo_ultimo_treino = f"{tt // 3600:02d}:{(tt % 3600) // 60:02d}"
+
     # Atividade dos últimos 7 dias (para o gráfico de constância)
     hoje = datetime.now(timezone.utc).date()
     inicio_semana = hoje - timedelta(days=6)
@@ -78,6 +87,7 @@ def dashboard():
                          total_versoes=total_versoes,
                          total_registros=total_registros,
                          ultimos_registros=ultimos_registros,
+                         tempo_ultimo_treino=tempo_ultimo_treino,
                          dias_semana_labels=dias_semana_labels,
                          dias_semana_valores=dias_semana_valores,
                          dias_semana_detalhes=dias_semana_detalhes,

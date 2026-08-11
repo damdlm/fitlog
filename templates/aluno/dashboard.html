@@ -154,6 +154,11 @@
             <i class="bi bi-clock-history me-2" style="color: #F28C33;"></i>
             Último Treino
         </h5>
+        {% if tempo_ultimo_treino %}
+        <span class="dash-badge">
+            <i class="bi bi-stopwatch me-1"></i>{{ tempo_ultimo_treino }}
+        </span>
+        {% endif %}
     </div>
     <div class="card-body">
         {% if ultimos_registros %}
@@ -187,12 +192,6 @@
                             <span class="dash-badge">{{ registro.series[0].repeticoes }}x</span>
                         {% endif %}
                         <span class="dash-badge">{{ registro.series|length }} séries</span>
-                        {% if registro.series and registro.series[0].tempo_treino %}
-                            {% set tt = registro.series[0].tempo_treino %}
-                            <span class="dash-badge">
-                                <i class="bi bi-stopwatch me-1"></i>{{ "%02d:%02d"|format(tt // 3600, (tt % 3600) // 60) }}
-                            </span>
-                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -211,7 +210,7 @@
     </div>
 </div>
 
-<!-- Cards de Resumo -->
+<!-- Cards de Resumo 
 <div class="row mt-4 g-3">
     <div class="col-6 col-md-3">
         <div class="dash-stat" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
@@ -249,7 +248,7 @@
             </div>
         </div>
     </div>
-</div>
+</div> -->
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
