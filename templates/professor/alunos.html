@@ -4,28 +4,81 @@
 {% block page_title %}Gerenciar Alunos{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <h2 class="d-none d-md-flex align-items-center mb-0">
+<style>
+    .ga-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .ga-header h2 {
+        display: flex;
+        align-items: center;
+        margin: 0;
+    }
+
+    .ga-footer-actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #EEF0F3;
+    }
+    .ga-footer-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #E3E6EB;
+        background: white;
+        color: #374151;
+        padding: 10px 18px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        text-decoration: none;
+        transition: all 0.15s ease;
+        position: relative;
+    }
+    .ga-footer-btn:hover {
+        border-color: #F28C33;
+        color: #F28C33;
+        background: #FFF8F2;
+        transform: translateY(-1px);
+    }
+    .ga-footer-btn.variant-primary {
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        border: none;
+        color: white;
+        box-shadow: 0 4px 14px rgba(242, 140, 51, 0.3);
+    }
+    .ga-footer-btn.variant-primary:hover { color: white; filter: brightness(1.04); transform: translateY(-1px); }
+    .ga-footer-btn .badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+    }
+
+    /* Modal de confirmação estilizado (substitui window.confirm) */
+    #gaConfirmModal .modal-content { border: none; border-radius: 18px; overflow: hidden; }
+    #gaConfirmModal .ga-confirm-icon {
+        width: 56px; height: 56px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem; margin: 4px auto 14px;
+        background: #FDECEC; color: #EF4444;
+    }
+    #gaConfirmModal .modal-body { text-align: center; padding: 30px 24px 10px; }
+    #gaConfirmModal .modal-footer { border: none; padding: 16px 24px 24px; justify-content: center; gap: 10px; }
+    #gaConfirmModal .modal-footer .btn { min-width: 130px; border-radius: 10px; }
+</style>
+
+<div class="ga-header">
+    <h2>
         <i class="bi bi-people-fill me-2" style="color: #F28C33;"></i>
         Gerenciar Alunos
         <span class="badge bg-light text-dark border ms-2 fw-normal fs-6">{{ alunos_data|length }}</span>
     </h2>
-    <div class="d-flex flex-wrap gap-2">
-        <a href="{{ url_for('professor.solicitacoes') }}" class="btn btn-outline-primary position-relative">
-            <i class="bi bi-envelope"></i> Solicitações
-            {% if current_user.solicitacoes_pendentes_count > 0 %}
-            <span class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle">
-                {{ current_user.solicitacoes_pendentes_count }}
-            </span>
-            {% endif %}
-        </a>
-        <a href="{{ url_for('professor.novo_aluno') }}" class="btn btn-success">
-            <i class="bi bi-person-plus"></i> Novo Aluno
-        </a>
-        <a href="{{ url_for('professor.dashboard') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Voltar
-        </a>
-    </div>
 </div>
 
 {% if current_user.solicitacoes_pendentes_count > 0 %}
@@ -195,7 +248,8 @@
                                 {% endif %}
                                 {% endif %}
                                 <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post"
-                                      class="d-inline" onsubmit="return confirm('Remover vínculo com {{ nome_exibicao }}?')">
+                                      class="d-inline ga-confirm-form"
+                                      data-confirm-text="Você vai perder acesso aos treinos, versões e histórico de {{ nome_exibicao }} até que um novo vínculo seja aceito. Os dados do aluno não são apagados, só a conexão com você.">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button type="submit" class="btn btn-outline-danger" title="Remover vínculo" aria-label="Remover vínculo com {{ nome_exibicao }}">
                                         <i class="bi bi-link-45deg"></i>
@@ -287,7 +341,8 @@
                 {% endif %}
                 {% endif %}
                 <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post"
-                      class="flex-fill" onsubmit="return confirm('Remover vínculo com {{ nome_exibicao }}?')">
+                      class="flex-fill ga-confirm-form"
+                      data-confirm-text="Você vai perder acesso aos treinos, versões e histórico de {{ nome_exibicao }} até que um novo vínculo seja aceito. Os dados do aluno não são apagados, só a conexão com você.">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-sm btn-outline-danger w-100">
                         <i class="bi bi-link-45deg"></i>
@@ -314,4 +369,64 @@
     </div>
     {% endfor %}
 </div>
+
+<div class="ga-footer-actions">
+    <a href="{{ url_for('professor.solicitacoes') }}" class="ga-footer-btn">
+        <i class="bi bi-envelope"></i> Solicitações
+        {% if current_user.solicitacoes_pendentes_count > 0 %}
+        <span class="badge rounded-pill bg-danger">{{ current_user.solicitacoes_pendentes_count }}</span>
+        {% endif %}
+    </a>
+    <a href="{{ url_for('professor.novo_aluno') }}" class="ga-footer-btn variant-primary">
+        <i class="bi bi-person-plus"></i> Novo Aluno
+    </a>
+    <a href="{{ url_for('professor.dashboard') }}" class="ga-footer-btn">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+</div>
+
+<!-- Modal de confirmação (substitui o window.confirm nativo em Remover Vínculo) -->
+<div class="modal fade" id="gaConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="ga-confirm-icon"><i class="bi bi-link-45deg"></i></div>
+                <h5 class="fw-bold mb-2">Remover vínculo?</h5>
+                <p class="text-muted mb-0" id="gaConfirmText"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="gaConfirmActionBtn">Remover vínculo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var confirmModalEl = document.getElementById('gaConfirmModal');
+    var confirmModal = new bootstrap.Modal(confirmModalEl);
+    var confirmText = document.getElementById('gaConfirmText');
+    var confirmActionBtn = document.getElementById('gaConfirmActionBtn');
+    var formPendente = null;
+
+    document.querySelectorAll('.ga-confirm-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            if (form.dataset.confirmado === 'true') return; // já confirmado no modal, deixa submeter
+            e.preventDefault();
+            formPendente = form;
+            confirmText.textContent = form.dataset.confirmText || 'Tem certeza?';
+            confirmModal.show();
+        });
+    });
+
+    confirmActionBtn.addEventListener('click', function () {
+        if (formPendente) {
+            formPendente.dataset.confirmado = 'true';
+            formPendente.submit();
+        }
+        confirmModal.hide();
+    });
+});
+</script>
 {% endblock %}

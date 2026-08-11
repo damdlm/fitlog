@@ -1,305 +1,432 @@
 {% extends "base.html" %}
 
-{% block page_icon %}<i class="bi bi-person-circle" style="color: #F28C33;"></i>{% endblock %}
-{% block page_title %}{{ aluno.nome_completo or aluno.username }}{% endblock %}
-
-{% block extra_css %}
-<style>
-    .va-profile-card {
-        border-radius: 16px;
-        overflow: hidden;
-    }
-    .va-avatar {
-        width: 64px;
-        height: 64px;
-        min-width: 64px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--gradient-primary);
-        color: #fff;
-        font-weight: 700;
-        font-size: 1.4rem;
-        box-shadow: 0 6px 16px rgba(242, 140, 51, 0.35);
-    }
-    .va-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px 18px;
-        font-size: 0.88rem;
-        color: #6c757d;
-    }
-    .va-meta span {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .va-meta i {
-        color: var(--primary-color);
-    }
-    .va-stat-card {
-        border-radius: 16px;
-        position: relative;
-        overflow: hidden;
-        height: 100%;
-    }
-    .va-stat-card .card-body {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 18px;
-    }
-    .va-stat-icon {
-        width: 44px;
-        height: 44px;
-        min-width: 44px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        background: rgba(255, 255, 255, 0.18);
-        color: #fff;
-    }
-    .va-stat-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #fff;
-        line-height: 1.1;
-    }
-    .va-stat-label {
-        font-size: 0.78rem;
-        color: rgba(255, 255, 255, 0.75);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-    @media (max-width: 767.98px) {
-        .va-actions {
-            width: 100%;
-        }
-        .va-actions .btn-group,
-        .va-actions .btn {
-            width: 100%;
-        }
-    }
-</style>
-{% endblock %}
+{% block page_icon %}<i class="bi bi-people-fill" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Gerenciar Alunos{% endblock %}
 
 {% block content %}
-{% set nome_exibicao = aluno.nome_completo or aluno.username %}
-{% set partes = nome_exibicao.split() %}
-{% set iniciais = (partes[0][0] ~ (partes[1][0] if partes|length > 1 else ''))|upper %}
-{% set pode_gerenciar = current_user.is_admin %}
+<style>
+    .ga-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .ga-header h2 {
+        display: flex;
+        align-items: center;
+        margin: 0;
+    }
 
-<!-- Cabeçalho do perfil -->
-<div class="card va-profile-card mb-4">
+    .ga-footer-actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #EEF0F3;
+    }
+    .ga-footer-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #E3E6EB;
+        background: white;
+        color: #374151;
+        padding: 10px 18px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        text-decoration: none;
+        transition: all 0.15s ease;
+        position: relative;
+    }
+    .ga-footer-btn:hover {
+        border-color: #F28C33;
+        color: #F28C33;
+        background: #FFF8F2;
+        transform: translateY(-1px);
+    }
+    .ga-footer-btn.variant-primary {
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        border: none;
+        color: white;
+        box-shadow: 0 4px 14px rgba(242, 140, 51, 0.3);
+    }
+    .ga-footer-btn.variant-primary:hover { color: white; filter: brightness(1.04); transform: translateY(-1px); }
+    .ga-footer-btn .badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+    }
+
+    /* Modal de confirmação estilizado (substitui window.confirm) */
+    #gaConfirmModal .modal-content { border: none; border-radius: 18px; overflow: hidden; }
+    #gaConfirmModal .ga-confirm-icon {
+        width: 56px; height: 56px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem; margin: 4px auto 14px;
+        background: #FDECEC; color: #EF4444;
+    }
+    #gaConfirmModal .modal-body { text-align: center; padding: 30px 24px 10px; }
+    #gaConfirmModal .modal-footer { border: none; padding: 16px 24px 24px; justify-content: center; gap: 10px; }
+    #gaConfirmModal .modal-footer .btn { min-width: 130px; border-radius: 10px; }
+</style>
+
+<div class="ga-header">
+    <h2>
+        <i class="bi bi-people-fill me-2" style="color: #F28C33;"></i>
+        Gerenciar Alunos
+        <span class="badge bg-light text-dark border ms-2 fw-normal fs-6">{{ alunos_data|length }}</span>
+    </h2>
+</div>
+
+{% if current_user.solicitacoes_pendentes_count > 0 %}
+<div class="alert alert-info d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <i class="bi bi-bell-fill me-2"></i>
+        Você tem <strong>{{ current_user.solicitacoes_pendentes_count }}</strong>
+        solicitação(ões) de vínculo aguardando resposta.
+    </div>
+    <a href="{{ url_for('professor.solicitacoes') }}" class="btn btn-sm btn-light">
+        Ver solicitações <i class="bi bi-arrow-right"></i>
+    </a>
+</div>
+{% endif %}
+
+<!-- Resumo -->
+<div class="row mb-4 g-3">
+    <div class="col-4">
+        <div class="card h-100" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);">
+            <div class="card-body d-flex justify-content-between align-items-center py-3">
+                <div>
+                    <h6 class="text-white-50 mb-1 small">Vinculados</h6>
+                    <h3 class="text-white mb-0">{{ total_vinculados }}</h3>
+                </div>
+                <i class="bi bi-people fs-2 text-white-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card h-100" style="background: #2D2D2D;">
+            <div class="card-body d-flex justify-content-between align-items-center py-3">
+                <div>
+                    <h6 class="text-white-50 mb-1 small">Ativos</h6>
+                    <h3 class="text-white mb-0">{{ total_ativos }}</h3>
+                </div>
+                <i class="bi bi-person-check fs-2 text-white-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card h-100 border">
+            <div class="card-body d-flex justify-content-between align-items-center py-3">
+                <div>
+                    <h6 class="text-muted mb-1 small">Inativos</h6>
+                    <h3 class="mb-0">{{ total_inativos }}</h3>
+                </div>
+                <i class="bi bi-person-x fs-2 text-muted"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
     <div class="card-body">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-            <div class="d-flex align-items-center gap-3">
-                <div class="va-avatar">{{ iniciais }}</div>
-                <div>
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <h4 class="mb-0">{{ nome_exibicao }}</h4>
-                        {% if aluno.ativo %}
-                            <span class="badge bg-success">Ativo</span>
-                        {% else %}
-                            <span class="badge bg-danger">Inativo</span>
-                        {% endif %}
-                    </div>
-                    <div class="va-meta mt-1">
-                        <span><i class="bi bi-envelope"></i> {{ aluno.email }}</span>
-                        <span><i class="bi bi-telephone"></i> {{ aluno.telefone or 'Não informado' }}</span>
-                        {% if aluno.created_at %}
-                        <span><i class="bi bi-calendar3"></i> Na plataforma desde {{ aluno.created_at.strftime('%m/%Y') }}</span>
-                        {% endif %}
-                    </div>
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label fw-bold small text-uppercase text-muted">Buscar</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" name="busca" class="form-control"
+                           placeholder="Nome, usuário ou e-mail..." value="{{ busca or '' }}">
                 </div>
             </div>
-
-            <div class="d-flex flex-column flex-md-row gap-2 va-actions">
-                {% if pode_gerenciar %}
-                <div class="btn-group">
-                    <a href="{{ url_for('professor.editar_aluno', aluno_id=aluno.id) }}"
-                       class="btn btn-warning">
-                        <i class="bi bi-pencil"></i> Editar
-                    </a>
-                    {% if aluno.ativo %}
-                    <form action="{{ url_for('professor.desativar_aluno', aluno_id=aluno.id) }}" method="post"
-                          class="d-inline" onsubmit="return confirm('Desativar este aluno?')">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-person-x"></i> Desativar
-                        </button>
-                    </form>
-                    {% else %}
-                    <form action="{{ url_for('professor.reativar_aluno', aluno_id=aluno.id) }}" method="post"
-                          class="d-inline" onsubmit="return confirm('Reativar este aluno?')">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-person-check"></i> Reativar
-                        </button>
-                    </form>
-                    {% endif %}
-                </div>
-                {% endif %}
-                {% if not current_user.is_admin %}
-                <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post"
-                      onsubmit="return confirm('Remover vínculo com {{ nome_exibicao }}?')">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <button type="submit" class="btn btn-outline-danger">
-                        <i class="bi bi-link-45deg"></i> Remover vínculo
-                    </button>
-                </form>
-                {% endif %}
-                <a href="{{ url_for('professor.listar_alunos') }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Voltar
-                </a>
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-uppercase text-muted">Status</label>
+                <select name="status" class="form-select">
+                    <option value="ativos" {% if status == 'ativos' %}selected{% endif %}>Ativos</option>
+                    <option value="inativos" {% if status == 'inativos' %}selected{% endif %}>Inativos</option>
+                    <option value="todos" {% if status == 'todos' %}selected{% endif %}>Todos</option>
+                </select>
             </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> Filtrar
+                </button>
+            </div>
+        </form>
+        {% if busca or status != 'ativos' %}
+        <div class="mt-2">
+            <a href="{{ url_for('professor.listar_alunos') }}" class="small text-muted">
+                <i class="bi bi-x-circle"></i> Limpar filtros
+            </a>
         </div>
-    </div>
-</div>
-
-<!-- Cards de Estatísticas -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="card va-stat-card" style="background: var(--gradient-primary);">
-            <div class="card-body">
-                <div class="va-stat-icon"><i class="bi bi-trophy"></i></div>
-                <div>
-                    <div class="va-stat-value">{{ treinos|length }}</div>
-                    <div class="va-stat-label">Treinos</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card va-stat-card" style="background: var(--secondary-color);">
-            <div class="card-body">
-                <div class="va-stat-icon"><i class="bi bi-list-check"></i></div>
-                <div>
-                    <div class="va-stat-value">{{ exercicios|length }}</div>
-                    <div class="va-stat-label">Exercícios</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card va-stat-card" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%);">
-            <div class="card-body">
-                <div class="va-stat-icon"><i class="bi bi-clipboard2-check"></i></div>
-                <div>
-                    <div class="va-stat-value">{{ registros }}</div>
-                    <div class="va-stat-label">Registros</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card va-stat-card" style="background: var(--secondary-color);">
-            <div class="card-body">
-                <div class="va-stat-icon"><i class="bi bi-bookmark-check"></i></div>
-                <div>
-                    <div class="va-stat-value">
-                        {% if versao_ativa %}v{{ versao_ativa.numero_versao }}{% else %}-{% endif %}
-                    </div>
-                    <div class="va-stat-label">Versão Ativa</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Links Rápidos -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title mb-3">Acompanhamento</h5>
-                <div class="row g-2">
-                    <div class="col-6 col-md-4 col-lg">
-                        <a href="{{ url_for('professor.treinos_aluno', aluno_id=aluno.id) }}" class="dash-quick-tile">
-                            <i class="bi bi-trophy"></i> Treinos
-                        </a>
-                    </div>
-                    <div class="col-6 col-md-4 col-lg">
-                        <a href="{{ url_for('professor.versoes_aluno', aluno_id=aluno.id) }}" class="dash-quick-tile">
-                            <i class="bi bi-clock-history"></i> Versões
-                        </a>
-                    </div>
-                    <div class="col-6 col-md-4 col-lg">
-                        <a href="{{ url_for('professor.estatisticas_aluno', aluno_id=aluno.id) }}" class="dash-quick-tile">
-                            <i class="bi bi-graph-up"></i> Estatísticas
-                        </a>
-                    </div>
-                    <div class="col-6 col-md-4 col-lg">
-                        <a href="{{ url_for('professor.calendario_aluno', aluno_id=aluno.id) }}" class="dash-quick-tile">
-                            <i class="bi bi-calendar"></i> Calendário
-                        </a>
-                    </div>
-                    {% if pode_gerenciar %}
-                    <div class="col-6 col-md-4 col-lg">
-                        <a href="{{ url_for('professor.editar_aluno', aluno_id=aluno.id) }}" class="dash-quick-tile">
-                            <i class="bi bi-pencil-square"></i> Editar Dados
-                        </a>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Últimos Registros -->
-<div class="card">
-    <div class="card-header bg-white">
-        <h5 class="mb-0">
-            <i class="bi bi-clock-history me-2" style="color: #F28C33;"></i>
-            Últimos Registros
-        </h5>
-    </div>
-    <div class="card-body">
-        {% if ultimos_registros %}
-            {% for registro in ultimos_registros %}
-            {% set nome_exercicio = (registro.exercicio.nome if registro.exercicio else registro.exercicio_base.nome if registro.exercicio_base else 'Exercício') %}
-            <div class="dash-registro-item{{ ' dash-registro-item-clicavel' if nome_exercicio|length > 20 else '' }}"
-                 {% if nome_exercicio|length > 20 %}
-                 tabindex="0"
-                 role="button"
-                 data-bs-toggle="popover"
-                 data-bs-trigger="focus"
-                 data-bs-placement="top"
-                 data-bs-content="{{ nome_exercicio }}"
-                 {% endif %}>
-                <div class="dash-registro-icon">
-                    <i class="bi bi-check2"></i>
-                </div>
-                <div class="dash-registro-info">
-                    <div class="dash-registro-top">
-                        <span class="dash-registro-exercicio{{ ' dash-registro-exercicio-trunc' if nome_exercicio|length > 20 else '' }}">
-                            {{ nome_exercicio[:20] }}{{ '...' if nome_exercicio|length > 20 else '' }}
-                        </span>
-                        <span class="dash-registro-meta">
-                            {{ registro.data_registro.strftime('%d/%m/%Y') }}
-                            {% if registro.treino_ref %} · {{ registro.treino_ref.codigo }}{% endif %}
-                        </span>
-                    </div>
-                    <div class="dash-registro-badges">
-                        {% if registro.series and registro.series|length > 0 %}
-                            <span class="dash-badge">{{ registro.series[0].carga }}kg</span>
-                            <span class="dash-badge">{{ registro.series[0].repeticoes }}x</span>
-                        {% endif %}
-                        <span class="dash-badge">{{ registro.series|length }} séries</span>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        {% else %}
-            <div class="dash-empty">
-                <i class="bi bi-clipboard-x"></i>
-                Nenhum registro encontrado
-            </div>
         {% endif %}
     </div>
 </div>
+
+<!-- Lista de Alunos — versão desktop (tabela) -->
+<div class="card d-none d-md-block">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Aluno</th>
+                        <th>Contato</th>
+                        <th>Vinculado desde</th>
+                        <th class="text-center">Registros</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end pe-3">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in alunos_data %}
+                    {% set aluno = item.aluno %}
+                    {% set nome_exibicao = aluno.nome_completo or aluno.username %}
+                    {% set partes = nome_exibicao.split() %}
+                    {% set iniciais = (partes[0][0] ~ (partes[1][0] if partes|length > 1 else ''))|upper %}
+                    <tr>
+                        <td class="ps-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                     style="width: 40px; height: 40px; background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: #fff; font-weight: 600;">
+                                    {{ iniciais }}
+                                </div>
+                                <div>
+                                    <div class="fw-semibold">{{ nome_exibicao }}</div>
+                                    <div class="text-muted small">@{{ aluno.username }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="small">{{ aluno.email }}</div>
+                            <div class="text-muted small">{{ aluno.telefone or '-' }}</div>
+                        </td>
+                        <td class="small text-muted">{{ formatar_data(item.vinculado_desde) }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark border">
+                                {{ registros_por_aluno.get(aluno.id, 0) }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            {% if aluno.ativo %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-3">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}"
+                                   class="btn btn-outline-info" title="Visualizar" aria-label="Visualizar {{ nome_exibicao }}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if current_user.is_admin %}
+                                <a href="{{ url_for('professor.editar_aluno', aluno_id=aluno.id) }}"
+                                   class="btn btn-outline-warning" title="Editar" aria-label="Editar {{ nome_exibicao }}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% if aluno.ativo %}
+                                <form action="{{ url_for('professor.desativar_aluno', aluno_id=aluno.id) }}" method="post"
+                                      class="d-inline" onsubmit="return confirm('Desativar {{ nome_exibicao }}?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn btn-outline-danger" title="Desativar" aria-label="Desativar {{ nome_exibicao }}">
+                                        <i class="bi bi-person-x"></i>
+                                    </button>
+                                </form>
+                                {% else %}
+                                <form action="{{ url_for('professor.reativar_aluno', aluno_id=aluno.id) }}" method="post"
+                                      class="d-inline" onsubmit="return confirm('Reativar {{ nome_exibicao }}?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn btn-outline-success" title="Reativar" aria-label="Reativar {{ nome_exibicao }}">
+                                        <i class="bi bi-person-check"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                                {% endif %}
+                                <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post"
+                                      class="d-inline ga-confirm-form"
+                                      data-confirm-text="Você vai perder acesso aos treinos, versões e histórico de {{ nome_exibicao }} até que um novo vínculo seja aceito. Os dados do aluno não são apagados, só a conexão com você.">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn btn-outline-danger" title="Remover vínculo" aria-label="Remover vínculo com {{ nome_exibicao }}">
+                                        <i class="bi bi-link-45deg"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-5">
+                            <i class="bi bi-people fs-1 d-block mb-3"></i>
+                            {% if busca or status != 'ativos' %}
+                                Nenhum aluno encontrado para esse filtro.
+                            {% else %}
+                                Você ainda não tem alunos vinculados.
+                                <br>
+                                <a href="{{ url_for('professor.novo_aluno') }}" class="btn btn-sm btn-success mt-3">
+                                    <i class="bi bi-person-plus"></i> Cadastrar primeiro aluno
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Alunos — versão mobile (cards) -->
+<div class="d-md-none d-flex flex-column gap-3">
+    {% for item in alunos_data %}
+    {% set aluno = item.aluno %}
+    {% set nome_exibicao = aluno.nome_completo or aluno.username %}
+    {% set partes = nome_exibicao.split() %}
+    {% set iniciais = (partes[0][0] ~ (partes[1][0] if partes|length > 1 else ''))|upper %}
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width: 44px; height: 44px; background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: #fff; font-weight: 600;">
+                    {{ iniciais }}
+                </div>
+                <div class="flex-grow-1">
+                    <div class="fw-semibold">{{ nome_exibicao }}</div>
+                    <div class="text-muted small">@{{ aluno.username }}</div>
+                </div>
+                {% if aluno.ativo %}
+                    <span class="badge bg-success">Ativo</span>
+                {% else %}
+                    <span class="badge bg-danger">Inativo</span>
+                {% endif %}
+            </div>
+            <div class="small text-muted mb-1"><i class="bi bi-envelope me-1"></i>{{ aluno.email }}</div>
+            {% if aluno.telefone %}
+            <div class="small text-muted mb-1"><i class="bi bi-telephone me-1"></i>{{ aluno.telefone }}</div>
+            {% endif %}
+            <div class="d-flex gap-3 small text-muted mb-3">
+                <span><i class="bi bi-calendar3 me-1"></i>Desde {{ formatar_data(item.vinculado_desde) }}</span>
+                <span><i class="bi bi-clipboard-data me-1"></i>{{ registros_por_aluno.get(aluno.id, 0) }} registro(s)</span>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}"
+                   class="btn btn-sm btn-outline-info flex-fill">
+                    <i class="bi bi-eye"></i> Ver
+                </a>
+                {% if current_user.is_admin %}
+                <a href="{{ url_for('professor.editar_aluno', aluno_id=aluno.id) }}"
+                   class="btn btn-sm btn-outline-warning flex-fill">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+                {% if aluno.ativo %}
+                <form action="{{ url_for('professor.desativar_aluno', aluno_id=aluno.id) }}" method="post"
+                      class="flex-fill" onsubmit="return confirm('Desativar {{ nome_exibicao }}?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                        <i class="bi bi-person-x"></i>
+                    </button>
+                </form>
+                {% else %}
+                <form action="{{ url_for('professor.reativar_aluno', aluno_id=aluno.id) }}" method="post"
+                      class="flex-fill" onsubmit="return confirm('Reativar {{ nome_exibicao }}?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-sm btn-outline-success w-100">
+                        <i class="bi bi-person-check"></i>
+                    </button>
+                </form>
+                {% endif %}
+                {% endif %}
+                <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post"
+                      class="flex-fill ga-confirm-form"
+                      data-confirm-text="Você vai perder acesso aos treinos, versões e histórico de {{ nome_exibicao }} até que um novo vínculo seja aceito. Os dados do aluno não são apagados, só a conexão com você.">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                        <i class="bi bi-link-45deg"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center text-muted py-5">
+            <i class="bi bi-people fs-1 d-block mb-3"></i>
+
+            {% if busca or status != 'ativos' %}
+                Nenhum aluno encontrado para esse filtro.
+            {% else %}
+                Você ainda não tem alunos vinculados.
+                <br>
+                <a href="{{ url_for('professor.novo_aluno') }}" class="btn btn-sm btn-success mt-3">
+                    <i class="bi bi-person-plus"></i> Cadastrar primeiro aluno
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="ga-footer-actions">
+    <a href="{{ url_for('professor.solicitacoes') }}" class="ga-footer-btn">
+        <i class="bi bi-envelope"></i> Solicitações
+        {% if current_user.solicitacoes_pendentes_count > 0 %}
+        <span class="badge rounded-pill bg-danger">{{ current_user.solicitacoes_pendentes_count }}</span>
+        {% endif %}
+    </a>
+    <a href="{{ url_for('professor.novo_aluno') }}" class="ga-footer-btn variant-primary">
+        <i class="bi bi-person-plus"></i> Novo Aluno
+    </a>
+    <a href="{{ url_for('professor.dashboard') }}" class="ga-footer-btn">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+</div>
+
+<!-- Modal de confirmação (substitui o window.confirm nativo em Remover Vínculo) -->
+<div class="modal fade" id="gaConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="ga-confirm-icon"><i class="bi bi-link-45deg"></i></div>
+                <h5 class="fw-bold mb-2">Remover vínculo?</h5>
+                <p class="text-muted mb-0" id="gaConfirmText"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="gaConfirmActionBtn">Remover vínculo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var confirmModalEl = document.getElementById('gaConfirmModal');
+    var confirmModal = new bootstrap.Modal(confirmModalEl);
+    var confirmText = document.getElementById('gaConfirmText');
+    var confirmActionBtn = document.getElementById('gaConfirmActionBtn');
+    var formPendente = null;
+
+    document.querySelectorAll('.ga-confirm-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            if (form.dataset.confirmado === 'true') return; // já confirmado no modal, deixa submeter
+            e.preventDefault();
+            formPendente = form;
+            confirmText.textContent = form.dataset.confirmText || 'Tem certeza?';
+            confirmModal.show();
+        });
+    });
+
+    confirmActionBtn.addEventListener('click', function () {
+        if (formPendente) {
+            formPendente.dataset.confirmado = 'true';
+            formPendente.submit();
+        }
+        confirmModal.hide();
+    });
+});
+</script>
 {% endblock %}
