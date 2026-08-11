@@ -542,10 +542,27 @@
             font-weight: 700;
         }
 
-        /* Evento vira um indicador simples: pontinho laranja + contagem,
-           em vez de tentar caber "3 ex • 2450kg" numa célula de 50px */
+        /* Evento vira só uma bolinha no canto inferior direito do dia —
+           sem barra, sem título, sem contagem. */
+        .fc-daygrid-day-frame {
+            position: relative;
+        }
+
+        .fc-daygrid-day-events {
+            position: absolute;
+            bottom: 3px;
+            right: 3px;
+            left: auto;
+            margin: 0 !important;
+            min-height: 0 !important;
+        }
+
+        .fc-daygrid-day-bottom {
+            display: none;
+        }
+
         .fc-daygrid-event-harness {
-            margin-top: 1px !important;
+            margin: 0 !important;
         }
 
         .fc-event {
@@ -553,6 +570,7 @@
             border: none !important;
             padding: 0 !important;
             box-shadow: none !important;
+            cursor: pointer;
         }
 
         .fc-event:hover {
@@ -560,30 +578,13 @@
             box-shadow: none;
         }
 
-        .fc-event-dot-wrap {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 3px;
-            padding: 2px 0;
-        }
-
         .fc-event-dot {
-            width: 8px;
-            height: 8px;
+            display: block;
+            width: 9px;
+            height: 9px;
             border-radius: 50%;
-            display: inline-block;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
-        }
-
-        .fc-event-count {
-            font-size: 0.62rem;
-            font-weight: 700;
-            color: #6b6b6b;
-        }
-
-        .fc-daygrid-day.fc-day-today .fc-event-count {
-            color: #F28C33;
+            background: var(--fl-accent);
+            box-shadow: 0 0 0 2px var(--surface);
         }
 
         /* Bottom sheet: o modal de detalhes desliza de baixo pra cima,
@@ -808,14 +809,6 @@
         color: #8a8a8a !important;
     }
 
-    .calendar-page[data-theme="dark"] .fc-event-count {
-        color: #a0a0a0;
-    }
-
-    .calendar-page[data-theme="dark"] .fc-daygrid-day.fc-day-today .fc-event-count {
-        color: #FFB366;
-    }
-
     .calendar-page[data-theme="dark"] .modal-content {
         background: var(--surface);
         color: #e8e8e8;
@@ -1024,20 +1017,24 @@
             eventClick: function(info) {
                 mostrarDetalhesEvento(info.event);
             },
+            dateClick: function(info) {
+                // Permite clicar em qualquer parte do dia (não só na
+                // bolinha, que é pequena) para abrir os exercícios.
+                const evento = calendar.getEvents().find(e => e.startStr === info.dateStr);
+                if (evento) {
+                    mostrarDetalhesEvento(evento);
+                }
+            },
             eventContent: function(arg) {
                 // No mobile, a barra de evento com texto ("3 ex • 2450kg")
                 // não cabe direito numa célula de ~50px — em vez de espremer,
-                // vira um indicador simples: um pontinho laranja (cor única,
-                // sem variação por volume) + a quantidade de exercícios do dia.
+                // vira só uma bolinha no canto do dia, indicando que houve
+                // treino naquele dia.
                 if (window.innerWidth > 768) {
                     return; // desktop: mantém a renderização padrão
                 }
-                const qtd = arg.event.extendedProps.exercicios || '';
                 return {
-                    html: `<div class="fc-event-dot-wrap">` +
-                          `<span class="fc-event-dot" style="background:${arg.event.backgroundColor}"></span>` +
-                          (qtd ? `<span class="fc-event-count">${qtd}</span>` : '') +
-                          `</div>`
+                    html: `<span class="fc-event-dot"></span>`
                 };
             },
             eventDidMount: function(info) {

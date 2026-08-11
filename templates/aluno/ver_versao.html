@@ -315,7 +315,19 @@
     .vv-exercicio-item.sortable-ghost { opacity: 0.5; background: var(--accent-soft); }
     .vv-drag-handle { cursor: grab; color: #B0B5BD; font-size: 1.1rem; flex-shrink: 0; touch-action: none; }
     .vv-drag-handle:active { cursor: grabbing; }
-    .vv-exercicio-nome { font-weight: 700; color: var(--vv-ink); font-size: 0.92rem; }
+    .vv-exercicio-content { flex: 1 1 auto; min-width: 0; }
+    .vv-exercicio-name-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .vv-exercicio-nome {
+        font-weight: 700;
+        color: var(--vv-ink);
+        font-size: 0.92rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+        flex: 1 1 auto;
+        cursor: default;
+    }
     .vv-exercicio-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
     .vv-tag {
         font-size: 0.72rem;
@@ -556,9 +568,11 @@
                         {% if exercicio_encontrado.obj %}
                         <div class="vv-exercicio-item" data-exercicio-id="{{ ex_id_completo }}">
                             <div class="vv-drag-handle"><i class="bi bi-grip-vertical"></i></div>
-                            <div class="flex-grow-1">
-                                <span class="vv-exercicio-nome">{{ exercicio_encontrado.obj.nome }}</span>
-                                {{ botao_imagens_exercicio(exercicio_encontrado.obj, extra_class='ms-1') }}
+                            <div class="vv-exercicio-content">
+                                <div class="vv-exercicio-name-row">
+                                    <span class="vv-exercicio-nome" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ exercicio_encontrado.obj.nome }}">{{ exercicio_encontrado.obj.nome }}</span>
+                                    {{ botao_imagens_exercicio(exercicio_encontrado.obj, extra_class='flex-shrink-0') }}
+                                </div>
                                 <div class="vv-exercicio-tags">
                                     <span class="vv-tag variant-meu">Meu exercício</span>
                                     <span class="vv-tag variant-musculo">{{ exercicio_encontrado.obj.musculo_nome or exercicio_encontrado.obj.musculo or 'N/A' }}</span>
@@ -579,9 +593,11 @@
                         {% if exercicio_encontrado.obj %}
                         <div class="vv-exercicio-item" data-exercicio-id="{{ ex_id_completo }}">
                             <div class="vv-drag-handle"><i class="bi bi-grip-vertical"></i></div>
-                            <div class="flex-grow-1">
-                                <span class="vv-exercicio-nome">{{ exercicio_encontrado.obj.nome }}</span>
-                                {{ botao_imagens_exercicio(exercicio_encontrado.obj, extra_class='ms-1') }}
+                            <div class="vv-exercicio-content">
+                                <div class="vv-exercicio-name-row">
+                                    <span class="vv-exercicio-nome" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ exercicio_encontrado.obj.nome }}">{{ exercicio_encontrado.obj.nome }}</span>
+                                    {{ botao_imagens_exercicio(exercicio_encontrado.obj, extra_class='flex-shrink-0') }}
+                                </div>
                                 <div class="vv-exercicio-tags">
                                     <span class="vv-tag variant-catalogo">Catálogo</span>
                                     <span class="vv-tag variant-musculo">{{ exercicio_encontrado.obj.musculo_nome or exercicio_encontrado.obj.musculo or 'N/A' }}</span>
