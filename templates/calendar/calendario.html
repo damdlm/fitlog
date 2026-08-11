@@ -7,18 +7,114 @@
 <!-- FullCalendar CSS -->
 <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
 <style>
+    :root {
+        --fl-accent: #F28C33;
+        --fl-accent-2: #FF6B4A;
+    }
+
+    .calendar-page {
+        --surface: #ffffff;
+        --surface-raised: #fbfbfb;
+        --border-subtle: rgba(20,20,20,0.07);
+        --text-primary: #1f1f1f;
+        --text-muted: #8a8a8a;
+        --shadow-elev: 0 16px 44px rgba(20,20,20,0.08);
+        transition: color 0.25s ease;
+    }
+
+    .calendar-page[data-theme="dark"] {
+        --surface: #1a1a21;
+        --surface-raised: #212129;
+        --border-subtle: rgba(255,255,255,0.07);
+        --text-primary: #f2f2f5;
+        --text-muted: #91919c;
+        --shadow-elev: 0 20px 50px rgba(0,0,0,0.45);
+    }
+
     #calendar {
         max-width: 1100px;
         margin: 0 auto;
-        background: white;
+        background: var(--surface);
         padding: 20px;
-        border-radius: 20px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        border-radius: 24px;
+        box-shadow: var(--shadow-elev);
+        transition: background-color 0.25s ease, box-shadow 0.25s ease;
     }
-    
-    .fc-toolbar-title {
-        color: #F28C33 !important;
-        font-weight: 700 !important;
+
+    .calendar-page .card {
+        border: none;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .calendar-page .card:hover {
+        box-shadow: none;
+    }
+
+    /* Resumo do mês — hero de estatísticas, estilo app fitness */
+    .month-summary {
+        display: flex;
+        align-items: stretch;
+        gap: 4px;
+        background: linear-gradient(135deg, var(--fl-accent) 0%, var(--fl-accent-2) 100%);
+        border-radius: 22px;
+        padding: 4px;
+        margin-bottom: 20px;
+        box-shadow: 0 14px 34px rgba(242, 140, 51, 0.28);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .calendar-page[data-theme="dark"] .month-summary {
+        box-shadow: 0 14px 34px rgba(242, 140, 51, 0.18), 0 0 0 1px rgba(255,255,255,0.04) inset;
+    }
+
+    .month-summary-tile {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px 8px;
+        color: #fff;
+        text-align: center;
+        min-width: 0;
+    }
+
+    .month-summary-icon {
+        font-size: 1.05rem;
+        opacity: 0.9;
+        margin-bottom: 4px;
+    }
+
+    .month-summary-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .month-summary-label {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        opacity: 0.85;
+        margin-top: 2px;
+        white-space: nowrap;
+    }
+
+    .month-summary-divider {
+        width: 1px;
+        background: rgba(255,255,255,0.28);
+        margin: 14px 0;
+        flex-shrink: 0;
+    }
+
+    .calendar-page .fc-toolbar-title {
+        color: var(--text-primary) !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.01em;
     }
     
     .fc-button-primary {
@@ -29,6 +125,11 @@
     .fc-button-primary:hover {
         background: #2D2D2D !important;
         border-color: #2D2D2D !important;
+    }
+
+    .calendar-page[data-theme="dark"] .fc-button-primary:hover {
+        background: #33333d !important;
+        border-color: #33333d !important;
     }
     
     .fc-day-today {
@@ -55,16 +156,26 @@
         justify-content: center;
         margin: 6px;
         border-radius: 10px;
-        background: #f0f0f0;
-        color: #2D2D2D !important;
+        background: var(--surface-raised);
+        color: var(--text-primary) !important;
         font-weight: 500;
         text-decoration: none !important;
+        transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
     }
 
     .fc-day-today .fc-daygrid-day-number {
-        background: #F28C33;
+        background: linear-gradient(135deg, var(--fl-accent) 0%, var(--fl-accent-2) 100%);
         color: #fff !important;
         font-weight: 700;
+        box-shadow: 0 0 0 4px rgba(242, 140, 51, 0.16), 0 4px 14px rgba(242, 140, 51, 0.4);
+    }
+
+    .calendar-page[data-theme="dark"] .fc-day-today .fc-daygrid-day-number {
+        box-shadow: 0 0 0 4px rgba(242, 140, 51, 0.22), 0 0 18px rgba(242, 140, 51, 0.55);
+    }
+
+    .fc-daygrid-day-frame:active .fc-daygrid-day-number {
+        transform: scale(0.9);
     }
 
     /* Remove a aparência de "tabela/planilha" do FullCalendar (linhas
@@ -112,8 +223,8 @@
         gap: 10px;
         padding-bottom: 14px;
         margin-bottom: 14px;
-        border-bottom: 1px solid #f0f0f0;
-        color: #9a9a9a;
+        border-bottom: 1px solid var(--border-subtle);
+        color: var(--text-muted);
         font-size: 0.85rem;
     }
 
@@ -123,10 +234,10 @@
     }
 
     .grupo-treino {
-        background: #fdfdfd;
-        border: 1px solid #eee;
+        background: var(--surface-raised);
+        border: 1px solid var(--border-subtle);
         border-left: 4px solid #F28C33;
-        border-radius: 10px;
+        border-radius: 14px;
         padding: 14px 16px;
         margin-bottom: 18px;
         box-shadow: 0 1px 4px rgba(0,0,0,0.04);
@@ -144,12 +255,12 @@
         gap: 6px 10px;
         margin-bottom: 8px;
         padding-bottom: 10px;
-        border-bottom: 1px solid #f2f2f2;
+        border-bottom: 1px solid var(--border-subtle);
     }
 
     .grupo-treino-nome {
         font-weight: 700;
-        color: #2D2D2D;
+        color: var(--text-primary);
         font-size: 0.95rem;
         display: flex;
         align-items: center;
@@ -173,7 +284,7 @@
 
     .exercicio-card {
         padding: 10px 0;
-        border-top: 1px dashed #f0f0f0;
+        border-top: 1px dashed var(--border-subtle);
     }
 
     .exercicio-card:first-of-type {
@@ -183,7 +294,7 @@
 
     .exercicio-nome {
         font-weight: 600;
-        color: #2D2D2D;
+        color: var(--text-primary);
         font-size: 0.9rem;
         margin-bottom: 8px;
         display: flex;
@@ -208,18 +319,18 @@
     }
 
     .serie-chip {
-        background: #f8f9fa;
-        border: 1px solid #eee;
+        background: var(--surface);
+        border: 1px solid var(--border-subtle);
         border-radius: 20px;
         padding: 4px 12px;
         font-size: 0.76rem;
-        color: #666;
+        color: var(--text-muted);
         font-weight: 500;
         white-space: nowrap;
     }
 
     .serie-chip b {
-        color: #2D2D2D;
+        color: var(--text-primary);
         font-weight: 700;
     }
 
@@ -267,7 +378,7 @@
     
     .skeleton-header {
         height: 50px;
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background: linear-gradient(90deg, var(--surface-raised) 25%, var(--border-subtle) 50%, var(--surface-raised) 75%);
         background-size: 200% 100%;
         animation: skeleton-loading 1.5s infinite;
         border-radius: 8px;
@@ -283,7 +394,7 @@
     
     .skeleton-weekday {
         height: 30px;
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background: linear-gradient(90deg, var(--surface-raised) 25%, var(--border-subtle) 50%, var(--surface-raised) 75%);
         background-size: 200% 100%;
         animation: skeleton-loading 1.5s infinite;
         border-radius: 4px;
@@ -297,7 +408,7 @@
     
     .skeleton-day {
         height: 100px;
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background: linear-gradient(90deg, var(--surface-raised) 25%, var(--border-subtle) 50%, var(--surface-raised) 75%);
         background-size: 200% 100%;
         animation: skeleton-loading 1.5s infinite;
         border-radius: 8px;
@@ -353,14 +464,25 @@
         .fc-button {
             padding: 0.4rem 0.6rem !important;
             font-size: 0.8rem !important;
-            border-radius: 10px !important;
+            border-radius: 12px !important;
             min-width: 38px;
             min-height: 38px;
+        }
+
+        .fc-prev-button,
+        .fc-next-button {
+            background: var(--surface-raised) !important;
+            border-color: var(--border-subtle) !important;
+            color: var(--text-primary) !important;
+            border-radius: 50% !important;
+            box-shadow: none !important;
         }
 
         .fc-today-button {
             border-radius: 20px !important;
             font-weight: 600 !important;
+            background: linear-gradient(135deg, var(--fl-accent) 0%, var(--fl-accent-2) 100%) !important;
+            border: none !important;
         }
 
         /* Cabeçalho dos dias da semana: só a inicial, mais discreto */
@@ -632,36 +754,8 @@
         color: #f5f5f5;
     }
 
-    .calendar-page[data-theme="dark"] .card {
-        background: #1c1c1c;
-        border-color: rgba(255,255,255,0.06);
-    }
-
-    .calendar-page[data-theme="dark"] #calendar {
-        background: #1c1c1c;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.35);
-    }
-
-    .calendar-page[data-theme="dark"] .fc-toolbar-title {
-        color: #FFB366 !important;
-    }
-
     .calendar-page[data-theme="dark"] .fc-col-header-cell-cushion {
         color: #8a8a8a !important;
-    }
-
-    .calendar-page[data-theme="dark"] .fc-daygrid-day-number {
-        background: #2a2a2a;
-        color: #e8e8e8 !important;
-    }
-
-    .calendar-page[data-theme="dark"] .fc-day-today .fc-daygrid-day-number {
-        background: #F28C33;
-        color: #1c1c1c !important;
-    }
-
-    .calendar-page[data-theme="dark"] .fc-daygrid-day:hover .fc-daygrid-day-frame {
-        background-color: rgba(242, 140, 51, 0.12);
     }
 
     .calendar-page[data-theme="dark"] .fc-event-count {
@@ -672,60 +766,20 @@
         color: #FFB366;
     }
 
-    .calendar-page[data-theme="dark"] .skeleton-header,
-    .calendar-page[data-theme="dark"] .skeleton-weekday,
-    .calendar-page[data-theme="dark"] .skeleton-day {
-        background: linear-gradient(90deg, #262626 25%, #333 50%, #262626 75%);
-        background-size: 200% 100%;
-    }
-
     .calendar-page[data-theme="dark"] .modal-content {
-        background: #1c1c1c;
+        background: var(--surface);
         color: #e8e8e8;
+        border: 1px solid var(--border-subtle);
     }
 
     .calendar-page[data-theme="dark"] .modal-footer {
-        border-top-color: rgba(255,255,255,0.08);
+        border-top-color: var(--border-subtle);
     }
 
     .calendar-page[data-theme="dark"] .modal-footer .btn-secondary {
         background: #333;
         border-color: #444;
         color: #e8e8e8;
-    }
-
-    .calendar-page[data-theme="dark"] .detail-data-strip {
-        color: #8a8a8a;
-        border-bottom-color: rgba(255,255,255,0.08);
-    }
-
-    .calendar-page[data-theme="dark"] .grupo-treino {
-        background: #202020;
-        border-color: rgba(255,255,255,0.06);
-        border-left-color: #F28C33;
-    }
-
-    .calendar-page[data-theme="dark"] .grupo-treino-header {
-        border-bottom-color: rgba(255,255,255,0.08);
-    }
-
-    .calendar-page[data-theme="dark"] .grupo-treino-nome,
-    .calendar-page[data-theme="dark"] .exercicio-nome {
-        color: #f0f0f0;
-    }
-
-    .calendar-page[data-theme="dark"] .exercicio-card {
-        border-top-color: rgba(255,255,255,0.08);
-    }
-
-    .calendar-page[data-theme="dark"] .serie-chip {
-        background: #262626;
-        border-color: rgba(255,255,255,0.08);
-        color: #bbb;
-    }
-
-    .calendar-page[data-theme="dark"] .serie-chip b {
-        color: #f0f0f0;
     }
 
     .calendar-page[data-theme="dark"] .btn-outline-secondary {
@@ -761,6 +815,27 @@
             </a>
             {% endif %}
         </div>
+    </div>
+</div>
+
+<!-- Resumo do mês -->
+<div class="month-summary" id="monthSummary">
+    <div class="month-summary-tile">
+        <div class="month-summary-icon"><i class="bi bi-trophy-fill"></i></div>
+        <div class="month-summary-value" id="statDias">–</div>
+        <div class="month-summary-label">dias treinados</div>
+    </div>
+    <div class="month-summary-divider"></div>
+    <div class="month-summary-tile">
+        <div class="month-summary-icon"><i class="bi bi-fire"></i></div>
+        <div class="month-summary-value" id="statSequencia">–</div>
+        <div class="month-summary-label">sequência atual</div>
+    </div>
+    <div class="month-summary-divider"></div>
+    <div class="month-summary-tile">
+        <div class="month-summary-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+        <div class="month-summary-value" id="statVolume">–</div>
+        <div class="month-summary-label">kg no mês</div>
     </div>
 </div>
 
@@ -831,6 +906,8 @@
 <script>
     let calendar;
     let eventos = [];
+    let viewStart = null;
+    let viewEnd = null;
 
     const THEME_STORAGE_KEY = 'fitlog_calendar_theme';
 
@@ -918,6 +995,11 @@
                 const descricaoTruncada = descricao.length > 100 ? descricao.substring(0, 100) + '...' : descricao;
                 info.el.setAttribute('title', descricaoTruncada);
             },
+            datesSet: function(info) {
+                viewStart = info.view.currentStart;
+                viewEnd = info.view.currentEnd;
+                atualizarResumoMes();
+            },
             windowResize: function() {
                 // Reajusta a altura das linhas do calendário ao girar a tela no celular
                 calendar.updateSize();
@@ -954,6 +1036,7 @@
                 eventos = data;
                 calendar.removeAllEvents();
                 calendar.addEventSource(data);
+                atualizarResumoMes();
             })
             .catch(error => {
                 console.error('Erro ao carregar eventos:', error);
@@ -961,6 +1044,60 @@
                     FitLogUtils.showToast('Erro ao carregar calendário', 'danger');
                 }
             });
+    }
+
+    function atualizarResumoMes() {
+        if (!viewStart) return;
+
+        // "start" dos eventos vem como 'YYYY-MM-DD' (ver calendar_routes.py) —
+        // comparar como string evita problemas de fuso horário do Date().
+        const inicioStr = formatarDataLocal(viewStart);
+        const fimStr = formatarDataLocal(viewEnd);
+
+        const eventosDoMes = eventos.filter(e => e.start >= inicioStr && e.start < fimStr);
+        const diasTreinados = eventosDoMes.length;
+        const volumeMes = eventosDoMes.reduce((soma, e) => soma + (e.extendedProps?.volume || 0), 0);
+
+        document.getElementById('statDias').textContent = diasTreinados;
+        document.getElementById('statVolume').textContent = formatarVolumeCompacto(volumeMes);
+        document.getElementById('statSequencia').textContent = calcularSequenciaAtual();
+    }
+
+    function formatarDataLocal(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
+    function formatarVolumeCompacto(kg) {
+        if (kg >= 1000) return (kg / 1000).toFixed(1).replace('.0', '') + 'k';
+        return kg.toFixed(0);
+    }
+
+    function calcularSequenciaAtual() {
+        // Sequência de dias consecutivos com treino registrado, contando
+        // para trás a partir de hoje (ou do último dia treinado, se hoje
+        // ainda não teve treino) — considera TODOS os eventos carregados,
+        // não só os do mês em exibição, pra não "quebrar" a sequência
+        // artificialmente ao trocar de mês.
+        const datasComTreino = new Set(eventos.map(e => e.start));
+        if (datasComTreino.size === 0) return 0;
+
+        let cursor = new Date();
+        cursor.setHours(0, 0, 0, 0);
+
+        if (!datasComTreino.has(formatarDataLocal(cursor))) {
+            cursor.setDate(cursor.getDate() - 1);
+            if (!datasComTreino.has(formatarDataLocal(cursor))) return 0;
+        }
+
+        let sequencia = 0;
+        while (datasComTreino.has(formatarDataLocal(cursor))) {
+            sequencia++;
+            cursor.setDate(cursor.getDate() - 1);
+        }
+        return sequencia;
     }
 
     function habilitarSwipeCalendario(calendarEl) {
