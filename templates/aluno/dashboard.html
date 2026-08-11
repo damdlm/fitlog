@@ -48,36 +48,44 @@
     }
 
     .dash-stat {
-        border-radius: 16px;
-        padding: 20px;
+        border-radius: 14px;
+        padding: 14px 16px;
         height: 100%;
+        display: flex;
+        align-items: center;
+        gap: 12px;
         transition: transform 0.25s ease, box-shadow 0.25s ease;
         position: relative;
     }
     .dash-stat:hover {
-        transform: translateY(-4px);
+        transform: translateY(-3px);
         box-shadow: 0 10px 24px rgba(0,0,0,0.12);
     }
     .dash-stat-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
         background: rgba(255,255,255,0.18);
-        font-size: 1.2rem;
-        margin-bottom: 14px;
+        font-size: 1.05rem;
+        flex-shrink: 0;
+    }
+    .dash-stat-info {
+        min-width: 0;
     }
     .dash-stat-value {
-        font-size: 1.8rem;
+        font-size: 1.35rem;
         font-weight: 700;
-        line-height: 1;
-        margin-bottom: 2px;
+        line-height: 1.1;
     }
     .dash-stat-label {
-        font-size: 0.82rem;
+        font-size: 0.76rem;
         opacity: 0.85;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .dash-quick-tile {
@@ -122,38 +130,6 @@
         <i class="bi bi-fire"></i>
         {{ dias_treinados_semana }} de 7 dias treinados nesta semana
     </span>
-</div>
-
-<!-- Cards de Resumo -->
-<div class="row mb-4 g-3">
-    <div class="col-6 col-md-3">
-        <div class="dash-stat" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
-            <div class="dash-stat-icon"><i class="bi bi-trophy"></i></div>
-            <div class="dash-stat-value">{{ total_treinos }}</div>
-            <div class="dash-stat-label">Meus Treinos</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="dash-stat" style="background: #2D2D2D; color: white;">
-            <div class="dash-stat-icon"><i class="bi bi-list-check"></i></div>
-            <div class="dash-stat-value">{{ total_exercicios }}</div>
-            <div class="dash-stat-label">Meus Exercícios</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="dash-stat" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%); color: white;">
-            <div class="dash-stat-icon"><i class="bi bi-clock-history"></i></div>
-            <div class="dash-stat-value">{{ total_versoes }}</div>
-            <div class="dash-stat-label">Minhas Versões</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="dash-stat" style="background: #2D2D2D; color: white;">
-            <div class="dash-stat-icon"><i class="bi bi-calendar-check"></i></div>
-            <div class="dash-stat-value">{{ total_registros }}</div>
-            <div class="dash-stat-label">Total de Registros</div>
-        </div>
-    </div>
 </div>
 
 <div class="row mb-4 g-3">
@@ -211,6 +187,12 @@
                             <span class="dash-badge">{{ registro.series[0].repeticoes }}x</span>
                         {% endif %}
                         <span class="dash-badge">{{ registro.series|length }} séries</span>
+                        {% if registro.series and registro.series[0].tempo_treino %}
+                            {% set tt = registro.series[0].tempo_treino %}
+                            <span class="dash-badge">
+                                <i class="bi bi-stopwatch me-1"></i>{{ "%02d:%02d"|format(tt // 3600, (tt % 3600) // 60) }}
+                            </span>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -229,6 +211,46 @@
     </div>
 </div>
 
+<!-- Cards de Resumo -->
+<div class="row mt-4 g-3">
+    <div class="col-6 col-md-3">
+        <div class="dash-stat" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+            <div class="dash-stat-icon"><i class="bi bi-trophy"></i></div>
+            <div class="dash-stat-info">
+                <div class="dash-stat-value">{{ total_treinos }}</div>
+                <div class="dash-stat-label">Meus Treinos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="dash-stat" style="background: #2D2D2D; color: white;">
+            <div class="dash-stat-icon"><i class="bi bi-list-check"></i></div>
+            <div class="dash-stat-info">
+                <div class="dash-stat-value">{{ total_exercicios }}</div>
+                <div class="dash-stat-label">Meus Exercícios</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="dash-stat" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%); color: white;">
+            <div class="dash-stat-icon"><i class="bi bi-clock-history"></i></div>
+            <div class="dash-stat-info">
+                <div class="dash-stat-value">{{ total_versoes }}</div>
+                <div class="dash-stat-label">Minhas Versões</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="dash-stat" style="background: #2D2D2D; color: white;">
+            <div class="dash-stat-icon"><i class="bi bi-calendar-check"></i></div>
+            <div class="dash-stat-info">
+                <div class="dash-stat-value">{{ total_registros }}</div>
+                <div class="dash-stat-label">Total de Registros</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -241,7 +263,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('graficoSemana');
     if (!ctx) return;
 
-    new Chart(ctx, {
+    const diasSemanaDetalhes = {{ dias_semana_detalhes|tojson }};
+
+    const graficoSemana = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: {{ dias_semana_labels|tojson }},
@@ -255,6 +279,21 @@ document.addEventListener('DOMContentLoaded', function() {
         options: {
             responsive: true,
             plugins: { legend: { display: false } },
+            onClick: function(event, elements) {
+                if (!elements.length) return;
+                const dia = diasSemanaDetalhes[elements[0].index];
+                if (!dia || dia.exercicios === 0) return;
+
+                const partes = [`${dia.exercicios} exercício${dia.exercicios === 1 ? '' : 's'} treinado${dia.exercicios === 1 ? '' : 's'}`];
+                partes.push(dia.tempo_treino ? `${dia.tempo_treino}h de treino` : 'tempo não registrado');
+
+                if (typeof FitLogUtils !== 'undefined') {
+                    FitLogUtils.showToast(`${dia.data} — ${partes.join(' · ')}`, 'info', 4000);
+                }
+            },
+            onHover: function(event, elements) {
+                event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+            },
             scales: {
                 y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { display: false } },
                 x: { grid: { display: false } }

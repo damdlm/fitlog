@@ -35,17 +35,32 @@ def dashboard():
         RegistroTreino.data_registro >= inicio_semana
     ).all()
     contagem_por_dia = {}
+    # tempo_treino é o cronômetro do topo (duração total da sessão),
+    # guardado em cada série (HistoricoTreino) — como pode haver mais
+    # de uma sessão no mesmo dia, ficamos com o maior valor do dia.
+    tempo_treino_por_dia = {}
     for registro in registros_semana:
         dia = registro.data_registro.date()
         contagem_por_dia[dia] = contagem_por_dia.get(dia, 0) + 1
+        if registro.series:
+            tempo = registro.series[0].tempo_treino
+            if tempo and tempo > tempo_treino_por_dia.get(dia, 0):
+                tempo_treino_por_dia[dia] = tempo
 
     dias_semana_labels = []
     dias_semana_valores = []
+    dias_semana_detalhes = []
     nomes_dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
     for i in range(7):
         dia = inicio_semana + timedelta(days=i)
         dias_semana_labels.append(nomes_dias[dia.weekday()])
         dias_semana_valores.append(contagem_por_dia.get(dia, 0))
+        tempo_segundos = tempo_treino_por_dia.get(dia, 0)
+        dias_semana_detalhes.append({
+            'data': dia.strftime('%d/%m'),
+            'exercicios': contagem_por_dia.get(dia, 0),
+            'tempo_treino': f"{tempo_segundos // 3600:02d}:{(tempo_segundos % 3600) // 60:02d}" if tempo_segundos else None
+        })
 
     dias_treinados_semana = sum(1 for v in dias_semana_valores if v > 0)
 
@@ -65,6 +80,7 @@ def dashboard():
                          ultimos_registros=ultimos_registros,
                          dias_semana_labels=dias_semana_labels,
                          dias_semana_valores=dias_semana_valores,
+                         dias_semana_detalhes=dias_semana_detalhes,
                          dias_treinados_semana=dias_treinados_semana,
                          saudacao=saudacao)
 

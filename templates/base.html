@@ -50,6 +50,29 @@
             background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+
+        /* ==========================================================
+           Bloqueio de zoom acidental no mobile (principalmente iOS)
+           Duas causas diferentes, duas correções:
+           1) touch-action: manipulation remove o "zoom" de duplo-toque
+              rápido em qualquer elemento, sem desativar o pinça-zoom
+              manual (esse continua funcionando, por acessibilidade).
+           2) O Safari no iPhone dá zoom automático ao focar um campo
+              de formulário (input/select/textarea) sempre que a fonte
+              dele é menor que 16px — por isso forçamos 16px nesses
+              campos só na faixa mobile, sem mudar o tamanho no desktop.
+           ========================================================== */
+        html {
+            touch-action: manipulation;
+        }
+
+        @media (max-width: 768px) {
+            input,
+            select,
+            textarea {
+                font-size: 16px !important;
+            }
+        }
         
         .navbar {
             position: sticky;
