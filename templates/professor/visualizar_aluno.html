@@ -412,7 +412,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.querySelectorAll('.ga-confirm-form').forEach(function (form) {
         form.addEventListener('submit', function (e) {
-            if (form.dataset.confirmado === 'true') return; // já confirmado no modal, deixa submeter
+            if (form.dataset.confirmado === 'true') return; // já confirmado no modal, deixa submeter  
             e.preventDefault();
             formPendente = form;
             confirmText.textContent = form.dataset.confirmText || 'Tem certeza?';
