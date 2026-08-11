@@ -549,21 +549,218 @@
             font-size: 0.9rem !important;
         }
     }
+
+    /* ==========================================================
+       Toggle de tema (claro/escuro) — switch estilo iOS
+       ========================================================== */
+    .theme-toggle {
+        position: relative;
+        width: 52px;
+        height: 30px;
+        border-radius: 999px;
+        border: none;
+        background: #e4e4e4;
+        cursor: pointer;
+        padding: 0;
+        flex-shrink: 0;
+        transition: background-color 0.25s ease;
+    }
+
+    .theme-toggle-icon {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.72rem;
+        transition: opacity 0.2s ease, color 0.2s ease;
+    }
+
+    .theme-toggle-icon-sun {
+        left: 7px;
+        color: #F28C33;
+        opacity: 1;
+    }
+
+    .theme-toggle-icon-moon {
+        right: 7px;
+        color: #9a9a9a;
+        opacity: 0.5;
+    }
+
+    .theme-toggle-knob {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        transition: transform 0.25s ease;
+    }
+
+    .calendar-page[data-theme="dark"] .theme-toggle {
+        background: #3a3a3a;
+    }
+
+    .calendar-page[data-theme="dark"] .theme-toggle .theme-toggle-knob {
+        transform: translateX(22px);
+        background: #2D2D2D;
+    }
+
+    .calendar-page[data-theme="dark"] .theme-toggle-icon-sun {
+        opacity: 0.4;
+        color: #cfcfcf;
+    }
+
+    .calendar-page[data-theme="dark"] .theme-toggle-icon-moon {
+        opacity: 1;
+        color: #F28C33;
+    }
+
+    /* ==========================================================
+       Tema escuro do calendário — escopado à .calendar-page para
+       não afetar o resto do app (que ainda não tem dark mode).
+       Bootstrap 5.3 respeita data-bs-theme nos componentes internos
+       (modal, botões), por isso ele também é setado via JS no wrapper.
+       ========================================================== */
+    .calendar-page[data-theme="dark"] {
+        color: #e8e8e8;
+    }
+
+    .calendar-page[data-theme="dark"] h2,
+    .calendar-page[data-theme="dark"] .modal-title {
+        color: #f5f5f5;
+    }
+
+    .calendar-page[data-theme="dark"] .card {
+        background: #1c1c1c;
+        border-color: rgba(255,255,255,0.06);
+    }
+
+    .calendar-page[data-theme="dark"] #calendar {
+        background: #1c1c1c;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+    }
+
+    .calendar-page[data-theme="dark"] .fc-toolbar-title {
+        color: #FFB366 !important;
+    }
+
+    .calendar-page[data-theme="dark"] .fc-col-header-cell-cushion {
+        color: #8a8a8a !important;
+    }
+
+    .calendar-page[data-theme="dark"] .fc-daygrid-day-number {
+        background: #2a2a2a;
+        color: #e8e8e8 !important;
+    }
+
+    .calendar-page[data-theme="dark"] .fc-day-today .fc-daygrid-day-number {
+        background: #F28C33;
+        color: #1c1c1c !important;
+    }
+
+    .calendar-page[data-theme="dark"] .fc-daygrid-day:hover .fc-daygrid-day-frame {
+        background-color: rgba(242, 140, 51, 0.12);
+    }
+
+    .calendar-page[data-theme="dark"] .fc-event-count {
+        color: #a0a0a0;
+    }
+
+    .calendar-page[data-theme="dark"] .fc-daygrid-day.fc-day-today .fc-event-count {
+        color: #FFB366;
+    }
+
+    .calendar-page[data-theme="dark"] .skeleton-header,
+    .calendar-page[data-theme="dark"] .skeleton-weekday,
+    .calendar-page[data-theme="dark"] .skeleton-day {
+        background: linear-gradient(90deg, #262626 25%, #333 50%, #262626 75%);
+        background-size: 200% 100%;
+    }
+
+    .calendar-page[data-theme="dark"] .modal-content {
+        background: #1c1c1c;
+        color: #e8e8e8;
+    }
+
+    .calendar-page[data-theme="dark"] .modal-footer {
+        border-top-color: rgba(255,255,255,0.08);
+    }
+
+    .calendar-page[data-theme="dark"] .modal-footer .btn-secondary {
+        background: #333;
+        border-color: #444;
+        color: #e8e8e8;
+    }
+
+    .calendar-page[data-theme="dark"] .detail-data-strip {
+        color: #8a8a8a;
+        border-bottom-color: rgba(255,255,255,0.08);
+    }
+
+    .calendar-page[data-theme="dark"] .grupo-treino {
+        background: #202020;
+        border-color: rgba(255,255,255,0.06);
+        border-left-color: #F28C33;
+    }
+
+    .calendar-page[data-theme="dark"] .grupo-treino-header {
+        border-bottom-color: rgba(255,255,255,0.08);
+    }
+
+    .calendar-page[data-theme="dark"] .grupo-treino-nome,
+    .calendar-page[data-theme="dark"] .exercicio-nome {
+        color: #f0f0f0;
+    }
+
+    .calendar-page[data-theme="dark"] .exercicio-card {
+        border-top-color: rgba(255,255,255,0.08);
+    }
+
+    .calendar-page[data-theme="dark"] .serie-chip {
+        background: #262626;
+        border-color: rgba(255,255,255,0.08);
+        color: #bbb;
+    }
+
+    .calendar-page[data-theme="dark"] .serie-chip b {
+        color: #f0f0f0;
+    }
+
+    .calendar-page[data-theme="dark"] .btn-outline-secondary {
+        color: #d8d8d8;
+        border-color: rgba(255,255,255,0.25);
+    }
+
+    .calendar-page[data-theme="dark"] .btn-outline-secondary:hover {
+        background: rgba(255,255,255,0.08);
+        color: #fff;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<div class="calendar-page" id="calendarPage" data-theme="light">
 <div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
         <h2 class="d-none d-md-block mb-0">
             <i class="bi bi-calendar-check me-2" style="color: #F28C33;"></i>
             {% if aluno %}Calendário de {{ aluno.nome_completo or aluno.username }}{% else %}Calendário de Treinos{% endif %}
         </h2>
-        {% if aluno %}
-        <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Voltar
-        </a>
-        {% endif %}
+        <div class="d-flex align-items-center gap-2 ms-auto">
+            <!-- Toggle claro/escuro -->
+            <button type="button" class="theme-toggle" id="themeToggle" aria-label="Alternar tema claro/escuro" aria-pressed="false">
+                <i class="bi bi-sun-fill theme-toggle-icon theme-toggle-icon-sun"></i>
+                <i class="bi bi-moon-stars-fill theme-toggle-icon theme-toggle-icon-moon"></i>
+                <span class="theme-toggle-knob"></span>
+            </button>
+            {% if aluno %}
+            <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+            {% endif %}
+        </div>
     </div>
 </div>
 
@@ -623,6 +820,7 @@
         </div>
     </div>
 </div>
+</div><!-- /.calendar-page -->
 {% endblock %}
 
 {% block scripts %}
@@ -633,8 +831,35 @@
 <script>
     let calendar;
     let eventos = [];
-    
+
+    const THEME_STORAGE_KEY = 'fitlog_calendar_theme';
+
+    function aplicarTema(tema) {
+        const page = document.getElementById('calendarPage');
+        const toggle = document.getElementById('themeToggle');
+        page.setAttribute('data-theme', tema);
+        // Bootstrap 5.3: componentes internos (modal, botões) seguem
+        // data-bs-theme no ancestral mais próximo.
+        page.setAttribute('data-bs-theme', tema);
+        toggle.setAttribute('aria-pressed', tema === 'dark' ? 'true' : 'false');
+    }
+
+    function inicializarTema() {
+        const salvo = localStorage.getItem(THEME_STORAGE_KEY);
+        const prefereEscuro = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const temaInicial = salvo || (prefereEscuro ? 'dark' : 'light');
+        aplicarTema(temaInicial);
+
+        document.getElementById('themeToggle').addEventListener('click', function() {
+            const atual = document.getElementById('calendarPage').getAttribute('data-theme');
+            const novo = atual === 'dark' ? 'light' : 'dark';
+            aplicarTema(novo);
+            localStorage.setItem(THEME_STORAGE_KEY, novo);
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
+        inicializarTema();
         inicializarCalendario();
     });
     
