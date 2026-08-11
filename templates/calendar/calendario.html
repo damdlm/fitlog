@@ -143,6 +143,19 @@
         background: #33333d !important;
         border-color: #33333d !important;
     }
+
+    /* Estado pressionado/clicado — sem isso, o FullCalendar usa um
+       escurecido bem forte (quase preto) por padrão. */
+    .fc-button-primary:not(:disabled):active,
+    .fc-button-primary:not(:disabled).fc-button-active {
+        background: #d9741f !important;
+        border-color: #d9741f !important;
+    }
+
+    .fc-button-primary:focus,
+    .fc-button-primary:not(:disabled):active:focus {
+        box-shadow: 0 0 0 0.2rem rgba(242, 140, 51, 0.3) !important;
+    }
     
     .fc-day-today {
         background-color: rgba(242, 140, 51, 0.1) !important;
@@ -490,11 +503,28 @@
             box-shadow: none !important;
         }
 
+        .fc-prev-button:not(:disabled):active,
+        .fc-next-button:not(:disabled):active,
+        .fc-prev-button:focus,
+        .fc-next-button:focus {
+            background: var(--border-subtle) !important;
+            border-color: var(--border-subtle) !important;
+            color: var(--text-primary) !important;
+            box-shadow: 0 0 0 0.15rem rgba(242, 140, 51, 0.2) !important;
+        }
+
         .fc-today-button {
             border-radius: 20px !important;
             font-weight: 600 !important;
             background: linear-gradient(135deg, var(--fl-accent) 0%, var(--fl-accent-2) 100%) !important;
             border: none !important;
+        }
+
+        .fc-today-button:not(:disabled):active,
+        .fc-today-button:focus {
+            background: linear-gradient(135deg, var(--fl-accent) 0%, var(--fl-accent-2) 100%) !important;
+            border: none !important;
+            box-shadow: 0 0 0 0.2rem rgba(242, 140, 51, 0.3) !important;
         }
 
         /* Cabeçalho dos dias da semana: só a inicial, mais discreto */
@@ -521,70 +551,34 @@
             padding: 4px !important;
             width: 26px;
             height: 26px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            background: #f0f0f0;
-            color: #2D2D2D !important;
-            font-weight: 500;
-            text-decoration: none !important;
-        }
-
-        /* Dia de hoje: círculo cheio, como calendário nativo */
-        .fc-day-today {
-            background-color: transparent !important;
-        }
-
-        .fc-day-today .fc-daygrid-day-number {
-            background: #F28C33;
-            color: #fff !important;
-            font-weight: 700;
-        }
-
-        /* Evento vira só uma bolinha no canto inferior direito do dia —
-           sem barra, sem título, sem contagem. */
-        .fc-daygrid-day-frame {
             position: relative;
         }
 
-        .fc-daygrid-day-events {
+        /* Bolinha de "dia treinado" — ancorada no canto do próprio
+           quadradinho do número (não solta na célula), tipo badge de
+           notificação. Adicionada via JS em eventDidMount. */
+        .fc-day-dot {
             position: absolute;
-            bottom: 3px;
-            right: 3px;
-            left: auto;
-            margin: 0 !important;
-            min-height: 0 !important;
-        }
-
-        .fc-daygrid-day-bottom {
-            display: none;
-        }
-
-        .fc-daygrid-event-harness {
-            margin: 0 !important;
-        }
-
-        .fc-event {
-            background: transparent !important;
-            border: none !important;
-            padding: 0 !important;
-            box-shadow: none !important;
-            cursor: pointer;
-        }
-
-        .fc-event:hover {
-            transform: none;
-            box-shadow: none;
-        }
-
-        .fc-event-dot {
-            display: block;
+            bottom: -2px;
+            right: -2px;
             width: 9px;
             height: 9px;
             border-radius: 50%;
             background: var(--fl-accent);
             box-shadow: 0 0 0 2px var(--surface);
+            pointer-events: none;
+        }
+
+        .fc-day-today .fc-day-dot {
+            box-shadow: 0 0 0 2px var(--fl-accent-2, var(--fl-accent));
+            background: #fff;
+        }
+
+        /* O evento em si fica invisível — ele só existe pra guardar os
+           dados (exercícios, volume) usados no modal; quem representa
+           visualmente o "dia treinado" é a bolinha acima. */
+        .fc-daygrid-day-events {
+            display: none !important;
         }
 
         /* Bottom sheet: o modal de detalhes desliza de baixo pra cima,
@@ -678,6 +672,13 @@
             width: 22px;
             height: 22px;
             font-size: 0.72rem;
+        }
+
+        .fc-day-dot {
+            width: 7px;
+            height: 7px;
+            bottom: -1px;
+            right: -1px;
         }
 
         .fc-toolbar-title {
@@ -1018,30 +1019,32 @@
                 mostrarDetalhesEvento(info.event);
             },
             dateClick: function(info) {
-                // Permite clicar em qualquer parte do dia (não só na
-                // bolinha, que é pequena) para abrir os exercícios.
+                // Permite clicar em qualquer parte do dia (não só no
+                // número) para abrir os exercícios.
                 const evento = calendar.getEvents().find(e => e.startStr === info.dateStr);
                 if (evento) {
                     mostrarDetalhesEvento(evento);
                 }
-            },
-            eventContent: function(arg) {
-                // No mobile, a barra de evento com texto ("3 ex • 2450kg")
-                // não cabe direito numa célula de ~50px — em vez de espremer,
-                // vira só uma bolinha no canto do dia, indicando que houve
-                // treino naquele dia.
-                if (window.innerWidth > 768) {
-                    return; // desktop: mantém a renderização padrão
-                }
-                return {
-                    html: `<span class="fc-event-dot"></span>`
-                };
             },
             eventDidMount: function(info) {
                 // Adicionar tooltip com informações detalhadas (truncado)
                 const descricao = info.event.extendedProps.descricao?.replace(/<[^>]*>/g, ' ') || info.event.title;
                 const descricaoTruncada = descricao.length > 100 ? descricao.substring(0, 100) + '...' : descricao;
                 info.el.setAttribute('title', descricaoTruncada);
+
+                // No mobile, o evento em si fica invisível (ver CSS
+                // .fc-daygrid-day-events) — quem indica visualmente que
+                // houve treino é uma bolinha ancorada no quadradinho do
+                // número do dia, não uma barra separada na célula.
+                if (window.innerWidth <= 768) {
+                    const diaEl = info.el.closest('.fc-daygrid-day');
+                    const numeroEl = diaEl?.querySelector('.fc-daygrid-day-number');
+                    if (numeroEl && !numeroEl.querySelector('.fc-day-dot')) {
+                        const bolinha = document.createElement('span');
+                        bolinha.className = 'fc-day-dot';
+                        numeroEl.appendChild(bolinha);
+                    }
+                }
             },
             datesSet: function(info) {
                 viewStart = info.view.currentStart;
