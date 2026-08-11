@@ -315,6 +315,45 @@
                 </div>
             </div>
         </div>
+
+        <!-- Acesso Rápido -->
+        <div class="card dash-card mt-4">
+            <div class="dash-card-header">
+                <h5 class="mb-0 d-flex align-items-center">
+                    <span class="dash-card-icon"><i class="bi bi-lightning-charge"></i></span>
+                    Acesso rápido
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-4">
+                        <a href="{{ url_for('aluno.treinos') }}" class="dash-quick-tile">
+                            <i class="bi bi-trophy"></i> Treinos
+                        </a>
+                    </div>
+                    <div class="col-4">
+                        <a href="{{ url_for('aluno.exercicios') }}" class="dash-quick-tile">
+                            <i class="bi bi-list-check"></i> Exercícios
+                        </a>
+                    </div>
+                    <div class="col-4">
+                        <a href="{{ url_for('aluno.versoes') }}" class="dash-quick-tile">
+                            <i class="bi bi-clock-history"></i> Versões
+                        </a>
+                    </div>
+                    <div class="col-4">
+                        <a href="{{ url_for('calendar.calendario') }}" class="dash-quick-tile">
+                            <i class="bi bi-calendar"></i> Calendário
+                        </a>
+                    </div>
+                    <div class="col-4">
+                        <a href="{{ url_for('register.registrar_treino') }}" class="dash-quick-tile">
+                            <i class="bi bi-plus-circle"></i> Registrar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

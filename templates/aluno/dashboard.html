@@ -158,7 +158,7 @@
 
 <div class="row mb-4 g-3">
     <!-- Gráfico de constância semanal -->
-    <div class="col-12 col-lg-5">
+    <div class="col-12">
         <div class="card h-100">
             <div class="card-body">
                 <h6 class="fw-bold mb-3">
@@ -166,42 +166,6 @@
                     Constância da semana
                 </h6>
                 <canvas id="graficoSemana" height="180"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- Acesso Rápido -->
-    <div class="col-12 col-lg-7">
-        <div class="card h-100">
-            <div class="card-body">
-                <h6 class="fw-bold mb-3">Acesso rápido</h6>
-                <div class="row g-2">
-                    <div class="col-4">
-                        <a href="{{ url_for('aluno.treinos') }}" class="dash-quick-tile">
-                            <i class="bi bi-trophy"></i> Treinos
-                        </a>
-                    </div>
-                    <div class="col-4">
-                        <a href="{{ url_for('aluno.exercicios') }}" class="dash-quick-tile">
-                            <i class="bi bi-list-check"></i> Exercícios
-                        </a>
-                    </div>
-                    <div class="col-4">
-                        <a href="{{ url_for('aluno.versoes') }}" class="dash-quick-tile">
-                            <i class="bi bi-clock-history"></i> Versões
-                        </a>
-                    </div>
-                    <div class="col-4">
-                        <a href="{{ url_for('calendar.calendario') }}" class="dash-quick-tile">
-                            <i class="bi bi-calendar"></i> Calendário
-                        </a>
-                    </div>
-                    <div class="col-4">
-                        <a href="{{ url_for('register.registrar_treino') }}" class="dash-quick-tile">
-                            <i class="bi bi-plus-circle"></i> Registrar
-                        </a>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
