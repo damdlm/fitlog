@@ -50,7 +50,30 @@
             background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
+        /* ==========================================================
+           Bloqueio de zoom acidental no mobile (principalmente iOS)
+           Duas causas diferentes, duas correções:
+           1) touch-action: manipulation remove o "zoom" de duplo-toque
+              rápido em qualquer elemento, sem desativar o pinça-zoom
+              manual (esse continua funcionando, por acessibilidade).
+           2) O Safari no iPhone dá zoom automático ao focar um campo
+              de formulário (input/select/textarea) sempre que a fonte
+              dele é menor que 16px — por isso forçamos 16px nesses
+              campos só na faixa mobile, sem mudar o tamanho no desktop.
+           ========================================================== */
+        html {
+            touch-action: manipulation;
+        }
+
+        @media (max-width: 768px) {
+            input,
+            select,
+            textarea {
+                font-size: 16px !important;
+            }
+        }
+                
         .navbar {
             position: sticky;
             top: 0;
@@ -1172,15 +1195,6 @@
             <i class="bi bi-house{{ '-fill' if request.endpoint == 'aluno.dashboard' else '' }}"></i>
             <span>Início</span>
         </a>
-        <a href="{{ url_for('calendar.calendario') }}" class="bottom-nav-item {{ 'active' if request.blueprint == 'calendar' else '' }}" data-fl-click-feedback>
-            <i class="bi bi-calendar{{ '-fill' if request.blueprint == 'calendar' else '' }}"></i>
-            <span>Calendário</span>
-        </a>
-        {% if current_user.pode_gerenciar_treino_proprio() %}
-        <a href="{{ url_for('register.registrar_treino') }}" class="bottom-nav-cta" aria-label="Registrar treino" data-fl-click-feedback>
-            <i class="bi bi-plus-lg"></i>
-        </a>
-        {% endif %}
         <a href="{{ url_for('aluno.estatisticas') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'aluno.estatisticas' else '' }}" data-fl-click-feedback>
             <i class="bi bi-graph-up-arrow"></i>
             <span>Progresso</span>

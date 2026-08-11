@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block page_icon %}{% endblock %}
-{% block page_title %}{% endblock %}
+{% block page_icon %}<i class="bi bi-bar-chart-fill" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Train · Log · Analyze{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -251,7 +251,7 @@
 <!-- Marca d'água -->
 <div class="watermark"></div>
 
-<div class="dash-hero mb-4">
+<div class="dash-hero mb-4 d-none d-md-flex">
     <div>
         <div class="dash-eyebrow">Workout Journal</div>
         <h2 class="dash-title">
@@ -339,16 +339,6 @@
                     <div class="col-4">
                         <a href="{{ url_for('aluno.versoes') }}" class="dash-quick-tile">
                             <i class="bi bi-clock-history"></i> Versões
-                        </a>
-                    </div>
-                    <div class="col-4">
-                        <a href="{{ url_for('calendar.calendario') }}" class="dash-quick-tile">
-                            <i class="bi bi-calendar"></i> Calendário
-                        </a>
-                    </div>
-                    <div class="col-4">
-                        <a href="{{ url_for('register.registrar_treino') }}" class="dash-quick-tile">
-                            <i class="bi bi-plus-circle"></i> Registrar
                         </a>
                     </div>
                 </div>
