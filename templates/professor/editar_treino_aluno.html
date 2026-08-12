@@ -1,45 +1,95 @@
 {% extends "base.html" %}
 
+{% block page_icon %}<i class="bi bi-pencil-square" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Editar Treino {{ treino.codigo }}{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<style>
+    .et-header { margin-bottom: 20px; }
+    .et-header h2 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 4px;
+        font-size: 1.4rem;
+    }
+    .et-eyebrow {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #9a9a9a;
+    }
+    .et-card {
+        border: none;
+        border-radius: 18px;
+        box-shadow: var(--card-shadow);
+        max-width: 560px;
+    }
+    .et-field-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #9a9a9a;
+        margin-bottom: 6px;
+        display: block;
+    }
+    .et-codigo-input {
+        width: 72px;
+        text-align: center;
+        font-weight: 800;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+    }
+    .et-btn-save {
+        background: var(--primary-gradient);
+        color: #fff;
+        border: none;
+        box-shadow: 0 4px 14px rgba(242, 140, 51, .3);
+    }
+    .et-btn-save:hover { color: #fff; filter: brightness(1.03); }
+</style>
+
+<div class="et-header d-none d-md-block">
+    <span class="et-eyebrow">{{ aluno.nome_completo or aluno.username }}</span>
     <h2>
-        <i class="bi bi-pencil-square me-2" style="color: #F28C33;"></i>
-        Editar Treino {{ treino.codigo }} de {{ aluno.nome_completo or aluno.username }}
+        <i class="bi bi-pencil-square" style="color: #F28C33;"></i>
+        Editar Treino {{ treino.codigo }}
     </h2>
-    <a href="{{ url_for('professor.treinos_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Voltar
-    </a>
 </div>
 
-<div class="card">
-    <div class="card-body">
+<div class="card et-card">
+    <div class="card-body p-4">
         <form method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
-            <div class="mb-3">
-                <label class="form-label fw-bold">ID do Treino</label>
-                <input type="text" name="id" class="form-control" 
-                       value="{{ treino.codigo }}" maxlength="1" required>
-                <small class="text-muted">Uma única letra maiúscula</small>
+
+            <div class="row g-3 mb-1">
+                <div class="col-auto">
+                    <label class="et-field-label">Código</label>
+                    <input type="text" name="id" class="form-control et-codigo-input"
+                           value="{{ treino.codigo }}" maxlength="1" required>
+                    <small class="text-muted">1 letra</small>
+                </div>
+                <div class="col">
+                    <label class="et-field-label">Nome do Treino</label>
+                    <input type="text" name="nome" class="form-control"
+                           value="{{ treino.nome }}" required>
+                </div>
             </div>
-            
-            <div class="mb-3">
-                <label class="form-label fw-bold">Nome do Treino</label>
-                <input type="text" name="nome" class="form-control" 
-                       value="{{ treino.nome }}" required>
+
+            <div class="mb-4 mt-3">
+                <label class="et-field-label">Descrição</label>
+                <input type="text" name="descricao" class="form-control"
+                       value="{{ treino.descricao }}" placeholder="Opcional">
             </div>
-            
-            <div class="mb-3">
-                <label class="form-label fw-bold">Descrição</label>
-                <input type="text" name="descricao" class="form-control" 
-                       value="{{ treino.descricao }}">
-            </div>
-            
-            <div class="mt-4">
-                <button type="submit" class="btn btn-primary">
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn et-btn-save">
                     <i class="bi bi-save"></i> Salvar Alterações
                 </button>
-                <a href="{{ url_for('professor.treinos_aluno', aluno_id=aluno.id) }}" class="btn btn-secondary">
+                <a href="{{ url_for('professor.treinos_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
                     Cancelar
                 </a>
             </div>

@@ -9,13 +9,13 @@
 
 {% block content %}
 <div class="etv-header">
-    <h2 class="etv-title d-none d-md-flex">
-        <i class="bi bi-pencil-square" style="color: #F28C33;"></i>
-        Editar Treino {{ treino_id }}
-    </h2>
-    <a href="{{ url_for('aluno.ver_versao', versao_id=versao.id) }}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Voltar
-    </a>
+    <div class="d-none d-md-block">
+        <span class="etv-eyebrow">Versão {{ versao.numero_versao }}</span>
+        <h2 class="etv-title">
+            <i class="bi bi-pencil-square" style="color: #F28C33;"></i>
+            Editar Treino {{ treino_id }}
+        </h2>
+    </div>
 </div>
 
 <div class="card etv-panel">
@@ -52,9 +52,17 @@
                     </div>
                     <div class="etv-toolbar-row">
                         <div class="etv-chip-row" id="etvChipsMusculo">
-                            <button type="button" class="etv-chip is-active" data-musculo="">Todos</button>
+                            <button type="button" class="etv-chip is-active" data-musculo="" aria-pressed="true">
+                                Todos <span class="etv-chip-count">{{ exercicios|length }}</span>
+                            </button>
                             {% for m in musculos %}
-                            <button type="button" class="etv-chip" data-musculo="{{ m }}">{{ m }}</button>
+                            {% set ns = namespace(count=0) %}
+                            {% for ex in exercicios %}
+                                {% if (ex.musculo_nome or ex.musculo or 'N/A') == m %}{% set ns.count = ns.count + 1 %}{% endif %}
+                            {% endfor %}
+                            <button type="button" class="etv-chip" data-musculo="{{ m }}" aria-pressed="false">
+                                {{ m }} <span class="etv-chip-count">{{ ns.count }}</span>
+                            </button>
                             {% endfor %}
                         </div>
                     </div>
@@ -118,7 +126,11 @@
                     {% else %}
                     <div class="etv-empty-state">
                         <i class="bi bi-exclamation-triangle display-6 d-block mb-2"></i>
-                        Nenhum exercício encontrado.
+                        Você ainda não tem exercícios no seu catálogo.
+                        <br>
+                        <a href="{{ url_for('aluno.novo_exercicio') }}" class="btn btn-sm btn-success">
+                            <i class="bi bi-plus-circle"></i> Cadastrar exercício
+                        </a>
                     </div>
                     {% endfor %}
                 </div>
@@ -126,6 +138,10 @@
                 <div class="text-center text-muted py-4 d-none" id="etvSemResultados">
                     <i class="bi bi-search display-6 d-block mb-2"></i>
                     Nenhum exercício encontrado para esse filtro.
+                    <br>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="etvLimparFiltroVazio">
+                        <i class="bi bi-x-circle"></i> Limpar filtros
+                    </button>
                 </div>
             </div>
 

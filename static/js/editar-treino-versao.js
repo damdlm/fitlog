@@ -62,23 +62,36 @@ document.addEventListener('DOMContentLoaded', function () {
         if (busca) busca.value = '';
         musculoAtivo = '';
         chipsMusculo?.querySelectorAll('.etv-chip').forEach(chip => {
-            chip.classList.toggle('is-active', chip.dataset.musculo === '');
+            const ativo = chip.dataset.musculo === '';
+            chip.classList.toggle('is-active', ativo);
+            chip.setAttribute('aria-pressed', String(ativo));
         });
         filtrar();
     }
 
     busca?.addEventListener('input', filtrar);
+    busca?.addEventListener('keydown', function (e) {
+        // O campo de busca vive dentro do <form> principal (não dá pra tirar
+        // sem reestruturar o HTML), então Enter aqui submeteria o treino
+        // inteiro sem querer. Enter deve só confirmar o filtro.
+        if (e.key === 'Enter') e.preventDefault();
+    });
 
     chipsMusculo?.addEventListener('click', function (e) {
         const chip = e.target.closest('.etv-chip');
         if (!chip) return;
         musculoAtivo = chip.dataset.musculo || '';
-        chipsMusculo.querySelectorAll('.etv-chip').forEach(c => c.classList.remove('is-active'));
+        chipsMusculo.querySelectorAll('.etv-chip').forEach(c => {
+            c.classList.remove('is-active');
+            c.setAttribute('aria-pressed', 'false');
+        });
         chip.classList.add('is-active');
+        chip.setAttribute('aria-pressed', 'true');
         filtrar();
     });
 
     btnLimparFiltro?.addEventListener('click', limparFiltro);
+    document.getElementById('etvLimparFiltroVazio')?.addEventListener('click', limparFiltro);
 
     // -----------------------------------------------------
     // Seleção (checkboxes, cards, bandeja de selecionados)
