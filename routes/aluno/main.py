@@ -22,19 +22,33 @@ def dashboard():
     total_versoes = VersaoGlobal.query.filter_by(user_id=current_user.id).count()
     total_registros = RegistroTreino.query.filter_by(user_id=current_user.id).count()
     
-    # Últimos registros
-    ultimos_registros = RegistroTreino.query.filter_by(user_id=current_user.id)\
+    # Último treino: uma "sessão" é identificada por treino_id + período +
+    # semana + versão (é essa combinação que o registro_service usa pra
+    # saber quais linhas substituir ao salvar). Antes pegávamos só os
+    # últimos 5 registros por data, o que podia misturar exercícios de
+    # sessões diferentes — agora buscamos o registro mais recente e todos
+    # os outros que pertencem à mesma sessão dele.
+    ultimo_registro = RegistroTreino.query.filter_by(user_id=current_user.id)\
         .order_by(RegistroTreino.data_registro.desc())\
-        .limit(5).all()
+        .first()
 
-    # Tempo do último treino (cronômetro do topo) — é o mesmo valor pra
-    # todos os exercícios da sessão, então mostramos uma vez só, no
-    # cabeçalho da lista, em vez de repetir em cada item.
+    ultimos_registros = []
     tempo_ultimo_treino = None
-    if ultimos_registros and ultimos_registros[0].series:
-        tt = ultimos_registros[0].series[0].tempo_treino
-        if tt:
-            tempo_ultimo_treino = f"{tt // 3600:02d}:{(tt % 3600) // 60:02d}"
+    if ultimo_registro:
+        ultimos_registros = RegistroTreino.query.filter_by(
+            user_id=current_user.id,
+            treino_id=ultimo_registro.treino_id,
+            periodo=ultimo_registro.periodo,
+            semana=ultimo_registro.semana,
+            versao_id=ultimo_registro.versao_id
+        ).order_by(RegistroTreino.data_registro.desc()).all()
+
+        for registro in ultimos_registros:
+            if registro.series:
+                tt = registro.series[0].tempo_treino
+                if tt:
+                    tempo_ultimo_treino = f"{tt // 3600:02d}:{(tt % 3600) // 60:02d}"
+                    break
 
     # Atividade dos últimos 7 dias (para o gráfico de constância)
     hoje = datetime.now(timezone.utc).date()
