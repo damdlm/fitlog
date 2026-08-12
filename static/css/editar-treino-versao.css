@@ -12,7 +12,7 @@
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.75rem;
 }
 
 .etv-eyebrow {
@@ -160,80 +160,6 @@
 
 .etv-chip.is-active .etv-chip-count {
     opacity: 0.85;
-}
-
-.etv-bulk-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.etv-count-badge {
-    font-size: 0.8rem;
-    font-weight: 700;
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: var(--dark-bg);
-    color: #fff;
-}
-
-.etv-count-badge .etv-count-num {
-    color: var(--light-orange);
-}
-
-/* Bandeja de selecionados */
-.etv-tray {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 12px;
-    padding: 10px;
-    border-radius: 12px;
-    background: #fff8f1;
-    border: 1px dashed #ffd7ad;
-}
-
-.etv-tray:empty {
-    display: none;
-}
-
-.etv-tray.is-empty {
-    display: none;
-}
-
-.etv-tray-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #fff;
-    border: 1px solid #ffd7ad;
-    border-radius: 999px;
-    padding: 4px 6px 4px 12px;
-    font-size: 0.76rem;
-    font-weight: 600;
-    color: #2D2D2D;
-}
-
-.etv-tray-chip button {
-    border: none;
-    background: #f1f1f1;
-    color: #6c757d;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.65rem;
-    line-height: 1;
-    cursor: pointer;
-    transition: all .15s ease;
-}
-
-.etv-tray-chip button:hover {
-    background: #e4462f;
-    color: #fff;
 }
 
 /* Lista de exercícios */

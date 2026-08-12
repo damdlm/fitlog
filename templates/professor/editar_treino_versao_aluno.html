@@ -8,8 +8,8 @@
 {% endblock %}
 
 {% block content %}
-<div class="etv-header">
-    <div class="d-none d-md-block">
+<div class="etv-header d-none d-md-flex">
+    <div>
         <span class="etv-eyebrow">Versão {{ versao.numero_versao }}</span>
         <h2 class="etv-title">
             <i class="bi bi-pencil-square" style="color: #F28C33;"></i>
@@ -73,23 +73,7 @@
                             {% endfor %}
                         </div>
                     </div>
-                    <div class="etv-toolbar-row">
-                        <div class="etv-bulk-actions">
-                            <button type="button" class="btn btn-sm btn-outline-primary" id="etvSelecionarVisiveis">
-                                <i class="bi bi-check-all"></i> Selecionar visíveis
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" id="etvLimparTodos">
-                                <i class="bi bi-x"></i> Limpar todos
-                            </button>
-                            <span class="etv-count-badge">
-                                <span class="etv-count-num" data-etv-contador-selecionados>0</span> selecionado(s)
-                            </span>
-                            <small class="text-muted ms-auto" id="etvContadorVisiveis">{{ exercicios|length }} exercícios disponíveis</small>
-                        </div>
-                    </div>
                 </div>
-
-                <div class="etv-tray is-empty" id="etvTray" aria-live="polite"></div>
 
                 <div class="etv-grid" id="etvGrid">
                     {% for ex in exercicios %}

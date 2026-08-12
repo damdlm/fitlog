@@ -14,10 +14,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const chipsMusculo = document.getElementById('etvChipsMusculo');
     const grid = document.getElementById('etvGrid');
     const semResultados = document.getElementById('etvSemResultados');
-    const contadorVisiveis = document.getElementById('etvContadorVisiveis');
-    const tray = document.getElementById('etvTray');
-    const btnSelecionarVisiveis = document.getElementById('etvSelecionarVisiveis');
-    const btnLimparTodos = document.getElementById('etvLimparTodos');
     const btnLimparFiltro = document.getElementById('etvLimparFiltro');
     const contadoresSelecionados = document.querySelectorAll('[data-etv-contador-selecionados]');
 
@@ -50,9 +46,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (mostrar) visiveis++;
         });
 
-        if (contadorVisiveis) {
-            contadorVisiveis.textContent = visiveis + ' exercício(s) encontrado(s)';
-        }
         if (semResultados) {
             semResultados.classList.toggle('d-none', visiveis !== 0);
         }
@@ -101,40 +94,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (card) card.classList.toggle('is-selected', checkbox.checked);
     }
 
-    function atualizarTray() {
-        if (!tray) return;
-        const marcados = checkboxes().filter(cb => cb.checked);
-
-        if (marcados.length === 0) {
-            tray.classList.add('is-empty');
-            tray.innerHTML = '';
-            return;
-        }
-
-        tray.classList.remove('is-empty');
-        tray.innerHTML = marcados.map(cb => {
-            const nome = cb.closest('.etv-card')?.dataset.nomeDisplay || cb.value;
-            return `<span class="etv-tray-chip" data-tray-for="${cb.id}">${nome}` +
-                   `<button type="button" aria-label="Remover ${nome}"><i class="bi bi-x"></i></button></span>`;
-        }).join('');
-    }
-
-    tray?.addEventListener('click', function (e) {
-        const btn = e.target.closest('button[aria-label]');
-        if (!btn) return;
-        const chip = btn.closest('.etv-tray-chip');
-        const cb = document.getElementById(chip?.dataset.trayFor);
-        if (cb) {
-            cb.checked = false;
-            sincronizarCard(cb);
-            atualizarContador();
-        }
-    });
-
     function atualizarContador() {
         const total = checkboxes().filter(cb => cb.checked).length;
         contadoresSelecionados.forEach(el => { el.textContent = String(total); });
-        atualizarTray();
     }
 
     function onCheckboxChange(checkbox) {
@@ -144,26 +106,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     checkboxes().forEach(cb => {
         cb.addEventListener('change', () => onCheckboxChange(cb));
-    });
-
-    btnSelecionarVisiveis?.addEventListener('click', function () {
-        itens().forEach(item => {
-            if (item.classList.contains('d-none')) return;
-            const cb = item.querySelector('.etv-checkbox');
-            if (cb && !cb.checked) {
-                cb.checked = true;
-                sincronizarCard(cb);
-            }
-        });
-        atualizarContador();
-    });
-
-    btnLimparTodos?.addEventListener('click', function () {
-        checkboxes().forEach(cb => {
-            cb.checked = false;
-            sincronizarCard(cb);
-        });
-        atualizarContador();
     });
 
     // -----------------------------------------------------
