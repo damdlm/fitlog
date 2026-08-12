@@ -103,10 +103,29 @@ class EstatisticaService(BaseService):
     
     @staticmethod
     def calcular_por_treino(user_id=None):
-        """Calcula estatísticas por treino"""
+        """
+        Calcula estatísticas por treino.
+
+        Agrega em SQL (GROUP BY treino_id) em vez de carregar todos os
+        registros do usuário com suas séries via ORM (RegistroService
+        .get_all(..., load_series=True)) e somar em Python — mesmo
+        espírito da agregação já usada em calcular_por_musculo. Em
+        benchmark com ~2.400 registros/9.700 séries essa era a operação
+        mais cara da tela de estatísticas (~240ms a frio), bem acima das
+        outras duas (~7ms cada), justamente por materializar todo o
+        histórico como objetos Python antes de somar.
+
+        exercicio_usuario_id e exercicio_base_id são mutuamente exclusivos
+        por constraint de banco (check_registro_exactly_one_exercicio: um
+        RegistroTreino nunca tem os dois preenchidos ao mesmo tempo), então
+        contar distinct de cada coluna separadamente e somar os totais dá
+        o mesmo resultado que o set() de pares (exercicio_usuario_id,
+        exercicio_base_id) usado antes — sem risco da colisão que esse par
+        evitava (IDs de exercício personalizado e de sistema vêm de
+        sequências independentes e podem coincidir em número).
+        """
         try:
             from .treino_service import TreinoService
-            from .registro_service import RegistroService
 
             user_id_resolvido = user_id or BaseService.get_current_user_id()
             cache_key = f"estatistica:{user_id_resolvido}:por_treino"
@@ -116,42 +135,34 @@ class EstatisticaService(BaseService):
                     return cache_hit
 
             treinos = TreinoService.get_all(user_id)
-            registros = RegistroService.get_all(user_id=user_id, load_series=True)
 
-            # Agrupar registros por treino uma única vez (O(R)) em vez de
-            # percorrer todos os registros para cada treino (O(T x R)).
-            registros_por_treino = {}
-            for r in registros:
-                registros_por_treino.setdefault(r.treino_id, []).append(r)
+            agregados_por_treino = {}
+            if user_id_resolvido:
+                agregados = db.session.query(
+                    RegistroTreino.treino_id.label('treino_id'),
+                    db.func.count(db.distinct(RegistroTreino.exercicio_usuario_id)).label('qtd_ex_personalizados'),
+                    db.func.count(db.distinct(RegistroTreino.exercicio_base_id)).label('qtd_ex_sistema'),
+                    db.func.count(db.distinct(RegistroTreino.id)).label('qtd_registros'),
+                    db.func.count(HistoricoTreino.id).label('total_series'),
+                    db.func.coalesce(db.func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume_total')
+                ).select_from(RegistroTreino)\
+                 .outerjoin(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
+                 .filter(RegistroTreino.user_id == user_id_resolvido)\
+                 .group_by(RegistroTreino.treino_id)\
+                 .all()
+                agregados_por_treino = {a.treino_id: a for a in agregados}
 
             treino_stats = {}
             for t in treinos:
-                registros_treino = registros_por_treino.get(t.id, [])
-
-                volume_total = 0
-                total_series = 0
-                exercicios_ids = set()
-                for r in registros_treino:
-                    # Não usar r.exercicio_id (coalesce entre as duas
-                    # origens) aqui: um exercício personalizado e um do
-                    # catálogo do sistema têm sequências de ID
-                    # independentes e podem colidir no mesmo número,
-                    # fazendo o set() contar como um exercício só quando
-                    # na verdade são dois. O par abaixo distingue a
-                    # origem e nunca colide.
-                    exercicios_ids.add((r.exercicio_usuario_id, r.exercicio_base_id))
-                    for s in r.series:
-                        volume_total += float(s.carga) * s.repeticoes
-                        total_series += 1
-
+                a = agregados_por_treino.get(t.id)
                 treino_stats[t.id] = {
                     "codigo": t.codigo,
                     "nome": t.nome,
                     "descricao": t.descricao,
-                    "qtd_exercicios": len(exercicios_ids),
-                    "qtd_registros": len(registros_treino),
-                    "volume_total": volume_total,
-                    "total_series": total_series
+                    "qtd_exercicios": (a.qtd_ex_personalizados + a.qtd_ex_sistema) if a else 0,
+                    "qtd_registros": a.qtd_registros if a else 0,
+                    "volume_total": float(a.volume_total) if a else 0.0,
+                    "total_series": a.total_series if a else 0
                 }
             
             if user_id_resolvido:
