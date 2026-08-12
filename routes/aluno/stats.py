@@ -40,10 +40,40 @@ def estatisticas():
             musculo_destaque = max(musculos_com_volume, key=lambda k: musculos_com_volume[k]['volume_total'])
 
     volume_maximo_musculo = max((v['volume_total'] for v in musculo_stats.values()), default=0)
-    
+
+    # Desempenho no mês -- mesmas métricas de antes (exercícios, registros,
+    # volume total), mas agrupadas por mês/ano em vez de por treino.
+    meses_pt = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+    mes_stats_raw = {}
+    for r in registros:
+        chave = r.data_registro.strftime('%Y-%m')
+        info = mes_stats_raw.setdefault(chave, {
+            'label': f"{meses_pt[r.data_registro.month - 1]}/{r.data_registro.year}",
+            'exercicios': set(),
+            'qtd_registros': 0,
+            'volume_total': 0.0
+        })
+        # Mesmo cuidado do treino_stats: par (usuario_id, base_id) em vez
+        # de exercicio_id, pra não juntar exercícios de tabelas diferentes.
+        info['exercicios'].add((r.exercicio_usuario_id, r.exercicio_base_id))
+        info['qtd_registros'] += 1
+        info['volume_total'] += sum(float(s.carga) * s.repeticoes for s in r.series)
+
+    mes_stats = {
+        chave: {
+            'label': dados['label'],
+            'qtd_exercicios': len(dados['exercicios']),
+            'qtd_registros': dados['qtd_registros'],
+            'volume_total': dados['volume_total']
+        }
+        for chave, dados in sorted(mes_stats_raw.items(), reverse=True)
+    }
+
     return render_template('aluno/estatisticas.html',
                          musculo_stats=musculo_stats,
                          treino_stats=treino_stats,
+                         mes_stats=mes_stats,
                          musculo_destaque=musculo_destaque,
                          volume_maximo_musculo=volume_maximo_musculo)
 
