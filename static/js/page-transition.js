@@ -12,7 +12,7 @@
     'use strict';
 
     var OVERLAY_ID = 'flPageTransitionOverlay';
-    var NAV_DELAY_MS = 1300;
+    var NAV_DELAY_MS = 400;
     // Atraso antes da própria película começar a aparecer quando o clique
     // parte do menu mobile (barra inferior / painel "Mais") -- dá tempo do
     // usuário ver o feedback de ripple no botão antes da tela escurecer.

@@ -10,7 +10,7 @@ from flask_wtf.csrf import CSRFProtect
 from config import get_config
 from models import db, User
 
-from extensions import limiter, cache
+from extensions import limiter, cache, compress
 
 login_manager = LoginManager()
 csrf = CSRFProtect()
@@ -132,6 +132,7 @@ def create_app(config_class=None):
     csrf.init_app(app)
     limiter.init_app(app)
     cache.init_app(app)
+    compress.init_app(app)
 
     login_manager.login_view = 'auth.login'
 

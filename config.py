@@ -84,6 +84,15 @@ class Config:
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
 
+    # Sem isso, o Flask manda "Cache-Control: no-cache" em tudo que está
+    # em /static/ (CSS, JS, ícones) — o navegador então revalida com o
+    # servidor a cada requisição, mesmo o arquivo não tendo mudado. Como
+    # esses arquivos não são versionados por hash no nome, 1 dia é um
+    # meio-termo seguro: elimina a maior parte das revalidações dentro
+    # de uma mesma sessão/dia de uso, sem deixar uma alteração de CSS/JS
+    # presa em cache por muito tempo depois de um deploy.
+    SEND_FILE_MAX_AGE_DEFAULT = 60 * 60 * 24
+
     # E-mail (usado no fluxo de recuperação de senha), enviado via API
     # HTTPS do Resend (api.resend.com), NAO via SMTP -- a Railway
     # bloqueia portas SMTP de saida (25/465/587) por padrao em alguns

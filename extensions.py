@@ -32,3 +32,10 @@ limiter = Limiter(
 # Configure CACHE_TYPE=redis e CACHE_REDIS_URL no .env para produção.
 from flask_caching import Cache
 cache = Cache()
+
+# Compressão gzip/brotli das respostas (HTML, CSS, JS, JSON) — a
+# aplicação é um MPA que recarrega a página inteira a cada navegação,
+# então comprimir o HTML em si (não só os assets estáticos) ajuda em
+# toda troca de tela, não só no carregamento inicial.
+from flask_compress import Compress
+compress = Compress()
