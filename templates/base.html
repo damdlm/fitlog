@@ -1163,6 +1163,11 @@
                             </a>
                         </li>
                         {% endif %}
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('contato.index') }}">
+                                <i class="bi bi-chat-heart"></i> Contato
+                            </a>
+                        </li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">

@@ -101,6 +101,12 @@ class Config:
     RESEND_API_KEY = os.getenv('RESEND_API_KEY')
     MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER', 'onboarding@resend.dev')
 
+    # Destinatário da tela "Contato" (reporte de erro/crítica/elogio).
+    # A rota primeiro tenta enviar para todos os usuários com is_admin=True
+    # no banco; ADMIN_EMAIL só é usado como fallback se nenhum admin tiver
+    # e-mail cadastrado (ex: banco recém-criado, ainda sem admin). Opcional.
+    ADMIN_EMAIL = os.getenv('ADMIN_EMAIL')
+
     # FitBot — assistente virtual de treino (chat com IA)
     #
     # Estratégia de roteamento (pensada para os limites do plano gratuito):
@@ -121,6 +127,11 @@ class Config:
 
     GROQ_API_KEY = os.getenv('GROQ_API_KEY')
     GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
+    # Modelo de transcrição de áudio (tela "Contato") -- mesma chave da
+    # Groq acima, endpoint diferente (audio/transcriptions). turbo é o
+    # mais rápido e já cobre português; troque para whisper-large-v3 se
+    # precisar de mais precisão.
+    GROQ_WHISPER_MODEL = os.getenv('GROQ_WHISPER_MODEL', 'whisper-large-v3-turbo')
 
     # Cache (Flask-Caching) — SimpleCache (em memória do processo) é
     # suficiente em dev/testes. ProductionConfig sobrescreve para Redis,

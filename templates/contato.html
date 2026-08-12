@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-chat-heart" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Contato{% endblock %}
+
+{% block content %}
+<style>
+    .ct-wrap { max-width: 640px; margin: 0 auto; }
+
+    .ct-header { display: none; align-items: center; gap: 8px; margin-bottom: 20px; }
+    @media (min-width: 768px) {
+        .ct-header { display: flex; }
+    }
+    .ct-header h2 { margin: 0; font-size: 1.4rem; }
+
+    .ct-intro {
+        border: none;
+        border-radius: 18px;
+        box-shadow: var(--card-shadow);
+        background: var(--primary-gradient);
+        color: white;
+        padding: 26px 24px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    .ct-intro .ct-linha {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+    .ct-intro .ct-final {
+        margin-top: 14px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        opacity: 0.95;
+    }
+
+    .ct-card {
+        border: none;
+        border-radius: 18px;
+        box-shadow: var(--card-shadow);
+    }
+
+    .ct-textarea {
+        border-radius: 12px;
+        resize: vertical;
+        min-height: 140px;
+    }
+    .ct-textarea:disabled { background: #f8f9fa; }
+
+    .ct-charcount { font-size: 0.75rem; color: #9a9a9a; text-align: right; margin-top: 4px; }
+
+    .ct-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+    }
+
+    .ct-mic-btn {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        border: none;
+        background: var(--dark-bg);
+        color: white;
+        font-size: 1.3rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.15s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .ct-mic-btn:hover { filter: brightness(1.15); }
+    .ct-mic-btn.is-recording {
+        background: #EF4444;
+        animation: ct-pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes ct-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); }
+        50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .ct-mic-btn.is-recording { animation: none; }
+    }
+
+    .ct-recording-info {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        color: #EF4444;
+        font-size: 0.9rem;
+    }
+    .ct-recording-info.is-active { display: flex; }
+    .ct-recording-dot {
+        width: 8px; height: 8px; border-radius: 50%; background: #EF4444;
+        animation: ct-blink 1s step-start infinite;
+    }
+    @keyframes ct-blink { 50% { opacity: 0; } }
+
+    .ct-transcrevendo {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 0.88rem;
+    }
+    .ct-transcrevendo.is-active { display: flex; }
+
+    .ct-btn-enviar {
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        font-weight: 700;
+        padding: 12px 26px;
+        border-radius: 12px;
+        box-shadow: 0 4px 14px rgba(242, 140, 51, .3);
+    }
+    .ct-btn-enviar:hover { color: white; filter: brightness(1.03); }
+    .ct-btn-enviar:disabled { opacity: 0.55; filter: none; }
+
+    .ct-sucesso {
+        display: none;
+        text-align: center;
+        padding: 40px 20px;
+    }
+    .ct-sucesso.is-active { display: block; }
+    .ct-sucesso i { font-size: 3rem; color: #16A34A; margin-bottom: 12px; display: inline-block; }
+
+    .ct-form.is-hidden { display: none; }
+</style>
+
+<div class="ct-wrap">
+    <div class="ct-header">
+        <h2><i class="bi bi-chat-heart" style="color: #F28C33;"></i> Contato</h2>
+    </div>
+
+    <div class="ct-intro">
+        <div class="ct-linha">Reporte algum erro 😬</div>
+        <div class="ct-linha">Faça uma crítica 😕</div>
+        <div class="ct-linha">Faça um elogio 😊</div>
+        <div class="ct-final">Queremos te ouvir e melhorar para vc!</div>
+    </div>
+
+    <div class="card ct-card" id="ctCard">
+        <div class="card-body p-4">
+            <form id="ctForm" class="ct-form">
+                <label for="ctMensagem" class="form-label fw-bold">Sua mensagem</label>
+                <textarea id="ctMensagem" class="form-control ct-textarea"
+                          maxlength="4000"
+                          placeholder="Digite aqui ou grave um áudio pelo botão do microfone..."></textarea>
+                <div class="ct-charcount"><span id="ctContador">0</span>/4000</div>
+
+                <div class="ct-transcrevendo" id="ctTranscrevendo">
+                    <span class="spinner-border spinner-border-sm"></span>
+                    Transcrevendo áudio...
+                </div>
+
+                <div class="ct-toolbar">
+                    <div class="d-flex align-items-center gap-3">
+                        <button type="button" class="ct-mic-btn" id="ctMicBtn" title="Gravar áudio" aria-label="Gravar áudio">
+                            <i class="bi bi-mic-fill" id="ctMicIcon"></i>
+                        </button>
+                        <div class="ct-recording-info" id="ctRecordingInfo">
+                            <span class="ct-recording-dot"></span>
+                            <span id="ctRecordingTime">00:00</span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn ct-btn-enviar" id="ctBtnEnviar" disabled>
+                        <i class="bi bi-send"></i> Enviar
+                    </button>
+                </div>
+            </form>
+
+            <div class="ct-sucesso" id="ctSucesso">
+                <i class="bi bi-check-circle-fill"></i>
+                <h5 class="fw-bold">Mensagem enviada!</h5>
+                <p class="text-muted mb-3">Obrigado por nos ajudar a melhorar o FitLog.</p>
+                <button type="button" class="btn btn-outline-secondary" id="ctNovaMensagem">
+                    <i class="bi bi-plus-circle"></i> Enviar outra mensagem
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('ctForm');
+    const textarea = document.getElementById('ctMensagem');
+    const contador = document.getElementById('ctContador');
+    const btnEnviar = document.getElementById('ctBtnEnviar');
+    const micBtn = document.getElementById('ctMicBtn');
+    const micIcon = document.getElementById('ctMicIcon');
+    const recordingInfo = document.getElementById('ctRecordingInfo');
+    const recordingTime = document.getElementById('ctRecordingTime');
+    const transcrevendoEl = document.getElementById('ctTranscrevendo');
+    const sucessoEl = document.getElementById('ctSucesso');
+    const novaMensagemBtn = document.getElementById('ctNovaMensagem');
+
+    const CSRF_TOKEN = '{{ csrf_token() }}';
+
+    function toast(msg, tipo) {
+        if (typeof FitLogUtils !== 'undefined' && FitLogUtils.showToast) {
+            FitLogUtils.showToast(msg, tipo || 'info');
+        } else {
+            alert(msg);
+        }
+    }
+
+    // ------------------------------------------------------------
+    // Contador de caracteres + habilitar/desabilitar botão Enviar
+    // ------------------------------------------------------------
+    function atualizarContador() {
+        const len = textarea.value.length;
+        contador.textContent = len;
+        btnEnviar.disabled = len === 0 || isRecording || isTranscrevendo;
+    }
+    textarea.addEventListener('input', atualizarContador);
+
+    // ------------------------------------------------------------
+    // Gravação de áudio (MediaRecorder)
+    // ------------------------------------------------------------
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+    let isTranscrevendo = false;
+    let timerInterval = null;
+    let segundos = 0;
+
+    const suportaGravacao = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+    if (!suportaGravacao) {
+        micBtn.disabled = true;
+        micBtn.title = 'Gravação de áudio não é suportada neste navegador';
+        micBtn.style.opacity = '0.4';
+    }
+
+    function formatarTempo(s) {
+        const m = Math.floor(s / 60).toString().padStart(2, '0');
+        const r = (s % 60).toString().padStart(2, '0');
+        return `${m}:${r}`;
+    }
+
+    function iniciarTimer() {
+        segundos = 0;
+        recordingTime.textContent = '00:00';
+        timerInterval = setInterval(() => {
+            segundos++;
+            recordingTime.textContent = formatarTempo(segundos);
+            // Trava de segurança: para automaticamente em 3 min para
+            // não gerar um áudio gigante.
+            if (segundos >= 180) pararGravacao();
+        }, 1000);
+    }
+
+    function pararTimer() {
+        clearInterval(timerInterval);
+    }
+
+    async function iniciarGravacao() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioChunks = [];
+            mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder.addEventListener('dataavailable', function (e) {
+                if (e.data.size > 0) audioChunks.push(e.data);
+            });
+
+            mediaRecorder.addEventListener('stop', function () {
+                stream.getTracks().forEach(track => track.stop());
+                const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                enviarParaTranscricao(blob);
+            });
+
+            mediaRecorder.start();
+            isRecording = true;
+            micBtn.classList.add('is-recording');
+            micIcon.className = 'bi bi-stop-fill';
+            recordingInfo.classList.add('is-active');
+            iniciarTimer();
+            atualizarContador();
+        } catch (err) {
+            console.error('Erro ao acessar microfone:', err);
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                toast('Permissão de microfone negada. Habilite o acesso ao microfone nas configurações do navegador.', 'danger');
+            } else {
+                toast('Não foi possível acessar o microfone.', 'danger');
+            }
+        }
+    }
+
+    function pararGravacao() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        isRecording = false;
+        micBtn.classList.remove('is-recording');
+        micIcon.className = 'bi bi-mic-fill';
+        recordingInfo.classList.remove('is-active');
+        pararTimer();
+    }
+
+    micBtn.addEventListener('click', function () {
+        if (isTranscrevendo) return;
+        if (isRecording) {
+            pararGravacao();
+        } else {
+            iniciarGravacao();
+        }
+    });
+
+    // ------------------------------------------------------------
+    // Envio do áudio para transcrição
+    // ------------------------------------------------------------
+    async function enviarParaTranscricao(blob) {
+        isTranscrevendo = true;
+        transcrevendoEl.classList.add('is-active');
+        micBtn.disabled = true;
+        atualizarContador();
+
+        const formData = new FormData();
+        formData.append('audio', blob, 'gravacao.webm');
+
+        try {
+            const response = await fetch('{{ url_for("contato.transcrever") }}', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': CSRF_TOKEN },
+                body: formData,
+            });
+            const data = await response.json();
+
+            if (data.ok && data.texto) {
+                // Se já tinha texto digitado, acrescenta o áudio transcrito
+                // numa nova linha em vez de substituir.
+                textarea.value = textarea.value.trim()
+                    ? textarea.value.trim() + '\n' + data.texto
+                    : data.texto;
+                atualizarContador();
+            } else {
+                toast(data.texto || 'Não foi possível transcrever o áudio.', 'warning');
+            }
+        } catch (err) {
+            console.error('Erro ao transcrever áudio:', err);
+            toast('Erro ao enviar áudio para transcrição.', 'danger');
+        } finally {
+            isTranscrevendo = false;
+            transcrevendoEl.classList.remove('is-active');
+            micBtn.disabled = false;
+            atualizarContador();
+        }
+    }
+
+    // ------------------------------------------------------------
+    // Envio da mensagem final
+    // ------------------------------------------------------------
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const mensagem = textarea.value.trim();
+        if (!mensagem) return;
+
+        btnEnviar.disabled = true;
+        btnEnviar.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Enviando...';
+
+        try {
+            const response = await fetch('{{ url_for("contato.enviar") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRF_TOKEN,
+                },
+                body: JSON.stringify({ mensagem }),
+            });
+            const data = await response.json();
+
+            if (data.ok) {
+                form.classList.add('is-hidden');
+                sucessoEl.classList.add('is-active');
+            } else {
+                toast(data.erro || 'Não foi possível enviar sua mensagem.', 'danger');
+                btnEnviar.disabled = false;
+                btnEnviar.innerHTML = '<i class="bi bi-send"></i> Enviar';
+            }
+        } catch (err) {
+            console.error('Erro ao enviar mensagem:', err);
+            toast('Erro ao enviar mensagem. Tente novamente.', 'danger');
+            btnEnviar.disabled = false;
+            btnEnviar.innerHTML = '<i class="bi bi-send"></i> Enviar';
+        }
+    });
+
+    novaMensagemBtn.addEventListener('click', function () {
+        textarea.value = '';
+        atualizarContador();
+        form.classList.remove('is-hidden');
+        sucessoEl.classList.remove('is-active');
+        btnEnviar.innerHTML = '<i class="bi bi-send"></i> Enviar';
+    });
+});
+</script>
+{% endblock %}
