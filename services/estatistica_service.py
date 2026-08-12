@@ -3,10 +3,17 @@
 from datetime import datetime, timedelta, timezone
 from models import db, Musculo, ExercicioCustomizado, ExercicioSistema, RegistroTreino, HistoricoTreino
 from sqlalchemy import func, and_
-from .base_service import BaseService
+from .base_service import BaseService, CacheService
 import logging
 
 logger = logging.getLogger(__name__)
+
+# TTL curto para os agregados desta tela (musculo/treino/progresso) —
+# mesma ideia já usada em FitBotContextService._contexto_estatisticas
+# (cache_key com user_id embutido, sem invalidação explícita: um treino
+# novo só refletir aqui com até 60s de atraso é aceitável para uma tela
+# de estatística, e evita recalcular os JOINs/GROUP BY a cada visita).
+ESTATISTICA_CACHE_TTL_SEGUNDOS = 60
 
 class EstatisticaService(BaseService):
     """Gerencia cálculos estatísticos"""
@@ -33,6 +40,11 @@ class EstatisticaService(BaseService):
             user_id = user_id or BaseService.get_current_user_id()
             if not user_id:
                 return {}
+
+            cache_key = f"estatistica:{user_id}:por_musculo"
+            cache_hit = CacheService.get(cache_key)
+            if cache_hit is not None:
+                return cache_hit
 
             # --- Exercícios personalizados (via tabela Musculo) ---
             personalizados = db.session.query(
@@ -83,6 +95,7 @@ class EstatisticaService(BaseService):
                 atual['volume_total'] += float(r.volume_total)
                 stats[nome] = atual
 
+            CacheService.set(cache_key, stats, ttl_seconds=ESTATISTICA_CACHE_TTL_SEGUNDOS)
             return stats
         except Exception as e:
             BaseService.handle_error(e, "Erro ao calcular estatísticas por músculo")
@@ -94,6 +107,13 @@ class EstatisticaService(BaseService):
         try:
             from .treino_service import TreinoService
             from .registro_service import RegistroService
+
+            user_id_resolvido = user_id or BaseService.get_current_user_id()
+            cache_key = f"estatistica:{user_id_resolvido}:por_treino"
+            if user_id_resolvido:
+                cache_hit = CacheService.get(cache_key)
+                if cache_hit is not None:
+                    return cache_hit
 
             treinos = TreinoService.get_all(user_id)
             registros = RegistroService.get_all(user_id=user_id, load_series=True)
@@ -134,6 +154,8 @@ class EstatisticaService(BaseService):
                     "total_series": total_series
                 }
             
+            if user_id_resolvido:
+                CacheService.set(cache_key, treino_stats, ttl_seconds=ESTATISTICA_CACHE_TTL_SEGUNDOS)
             return treino_stats
         except Exception as e:
             BaseService.handle_error(e, "Erro ao calcular estatísticas por treino")
@@ -146,7 +168,12 @@ class EstatisticaService(BaseService):
             user_id = user_id or BaseService.get_current_user_id()
             if not user_id:
                 return []
-            
+
+            cache_key = f"estatistica:{user_id}:progresso_semana:{treino_id or 'todos'}"
+            cache_hit = CacheService.get(cache_key)
+            if cache_hit is not None:
+                return cache_hit
+
             query = db.session.query(
                 RegistroTreino.periodo,
                 RegistroTreino.semana,
@@ -159,7 +186,9 @@ class EstatisticaService(BaseService):
             if treino_id:
                 query = query.filter(RegistroTreino.treino_id == treino_id)
             
-            return query.order_by(RegistroTreino.periodo, RegistroTreino.semana).all()
+            resultado = query.order_by(RegistroTreino.periodo, RegistroTreino.semana).all()
+            CacheService.set(cache_key, resultado, ttl_seconds=ESTATISTICA_CACHE_TTL_SEGUNDOS)
+            return resultado
         except Exception as e:
             BaseService.handle_error(e, "Erro ao calcular progresso por semana")
             return []

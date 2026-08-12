@@ -256,7 +256,14 @@ def create_app(config_class=None):
     @app.route("/exercicios-media/<path:caminho>")
     def exercicios_media(caminho):
         from flask import send_from_directory
-        return send_from_directory(EXERCICIOS_MEDIA_DIR, caminho)
+        # Arquivos são endereçados por hash (ex: "0001-2gPfomN.gif" —
+        # media_id no nome), então o mesmo caminho nunca muda de conteúdo:
+        # seguro cachear por muito tempo no navegador/CDN de borda, em vez
+        # de reservir a mídia (e ocupar uma thread do Gunicorn) a cada
+        # visita à mesma tela de exercício.
+        return send_from_directory(
+            EXERCICIOS_MEDIA_DIR, caminho, max_age=60 * 60 * 24 * 30
+        )
 
     return app  # ← estava faltando isso!
 
