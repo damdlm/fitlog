@@ -4,7 +4,6 @@ from datetime import datetime
 from . import aluno_bp
 from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
-from services.versao_service import VersaoService
 from services.registro_service import RegistroService
 import logging
 
@@ -13,21 +12,21 @@ logger = logging.getLogger(__name__)
 @aluno_bp.route('/treinos')
 @login_required
 def treinos():
-    """Lista todos os treinos do aluno"""
+    """
+    Tela 'Meus Treinos': ver e editar sessões já registradas por data.
+
+    Antes também listava os treinos avulsos (A/B/C) do usuário, com um
+    botão 'Novo Treino' -- removido a pedido: os treinos passaram a ser
+    geridos só dentro de cada versão (ver aluno.novo_treino_versao), e a
+    lista avulsa não é mais usada. Sem ela, não há mais motivo para
+    buscar TreinoService.get_all()/VersaoService.get_exercicios_agrupados_
+    por_treino() nesta rota -- trabalho a menos em toda visita à página.
+    """
     if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
-    
-    treinos = TreinoService.get_all(user_id=current_user.id)
-    # Antes: um ExercicioService.get_by_treino() por treino (N+1). Agora:
-    # 1 chamada que busca tudo da versão ativa de uma vez e agrupa por
-    # treino_id (ver VersaoService.get_exercicios_agrupados_por_treino).
-    exercicios_agrupados = VersaoService.get_exercicios_agrupados_por_treino(user_id=current_user.id)
-    exercicios_por_treino = {treino.id: exercicios_agrupados.get(treino.id, []) for treino in treinos}
-    
-    return render_template('aluno/treinos.html',
-                         treinos=treinos,
-                         exercicios_por_treino=exercicios_por_treino)
+
+    return render_template('aluno/treinos.html')
 
 @aluno_bp.route('/treino/novo', methods=['GET', 'POST'])
 @login_required

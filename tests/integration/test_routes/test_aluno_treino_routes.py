@@ -32,7 +32,10 @@ class TestListarTreinos:
         resp = client.get('/aluno/treinos')
         assert resp.status_code == 200
 
-    def test_lista_treinos_e_exercicios_agrupados(self, client, app):
+    def test_pagina_carrega_com_filtro_por_data(self, client, app):
+        """A tela não lista mais os treinos avulsos (A/B/C) nem tem
+        botão 'Novo Treino' -- só o filtro por data para ver/editar
+        sessões já registradas. Ver routes/aluno/treino.py::treinos()."""
         with app.app_context():
             u = _criar_usuario('at_list_2')
             musc = Musculo(nome=f'm_{u.id}', nome_exibicao='Peito')
@@ -50,8 +53,8 @@ class TestListarTreinos:
 
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)
-        assert 'Treino A' in body
-        assert 'Supino' in body
+        assert 'mtFiltroData' in body
+        assert 'Novo Treino' not in body
 
     def test_professor_tambem_acessa_a_propria_lista(self, client, app):
         with app.app_context():
