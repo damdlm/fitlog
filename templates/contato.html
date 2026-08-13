@@ -152,6 +152,7 @@
             <form id="ctForm" class="ct-form">
                 <label for="ctMensagem" class="form-label fw-bold">Sua mensagem</label>
                 <textarea id="ctMensagem" class="form-control ct-textarea"
+                          rows="6"
                           maxlength="4000"
                           placeholder="Digite aqui ou grave um áudio pelo botão do microfone..."></textarea>
                 <div class="ct-charcount"><span id="ctContador">0</span>/4000</div>
@@ -171,7 +172,7 @@
                             <span id="ctRecordingTime">00:00</span>
                         </div>
                     </div>
-                    <button type="submit" class="btn ct-btn-enviar" id="ctBtnEnviar" disabled>
+                    <button type="submit" class="btn ct-btn-enviar" id="ctBtnEnviar" disabled data-fl-no-transition>
                         <i class="bi bi-send"></i> Enviar
                     </button>
                 </div>
