@@ -64,6 +64,45 @@
     </div>
 </div>
 
+<!-- Filtro por data: carrega o treino realizado numa data específica -->
+<div class="card mb-4" id="mtFiltroDataCard">
+    <div class="card-body">
+        <label for="mtFiltroData" class="form-label fw-bold mb-2">
+            <i class="bi bi-calendar-event" style="color: #F28C33;"></i>
+            Ver treino realizado em uma data
+        </label>
+        <div class="row g-2 align-items-end">
+            <div class="col-auto">
+                <input type="date" class="form-control" id="mtFiltroData">
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-outline-secondary" id="mtFiltroLimpar">
+                    <i class="bi bi-x-circle"></i> Limpar
+                </button>
+            </div>
+        </div>
+
+        <div id="mtResultadoData" class="mt-3" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 p-3"
+                 style="background: #f8f9fa; border-radius: 10px;">
+                <div>
+                    <span class="badge me-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);" id="mtResultadoCodigo"></span>
+                    <strong id="mtResultadoNome"></strong>
+                    <span class="text-muted small ms-2" id="mtResultadoQtd"></span>
+                </div>
+                <button type="button" class="btn btn-warning btn-sm" id="mtBtnEditar">
+                    <i class="bi bi-pencil"></i> Editar
+                </button>
+            </div>
+        </div>
+
+        <div id="mtResultadoVazio" class="mt-3 text-muted small" style="display:none;">
+            <i class="bi bi-info-circle"></i>
+            <span id="mtResultadoVazioTexto">Nenhum treino registrado nesta data.</span>
+        </div>
+    </div>
+</div>
+
 <!-- Cards de Resumo -->
 <div class="row mb-4">
     <div class="col-md-3">
@@ -231,4 +270,307 @@
     </a>
 </div>
 {% endif %}
+
+<!-- Modal: editar exercícios de um treino já registrado numa data -->
+<div class="modal fade" id="mtModalEditar" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border: none; border-radius: 16px;">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square" style="color: #F28C33;"></i>
+                    Editar treino — <span id="mtModalDataExtenso"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="mtModalExerciciosLista"><!-- preenchido via JS --></div>
+            </div>
+            <div class="modal-footer" style="border: none; padding: 16px 24px 24px; gap: 8px;">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-arrow-left"></i> Voltar
+                </button>
+                <button type="button" class="btn btn-danger" id="mtBtnExcluir">
+                    <i class="bi bi-trash"></i> Excluir
+                </button>
+                <button type="button" class="btn" id="mtBtnSalvar"
+                        style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; font-weight: 600;">
+                    <i class="bi bi-check-circle"></i> Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmação ao excluir o treino registrado -- mesmo estilo
+     visual do aviso "Cancelar treino?" da tela Registrar Treino. -->
+<div class="modal fade" id="mtModalConfirmarExclusao" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border: none; border-radius: 16px;">
+            <div class="modal-body text-center p-4">
+                <div class="mt-confirmar-icone">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <h5 class="mt-confirmar-titulo">Excluir treino registrado?</h5>
+                <p class="mt-confirmar-texto">
+                    Todos os exercícios e séries registrados nesta data serão
+                    excluídos e não podem ser recuperados.
+                </p>
+                <div class="d-grid gap-2">
+                    <button type="button" id="mtBtnConfirmarExclusaoSim" class="btn mt-btn-confirmar-exclusao w-100">
+                        Sim, excluir treino
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary w-100" id="mtBtnConfirmarExclusaoNao">
+                        Continuar editando
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Mesmo visual do aviso de "Cancelar treino?" em Registrar Treino,
+       trocando a cor/textos para o contexto de exclusão aqui. */
+    .mt-confirmar-icone {
+        width: 56px; height: 56px; border-radius: 50%;
+        background: rgba(220, 53, 69, 0.12); color: #dc3545;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem; margin: 0 auto 14px;
+    }
+    .mt-confirmar-titulo { font-weight: 700; color: #2D2D2D; margin-bottom: 8px; }
+    .mt-confirmar-texto { color: #6c757d; font-size: 0.92rem; margin-bottom: 20px; }
+    .mt-btn-confirmar-exclusao {
+        background: #dc3545; color: #fff; font-weight: 600;
+        border-radius: 999px; padding: 11px 20px; border: none;
+        transition: filter .15s ease;
+    }
+    .mt-btn-confirmar-exclusao:hover { background: #dc3545; color: #fff; filter: brightness(0.92); }
+
+    .mt-exercicio-row {
+        background: #fff; padding: 14px 16px; margin-bottom: 10px;
+        border-radius: 12px; border: 1px solid #ece7e0;
+        border-left: 4px solid #F28C33;
+    }
+    .mt-exercicio-row .mt-exercicio-nome { font-weight: 700; font-size: 0.95rem; }
+    .mt-exercicio-row .mt-exercicio-musculo {
+        background: #f8f9fa; color: #F28C33; font-weight: 600;
+        font-size: 0.72rem; padding: 2px 8px; border-radius: 20px;
+    }
+    .mt-exercicio-row .mt-campos { display: flex; gap: 8px; margin-top: 10px; }
+    .mt-exercicio-row .mt-campo { flex: 1; text-align: center; }
+    .mt-exercicio-row .mt-campo label {
+        font-size: 0.7rem; font-weight: 600; color: #6c757d; display: block; margin-bottom: 3px;
+    }
+    .mt-exercicio-row input {
+        width: 100%; text-align: center; font-weight: 700;
+        border: 2px solid #ece7e0; border-radius: 8px; padding: 5px; font-size: 0.9rem;
+    }
+    .mt-exercicio-row input:focus {
+        outline: none; border-color: #F28C33; box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12);
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const filtroData = document.getElementById('mtFiltroData');
+    const filtroLimpar = document.getElementById('mtFiltroLimpar');
+    const resultadoData = document.getElementById('mtResultadoData');
+    const resultadoVazio = document.getElementById('mtResultadoVazio');
+    const resultadoVazioTexto = document.getElementById('mtResultadoVazioTexto');
+    const resultadoCodigo = document.getElementById('mtResultadoCodigo');
+    const resultadoNome = document.getElementById('mtResultadoNome');
+    const resultadoQtd = document.getElementById('mtResultadoQtd');
+    const btnEditar = document.getElementById('mtBtnEditar');
+
+    const modalEditarEl = document.getElementById('mtModalEditar');
+    const modalEditar = new bootstrap.Modal(modalEditarEl);
+    const modalExcluirEl = document.getElementById('mtModalConfirmarExclusao');
+    const modalExcluir = new bootstrap.Modal(modalExcluirEl);
+    const listaExercicios = document.getElementById('mtModalExerciciosLista');
+    const modalDataExtenso = document.getElementById('mtModalDataExtenso');
+    const btnSalvar = document.getElementById('mtBtnSalvar');
+    const btnExcluir = document.getElementById('mtBtnExcluir');
+    const btnConfirmarSim = document.getElementById('mtBtnConfirmarExclusaoSim');
+    const btnConfirmarNao = document.getElementById('mtBtnConfirmarExclusaoNao');
+
+    const CSRF_TOKEN = '{{ csrf_token() }}';
+
+    let treinoAtual = null; // { treino: {id, codigo, nome}, data, exercicios: [...] }
+
+    function toast(msg, tipo) {
+        if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
+            window.FitLogUtils.showToast(msg, tipo || 'info');
+        }
+    }
+
+    function formatarDataExtenso(dataStr) {
+        const [ano, mes, dia] = dataStr.split('-');
+        return `${dia}/${mes}/${ano}`;
+    }
+
+    async function buscarTreinoDaData(dataStr) {
+        resultadoData.style.display = 'none';
+        resultadoVazio.style.display = 'none';
+        treinoAtual = null;
+
+        if (!dataStr) return;
+
+        try {
+            const resp = await fetch(`{{ url_for('aluno.treino_registro_por_data') }}?data=${dataStr}`);
+            const json = await resp.json();
+
+            if (json.ok) {
+                treinoAtual = json;
+                resultadoCodigo.textContent = json.treino ? json.treino.codigo : '?';
+                resultadoNome.textContent = json.treino ? json.treino.nome : 'Treino';
+                resultadoQtd.textContent = `${json.exercicios.length} exercício(s) registrado(s)`;
+                resultadoData.style.display = '';
+            } else {
+                resultadoVazioTexto.textContent = json.erro || 'Nenhum treino registrado nesta data.';
+                resultadoVazio.style.display = '';
+            }
+        } catch (err) {
+            console.error('Erro ao buscar treino por data:', err);
+            toast('Erro ao buscar o treino desta data.', 'danger');
+        }
+    }
+
+    filtroData.addEventListener('change', function () {
+        buscarTreinoDaData(filtroData.value);
+    });
+
+    filtroLimpar.addEventListener('click', function () {
+        filtroData.value = '';
+        resultadoData.style.display = 'none';
+        resultadoVazio.style.display = 'none';
+        treinoAtual = null;
+    });
+
+    function renderizarExerciciosNoModal() {
+        if (!treinoAtual) return;
+        modalDataExtenso.textContent = formatarDataExtenso(treinoAtual.data);
+        listaExercicios.innerHTML = '';
+
+        treinoAtual.exercicios.forEach(function (ex, idx) {
+            const row = document.createElement('div');
+            row.className = 'mt-exercicio-row';
+            row.dataset.chave = ex.chave;
+            row.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="mt-exercicio-nome">${ex.nome}</span>
+                    ${ex.musculo ? `<span class="mt-exercicio-musculo">${ex.musculo}</span>` : ''}
+                </div>
+                <div class="mt-campos">
+                    <div class="mt-campo">
+                        <label>Carga (kg)</label>
+                        <input type="number" step="0.5" min="0" class="mt-input-carga" value="${ex.carga}">
+                    </div>
+                    <div class="mt-campo">
+                        <label>Repetições</label>
+                        <input type="number" step="1" min="0" class="mt-input-reps" value="${ex.repeticoes}">
+                    </div>
+                    <div class="mt-campo">
+                        <label>Séries</label>
+                        <input type="number" step="1" min="1" max="10" class="mt-input-series" value="${ex.num_series}">
+                    </div>
+                </div>
+            `;
+            listaExercicios.appendChild(row);
+        });
+    }
+
+    btnEditar.addEventListener('click', function () {
+        if (!treinoAtual) return;
+        renderizarExerciciosNoModal();
+        modalEditar.show();
+    });
+
+    btnSalvar.addEventListener('click', async function () {
+        if (!treinoAtual || !treinoAtual.treino) return;
+
+        const exerciciosEditados = [];
+        listaExercicios.querySelectorAll('.mt-exercicio-row').forEach(function (row) {
+            exerciciosEditados.push({
+                chave: row.dataset.chave,
+                carga: row.querySelector('.mt-input-carga').value,
+                repeticoes: row.querySelector('.mt-input-reps').value,
+                num_series: row.querySelector('.mt-input-series').value
+            });
+        });
+
+        btnSalvar.disabled = true;
+        btnSalvar.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Salvando...';
+
+        try {
+            const resp = await fetch('{{ url_for("aluno.treino_registro_editar") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                body: JSON.stringify({
+                    data: treinoAtual.data,
+                    treino_id: treinoAtual.treino.id,
+                    exercicios: exerciciosEditados
+                })
+            });
+            const json = await resp.json();
+
+            if (json.ok) {
+                toast('Treino atualizado com sucesso!', 'success');
+                modalEditar.hide();
+                await buscarTreinoDaData(treinoAtual.data);
+            } else {
+                toast(json.erro || 'Não foi possível salvar as alterações.', 'danger');
+            }
+        } catch (err) {
+            console.error('Erro ao salvar edição do treino:', err);
+            toast('Erro ao salvar as alterações.', 'danger');
+        } finally {
+            btnSalvar.disabled = false;
+            btnSalvar.innerHTML = '<i class="bi bi-check-circle"></i> Salvar';
+        }
+    });
+
+    btnExcluir.addEventListener('click', function () {
+        modalEditar.hide();
+        modalExcluir.show();
+    });
+
+    btnConfirmarNao.addEventListener('click', function () {
+        modalExcluir.hide();
+        modalEditar.show();
+    });
+
+    btnConfirmarSim.addEventListener('click', async function () {
+        if (!treinoAtual || !treinoAtual.treino) return;
+
+        btnConfirmarSim.disabled = true;
+        btnConfirmarSim.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Excluindo...';
+
+        try {
+            const resp = await fetch('{{ url_for("aluno.treino_registro_excluir") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                body: JSON.stringify({
+                    data: treinoAtual.data,
+                    treino_id: treinoAtual.treino.id
+                })
+            });
+            const json = await resp.json();
+
+            if (json.ok) {
+                toast('Treino excluído.', 'success');
+                modalExcluir.hide();
+                await buscarTreinoDaData(treinoAtual.data);
+            } else {
+                toast(json.erro || 'Não foi possível excluir o treino.', 'danger');
+            }
+        } catch (err) {
+            console.error('Erro ao excluir treino:', err);
+            toast('Erro ao excluir o treino.', 'danger');
+        } finally {
+            btnConfirmarSim.disabled = false;
+            btnConfirmarSim.innerHTML = 'Sim, excluir treino';
+        }
+    });
+});
+</script>
 {% endblock %}

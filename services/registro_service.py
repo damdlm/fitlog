@@ -62,6 +62,68 @@ class RegistroService(BaseService):
             return []
     
     @staticmethod
+    def get_treino_por_data(data, user_id=None):
+        """
+        Encontra qual treino foi registrado numa data específica.
+
+        Todos os registros de uma mesma sessão compartilham
+        treino_id/versao_id/periodo/semana (são criados juntos por
+        salvar_registros), então basta o primeiro registro do dia para
+        saber qual treino foi feito.
+
+        Compara contra a meia-noite (datetime), não um date puro: a
+        coluna é DateTime e no Postgres (produção) comparar com um date
+        já funciona por cast implícito, mas no SQLite (dev/testes, sem
+        tipagem real) um date puro vira o literal '2026-06-15' na query
+        enquanto o valor gravado é '2026-06-15 00:00:00.000000' -- strings
+        diferentes, então a busca não encontra nada. Normalizando aqui
+        funciona nos dois bancos.
+        """
+        try:
+            user_id = user_id or BaseService.get_current_user_id()
+            if not user_id:
+                return None
+
+            if isinstance(data, str):
+                data = datetime.strptime(data, '%Y-%m-%d').date()
+            data_meia_noite = datetime(data.year, data.month, data.day)
+
+            return RegistroTreino.query.filter(
+                RegistroTreino.user_id == user_id,
+                RegistroTreino.data_registro == data_meia_noite
+            ).first()
+        except Exception as e:
+            BaseService.handle_error(e, "Erro ao buscar treino por data")
+            return None
+
+    @staticmethod
+    def excluir_por_treino_data(treino_id, versao_id, data, user_id=None):
+        """Exclui todos os registros (e séries, via CASCADE no banco) de
+        um treino numa data específica — usado para descartar uma sessão
+        já registrada."""
+        try:
+            user_id = user_id or BaseService.get_current_user_id()
+            if not user_id:
+                return False
+
+            if isinstance(data, str):
+                data = datetime.strptime(data, '%Y-%m-%d').date()
+            data_meia_noite = datetime(data.year, data.month, data.day)
+
+            RegistroTreino.query.filter(
+                RegistroTreino.user_id == user_id,
+                RegistroTreino.treino_id == treino_id,
+                RegistroTreino.versao_id == versao_id,
+                RegistroTreino.data_registro == data_meia_noite
+            ).delete()
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            BaseService.handle_error(e, "Erro ao excluir registros por treino/data")
+            return False
+
+    @staticmethod
     def get_by_data(treino_id, versao_id, data, user_id=None):
         """
         Retorna registros de um treino em uma data específica
@@ -84,13 +146,21 @@ class RegistroService(BaseService):
             # Garantir que data é date object
             if isinstance(data, str):
                 data = datetime.strptime(data, '%Y-%m-%d').date()
-            
+
+            # Compara contra a meia-noite (datetime), não um date puro --
+            # a coluna é DateTime; no Postgres um date puro já funciona
+            # por cast implícito, mas no SQLite (dev/testes) um date puro
+            # vira o literal '2026-06-15' na query enquanto o valor
+            # gravado é '2026-06-15 00:00:00.000000', então a busca não
+            # encontra nada. Normalizando aqui funciona nos dois bancos.
+            data_meia_noite = datetime(data.year, data.month, data.day)
+
             # Buscar registros do dia
             registros = RegistroTreino.query.filter(
                 RegistroTreino.user_id == user_id,
                 RegistroTreino.treino_id == treino_id,
                 RegistroTreino.versao_id == versao_id,
-                RegistroTreino.data_registro == data
+                RegistroTreino.data_registro == data_meia_noite
             ).all()
             
             logger.debug(f"Encontrados {len(registros)} registros para treino {treino_id} em {data}")

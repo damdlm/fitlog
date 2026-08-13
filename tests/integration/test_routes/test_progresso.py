@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta, timezone
-from models import db, User, Treino, RegistroTreino, HistoricoTreino, Musculo, ExercicioUsuario
+from datetime import datetime, timedelta, timezone, date
+from models import db, User, Treino, RegistroTreino, HistoricoTreino, Musculo, ExercicioUsuario, VersaoGlobal
 
 
 def _login(client, user):
@@ -43,10 +43,15 @@ def test_progresso_ultimos_30_dias_com_registro(client, app):
         db.session.add(treino)
         db.session.commit()
 
+        versao = VersaoGlobal(numero_versao=1, descricao='V1', divisao='ABC',
+                               data_inicio=date(2026, 1, 1), user_id=u.id)
+        db.session.add(versao)
+        db.session.commit()
+
         hoje = datetime.now(timezone.utc)
         for dias_atras in [0, 5, 40]:  # 40 deve ficar fora da janela
             r = RegistroTreino(
-                treino_id=treino.id, versao_id=1, periodo='Julho/2026', semana=1,
+                treino_id=treino.id, versao_id=versao.id, periodo='Julho/2026', semana=1,
                 exercicio_usuario_id=ex.id, data_registro=hoje - timedelta(days=dias_atras),
                 user_id=u.id
             )

@@ -4,9 +4,27 @@ from flask_login import UserMixin
 from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 db = SQLAlchemy()
+
+
+@event.listens_for(Engine, "connect")
+def _habilitar_foreign_keys_sqlite(dbapi_connection, connection_record):
+    """SQLite ignora 'ON DELETE CASCADE' por padrão -- cada conexão
+    precisa pedir explicitamente 'PRAGMA foreign_keys = ON'. Sem isso,
+    excluir um RegistroTreino deixa HistoricoTreino órfão para trás
+    (o schema declara ondelete='CASCADE', mas o SQLite nunca aplica).
+    Postgres (produção) já aplica FKs nativamente, então esse listener
+    só age quando o dialeto é sqlite -- não muda nada em produção.
+    """
+    if dbapi_connection.__class__.__module__.startswith("sqlite3"):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
 
 # =====================================================
 # TABELA DE ASSOCIAÇÃO ENTRE ALUNOS E PROFESSORES
