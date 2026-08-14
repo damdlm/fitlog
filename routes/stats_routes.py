@@ -135,7 +135,46 @@ def visualizar_tabela():
     dados_tabela = EstatisticaService.preparar_dados_tabela(
         exercicios_filtrados, registros, semanas_filtro, request.args
     )
-    
+
+    # Dados 100% serializáveis (dicts/listas/primitivos) para a visão em
+    # cards do mobile: a tabela pivotada acima exige rolagem lateral, que
+    # funciona mal em telas pequenas -- no mobile trocamos por um card por
+    # exercício, com a evolução semana a semana em lista vertical. Reaproveita
+    # a mesma matriz `registros_por_exercicio`/`semanas` já calculada acima,
+    # sem nenhuma query extra.
+    dados_mobile = []
+    for ex in exercicios_filtrados:
+        chave_exercicio = f"{ex.tipo}_{ex.id}"
+        registros_ex = dados_tabela['registros_por_exercicio'].get(chave_exercicio, {})
+
+        semanas_ex = []
+        for semana in dados_tabela['semanas']:
+            registro = registros_ex.get(semana['key'])
+            if registro and registro.get('series'):
+                primeira_serie = registro['series'][0]
+                semanas_ex.append({
+                    'periodo': semana['periodo'],
+                    'semana': semana['semana'],
+                    'carga': primeira_serie['carga'],
+                    'repeticoes': primeira_serie['repeticoes'],
+                    'num_series': len(registro['series']),
+                })
+            else:
+                semanas_ex.append({
+                    'periodo': semana['periodo'],
+                    'semana': semana['semana'],
+                    'carga': None,
+                    'repeticoes': None,
+                    'num_series': 0,
+                })
+
+        dados_mobile.append({
+            'nome': ex.nome,
+            'treino_codigo': _get_treino_codigo(ex) or 'N/A',
+            'musculo': ex.musculo_nome or 'N/A',
+            'semanas': semanas_ex,
+        })
+
     return render_template("stats/visualizar_tabela.html",
                          treinos=treinos,
                          treino_selecionado=treino_selecionado,
@@ -145,6 +184,7 @@ def visualizar_tabela():
                          exercicios=exercicios_filtrados,
                          semanas=dados_tabela['semanas'],
                          registros_por_exercicio=dados_tabela['registros_por_exercicio'],
+                         dados_mobile=dados_mobile,
                          semanas_selecionadas=semanas_filtro,
                          semanas_selecionadas_lista=dados_tabela['semanas_selecionadas_lista'],
                          periodos_disponiveis=dados_tabela['periodos_disponiveis'])

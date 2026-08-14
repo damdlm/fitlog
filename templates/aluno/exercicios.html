@@ -3,30 +3,314 @@
 {% block page_icon %}<i class="bi bi-list-check" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Meus Exercícios{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* ===== Hero / resumo ===== */
+    .exs-hero {
+        background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
+        border-radius: 18px;
+        padding: 24px 28px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+    .exs-hero::before {
+        content: '';
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(242,140,51,0.35) 0%, rgba(242,140,51,0) 70%);
+    }
+    .exs-hero-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 14px;
+        position: relative;
+    }
+    .exs-hero-title {
+        font-size: 0.95rem;
+        color: rgba(255,255,255,0.6);
+        margin-bottom: 2px;
+    }
+    .exs-hero-destaque {
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin-bottom: 0;
+    }
+    .exs-hero-destaque .highlight {
+        color: #FFB366;
+    }
+    .exs-hero-stats {
+        display: flex;
+        gap: 22px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+        position: relative;
+    }
+    .exs-hero-stat-num {
+        font-size: 1.4rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .exs-hero-stat-label {
+        font-size: 0.72rem;
+        color: rgba(255,255,255,0.55);
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        margin-top: 2px;
+    }
+    .exs-hero-actions {
+        display: flex;
+        gap: 8px;
+        position: relative;
+    }
+    .exs-btn-primary {
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        color: white;
+        border: none;
+        font-weight: 600;
+        border-radius: 10px;
+        white-space: nowrap;
+    }
+    .exs-btn-primary:hover { color: white; filter: brightness(1.05); }
+    .exs-btn-ghost {
+        background: rgba(255,255,255,0.08);
+        color: white;
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 10px;
+        white-space: nowrap;
+    }
+    .exs-btn-ghost:hover { background: rgba(255,255,255,0.15); color: white; }
+
+    /* ===== Filtros ===== */
+    .exs-filtros {
+        border-radius: 16px;
+        border: 1px solid rgba(0,0,0,0.06);
+    }
+    .exs-filtros .form-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #8a8a8a;
+        text-transform: uppercase;
+        letter-spacing: .02em;
+        margin-bottom: 4px;
+    }
+    .exs-filtro-busca {
+        position: relative;
+    }
+    .exs-filtro-busca i {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #b8b8b8;
+    }
+    .exs-filtro-busca input {
+        padding-left: 38px;
+        border-radius: 10px;
+    }
+    .exs-filtros select {
+        border-radius: 10px;
+    }
+    .exs-contador {
+        font-size: 0.82rem;
+        color: #8a8a8a;
+    }
+    .exs-contador strong { color: var(--secondary-color); }
+
+    /* ===== Tabela (desktop) ===== */
+    .exs-table-card {
+        border-radius: 16px;
+        border: 1px solid rgba(0,0,0,0.06);
+        overflow: hidden;
+    }
+    #tabelaExercicios thead th {
+        border-top: none;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        color: #8a8a8a;
+        font-weight: 700;
+        background: #fafafa;
+    }
+    #tabelaExercicios tbody tr {
+        transition: background-color .12s ease;
+    }
+    #tabelaExercicios tbody tr:hover {
+        background-color: rgba(242, 140, 51, 0.05);
+    }
+    .exs-badge-treino {
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        color: white;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 4px 11px;
+        font-size: 0.74rem;
+    }
+    .exs-badge-musculo {
+        background: rgba(45, 45, 45, 0.06);
+        color: var(--secondary-color);
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 4px 11px;
+        font-size: 0.74rem;
+    }
+    .exs-carga-valor {
+        font-weight: 700;
+        color: #198754;
+    }
+    .exs-acao-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+    }
+
+    /* ===== Cards (mobile) ===== */
+    .exs-cards { display: none; }
+    .exs-card {
+        background: #fff;
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,0.06);
+        border-left: 4px solid #F28C33;
+        padding: 14px 16px;
+        margin-bottom: 12px;
+    }
+    .exs-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .exs-card-nome {
+        font-weight: 700;
+        font-size: 0.98rem;
+        color: var(--secondary-color);
+        margin-bottom: 5px;
+    }
+    .exs-card-badges {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .exs-card-metrics {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .exs-card-metric {
+        flex: 1;
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 8px 10px;
+        text-align: center;
+    }
+    .exs-card-metric-valor {
+        font-weight: 700;
+        font-size: 1.02rem;
+        color: var(--secondary-color);
+    }
+    .exs-card-metric-valor.exs-tem-carga { color: #198754; }
+    .exs-card-metric-label {
+        font-size: 0.66rem;
+        color: #999;
+        text-transform: uppercase;
+        letter-spacing: .02em;
+    }
+    .exs-card-acoes {
+        display: flex;
+        gap: 6px;
+    }
+    .exs-card-acoes .btn {
+        border-radius: 9px;
+    }
+
+    .exs-empty {
+        text-align: center;
+        padding: 48px 20px;
+        color: #999;
+    }
+    .exs-empty i {
+        font-size: 2.6rem;
+        color: #e0a877;
+        margin-bottom: 12px;
+        display: block;
+    }
+
+    @media (max-width: 767.98px) {
+        .exs-table-card { display: none; }
+        .exs-cards { display: block; }
+        .exs-hero { padding: 20px; }
+        .exs-hero-destaque { font-size: 1.15rem; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="d-none d-md-block">
-        <i class="bi bi-list-check me-2" style="color: #F28C33;"></i>
-        Meus Exercícios
-    </h2>
-    <div>
-        <a href="{{ url_for('aluno.novo_exercicio') }}" class="btn btn-success me-2">
-            <i class="bi bi-plus-circle"></i> Novo Exercício
-        </a>
-        <a href="{{ url_for('aluno.dashboard') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Voltar
-        </a>
+
+<!-- Cabeçalho com destaque, no mesmo espírito visual da tela de Estatísticas -->
+<div class="exs-hero">
+    <div class="exs-hero-top">
+        <div>
+            <div class="exs-hero-title">Meus Exercícios</div>
+            {% if musculo_destaque %}
+            <p class="exs-hero-destaque mb-0">
+                Grupo muscular com mais exercícios:
+                <span class="highlight">{{ musculo_destaque }}</span> 💪
+            </p>
+            {% else %}
+            <p class="exs-hero-destaque mb-0">Cadastre exercícios para começar a acompanhar seu progresso 📋</p>
+            {% endif %}
+        </div>
+        <div class="exs-hero-actions">
+            <a href="{{ url_for('aluno.novo_exercicio') }}" class="btn exs-btn-primary">
+                <i class="bi bi-plus-circle"></i> Novo Exercício
+            </a>
+            <a href="{{ url_for('aluno.dashboard') }}" class="btn exs-btn-ghost">
+                <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Voltar</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="exs-hero-stats">
+        <div>
+            <div class="exs-hero-stat-num">{{ exercicios|length }}</div>
+            <div class="exs-hero-stat-label">Exercícios</div>
+        </div>
+        <div>
+            <div class="exs-hero-stat-num">{{ treinos|length }}</div>
+            <div class="exs-hero-stat-label">Treinos</div>
+        </div>
+        <div>
+            <div class="exs-hero-stat-num">{{ total_registros }}</div>
+            <div class="exs-hero-stat-label">Registros no total</div>
+        </div>
     </div>
 </div>
 
 <!-- Filtros -->
-<div class="card mb-4">
+<div class="card exs-filtros mb-3">
     <div class="card-body">
-        <div class="row">
+        <div class="row g-3 align-items-end">
             <div class="col-md-4">
-                <input type="text" id="filtroNome" class="form-control" placeholder="Buscar por nome...">
+                <label class="form-label">Buscar</label>
+                <div class="exs-filtro-busca">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="filtroNome" class="form-control" placeholder="Nome do exercício...">
+                </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-6 col-md-4">
+                <label class="form-label">Músculo</label>
                 <select id="filtroMusculo" class="form-select">
                     <option value="">Todos os músculos</option>
                     {% for treino in treinos %}
@@ -38,7 +322,8 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-4">
+            <div class="col-6 col-md-4">
+                <label class="form-label">Treino</label>
                 <select id="filtroTreino" class="form-select">
                     <option value="">Todos os treinos</option>
                     {% for treino in treinos %}
@@ -47,14 +332,15 @@
                 </select>
             </div>
         </div>
+        <div class="exs-contador mt-3" id="exsContador"></div>
     </div>
 </div>
 
-<!-- Lista de Exercícios -->
-<div class="card">
+<!-- Tabela de Exercícios (desktop) -->
+<div class="card exs-table-card">
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover" id="tabelaExercicios">
+            <table class="table table-hover align-middle mb-0" id="tabelaExercicios">
                 <thead>
                     <tr>
                         <th>Treino</th>
@@ -62,43 +348,43 @@
                         <th>Músculo</th>
                         <th>Última Carga</th>
                         <th>Total Registros</th>
-                        <th>Ações</th>
+                        <th class="text-end">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for exercicio in exercicios %}
-                    <tr data-nome="{{ exercicio.nome|lower }}" 
+                    <tr data-nome="{{ exercicio.nome|lower }}"
                         data-musculo="{{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else '' }}"
                         data-treino="{{ exercicio.treino_id }}">
                         <td>
                             {% if exercicio.treino_ref %}
-                                <span class="badge bg-primary">{{ exercicio.treino_ref.codigo }}</span>
+                                <span class="exs-badge-treino">{{ exercicio.treino_ref.codigo }}</span>
                             {% else %}
                                 <span class="badge bg-secondary">-</span>
                             {% endif %}
                         </td>
                         <td><strong>{{ exercicio.nome }}</strong></td>
                         <td>
-                            <span class="badge bg-info">
+                            <span class="exs-badge-musculo">
                                 {{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}
                             </span>
                         </td>
                         <td>
                             {% if ultimas_cargas.get(exercicio.id) %}
-                                <span class="badge bg-success">{{ ultimas_cargas[exercicio.id] }} kg</span>
+                                <span class="exs-carga-valor">{{ ultimas_cargas[exercicio.id] }} kg</span>
                             {% else %}
                                 <span class="text-muted">-</span>
                             {% endif %}
                         </td>
                         <td>{{ exercicio.registros|length }}</td>
-                        <td>
+                        <td class="text-end">
                             <div class="btn-group btn-group-sm">
-                                <a href="{{ url_for('aluno.editar_exercicio', exercicio_id=exercicio.id) }}" 
-                                   class="btn btn-warning" title="Editar">
+                                <a href="{{ url_for('aluno.editar_exercicio', exercicio_id=exercicio.id) }}"
+                                   class="btn btn-warning exs-acao-btn" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <a href="{{ url_for('aluno.excluir_exercicio', exercicio_id=exercicio.id, confirmar='false') }}" 
-                                   class="btn btn-danger" title="Excluir"
+                                <a href="{{ url_for('aluno.excluir_exercicio', exercicio_id=exercicio.id, confirmar='false') }}"
+                                   class="btn btn-danger exs-acao-btn" title="Excluir"
                                    onclick="return confirm('Excluir este exercício?')">
                                     <i class="bi bi-trash"></i>
                                 </a>
@@ -120,30 +406,105 @@
     </div>
 </div>
 
+<!-- Cards de Exercícios (mobile) -->
+<div class="exs-cards" id="cardsExercicios">
+    {% for exercicio in exercicios %}
+    <div class="exs-card"
+         data-nome="{{ exercicio.nome|lower }}"
+         data-musculo="{{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else '' }}"
+         data-treino="{{ exercicio.treino_id }}">
+        <div class="exs-card-top">
+            <div>
+                <div class="exs-card-nome">{{ exercicio.nome }}</div>
+                <div class="exs-card-badges">
+                    {% if exercicio.treino_ref %}
+                    <span class="exs-badge-treino">{{ exercicio.treino_ref.codigo }}</span>
+                    {% endif %}
+                    <span class="exs-badge-musculo">
+                        {{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}
+                    </span>
+                </div>
+            </div>
+            <div class="exs-card-acoes">
+                <a href="{{ url_for('aluno.editar_exercicio', exercicio_id=exercicio.id) }}"
+                   class="btn btn-warning btn-sm exs-acao-btn" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                </a>
+                <a href="{{ url_for('aluno.excluir_exercicio', exercicio_id=exercicio.id, confirmar='false') }}"
+                   class="btn btn-danger btn-sm exs-acao-btn" title="Excluir"
+                   onclick="return confirm('Excluir este exercício?')">
+                    <i class="bi bi-trash"></i>
+                </a>
+            </div>
+        </div>
+        <div class="exs-card-metrics">
+            <div class="exs-card-metric">
+                <div class="exs-card-metric-valor {% if ultimas_cargas.get(exercicio.id) %}exs-tem-carga{% endif %}">
+                    {% if ultimas_cargas.get(exercicio.id) %}{{ ultimas_cargas[exercicio.id] }} kg{% else %}-{% endif %}
+                </div>
+                <div class="exs-card-metric-label">Última carga</div>
+            </div>
+            <div class="exs-card-metric">
+                <div class="exs-card-metric-valor">{{ exercicio.registros|length }}</div>
+                <div class="exs-card-metric-label">Registros</div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="exs-empty">
+        <i class="bi bi-info-circle"></i>
+        Nenhum exercício cadastrado.
+        <a href="{{ url_for('aluno.novo_exercicio') }}" class="d-block mt-2">Criar primeiro exercício</a>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="exs-empty" id="exsSemResultado" style="display:none;">
+    <i class="bi bi-search"></i>
+    Nenhum exercício encontrado com esses filtros.
+</div>
+
 <script>
-    // Filtros em tempo real
+    // Filtros em tempo real -- aplica na tabela (desktop) e nos cards (mobile) ao mesmo tempo
     document.getElementById('filtroNome').addEventListener('input', filtrar);
     document.getElementById('filtroMusculo').addEventListener('change', filtrar);
     document.getElementById('filtroTreino').addEventListener('change', filtrar);
-    
+
     function filtrar() {
         const nomeFiltro = document.getElementById('filtroNome').value.toLowerCase();
         const musculoFiltro = document.getElementById('filtroMusculo').value;
         const treinoFiltro = document.getElementById('filtroTreino').value;
-        
-        document.querySelectorAll('#tabelaExercicios tbody tr').forEach(row => {
-            const nome = row.dataset.nome || '';
-            const musculo = row.dataset.musculo || '';
-            const treino = row.dataset.treino || '';
-            
+
+        let visiveis = 0;
+        let total = 0;
+
+        document.querySelectorAll('#tabelaExercicios tbody tr[data-nome], #cardsExercicios .exs-card').forEach(el => {
+            const nome = el.dataset.nome || '';
+            const musculo = el.dataset.musculo || '';
+            const treino = el.dataset.treino || '';
+
             let mostrar = true;
-            
             if (nomeFiltro && !nome.includes(nomeFiltro)) mostrar = false;
             if (musculoFiltro && musculo !== musculoFiltro) mostrar = false;
             if (treinoFiltro && treino !== treinoFiltro) mostrar = false;
-            
-            row.style.display = mostrar ? '' : 'none';
+
+            const isRow = el.tagName === 'TR';
+            el.style.display = mostrar ? (isRow ? '' : 'block') : 'none';
+
+            total++;
+            if (mostrar) visiveis++;
         });
+
+        const contador = document.getElementById('exsContador');
+        const semResultado = document.getElementById('exsSemResultado');
+        if (total > 0) {
+            contador.textContent = `Mostrando ${visiveis} de ${total} exercício(s)`;
+            semResultado.style.display = (visiveis === 0) ? 'block' : 'none';
+        } else {
+            contador.textContent = '';
+        }
     }
+
+    filtrar();
 </script>
 {% endblock %}

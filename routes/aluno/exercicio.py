@@ -53,10 +53,22 @@ def exercicios():
         ultimas_cargas = {ex_id: float(carga) for ex_id, carga in cargas_query}
         treinos = Treino.query.filter_by(user_id=current_user.id).all()
 
+        # Resumo exibido no cabeçalho da tela (cards de destaque). Contagem
+        # simples em Python sobre a lista já carregada -- sem query extra,
+        # já que `exercicios` já veio com musculo_ref via joinedload acima.
+        musculo_contagem = {}
+        for ex in exercicios:
+            nome_musculo = ex.musculo_ref.nome_exibicao if ex.musculo_ref else None
+            if nome_musculo:
+                musculo_contagem[nome_musculo] = musculo_contagem.get(nome_musculo, 0) + 1
+        musculo_destaque = max(musculo_contagem, key=musculo_contagem.get) if musculo_contagem else None
+
         return render_template('aluno/exercicios.html',
                              exercicios=exercicios,
                              ultimas_cargas=ultimas_cargas,
-                             treinos=treinos)
+                             treinos=treinos,
+                             musculo_destaque=musculo_destaque,
+                             total_registros=sum(len(ex.registros) for ex in exercicios))
     except Exception:
         logger.exception("Erro ao carregar exercícios")
         flash(f'Erro ao carregar exercícios.', 'danger')

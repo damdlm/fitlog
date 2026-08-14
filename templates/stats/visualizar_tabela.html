@@ -5,85 +5,172 @@
 
 {% block extra_css %}
 <style>
+    /* ===== Cabeçalho ===== */
+    .prog-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 18px;
+    }
+    .prog-header h2 { margin: 0; }
+
+    /* ===== Filtros ===== */
+    .prog-filtros {
+        border-radius: 16px;
+        border: 1px solid rgba(0,0,0,0.06);
+    }
+    .prog-filtros .form-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #8a8a8a;
+        text-transform: uppercase;
+        letter-spacing: .02em;
+        margin-bottom: 4px;
+    }
+    .prog-filtros select { border-radius: 10px; }
+    .prog-btn-escolher {
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        color: white; border: none; border-radius: 10px; font-weight: 600;
+    }
+    .prog-btn-escolher:hover { color: white; filter: brightness(1.05); }
+
+    /* ===== Tabela (desktop) ===== */
+    .prog-table-card {
+        border-radius: 16px;
+        border: 1px solid rgba(0,0,0,0.06);
+        overflow: hidden;
+    }
+    #progressTable thead th {
+        border-top: none;
+    }
+    #progressTable tbody tr:hover {
+        background-color: rgba(242, 140, 51, 0.04);
+    }
+    .prog-cell-treino {
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        color: white; font-weight: 600; border-radius: 999px;
+        padding: 2px 9px; font-size: 0.68rem;
+    }
+
     @media (max-width: 767.98px) {
-        #progressTable {
-            font-size: 0.8rem;
+        #progressTable { font-size: 0.8rem; }
+        #progressTable th, #progressTable td { padding: 0.4rem 0.5rem; white-space: nowrap; }
+        #progressTable th:first-child, #progressTable td:first-child {
+            position: sticky; left: 0; z-index: 2; white-space: normal;
+            min-width: 130px; max-width: 150px; box-shadow: 2px 0 4px rgba(0,0,0,0.08);
         }
-
-        #progressTable th,
-        #progressTable td {
-            padding: 0.4rem 0.5rem;
-            white-space: nowrap;
-        }
-
-        /* Coluna do exercício fica fixa ao rolar horizontalmente */
-        #progressTable th:first-child,
-        #progressTable td:first-child {
-            position: sticky;
-            left: 0;
-            z-index: 2;
-            white-space: normal;
-            min-width: 130px;
-            max-width: 150px;
-            box-shadow: 2px 0 4px rgba(0,0,0,0.08);
-        }
-
-        #progressTable td:first-child {
-            background: #fff;
-        }
-
-        #progressTable thead th:first-child {
-            z-index: 3;
-            background: #f8f9fa;
-        }
-
-        /* Badges de treino/músculo dentro da célula do exercício, bem discretos */
-        .exercicio-cell-badges {
-            display: flex;
-            gap: 4px;
-            margin-top: 2px;
-            flex-wrap: wrap;
-        }
-
-        .exercicio-cell-badges .badge {
-            font-size: 0.62rem;
-            font-weight: 500;
-            padding: 2px 6px;
-        }
-
-        /* Dica visual de que dá pra rolar pro lado */
-        .table-responsive {
-            position: relative;
-        }
-
+        #progressTable td:first-child { background: #fff; }
+        #progressTable thead th:first-child { z-index: 3; background: #f8f9fa; }
+        .exercicio-cell-badges { display: flex; gap: 4px; margin-top: 2px; flex-wrap: wrap; }
+        .exercicio-cell-badges .badge { font-size: 0.62rem; font-weight: 500; padding: 2px 6px; }
+        .table-responsive { position: relative; }
         .table-responsive::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: 18px;
+            content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 18px;
             background: linear-gradient(to right, transparent, rgba(0,0,0,0.06));
             pointer-events: none;
         }
+    }
+
+    /* ===== Cards de progresso (mobile) ===== */
+    .prog-cards { display: none; }
+    .prog-card {
+        background: #fff;
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,0.06);
+        border-left: 4px solid #F28C33;
+        padding: 14px 16px;
+        margin-bottom: 12px;
+    }
+    .prog-card-nome {
+        font-weight: 700;
+        font-size: 0.96rem;
+        color: var(--secondary-color);
+        margin-bottom: 6px;
+    }
+    .prog-card-badges {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+    .prog-card-badges .badge-treino {
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        color: white; font-weight: 600; border-radius: 999px; padding: 3px 10px; font-size: 0.68rem;
+    }
+    .prog-card-badges .badge-musculo {
+        background: rgba(45, 45, 45, 0.06);
+        color: var(--secondary-color); font-weight: 600; border-radius: 999px; padding: 3px 10px; font-size: 0.68rem;
+    }
+    .prog-semana-linha {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 7px 0;
+        border-bottom: 1px dashed rgba(0,0,0,0.07);
+        font-size: 0.85rem;
+    }
+    .prog-semana-linha:last-child { border-bottom: none; }
+    .prog-semana-label {
+        color: #8a8a8a;
+        font-size: 0.78rem;
+        min-width: 90px;
+    }
+    .prog-semana-valor {
+        font-weight: 700;
+        color: var(--secondary-color);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .prog-semana-valor.prog-sem-dado { color: #ccc; font-weight: 400; }
+    .prog-semana-reps { font-weight: 400; color: #8a8a8a; font-size: 0.8rem; }
+    .prog-tendencia { font-size: 0.85rem; }
+    .prog-tendencia.up { color: #198754; }
+    .prog-tendencia.down { color: #dc3545; }
+    .prog-tendencia.flat { color: #adb5bd; }
+    .prog-card-resumo {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(0,0,0,0.06);
+        font-size: 0.78rem;
+        color: #8a8a8a;
+        display: flex;
+        justify-content: space-between;
+    }
+    .prog-card-resumo strong { color: var(--secondary-color); }
+
+    .prog-empty {
+        text-align: center;
+        padding: 48px 20px;
+        color: #999;
+    }
+    .prog-empty i {
+        font-size: 2.6rem;
+        color: #e0a877;
+        margin-bottom: 12px;
+        display: block;
+    }
+
+    @media (max-width: 767.98px) {
+        .prog-table-card { display: none; }
+        .prog-cards { display: block; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row mb-4 d-none d-md-flex">
-    <div class="col-12">
-        <h2>
-            <i class="bi bi-table me-2" style="color: #F28C33;"></i>Tabela de Progresso
-        </h2>
-    </div>
+<div class="prog-header d-none d-md-flex">
+    <h2>
+        <i class="bi bi-table me-2" style="color: #F28C33;"></i>Tabela de Progresso
+    </h2>
 </div>
 
-<div class="card mb-4">
+<div class="card prog-filtros mb-4">
     <div class="card-body">
         <form method="get" class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label fw-bold">Treino</label>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Treino</label>
                 <select name="treino" class="form-select" onchange="this.form.submit()">
                     <option value="">Todos os Treinos</option>
                     {% for t in treinos %}
@@ -93,8 +180,8 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3">
-                <label class="form-label fw-bold">Músculo</label>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Músculo</label>
                 <select name="musculo" class="form-select" onchange="this.form.submit()">
                     <option value="">Todos os Músculos</option>
                     {% for m in musculos %}
@@ -104,8 +191,8 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold">Semanas</label>
+            <div class="col-8 col-md-4">
+                <label class="form-label">Semanas</label>
                 <select name="semanas" class="form-select" onchange="this.form.submit()">
                     <option value="todas" {% if semanas_selecionadas == 'todas' %}selected{% endif %}>
                         📅 Últimos 30 dias
@@ -121,12 +208,12 @@
                     </option>
                 </select>
             </div>
-            <div class="col-md-2">
-                <label class="form-label fw-bold">&nbsp;</label>
+            <div class="col-4 col-md-2">
+                <label class="form-label">&nbsp;</label>
                 <div>
-                    <button type="button" class="btn w-100" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;" 
+                    <button type="button" class="btn prog-btn-escolher w-100"
                             data-bs-toggle="modal" data-bs-target="#modalSelecionarSemanas">
-                        <i class="bi bi-calendar-check"></i> Escolher
+                        <i class="bi bi-calendar-check"></i> <span class="d-none d-sm-inline">Escolher</span>
                     </button>
                 </div>
             </div>
@@ -150,7 +237,7 @@
                     <input type="hidden" name="musculo" value="{{ musculo_selecionado }}">
                     <input type="hidden" name="ordenar" value="{{ ordenar }}">
                     <input type="hidden" name="semanas" value="personalizado">
-                    
+
                     <div class="row">
                         {% for periodo in periodos_disponiveis %}
                         <div class="col-md-6 mb-4">
@@ -165,8 +252,8 @@
                                         {% for semana in periodo.semanas %}
                                         <div class="col-6 mb-2">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" 
-                                                       name="semana_{{ periodo.periodo }}_{{ semana }}" 
+                                                <input class="form-check-input" type="checkbox"
+                                                       name="semana_{{ periodo.periodo }}_{{ semana }}"
                                                        id="semana_{{ periodo.periodo }}_{{ semana }}"
                                                        value="{{ semana }}"
                                                        {% if periodo.periodo|string + '_' + semana|string in semanas_selecionadas_lista %}checked{% endif %}>
@@ -205,14 +292,15 @@
     </div>
 </div>
 
-<div class="card">
+<!-- Tabela (desktop) -->
+<div class="card prog-table-card">
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-bordered table-hover table-sm" id="progressTable">
                 <thead class="table-light">
                     <tr>
                         <th rowspan="2" class="align-middle text-center">Exercício</th>
-                        
+
                         {% for semana in semanas %}
                         <th colspan="2" class="text-center" style="background-color: {% if loop.index % 2 == 0 %}#fff3e0{% else %}#ffe4cc{% endif %};">
                             <div style="font-size: 1.1em; font-weight: bold; color: #F28C33;">{{ semana.periodo }}</div>
@@ -235,17 +323,17 @@
                             data-musculo="{{ exercicio.musculo or 'N/A' }}">
                             <strong>{{ exercicio.nome }}</strong>
                             <div class="exercicio-cell-badges">
-                                <span class="badge" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+                                <span class="prog-cell-treino">
                                     {{ exercicio.treino_ref.codigo if exercicio.treino_ref else 'N/A' }}
                                 </span>
                                 <span class="badge bg-secondary">{{ exercicio.musculo or 'N/A' }}</span>
                             </div>
                         </td>
-                        
+
                         {% for semana in semanas %}
                             {% set chave_exercicio = exercicio.tipo ~ '_' ~ exercicio.id %}
                             {% set registro = registros_por_exercicio[chave_exercicio].get(semana.key) if chave_exercicio in registros_por_exercicio else None %}
-                            
+
                             {% if registro and registro.series and registro.series|length > 0 %}
                                 {% set primeira_serie = registro.series[0] %}
                                 <td class="text-center table-success">
@@ -266,6 +354,14 @@
             </table>
         </div>
     </div>
+</div>
+
+<!-- Cards (mobile) -->
+<div class="prog-cards" id="progCards"></div>
+
+<div class="prog-empty" id="progEmpty" style="display:none;">
+    <i class="bi bi-info-circle"></i>
+    Nenhum exercício encontrado para os filtros selecionados.
 </div>
 
 <div class="row mt-3">
@@ -290,23 +386,21 @@
             cb.checked = true;
         });
     }
-    
+
     function limparTodas() {
         document.querySelectorAll('#formSemanas input[type="checkbox"]').forEach(cb => {
             cb.checked = false;
         });
     }
-    
+
     function exportarCSV() {
         const table = document.getElementById('progressTable');
         let csv = [];
 
-        // Cabeçalho: usa Treino/Exercício/Músculo como 3 colunas no CSV,
-        // mesmo estando unificadas visualmente em 1 coluna na tela
         const headerCells = table.querySelectorAll('thead tr:first-child th');
         const header = ['Treino', 'Exercício', 'Músculo'];
         headerCells.forEach((th, i) => {
-            if (i === 0) return; // pula o "Exercício" combinado, já tratado acima
+            if (i === 0) return;
             let text = th.textContent.trim().replace(/\s+/g, ' ').replace(/,/g, ';');
             if (text) header.push(text);
         });
@@ -334,5 +428,83 @@
         link.download = 'progresso_treinos.csv';
         link.click();
     }
+
+    // ===== Cards mobile: monta a partir dos dados já serializados pelo backend =====
+    const dadosMobile = {{ dados_mobile|tojson }};
+
+    function montarCardsMobile() {
+        const container = document.getElementById('progCards');
+        const empty = document.getElementById('progEmpty');
+        container.innerHTML = '';
+
+        if (!dadosMobile.length) {
+            empty.style.display = 'block';
+            return;
+        }
+        empty.style.display = 'none';
+
+        dadosMobile.forEach(ex => {
+            const semanasComDado = ex.semanas.filter(s => s.carga !== null);
+
+            const linhasHtml = ex.semanas.map((s, idx) => {
+                const label = `${s.periodo} · S${s.semana}`;
+                if (s.carga === null) {
+                    return `<div class="prog-semana-linha">
+                        <span class="prog-semana-label">${label}</span>
+                        <span class="prog-semana-valor prog-sem-dado">Sem registro</span>
+                    </div>`;
+                }
+
+                // Tendência: compara com o registro anterior que tenha dado
+                let tendenciaHtml = '';
+                const anteriorComDado = [...ex.semanas.slice(0, idx)].reverse().find(s2 => s2.carga !== null);
+                if (anteriorComDado) {
+                    if (s.carga > anteriorComDado.carga) {
+                        tendenciaHtml = '<i class="bi bi-arrow-up-circle-fill prog-tendencia up"></i>';
+                    } else if (s.carga < anteriorComDado.carga) {
+                        tendenciaHtml = '<i class="bi bi-arrow-down-circle-fill prog-tendencia down"></i>';
+                    } else {
+                        tendenciaHtml = '<i class="bi bi-dash-circle-fill prog-tendencia flat"></i>';
+                    }
+                }
+
+                const seriesInfo = s.num_series > 1 ? ` <span class="prog-semana-reps">(${s.num_series} séries)</span>` : '';
+
+                return `<div class="prog-semana-linha">
+                    <span class="prog-semana-label">${label}</span>
+                    <span class="prog-semana-valor">
+                        ${tendenciaHtml}
+                        ${s.carga}kg <span class="prog-semana-reps">× ${s.repeticoes}${seriesInfo}</span>
+                    </span>
+                </div>`;
+            }).join('');
+
+            const primeiraCarga = semanasComDado.length ? semanasComDado[0].carga : null;
+            const ultimaCarga = semanasComDado.length ? semanasComDado[semanasComDado.length - 1].carga : null;
+            let variacaoHtml = '<span>Sem registros no período</span>';
+            if (primeiraCarga !== null && ultimaCarga !== null) {
+                const diff = ultimaCarga - primeiraCarga;
+                const sinal = diff > 0 ? '+' : '';
+                const cor = diff > 0 ? 'color:#198754;' : (diff < 0 ? 'color:#dc3545;' : 'color:#8a8a8a;');
+                variacaoHtml = `<span>Variação no período: <strong style="${cor}">${sinal}${diff.toFixed(1)}kg</strong></span>`;
+            }
+
+            const card = document.createElement('div');
+            card.className = 'prog-card';
+            card.dataset.nome = ex.nome.toLowerCase();
+            card.innerHTML = `
+                <div class="prog-card-nome">${ex.nome}</div>
+                <div class="prog-card-badges">
+                    <span class="badge-treino">${ex.treino_codigo}</span>
+                    <span class="badge-musculo">${ex.musculo}</span>
+                </div>
+                <div class="prog-card-semanas">${linhasHtml}</div>
+                <div class="prog-card-resumo">${variacaoHtml}</div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    montarCardsMobile();
 </script>
 {% endblock %}
