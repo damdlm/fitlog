@@ -205,46 +205,6 @@
     </div>
 </div>
 
-<!-- Desempenho no Mês -->
-<div class="card est-card mb-3">
-    <div class="card-header bg-white border-0 pb-0">
-        <h6 class="fw-bold mb-0">
-            <i class="bi bi-calendar3 me-1" style="color: #F28C33;"></i>Desempenho no Mês
-        </h6>
-    </div>
-    <div class="card-body">
-        {% if mes_stats %}
-        <div class="row g-3">
-            {% for chave, stats in mes_stats.items() %}
-            <div class="col-md-4">
-                <div class="est-treino-card">
-                    <div class="est-treino-codigo"><i class="bi bi-calendar3"></i></div>
-                    <div class="fw-bold mb-2">{{ stats.label }}</div>
-                    <div class="est-treino-metric">
-                        <span class="text-muted">Exercícios</span>
-                        <strong>{{ stats.qtd_exercicios }}</strong>
-                    </div>
-                    <div class="est-treino-metric">
-                        <span class="text-muted">Registros</span>
-                        <strong>{{ stats.qtd_registros }}</strong>
-                    </div>
-                    <div class="est-treino-metric">
-                        <span class="text-muted">Volume Total</span>
-                        <strong style="color: var(--primary-color);">{{ stats.volume_total|int }}kg</strong>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="est-empty">
-            <i class="bi bi-clipboard-x"></i>
-            Nenhum treino registrado ainda.
-        </div>
-        {% endif %}
-    </div>
-</div>
-
 <!-- Gráfico de Evolução -->
 <div class="card est-card">
     <div class="card-header bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 pb-0">

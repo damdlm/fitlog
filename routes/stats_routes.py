@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request
 from flask_login import login_required
+from datetime import datetime, timedelta, timezone
 from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
 from services.musculo_service import MusculoService
@@ -9,6 +10,21 @@ import logging
 
 stats_bp = Blueprint('stats', __name__)
 logger = logging.getLogger(__name__)
+
+# Tabela de Progresso: antes trazia TODO o histórico de registros/séries
+# do usuário (podendo passar de milhares de linhas com o tempo), mesmo
+# que o filtro de "semanas" aplicado depois mostrasse só uma fração
+# disso. Restringir para os últimos 30 dias na própria query reduz o
+# volume de dados trafegado do banco e processado em Python nesta rota
+# -- mesma janela já usada em EstatisticaService.get_progresso_ultimos_30_dias
+# (gráfico "Evolução do Volume" da tela de estatísticas), então o app já
+# tinha esse mesmo horizonte de tempo em outro lugar.
+#
+# Trade-off consciente: quem quiser comparar cargas de mais de 30 dias
+# atrás nesta tabela específica não vai mais conseguir -- o filtro
+# "Todas as semanas" do dropdown passa a significar "todas dentro dos
+# últimos 30 dias", não mais o histórico completo.
+DIAS_HISTORICO_TABELA_PROGRESSO = 30
 
 
 def _get_treino_id(exercicio):
@@ -23,12 +39,18 @@ def _get_treino_id(exercicio):
 
 
 def _get_treino_codigo(exercicio):
-    """Retorna o código do treino para ordenação (fallback para string vazia)"""
-    treino_id = _get_treino_id(exercicio)
-    if treino_id:
-        treino = TreinoService.get_by_id(treino_id)
-        return treino.codigo if treino else ""
-    return ""
+    """Retorna o código do treino para ordenação (fallback para string vazia)
+
+    IMPORTANTE: não usa TreinoService.get_by_id() aqui. Os exercícios
+    passados a esta função vêm de ExercicioService.get_exercicios_dos_treinos(),
+    que já anexa `treino_ref` a cada exercício num único batch (query com
+    IN, feita uma vez para todos os treinos envolvidos). Buscar o treino
+    de novo por id, um a um, transformava esta função -- usada como chave
+    de ordenação, ou seja, chamada uma vez por exercício -- numa query SQL
+    extra por exercício (N+1) toda vez que a Tabela de Progresso carregava.
+    """
+    treino_ref = getattr(exercicio, 'treino_ref', None)
+    return treino_ref.codigo if treino_ref else ""
 
 
 @stats_bp.route("/estatisticas")
@@ -75,7 +97,8 @@ def visualizar_tabela():
     ordenar = request.args.get("ordenar", "exercicio")
     semanas_filtro = request.args.get("semanas", "todas")
     
-    registros = RegistroService.get_all(load_series=True)
+    data_inicio = datetime.now(timezone.utc) - timedelta(days=DIAS_HISTORICO_TABELA_PROGRESSO)
+    registros = RegistroService.get_all(load_series=True, data_inicio=data_inicio)
     exercicios = ExercicioService.get_exercicios_dos_treinos()
     treinos = TreinoService.get_all()
     musculos_obj = MusculoService.get_all()

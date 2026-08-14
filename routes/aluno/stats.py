@@ -1,8 +1,7 @@
 from flask import render_template, redirect, url_for, flash, jsonify, request
 from flask_login import login_required, current_user
 from . import aluno_bp
-from models import User, RegistroTreino
-from services.treino_service import TreinoService
+from models import User
 from services.estatistica_service import EstatisticaService
 import logging
 
@@ -17,20 +16,14 @@ def estatisticas():
         return redirect(url_for('main.index'))
     
     musculo_stats = EstatisticaService.calcular_por_musculo(user_id=current_user.id)
-    
-    treinos = TreinoService.get_all(user_id=current_user.id)
-    registros = RegistroTreino.query.filter_by(user_id=current_user.id).all()
-    treino_stats = {t.id: {
-        "codigo": t.codigo, "nome": t.nome, "descricao": t.descricao,
-        # Usa o par (usuario_id, base_id) em vez de r.exercicio_id: um
-        # exercício personalizado e um do catálogo do sistema podem ter
-        # o mesmo número de ID (tabelas diferentes, sequências
-        # independentes), o que faria o set() contar como um só.
-        "qtd_exercicios": len(set((r.exercicio_usuario_id, r.exercicio_base_id) for r in registros if r.treino_id == t.id)),
-        "qtd_registros": len([r for r in registros if r.treino_id == t.id]),
-        "volume_total": sum(float(s.carga) * s.repeticoes for r in registros if r.treino_id == t.id for s in r.series),
-        "total_series": sum(1 for r in registros if r.treino_id == t.id for s in r.series)
-    } for t in treinos}
+
+    # Antes calculava aqui manualmente (RegistroTreino.query.filter_by(...).all()
+    # sem selectinload nas séries -- cada `for s in r.series` disparava uma
+    # query lazy-load por registro -- e um loop O(treinos x registros), já
+    # que cada treino refazia um scan completo de `registros`).
+    # calcular_por_treino() faz a mesma agregação em SQL (GROUP BY), com
+    # cache de 60s, e devolve exatamente o mesmo formato de dict.
+    treino_stats = EstatisticaService.calcular_por_treino(user_id=current_user.id)
 
     # Músculo com maior volume total -- usado no destaque do cabeçalho
     musculo_destaque = None
@@ -41,39 +34,9 @@ def estatisticas():
 
     volume_maximo_musculo = max((v['volume_total'] for v in musculo_stats.values()), default=0)
 
-    # Desempenho no mês -- mesmas métricas de antes (exercícios, registros,
-    # volume total), mas agrupadas por mês/ano em vez de por treino.
-    meses_pt = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-    mes_stats_raw = {}
-    for r in registros:
-        chave = r.data_registro.strftime('%Y-%m')
-        info = mes_stats_raw.setdefault(chave, {
-            'label': f"{meses_pt[r.data_registro.month - 1]}/{r.data_registro.year}",
-            'exercicios': set(),
-            'qtd_registros': 0,
-            'volume_total': 0.0
-        })
-        # Mesmo cuidado do treino_stats: par (usuario_id, base_id) em vez
-        # de exercicio_id, pra não juntar exercícios de tabelas diferentes.
-        info['exercicios'].add((r.exercicio_usuario_id, r.exercicio_base_id))
-        info['qtd_registros'] += 1
-        info['volume_total'] += sum(float(s.carga) * s.repeticoes for s in r.series)
-
-    mes_stats = {
-        chave: {
-            'label': dados['label'],
-            'qtd_exercicios': len(dados['exercicios']),
-            'qtd_registros': dados['qtd_registros'],
-            'volume_total': dados['volume_total']
-        }
-        for chave, dados in sorted(mes_stats_raw.items(), reverse=True)
-    }
-
     return render_template('aluno/estatisticas.html',
                          musculo_stats=musculo_stats,
                          treino_stats=treino_stats,
-                         mes_stats=mes_stats,
                          musculo_destaque=musculo_destaque,
                          volume_maximo_musculo=volume_maximo_musculo)
 

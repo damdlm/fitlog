@@ -1,5 +1,6 @@
 """Serviço para cálculos estatísticos"""
 
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from models import db, Musculo, ExercicioCustomizado, ExercicioSistema, RegistroTreino, HistoricoTreino
 from sqlalchemy import func, and_
@@ -312,15 +313,24 @@ class EstatisticaService(BaseService):
             semanas_filtradas.sort(key=lambda x: (ordem_periodos.index(x["periodo"]) if x["periodo"] in ordem_periodos else 999, x["semana"]))
             
             # Preparar períodos disponíveis para o modal
+            #
+            # Antes, para cada (período, semana) fazia-se um sum(1 for r in
+            # registros if ...) -- ou seja, uma varredura completa da lista
+            # de registros por combinação. Com P períodos e S semanas por
+            # período, isso é O(P * S * len(registros)); com um Counter
+            # feito uma única vez sobre `registros`, cai para O(len(registros)
+            # + P * S), sem mudar nenhum resultado.
+            contagem_por_periodo_semana = Counter((r.periodo, r.semana) for r in registros)
+
             periodos_disponiveis = []
             periodos_set = set(s[0] for s in semanas_set)
             for periodo in periodos_set:
                 semanas_periodo = sorted([s[1] for s in semanas_set if s[0] == periodo])
-                registros_por_semana = {}
-                for semana in semanas_periodo:
-                    count = sum(1 for r in registros if r.periodo == periodo and r.semana == semana)
-                    registros_por_semana[semana] = count
-                
+                registros_por_semana = {
+                    semana: contagem_por_periodo_semana.get((periodo, semana), 0)
+                    for semana in semanas_periodo
+                }
+
                 periodos_disponiveis.append({
                     "periodo": periodo,
                     "semanas": semanas_periodo,
