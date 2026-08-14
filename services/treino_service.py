@@ -38,6 +38,43 @@ class TreinoService(BaseService):
         except Exception as e:
             BaseService.handle_error(e, f"Erro ao buscar treino {codigo}")
             return None
+
+    @staticmethod
+    def get_da_versao_ativa(user_id=None):
+        """Retorna os treinos que pertencem à versão ativa do usuário.
+
+        Diferente de get_all(), que traz TODO treino já criado pelo
+        usuário (inclusive de versões antigas/encerradas), este método
+        restringe aos treinos vinculados (via TreinoVersao) à versão
+        global sem data_fim -- usado nos filtros de "Evolução do Volume"
+        das telas de estatísticas, para não misturar treinos que não
+        fazem mais parte da grade atual do usuário.
+        """
+        try:
+            from models import TreinoVersao
+            from services.versao_service import VersaoService
+
+            user_id = user_id or BaseService.get_current_user_id()
+            if not user_id:
+                return []
+
+            versao_ativa = VersaoService.get_ativa(user_id=user_id)
+            if not versao_ativa:
+                return []
+
+            return (
+                Treino.query
+                .join(TreinoVersao, TreinoVersao.treino_id == Treino.id)
+                .filter(
+                    TreinoVersao.versao_id == versao_ativa.id,
+                    Treino.user_id == user_id,
+                )
+                .order_by(Treino.codigo)
+                .all()
+            )
+        except Exception as e:
+            BaseService.handle_error(e, "Erro ao buscar treinos da versão ativa")
+            return []
     
     @staticmethod
     def create(codigo, nome, descricao, user_id=None):

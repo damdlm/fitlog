@@ -63,7 +63,10 @@ def estatisticas():
     # calcular_por_musculo()/calcular_por_treino() buscam seus próprios
     # dados internamente. Eram duas queries completas descartadas em toda
     # visita à página.
-    treinos = TreinoService.get_all()
+    # Usado só nos pills de filtro da seção "Evolução do Volume" -- restrito
+    # à versão ativa (não TreinoService.get_all(), que traria também
+    # treinos de versões antigas/encerradas do usuário).
+    treinos = TreinoService.get_da_versao_ativa()
     
     musculos_obj = MusculoService.get_all()
     musculos = [m.nome_exibicao for m in musculos_obj]

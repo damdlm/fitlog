@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from . import aluno_bp
 from models import User
 from services.estatistica_service import EstatisticaService
+from services.treino_service import TreinoService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -17,13 +18,14 @@ def estatisticas():
     
     musculo_stats = EstatisticaService.calcular_por_musculo(user_id=current_user.id)
 
-    # Antes calculava aqui manualmente (RegistroTreino.query.filter_by(...).all()
-    # sem selectinload nas séries -- cada `for s in r.series` disparava uma
-    # query lazy-load por registro -- e um loop O(treinos x registros), já
-    # que cada treino refazia um scan completo de `registros`).
-    # calcular_por_treino() faz a mesma agregação em SQL (GROUP BY), com
-    # cache de 60s, e devolve exatamente o mesmo formato de dict.
-    treino_stats = EstatisticaService.calcular_por_treino(user_id=current_user.id)
+    # Usado só nos pills de filtro da seção "Evolução do Volume". Antes
+    # vinha de EstatisticaService.calcular_por_treino() -- uma agregação
+    # SQL (GROUP BY + volume/séries) sobre TODO o histórico só para
+    # extrair o código de cada treino, e ainda trazia treinos de versões
+    # antigas/encerradas que não fazem mais parte da grade atual do
+    # usuário. get_da_versao_ativa() é mais barato (sem agregação) e já
+    # nasce restrito à versão vigente.
+    treinos_versao_ativa = TreinoService.get_da_versao_ativa(user_id=current_user.id)
 
     # Músculo com maior volume total -- usado no destaque do cabeçalho
     musculo_destaque = None
@@ -36,7 +38,7 @@ def estatisticas():
 
     return render_template('aluno/estatisticas.html',
                          musculo_stats=musculo_stats,
-                         treino_stats=treino_stats,
+                         treinos_versao_ativa=treinos_versao_ativa,
                          musculo_destaque=musculo_destaque,
                          volume_maximo_musculo=volume_maximo_musculo)
 

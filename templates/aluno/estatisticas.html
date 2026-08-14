@@ -213,8 +213,8 @@
         </h6>
         <div class="est-pill-group" id="filtrosEvolucao">
             <button class="est-pill active" data-treino="todos">Todos</button>
-            {% for t in treino_stats.values() %}
-            <button class="est-pill" data-treino="{{ t.codigo }}">{{ t.codigo }}</button>
+            {% for t in treinos_versao_ativa %}
+            <button class="est-pill" data-treino="{{ t.id }}">{{ t.codigo }}</button>
             {% endfor %}
         </div>
     </div>
