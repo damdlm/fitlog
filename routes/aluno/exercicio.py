@@ -1,9 +1,8 @@
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from . import aluno_bp
-from models import db, ExercicioCustomizado, RegistroTreino, HistoricoTreino, Treino
+from models import db, ExercicioCustomizado, ExercicioSistema, RegistroTreino, HistoricoTreino
 from services.exercicio_service import ExercicioService
-from services.treino_service import TreinoService
 from services.musculo_service import MusculoService
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
@@ -51,12 +50,22 @@ def exercicios():
         ).filter(HistoricoTreino.ordem == 1).all()
 
         ultimas_cargas = {ex_id: float(carga) for ex_id, carga in cargas_query}
-        treinos = Treino.query.filter_by(user_id=current_user.id).all()
+
+        # Resumo exibido no cabeçalho da tela (cards de destaque). Contagem
+        # simples em Python sobre a lista já carregada -- sem query extra,
+        # já que `exercicios` já veio com musculo_ref via joinedload acima.
+        musculo_contagem = {}
+        for ex in exercicios:
+            nome_musculo = ex.musculo_ref.nome_exibicao if ex.musculo_ref else None
+            if nome_musculo:
+                musculo_contagem[nome_musculo] = musculo_contagem.get(nome_musculo, 0) + 1
+        musculo_destaque = max(musculo_contagem, key=musculo_contagem.get) if musculo_contagem else None
 
         return render_template('aluno/exercicios.html',
                              exercicios=exercicios,
                              ultimas_cargas=ultimas_cargas,
-                             treinos=treinos)
+                             musculo_destaque=musculo_destaque,
+                             total_registros=sum(len(ex.registros) for ex in exercicios))
     except Exception:
         logger.exception("Erro ao carregar exercícios")
         flash(f'Erro ao carregar exercícios.', 'danger')
@@ -73,7 +82,6 @@ def novo_exercicio():
     if request.method == 'POST':
         nome = request.form.get('nome')
         musculo = request.form.get('musculo')
-        treino_id = request.form.get('treino') or None
         descricao = request.form.get('descricao', '')
         
         if not nome:
@@ -84,8 +92,7 @@ def novo_exercicio():
             user_id=current_user.id,
             nome=nome,
             musculo_nome=musculo or 'Outros',
-            descricao=descricao,
-            treino_id=treino_id
+            descricao=descricao
         )
         
         if exercicio:
@@ -94,9 +101,46 @@ def novo_exercicio():
         else:
             flash('Erro ao criar exercício!', 'danger')
     
-    treinos = TreinoService.get_all(user_id=current_user.id)
     musculos = MusculoService.get_all_nomes()
-    return render_template('aluno/novo_exercicio.html', treinos=treinos, musculos=musculos)
+    return render_template('aluno/novo_exercicio.html', musculos=musculos)
+
+
+def _buscar_exercicio_proprio_ou_flash(exercicio_id, acao_verbo):
+    """
+    Busca um exercício customizado do usuário logado, escopado por
+    (id, usuario_id) -- direto na tabela do usuário, sem passar pelo
+    ExercicioService.get_by_id() genérico.
+
+    Por quê: get_by_id() checa o catálogo global (exercicios_sistema)
+    ANTES dos exercícios do próprio usuário. exercicios_sistema e
+    exercicios_usuario têm sequências de ID independentes, e o catálogo
+    tem centenas de linhas -- então IDs baixos colidem com frequência.
+    Resultado: um exercício que É do usuário podia ser identificado como
+    "do catálogo" só por coincidência numérica, bloqueando edição/exclusão
+    de exercícios que o usuário legitimamente possui (bug relatado).
+
+    Aqui a posse (usuario_id) decide primeiro: se o ID pertence a um
+    exercício do próprio usuário, é nele que a ação deve operar --
+    nunca ambíguo nas telas do app, já que os links de editar/excluir
+    em "Meus Exercícios" sempre apontam para IDs de exercícios que
+    pertencem ao usuário. Só cai no catálogo geral para dar uma mensagem
+    de erro mais clara quando o ID realmente não é do usuário.
+    """
+    exercicio = ExercicioCustomizado.query.filter_by(
+        id=exercicio_id, usuario_id=current_user.id
+    ).options(joinedload(ExercicioCustomizado.musculo_ref)).first()
+
+    if exercicio:
+        return exercicio
+
+    if ExercicioSistema.query.get(exercicio_id) is not None:
+        flash(f'Este exercício faz parte do catálogo geral e não pode ser {acao_verbo}. '
+              f'Crie um exercício personalizado se quiser algo diferente.', 'warning')
+    else:
+        flash('Exercício não encontrado!', 'danger')
+
+    return None
+
 
 @aluno_bp.route('/exercicio/<int:exercicio_id>', methods=['GET', 'POST'])
 @login_required
@@ -105,14 +149,9 @@ def editar_exercicio(exercicio_id):
     if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
-    
-    exercicio = ExercicioService.get_by_id(exercicio_id, user_id=current_user.id, load_relations=True)
-    if not exercicio:
-        flash('Exercício não encontrado!', 'danger')
-        return redirect(url_for('aluno.exercicios'))
 
-    if not (hasattr(exercicio, 'is_custom') and exercicio.is_custom):
-        flash('Este exercício faz parte do catálogo geral e não pode ser editado. Crie um exercício personalizado se quiser algo diferente.', 'warning')
+    exercicio = _buscar_exercicio_proprio_ou_flash(exercicio_id, 'editado')
+    if not exercicio:
         return redirect(url_for('aluno.exercicios'))
     
     if request.method == 'POST':
@@ -135,9 +174,8 @@ def editar_exercicio(exercicio_id):
         else:
             flash('Erro ao atualizar exercício!', 'danger')
     
-    treinos = TreinoService.get_all(user_id=current_user.id)
     musculos = MusculoService.get_all_nomes()
-    return render_template('aluno/editar_exercicio.html', exercicio=exercicio, treinos=treinos, musculos=musculos)
+    return render_template('aluno/editar_exercicio.html', exercicio=exercicio, musculos=musculos)
 
 @aluno_bp.route('/exercicio/<int:exercicio_id>/excluir', methods=['POST'])
 @login_required
@@ -146,14 +184,9 @@ def excluir_exercicio(exercicio_id):
     if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
-    
-    exercicio = ExercicioService.get_by_id(exercicio_id, user_id=current_user.id)
-    if not exercicio:
-        flash('Exercício não encontrado!', 'danger')
-        return redirect(url_for('aluno.exercicios'))
 
-    if not (hasattr(exercicio, 'is_custom') and exercicio.is_custom):
-        flash('Este exercício faz parte do catálogo geral e não pode ser excluído.', 'warning')
+    exercicio = _buscar_exercicio_proprio_ou_flash(exercicio_id, 'excluído')
+    if not exercicio:
         return redirect(url_for('aluno.exercicios'))
     
     confirmado = request.args.get('confirmar', 'false').lower() == 'true'

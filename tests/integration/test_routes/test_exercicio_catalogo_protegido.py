@@ -1,12 +1,14 @@
 """Testes de integração: editar/excluir exercício não pode mexer em
-exercícios do catálogo global (ExercicioSistema) -- só em exercícios
-personalizados do próprio usuário (ExercicioUsuario/ExercicioCustomizado).
+exercícios do catálogo global (ExercicioSistema) que não pertencem ao
+usuário -- só em exercícios personalizados do próprio usuário
+(ExercicioUsuario/ExercicioCustomizado).
 
-Antes da correção, tentar editar ou excluir um exercício do catálogo por
-essas rotas acabava batendo na tabela errada (exercicios_usuario) com um
-ID que na verdade pertencia a exercicios_sistema -- na pior hipótese,
-se por coincidência o usuário tivesse um exercício personalizado com o
-mesmo número de ID, a exclusão apagava o exercício errado.
+Quando o ID da URL pertence a um exercício do próprio usuário, a posse
+decide primeiro -- mesmo que esse número também exista, por coincidência,
+no catálogo global (exercicios_sistema e exercicios_usuario têm
+sequências de ID independentes, então isso acontece com frequência).
+Só cai na checagem do catálogo para dar uma mensagem clara quando o ID
+realmente não pertence a nenhum exercício do usuário.
 """
 from models import db, User, Musculo, ExercicioUsuario, ExercicioSistema
 
@@ -57,10 +59,23 @@ def test_nao_permite_excluir_exercicio_do_catalogo(client):
         assert ExercicioSistema.query.get(ex_id) is not None
 
 
-def test_nao_apaga_exercicio_personalizado_com_id_coincidente_do_catalogo(client):
-    """Cenário do bug real: um exercício personalizado do usuário tem,
-    por coincidência, o mesmo ID numérico de um exercício do catálogo.
-    Tentar excluir o exercício do catálogo NÃO pode apagar o personalizado."""
+def test_excluir_exercicio_proprio_funciona_mesmo_com_id_coincidente_do_catalogo(client):
+    """Cenário do bug relatado: um exercício personalizado do usuário tem,
+    por coincidência, o mesmo ID numérico de um exercício do catálogo
+    (comum, já que o catálogo tem centenas de linhas e ambas as tabelas
+    começam a contar em 1).
+
+    Antes: a rota checava o catálogo global PRIMEIRO, então esse exercício
+    -- que É do usuário -- era identificado como "do catálogo" só pela
+    coincidência de ID, e a exclusão/edição era bloqueada indevidamente.
+
+    Agora: a posse (usuario_id) decide primeiro. Todos os links de
+    editar/excluir do app partem de "Meus Exercícios", que só lista
+    exercícios do próprio usuário -- então o ID nessas telas nunca é
+    realmente ambíguo. Se o exercício é do usuário, a ação tem que
+    funcionar nele, independentemente de existir (ou não) um exercício
+    de catálogo com o mesmo número.
+    """
     user_id = _criar_usuario_logado(client)
     with client.application.app_context():
         musculo = Musculo(nome='costas', nome_exibicao='Costas')
@@ -84,14 +99,18 @@ def test_nao_apaga_exercicio_personalizado_com_id_coincidente_do_catalogo(client
         db.session.commit()
         assert ex_sistema is not None, "não foi possível reproduzir a coincidência de ID no teste"
         sistema_id = ex_sistema.id
+        assert sistema_id == custom_id  # a premissa do teste é essa coincidência
 
     resp = client.post(f'/aluno/exercicio/{sistema_id}/excluir?confirmar=true', follow_redirects=True)
     assert resp.status_code == 200
 
-    # O exercício PERSONALIZADO do usuário, com o mesmo número de ID,
-    # tem que continuar existindo.
+    # O exercício PERSONALIZADO do usuário -- que é o dono legítimo desse
+    # ID nessa tela -- foi excluído com sucesso.
     with client.application.app_context():
-        assert ExercicioUsuario.query.get(custom_id) is not None
+        assert ExercicioUsuario.query.get(custom_id) is None
+        # O exercício de sistema em si nunca é tocado por essa rota (ela só
+        # executa DELETE contra exercicios_usuario).
+        assert ExercicioSistema.query.get(sistema_id) is not None
 
 
 def test_ainda_permite_editar_exercicio_personalizado(client):

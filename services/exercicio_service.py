@@ -408,7 +408,7 @@ class ExercicioService(BaseService):
             return None
     
     @staticmethod
-    def criar_exercicio_customizado(user_id, nome, musculo_nome, descricao='', treino_id=None):
+    def criar_exercicio_customizado(user_id, nome, musculo_nome, descricao=''):
         """
         Cria um novo exercício customizado para o usuário
         """
@@ -431,10 +431,6 @@ class ExercicioService(BaseService):
             )
             db.session.add(exercicio)
             db.session.flush()
-            
-            # Se tiver treino_id, associar ao treino (via versão?)
-            # Esta parte depende da lógica de negócio
-            
             db.session.commit()
             
             logger.info(f"Exercício customizado '{nome}' criado para usuário {user_id}")

@@ -36,16 +36,6 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-bold">Treino (opcional)</label>
-                <select name="treino" class="form-select">
-                    <option value="">Não associar</option>
-                    {% for treino in treinos %}
-                    <option value="{{ treino.id }}">{{ treino.codigo }} - {{ treino.nome }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="mb-3">
                 <label class="form-label fw-bold">Descrição (opcional)</label>
                 <textarea name="descricao" class="form-control" rows="2" 
                           placeholder="Ex: Foco na parte inferior"></textarea>
