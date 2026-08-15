@@ -243,6 +243,10 @@ def _estimar_data(periodo, semana):
                 data_base = datetime(ano, mes_num, 1).date()
                 dias = (semana - 1) * 7
                 return data_base + timedelta(days=dias)
-    except:
+    except (ValueError, TypeError, KeyError):
+        # Entrada de "periodo" mal formada (ex: mês inválido, ano não
+        # numérico) -- comportamento já era cair pra None; só deixamos
+        # de engolir QUALQUER exceção (bare except) e passamos a pegar
+        # só os erros esperados de parsing, sem mascarar bugs futuros.
         pass
     return None

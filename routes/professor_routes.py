@@ -483,7 +483,7 @@ def ver_versao_aluno(aluno_id, versao_id):
                          exercicios=exercicios)
 
 
-@professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/finalizar')
+@professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/finalizar', methods=['POST'])
 @login_required
 def finalizar_versao_aluno(aluno_id, versao_id):
     """Finaliza uma versão do aluno"""
@@ -514,7 +514,7 @@ def finalizar_versao_aluno(aluno_id, versao_id):
     return redirect(url_for('professor.versoes_aluno', aluno_id=aluno.id))
 
 
-@professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/clonar')
+@professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/clonar', methods=['POST'])
 @login_required
 def clonar_versao_aluno(aluno_id, versao_id):
     """Clona uma versão do aluno"""
@@ -533,7 +533,7 @@ def clonar_versao_aluno(aluno_id, versao_id):
     return redirect(url_for('professor.versoes_aluno', aluno_id=aluno.id))
 
 
-@professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/excluir')
+@professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/excluir', methods=['POST'])
 @login_required
 def excluir_versao_aluno(aluno_id, versao_id):
     """Exclui uma versão do aluno (se não tiver registros)"""
@@ -837,7 +837,7 @@ def editar_exercicio_aluno(aluno_id, exercicio_id):
                          musculos=musculos)
 
 
-@professor_bp.route('/aluno/<int:aluno_id>/exercicio/<int:exercicio_id>/excluir')
+@professor_bp.route('/aluno/<int:aluno_id>/exercicio/<int:exercicio_id>/excluir', methods=['POST'])
 @login_required
 def excluir_exercicio_aluno(aluno_id, exercicio_id):
     """Exclui um exercício do aluno"""
@@ -1030,7 +1030,7 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
 # ROTA EXCLUIR TREINO VERSÃO ALUNO
 # ==========================================================
 
-@professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/treino/<string:treino_codigo>/excluir')
+@professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/treino/<string:treino_codigo>/excluir', methods=['POST'])
 @login_required
 def excluir_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
     """Remove um treino de uma versão do aluno"""
@@ -1047,9 +1047,15 @@ def excluir_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
     try:
         VersaoService.excluir_treino_versao(versao_id, treino_codigo, aluno.id, current_user)
         flash(f'Treino {treino_codigo} removido da versão!', 'success')
-    except Exception as e:
-        logger.exception("Erro ao excluir treino da versão")
+    except (ValueError, PermissionError) as e:
+        # Mensagens de validação de negócio (definidas no service, texto
+        # seguro e fixo) -- ok mostrar direto ao usuário.
         flash(str(e), 'danger')
+    except Exception:
+        # CORREÇÃO seção 13 (hardening de segurança): qualquer outra
+        # exceção (não prevista) fica só no log -- nunca no flash.
+        logger.exception("Erro ao excluir treino da versão")
+        flash('Não foi possível concluir a operação.', 'danger')
     
     return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
 

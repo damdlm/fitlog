@@ -267,4 +267,6 @@ def api_treinos_por_data():
         
     except Exception as e:
         logger.exception("Erro na API treinos-por-data")
-        return jsonify({"success": False, "error": str(e)}), 500
+        # CORREÇÃO seção 13 (hardening de segurança): idem -- não
+        # devolver str(e) ao cliente.
+        return jsonify({"success": False, "error": "Não foi possível concluir a operação."}), 500

@@ -50,7 +50,7 @@ def test_nao_permite_excluir_exercicio_do_catalogo(client):
         db.session.commit()
         ex_id = ex_sistema.id
 
-    resp = client.get(f'/aluno/exercicio/{ex_id}/excluir?confirmar=true', follow_redirects=True)
+    resp = client.post(f'/aluno/exercicio/{ex_id}/excluir?confirmar=true', follow_redirects=True)
     assert resp.status_code == 200
 
     with client.application.app_context():
@@ -85,7 +85,7 @@ def test_nao_apaga_exercicio_personalizado_com_id_coincidente_do_catalogo(client
         assert ex_sistema is not None, "não foi possível reproduzir a coincidência de ID no teste"
         sistema_id = ex_sistema.id
 
-    resp = client.get(f'/aluno/exercicio/{sistema_id}/excluir?confirmar=true', follow_redirects=True)
+    resp = client.post(f'/aluno/exercicio/{sistema_id}/excluir?confirmar=true', follow_redirects=True)
     assert resp.status_code == 200
 
     # O exercício PERSONALIZADO do usuário, com o mesmo número de ID,

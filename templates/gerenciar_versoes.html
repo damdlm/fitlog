@@ -338,14 +338,22 @@
 <script>
     // Cache dos exercícios para usar na edição
     let todosExercicios = [];
+
+    // CORREÇÃO 2 (hardening de segurança): escapa nome/músculo antes de
+    // montar HTML dinâmico -- função local, sem custo de rede/banco.
+    function escapeHtml(valor) {
+        const div = document.createElement('div');
+        div.textContent = valor === undefined || valor === null ? '' : String(valor);
+        return div.innerHTML;
+    }
     
     // Carrega todos os exercícios do treino ao iniciar
     document.addEventListener('DOMContentLoaded', function() {
         {% for ex in exercicios if ex.treino == treino.id %}
         todosExercicios.push({
             id: {{ ex.id }},
-            nome: "{{ ex.nome }}",
-            musculo: "{{ ex.musculo }}"
+            nome: {{ ex.nome | tojson }},
+            musculo: {{ ex.musculo | tojson }}
         });
         {% endfor %}
         
@@ -406,8 +414,8 @@
                                    name="edit_exercicios[]" value="${ex.id}" 
                                    id="edit_ex_${ex.id}" ${isChecked ? 'checked' : ''}>
                             <label class="form-check-label" for="edit_ex_${ex.id}">
-                                <strong>${ex.nome}</strong>
-                                <br><small class="text-muted">${ex.musculo}</small>
+                                <strong>${escapeHtml(ex.nome)}</strong>
+                                <br><small class="text-muted">${escapeHtml(ex.musculo)}</small>
                             </label>
                         </div>
                     `;

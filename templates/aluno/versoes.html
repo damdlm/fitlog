@@ -878,7 +878,7 @@ document.addEventListener('DOMContentLoaded', function () {
             confirmIcon.className = 'bi ' + (link.dataset.confirmIcon || 'bi-question-circle');
             confirmActionBtn.textContent = link.dataset.confirmLabel || 'Confirmar';
             confirmActionBtn.className = 'btn btn-' + (variant === 'danger' ? 'danger' : variant === 'info' ? 'info' : 'warning');
-            confirmActionBtn.href = link.getAttribute('href');
+            confirmActionBtn.dataset.targetUrl = link.getAttribute('href');
             confirmModal.show();
         });
     });
@@ -886,6 +886,24 @@ document.addEventListener('DOMContentLoaded', function () {
     // Tooltips modernos nos botões de ação (Ver / Finalizar / Clonar / Excluir)
     document.querySelectorAll('.vc-action-btn[title]').forEach(function (btn) {
         new bootstrap.Tooltip(btn, { placement: 'top', trigger: 'hover focus' });
+    });
+
+    // Confirma a ação (POST + CSRF) via form dinâmico, em vez de navegar
+    // por GET -- ver comentário acima em confirmActionBtn.dataset.targetUrl.
+    confirmActionBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        var url = confirmActionBtn.dataset.targetUrl;
+        if (!url) return;
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        var csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        form.appendChild(csrfInput);
+        document.body.appendChild(form);
+        form.submit();
     });
 });
 </script>

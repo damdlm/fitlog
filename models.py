@@ -1,30 +1,13 @@
 from flask import current_app
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
-from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+import hashlib
+import secrets
 
 db = SQLAlchemy()
-
-
-@event.listens_for(Engine, "connect")
-def _habilitar_foreign_keys_sqlite(dbapi_connection, connection_record):
-    """SQLite ignora 'ON DELETE CASCADE' por padrão -- cada conexão
-    precisa pedir explicitamente 'PRAGMA foreign_keys = ON'. Sem isso,
-    excluir um RegistroTreino deixa HistoricoTreino órfão para trás
-    (o schema declara ondelete='CASCADE', mas o SQLite nunca aplica).
-    Postgres (produção) já aplica FKs nativamente, então esse listener
-    só age quando o dialeto é sqlite -- não muda nada em produção.
-    """
-    if dbapi_connection.__class__.__module__.startswith("sqlite3"):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.close()
-
 
 # =====================================================
 # TABELA DE ASSOCIAÇÃO ENTRE ALUNOS E PROFESSORES
@@ -96,6 +79,13 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     last_login = db.Column(db.DateTime(timezone=True))
+
+    # CORREÇÃO 10 (hardening de segurança): incrementada em set_password()
+    # -- permite invalidar sessões antigas após troca de senha sem
+    # precisar de uma tabela/query extra por requisição (comparada com o
+    # valor gravado na sessão assinada do Flask no momento do login; ver
+    # app.py:load_user).
+    session_version = db.Column(db.Integer, nullable=False, default=0)
     
     # Relacionamentos
     treinos = db.relationship('Treino', backref='usuario', lazy=True, cascade='all, delete-orphan')
@@ -104,48 +94,77 @@ class User(UserMixin, db.Model):
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
-    
+        # CORREÇÃO 10 (hardening de segurança): incrementa a versão da
+        # sessão sempre que a senha muda, para invalidar sessões antigas
+        # (ver session_version comparado em app.py:load_user). Sem custo
+        # de query extra -- é o mesmo objeto/UPDATE que já ia rolar.
+        self.session_version = (self.session_version or 0) + 1
+
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
     def get_reset_token(self, expires_sec=1800):
         """
-        Gera um token assinado (itsdangerous) para reset de senha.
+        Gera um token de reset de senha aleatório e criptograficamente
+        seguro (CORREÇÃO 9 do hardening de segurança).
 
-        O token embute o id do usuario e o hash da senha atual (nao a
-        senha em si). Isso tem duas vantagens sobre guardar um token
-        em coluna no banco:
-          - nao precisa de migracao/tabela nova;
-          - o token se invalida sozinho assim que a senha muda (o hash
-            embutido deixa de bater), entao nao da pra reusar um link
-            de reset antigo depois que a senha ja foi trocada.
-
-        expires_sec: validade do token em segundos (padrao 30 minutos).
+        Antes o token embutia user_id + password_hash assinados
+        (itsdangerous) -- funcionava contra forjar o token, mas o hash
+        da senha viajava decodável (base64) dentro do link enviado por
+        e-mail, exposto em logs de servidor SMTP, histórico do
+        navegador, proxies etc. Agora o token é puramente aleatório
+        (secrets.token_urlsafe), e só o SHA-256 dele fica no banco
+        (tabela password_reset_tokens), com expiração e uso único.
         """
-        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-        return s.dumps(
-            {'user_id': self.id, 'pw_hash': self.password_hash},
-            salt='password-reset',
-        )
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+        db.session.add(PasswordResetToken(
+            user_id=self.id,
+            token_hash=token_hash,
+            expires_at=datetime.now(timezone.utc) + timedelta(seconds=expires_sec),
+        ))
+        return raw_token
 
     @staticmethod
-    def verify_reset_token(token, max_age=1800):
-        """
-        Verifica um token de reset de senha.
-        Retorna o User correspondente se o token for valido, ainda
-        dentro da validade, e a senha nao tiver mudado desde a geracao.
-        Retorna None em qualquer caso de token invalido/expirado/ja usado.
-        """
-        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-        try:
-            data = s.loads(token, salt='password-reset', max_age=max_age)
-        except (BadSignature, SignatureExpired):
+    def _lookup_valid_reset_token(token):
+        """Busca o registro do token (O(1) via índice único em
+        token_hash) se ele existir, não tiver expirado e não tiver sido
+        usado ainda. Retorna None em qualquer outro caso."""
+        if not token:
             return None
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        registro = PasswordResetToken.query.filter_by(token_hash=token_hash).first()
+        if registro is None or registro.used_at is not None:
+            return None
+        expires_at = registro.expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if expires_at < datetime.now(timezone.utc):
+            return None
+        return registro
 
-        user = User.query.get(data.get('user_id'))
-        if user is None or user.password_hash != data.get('pw_hash'):
+    @staticmethod
+    def verify_reset_token(token):
+        """
+        Verifica um token de reset de senha (sem consumi-lo -- usado
+        para exibir o formulário). Retorna o User correspondente se o
+        token for válido, ainda dentro da validade, e não tiver sido
+        usado. Retorna None em qualquer caso de token inválido/
+        expirado/já usado.
+        """
+        registro = User._lookup_valid_reset_token(token)
+        if registro is None:
             return None
-        return user
+        return User.query.get(registro.user_id)
+
+    @staticmethod
+    def invalidate_reset_token(token):
+        """Marca o token como usado (uso único) -- chamar somente depois
+        que a senha já foi trocada com sucesso, para impedir reuso do
+        mesmo link de reset."""
+        registro = User._lookup_valid_reset_token(token)
+        if registro is not None:
+            registro.used_at = datetime.now(timezone.utc)
     
     def is_professor(self):
         return self.tipo_usuario == 'professor'
@@ -212,6 +231,23 @@ class User(UserMixin, db.Model):
     
     def __repr__(self):
         return f'<User {self.username} ({self.tipo_usuario})>'
+
+
+class PasswordResetToken(db.Model):
+    """Token de reset de senha: aleatório (gerado em User.get_reset_token),
+    só o hash SHA-256 fica no banco, com expiração e uso único
+    (CORREÇÃO 9 do hardening de segurança -- ver models.py:get_reset_token
+    para o porquê de não embutir mais o password_hash no token)."""
+    __tablename__ = 'password_reset_tokens'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    token_hash = db.Column(db.String(64), nullable=False, unique=True, index=True)
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=False)
+    used_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    usuario = db.relationship('User', foreign_keys=[user_id])
 
 
 # =====================================================

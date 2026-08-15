@@ -1,8 +1,9 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User
 from extensions import limiter   # <-- importa de extensions, nunca de app
 from datetime import datetime, timezone
+from urllib.parse import urlparse, urljoin
 import logging
 from utils.validators import validar_email, validar_senha
 from utils.email_utils import enviar_email
@@ -13,13 +14,57 @@ logger = logging.getLogger(__name__)
 
 def _safe_next_url(next_url):
     """
-    Valida URL de redirecionamento pós-login — previne Open Redirect.
-    Aceita apenas caminhos relativos (ex: /dashboard).
-    Rejeita URLs externas (http://...) e protocol-relative (//evil.com).
+    Valida URL de redirecionamento pós-login -- previne Open Redirect
+    (CORREÇÃO seção 11 do hardening de segurança).
+
+    A checagem antiga (`startswith('/') and not startswith('//')`)
+    tinha um bypass conhecido: `next=/\\evil.com` passa em ambas as
+    condições, mas navegadores normalizam a contra-barra para `/`,
+    virando `//evil.com` (URL protocol-relative) na hora de navegar --
+    ou seja, um redirect externo escapando do check baseado em string.
+
+    Agora usamos urllib.parse: resolvemos next_url contra o host atual
+    (urljoin) e só aceitamos se o netloc resultante bater exatamente
+    com o host da aplicação, além de rejeitar explicitamente qualquer
+    contra-barra. Isso é O(1)/local -- sem custo de rede ou banco.
     """
-    if next_url and next_url.startswith('/') and not next_url.startswith('//'):
+    if not next_url or '\\' in next_url or not next_url.startswith('/'):
+        return url_for('main.index')
+
+    host_atual = urlparse(request.host_url).netloc
+    destino = urlparse(urljoin(request.host_url, next_url))
+
+    if destino.scheme in ('http', 'https') and destino.netloc == host_atual:
         return next_url
     return url_for('main.index')
+
+
+def _build_trusted_url(endpoint, **values):
+    """
+    Gera uma URL absoluta para e-mails/links enviados ao usuário sem
+    depender do header Host da requisição recebida (CORREÇÃO seção 12
+    do hardening de segurança -- Trusted Hosts / Host Header Injection).
+
+    Se APP_BASE_URL estiver configurada (recomendado em produção), o
+    link é montado a partir dela. Caso contrário, cai no comportamento
+    padrão do Flask (url_for com _external=True, que usa o Host
+    recebido) com um aviso no log -- aceitável em dev/testes, mas em
+    produção configure APP_BASE_URL para fechar esse vetor.
+    """
+    from flask import current_app
+
+    base_url = current_app.config.get('APP_BASE_URL')
+    caminho = url_for(endpoint, **values)  # relativo, não usa Host
+
+    if base_url:
+        return base_url.rstrip('/') + caminho
+
+    logger.warning(
+        "APP_BASE_URL não configurada -- link gerado a partir do Host "
+        "da requisição (vulnerável a Host Header Injection se o proxy "
+        "reverso não validar o Host antes de chegar aqui)."
+    )
+    return url_for(endpoint, _external=True, **values)
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -51,6 +96,7 @@ def login():
         db.session.commit()
 
         login_user(user, remember=remember)
+        session['sv'] = user.session_version
         logger.info(f"Login OK -- usuario ID {user.id} ({user.tipo_usuario})")
         flash(f'Bem-vindo, {user.nome_completo or user.username}!', 'success')
 
@@ -76,7 +122,8 @@ def reset_password_request():
         # e-mails estão cadastrados (user enumeration).
         if user and user.ativo:
             token = user.get_reset_token()
-            reset_url = url_for('auth.reset_password', token=token, _external=True)
+            db.session.commit()
+            reset_url = _build_trusted_url('auth.reset_password', token=token)
 
             corpo_texto = (
                 f"Olá, {user.nome_completo or user.username}!\n\n"
@@ -122,6 +169,7 @@ def reset_password(token):
             return render_template('auth/reset_password.html', token=token)
 
         user.set_password(password)
+        User.invalidate_reset_token(token)
         db.session.commit()
         logger.info(f"Senha redefinida via token -- usuario ID {user.id}")
         flash('Senha redefinida com sucesso! Faça login com a nova senha.', 'success')
@@ -210,10 +258,6 @@ def register():
         )
         user.set_password(password)
 
-        if User.query.count() == 0:
-            user.is_admin = True
-            user.tipo_usuario = 'professor'
-
         db.session.add(user)
         db.session.flush()
 
@@ -277,6 +321,7 @@ def update_profile():
 
 @auth_bp.route('/change-password', methods=['POST'])
 @login_required
+@limiter.limit("10 per hour")
 def change_password():
     current_password = request.form.get('current_password', '')
     new_password = request.form.get('new_password', '')

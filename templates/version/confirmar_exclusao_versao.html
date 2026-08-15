@@ -55,11 +55,13 @@
                         <i class="bi bi-arrow-left"></i> Cancelar
                     </a>
                     
-                    <a href="{{ url_for('version.excluir_versao_global', versao_id=versao.id, confirmar='true') }}" 
-                       class="btn btn-danger"
-                       onclick="return confirm('Tem certeza absoluta? Esta ação não pode ser desfeita.')">
-                        <i class="bi bi-trash"></i> Sim, excluir permanentemente
-                    </a>
+                    <form method="POST" action="{{ url_for('version.excluir_versao_global', versao_id=versao.id, confirmar='true') }}"
+                          onsubmit="return confirm('Tem certeza absoluta? Esta ação não pode ser desfeita.')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Sim, excluir permanentemente
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>

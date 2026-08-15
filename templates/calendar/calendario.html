@@ -1214,6 +1214,18 @@
         });
     }
     
+    // CORREÇÃO 2 (hardening de segurança): treino_nome, treino_codigo e
+    // exercicio_nome vêm de dados criados pelo próprio usuário/professor
+    // (routes/calendar_routes.py) e podem ser exibidos na tela de outra
+    // pessoa (professor vendo calendário do aluno) -- por isso passam por
+    // escape antes de entrar no innerHTML. É uma função pura, local,
+    // sem custo de rede/banco.
+    function escapeHtml(valor) {
+        const div = document.createElement('div');
+        div.textContent = valor === undefined || valor === null ? '' : String(valor);
+        return div.innerHTML;
+    }
+
     function mostrarDetalhesEvento(event) {
         const modal = new bootstrap.Modal(document.getElementById('eventoModal'));
         const tituloEl = document.querySelector('#eventoModal .modal-title');
@@ -1222,7 +1234,7 @@
             weekday: 'long', day: '2-digit', month: 'long'
         });
         const dataCapitalizada = dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1);
-        tituloEl.innerHTML = `<i class="bi bi-calendar-check me-2"></i>${dataCapitalizada}`;
+        tituloEl.innerHTML = `<i class="bi bi-calendar-check me-2"></i>${escapeHtml(dataCapitalizada)}`;
         
         // Se o evento tem múltiplos treinos, mostrar todos
         if (event.extendedProps.treinos && event.extendedProps.treinos.length > 0) {
@@ -1241,12 +1253,14 @@
             const codigos = Object.keys(porTreino);
             codigos.forEach((codigo, index) => {
                 const grupo = porTreino[codigo];
+                const codigoSeguro = escapeHtml(codigo);
+                const nomeSeguro = escapeHtml(grupo.nome);
                 html += `
                     <div class="grupo-treino">
                         <div class="grupo-treino-header">
                             <span class="grupo-treino-nome">
                                 <i class="bi bi-trophy-fill"></i>
-                                Treino ${codigo}${grupo.nome && grupo.nome !== 'Treino' ? ` · ${grupo.nome}` : ''}
+                                Treino ${codigoSeguro}${grupo.nome && grupo.nome !== 'Treino' ? ` · ${nomeSeguro}` : ''}
                             </span>
                             <span class="grupo-treino-volume">${grupo.volume.toFixed(0)} kg</span>
                         </div>
@@ -1254,11 +1268,11 @@
                 
                 grupo.exercicios.forEach(ex => {
                     const chips = (ex.series || [])
-                        .map(s => `<span class="serie-chip"><b>${s.carga}kg</b> × ${s.repeticoes}</span>`)
+                        .map(s => `<span class="serie-chip"><b>${escapeHtml(s.carga)}kg</b> × ${escapeHtml(s.repeticoes)}</span>`)
                         .join('');
                     html += `
                         <div class="exercicio-card">
-                            <div class="exercicio-nome">${ex.exercicio_nome}</div>
+                            <div class="exercicio-nome">${escapeHtml(ex.exercicio_nome)}</div>
                             ${chips ? `<div class="series-lista">${chips}</div>` : `<div class="sem-series">Sem séries registradas</div>`}
                         </div>
                     `;

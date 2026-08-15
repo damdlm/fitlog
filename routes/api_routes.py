@@ -302,9 +302,17 @@ def api_criar_exercicio():
 def api_catalogo_todos():
     """Retorna todos os exercícios do catálogo"""
     from services.catalogo_service import CatalogoService
-    
+
+    # CORREÇÃO seção 14 (hardening de segurança): "limite" vinha direto
+    # do cliente sem teto e ia parar num LIMIT de SQL -- um valor
+    # gigante (ou negativo) força o banco a preparar/varrer muito mais
+    # linhas do que a tela realmente usa. Trava em MAX_LIMITE, validação
+    # local O(1), sem custo de query extra.
+    MAX_LIMITE = 500
+    limite = request.args.get("limite", MAX_LIMITE, type=int) or MAX_LIMITE
+    limite = max(1, min(limite, MAX_LIMITE))
+
     try:
-        limite = request.args.get("limite", 500, type=int)
         exercicios = CatalogoService.get_todos_exercicios(limite=limite)
         return jsonify(exercicios)
     except Exception:
@@ -384,7 +392,11 @@ def api_reordenar_exercicios():
         
     except Exception as e:
         logger.exception("Erro na API reordenar-exercicios")
-        return jsonify({"success": False, "error": str(e)}), 500
+        # CORREÇÃO seção 13 (hardening de segurança): não devolver
+        # str(e) ao cliente -- pode vazar detalhes internos (SQL, nomes
+        # de tabela/coluna, caminhos do servidor). O detalhe real já foi
+        # logado no server acima via logger.exception.
+        return jsonify({"success": False, "error": "Não foi possível concluir a operação."}), 500
 
 
 # ============================================================================

@@ -198,6 +198,9 @@
         color: var(--vc-muted);
         transition: all 0.15s ease;
         font-size: 0.95rem;
+        cursor: pointer;
+        font-family: inherit;
+        text-decoration: none;
     }
     .vc-icon-btn:hover { transform: translateY(-1px); color: white; }
     .vc-icon-btn.btn-view:hover { background: #3B82F6; border-color: #3B82F6; }
@@ -640,23 +643,29 @@
                            class="vc-icon-btn btn-view" title="Visualizar/Editar">
                             <i class="bi bi-pencil"></i>
                         </a>
-                        <a href="{{ url_for('version.clonar_versao_global', versao_id=v.id) }}"
-                           class="vc-icon-btn btn-clone" title="Clonar"
-                           onclick="return confirm('Criar uma nova versão baseada nesta?')">
-                            <i class="bi bi-copy"></i>
-                        </a>
+                        <form method="POST" action="{{ url_for('version.clonar_versao_global', versao_id=v.id) }}"
+                              class="d-inline" onsubmit="return confirm('Criar uma nova versão baseada nesta?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="vc-icon-btn btn-clone" title="Clonar">
+                                <i class="bi bi-copy"></i>
+                            </button>
+                        </form>
                         {% if is_atual %}
-                        <a href="{{ url_for('version.finalizar_versao_global', versao_id=v.id) }}"
-                           class="vc-icon-btn btn-finish" title="Finalizar"
-                           onclick="return confirm('Finalizar esta versão?')">
-                            <i class="bi bi-calendar-x"></i>
-                        </a>
+                        <form method="POST" action="{{ url_for('version.finalizar_versao_global', versao_id=v.id) }}"
+                              class="d-inline" onsubmit="return confirm('Finalizar esta versão?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="vc-icon-btn btn-finish" title="Finalizar">
+                                <i class="bi bi-calendar-x"></i>
+                            </button>
+                        </form>
                         {% else %}
-                        <a href="{{ url_for('version.excluir_versao_global', versao_id=v.id, confirmar='true') }}"
-                           class="vc-icon-btn btn-delete" title="Excluir"
-                           onclick="return confirm('Tem certeza que deseja excluir esta versão permanentemente?')">
-                            <i class="bi bi-trash"></i>
-                        </a>
+                        <form method="POST" action="{{ url_for('version.excluir_versao_global', versao_id=v.id, confirmar='true') }}"
+                              class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir esta versão permanentemente?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="vc-icon-btn btn-delete" title="Excluir">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
                         {% endif %}
                     </div>
                 </div>
@@ -773,6 +782,15 @@ function prepararEnvioNovoExercicioGlobal() {
     return true;
 }
 
+// CORREÇÃO 2 (hardening de segurança): defesa em profundidade -- estes
+// dados vêm do catálogo estático hoje, mas escapamos para não depender
+// disso no futuro. Função local, sem custo de rede/banco.
+function escapeHtml(valor) {
+    const div = document.createElement('div');
+    div.textContent = valor === undefined || valor === null ? '' : String(valor);
+    return div.innerHTML;
+}
+
 function buscarMusculoManualGlobal() {
     const nome = document.getElementById('global-manual_nome').value.trim();
     if (!nome) {
@@ -794,7 +812,7 @@ function buscarMusculoManualGlobal() {
                         break;
                     }
                 }
-                msg.innerHTML = `✅ Músculo encontrado: ${data.musculo}`;
+                msg.innerHTML = `✅ Músculo encontrado: ${escapeHtml(data.musculo)}`;
                 div.style.display = 'block';
                 div.className = 'alert alert-success mt-2';
             } else {
@@ -834,8 +852,8 @@ function exibirResultadosGlobal(resultados) {
         item.innerHTML = `
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <strong>${ex.nome}</strong>
-                    <br><small class="text-muted">Músculo: ${ex.musculo}</small>
+                    <strong>${escapeHtml(ex.nome)}</strong>
+                    <br><small class="text-muted">Músculo: ${escapeHtml(ex.musculo)}</small>
                 </div>
                 <i class="bi bi-plus-circle text-success"></i>
             </div>

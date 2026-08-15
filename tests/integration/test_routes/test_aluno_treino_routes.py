@@ -32,10 +32,7 @@ class TestListarTreinos:
         resp = client.get('/aluno/treinos')
         assert resp.status_code == 200
 
-    def test_pagina_carrega_com_filtro_por_data(self, client, app):
-        """A tela não lista mais os treinos avulsos (A/B/C) nem tem
-        botão 'Novo Treino' -- só o filtro por data para ver/editar
-        sessões já registradas. Ver routes/aluno/treino.py::treinos()."""
+    def test_lista_treinos_e_exercicios_agrupados(self, client, app):
         with app.app_context():
             u = _criar_usuario('at_list_2')
             musc = Musculo(nome=f'm_{u.id}', nome_exibicao='Peito')
@@ -53,8 +50,8 @@ class TestListarTreinos:
 
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)
-        assert 'mtFiltroData' in body
-        assert 'Novo Treino' not in body
+        assert 'Treino A' in body
+        assert 'Supino' in body
 
     def test_professor_tambem_acessa_a_propria_lista(self, client, app):
         with app.app_context():
@@ -160,7 +157,7 @@ class TestExcluirTreino:
             treino_id = treino.id
         _login(client, 'at_excl_1')
 
-        resp = client.get(f'/aluno/treino/{treino_id}/excluir')
+        resp = client.post(f'/aluno/treino/{treino_id}/excluir')
 
         assert resp.status_code == 302
         with app.app_context():
@@ -173,7 +170,7 @@ class TestExcluirTreino:
             treino_id = treino.id
         _login(client, 'at_excl_2')
 
-        resp = client.get(f'/aluno/treino/{treino_id}/excluir?confirmar=true')
+        resp = client.post(f'/aluno/treino/{treino_id}/excluir?confirmar=true')
 
         assert resp.status_code == 302
         with app.app_context():
@@ -187,7 +184,7 @@ class TestExcluirTreino:
             treino_b_id = treino_b.id
         _login(client, 'at_excl_a')
 
-        resp = client.get(f'/aluno/treino/{treino_b_id}/excluir?confirmar=true')
+        resp = client.post(f'/aluno/treino/{treino_b_id}/excluir?confirmar=true')
 
         assert resp.status_code == 302
         with app.app_context():

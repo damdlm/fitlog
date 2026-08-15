@@ -147,6 +147,21 @@ class Config:
     # já que o Gunicorn roda múltiplos workers com memórias separadas.
     CACHE_TYPE = 'SimpleCache'
 
+    # CORREÇÃO seção 12 (hardening de segurança -- Trusted Hosts / Host
+    # Header): links absolutos gerados pelo servidor (hoje só o de reset
+    # de senha) NÃO devem depender do header Host da requisição recebida,
+    # porque ele pode ser forjado pelo cliente (Host Header Injection) --
+    # um atacante poderia forçar o e-mail de reset a apontar para um
+    # domínio dele, capturando o token de reset de outra pessoa.
+    #
+    # Se APP_BASE_URL estiver definida (ex: "https://fitlog.exemplo.com"),
+    # ela é usada como origem confiável em vez do Host recebido. Se não
+    # estiver definida, cai no comportamento antigo (url_for com
+    # _external=True, baseado no Host) com um aviso no log -- ver
+    # routes/auth_routes.py. ProductionConfig não precisa sobrescrever
+    # isso: é a mesma variável de ambiente em qualquer ambiente.
+    APP_BASE_URL = os.getenv('APP_BASE_URL')
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
@@ -164,6 +179,17 @@ class ProductionConfig(Config):
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
+
+    # CORREÇÃO seção 18 (hardening de segurança -- cookies): o cookie de
+    # "remember me" (Flask-Login) não herda as flags do cookie de sessão
+    # acima, então precisa das próprias. Sem isso ele ficaria acessível
+    # via JavaScript (sem HTTPONLY) e poderia trafegar em HTTP puro
+    # (sem SECURE), quebrando a mesma garantia que já vale pro cookie
+    # de sessão normal. Duração mantida no padrão do Flask-Login (365
+    # dias) -- não há necessidade de negócio pra encurtar isso agora.
+    REMEMBER_COOKIE_SECURE = True
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SAMESITE = 'Lax'
 
     # Redis é exigido em produção (ver validação em get_config() acima) —
     # reaproveitamos a mesma REDIS_URL do Flask-Limiter para o cache

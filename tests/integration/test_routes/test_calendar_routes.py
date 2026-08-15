@@ -16,6 +16,7 @@ def _login(client, user):
     with client.session_transaction() as sess:
         sess['_user_id'] = str(user.id)
         sess['_fresh'] = True
+        sess['sv'] = user.session_version
 
 
 def _criar_usuario(username, tipo='aluno'):

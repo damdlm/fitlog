@@ -871,6 +871,16 @@ function showLoading(show = true) {
     }
 }
 
+// CORREÇÃO 2 (hardening de segurança): defesa em profundidade -- hoje
+// ex.nome/ex.musculo vêm só do catálogo estático (JSON de referência),
+// mas escapamos aqui também para não depender dessa garantia se a fonte
+// mudar no futuro. Função local, sem custo de rede/banco.
+function escapeHtml(valor) {
+    const div = document.createElement('div');
+    div.textContent = valor === undefined || valor === null ? '' : String(valor);
+    return div.innerHTML;
+}
+
 function exibirResultados(resultados) {
     const listaDiv = document.getElementById('listaResultados');
     const resultadosDiv = document.getElementById('resultadosBusca');
@@ -896,8 +906,8 @@ function exibirResultados(resultados) {
         item.innerHTML = `
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <strong>${ex.nome}</strong>
-                    <br><small class="text-muted">Músculo: ${ex.musculo}</small>
+                    <strong>${escapeHtml(ex.nome)}</strong>
+                    <br><small class="text-muted">Músculo: ${escapeHtml(ex.musculo)}</small>
                 </div>
                 <i class="bi bi-plus-circle text-success"></i>
             </div>

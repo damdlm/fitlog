@@ -81,7 +81,7 @@ def ver_versao(versao_id):
                          exercicios=exercicios,
                          treinos_disponiveis=treinos_disponiveis)
 
-@aluno_bp.route('/versao/<int:versao_id>/finalizar')
+@aluno_bp.route('/versao/<int:versao_id>/finalizar', methods=['POST'])
 @login_required
 def finalizar_versao(versao_id):
     if not current_user.pode_gerenciar_treino_proprio():
@@ -101,7 +101,7 @@ def finalizar_versao(versao_id):
         flash('Erro ao finalizar versão!', 'danger')
     return redirect(url_for('aluno.versoes'))
 
-@aluno_bp.route('/versao/<int:versao_id>/clonar')
+@aluno_bp.route('/versao/<int:versao_id>/clonar', methods=['POST'])
 @login_required
 def clonar_versao(versao_id):
     if not current_user.pode_gerenciar_treino_proprio():
@@ -113,7 +113,7 @@ def clonar_versao(versao_id):
         flash('Erro ao clonar versão!', 'danger')
     return redirect(url_for('aluno.versoes'))
 
-@aluno_bp.route('/versao/<int:versao_id>/excluir')
+@aluno_bp.route('/versao/<int:versao_id>/excluir', methods=['POST'])
 @login_required
 def excluir_versao(versao_id):
     if not current_user.pode_gerenciar_treino_proprio():
@@ -290,7 +290,7 @@ def editar_treino_versao(versao_id, treino_codigo):
                          exercicios=exercicios_display,
                          musculos=musculos)
 
-@aluno_bp.route('/versao/<int:versao_id>/treino/<string:treino_codigo>/excluir')
+@aluno_bp.route('/versao/<int:versao_id>/treino/<string:treino_codigo>/excluir', methods=['POST'])
 @login_required
 def excluir_treino_versao(versao_id, treino_codigo):
     if not current_user.pode_gerenciar_treino_proprio():
@@ -299,6 +299,13 @@ def excluir_treino_versao(versao_id, treino_codigo):
     try:
         VersaoService.excluir_treino_versao(versao_id, treino_codigo, current_user.id, current_user)
         flash(f'Treino {treino_codigo} removido da versão!', 'success')
-    except Exception as e:
+    except (ValueError, PermissionError) as e:
+        # Mensagens de validação de negócio (texto seguro e fixo,
+        # definidas no service) -- ok mostrar direto ao usuário.
         flash(str(e), 'danger')
+    except Exception:
+        # CORREÇÃO seção 13 (hardening de segurança): qualquer outra
+        # exceção (não prevista) fica só no log -- nunca no flash.
+        logger.exception("Erro ao excluir treino da versão (aluno)")
+        flash('Não foi possível concluir a operação.', 'danger')
     return redirect(url_for('aluno.ver_versao', versao_id=versao_id))

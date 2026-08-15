@@ -239,7 +239,7 @@ class TestExcluirExercicio:
             ex_id = ex.id
         _login(client, 'ae_excl_1')
 
-        resp = client.get(f'/aluno/exercicio/{ex_id}/excluir')
+        resp = client.post(f'/aluno/exercicio/{ex_id}/excluir')
         assert resp.status_code == 302
         with app.app_context():
             assert db.session.get(ExercicioCustomizado, ex_id) is not None
@@ -256,7 +256,7 @@ class TestExcluirExercicio:
             ex_id = ex.id
         _login(client, 'ae_excl_2')
 
-        resp = client.get(f'/aluno/exercicio/{ex_id}/excluir?confirmar=true')
+        resp = client.post(f'/aluno/exercicio/{ex_id}/excluir?confirmar=true')
         assert resp.status_code == 302
         with app.app_context():
             assert db.session.get(ExercicioCustomizado, ex_id) is None
@@ -274,7 +274,7 @@ class TestExcluirExercicio:
             ex_b_id = ex_b.id
         _login(client, 'ae_excl_a')
 
-        resp = client.get(f'/aluno/exercicio/{ex_b_id}/excluir?confirmar=true')
+        resp = client.post(f'/aluno/exercicio/{ex_b_id}/excluir?confirmar=true')
         assert resp.status_code == 302
         with app.app_context():
             assert db.session.get(ExercicioCustomizado, ex_b_id) is not None

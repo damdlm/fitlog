@@ -1127,8 +1127,7 @@
     #modalConfirmarCancelamento,
     #modalResumoTreino,
     #modalImagensExercicio,
-    #modalInstrucoesExercicio,
-    #fitbotModal {
+    #modalInstrucoesExercicio {
         z-index: 2000;
     }
 
@@ -2973,6 +2972,16 @@ function tocarBipe() {
         };
     }
 
+    // CORREÇÃO 2 (hardening de segurança): ex.nome do card de resumo vem
+    // do nome do exercício/treino, que pode ter sido definido pelo
+    // professor ou por outro aluno em versões compartilhadas -- escapamos
+    // antes de montar o HTML do card compartilhável. Função local, O(1).
+    function escapeHtml(valor) {
+        const div = document.createElement('div');
+        div.textContent = valor === undefined || valor === null ? '' : String(valor);
+        return div.innerHTML;
+    }
+
     function preencherCard(resumo) {
         document.getElementById('shareCardUser').textContent = resumo.usuario;
         document.getElementById('shareCardSubtitle').textContent = `${resumo.treino} • ${resumo.dataExtenso}`;
@@ -2987,16 +2996,16 @@ function tocarBipe() {
             item.className = 'share-card-exercicio-item';
             const tags = [];
             if (ex.series !== '') {
-                tags.push(`<span class="share-card-exercicio-tag"><i class="bi bi-layers"></i>${ex.series} ${ex.series == 1 ? 'série' : 'séries'}</span>`);
+                tags.push(`<span class="share-card-exercicio-tag"><i class="bi bi-layers"></i>${escapeHtml(ex.series)} ${ex.series == 1 ? 'série' : 'séries'}</span>`);
             }
             if (ex.reps !== '') {
-                tags.push(`<span class="share-card-exercicio-tag"><i class="bi bi-arrow-repeat"></i>${ex.reps} ${ex.reps == 1 ? 'repetição' : 'repetições'}</span>`);
+                tags.push(`<span class="share-card-exercicio-tag"><i class="bi bi-arrow-repeat"></i>${escapeHtml(ex.reps)} ${ex.reps == 1 ? 'repetição' : 'repetições'}</span>`);
             }
             if (ex.carga !== '') {
-                tags.push(`<span class="share-card-exercicio-tag"><i class="bi bi-speedometer2"></i>${ex.carga} kg</span>`);
+                tags.push(`<span class="share-card-exercicio-tag"><i class="bi bi-speedometer2"></i>${escapeHtml(ex.carga)} kg</span>`);
             }
             item.innerHTML = `
-                <span class="share-card-exercicio-nome">${ex.nome}</span>
+                <span class="share-card-exercicio-nome">${escapeHtml(ex.nome)}</span>
                 <div class="share-card-exercicio-detalhes">${tags.join('')}</div>
             `;
             listaEl.appendChild(item);

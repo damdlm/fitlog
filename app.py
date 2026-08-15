@@ -138,7 +138,17 @@ def create_app(config_class=None):
 
     @login_manager.user_loader
     def load_user(user_id):
-        return db.session.get(User, int(user_id))
+        from flask import session as flask_session
+        user = db.session.get(User, int(user_id))
+        if user is None:
+            return None
+        # CORREÇÃO 10 (hardening de segurança): invalida sessões antigas
+        # após troca de senha. Não é uma query extra -- o usuário já é
+        # buscado em toda requisição autenticada por causa do próprio
+        # Flask-Login; só comparamos o contador que já veio junto.
+        if flask_session.get('sv') != user.session_version:
+            return None
+        return user
 
     setup_logging(app)
 
@@ -220,12 +230,36 @@ def create_app(config_class=None):
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
+        # CORREÇÃO seção 17 (hardening de segurança -- CSP progressiva):
+        # primeira fase, mapeada a partir do que a aplicação realmente
+        # usa hoje (grep em todos os templates) -- só 2 CDNs externos
+        # (cdn.jsdelivr.net p/ Chart.js/FullCalendar/SortableJS/
+        # html2canvas, cdnjs.cloudflare.com p/ Flatpickr), nenhuma
+        # imagem/fetch externo, e MUITO script/estilo inline espalhado
+        # pelos templates (onclick=, <script> inline, style=) -- por
+        # isso 'unsafe-inline' continua liberado por enquanto em
+        # script-src/style-src, senão a aplicação quebraria na hora.
+        # object-src/base-uri/frame-ancestors já fecham sem custo (a
+        # aplicação não usa <object>/<embed>, não precisa trocar <base>,
+        # e X-Frame-Options acima já cobre o mesmo que frame-ancestors).
+        # Endurecimento futuro (remover unsafe-inline via nonce) fica
+        # para uma tarefa própria, por template, testando um de cada vez.
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "img-src 'self' data: https:; "
+            "media-src 'self' https:; "
+            "font-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "connect-src 'self'; "
+            "object-src 'none'; "
+            "base-uri 'self'; "
+            "frame-ancestors 'self';"
+        )
+
         # HSTS só faz sentido (e só é seguro) quando servido via HTTPS,
         # ou seja, em produção -- em dev/testes, servido por http://
         # localhost, o navegador não deve ser instruído a forçar HTTPS.
-        # CSP fica de fora propositalmente nesta fase: o FitLog usa
-        # scripts/estilos inline e recursos externos, e uma CSP mal
-        # configurada quebraria a aplicação -- tratar em tarefa própria.
         if em_producao:
             response.headers["Strict-Transport-Security"] = (
                 "max-age=31536000; includeSubDomains"

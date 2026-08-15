@@ -126,7 +126,7 @@ def ver_versao(versao_id):
                          treinos=treinos,
                          musculos=musculos)
 
-@version_bp.route("/finalizar/<int:versao_id>")
+@version_bp.route("/finalizar/<int:versao_id>", methods=["POST"])
 @login_required
 def finalizar_versao_global(versao_id):
     versao = VersaoService.get_by_id(versao_id)
@@ -144,7 +144,7 @@ def finalizar_versao_global(versao_id):
         flash(f"Erro ao finalizar versão!", "danger")
     return redirect(url_for("version.gerenciar_versoes_global"))
 
-@version_bp.route("/clonar/<int:versao_id>")
+@version_bp.route("/clonar/<int:versao_id>", methods=["POST"])
 @login_required
 def clonar_versao_global(versao_id):
     if VersaoService.clone(versao_id):
@@ -272,9 +272,18 @@ def editar_treino_na_versao(versao_id, treino_codigo):
             flash("Selecione pelo menos um exercício!", "danger")
             return redirect(request.url)
         
-        # Validar IDs
+        # CORREÇÃO seção 20/21 (hardening de segurança -- IDOR /
+        # integridade de dados): antes só checava que o ID existia em
+        # ExercicioUsuario (query.get), sem checar de quem era -- um
+        # usuário podia referenciar o exercício customizado de OUTRO
+        # usuário só adivinhando/enumerando o ID. ExercicioSistema
+        # continua liberado por get() normal: é catálogo global,
+        # compartilhado por design, sem dono.
         from models import ExercicioUsuario, ExercicioSistema
-        usuarios_ids_validos = [eid for eid in usuarios_ids if ExercicioUsuario.query.get(eid)]
+        usuarios_ids_validos = [
+            eid for eid in usuarios_ids
+            if ExercicioUsuario.query.filter_by(id=eid, usuario_id=current_user.id).first()
+        ]
         bases_ids_validos = [eid for eid in bases_ids if ExercicioSistema.query.get(eid)]
         
         try:
@@ -309,10 +318,18 @@ def editar_treino_na_versao(versao_id, treino_codigo):
             db.session.commit()
             flash(f"Treino {treino_codigo} atualizado com sucesso!", "success")
             return redirect(url_for("version.ver_versao", versao_id=versao_id))
-        except Exception as e:
+        except (ValueError, PermissionError) as e:
+            # Mensagens de validação de negócio (texto seguro e fixo,
+            # definidas no service) -- ok mostrar direto ao usuário.
+            db.session.rollback()
+            flash(str(e), "danger")
+            return redirect(request.url)
+        except Exception:
+            # CORREÇÃO seção 13 (hardening de segurança): qualquer outra
+            # exceção (não prevista) fica só no log -- nunca no flash.
             db.session.rollback()
             logger.exception("Erro ao editar treino")
-            flash(str(e), "danger")
+            flash("Não foi possível concluir a operação.", "danger")
             return redirect(request.url)
     
     # GET - exibir formulário
@@ -361,7 +378,7 @@ def editar_treino_na_versao(versao_id, treino_codigo):
         musculos_catalogo=musculos_catalogo,
     )
 
-@version_bp.route("/versao/<int:versao_id>/treino/<string:treino_codigo>/excluir")
+@version_bp.route("/versao/<int:versao_id>/treino/<string:treino_codigo>/excluir", methods=["POST"])
 @login_required
 def excluir_treino_da_versao(versao_id, treino_codigo):
     versao = VersaoService.get_by_id(versao_id)
@@ -469,7 +486,7 @@ def remover_exercicio_da_versao(versao_id, treino_codigo, exercicio_id):
     else:
         return jsonify({"success": False, "error": "Exercício não encontrado"}), 404
 
-@version_bp.route("/excluir/<int:versao_id>")
+@version_bp.route("/excluir/<int:versao_id>", methods=["POST"])
 @login_required
 def excluir_versao_global(versao_id):
     versao = VersaoService.get_by_id(versao_id)

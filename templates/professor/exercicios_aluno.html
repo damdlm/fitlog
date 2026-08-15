@@ -94,11 +94,13 @@
                                    class="btn btn-warning" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <a href="{{ url_for('professor.excluir_exercicio_aluno', aluno_id=aluno.id, exercicio_id=exercicio.id, confirmar='false') }}" 
-                                   class="btn btn-danger" title="Excluir"
-                                   onclick="return confirm('Excluir este exercício?')">
-                                    <i class="bi bi-trash"></i>
-                                </a>
+                                <form method="POST" action="{{ url_for('professor.excluir_exercicio_aluno', aluno_id=aluno.id, exercicio_id=exercicio.id, confirmar='false') }}"
+                                      class="d-inline" onsubmit="return confirm('Excluir este exercício?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn btn-danger" title="Excluir">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
                             </div>
                         </td>
                     </tr>

@@ -6,6 +6,7 @@ import logging
 
 import requests
 from flask import current_app
+from markupsafe import escape
 
 from models import User
 from utils.email_utils import enviar_email
@@ -114,13 +115,24 @@ class ContatoService:
             f"Tipo de usuário: {usuario.tipo_usuario}\n\n"
             f"Mensagem:\n{mensagem}\n"
         )
+        # Escapamos tudo que vem do usuário (nome, e-mail, tipo e mensagem)
+        # antes de montar o HTML -- corrige HTML injection na tela de
+        # Contato (CORREÇÃO 3 do hardening de segurança). O e-mail já
+        # cadastrado do usuário é validado no registro, mas escapamos
+        # mesmo assim por defesa em profundidade e por ser O(1)/local,
+        # sem custo adicional de banco ou rede.
+        nome_html = escape(usuario.nome_completo or usuario.username)
+        email_html = escape(usuario.email)
+        tipo_html = escape(usuario.tipo_usuario)
+        mensagem_html = escape(mensagem)
+
         corpo_html = (
             f"<p>Nova mensagem recebida pela tela de <strong>Contato</strong> do FitLog.</p>"
-            f"<p><strong>De:</strong> {usuario.nome_completo or usuario.username} "
-            f"(<a href='mailto:{usuario.email}'>{usuario.email}</a>)<br>"
-            f"<strong>Tipo de usuário:</strong> {usuario.tipo_usuario}</p>"
+            f"<p><strong>De:</strong> {nome_html} "
+            f"(<a href='mailto:{email_html}'>{email_html}</a>)<br>"
+            f"<strong>Tipo de usuário:</strong> {tipo_html}</p>"
             f"<p><strong>Mensagem:</strong></p>"
-            f"<p style='white-space:pre-wrap;background:#f9f9f9;padding:12px;border-radius:8px;'>{mensagem}</p>"
+            f"<p style='white-space:pre-wrap;background:#f9f9f9;padding:12px;border-radius:8px;'>{mensagem_html}</p>"
         )
 
         # Envia para cada admin -- enviar_email já trata falhas
