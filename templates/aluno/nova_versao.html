@@ -149,9 +149,6 @@
         <i class="bi bi-plus-circle me-2" style="color: #F28C33;"></i>
         Nova Versão de Treino
     </h1>
-    <a href="{{ url_for('aluno.versoes') }}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Voltar
-    </a>
 </div>
 
 {% if versao_atual %}
@@ -218,7 +215,6 @@
                         </div>
                     </div>
                 </div>
-                <small class="nv-hint">Você adiciona os treinos de cada letra depois de criar a versão — não precisa cadastrá-los agora.</small>
             </div>
 
             <div class="row">
@@ -228,20 +224,7 @@
                         <input type="date" id="data_inicio" name="data_inicio" value="{{ data_atual_iso() }}" required>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="nv-field">
-                        <label for="data_fim">Data de fim <span class="text-muted fw-normal">(opcional)</span></label>
-                        <input type="date" id="data_fim" name="data_fim">
-                        <small class="nv-hint">Deixe em branco se essa for a versão atual (em andamento).</small>
-                    </div>
-                </div>
             </div>
-
-            <div class="nv-info-box">
-                <i class="bi bi-lightbulb"></i>
-                <span><strong>Dica:</strong> mudar de divisão (ex: ABC → ABCD) no meio do plano é normal — é só criar uma nova versão quando quiser evoluir o treino.</span>
-            </div>
-
             <div class="nv-actions">
                 <button type="submit" class="btn btn-primary btn-lg">
                     <i class="bi bi-save"></i> Criar versão
