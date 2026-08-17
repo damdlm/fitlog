@@ -643,26 +643,37 @@
                            class="vc-icon-btn btn-view" title="Visualizar/Editar">
                             <i class="bi bi-pencil"></i>
                         </a>
-                        <form method="POST" action="{{ url_for('version.clonar_versao_global', versao_id=v.id) }}"
-                              class="d-inline" onsubmit="return confirm('Criar uma nova versão baseada nesta?')">
+                        <form method="POST" action="{{ url_for('version.clonar_versao_global', versao_id=v.id) }}" class="d-inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                            <button type="submit" class="vc-icon-btn btn-clone" title="Clonar">
+                            <button type="submit" class="vc-icon-btn btn-clone" title="Clonar"
+                                    data-confirm-title="Clonar esta versão?"
+                                    data-confirm-text="Cria uma nova versão com os mesmos treinos e exercícios desta."
+                                    data-confirm-variant="info"
+                                    data-confirm-icon="bi-copy"
+                                    data-confirm-label="Sim, clonar">
                                 <i class="bi bi-copy"></i>
                             </button>
                         </form>
                         {% if is_atual %}
-                        <form method="POST" action="{{ url_for('version.finalizar_versao_global', versao_id=v.id) }}"
-                              class="d-inline" onsubmit="return confirm('Finalizar esta versão?')">
+                        <form method="POST" action="{{ url_for('version.finalizar_versao_global', versao_id=v.id) }}" class="d-inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                            <button type="submit" class="vc-icon-btn btn-finish" title="Finalizar">
+                            <button type="submit" class="vc-icon-btn btn-finish" title="Finalizar"
+                                    data-confirm-title="Finalizar esta versão?"
+                                    data-confirm-text="Depois de finalizada, ela não poderá mais ser usada para novos registros."
+                                    data-confirm-variant="warning"
+                                    data-confirm-icon="bi-calendar-x"
+                                    data-confirm-label="Sim, finalizar">
                                 <i class="bi bi-calendar-x"></i>
                             </button>
                         </form>
                         {% else %}
-                        <form method="POST" action="{{ url_for('version.excluir_versao_global', versao_id=v.id, confirmar='true') }}"
-                              class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir esta versão permanentemente?')">
+                        <form method="POST" action="{{ url_for('version.excluir_versao_global', versao_id=v.id, confirmar='true') }}" class="d-inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                            <button type="submit" class="vc-icon-btn btn-delete" title="Excluir">
+                            <button type="submit" class="vc-icon-btn btn-delete" title="Excluir"
+                                    data-confirm-title="Excluir esta versão permanentemente?"
+                                    data-confirm-text="Esta ação não pode ser desfeita."
+                                    data-confirm-icon="bi-trash"
+                                    data-confirm-label="Sim, excluir">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </form>

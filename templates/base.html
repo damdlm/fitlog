@@ -718,6 +718,59 @@
             }
         }
 
+        /* ===== Modal de confirmação global (substitui window.confirm) =====
+           Mesmo padrão visual do aviso "Cancelar treino?" da tela de
+           registro: ícone circular, título, texto e botões empilhados de
+           largura total. As cores do ícone/botão principal mudam conforme
+           data-confirm-variant ("danger", "warning" ou "info"), lido pelo
+           static/js/fl-confirm.js. */
+        .fl-confirm-content {
+            border: none;
+            border-radius: var(--radius-lg, 16px);
+        }
+        .fl-confirm-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin: 0 auto 14px;
+        }
+        .fl-confirm-icon.variant-danger { background: rgba(220, 53, 69, 0.12); color: #dc3545; }
+        .fl-confirm-icon.variant-warning { background: #FEF3E2; color: #F59E0B; }
+        .fl-confirm-icon.variant-info { background: #E7F3FE; color: #0EA5E9; }
+        .fl-confirm-title {
+            font-weight: 700;
+            color: var(--dark-bg, #2D2D2D);
+            margin-bottom: 8px;
+        }
+        .fl-confirm-text {
+            color: #6c757d;
+            font-size: 0.92rem;
+            margin-bottom: 20px;
+        }
+        .fl-confirm-btn-primary {
+            font-weight: 600;
+            border-radius: 999px;
+            padding: 11px 20px;
+            border: none;
+            color: #fff;
+            transition: filter .15s ease, transform .15s ease;
+        }
+        .fl-confirm-btn-primary.variant-danger { background: #dc3545; }
+        .fl-confirm-btn-primary.variant-warning { background: #F59E0B; }
+        .fl-confirm-btn-primary.variant-info { background: #0EA5E9; }
+        .fl-confirm-btn-primary:hover,
+        .fl-confirm-btn-primary:focus {
+            color: #fff;
+            filter: brightness(0.92);
+        }
+        .fl-confirm-btn-primary:active {
+            transform: scale(0.97);
+        }
+
         /* ====================================================
            Modais globais de mídia/instruções do exercício
            (usados em qualquer tela que liste exercícios, ex:
@@ -1403,6 +1456,32 @@
         </div>
     </div>
 
+    <!-- ===== Modal de confirmação global (substitui window.confirm() nativo) =====
+         Usado em qualquer ação destrutiva/importante do app (excluir, remover,
+         desativar, etc.) -- ver static/js/fl-confirm.js. Segue o mesmo padrão
+         visual do aviso "Cancelar treino?" da tela de registro de treino. -->
+    <div class="modal fade" id="flConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content fl-confirm-content">
+                <div class="modal-body text-center p-4">
+                    <div class="fl-confirm-icon" id="flConfirmIconWrap">
+                        <i class="bi" id="flConfirmIcon"></i>
+                    </div>
+                    <h5 class="fl-confirm-title" id="flConfirmTitle">Confirmar ação?</h5>
+                    <p class="fl-confirm-text" id="flConfirmText"></p>
+                    <div class="d-grid gap-2">
+                        <button type="button" id="flConfirmBtnSim" class="btn fl-confirm-btn-primary variant-danger w-100">
+                            Confirmar
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary w-100" data-bs-dismiss="modal">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <!-- Bootstrap JS (servido localmente) -->
     <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
@@ -1410,6 +1489,7 @@
     <!-- Utilitário Global -->
     <script src="{{ url_for('static', filename='js/fitlog-utils.js') }}"></script>
     <script src="{{ url_for('static', filename='js/page-transition.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/fl-confirm.js') }}"></script>
     
     <!-- CSRF Protection -->
     <script src="{{ url_for('static', filename='js/modules/csrf.js') }}"></script>

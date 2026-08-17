@@ -503,11 +503,8 @@
         }
     });
     
-    // Validação antes de enviar formulário de finalização
-    document.getElementById('formFinalizarVersao')?.addEventListener('submit', function(e) {
-        if (!confirm('Tem certeza que deseja finalizar esta versão? Após finalizada, não poderá mais ser usada para novos registros.')) {
-            e.preventDefault();
-        }
-    });
+    // O próprio modal de "Finalizar Versão" (com o campo de Data de Fim)
+    // já funciona como a confirmação -- um segundo confirm() aqui era
+    // redundante.
 </script>
 {% endblock %}

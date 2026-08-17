@@ -187,10 +187,13 @@
                         <i class="bi bi-pencil"></i>
                     </a>
                     <form action="{{ url_for('professor.excluir_treino_aluno', aluno_id=aluno.id, treino_id=treino.id) }}"
-                          method="post" class="d-inline"
-                          onsubmit="return confirm('Excluir o treino {{ treino.codigo }}? Isso também excluirá todos os exercícios e registros associados.')">
+                          method="post" class="d-inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <button type="submit" class="btn btn-outline-danger" title="Excluir" aria-label="Excluir treino {{ treino.nome }}">
+                        <button type="submit" class="btn btn-outline-danger" title="Excluir" aria-label="Excluir treino {{ treino.nome }}"
+                                data-confirm-title="Excluir o treino {{ treino.codigo }}?"
+                                data-confirm-text="Isso também excluirá todos os exercícios e registros associados."
+                                data-confirm-icon="bi-trash"
+                                data-confirm-label="Sim, excluir treino">
                             <i class="bi bi-trash"></i>
                         </button>
                     </form>
@@ -343,10 +346,13 @@
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <form action="{{ url_for('professor.excluir_treino_aluno', aluno_id=aluno.id, treino_id=treino.id) }}"
-                                          method="post" class="d-inline"
-                                          onsubmit="return confirm('Excluir o treino {{ treino.codigo }}? Isso também excluirá todos os exercícios e registros associados.')">
+                                          method="post" class="d-inline">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                        <button type="submit" class="btn btn-outline-danger" title="Excluir" aria-label="Excluir treino {{ treino.nome }}">
+                                        <button type="submit" class="btn btn-outline-danger" title="Excluir" aria-label="Excluir treino {{ treino.nome }}"
+                                                data-confirm-title="Excluir o treino {{ treino.codigo }}?"
+                                                data-confirm-text="Isso também excluirá todos os exercícios e registros associados."
+                                                data-confirm-icon="bi-trash"
+                                                data-confirm-label="Sim, excluir treino">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>

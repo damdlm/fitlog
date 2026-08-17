@@ -60,17 +60,9 @@
         right: -6px;
     }
 
-    /* Modal de confirmação estilizado (substitui window.confirm) */
-    #gaConfirmModal .modal-content { border: none; border-radius: 18px; overflow: hidden; }
-    #gaConfirmModal .ga-confirm-icon {
-        width: 56px; height: 56px; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.5rem; margin: 4px auto 14px;
-        background: #FDECEC; color: #EF4444;
-    }
-    #gaConfirmModal .modal-body { text-align: center; padding: 30px 24px 10px; }
-    #gaConfirmModal .modal-footer { border: none; padding: 16px 24px 24px; justify-content: center; gap: 10px; }
-    #gaConfirmModal .modal-footer .btn { min-width: 130px; border-radius: 10px; }
+    /* Modal de confirmação: agora usa o padrão global (fl-confirm.js),
+       ver base.html -- as regras locais específicas do gaConfirmModal
+       foram removidas daqui. */
 </style>
 
 <div class="ga-header">
@@ -230,28 +222,35 @@
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 {% if aluno.ativo %}
-                                <form action="{{ url_for('professor.desativar_aluno', aluno_id=aluno.id) }}" method="post"
-                                      class="d-inline" onsubmit="return confirm('Desativar {{ nome_exibicao }}?')">
+                                <form action="{{ url_for('professor.desativar_aluno', aluno_id=aluno.id) }}" method="post" class="d-inline">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" class="btn btn-outline-danger" title="Desativar" aria-label="Desativar {{ nome_exibicao }}">
+                                    <button type="submit" class="btn btn-outline-danger" title="Desativar" aria-label="Desativar {{ nome_exibicao }}"
+                                            data-confirm-title="Desativar {{ nome_exibicao }}?"
+                                            data-confirm-icon="bi-person-x"
+                                            data-confirm-label="Sim, desativar">
                                         <i class="bi bi-person-x"></i>
                                     </button>
                                 </form>
                                 {% else %}
-                                <form action="{{ url_for('professor.reativar_aluno', aluno_id=aluno.id) }}" method="post"
-                                      class="d-inline" onsubmit="return confirm('Reativar {{ nome_exibicao }}?')">
+                                <form action="{{ url_for('professor.reativar_aluno', aluno_id=aluno.id) }}" method="post" class="d-inline">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" class="btn btn-outline-success" title="Reativar" aria-label="Reativar {{ nome_exibicao }}">
+                                    <button type="submit" class="btn btn-outline-success" title="Reativar" aria-label="Reativar {{ nome_exibicao }}"
+                                            data-confirm-title="Reativar {{ nome_exibicao }}?"
+                                            data-confirm-variant="info"
+                                            data-confirm-icon="bi-person-check"
+                                            data-confirm-label="Sim, reativar">
                                         <i class="bi bi-person-check"></i>
                                     </button>
                                 </form>
                                 {% endif %}
                                 {% endif %}
-                                <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post"
-                                      class="d-inline ga-confirm-form"
-                                      data-confirm-text="Você vai perder acesso aos treinos, versões e histórico de {{ nome_exibicao }} até que um novo vínculo seja aceito. Os dados do aluno não são apagados, só a conexão com você.">
+                                <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post" class="d-inline">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" class="btn btn-outline-danger" title="Remover vínculo" aria-label="Remover vínculo com {{ nome_exibicao }}">
+                                    <button type="submit" class="btn btn-outline-danger" title="Remover vínculo" aria-label="Remover vínculo com {{ nome_exibicao }}"
+                                            data-confirm-title="Remover vínculo?"
+                                            data-confirm-text="Você vai perder acesso aos treinos, versões e histórico de {{ nome_exibicao }} até que um novo vínculo seja aceito. Os dados do aluno não são apagados, só a conexão com você."
+                                            data-confirm-icon="bi-link-45deg"
+                                            data-confirm-label="Remover vínculo">
                                         <i class="bi bi-link-45deg"></i>
                                     </button>
                                 </form>
@@ -323,28 +322,35 @@
                     <i class="bi bi-pencil"></i> Editar
                 </a>
                 {% if aluno.ativo %}
-                <form action="{{ url_for('professor.desativar_aluno', aluno_id=aluno.id) }}" method="post"
-                      class="flex-fill" onsubmit="return confirm('Desativar {{ nome_exibicao }}?')">
+                <form action="{{ url_for('professor.desativar_aluno', aluno_id=aluno.id) }}" method="post" class="flex-fill">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                    <button type="submit" class="btn btn-sm btn-outline-danger w-100"
+                            data-confirm-title="Desativar {{ nome_exibicao }}?"
+                            data-confirm-icon="bi-person-x"
+                            data-confirm-label="Sim, desativar">
                         <i class="bi bi-person-x"></i>
                     </button>
                 </form>
                 {% else %}
-                <form action="{{ url_for('professor.reativar_aluno', aluno_id=aluno.id) }}" method="post"
-                      class="flex-fill" onsubmit="return confirm('Reativar {{ nome_exibicao }}?')">
+                <form action="{{ url_for('professor.reativar_aluno', aluno_id=aluno.id) }}" method="post" class="flex-fill">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <button type="submit" class="btn btn-sm btn-outline-success w-100">
+                    <button type="submit" class="btn btn-sm btn-outline-success w-100"
+                            data-confirm-title="Reativar {{ nome_exibicao }}?"
+                            data-confirm-variant="info"
+                            data-confirm-icon="bi-person-check"
+                            data-confirm-label="Sim, reativar">
                         <i class="bi bi-person-check"></i>
                     </button>
                 </form>
                 {% endif %}
                 {% endif %}
-                <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post"
-                      class="flex-fill ga-confirm-form"
-                      data-confirm-text="Você vai perder acesso aos treinos, versões e histórico de {{ nome_exibicao }} até que um novo vínculo seja aceito. Os dados do aluno não são apagados, só a conexão com você.">
+                <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post" class="flex-fill">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                    <button type="submit" class="btn btn-sm btn-outline-danger w-100"
+                            data-confirm-title="Remover vínculo?"
+                            data-confirm-text="Você vai perder acesso aos treinos, versões e histórico de {{ nome_exibicao }} até que um novo vínculo seja aceito. Os dados do aluno não são apagados, só a conexão com você."
+                            data-confirm-icon="bi-link-45deg"
+                            data-confirm-label="Remover vínculo">
                         <i class="bi bi-link-45deg"></i>
                     </button>
                 </form>
@@ -384,49 +390,4 @@
         <i class="bi bi-arrow-left"></i> Voltar
     </a>
 </div>
-
-<!-- Modal de confirmação (substitui o window.confirm nativo em Remover Vínculo) -->
-<div class="modal fade" id="gaConfirmModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-        <div class="modal-content">
-            <div class="modal-body">
-                <div class="ga-confirm-icon"><i class="bi bi-link-45deg"></i></div>
-                <h5 class="fw-bold mb-2">Remover vínculo?</h5>
-                <p class="text-muted mb-0" id="gaConfirmText"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="gaConfirmActionBtn">Remover vínculo</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    var confirmModalEl = document.getElementById('gaConfirmModal');
-    var confirmModal = new bootstrap.Modal(confirmModalEl);
-    var confirmText = document.getElementById('gaConfirmText');
-    var confirmActionBtn = document.getElementById('gaConfirmActionBtn');
-    var formPendente = null;
-
-    document.querySelectorAll('.ga-confirm-form').forEach(function (form) {
-        form.addEventListener('submit', function (e) {
-            if (form.dataset.confirmado === 'true') return; // já confirmado no modal, deixa submeter
-            e.preventDefault();
-            formPendente = form;
-            confirmText.textContent = form.dataset.confirmText || 'Tem certeza?';
-            confirmModal.show();
-        });
-    });
-
-    confirmActionBtn.addEventListener('click', function () {
-        if (formPendente) {
-            formPendente.dataset.confirmado = 'true';
-            formPendente.submit();
-        }
-        confirmModal.hide();
-    });
-});
-</script>
 {% endblock %}

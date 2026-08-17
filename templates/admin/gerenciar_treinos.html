@@ -762,35 +762,47 @@ function salvarEdicaoExercicio() {
 }
 
 function confirmarExclusaoTreino(id, descricao) {
-    if (confirm(`Excluir treino ${descricao}?\nIsso também excluirá todos os exercícios e registros!`)) {
-        showLoading(true);
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/excluir/treino/${id}`;
-        const csrf = document.createElement('input');
-        csrf.type = 'hidden';
-        csrf.name = 'csrf_token';
-        csrf.value = '{{ csrf_token() }}';
-        form.appendChild(csrf);
-        document.body.appendChild(form);
-        form.submit();
-    }
+    window.FitLogConfirm({
+        title: `Excluir treino ${descricao}?`,
+        text: 'Isso também excluirá todos os exercícios e registros associados.',
+        icon: 'bi-trash',
+        confirmLabel: 'Sim, excluir treino',
+        onConfirm: function () {
+            showLoading(true);
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/excluir/treino/${id}`;
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = 'csrf_token';
+            csrf.value = '{{ csrf_token() }}';
+            form.appendChild(csrf);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
 }
 
 function confirmarExclusaoExercicio(id, nome) {
-    if (confirm(`Excluir exercício "${nome}"?\nIsso também excluirá todos os registros!`)) {
-        showLoading(true);
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/excluir/exercicio/${id}`;
-        const csrf = document.createElement('input');
-        csrf.type = 'hidden';
-        csrf.name = 'csrf_token';
-        csrf.value = '{{ csrf_token() }}';
-        form.appendChild(csrf);
-        document.body.appendChild(form);
-        form.submit();
-    }
+    window.FitLogConfirm({
+        title: `Excluir exercício "${nome}"?`,
+        text: 'Isso também excluirá todos os registros associados.',
+        icon: 'bi-trash',
+        confirmLabel: 'Sim, excluir',
+        onConfirm: function () {
+            showLoading(true);
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/excluir/exercicio/${id}`;
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = 'csrf_token';
+            csrf.value = '{{ csrf_token() }}';
+            form.appendChild(csrf);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
 }
 
 // =============================================

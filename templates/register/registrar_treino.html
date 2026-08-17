@@ -1141,8 +1141,21 @@
        imagem, WhatsApp, Sair) ficavam cobertos pelo próprio fundo escuro
        e paravam de responder a clique, embora visualmente tudo
        parecesse normal. Por isso os modais acima também têm z-index
-       explícito (2000), sempre maior que o do backdrop (1950). */
-    .modal-backdrop {
+       explícito (2000), sempre maior que o do backdrop (1950).
+
+       CRÍTICO: isso só pode valer ENQUANTO o modo treino em tela cheia
+       está ativo. Bug relatado: com essa regra sem escopo (valendo o
+       tempo todo, pra qualquer modal da página), o modal do FitBot --
+       que vem do base.html e é usado em toda a página, incluindo aqui --
+       tinha seu backdrop empurrado pra 1950 mas o CONTEÚDO do modal
+       ficava no z-index padrão do Bootstrap (bem menor) -- ou seja, o
+       fundo escuro cobria o próprio chat, tornando-o invisível e sem
+       resposta a clique: parecia que a tela travava ao abrir o FitBot.
+       Por isso a regra só entra em vigor com body.fl-modo-treino-ativo
+       (classe ligada/desligada junto com o overlay, ver JS) -- fora do
+       modo treino, os backdrops de todos os modais (incluindo o do
+       FitBot) usam o z-index padrão do Bootstrap normalmente. */
+    body.fl-modo-treino-ativo .modal-backdrop {
         z-index: 1950;
     }
 
@@ -2663,6 +2676,7 @@ function tocarBipe() {
             if (cronoTreinoBoxEl) cronoTreinoBoxEl.classList.add('d-none');
 
             overlay.classList.remove('d-none');
+            document.body.classList.add('fl-modo-treino-ativo');
             document.body.style.overflow = 'hidden';
             body.scrollTop = 0;
         }
@@ -2673,6 +2687,7 @@ function tocarBipe() {
     function fecharModoTreinoTelaCheia() {
         var overlay = document.getElementById('modoTreinoOverlay');
         if (overlay) overlay.classList.add('d-none');
+        document.body.classList.remove('fl-modo-treino-ativo');
         document.body.style.overflow = '';
     }
     window.FitLogFecharModoTreinoTelaCheia = fecharModoTreinoTelaCheia;

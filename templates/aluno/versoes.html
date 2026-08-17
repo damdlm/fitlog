@@ -502,29 +502,11 @@
         margin-bottom: 14px;
     }
 
-    /* Modal de confirmação estilizado (substitui window.confirm) */
-    #vcConfirmModal .modal-content {
-        border: none;
-        border-radius: 18px;
-        overflow: hidden;
-    }
-    #vcConfirmModal .vc-confirm-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        margin: 4px auto 14px;
-    }
-    #vcConfirmModal .vc-confirm-icon.variant-warning { background: #FEF3E2; color: #F59E0B; }
-    #vcConfirmModal .vc-confirm-icon.variant-danger { background: #FDECEC; color: #EF4444; }
-    #vcConfirmModal .vc-confirm-icon.variant-info { background: #E7F3FE; color: #0EA5E9; }
-    #vcConfirmModal .modal-body { text-align: center; padding: 30px 24px 10px; }
-    #vcConfirmModal .modal-footer { border: none; padding: 16px 24px 24px; justify-content: center; gap: 10px; }
-    #vcConfirmModal .modal-footer .btn { min-width: 120px; border-radius: 10px; }
+    /* Modal de confirmação: agora usa o padrão global (fl-confirm.js),
+       ver base.html -- as regras locais específicas do vcConfirmModal
+       foram removidas daqui. */
 </style>
+
 
 <div class="vc-header">
     <h1 class="d-none d-md-block">
@@ -632,7 +614,6 @@
                 {% if is_atual %}
                 <a href="{{ url_for('aluno.finalizar_versao', versao_id=versao.id) }}"
                    class="vc-action-btn variant-finish" title="Finalizar e arquivar esta versão"
-                   data-fl-no-transition
                    data-confirm-title="Finalizar esta versão?"
                    data-confirm-text="Ela será arquivada e sairá da lista de versões ativas."
                    data-confirm-variant="warning"
@@ -643,7 +624,6 @@
                 {% endif %}
                 <a href="{{ url_for('aluno.clonar_versao', versao_id=versao.id) }}"
                    class="vc-action-btn variant-clone" title="Clonar treinos e exercícios para uma nova versão"
-                   data-fl-no-transition
                    data-confirm-title="Clonar esta versão?"
                    data-confirm-text="Uma nova versão será criada com os mesmos treinos e exercícios desta."
                    data-confirm-variant="info"
@@ -651,9 +631,8 @@
                    data-confirm-label="Clonar">
                     <i class="bi bi-copy"></i><span class="vc-action-label">Clonar</span>
                 </a>
-                <a href="{{ url_for('aluno.excluir_versao', versao_id=versao.id, confirmar='false') }}"
+                <a href="{{ url_for('aluno.excluir_versao', versao_id=versao.id, confirmar='true') }}"
                    class="vc-action-btn variant-delete" title="Excluir permanentemente esta versão"
-                   data-fl-no-transition
                    data-confirm-title="Excluir esta versão?"
                    data-confirm-text="Essa ação não pode ser desfeita. Todos os treinos e exercícios ligados a esta versão serão removidos."
                    data-confirm-variant="danger"
@@ -756,24 +735,9 @@
     </a>
 </div>
 
-<!-- Modal de confirmação (substitui o window.confirm nativo nas ações Finalizar/Clonar/Excluir) -->
-<div class="modal fade" id="vcConfirmModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 380px;">
-        <div class="modal-content">
-            <div class="modal-body">
-                <div class="vc-confirm-icon variant-warning" id="vcConfirmIconWrap">
-                    <i class="bi" id="vcConfirmIcon"></i>
-                </div>
-                <h5 class="fw-bold mb-2" id="vcConfirmTitle">Confirmar ação?</h5>
-                <p class="text-muted mb-0" id="vcConfirmText"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                <a href="#" class="btn btn-primary" id="vcConfirmActionBtn">Confirmar</a>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- O modal de confirmação (usado nas ações Finalizar/Clonar/Excluir) agora
+     é o global -- ver #flConfirmModal em base.html e static/js/fl-confirm.js.
+     Os links acima já têm os atributos data-confirm-* necessários. -->
 {% endblock %}
 
 {% block scripts %}
@@ -847,63 +811,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Modal de confirmação estilizado no lugar do window.confirm() nativo
-    var confirmModalEl = document.getElementById('vcConfirmModal');
-    var confirmModal = new bootstrap.Modal(confirmModalEl);
-    var confirmTitle = document.getElementById('vcConfirmTitle');
-    var confirmText = document.getElementById('vcConfirmText');
-    var confirmIcon = document.getElementById('vcConfirmIcon');
-    var confirmIconWrap = document.getElementById('vcConfirmIconWrap');
-    var confirmActionBtn = document.getElementById('vcConfirmActionBtn');
-
-    document.querySelectorAll('[data-confirm-title]').forEach(function (link) {
-        link.addEventListener('click', function (e) {
-            // preventDefault() sozinho não bastava: o script global de
-            // transição de página (page-transition.js) escuta clique em
-            // qualquer link interno lá em cima, no document, e navegava por
-            // conta própria antes do usuário decidir no modal. stopPropagation()
-            // impede esse listener global de rodar; data-fl-no-transition nos
-            // links (ver HTML) é o segundo reforço, caso outro script escute
-            // diretamente sem passar pelo document.
-            e.preventDefault();
-            e.stopPropagation();
-
-            var tooltip = bootstrap.Tooltip.getInstance(link);
-            if (tooltip) tooltip.hide();
-
-            confirmTitle.textContent = link.dataset.confirmTitle || 'Confirmar ação?';
-            confirmText.textContent = link.dataset.confirmText || '';
-            var variant = link.dataset.confirmVariant || 'warning';
-            confirmIconWrap.className = 'vc-confirm-icon variant-' + variant;
-            confirmIcon.className = 'bi ' + (link.dataset.confirmIcon || 'bi-question-circle');
-            confirmActionBtn.textContent = link.dataset.confirmLabel || 'Confirmar';
-            confirmActionBtn.className = 'btn btn-' + (variant === 'danger' ? 'danger' : variant === 'info' ? 'info' : 'warning');
-            confirmActionBtn.dataset.targetUrl = link.getAttribute('href');
-            confirmModal.show();
-        });
-    });
+    // O modal de confirmação nas ações Finalizar/Clonar/Excluir agora é
+    // tratado globalmente por static/js/fl-confirm.js (mesmos atributos
+    // data-confirm-title/text/variant/icon/label já estão nos links acima).
 
     // Tooltips modernos nos botões de ação (Ver / Finalizar / Clonar / Excluir)
     document.querySelectorAll('.vc-action-btn[title]').forEach(function (btn) {
         new bootstrap.Tooltip(btn, { placement: 'top', trigger: 'hover focus' });
-    });
-
-    // Confirma a ação (POST + CSRF) via form dinâmico, em vez de navegar
-    // por GET -- ver comentário acima em confirmActionBtn.dataset.targetUrl.
-    confirmActionBtn.addEventListener('click', function (e) {
-        e.preventDefault();
-        var url = confirmActionBtn.dataset.targetUrl;
-        if (!url) return;
-        var form = document.createElement('form');
-        form.method = 'POST';
-        form.action = url;
-        var csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = 'csrf_token';
-        csrfInput.value = document.querySelector('meta[name="csrf-token"]')?.content || '';
-        form.appendChild(csrfInput);
-        document.body.appendChild(form);
-        form.submit();
     });
 });
 </script>

@@ -145,21 +145,56 @@
         }
 
         // Envio de formulário (botão type="submit")
-        var submitBtn = evt.target.closest('button[type="submit"], input[type="submit"]');
-        if (submitBtn && submitBtn.dataset.flNoTransition === undefined) {
-            var form = submitBtn.form || submitBtn.closest('form');
-            if (form && (typeof form.checkValidity !== 'function' || form.checkValidity())) {
-                evt.preventDefault();
-                showOverlay();
-                window.setTimeout(function () {
-                    if (typeof form.requestSubmit === 'function') {
-                        form.requestSubmit(submitBtn);
-                    } else {
-                        form.submit();
-                    }
-                }, NAV_DELAY_MS);
-            }
+        //
+        // Importante: NÃO interceptamos mais aqui, no 'click' do botão.
+        // Isso foi tentado antes (preventDefault no click + reenviar via
+        // requestSubmit() depois de um delay) e travava a tela sempre que
+        // o formulário tinha sua própria confirmação (onsubmit="return
+        // confirm(...)" ou um listener de 'submit'): a película escura já
+        // tinha aparecido ANTES do confirm() rodar, e se o usuário
+        // cancelasse, nada escondia ela de volta -- a tela "travava" na
+        // transição (bug real, relatado por usuários). O listener de
+        // 'submit' mais abaixo resolve isso checando defaultPrevented.
+    }, false);
+
+    // Envio de formulário: escuta o evento 'submit' (fase de bolha, no
+    // document) em vez do 'click' do botão. Diferença crucial: quando o
+    // evento 'submit' chega até aqui, qualquer confirmação própria do
+    // formulário (onsubmit="return confirm(...)" ou um listener de
+    // 'submit' anexado direto nele) já rodou -- fica mais perto do alvo
+    // do evento (o próprio form) e dispara antes, na fase de bolha, de
+    // chegar num listener no document. Se o usuário cancelou (confirm()
+    // retornou false), o navegador já marca esse 'submit' como
+    // defaultPrevented sozinho -- então, checando isso, simplesmente não
+    // mostramos a película nem reenviamos nada, e a página continua
+    // exibida normalmente, sem travar em lugar nenhum.
+    document.addEventListener('submit', function (evt) {
+        var form = evt.target;
+        if (!(form instanceof HTMLFormElement)) return;
+        if (form.dataset.flNoTransition !== undefined) return;
+
+        // Este 'submit' é o reenvio programático feito por nós mesmos logo
+        // abaixo (form.requestSubmit()) -- deixa passar direto dessa vez,
+        // sem entrar de novo neste mesmo fluxo (senão nunca terminaria).
+        if (form.dataset.flTransitionArmed) {
+            delete form.dataset.flTransitionArmed;
+            return;
         }
+
+        // A confirmação própria do form (se houver) já rodou antes de
+        // chegar aqui -- se ela cancelou o envio, respeita e não faz nada.
+        if (evt.defaultPrevented) return;
+
+        evt.preventDefault();
+        showOverlay();
+        window.setTimeout(function () {
+            form.dataset.flTransitionArmed = '1';
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit(evt.submitter || undefined);
+            } else {
+                form.submit();
+            }
+        }, NAV_DELAY_MS);
     }, false);
 
     // Garante que a película não fique visível se o usuário voltar

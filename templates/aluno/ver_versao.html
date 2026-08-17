@@ -488,45 +488,35 @@
 
         <div class="vv-danger-zone">
             {% if not versao.data_fim %}
-            <button type="button" class="btn btn-outline-warning btn-sm js-versao-action"
-                    data-action-url="{{ url_for('aluno.finalizar_versao', versao_id=versao.id) }}"
-                    data-confirm-msg="Finalizar esta versão?">
+            <button type="button" class="btn btn-outline-warning btn-sm"
+                    data-confirm-url="{{ url_for('aluno.finalizar_versao', versao_id=versao.id) }}"
+                    data-confirm-title="Finalizar esta versão?"
+                    data-confirm-text="Depois de finalizada, ela não poderá mais ser usada para novos registros."
+                    data-confirm-variant="warning"
+                    data-confirm-icon="bi-calendar-x"
+                    data-confirm-label="Sim, finalizar">
                 <i class="bi bi-calendar-x"></i> Finalizar Versão
             </button>
             {% endif %}
-            <button type="button" class="btn btn-outline-info btn-sm js-versao-action"
-                    data-action-url="{{ url_for('aluno.clonar_versao', versao_id=versao.id) }}"
-                    data-confirm-msg="Criar uma nova versão baseada nesta?">
+            <button type="button" class="btn btn-outline-info btn-sm"
+                    data-confirm-url="{{ url_for('aluno.clonar_versao', versao_id=versao.id) }}"
+                    data-confirm-title="Clonar esta versão?"
+                    data-confirm-text="Cria uma nova versão com os mesmos treinos e exercícios desta."
+                    data-confirm-variant="info"
+                    data-confirm-icon="bi-copy"
+                    data-confirm-label="Sim, clonar">
                 <i class="bi bi-copy"></i> Clonar Versão
             </button>
-            <button type="button" class="btn btn-outline-danger btn-sm js-versao-action"
-                    data-action-url="{{ url_for('aluno.excluir_versao', versao_id=versao.id, confirmar='false') }}"
-                    data-confirm-msg="Tem certeza que deseja excluir esta versão? Esta ação não pode ser desfeita.">
+            <button type="button" class="btn btn-outline-danger btn-sm"
+                    data-confirm-url="{{ url_for('aluno.excluir_versao', versao_id=versao.id, confirmar='true') }}"
+                    data-confirm-title="Excluir esta versão?"
+                    data-confirm-text="Esta ação não pode ser desfeita."
+                    data-confirm-icon="bi-trash"
+                    data-confirm-label="Sim, excluir versão">
                 <i class="bi bi-trash"></i> Excluir Versão
             </button>
         </div>
     </form>
-    <script>
-    // CORREÇÃO 4 (hardening de segurança): estes botões ficam dentro do
-    // form de edição da versão -- montamos um form standalone (fora do
-    // form pai, para evitar aninhamento inválido de <form>) e submetemos
-    // por ele, com POST + CSRF.
-    document.querySelectorAll('.js-versao-action').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            if (!confirm(btn.dataset.confirmMsg || 'Confirmar ação?')) return;
-            var form = document.createElement('form');
-            form.method = 'POST';
-            form.action = btn.dataset.actionUrl;
-            var csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrf_token';
-            csrfInput.value = document.querySelector('meta[name="csrf-token"]')?.content || '';
-            form.appendChild(csrfInput);
-            document.body.appendChild(form);
-            form.submit();
-        });
-    });
-    </script>
 </div>
 
 <!-- ===== Treinos da versão ===== -->
@@ -554,10 +544,13 @@
                    class="vv-icon-action" title="Editar treino">
                     <i class="bi bi-pencil"></i>
                 </a>
-                <form method="POST" action="{{ url_for('aluno.excluir_treino_versao', versao_id=versao.id, treino_codigo=treino_id) }}"
-                      class="d-inline" onsubmit="return confirm('Remover este treino da versão? Os exercícios não serão excluídos do catálogo.')">
+                <form method="POST" action="{{ url_for('aluno.excluir_treino_versao', versao_id=versao.id, treino_codigo=treino_id) }}" class="d-inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <button type="submit" class="vv-icon-action variant-danger" title="Remover da versão">
+                    <button type="submit" class="vv-icon-action variant-danger" title="Remover da versão"
+                            data-confirm-title="Remover este treino da versão?"
+                            data-confirm-text="Os exercícios não serão excluídos do catálogo."
+                            data-confirm-icon="bi-trash"
+                            data-confirm-label="Sim, remover">
                         <i class="bi bi-trash"></i>
                     </button>
                 </form>

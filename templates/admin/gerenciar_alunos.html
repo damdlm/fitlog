@@ -334,56 +334,68 @@ function limparSelecao() {
 
 function bulkDesativar() {
     if (alunosSelecionados.length === 0) return;
-    
-    if (confirm(`Desativar ${alunosSelecionados.length} alunos selecionados?`)) {
-        fetch('{{ url_for("admin.bulk_desativar_alunos") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
-            },
-            body: JSON.stringify({ alunos: alunosSelecionados })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Erro ao desativar alunos: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            alert('Erro ao comunicar com o servidor');
-        });
-    }
+
+    window.FitLogConfirm({
+        title: `Desativar ${alunosSelecionados.length} alunos selecionados?`,
+        variant: 'danger',
+        icon: 'bi-person-x',
+        confirmLabel: 'Sim, desativar',
+        onConfirm: function () {
+            fetch('{{ url_for("admin.bulk_desativar_alunos") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+                },
+                body: JSON.stringify({ alunos: alunosSelecionados })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erro ao desativar alunos: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao comunicar com o servidor');
+            });
+        }
+    });
 }
 
 function bulkAtivar() {
     if (alunosSelecionados.length === 0) return;
-    
-    if (confirm(`Ativar ${alunosSelecionados.length} alunos selecionados?`)) {
-        fetch('{{ url_for("admin.bulk_ativar_alunos") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
-            },
-            body: JSON.stringify({ alunos: alunosSelecionados })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Erro ao ativar alunos: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            alert('Erro ao comunicar com o servidor');
-        });
-    }
+
+    window.FitLogConfirm({
+        title: `Ativar ${alunosSelecionados.length} alunos selecionados?`,
+        variant: 'info',
+        icon: 'bi-person-check',
+        confirmLabel: 'Sim, ativar',
+        onConfirm: function () {
+            fetch('{{ url_for("admin.bulk_ativar_alunos") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+                },
+                body: JSON.stringify({ alunos: alunosSelecionados })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erro ao ativar alunos: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao comunicar com o servidor');
+            });
+        }
+    });
 }
 
 function bulkAssociarProfessor() {

@@ -125,18 +125,23 @@
                         <i class="bi bi-pencil"></i> Editar
                     </a>
                     {% if aluno.ativo %}
-                    <form action="{{ url_for('professor.desativar_aluno', aluno_id=aluno.id) }}" method="post"
-                          class="d-inline" onsubmit="return confirm('Desativar este aluno?')">
+                    <form action="{{ url_for('professor.desativar_aluno', aluno_id=aluno.id) }}" method="post" class="d-inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <button type="submit" class="btn btn-danger">
+                        <button type="submit" class="btn btn-danger"
+                                data-confirm-title="Desativar este aluno?"
+                                data-confirm-icon="bi-person-x"
+                                data-confirm-label="Sim, desativar">
                             <i class="bi bi-person-x"></i> Desativar
                         </button>
                     </form>
                     {% else %}
-                    <form action="{{ url_for('professor.reativar_aluno', aluno_id=aluno.id) }}" method="post"
-                          class="d-inline" onsubmit="return confirm('Reativar este aluno?')">
+                    <form action="{{ url_for('professor.reativar_aluno', aluno_id=aluno.id) }}" method="post" class="d-inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <button type="submit" class="btn btn-success">
+                        <button type="submit" class="btn btn-success"
+                                data-confirm-title="Reativar este aluno?"
+                                data-confirm-variant="info"
+                                data-confirm-icon="bi-person-check"
+                                data-confirm-label="Sim, reativar">
                             <i class="bi bi-person-check"></i> Reativar
                         </button>
                     </form>

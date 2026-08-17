@@ -37,12 +37,19 @@
                     <div class="d-flex gap-2">
                         <a href="{{ url_for('professor.aprovar_solicitacao', solicitacao_id=sol.id) }}" 
                            class="btn btn-success flex-fill"
-                           onclick="return confirm('Aprovar vínculo com este aluno?')">
+                           data-confirm-title="Aprovar vínculo com este aluno?"
+                           data-confirm-variant="info"
+                           data-confirm-icon="bi-check-lg"
+                           data-confirm-label="Sim, aprovar"
+                           data-confirm-method="get">
                             <i class="bi bi-check-lg"></i> Aprovar
                         </a>
                         <a href="{{ url_for('professor.recusar_solicitacao', solicitacao_id=sol.id) }}" 
                            class="btn btn-danger flex-fill"
-                           onclick="return confirm('Recusar esta solicitação?')">
+                           data-confirm-title="Recusar esta solicitação?"
+                           data-confirm-icon="bi-x-lg"
+                           data-confirm-label="Sim, recusar"
+                           data-confirm-method="get">
                             <i class="bi bi-x-lg"></i> Recusar
                         </a>
                     </div>

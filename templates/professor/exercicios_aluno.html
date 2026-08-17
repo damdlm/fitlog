@@ -94,10 +94,13 @@
                                    class="btn btn-warning" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <form method="POST" action="{{ url_for('professor.excluir_exercicio_aluno', aluno_id=aluno.id, exercicio_id=exercicio.id, confirmar='false') }}"
-                                      class="d-inline" onsubmit="return confirm('Excluir este exercício?')">
+                                <form method="POST" action="{{ url_for('professor.excluir_exercicio_aluno', aluno_id=aluno.id, exercicio_id=exercicio.id, confirmar='true') }}" class="d-inline">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" class="btn btn-danger" title="Excluir">
+                                    <button type="submit" class="btn btn-danger" title="Excluir"
+                                            data-confirm-title="Excluir este exercício?"
+                                            data-confirm-text="&quot;{{ exercicio.nome }}&quot; será removido da lista do aluno."
+                                            data-confirm-icon="bi-trash"
+                                            data-confirm-label="Sim, excluir">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>

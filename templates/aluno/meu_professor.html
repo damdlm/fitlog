@@ -58,10 +58,13 @@
                     <a href="{{ url_for('professor.solicitacoes') }}" class="btn btn-outline-info">
                         <i class="bi bi-bell"></i> Ver Solicitações
                     </a>
-                    <form action="{{ url_for('aluno.remover_vinculo') }}" method="post" 
-                          onsubmit="return confirm('Tem certeza que deseja remover o vínculo com este professor?')">
+                    <form action="{{ url_for('aluno.remover_vinculo') }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-outline-danger">
+                        <button type="submit" class="btn btn-outline-danger"
+                                data-confirm-title="Remover vínculo com este professor?"
+                                data-confirm-text="Você pode solicitar um novo vínculo depois, se precisar."
+                                data-confirm-icon="bi-person-x"
+                                data-confirm-label="Sim, remover">
                             <i class="bi bi-person-x"></i> Remover Vínculo
                         </button>
                     </form>
