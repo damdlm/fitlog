@@ -3,7 +3,7 @@
 Permite que o aluno escolha não aparecer no ranking geral de "Melhores
 Alunos" (comparação entre alunos, nome + estatísticas de treino visíveis
 a outros usuários logados). Default True: quem não mexer na configuração
-aparece normalmente, mas fica reversível a qualquer momento no perfil.
+aparece normalmente, mas fica reversível a qualquer momento no perfil. 
 
 Revision ID: e5f6a7b8c9d0
 Revises: d4e5f6a7b8c9
