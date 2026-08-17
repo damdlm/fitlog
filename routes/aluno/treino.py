@@ -27,36 +27,25 @@ def treinos():
                          treinos=treinos,
                          exercicios_por_treino=exercicios_por_treino)
 
-@aluno_bp.route('/treino/novo', methods=['GET', 'POST'])
+@aluno_bp.route('/treino/novo')
 @login_required
 def novo_treino():
-    """Cria um novo treino para o aluno"""
+    """
+    Treinos agora só existem dentro de uma versão (ver aluno.novo_treino_versao),
+    então esta rota não cadastra nada diretamente -- ela só direciona o aluno
+    para o lugar certo: a versão ativa, se existir, ou a tela de criar uma
+    versão nova, caso ele ainda não tenha nenhuma.
+    """
     if not current_user.pode_gerenciar_treino_proprio():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
-    if request.method == 'POST':
-        codigo = request.form.get('id').upper()
-        nome = request.form.get('nome')
-        descricao = request.form.get('descricao', '')
-        
-        if not codigo or not codigo.isalpha() or len(codigo) != 1:
-            flash('ID do treino deve ser uma única letra!', 'danger')
-            return redirect(url_for('aluno.novo_treino'))
-        
-        existente = TreinoService.get_by_codigo(codigo, user_id=current_user.id)
-        if existente:
-            flash(f'Treino {codigo} já existe!', 'danger')
-            return redirect(url_for('aluno.novo_treino'))
-        
-        treino = TreinoService.create(codigo, nome, descricao, user_id=current_user.id)
-        if treino:
-            flash(f'Treino {codigo} criado com sucesso!', 'success')
-            return redirect(url_for('aluno.treinos'))
-        else:
-            flash('Erro ao criar treino!', 'danger')
+    versao_ativa = VersaoService.get_ativa(user_id=current_user.id)
+    if versao_ativa:
+        return redirect(url_for('aluno.novo_treino_versao', versao_id=versao_ativa.id))
     
-    return render_template('aluno/novo_treino.html')
+    flash('Você ainda não tem uma versão de treino. Crie uma versão primeiro.', 'info')
+    return redirect(url_for('aluno.nova_versao'))
 
 @aluno_bp.route('/treino/<int:treino_id>', methods=['GET', 'POST'])
 @login_required

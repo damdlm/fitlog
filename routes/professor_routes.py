@@ -552,40 +552,28 @@ def treinos_aluno(aluno_id):
                          exercicios_por_treino=exercicios_por_treino)
 
 
-@professor_bp.route('/aluno/<int:aluno_id>/treino/novo', methods=['GET', 'POST'])
+@professor_bp.route('/aluno/<int:aluno_id>/treino/novo')
 @login_required
 def novo_treino_aluno(aluno_id):
-    """Cria um novo treino para o aluno"""
+    """
+    Treinos agora só existem dentro de uma versão (ver
+    professor.novo_treino_versao_aluno), então esta rota não cadastra nada
+    diretamente -- ela só direciona o professor para o lugar certo: a versão
+    ativa do aluno, se existir, ou a tela de criar uma versão nova, caso o
+    aluno ainda não tenha nenhuma.
+    """
     aluno = User.query.get_or_404(aluno_id)
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
         return redirect(url_for('professor.listar_alunos'))
     
-    if request.method == 'POST':
-        codigo = request.form.get('id').upper()
-        nome = request.form.get('nome')
-        descricao = request.form.get('descricao', '')
-        
-        if not codigo or not codigo.isalpha() or len(codigo) != 1:
-            flash('ID do treino deve ser uma única letra!', 'danger')
-            return redirect(url_for('professor.novo_treino_aluno', aluno_id=aluno.id))
-        
-        existente = TreinoService.get_by_codigo(codigo, user_id=aluno.id)
-        if existente:
-            flash(f'Treino {codigo} já existe para este aluno!', 'danger')
-            return redirect(url_for('professor.novo_treino_aluno', aluno_id=aluno.id))
-        
-        treino = TreinoService.create(codigo, nome, descricao, user_id=aluno.id)
-        
-        if treino:
-            logger.info(f"Professor {current_user.id} criou treino {treino.id} para aluno {aluno.id}")
-            flash(f'Treino {codigo} criado para {aluno.nome_completo or aluno.username}!', 'success')
-            return redirect(url_for('professor.treinos_aluno', aluno_id=aluno.id))
-        else:
-            flash('Erro ao criar treino!', 'danger')
+    versao_ativa = VersaoService.get_ativa(user_id=aluno.id)
+    if versao_ativa:
+        return redirect(url_for('professor.novo_treino_versao_aluno', aluno_id=aluno.id, versao_id=versao_ativa.id))
     
-    return render_template('professor/novo_treino_aluno.html', aluno=aluno)
+    flash(f'{aluno.nome_completo or aluno.username} ainda não tem uma versão de treino. Crie uma versão primeiro.', 'info')
+    return redirect(url_for('professor.nova_versao_aluno', aluno_id=aluno.id))
 
 
 @professor_bp.route('/aluno/<int:aluno_id>/treino/<int:treino_id>', methods=['GET', 'POST'])

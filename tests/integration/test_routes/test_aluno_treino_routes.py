@@ -67,43 +67,50 @@ class TestListarTreinos:
 
 
 class TestNovoTreino:
-    def test_cria_treino_com_sucesso(self, client, app):
+    """
+    /aluno/treino/novo não cadastra mais nada diretamente -- treinos só
+    existem dentro de uma versão (aluno.novo_treino_versao). Esta rota agora
+    é só um dispatcher: manda pra versão ativa se existir, ou pra tela de
+    criar versão nova, caso contrário. Regressão do bug em que "Criar
+    primeiro treino" dava erro 500 (template inexistente) quando o aluno
+    ainda não tinha nenhuma versão cadastrada.
+    """
+    def test_sem_versao_redireciona_para_nova_versao(self, client, app):
         with app.app_context():
             _criar_usuario('at_novo_1')
         _login(client, 'at_novo_1')
 
-        resp = client.post('/aluno/treino/novo', data={'id': 'A', 'nome': 'Treino A', 'descricao': 'peito'})
+        resp = client.get('/aluno/treino/novo')
 
         assert resp.status_code == 302
-        assert '/aluno/treinos' in resp.headers['Location']
-        with app.app_context():
-            u = User.query.filter_by(username='at_novo_1').first()
-            assert Treino.query.filter_by(codigo='A', user_id=u.id).first() is not None
+        assert '/aluno/versao/nova' in resp.headers['Location']
 
-    def test_codigo_invalido_nao_cria(self, client, app):
+    def test_com_versao_ativa_redireciona_para_novo_treino_da_versao(self, client, app):
         with app.app_context():
-            _criar_usuario('at_novo_2')
+            u = _criar_usuario('at_novo_2')
+            versao = VersaoService.create(descricao='V1', data_inicio=date(2026, 1, 1), user_id=u.id)
+            versao_id = versao.id
         _login(client, 'at_novo_2')
 
-        resp = client.post('/aluno/treino/novo', data={'id': 'AB', 'nome': 'Treino AB'})
+        resp = client.get('/aluno/treino/novo')
 
         assert resp.status_code == 302
-        with app.app_context():
-            u = User.query.filter_by(username='at_novo_2').first()
-            assert Treino.query.filter_by(user_id=u.id).count() == 0
+        assert f'/aluno/versao/{versao_id}/treino/novo' in resp.headers['Location']
 
-    def test_codigo_duplicado_nao_cria_outro(self, client, app):
+    def test_com_versao_arquivada_redireciona_para_nova_versao(self, client, app):
+        """Versão com data_fim preenchida não conta como ativa (get_ativa
+        só considera data_fim=None), então o comportamento é o mesmo de
+        não ter versão nenhuma."""
         with app.app_context():
             u = _criar_usuario('at_novo_3')
-            TreinoService.create('A', 'Treino A', 'd', user_id=u.id)
+            VersaoService.create(descricao='V1', data_inicio=date(2026, 1, 1),
+                                  data_fim=date(2026, 2, 1), user_id=u.id)
         _login(client, 'at_novo_3')
 
-        resp = client.post('/aluno/treino/novo', data={'id': 'A', 'nome': 'Outro Treino A'})
+        resp = client.get('/aluno/treino/novo')
 
         assert resp.status_code == 302
-        with app.app_context():
-            u = User.query.filter_by(username='at_novo_3').first()
-            assert Treino.query.filter_by(codigo='A', user_id=u.id).count() == 1
+        assert '/aluno/versao/nova' in resp.headers['Location']
 
 
 class TestEditarTreino:
