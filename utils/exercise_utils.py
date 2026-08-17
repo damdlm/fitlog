@@ -22,11 +22,11 @@ def buscar_musculo_no_catalogo(nome_exercicio):
     from models import ExercicioSistema
     from utils.exercise_utils import remover_acentos
     
-    print(f"🔍 Buscando músculo para: '{nome_exercicio}'")
+    logger.debug("Buscando músculo para: '%s'", nome_exercicio)
     
     # Normalizar o nome de busca
     nome_busca = remover_acentos(nome_exercicio.lower().strip())
-    print(f"🔤 Termo de busca normalizado: '{nome_busca}'")
+    logger.debug("Termo de busca normalizado: '%s'", nome_busca)
     
     try:
         # 1. Correspondência exata
@@ -36,7 +36,7 @@ def buscar_musculo_no_catalogo(nome_exercicio):
         
         if exercicio and exercicio.grupo_muscular:
             musculo = exercicio.grupo_muscular
-            print(f"✅ Correspondência exata encontrada: {musculo}")
+            logger.debug("Correspondência exata encontrada: %s", musculo)
             return musculo
         
         # 2. Nome do catálogo CONTÉM o nome buscado
@@ -48,7 +48,7 @@ def buscar_musculo_no_catalogo(nome_exercicio):
             nome_catalogo = remover_acentos(ex.nome.lower())
             if nome_busca in nome_catalogo and ex.grupo_muscular:
                 musculo = ex.grupo_muscular
-                print(f"✅ Correspondência parcial: {musculo}")
+                logger.debug("Correspondência parcial: %s", musculo)
                 return musculo
         
         # 3. Nome buscado CONTÉM o nome do catálogo
@@ -56,10 +56,10 @@ def buscar_musculo_no_catalogo(nome_exercicio):
             nome_catalogo = remover_acentos(ex.nome.lower())
             if nome_catalogo in nome_busca and ex.grupo_muscular:
                 musculo = ex.grupo_muscular
-                print(f"✅ Correspondência inversa: {musculo}")
+                logger.debug("Correspondência inversa: %s", musculo)
                 return musculo
         
-        print(f"❌ Nenhum músculo encontrado para '{nome_exercicio}'")
+        logger.debug("Nenhum músculo encontrado para '%s'", nome_exercicio)
         
     except Exception:
         logger.exception("Erro ao buscar no catálogo")

@@ -1,6 +1,10 @@
+import logging
+
 from .date_utils import converter_periodo_para_data
 from .exercise_utils import get_series_from_registro
 from models import Treino
+
+logger = logging.getLogger(__name__)
 
 # ===== VERSÕES GLOBAIS =====
 
@@ -65,7 +69,7 @@ def adicionar_treino_na_versao(versao_id, treino_codigo, nome_treino, descricao_
     # VERIFICAR SE O TREINO EXISTE PELO CÓDIGO
     treino_existente = Treino.query.filter_by(codigo=treino_codigo).first()
     if not treino_existente:
-        print(f"❌ ERRO: Treino com código {treino_codigo} não existe na tabela treinos")
+        logger.warning("Treino com código %s não existe na tabela treinos", treino_codigo)
         return False
     
     # Verificar se o treino já existe na versão (pelo ID numérico)
@@ -76,7 +80,7 @@ def adicionar_treino_na_versao(versao_id, treino_codigo, nome_treino, descricao_
             break
     
     if existe:
-        print(f"❌ Treino {treino_codigo} já existe nesta versão")
+        logger.warning("Treino %s já existe nesta versão", treino_codigo)
         return False
     
     # Criar novo treino na versão
@@ -127,13 +131,13 @@ def editar_treino_na_versao(versao_id, treino_codigo, nome_treino=None, descrica
     versao = get_versao(versao_id)
     
     if not versao:
-        print(f"❌ Versão {versao_id} não encontrada")
+        logger.warning("Versão %s não encontrada", versao_id)
         return False
     
     # Buscar o treino pelo código para obter o ID numérico
     treino = Treino.query.filter_by(codigo=treino_codigo).first()
     if not treino:
-        print(f"❌ Treino com código {treino_codigo} não encontrado")
+        logger.warning("Treino com código %s não encontrado", treino_codigo)
         return False
     
     # Encontrar o treino na versão usando o ID numérico
@@ -144,7 +148,7 @@ def editar_treino_na_versao(versao_id, treino_codigo, nome_treino=None, descrica
             break
     
     if not treino_versao:
-        print(f"❌ Treino {treino_codigo} não encontrado nesta versão")
+        logger.warning("Treino %s não encontrado nesta versão", treino_codigo)
         return False
     
     # Atualizar dados
@@ -178,13 +182,13 @@ def remover_treino_da_versao(versao_id, treino_codigo):
     versao = get_versao(versao_id)
     
     if not versao:
-        print(f"❌ Versão {versao_id} não encontrada")
+        logger.warning("Versão %s não encontrada", versao_id)
         return False
     
     # Buscar o treino pelo código para obter o ID numérico
     treino = Treino.query.filter_by(codigo=treino_codigo).first()
     if not treino:
-        print(f"❌ Treino com código {treino_codigo} não encontrado")
+        logger.warning("Treino com código %s não encontrado", treino_codigo)
         return False
     
     # Encontrar o treino na versão usando o ID numérico
@@ -195,7 +199,7 @@ def remover_treino_da_versao(versao_id, treino_codigo):
             break
     
     if not treino_versao:
-        print(f"❌ Treino {treino_codigo} não encontrado nesta versão")
+        logger.warning("Treino %s não encontrado nesta versão", treino_codigo)
         return False
     
     db.session.delete(treino_versao)
@@ -392,7 +396,7 @@ def migrar_versoes_para_novo_formato():
         if 'treinos' in v and v['treinos']:
             primeiro_treino = next(iter(v['treinos'].values())) if v['treinos'] else None
             if primeiro_treino and isinstance(primeiro_treino, dict) and 'exercicios' in primeiro_treino:
-                print("Arquivo já está no novo formato")
+                logger.debug("Arquivo já está no novo formato")
                 return versoes
     
     # Converte para o novo formato

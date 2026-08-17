@@ -2,9 +2,12 @@
 Utilitários para manipulação de datas no FitLog
 """
 
+import logging
 import re
 from datetime import datetime
 import calendar
+
+logger = logging.getLogger(__name__)
 
 # Mapeamento de meses (nome para número)
 MESES = {
@@ -67,7 +70,7 @@ def converter_periodo_para_data(periodo_str):
             return f"{ano_atual}-{mes_num:02d}-01"
     
     # Fallback
-    print(f"Aviso: Não foi possível converter período '{periodo_str}'. Usando data atual.")
+    logger.warning("Não foi possível converter período '%s'. Usando data atual.", periodo_str)
     return datetime.now().strftime("%Y-%m-%d")
 
 
