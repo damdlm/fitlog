@@ -16,43 +16,6 @@ professor_bp = Blueprint('professor', __name__, url_prefix='/professor')
 logger = logging.getLogger(__name__)
 
 # =============================================
-# DASHBOARD DO PROFESSOR
-# =============================================
-
-@professor_bp.route('/dashboard')
-@login_required
-def dashboard():
-    """Dashboard principal do professor"""
-    if not current_user.is_professor() and not current_user.is_admin:
-        flash('Acesso negado. Área restrita para professores.', 'danger')
-        return redirect(url_for('main.index'))
-    
-    alunos = current_user.get_alunos() if current_user.is_professor() else User.query.filter_by(tipo_usuario='aluno', ativo=True).all()
-    
-    total_alunos = len(alunos)
-    total_treinos = 0
-    total_registros = 0
-    
-    # Antes: 2 queries .count() por aluno em loop (N+1). Agora: 2 queries
-    # agregadas com IN + GROUP BY, mesmo padrão já usado em listar_alunos()
-    # nesta mesma tela (linhas ~90-98).
-    aluno_ids = [aluno.id for aluno in alunos]
-    if aluno_ids:
-        total_treinos = (db.session.query(func.count(Treino.id))
-                          .filter(Treino.user_id.in_(aluno_ids))
-                          .scalar()) or 0
-        total_registros = (db.session.query(func.count(RegistroTreino.id))
-                            .filter(RegistroTreino.user_id.in_(aluno_ids))
-                            .scalar()) or 0
-    
-    return render_template('professor/dashboard.html',
-                         alunos=alunos,
-                         total_alunos=total_alunos,
-                         total_treinos=total_treinos,
-                         total_registros=total_registros)
-
-
-# =============================================
 # GERENCIAMENTO DE ALUNOS
 # =============================================
 
@@ -176,7 +139,7 @@ def visualizar_aluno(aluno_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para ver este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     treinos = TreinoService.get_all(user_id=aluno.id)
     exercicios = ExercicioService.get_exercicios_completos(user_id=aluno.id)
@@ -205,7 +168,7 @@ def desativar_aluno(aluno_id):
     
     if not current_user.is_admin:
         flash('Você não tem permissão para desativar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     aluno.ativo = False
     db.session.commit()
@@ -221,7 +184,7 @@ def reativar_aluno(aluno_id):
     
     if not current_user.is_admin:
         flash('Você não tem permissão para reativar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     aluno.ativo = True
     db.session.commit()
@@ -237,7 +200,7 @@ def remover_vinculo(aluno_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para remover este vínculo.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     assoc = AlunoProfessor.query.filter_by(aluno_id=aluno_id, ativo=True).first()
     if assoc:
@@ -256,7 +219,7 @@ def editar_aluno(aluno_id):
     
     if not current_user.is_admin:
         flash('Você não tem permissão para editar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     if request.method == 'POST':
         nome_completo = request.form.get('nome_completo')
@@ -384,7 +347,7 @@ def versoes_aluno(aluno_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     versoes = VersaoService.get_all(user_id=aluno.id)
     return render_template('professor/versoes_aluno.html', aluno=aluno, versoes=versoes)
@@ -398,7 +361,7 @@ def nova_versao_aluno(aluno_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     if request.method == 'POST':
         descricao = request.form.get('descricao')
@@ -438,7 +401,7 @@ def ver_versao_aluno(aluno_id, versao_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     versao = VersaoService.get_by_id(versao_id, user_id=aluno.id, load_relations=True)
     
@@ -479,7 +442,7 @@ def finalizar_versao_aluno(aluno_id, versao_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     versao = VersaoService.get_by_id(versao_id, user_id=aluno.id)
     
@@ -510,7 +473,7 @@ def clonar_versao_aluno(aluno_id, versao_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     if VersaoService.clone(versao_id, user_id=aluno.id):
         logger.info(f"Professor {current_user.id} clonou versão {versao_id} do aluno {aluno.id}")
@@ -529,7 +492,7 @@ def excluir_versao_aluno(aluno_id, versao_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     versao = VersaoService.get_by_id(versao_id, user_id=aluno.id)
     
@@ -573,7 +536,7 @@ def treinos_aluno(aluno_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     treinos = TreinoService.get_all(user_id=aluno.id)
     
@@ -597,7 +560,7 @@ def novo_treino_aluno(aluno_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     if request.method == 'POST':
         codigo = request.form.get('id').upper()
@@ -633,7 +596,7 @@ def editar_treino_aluno(aluno_id, treino_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     treino = TreinoService.get_by_id(treino_id, user_id=aluno.id)
     
@@ -673,7 +636,7 @@ def excluir_treino_aluno(aluno_id, treino_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     treino = TreinoService.get_by_id(treino_id, user_id=aluno.id)
     
@@ -702,7 +665,7 @@ def exercicios_aluno(aluno_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     exercicios = ExercicioService.get_exercicios_completos(user_id=aluno.id)
     treinos = TreinoService.get_all(user_id=aluno.id)
@@ -737,7 +700,7 @@ def novo_exercicio_aluno(aluno_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     if request.method == 'POST':
         nome = request.form.get('nome')
@@ -781,7 +744,7 @@ def editar_exercicio_aluno(aluno_id, exercicio_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     exercicio = ExercicioService.get_by_id(exercicio_id, user_id=aluno.id, load_relations=True)
     
@@ -833,7 +796,7 @@ def excluir_exercicio_aluno(aluno_id, exercicio_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     exercicio = ExercicioService.get_by_id(exercicio_id, user_id=aluno.id)
     
@@ -873,7 +836,7 @@ def novo_treino_versao_aluno(aluno_id, versao_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     versao = VersaoService.get_by_id(versao_id, user_id=aluno.id)
     
@@ -952,7 +915,7 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
     aluno = User.query.get_or_404(aluno_id)
     if not (current_user.is_admin or current_user.pode_acessar_dados_de(aluno)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     versao = VersaoService.get_by_id(versao_id, user_id=aluno.id, load_relations=True)
     if not versao:
@@ -1030,7 +993,7 @@ def excluir_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     try:
         VersaoService.excluir_treino_versao(versao_id, treino_codigo, aluno.id, current_user)
@@ -1060,7 +1023,7 @@ def estatisticas_aluno(aluno_id):
     
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para ver as estatísticas deste aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
     
     musculo_stats = EstatisticaService.calcular_por_musculo(user_id=aluno.id)
     
@@ -1124,7 +1087,7 @@ def calendario_aluno(aluno_id):
 
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para ver o calendário deste aluno.', 'danger')
-        return redirect(url_for('professor.dashboard'))
+        return redirect(url_for('professor.listar_alunos'))
 
     data_atual = datetime.now(timezone.utc)
 

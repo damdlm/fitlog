@@ -5,18 +5,10 @@
 
 {% block content %}
 <style>
-    .ga-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-    .ga-header h2 {
-        display: flex;
-        align-items: center;
-        margin: 0;
-    }
-
+    /* Rodapé com as ações principais -- mesmo padrão de
+       aluno/versoes.html (.vc-footer-actions) e aluno/ver_versao.html
+       (.vv-footer-actions): container flex + classes .btn padrão do
+       Bootstrap, em vez de um botão customizado só desta página. */
     .ga-footer-actions {
         display: flex;
         justify-content: center;
@@ -26,52 +18,11 @@
         padding-top: 24px;
         border-top: 1px solid #EEF0F3;
     }
-    .ga-footer-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border: 1px solid #E3E6EB;
-        background: white;
-        color: #374151;
-        padding: 10px 18px;
-        border-radius: 12px;
-        font-weight: 700;
-        font-size: 0.88rem;
-        text-decoration: none;
-        transition: all 0.15s ease;
-        position: relative;
-    }
-    .ga-footer-btn:hover {
-        border-color: #F28C33;
-        color: #F28C33;
-        background: #FFF8F2;
-        transform: translateY(-1px);
-    }
-    .ga-footer-btn.variant-primary {
-        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
-        border: none;
-        color: white;
-        box-shadow: 0 4px 14px rgba(242, 140, 51, 0.3);
-    }
-    .ga-footer-btn.variant-primary:hover { color: white; filter: brightness(1.04); transform: translateY(-1px); }
-    .ga-footer-btn .badge {
-        position: absolute;
-        top: -6px;
-        right: -6px;
-    }
 
     /* Modal de confirmação: agora usa o padrão global (fl-confirm.js),
        ver base.html -- as regras locais específicas do gaConfirmModal
        foram removidas daqui. */
 </style>
-<!--
-<div class="ga-header">
-    <h2>
-        <i class="bi bi-people-fill me-2" style="color: #F28C33;"></i>
-        Gerenciar Alunos
-        <span class="badge bg-light text-dark border ms-2 fw-normal fs-6">{{ alunos_data|length }}</span>
-    </h2>
-</div> -->
 
 {% if current_user.solicitacoes_pendentes_count > 0 %}
 <div class="alert alert-info d-flex align-items-center justify-content-between mb-4">
@@ -314,17 +265,14 @@
 </div>
 
 <div class="ga-footer-actions">
-    <a href="{{ url_for('professor.solicitacoes') }}" class="ga-footer-btn">
+    <a href="{{ url_for('professor.solicitacoes') }}" class="btn btn-outline-secondary">
         <i class="bi bi-envelope"></i> Solicitações
         {% if current_user.solicitacoes_pendentes_count > 0 %}
         <span class="badge rounded-pill bg-danger">{{ current_user.solicitacoes_pendentes_count }}</span>
         {% endif %}
     </a>
-    <a href="{{ url_for('professor.novo_aluno') }}" class="ga-footer-btn variant-primary">
+    <a href="{{ url_for('professor.novo_aluno') }}" class="btn btn-success">
         <i class="bi bi-person-plus"></i> Novo Aluno
-    </a>
-    <a href="{{ url_for('professor.dashboard') }}" class="ga-footer-btn">
-        <i class="bi bi-arrow-left"></i> Voltar
     </a>
 </div>
 {% endblock %}

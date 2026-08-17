@@ -1034,13 +1034,6 @@
                     </button>
                     <div class="mega-panel" data-mega-panel="professor">
                         <div class="mega-grid">
-                            <a class="mega-card" href="{{ url_for('professor.dashboard') }}">
-                                <span class="mega-icon"><i class="bi bi-speedometer2"></i></span>
-                                <span>
-                                    <span class="mega-title">Dashboard</span>
-                                    <span class="mega-desc">Visão geral dos seus alunos</span>
-                                </span>
-                            </a>
                             <a class="mega-card" href="{{ url_for('professor.listar_alunos') }}">
                                 <span class="mega-icon"><i class="bi bi-people"></i></span>
                                 <span>
@@ -1188,11 +1181,6 @@
                             </a>
                         </li>
                         {% if current_user.is_professor() %}
-                        <li class="d-lg-none">
-                            <a class="dropdown-item" href="{{ url_for('professor.dashboard') }}">
-                                <i class="bi bi-speedometer2"></i> Dashboard
-                            </a>
-                        </li>
                         <li class="d-lg-none">
                             <a class="dropdown-item" href="{{ url_for('professor.listar_alunos') }}">
                                 <i class="bi bi-people"></i> Meus Alunos
