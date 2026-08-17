@@ -59,13 +59,12 @@ def dashboard():
 @professor_bp.route('/alunos')
 @login_required
 def listar_alunos():
-    """Lista todos os alunos do professor"""
+    """Lista os alunos vinculados e ativos do professor"""
     if not current_user.is_professor() and not current_user.is_admin:
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
     busca = request.args.get('busca', '').strip()
-    status = request.args.get('status', 'ativos')
     
     # Uma única query com joinedload evita o N+1 de buscar cada aluno
     # individualmente (db.session.get dentro do loop).
@@ -74,18 +73,11 @@ def listar_alunos():
                 .filter_by(professor_id=current_user.id, ativo=True)
                 .all())
     
-    total_ativos = sum(1 for v in vinculos if v.aluno and v.aluno.ativo)
-    total_inativos = sum(1 for v in vinculos if v.aluno and not v.aluno.ativo)
-    
     busca_lower = busca.lower()
     alunos_data = []
     for vinculo in vinculos:
         aluno = vinculo.aluno
-        if not aluno:
-            continue
-        if status == 'ativos' and not aluno.ativo:
-            continue
-        if status == 'inativos' and aluno.ativo:
+        if not aluno or not aluno.ativo:
             continue
         if busca_lower and busca_lower not in (aluno.nome_completo or '').lower() \
                 and busca_lower not in aluno.username.lower() \
@@ -108,11 +100,7 @@ def listar_alunos():
     return render_template('professor/alunos.html', 
                          alunos_data=alunos_data,
                          registros_por_aluno=registros_por_aluno,
-                         total_vinculados=len(vinculos),
-                         total_ativos=total_ativos,
-                         total_inativos=total_inativos,
-                         busca=busca,
-                         status=status)
+                         busca=busca)
 
 
 @professor_bp.route('/aluno/novo', methods=['GET', 'POST'])

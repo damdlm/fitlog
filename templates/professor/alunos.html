@@ -86,73 +86,23 @@
 </div>
 {% endif %}
 
-<!-- Resumo -->
-<div class="row mb-4 g-3">
-    <div class="col-4">
-        <div class="card h-100" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);">
-            <div class="card-body d-flex justify-content-between align-items-center py-3">
-                <div>
-                    <h6 class="text-white-50 mb-1 small">Vinculados</h6>
-                    <h3 class="text-white mb-0">{{ total_vinculados }}</h3>
-                </div>
-                <i class="bi bi-people fs-2 text-white-50"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-4">
-        <div class="card h-100" style="background: #2D2D2D;">
-            <div class="card-body d-flex justify-content-between align-items-center py-3">
-                <div>
-                    <h6 class="text-white-50 mb-1 small">Ativos</h6>
-                    <h3 class="text-white mb-0">{{ total_ativos }}</h3>
-                </div>
-                <i class="bi bi-person-check fs-2 text-white-50"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-4">
-        <div class="card h-100 border">
-            <div class="card-body d-flex justify-content-between align-items-center py-3">
-                <div>
-                    <h6 class="text-muted mb-1 small">Inativos</h6>
-                    <h3 class="mb-0">{{ total_inativos }}</h3>
-                </div>
-                <i class="bi bi-person-x fs-2 text-muted"></i>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Filtros -->
 <div class="card mb-4">
     <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-6">
-                <label class="form-label fw-bold small text-uppercase text-muted">Buscar</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-                    <input type="text" name="busca" class="form-control"
-                           placeholder="Nome, usuário ou e-mail..." value="{{ busca or '' }}">
-                </div>
+        <form method="get" class="d-flex gap-2 align-items-center">
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input type="text" name="busca" class="form-control"
+                       placeholder="Nome, usuário ou e-mail..." value="{{ busca or '' }}">
             </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold small text-uppercase text-muted">Status</label>
-                <select name="status" class="form-select">
-                    <option value="ativos" {% if status == 'ativos' %}selected{% endif %}>Ativos</option>
-                    <option value="inativos" {% if status == 'inativos' %}selected{% endif %}>Inativos</option>
-                    <option value="todos" {% if status == 'todos' %}selected{% endif %}>Todos</option>
-                </select>
-            </div>
-            <div class="col-md-2 d-flex gap-2">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-funnel"></i> Filtrar
-                </button>
-            </div>
+            <button type="submit" class="btn btn-primary flex-shrink-0">
+                <i class="bi bi-funnel"></i> Filtrar
+            </button>
         </form>
-        {% if busca or status != 'ativos' %}
+        {% if busca %}
         <div class="mt-2">
             <a href="{{ url_for('professor.listar_alunos') }}" class="small text-muted">
-                <i class="bi bi-x-circle"></i> Limpar filtros
+                <i class="bi bi-x-circle"></i> Limpar filtro
             </a>
         </div>
         {% endif %}
@@ -170,7 +120,6 @@
                         <th>Contato</th>
                         <th>Vinculado desde</th>
                         <th class="text-center">Registros</th>
-                        <th class="text-center">Status</th>
                         <th class="text-end pe-3">Ações</th>
                     </tr>
                 </thead>
@@ -202,13 +151,6 @@
                             <span class="badge bg-light text-dark border">
                                 {{ registros_por_aluno.get(aluno.id, 0) }}
                             </span>
-                        </td>
-                        <td class="text-center">
-                            {% if aluno.ativo %}
-                                <span class="badge bg-success">Ativo</span>
-                            {% else %}
-                                <span class="badge bg-danger">Inativo</span>
-                            {% endif %}
                         </td>
                         <td class="text-end pe-3">
                             <div class="btn-group btn-group-sm">
@@ -259,9 +201,9 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-5">
+                        <td colspan="5" class="text-center text-muted py-5">
                             <i class="bi bi-people fs-1 d-block mb-3"></i>
-                            {% if busca or status != 'ativos' %}
+                            {% if busca %}
                                 Nenhum aluno encontrado para esse filtro.
                             {% else %}
                                 Você ainda não tem alunos vinculados.
@@ -297,11 +239,6 @@
                     <div class="fw-semibold">{{ nome_exibicao }}</div>
                     <div class="text-muted small">@{{ aluno.username }}</div>
                 </div>
-                {% if aluno.ativo %}
-                    <span class="badge bg-success">Ativo</span>
-                {% else %}
-                    <span class="badge bg-danger">Inativo</span>
-                {% endif %}
             </div>
             <div class="small text-muted mb-1"><i class="bi bi-envelope me-1"></i>{{ aluno.email }}</div>
             {% if aluno.telefone %}
@@ -362,7 +299,7 @@
         <div class="card-body text-center text-muted py-5">
             <i class="bi bi-people fs-1 d-block mb-3"></i>
 
-            {% if busca or status != 'ativos' %}
+            {% if busca %}
                 Nenhum aluno encontrado para esse filtro.
             {% else %}
                 Você ainda não tem alunos vinculados.
