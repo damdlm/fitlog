@@ -8,3 +8,4 @@ from . import treino
 from . import exercicio
 from . import versao
 from . import stats
+from . import ranking

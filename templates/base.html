@@ -1112,6 +1112,13 @@
                                         </span>
                                     </a>
                                     {% endif %}
+                                    <a class="mega-card" href="{{ url_for('aluno.ranking') }}">
+                                        <span class="mega-icon"><i class="bi bi-trophy-fill"></i></span>
+                                        <span>
+                                            <span class="mega-title">Melhores Alunos</span>
+                                            <span class="mega-desc">Ranking dos últimos 30 dias</span>
+                                        </span>
+                                    </a>
                                 </div>
                             </div>
                             <div>
@@ -1293,6 +1300,7 @@
                 <a class="mais-link" href="{{ url_for('aluno.exercicios') }}"><i class="bi bi-list-check"></i> Meus Exercícios</a>
                 <a class="mais-link" href="{{ url_for('aluno.treinos') }}"><i class="bi bi-trophy"></i> Meus Treinos</a>
                 <a class="mais-link" href="{{ url_for('aluno.versoes') }}"><i class="bi bi-clock-history"></i> Minhas Versões</a>
+                <a class="mais-link" href="{{ url_for('aluno.ranking') }}"><i class="bi bi-trophy-fill"></i> Melhores Alunos</a>
             </div>
         </div>
     </div>

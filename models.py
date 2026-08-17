@@ -86,6 +86,11 @@ class User(UserMixin, db.Model):
     # valor gravado na sessão assinada do Flask no momento do login; ver
     # app.py:load_user).
     session_version = db.Column(db.Integer, nullable=False, default=0)
+
+    # Opt-out da tela "Melhores Alunos" (ranking geral entre alunos) --
+    # ver migration e5f6a7b8c9d0. Default True (aparece), reversível a
+    # qualquer momento em Meu Perfil.
+    aparecer_no_ranking = db.Column(db.Boolean, nullable=False, default=True)
     
     # Relacionamentos
     treinos = db.relationship('Treino', backref='usuario', lazy=True, cascade='all, delete-orphan')

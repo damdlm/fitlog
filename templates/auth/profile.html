@@ -69,7 +69,23 @@
                                         <label class="form-label fw-bold">Telefone</label>
                                         <input type="text" name="telefone" class="form-control" value="{{ user.telefone or '' }}">
                                     </div>
-                                    
+
+                                    {% if user.tipo_usuario == 'aluno' %}
+                                    <div class="mb-3 form-check form-switch">
+                                        <input type="checkbox" class="form-check-input" role="switch"
+                                               id="aparecerNoRanking" name="aparecer_no_ranking"
+                                               {% if user.aparecer_no_ranking %}checked{% endif %}>
+                                        <label class="form-check-label fw-bold" for="aparecerNoRanking">
+                                            Aparecer no ranking "Melhores Alunos"
+                                        </label>
+                                        <div class="form-text">
+                                            Quando ativado, seu nome e suas estatísticas de treino
+                                            (dias treinados e tempo de treino dos últimos 30 dias)
+                                            ficam visíveis para outros alunos no ranking geral.
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
                                     <button type="submit" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
                                         <i class="bi bi-save"></i> Salvar Alterações
                                     </button>

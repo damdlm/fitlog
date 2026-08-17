@@ -7,6 +7,7 @@ from urllib.parse import urlparse, urljoin
 import logging
 from utils.validators import validar_email, validar_senha
 from utils.email_utils import enviar_email
+from services.base_service import CacheService
 
 auth_bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
@@ -308,6 +309,16 @@ def update_profile():
         current_user.nome_completo = nome_completo or None
         current_user.email = email
         current_user.telefone = telefone or None
+
+        if current_user.tipo_usuario == 'aluno':
+            # Checkbox desmarcado não vem no POST -- ausência = False.
+            novo_valor = 'aparecer_no_ranking' in request.form
+            if novo_valor != current_user.aparecer_no_ranking:
+                current_user.aparecer_no_ranking = novo_valor
+                # Opt-out de privacidade precisa valer na hora -- não dá
+                # pra esperar o TTL de 5min do cache do ranking geral.
+                CacheService.invalidate("ranking:geral:30d")
+
         db.session.commit()
 
         flash('Perfil atualizado com sucesso!', 'success')

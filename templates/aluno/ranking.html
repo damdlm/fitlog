@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-trophy-fill" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Melhores Alunos{% endblock %}
+
+{% block content %}
+<style>
+    .rk-hero {
+        background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
+        border-radius: 18px;
+        padding: 28px 32px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+    .rk-hero::before {
+        content: '';
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(242,140,51,0.35) 0%, rgba(242,140,51,0) 70%);
+    }
+    .rk-hero-title {
+        font-size: 0.95rem;
+        color: rgba(255,255,255,0.6);
+        margin-bottom: 2px;
+    }
+    .rk-hero-destaque {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+    .rk-hero-sub {
+        color: rgba(255,255,255,0.55);
+        font-size: 0.85rem;
+        margin-bottom: 0;
+    }
+
+    .rk-card {
+        border-radius: 16px;
+        border: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .rk-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 6px;
+        border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+    .rk-item:last-child { border-bottom: none; }
+
+    .rk-posicao {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1rem;
+        flex-shrink: 0;
+        background: #f1f1f1;
+        color: #6c757d;
+    }
+    .rk-posicao.top1 { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: white; }
+    .rk-posicao.top2 { background: linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%); color: white; }
+    .rk-posicao.top3 { background: linear-gradient(135deg, #CD7F32 0%, #B06A2A 100%); color: white; }
+
+    .rk-info { flex: 1; min-width: 0; }
+    .rk-nome {
+        font-weight: 700;
+        color: var(--secondary-color, #2D2D2D);
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .rk-metricas {
+        font-size: 0.8rem;
+        color: #8a8a8a;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .rk-metricas i { color: #F28C33; margin-right: 3px; }
+
+    .rk-minha-posicao {
+        border: 2px dashed #F28C33;
+        border-radius: 14px;
+        padding: 14px 16px;
+        margin-top: 18px;
+        background: rgba(242, 140, 51, 0.04);
+    }
+    .rk-minha-posicao .rk-item { border-bottom: none; padding: 0; }
+
+    .rk-empty {
+        text-align: center;
+        padding: 48px 20px;
+        color: #999;
+    }
+    .rk-empty i {
+        font-size: 2.6rem;
+        color: #e0a877;
+        margin-bottom: 12px;
+        display: block;
+    }
+
+    .rk-info-box {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 14px 16px;
+        font-size: 0.82rem;
+        color: #6c757d;
+        margin-top: 18px;
+    }
+    .rk-info-box i { color: #F28C33; }
+
+    .rk-opt-out {
+        font-size: 0.8rem;
+        color: #8a8a8a;
+        margin-top: 10px;
+    }
+    .rk-opt-out a { color: #F28C33; font-weight: 600; }
+</style>
+
+<div class="rk-hero">
+    <div class="rk-hero-title">Melhores Alunos</div>
+    <p class="rk-hero-destaque mb-0">
+        Ranking dos últimos 30 dias <span style="color:#FFB366;">🏆</span>
+    </p>
+    <p class="rk-hero-sub">
+        Por dias treinados e, em caso de empate, pelo tempo total de treino.
+    </p>
+</div>
+
+<div class="card rk-card">
+    <div class="card-body">
+        {% if ranking %}
+            {% for item in ranking %}
+            <div class="rk-item">
+                <div class="rk-posicao {% if item.posicao == 1 %}top1{% elif item.posicao == 2 %}top2{% elif item.posicao == 3 %}top3{% endif %}">
+                    {{ item.posicao }}
+                </div>
+                <div class="rk-info">
+                    <div class="rk-nome">
+                        {{ item.nome }}
+                        {% if item.user_id == current_user.id %}
+                            <span class="badge bg-secondary">Você</span>
+                        {% endif %}
+                    </div>
+                    <div class="rk-metricas">
+                        <span><i class="bi bi-calendar-check"></i>{{ item.dias_treinados }} dia{{ 's' if item.dias_treinados != 1 }} treinado{{ 's' if item.dias_treinados != 1 }}</span>
+                        <span><i class="bi bi-stopwatch"></i>{{ item.tempo_total_formatado }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="rk-empty">
+                <i class="bi bi-trophy"></i>
+                Ainda não há dados suficientes para montar o ranking dos últimos 30 dias.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if mostrar_minha_posicao_separada %}
+<div class="rk-minha-posicao">
+    <div class="rk-item">
+        <div class="rk-posicao">{{ minha_posicao.posicao }}</div>
+        <div class="rk-info">
+            <div class="rk-nome">{{ minha_posicao.nome }} <span class="badge bg-secondary">Você</span></div>
+            <div class="rk-metricas">
+                <span><i class="bi bi-calendar-check"></i>{{ minha_posicao.dias_treinados }} dia{{ 's' if minha_posicao.dias_treinados != 1 }} treinado{{ 's' if minha_posicao.dias_treinados != 1 }}</span>
+                <span><i class="bi bi-stopwatch"></i>{{ minha_posicao.tempo_total_formatado }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="rk-info-box">
+    <i class="bi bi-info-circle"></i>
+    Sessões de treino com mais de 2h30 de duração têm o tempo desconsiderado no ranking
+    (provável esquecimento de finalizar o treino) — mas o dia continua contando normalmente.
+
+    {% if not participa_do_ranking %}
+    <div class="rk-opt-out mt-2">
+        <i class="bi bi-eye-slash"></i> Você optou por não aparecer neste ranking.
+        <a href="{{ url_for('auth.profile') }}">Alterar em Meu Perfil</a>
+    </div>
+    {% else %}
+    <div class="rk-opt-out">
+        Não quer aparecer aqui? <a href="{{ url_for('auth.profile') }}">Desative em Meu Perfil</a>.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
