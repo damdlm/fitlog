@@ -433,7 +433,7 @@
                 <a href="#treino-{{ letra }}" class="vv-progress-dot vv-accent-{{ i % 5 }} is-filled" title="Treino {{ letra }}: montado">{{ letra }}</a>
                 {% else %}
                     {% if not versao.data_fim %}
-                    <a href="{{ url_for('aluno.novo_treino_versao', versao_id=versao.id) }}" class="vv-progress-dot vv-accent-{{ i % 5 }}" title="Treino {{ letra }}: ainda não montado, clique para adicionar">{{ letra }}</a>
+                    <a href="{{ url_for('aluno.cadastrar_treinos') }}" class="vv-progress-dot vv-accent-{{ i % 5 }}" title="Treino {{ letra }}: ainda não montado, clique para adicionar">{{ letra }}</a>
                     {% else %}
                     <span class="vv-progress-dot vv-accent-{{ i % 5 }}" title="Treino {{ letra }}: não montado">{{ letra }}</span>
                     {% endif %}
@@ -523,7 +523,7 @@
 <div class="vv-section-title">
     <h2><i class="bi bi-trophy" style="color:#F28C33;"></i> Treinos da Versão ({{ total_treinos }})</h2>
     {% if not versao.data_fim and total_treinos < max_treinos %}
-    <a href="{{ url_for('aluno.novo_treino_versao', versao_id=versao.id) }}" class="btn btn-success btn-sm">
+    <a href="{{ url_for('aluno.cadastrar_treinos') }}" class="btn btn-success btn-sm">
         <i class="bi bi-plus-circle"></i> Adicionar Treino
     </a>
     {% endif %}
@@ -645,7 +645,7 @@
     <i class="bi bi-trophy"></i>
     <p>Nenhum treino cadastrado nesta versão ainda.</p>
     {% if not versao.data_fim %}
-    <a href="{{ url_for('aluno.novo_treino_versao', versao_id=versao.id) }}" class="btn btn-success">
+    <a href="{{ url_for('aluno.cadastrar_treinos') }}" class="btn btn-success">
         <i class="bi bi-plus-circle"></i> Adicionar primeiro treino
     </a>
     {% endif %}

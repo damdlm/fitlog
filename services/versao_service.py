@@ -16,6 +16,18 @@ logger = logging.getLogger(__name__)
 
 class VersaoService(BaseService):
     """Gerencia operações relacionadas a versões"""
+
+    # Tela "Cadastrar Treinos" (fluxo unificado, sem divisão fixa ABC/ABCD/ABCDE):
+    # limite superior de treinos por versão -- não é uma regra de negócio do
+    # usuário, é uma trava de consistência/anti-abuso (evita uma versão com
+    # centenas de treinos por engano ou script malicioso). Bem acima de
+    # qualquer uso real (a maior divisão fixa que existia era ABCDE = 5).
+    MAX_TREINOS_POR_VERSAO = 10
+
+    # Códigos (letras) atribuídos automaticamente aos treinos da versão
+    # "livre", na ordem em que são criados -- nunca aceitos do cliente,
+    # para não colidir com o unique_treino_por_usuario (user_id, codigo).
+    _CODIGOS_AUTO = [chr(c) for c in range(ord('A'), ord('Z') + 1)]
     
     @staticmethod
     def get_all(user_id=None):
@@ -1013,3 +1025,280 @@ class VersaoService(BaseService):
         db.session.delete(treino_versao)
         db.session.commit()
         return True
+
+    # ==========================================================
+    # TELA "CADASTRAR TREINOS" -- fluxo unificado (versão sem
+    # divisão fixa + treinos + exercícios em um único lugar).
+    #
+    # Todos os métodos abaixo levantam ValueError com uma mensagem
+    # segura para exibir direto ao usuário (mesmo padrão já usado em
+    # editar_treino_versao/excluir_treino_versao acima) -- erros
+    # inesperados são logados e relançados como ValueError genérico,
+    # nunca com str(exception) original (não vazar detalhes internos).
+    # ==========================================================
+
+    @staticmethod
+    def create_livre(descricao, user_id=None):
+        """
+        Cria uma nova versão "livre" (sem campo de divisão, sem data de
+        início/fim informados pelo usuário):
+        - data_inicio = data atual do SERVIDOR (nunca aceita do cliente,
+          pra não permitir versão retroativa/futura forjada);
+        - data_fim = None (só é preenchida ao finalizar, com a data real
+          de finalização);
+        - só é permitida se o usuário não tiver nenhuma versão ativa no
+          momento (nunca fecha silenciosamente a versão anterior --
+          diferente de create(), que fazia isso; aqui exigimos que o
+          usuário finalize explicitamente antes de criar outra).
+        """
+        user_id = user_id or BaseService.get_current_user_id()
+        if not user_id:
+            raise ValueError("Usuário não autenticado.")
+
+        descricao = (descricao or '').strip()
+        if not descricao:
+            raise ValueError("Descrição da versão é obrigatória.")
+        if len(descricao) > 200:
+            raise ValueError("Descrição deve ter no máximo 200 caracteres.")
+
+        versao_atual = VersaoService.get_ativa(user_id=user_id)
+        if versao_atual:
+            raise ValueError(
+                f"Já existe uma versão ativa (v{versao_atual.numero_versao} - "
+                f"{versao_atual.descricao}). Finalize-a antes de criar outra."
+            )
+
+        try:
+            data_inicio = datetime.now(timezone.utc).date()
+            ultima_versao = db.session.query(func.max(VersaoGlobal.numero_versao)) \
+                .filter_by(user_id=user_id).scalar() or 0
+            nova_versao = VersaoGlobal(
+                numero_versao=ultima_versao + 1,
+                descricao=descricao,
+                divisao='LIVRE',
+                data_inicio=data_inicio,
+                data_fim=None,
+                user_id=user_id
+            )
+            db.session.add(nova_versao)
+            db.session.commit()
+            logger.info(f"Versão livre {nova_versao.numero_versao} criada para usuário {user_id}")
+            return nova_versao
+        except Exception:
+            db.session.rollback()
+            logger.exception(f"Erro ao criar versão livre para usuário {user_id}")
+            raise ValueError("Não foi possível criar a versão.")
+
+    @staticmethod
+    def _get_versao_editavel(versao_id, user_id):
+        """Busca a versão garantindo posse (IDOR) e que ainda não foi
+        finalizada. Levanta ValueError com mensagem segura em qualquer
+        caso inválido -- usado por todas as mutações da tela "Cadastrar
+        Treinos" abaixo."""
+        versao = VersaoGlobal.query.filter_by(id=versao_id, user_id=user_id).first()
+        if not versao:
+            raise ValueError("Versão não encontrada.")
+        if versao.data_fim is not None:
+            raise ValueError("Esta versão já foi finalizada e não pode mais ser alterada.")
+        return versao
+
+    @staticmethod
+    def adicionar_treino_livre(versao_id, nome_treino, descricao_treino, user_id=None):
+        """
+        Adiciona um novo treino à versão "livre", sem pedir letra/código
+        do usuário: o código (A, B, C...) é escolhido automaticamente pelo
+        servidor, olhando só os códigos já usados NESTA versão (o mesmo
+        código pode ser reaproveitado -- via TreinoService.get_or_create --
+        em versões diferentes do mesmo usuário, é assim que o restante do
+        sistema já funciona).
+        """
+        user_id = user_id or BaseService.get_current_user_id()
+        if not user_id:
+            raise ValueError("Usuário não autenticado.")
+
+        versao = VersaoService._get_versao_editavel(versao_id, user_id)
+
+        nome_treino = (nome_treino or '').strip()
+        descricao_treino = (descricao_treino or '').strip()
+        if not nome_treino:
+            raise ValueError("Nome do treino é obrigatório.")
+        if len(nome_treino) > 100:
+            raise ValueError("Nome do treino deve ter no máximo 100 caracteres.")
+        if len(descricao_treino) > 200:
+            raise ValueError("Descrição do treino deve ter no máximo 200 caracteres.")
+
+        treinos_atuais = TreinoVersao.query.filter_by(versao_id=versao_id).count()
+        if treinos_atuais >= VersaoService.MAX_TREINOS_POR_VERSAO:
+            raise ValueError(
+                f"Limite de {VersaoService.MAX_TREINOS_POR_VERSAO} treinos por versão atingido."
+            )
+
+        linhas_codigo = db.session.query(Treino.codigo) \
+            .join(TreinoVersao, TreinoVersao.treino_id == Treino.id) \
+            .filter(TreinoVersao.versao_id == versao_id, Treino.user_id == user_id) \
+            .all()
+        codigos_em_uso = {linha[0] for linha in linhas_codigo}
+
+        proximo_codigo = next(
+            (c for c in VersaoService._CODIGOS_AUTO if c not in codigos_em_uso), None
+        )
+        if not proximo_codigo:
+            raise ValueError("Não há mais códigos disponíveis para novos treinos.")
+
+        try:
+            treino = TreinoService.get_or_create(
+                proximo_codigo, nome_treino, descricao_treino, user_id=user_id
+            )
+            if not treino:
+                raise ValueError("Não foi possível criar o treino.")
+
+            treino_versao = TreinoVersao(
+                versao_id=versao_id,
+                treino_id=treino.id,
+                nome_treino=nome_treino,
+                descricao_treino=descricao_treino,
+                ordem=treinos_atuais
+            )
+            db.session.add(treino_versao)
+            db.session.commit()
+            logger.info(
+                f"Treino {proximo_codigo} adicionado (cadastro livre) à versão {versao_id} "
+                f"do usuário {user_id}"
+            )
+            return treino_versao
+        except ValueError:
+            db.session.rollback()
+            raise
+        except Exception:
+            db.session.rollback()
+            logger.exception(f"Erro ao adicionar treino livre à versão {versao_id}")
+            raise ValueError("Não foi possível adicionar o treino.")
+
+    @staticmethod
+    def _get_treino_versao_editavel(versao_id, treino_versao_id, user_id):
+        """Garante que o treino_versao_id realmente pertence à versao_id,
+        que por sua vez pertence ao user_id, e que a versão não está
+        finalizada. Sem este check, um usuário autenticado poderia tentar
+        editar/remover um treino_versao_id de OUTRO usuário só adivinhando
+        o ID (IDOR)."""
+        versao = VersaoService._get_versao_editavel(versao_id, user_id)
+        treino_versao = TreinoVersao.query.filter_by(
+            id=treino_versao_id, versao_id=versao_id
+        ).first()
+        if not treino_versao:
+            raise ValueError("Treino não encontrado nesta versão.")
+        return versao, treino_versao
+
+    @staticmethod
+    def salvar_treino_livre(versao_id, treino_versao_id, nome_treino, descricao_treino,
+                             exercicios_raw, user_id=None, observacoes=None):
+        """Atualiza nome/descrição de um treino da versão e substitui a
+        lista de exercícios associados (mesma semântica de
+        adicionar_exercicios_a_treino_versao: a lista enviada substitui a
+        anterior por completo).
+
+        observacoes: dict opcional {"u_<id>": "texto", "b_<id>": "texto"}
+        -- mesma convenção usada em editar_treino_versao (aluno), repassado
+        direto pra adicionar_exercicios_a_treino_versao, que já trunca em
+        60 caracteres."""
+        user_id = user_id or BaseService.get_current_user_id()
+        if not user_id:
+            raise ValueError("Usuário não autenticado.")
+
+        _, treino_versao = VersaoService._get_treino_versao_editavel(versao_id, treino_versao_id, user_id)
+
+        nome_treino = (nome_treino or '').strip()
+        descricao_treino = (descricao_treino or '').strip()
+        if not nome_treino:
+            raise ValueError("Nome do treino é obrigatório.")
+        if len(nome_treino) > 100:
+            raise ValueError("Nome do treino deve ter no máximo 100 caracteres.")
+        if len(descricao_treino) > 200:
+            raise ValueError("Descrição do treino deve ter no máximo 200 caracteres.")
+
+        usuarios_ids_validos, bases_ids_validos = VersaoService.processar_exercicios_formulario(
+            exercicios_raw or [], user_id
+        )
+
+        # Trava anti-abuso: número de exercícios por treino também tem um
+        # teto (nenhuma regra do usuário pedia isso, mas sem limite um
+        # POST malicioso poderia tentar associar milhares de linhas de
+        # uma vez só).
+        MAX_EXERCICIOS_POR_TREINO = 40
+        total_exercicios = len(usuarios_ids_validos) + len(bases_ids_validos)
+        if total_exercicios > MAX_EXERCICIOS_POR_TREINO:
+            raise ValueError(f"Máximo de {MAX_EXERCICIOS_POR_TREINO} exercícios por treino.")
+
+        try:
+            treino_versao.nome_treino = nome_treino
+            treino_versao.descricao_treino = descricao_treino
+            VersaoService.adicionar_exercicios_a_treino_versao(
+                treino_versao.id, usuarios_ids_validos, bases_ids_validos, observacoes=observacoes
+            )
+            db.session.commit()
+            logger.info(f"Treino {treino_versao.id} (versão {versao_id}) salvo via cadastro livre")
+            return treino_versao
+        except Exception:
+            db.session.rollback()
+            logger.exception(f"Erro ao salvar treino {treino_versao_id} da versão {versao_id}")
+            raise ValueError("Não foi possível salvar o treino.")
+
+    @staticmethod
+    def remover_treino_livre(versao_id, treino_versao_id, user_id=None):
+        """Remove um treino (e seus exercícios, via cascade) da versão."""
+        user_id = user_id or BaseService.get_current_user_id()
+        if not user_id:
+            raise ValueError("Usuário não autenticado.")
+
+        _, treino_versao = VersaoService._get_treino_versao_editavel(versao_id, treino_versao_id, user_id)
+
+        try:
+            db.session.delete(treino_versao)
+            db.session.commit()
+            logger.info(f"Treino {treino_versao_id} removido da versão {versao_id} (cadastro livre)")
+            return True
+        except Exception:
+            db.session.rollback()
+            logger.exception(f"Erro ao remover treino {treino_versao_id} da versão {versao_id}")
+            raise ValueError("Não foi possível remover o treino.")
+
+    @staticmethod
+    def finalizar_livre(versao_id, user_id=None):
+        """
+        Finaliza a versão gravando a data de HOJE (servidor) como
+        data_fim -- nunca aceita do cliente.
+
+        Regra de consistência: só permite finalizar se houver pelo menos
+        1 treino, e cada treino tiver pelo menos 1 exercício -- do
+        contrário a versão ficaria "ativa" mas inutilizável na tela de
+        registro diário (RegistroTreino), que depende de
+        VersaoService.get_treinos_para_registro/get_exercicios.
+        """
+        user_id = user_id or BaseService.get_current_user_id()
+        if not user_id:
+            raise ValueError("Usuário não autenticado.")
+
+        versao = VersaoService._get_versao_editavel(versao_id, user_id)
+
+        treinos = TreinoVersao.query.filter_by(versao_id=versao_id).all()
+        if not treinos:
+            raise ValueError("Adicione pelo menos um treino antes de finalizar a versão.")
+
+        treinos_sem_exercicio = [
+            (t.treino_ref.codigo if t.treino_ref else '?') for t in treinos if not t.exercicios
+        ]
+        if treinos_sem_exercicio:
+            raise ValueError(
+                "Todos os treinos precisam ter pelo menos um exercício antes de finalizar. "
+                f"Faltando em: {', '.join(sorted(treinos_sem_exercicio))}."
+            )
+
+        try:
+            versao.data_fim = datetime.now(timezone.utc).date()
+            db.session.commit()
+            logger.info(f"Versão {versao_id} finalizada (cadastro livre) pelo usuário {user_id}")
+            return versao
+        except Exception:
+            db.session.rollback()
+            logger.exception(f"Erro ao finalizar versão {versao_id}")
+            raise ValueError("Não foi possível finalizar a versão.")

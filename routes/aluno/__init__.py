@@ -7,5 +7,6 @@ from . import main
 from . import treino
 from . import exercicio
 from . import versao
+from . import cadastro_treinos
 from . import stats
 from . import ranking

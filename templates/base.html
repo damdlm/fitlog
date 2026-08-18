@@ -1117,6 +1117,13 @@
                             <div>
                                 <span class="mega-col-label">Gerenciar</span>
                                 <div class="mega-grid mega-grid-1col">
+                                    <a class="mega-card" href="{{ url_for('aluno.cadastrar_treinos') }}">
+                                        <span class="mega-icon"><i class="bi bi-clipboard2-plus"></i></span>
+                                        <span>
+                                            <span class="mega-title">Cadastrar Treinos</span>
+                                            <span class="mega-desc">Monte sua versão, treinos e exercícios</span>
+                                        </span>
+                                    </a>
                                     <a class="mega-card" href="{{ url_for('aluno.exercicios') }}">
                                         <span class="mega-icon"><i class="bi bi-list-check"></i></span>
                                         <span>
@@ -1285,6 +1292,7 @@
 
             <div class="mais-section">
             <!-- <span class="mais-section-label">Treino</span> -->
+                <a class="mais-link" href="{{ url_for('aluno.cadastrar_treinos') }}"><i class="bi bi-clipboard2-plus"></i> Cadastrar Treinos</a>
                 <a class="mais-link" href="{{ url_for('aluno.exercicios') }}"><i class="bi bi-list-check"></i> Meus Exercícios</a>
                 <a class="mais-link" href="{{ url_for('aluno.treinos') }}"><i class="bi bi-trophy"></i> Meus Treinos</a>
                 <a class="mais-link" href="{{ url_for('aluno.versoes') }}"><i class="bi bi-clock-history"></i> Minhas Versões</a>
