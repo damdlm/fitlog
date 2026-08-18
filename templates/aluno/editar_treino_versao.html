@@ -90,6 +90,14 @@
                                 {{ ex.nome }}
                             </div>
                             <span class="badge etv-card-musculo">{{ musculo_nome }}</span>
+                            <input type="text"
+                                   class="etv-obs-input"
+                                   name="observacao_{{ ex.prefixo }}{{ ex.id }}"
+                                   maxlength="60"
+                                   placeholder="Observação (opcional)"
+                                   value="{{ observacoes_atuais.get(ex.prefixo ~ ex.id|string, '') }}"
+                                   onclick="event.stopPropagation()"
+                                   {% if not marcado %}disabled{% endif %}>
                         </div>
 
                         {% if ex.tipo == 'usuario' %}

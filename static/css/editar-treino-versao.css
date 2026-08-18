@@ -248,6 +248,33 @@
     font-size: .68rem;
 }
 
+.etv-obs-input {
+    margin-top: 4px;
+    width: 100%;
+    font-size: .78rem;
+    padding: 4px 8px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    color: #495057;
+    background: #fff;
+}
+
+.etv-obs-input::placeholder {
+    color: #adb5bd;
+}
+
+.etv-obs-input:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+    box-shadow: 0 0 0 2px rgba(242, 140, 51, .15);
+}
+
+.etv-obs-input:disabled {
+    background: #f8f9fa;
+    color: #ced4da;
+    cursor: not-allowed;
+}
+
 .etv-tipo-badge {
     flex: 0 0 auto;
     width: 22px;

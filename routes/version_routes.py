@@ -272,6 +272,12 @@ def editar_treino_na_versao(versao_id, treino_codigo):
             flash("Selecione pelo menos um exercício!", "danger")
             return redirect(request.url)
         
+        # Observação por exercício (campo observacao_<chave>, até 60 chars)
+        observacoes = {
+            val: request.form.get(f'observacao_{val}', '').strip()[:60]
+            for val in valores if val and val.strip()
+        }
+        
         # CORREÇÃO seção 20/21 (hardening de segurança -- IDOR /
         # integridade de dados): antes só checava que o ID existia em
         # ExercicioUsuario (query.get), sem checar de quem era -- um
@@ -312,7 +318,8 @@ def editar_treino_na_versao(versao_id, treino_codigo):
             VersaoService.adicionar_exercicios_a_treino_versao(
                 treino_versao.id,
                 usuarios_ids_validos,
-                bases_ids_validos
+                bases_ids_validos,
+                observacoes=observacoes
             )
             
             db.session.commit()
@@ -352,7 +359,7 @@ def editar_treino_na_versao(versao_id, treino_codigo):
         flash("Treino não encontrado nesta versão!", "danger")
         return redirect(url_for("version.ver_versao", versao_id=versao_id))
 
-    exercicios_catalogo, exercicios_atuais = VersaoService.get_exercicios_para_edicao(
+    exercicios_catalogo, exercicios_atuais, observacoes_atuais = VersaoService.get_exercicios_para_edicao(
         current_user.id, treino_versao
     )
 
@@ -375,6 +382,7 @@ def editar_treino_na_versao(versao_id, treino_codigo):
         treino=treino_dict,
         treino_id=treino_codigo,
         exercicios_catalogo=exercicios_catalogo,
+        observacoes_atuais=observacoes_atuais,
         musculos_catalogo=musculos_catalogo,
     )
 

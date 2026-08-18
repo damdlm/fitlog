@@ -172,6 +172,10 @@ def novo_treino_versao(versao_id):
             return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
         exercicios = ExercicioService.get_by_treino(treino.id, user_id=current_user.id)
         exercicios_ids = [ex.id for ex in exercicios]
+        observacoes = {
+            f"{ex.prefixo}{ex.id}": ex.observacao_treino
+            for ex in exercicios if getattr(ex, 'observacao_treino', None)
+        }
         try:
             treino_versao = TreinoVersao(
                 versao_id=versao_id,
@@ -182,7 +186,7 @@ def novo_treino_versao(versao_id):
             )
             db.session.add(treino_versao)
             db.session.flush()
-            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, exercicios_ids, [])
+            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, exercicios_ids, [], observacoes=observacoes)
             db.session.commit()
             flash(f'Treino {treino.codigo} adicionado!', 'success')
             return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
@@ -251,12 +255,18 @@ def editar_treino_versao(versao_id, treino_codigo):
             flash('Selecione pelo menos um exercício!', 'danger')
             return redirect(request.url)
 
+        # Observação por exercício (campo observacao_<chave>, até 60 chars)
+        observacoes = {
+            chave: request.form.get(f'observacao_{chave}', '').strip()[:60]
+            for chave in exercicios_raw if chave and chave.strip()
+        }
+
         treino_versao.nome_treino = nome_treino
         treino_versao.descricao_treino = descricao_treino
 
         try:
             VersaoService.adicionar_exercicios_a_treino_versao(
-                treino_versao.id, usuarios_ids_validos, bases_ids_validos
+                treino_versao.id, usuarios_ids_validos, bases_ids_validos, observacoes=observacoes
             )
             db.session.commit()
             flash(f'Treino {treino_codigo} atualizado!', 'success')
@@ -273,7 +283,7 @@ def editar_treino_versao(versao_id, treino_codigo):
     # Mesmo serviço usado pela visão do professor (routes/professor_routes.py) --
     # já traz imagem/descrição de cada exercício, o que a montagem manual
     # anterior aqui não trazia.
-    exercicios_display, exercicios_atuais = VersaoService.get_exercicios_para_edicao(
+    exercicios_display, exercicios_atuais, observacoes_atuais = VersaoService.get_exercicios_para_edicao(
         current_user.id, treino_versao
     )
 
@@ -288,6 +298,7 @@ def editar_treino_versao(versao_id, treino_codigo):
                              "exercicios": exercicios_atuais
                          },
                          exercicios=exercicios_display,
+                         observacoes_atuais=observacoes_atuais,
                          musculos=musculos)
 
 @aluno_bp.route('/versao/<int:versao_id>/treino/<string:treino_codigo>/excluir', methods=['POST'])

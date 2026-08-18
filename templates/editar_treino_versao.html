@@ -18,13 +18,6 @@
     </div>
 </div>
 
-<div class="etv-meta">
-    <span class="etv-meta-pill">
-        <i class="bi bi-person"></i>
-        <strong>{{ aluno.nome_completo or aluno.username }}</strong>
-    </span>
-</div>
-
 <div class="card etv-panel">
     <div class="card-body">
         <form method="post" id="formEditarTreino">
@@ -43,7 +36,7 @@
                 </div>
             </div>
 
-            <label class="etv-field-label">Selecione os exercícios do catálogo do aluno</label>
+            <label class="etv-field-label">Exercícios do catálogo</label>
 
             <div class="etv-scroll">
                 <div class="etv-toolbar">
@@ -60,12 +53,12 @@
                     <div class="etv-toolbar-row">
                         <div class="etv-chip-row" id="etvChipsMusculo">
                             <button type="button" class="etv-chip is-active" data-musculo="" aria-pressed="true">
-                                Todos <span class="etv-chip-count">{{ exercicios|length }}</span>
+                                Todos <span class="etv-chip-count">{{ exercicios_catalogo|length }}</span>
                             </button>
-                            {% for m in musculos %}
+                            {% for m in musculos_catalogo %}
                             {% set ns = namespace(count=0) %}
-                            {% for ex in exercicios %}
-                                {% if (ex.musculo_nome or ex.musculo or 'N/A') == m %}{% set ns.count = ns.count + 1 %}{% endif %}
+                            {% for ex in exercicios_catalogo %}
+                                {% if ex.musculo == m %}{% set ns.count = ns.count + 1 %}{% endif %}
                             {% endfor %}
                             <button type="button" class="etv-chip" data-musculo="{{ m }}" aria-pressed="false">
                                 {{ m }} <span class="etv-chip-count">{{ ns.count }}</span>
@@ -76,19 +69,18 @@
                 </div>
 
                 <div class="etv-grid" id="etvGrid">
-                    {% for ex in exercicios %}
-                    {% set musculo_nome = ex.musculo_nome or ex.musculo or 'N/A' %}
+                    {% for ex in exercicios_catalogo %}
                     {% set marcado = (ex.prefixo ~ ex.id|string) in treino.exercicios %}
                     <label class="etv-card {% if marcado %}is-selected{% endif %}"
-                           for="ex_{{ ex.tipo }}_{{ ex.id }}"
+                           for="ex_{{ ex.prefixo }}{{ ex.id }}"
                            data-nome="{{ ex.nome|lower }}"
                            data-nome-display="{{ ex.nome }}"
-                           data-musculo="{{ musculo_nome }}">
+                           data-musculo="{{ ex.musculo }}">
                         <input class="etv-checkbox"
                                type="checkbox"
                                name="exercicios[]"
                                value="{{ ex.prefixo }}{{ ex.id }}"
-                               id="ex_{{ ex.tipo }}_{{ ex.id }}"
+                               id="ex_{{ ex.prefixo }}{{ ex.id }}"
                                {% if marcado %}checked{% endif %}>
 
                         <div class="etv-card-body">
@@ -96,7 +88,7 @@
                                  title="{{ ex.descricao or ex.nome }}">
                                 {{ ex.nome }}
                             </div>
-                            <span class="badge etv-card-musculo">{{ musculo_nome }}</span>
+                            <span class="badge etv-card-musculo">{{ ex.musculo }}</span>
                             <input type="text"
                                    class="etv-obs-input"
                                    name="observacao_{{ ex.prefixo }}{{ ex.id }}"
@@ -125,11 +117,7 @@
                     {% else %}
                     <div class="etv-empty-state">
                         <i class="bi bi-exclamation-triangle display-6 d-block mb-2"></i>
-                        Esse aluno ainda não tem exercícios no catálogo.
-                        <br>
-                        <a href="{{ url_for('professor.novo_exercicio_aluno', aluno_id=aluno.id) }}" class="btn btn-sm btn-success">
-                            <i class="bi bi-plus-circle"></i> Cadastrar exercício
-                        </a>
+                        Nenhum exercício disponível no catálogo.
                     </div>
                     {% endfor %}
                 </div>
@@ -150,7 +138,7 @@
                     <span><span data-etv-contador-selecionados>0</span> exercício(s) selecionado(s)</span>
                 </div>
                 <div class="d-flex gap-2">
-                    <a href="{{ url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" class="btn btn-secondary">
+                    <a href="{{ url_for('version.ver_versao', versao_id=versao.id) }}" class="btn btn-secondary">
                         Cancelar
                     </a>
                     <button type="submit" class="btn etv-btn-save">
@@ -161,6 +149,18 @@
         </form>
     </div>
 </div>
+
+<style>
+    .btn-outline-primary {
+        color: #F28C33;
+        border-color: #F28C33;
+    }
+    .btn-outline-primary:hover {
+        background-color: #F28C33;
+        border-color: #F28C33;
+        color: white;
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}

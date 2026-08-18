@@ -330,6 +330,12 @@ class VersaoExercicio(db.Model):
 
     ordem = db.Column(db.Integer, default=0)
 
+    # Observação curta e específica deste exercício DENTRO deste treino
+    # (ex: "pegada aberta", "cadência lenta na descida") -- diferente de
+    # ExercicioUsuario.observacoes, que é sobre o exercício em si e vale
+    # para todos os treinos onde ele aparece.
+    observacao = db.Column(db.String(60))
+
     # Relacionamentos
     treino_versao = db.relationship('TreinoVersao', back_populates='exercicios')
     exercicio_usuario = db.relationship('ExercicioUsuario', foreign_keys=[exercicio_usuario_id])

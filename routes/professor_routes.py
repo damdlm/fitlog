@@ -854,6 +854,10 @@ def novo_treino_versao_aluno(aluno_id, versao_id):
         
         exercicios = ExercicioService.get_by_treino(treino.id, user_id=aluno.id)
         usuarios_ids = [ex.id for ex in exercicios]
+        observacoes = {
+            f"{ex.prefixo}{ex.id}": ex.observacao_treino
+            for ex in exercicios if getattr(ex, 'observacao_treino', None)
+        }
         
         try:
             treino_versao = TreinoVersao(
@@ -866,7 +870,7 @@ def novo_treino_versao_aluno(aluno_id, versao_id):
             db.session.add(treino_versao)
             db.session.flush()
             
-            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, usuarios_ids, [])
+            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, usuarios_ids, [], observacoes=observacoes)
             
             db.session.commit()
             logger.info(f"Professor {current_user.id} adicionou treino {treino.codigo} à versão {versao_id} do aluno {aluno.id}")
@@ -939,11 +943,17 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
             flash('Selecione pelo menos um exercício válido!', 'danger')
             return redirect(request.url)
         
+        # Observação por exercício (campo observacao_<chave>, até 60 chars)
+        observacoes = {
+            chave: request.form.get(f'observacao_{chave}', '').strip()[:60]
+            for chave in exercicios_raw if chave and chave.strip()
+        }
+        
         treino_versao.nome_treino = nome_treino
         treino_versao.descricao_treino = descricao_treino
         
         try:
-            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, usuarios_ids, bases_ids)
+            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, usuarios_ids, bases_ids, observacoes=observacoes)
             db.session.commit()
             flash(f'Treino {treino_codigo} atualizado com sucesso!', 'success')
             return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
@@ -956,13 +966,13 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
     # ==========================================================
     # MÉTODO GET - CARREGAR FORMULÁRIO
     # ==========================================================
-    exercicios_display, exercicios_atuais = VersaoService.get_exercicios_para_edicao(aluno.id, treino_versao)
+    exercicios_display, exercicios_atuais, observacoes_atuais = VersaoService.get_exercicios_para_edicao(aluno.id, treino_versao)
     musculos = MusculoService.get_all_nomes()
     
     return render_template('professor/editar_treino_versao_aluno.html',
                          aluno=aluno, versao=versao, treino_id=treino_codigo,
                          treino={"nome": treino_versao.nome_treino, "descricao": treino_versao.descricao_treino, "exercicios": exercicios_atuais},
-                         exercicios=exercicios_display, musculos=musculos)
+                         exercicios=exercicios_display, observacoes_atuais=observacoes_atuais, musculos=musculos)
 
 
 # ==========================================================

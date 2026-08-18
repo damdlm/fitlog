@@ -92,6 +92,11 @@ document.addEventListener('DOMContentLoaded', function () {
     function sincronizarCard(checkbox) {
         const card = checkbox.closest('.etv-card');
         if (card) card.classList.toggle('is-selected', checkbox.checked);
+
+        // Campo de observação só faz sentido pra exercício selecionado --
+        // desabilita (e não envia valor) quando o card é desmarcado.
+        const obsInput = card?.querySelector('.etv-obs-input');
+        if (obsInput) obsInput.disabled = !checkbox.checked;
     }
 
     function atualizarContador() {

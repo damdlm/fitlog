@@ -119,6 +119,26 @@
         align-items: center;
         justify-content: space-between;
     }
+    /* Observação cadastrada pelo professor/aluno pra esse exercício dentro
+       deste treino (versao_exercicios.observacao) -- curta (60 chars),
+       exibida como uma dica logo abaixo do nome do exercício. */
+    .dash-registro-obs {
+        display: flex;
+        align-items: flex-start;
+        gap: 5px;
+        font-size: 0.78rem;
+        color: #8a6d3b;
+        background: #FFF8F1;
+        border-radius: 6px;
+        padding: 3px 8px;
+        margin-top: 4px;
+        max-width: fit-content;
+    }
+    .dash-registro-obs i {
+        margin-top: 1px;
+        color: var(--primary-orange, #F28C33);
+        flex-shrink: 0;
+    }
 
     @keyframes fadeSlideIn {
         from { opacity: 0; transform: translateY(6px); }
@@ -1955,6 +1975,12 @@
                                 <div class="dash-registro-top">
                                     <span class="dash-registro-exercicio exercicio-nome-trunc" data-full-nome="{{ ex.nome }}">{{ ex.nome }}</span>
                                 </div>
+                                {% if ex.observacao_treino %}
+                                <div class="dash-registro-obs">
+                                    <i class="bi bi-chat-left-text"></i>
+                                    <span>{{ ex.observacao_treino }}</span>
+                                </div>
+                                {% endif %}
                                 <div class="dash-registro-badges">
                                     {% if ultimas %}
                                     <span class="dash-badge">{{ ultimas[0].carga }}kg</span>

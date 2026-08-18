@@ -173,11 +173,16 @@ class VersaoService(BaseService):
             for tv in versao_origem.treinos:
                 usuarios_ids = []
                 bases_ids = []
+                observacoes = {}
                 for ve in tv.exercicios:
                     if ve.exercicio_usuario_id is not None:
                         usuarios_ids.append(ve.exercicio_usuario_id)
+                        if ve.observacao:
+                            observacoes[f"u_{ve.exercicio_usuario_id}"] = ve.observacao
                     elif ve.exercicio_base_id is not None:
                         bases_ids.append(ve.exercicio_base_id)
+                        if ve.observacao:
+                            observacoes[f"b_{ve.exercicio_base_id}"] = ve.observacao
                 
                 VersaoService.adicionar_treino(
                     nova_versao.id,
@@ -186,7 +191,8 @@ class VersaoService(BaseService):
                     tv.descricao_treino,
                     usuarios_ids,
                     bases_ids,
-                    user_id
+                    user_id,
+                    observacoes=observacoes
                 )
             db.session.commit()
             return True
@@ -402,14 +408,17 @@ class VersaoService(BaseService):
             usuario_ids = []
             base_ids = []
             ordem_map = {}
+            observacao_map = {}
             
             for idx, ve in enumerate(ve_list):
                 if ve.exercicio_usuario_id is not None:
                     usuario_ids.append(ve.exercicio_usuario_id)
                     ordem_map[('usuario', ve.exercicio_usuario_id)] = idx
+                    observacao_map[('usuario', ve.exercicio_usuario_id)] = ve.observacao
                 elif ve.exercicio_base_id is not None:
                     base_ids.append(ve.exercicio_base_id)
                     ordem_map[('base', ve.exercicio_base_id)] = idx
+                    observacao_map[('base', ve.exercicio_base_id)] = ve.observacao
             
             exercicios = []
 
@@ -444,6 +453,7 @@ class VersaoService(BaseService):
                         ex.prefixo = 'u_'
                         ex.musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
                         ex.musculo = ex.musculo_nome
+                        ex.observacao_treino = observacao_map.get(('usuario', ex.id))
                         set_committed_value(ex, 'registros', registros_usuario_map.get(ex.id, []))
                         db.session.expunge(ex)
                         exercicios.append(ex)
@@ -470,6 +480,7 @@ class VersaoService(BaseService):
                         ex.prefixo = 'b_'
                         # musculo_nome já é property (= grupo_muscular)
                         ex.musculo = ex.grupo_muscular or 'N/A'
+                        ex.observacao_treino = observacao_map.get(('base', ex.id))
                         set_committed_value(ex, 'registros', registros_base_map.get(ex.id, []))
                         db.session.expunge(ex)
                         exercicios.append(ex)
@@ -603,7 +614,7 @@ class VersaoService(BaseService):
 
     @staticmethod
     def get_exercicios_para_edicao(user_id, treino_versao):
-        """Retorna (exercicios_display, exercicios_atuais) para o template de edição."""
+        """Retorna (exercicios_display, exercicios_atuais, observacoes_atuais) para o template de edição."""
         from models import ExercicioCustomizado, ExercicioSistema
         from sqlalchemy.orm import joinedload
         
@@ -648,21 +659,35 @@ class VersaoService(BaseService):
         exercicios_display.sort(key=lambda x: x['nome'].lower())
         
         exercicios_atuais = []
+        observacoes_atuais = {}
         for ve in treino_versao.exercicios:
             if ve.exercicio_usuario_id is not None:
-                exercicios_atuais.append(f"u_{ve.exercicio_usuario_id}")
+                chave = f"u_{ve.exercicio_usuario_id}"
             elif ve.exercicio_base_id is not None:
-                exercicios_atuais.append(f"b_{ve.exercicio_base_id}")
+                chave = f"b_{ve.exercicio_base_id}"
+            else:
+                continue
+            exercicios_atuais.append(chave)
+            if ve.observacao:
+                observacoes_atuais[chave] = ve.observacao
         
-        return exercicios_display, exercicios_atuais
+        return exercicios_display, exercicios_atuais, observacoes_atuais
 
     @staticmethod
-    def adicionar_exercicios_a_treino_versao(treino_versao_id, usuarios_ids, bases_ids):
-        """Substitui todos os exercícios de um treino na versão."""
+    def adicionar_exercicios_a_treino_versao(treino_versao_id, usuarios_ids, bases_ids, observacoes=None):
+        """
+        Substitui todos os exercícios de um treino na versão.
+
+        observacoes: dict opcional {"u_<id>": "texto", "b_<id>": "texto"}
+        com a observação de cada exercício dentro deste treino (até 60
+        caracteres -- truncado aqui como segunda garantia, além do
+        maxlength no formulário).
+        """
         from models import VersaoExercicio, db
         
         usuarios_ids = usuarios_ids or []
         bases_ids = bases_ids or []
+        observacoes = observacoes or {}
         
       #  if not usuarios_ids and not bases_ids:
       #      raise ValueError("Pelo menos um exercício é obrigatório")
@@ -673,20 +698,24 @@ class VersaoService(BaseService):
         ordem = 0
         
         for ex_id in usuarios_ids:
+            obs = (observacoes.get(f"u_{ex_id}") or '').strip()[:60] or None
             ve = VersaoExercicio()
             ve.treino_versao_id = treino_versao_id
             ve.exercicio_usuario_id = ex_id
             ve.exercicio_base_id = None
             ve.ordem = ordem
+            ve.observacao = obs
             db.session.add(ve)
             ordem += 1
         
         for ex_id in bases_ids:
+            obs = (observacoes.get(f"b_{ex_id}") or '').strip()[:60] or None
             ve = VersaoExercicio()
             ve.treino_versao_id = treino_versao_id
             ve.exercicio_usuario_id = None
             ve.exercicio_base_id = ex_id
             ve.ordem = ordem
+            ve.observacao = obs
             db.session.add(ve)
             ordem += 1
         
@@ -694,7 +723,7 @@ class VersaoService(BaseService):
         logger.info(f"Adicionados {len(usuarios_ids)} exercícios de usuário e {len(bases_ids)} da base ao treino {treino_versao_id}")
 
     @staticmethod
-    def adicionar_treino(versao_id, treino_codigo, nome_treino, descricao_treino, usuarios_ids, bases_ids, user_id=None):
+    def adicionar_treino(versao_id, treino_codigo, nome_treino, descricao_treino, usuarios_ids, bases_ids, user_id=None, observacoes=None):
         """Adiciona treino a uma versão"""
         try:
             versao = VersaoService.get_by_id(versao_id, user_id)
@@ -714,7 +743,7 @@ class VersaoService(BaseService):
             )
             db.session.add(treino_versao)
             db.session.flush()
-            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, usuarios_ids, bases_ids)
+            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, usuarios_ids, bases_ids, observacoes=observacoes)
             db.session.commit()
             return True
         except Exception as e:
