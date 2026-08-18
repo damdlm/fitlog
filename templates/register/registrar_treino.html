@@ -146,6 +146,7 @@
     }
     @media (prefers-reduced-motion: reduce) {
         .exercise-row { animation: none; }
+        .empty-icon.is-play-trigger { animation: none; }
     }
 
     /* O botão de imagens do exercício precisa preencher o quadrado
@@ -609,6 +610,30 @@
         color: #8a8580;
         max-width: 360px;
         margin: 0 auto;
+    }
+
+    /* Ícone de play clicável (substitui o botão "Iniciar treino" -- a
+       própria animação do ícone é a ação). Sem o giro 3D do clipboard;
+       em vez disso, um pulso sutil convida ao toque. */
+    .empty-icon.is-play-trigger {
+        cursor: pointer;
+        transition: transform 0.15s ease;
+        animation: flPlayPulse 2.2s ease-in-out infinite;
+    }
+    .empty-icon.is-play-trigger i {
+        animation: none;
+    }
+    .empty-icon.is-play-trigger:hover,
+    .empty-icon.is-play-trigger:focus-visible {
+        transform: scale(1.06);
+        outline: none;
+    }
+    .empty-icon.is-play-trigger:active {
+        transform: scale(0.94);
+    }
+    @keyframes flPlayPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(242, 140, 51, 0.35); }
+        50% { box-shadow: 0 0 0 14px rgba(242, 140, 51, 0); }
     }
 
     /* Card "Pronto para treinar?" mais compacto em telas menores --
@@ -1654,7 +1679,47 @@
     .btn-confirmar-cancelamento:active {
         transform: scale(0.97);
     }
+
+    /* Loading ao trocar de treino/data -- efeito "scanner" (Opção 10 de
+       Animações.html), reaproveitando a película/posicionamento já
+       globais de .fl-loader-overlay (page-transition.css). */
+    .fl-scan-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+    .fl-scan-line {
+        width: 140px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--primary-orange), transparent);
+        border-radius: 2px;
+        animation: flScanLine 1.8s ease-in-out infinite;
+        box-shadow: 0 0 30px rgba(242, 140, 51, 0.2);
+    }
+    .fl-scan-text {
+        font-size: 0.78rem;
+        color: rgba(255, 255, 255, 0.55);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+    @keyframes flScanLine {
+        0% { transform: translateX(-70px) scaleX(0.3); opacity: 0; }
+        50% { transform: translateX(0) scaleX(1); opacity: 1; }
+        100% { transform: translateX(70px) scaleX(0.3); opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .fl-scan-line { animation: none; }
+    }
 </style>
+
+<!-- Loading ao selecionar treino/data -- some assim que a página troca -->
+<div id="treinoScanOverlay" class="fl-loader-overlay" role="status" aria-label="Carregando exercícios">
+    <div class="fl-scan-wrap">
+        <div class="fl-scan-line" aria-hidden="true"></div>
+        <div class="fl-scan-text">Carregando exercícios</div>
+    </div>
+</div>
 
 <!-- Loading Spinner -->
 <div id="global-loader">
@@ -1899,14 +1964,17 @@
 
 {% if exercicios %}
 <div class="empty-state mb-4" id="exerciciosProntoState">
-    <div class="empty-icon"><i class="bi bi-play-circle"></i></div>
+    <div class="empty-icon is-play-trigger" id="playIniciarTreino" role="button" tabindex="0"
+         aria-label="Iniciar treino">
+        <i class="bi bi-play-circle"></i>
+    </div>
     <h5>Tudo pronto!</h5>
-    <p>{{ exercicios|length }} exercício{{ 's' if exercicios|length != 1 }} carregado{{ 's' if exercicios|length != 1 }}. Clique em <strong>Iniciar treino</strong> para começar a registrar.</p>
+    <p>{{ exercicios|length }} exercício{{ 's' if exercicios|length != 1 }} carregado{{ 's' if exercicios|length != 1 }}. Toque no <strong>play acima</strong> para começar a registrar.</p>
 </div>
 {% endif %}
 
 {% if exercicios %}
-<div class="cronometro-actions mt-0 mb-4" id="cronoTreinoBox">
+<div class="cronometro-actions mt-0 mb-4 d-none" id="cronoTreinoBox">
     <button type="button" class="btn-cronometro btn-cronometro-primary flex-fill justify-content-center" id="cronoTreinoBtnIniciar">
         <i class="bi bi-play-fill"></i> <span>Iniciar treino</span>
     </button>
@@ -2229,22 +2297,44 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Auto-submit ao mudar treino ou data
+    // Auto-submit ao mudar treino ou data -- mostra a "película" de
+    // scanner por um instante antes de recarregar a página com os
+    // exercícios do treino escolhido.
+    function submeterComScanner() {
+        var overlay = document.getElementById('treinoScanOverlay');
+        var form = document.getElementById('formBusca');
+        if (!form) return;
+        if (overlay) {
+            void overlay.offsetWidth; // força reflow p/ a transição rodar
+            overlay.classList.add('fl-loader-visible');
+        }
+        window.setTimeout(function () {
+            form.submit();
+        }, 550);
+    }
+
     const treinoSelect = document.querySelector('select[name="treino"]');
     if (treinoSelect && dataInput) {
         treinoSelect.addEventListener('change', function() {
             if (this.value && dataInput.value) {
-                document.getElementById('formBusca').submit();
+                submeterComScanner();
             }
         });
         
         dataInput.addEventListener('change', function() {
             const treinoSelect = document.querySelector('select[name="treino"]');
             if (treinoSelect && treinoSelect.value && this.value) {
-                document.getElementById('formBusca').submit();
+                submeterComScanner();
             }
         });
     }
+
+    // Garante que a película não fique visível se o usuário voltar pelo
+    // histórico do navegador (bfcache) -- mesma proteção do page-transition.js.
+    window.addEventListener('pageshow', function () {
+        var overlay = document.getElementById('treinoScanOverlay');
+        if (overlay) overlay.classList.remove('fl-loader-visible');
+    });
     
     // Atualizar resumo ao digitar/mudar
     const registroForm = document.getElementById('registroForm');
@@ -2798,6 +2888,23 @@ function tocarBipe() {
             iniciar();
         }
     });
+
+    // Ícone de play do card "Tudo pronto!" -- substitui o botão "Iniciar
+    // treino" visualmente; a ação é a mesma (delega pro botão original,
+    // que continua existindo escondido, com toda a lógica de wake lock,
+    // película de transição etc. intacta).
+    var elPlayIniciar = document.getElementById('playIniciarTreino');
+    if (elPlayIniciar) {
+        elPlayIniciar.addEventListener('click', function () {
+            elBtnIniciar.click();
+        });
+        elPlayIniciar.addEventListener('keydown', function (evt) {
+            if (evt.key === 'Enter' || evt.key === ' ') {
+                evt.preventDefault();
+                elBtnIniciar.click();
+            }
+        });
+    }
 
     elBtnZerar.addEventListener('click', function () {
         rodando = false;
