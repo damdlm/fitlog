@@ -140,6 +140,39 @@
         flex-shrink: 0;
     }
 
+    /* Região clicável (nome + observação + valores do último treino) que
+       abre o popover com a descrição completa do exercício e os músculos
+       trabalhados (principal + secundários). Ver
+       inicializarPopoverDescricaoExercicio() mais abaixo. */
+    .exercicio-info-trigger {
+        cursor: pointer;
+        border-radius: 8px;
+        margin: -4px -6px;
+        padding: 4px 6px;
+        transition: background-color 0.15s ease;
+    }
+    .exercicio-info-trigger:hover,
+    .exercicio-info-trigger:focus-visible {
+        background-color: rgba(242, 140, 51, 0.06);
+        outline: none;
+    }
+    .popover-descricao-exercicio {
+        max-width: 280px;
+    }
+    .popover-descricao-exercicio .popover-body {
+        font-size: 0.85rem;
+    }
+    .popover-musculo-linha {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    .popover-musculo-linha + .popover-musculo-linha {
+        margin-top: 2px;
+    }
+    .popover-musculo-linha strong {
+        color: var(--dark-bg);
+    }
+
     @keyframes fadeSlideIn {
         from { opacity: 0; transform: translateY(6px); }
         to { opacity: 1; transform: translateY(0); }
@@ -2040,7 +2073,11 @@
                                     <i class="bi bi-activity"></i>
                                 {% endif %}
                             </div>
-                            <div class="dash-registro-info">
+                            <div class="dash-registro-info exercicio-info-trigger"
+                                 role="button" tabindex="0"
+                                 data-descricao="{{ ex.descricao_completa }}"
+                                 data-musculo-principal="{{ ex.musculo or '' }}"
+                                 data-musculos-secundarios="{{ ex.musculos_secundarios_lista|join(', ') if ex.musculos_secundarios_lista else '' }}">
                                 <div class="dash-registro-top">
                                     <span class="dash-registro-exercicio exercicio-nome-trunc" data-full-nome="{{ ex.nome }}">{{ ex.nome }}</span>
                                 </div>
@@ -2050,17 +2087,13 @@
                                     <span>{{ ex.observacao_treino }}</span>
                                 </div>
                                 {% endif %}
+                                {% if ultimas %}
                                 <div class="dash-registro-badges">
-                                    {% if ultimas %}
                                     <span class="dash-badge">{{ ultimas[0].carga }}kg</span>
                                     <span class="dash-badge">{{ ultimas[0].repeticoes }}x</span>
                                     <span class="dash-badge">{{ ultimas|length }} série{{ 's' if ultimas|length != 1 }}</span>
-                                    {% endif %}
-                                    <span class="dash-registro-meta">
-                                        <i class="bi bi-link-45deg"></i>
-                                        {{ ex.musculo or 'N/A' }}
-                                    </span>
                                 </div>
+                                {% endif %}
                             </div>
                             {% if ex.passos_pt %}
                             <div class="dash-registro-icon">
@@ -2349,6 +2382,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Nome do exercício: truncamento com popover
     inicializarTruncamentoNomesExercicio();
+    // Descrição completa + músculos trabalhados, ao clicar no nome/valores
+    inicializarPopoverDescricaoExercicio();
     let resizeTimer;
     window.addEventListener('resize', function() {
         clearTimeout(resizeTimer);
@@ -2478,6 +2513,69 @@ function inicializarTruncamentoNomesExercicio() {
         } else {
             el.removeAttribute('tabindex');
             el.removeAttribute('role');
+        }
+    });
+}
+
+// Popover com a descrição completa do exercício e os músculos trabalhados
+// (principal + secundários), aberto ao clicar/focar na região do nome e
+// dos valores do último treino (ver .exercicio-info-trigger no HTML).
+function inicializarPopoverDescricaoExercicio() {
+    function escaparHtml(valor) {
+        const div = document.createElement('div');
+        div.textContent = valor === undefined || valor === null ? '' : String(valor);
+        return div.innerHTML;
+    }
+
+    document.querySelectorAll('.exercicio-info-trigger').forEach(function (el) {
+        const instanciaAnterior = window.bootstrap && bootstrap.Popover.getInstance(el);
+        if (instanciaAnterior) instanciaAnterior.dispose();
+        if (!window.bootstrap) return;
+
+        const descricao = (el.dataset.descricao || '').trim();
+        const musculoPrincipal = (el.dataset.musculoPrincipal || '').trim();
+        const musculosSecundarios = (el.dataset.musculosSecundarios || '').trim();
+
+        // Sem nenhuma informação pra mostrar (exercício sem descrição e
+        // sem músculo cadastrado): não faz sentido a região virar clicável.
+        if (!descricao && !musculoPrincipal && !musculosSecundarios) {
+            el.classList.remove('exercicio-info-trigger');
+            el.removeAttribute('role');
+            el.removeAttribute('tabindex');
+            return;
+        }
+
+        const partes = [];
+        if (descricao) {
+            partes.push('<p class="mb-2">' + escaparHtml(descricao) + '</p>');
+        }
+        if (musculoPrincipal) {
+            partes.push('<div class="popover-musculo-linha"><strong>Músculo principal:</strong> ' + escaparHtml(musculoPrincipal) + '</div>');
+        }
+        if (musculosSecundarios) {
+            partes.push('<div class="popover-musculo-linha"><strong>Músculos secundários:</strong> ' + escaparHtml(musculosSecundarios) + '</div>');
+        }
+
+        new bootstrap.Popover(el, {
+            trigger: 'focus',
+            placement: 'top',
+            html: true,
+            content: partes.join(''),
+            container: 'body',
+            customClass: 'popover-descricao-exercicio'
+        });
+
+        // O nome do exercício (.exercicio-nome-trunc) tem seu próprio
+        // popover (nome completo, quando truncado) e fica DENTRO desta
+        // região. O evento 'focusin' que o Bootstrap usa pro trigger
+        // 'focus' propaga (bubbling), então sem isto os dois popovers
+        // abririam juntos ao clicar num nome truncado.
+        const nomeEl = el.querySelector('.exercicio-nome-trunc');
+        if (nomeEl && !nomeEl.dataset.focusinIsolado) {
+            nomeEl.addEventListener('focusin', function (evt) {
+                evt.stopPropagation();
+            });
+            nomeEl.dataset.focusinIsolado = '1';
         }
     });
 }

@@ -466,6 +466,12 @@ class VersaoService(BaseService):
                         ex.musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
                         ex.musculo = ex.musculo_nome
                         ex.observacao_treino = observacao_map.get(('usuario', ex.id))
+                        # Normalizado com ex_base abaixo para o tooltip da tela de
+                        # registrar treino: descricao_completa junta o texto livre
+                        # cadastrado; exercícios de usuário não têm músculos
+                        # secundários cadastrados (só o principal, via musculo_id).
+                        ex.descricao_completa = (ex.descricao or '').strip()
+                        ex.musculos_secundarios_lista = []
                         set_committed_value(ex, 'registros', registros_usuario_map.get(ex.id, []))
                         db.session.expunge(ex)
                         exercicios.append(ex)
@@ -493,6 +499,11 @@ class VersaoService(BaseService):
                         # musculo_nome já é property (= grupo_muscular)
                         ex.musculo = ex.grupo_muscular or 'N/A'
                         ex.observacao_treino = observacao_map.get(('base', ex.id))
+                        # instrucao_pt é o texto livre de descrição do exercício
+                        # (equivalente ao "descricao" de ExercicioUsuario);
+                        # musculos_secundarios já vem como lista no JSON.
+                        ex.descricao_completa = (ex.instrucao_pt or '').strip()
+                        ex.musculos_secundarios_lista = ex.musculos_secundarios or []
                         set_committed_value(ex, 'registros', registros_base_map.get(ex.id, []))
                         db.session.expunge(ex)
                         exercicios.append(ex)
