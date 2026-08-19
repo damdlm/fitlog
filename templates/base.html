@@ -829,12 +829,25 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            width: fit-content;
+            max-width: 100%;
+            margin: 0 auto;
         }
 
+        /* width/height "auto" (em vez de width:100% fixo) faz a moldura
+           acompanhar o tamanho real do vídeo/gif, em vez de esticar pra
+           ocupar a largura toda do modal -- isso é o que causava as
+           barras pretas nas laterais (letterbox) em vídeos mais
+           estreitos/verticais que a largura do modal. O tamanho máximo
+           (max-height) continua exatamente o mesmo de antes, então o
+           vídeo não fica nem maior nem menor -- só para de sobrar
+           espaço escuro em volta dele. */
         .exmodal-media-frame img,
         .exmodal-media-frame video {
             display: block;
-            width: 100%;
+            width: auto;
+            height: auto;
+            max-width: 100%;
             max-height: 70vh;
             object-fit: contain;
             background: #1e1e1e;
