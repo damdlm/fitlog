@@ -180,20 +180,23 @@
     /* ===== Botão adicionar treino ===== */
     .ct-add-treino-btn {
         width: 100%;
-        border: 2px dashed var(--ct-line);
-        background: transparent;
+        border: none;
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
         border-radius: 14px;
         padding: 16px;
-        color: var(--ct-muted);
-        font-weight: 600;
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
-        transition: border-color .15s, color .15s;
+        box-shadow: 0 4px 14px rgba(242, 140, 51, 0.35);
+        margin-bottom: 20px;
+        transition: transform .15s, box-shadow .15s;
     }
-    .ct-add-treino-btn:hover { border-color: var(--ct-orange); color: var(--ct-orange); }
-    .ct-add-treino-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .ct-add-treino-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(242, 140, 51, 0.45); }
+    .ct-add-treino-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
     .ct-finalizar-box {
         margin-top: 28px;
@@ -213,9 +216,6 @@
         <i class="bi bi-clipboard2-plus me-2" style="color: #F28C33;"></i>
         Cadastrar Treinos
     </h1>
-    <a href="{{ url_for('aluno.versoes') }}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-clock-history"></i> Minhas Versões
-    </a>
 </div>
 
 {% if not versao %}
@@ -250,7 +250,7 @@
 <div class="ct-hero">
     <div>
         <div class="ct-hero-desc">
-            v{{ versao.numero_versao }} · {{ versao.descricao }}
+            {{ versao.descricao }}
             <span class="ct-status-pill"><span class="dot"></span>Em edição</span>
         </div>
         <div class="ct-hero-meta">
@@ -260,6 +260,16 @@
         </div>
     </div>
 </div>
+
+{% if total_treinos < max_treinos %}
+<button type="button" class="ct-add-treino-btn" data-bs-toggle="modal" data-bs-target="#modalNovoTreino">
+    <i class="bi bi-plus-circle"></i> Adicionar treino ({{ total_treinos }}/{{ max_treinos }})
+</button>
+{% else %}
+<div class="ct-finalizar-hint text-center" style="margin-bottom: 20px;">
+    <i class="bi bi-info-circle"></i> Limite de {{ max_treinos }} treinos por versão atingido.
+</div>
+{% endif %}
 
 <div class="ct-section-title">
     <h2><i class="bi bi-trophy" style="color:#F28C33;"></i> Treinos desta versão</h2>
@@ -326,16 +336,6 @@
         {% endif %}
     </div>
     {% endfor %}
-{% endif %}
-
-{% if total_treinos < max_treinos %}
-<button type="button" class="ct-add-treino-btn" data-bs-toggle="modal" data-bs-target="#modalNovoTreino">
-    <i class="bi bi-plus-circle"></i> Adicionar treino ({{ total_treinos }}/{{ max_treinos }})
-</button>
-{% else %}
-<div class="ct-finalizar-hint text-center">
-    <i class="bi bi-info-circle"></i> Limite de {{ max_treinos }} treinos por versão atingido.
-</div>
 {% endif %}
 
 <div class="ct-finalizar-box">
@@ -545,6 +545,12 @@
     window.CT_TREINO_OBSERVACOES = {{ treino_observacoes_map|tojson }};
 </script>
 {% endif %}
+
+<div class="text-center mt-4">
+    <a href="{{ url_for('aluno.versoes') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-clock-history"></i> Minhas Versões
+    </a>
+</div>
 {% endblock %}
 
 {% block scripts %}
