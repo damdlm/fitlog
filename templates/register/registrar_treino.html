@@ -54,11 +54,14 @@
     /* Botão "marcar como feito": fica do lado oposto ao switch de
        desmarcar exercício -- switch na coluna 1 (esquerda), este botão
        na coluna 3 (direita), colado no campo de Séries, na mesma linha
-       dos inputs. Visual fixo em cinza claro com borda e ícone verdes;
-       não muda de aparência ao ser clicado -- quem muda é a borda
-       lateral do card (.exercise-row.is-feito). Quadrado (não círculo)
-       e com a mesma altura de 30px dos inputs de carga/reps/séries,
-       pra alinhar certinho com eles. */
+       dos inputs. Estado padrão: fundo cinza claro, borda e ícone
+       verdes. Ao selecionar, o próprio botão inverte pra fundo verde
+       sólido com o ícone branco (.btn-marcar-feito.is-ativo), além da
+       borda lateral do card mudar de laranja pra verde
+       (.exercise-row.is-feito) -- tudo puramente visual, não mexe em
+       nada do que é enviado no formulário. Quadrado (não círculo) e
+       com a mesma altura de 30px dos inputs de carga/reps/séries, pra
+       alinhar certinho com eles. */
     .btn-marcar-feito {
         display: flex;
         align-items: center;
@@ -74,7 +77,7 @@
         line-height: 1;
         padding: 0;
         cursor: pointer;
-        transition: transform 0.15s ease;
+        transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
     }
     .btn-marcar-feito:hover {
         transform: scale(1.06);
@@ -82,6 +85,10 @@
     .btn-marcar-feito:focus-visible {
         outline: 2px solid var(--success-green);
         outline-offset: 2px;
+    }
+    .btn-marcar-feito.is-ativo {
+        background: var(--success-green);
+        color: #fff;
     }
     .exercise-row.is-desativado .btn-marcar-feito {
         pointer-events: none;
@@ -253,11 +260,15 @@
 
     /* O botão de imagens do exercício precisa preencher o quadrado
        .dash-registro-icon (classe global, compartilhada com o card
-       "Último Treino" do dashboard) em vez do próprio tamanho padrão. */
+       "Último Treino" do dashboard) em vez do próprio tamanho padrão.
+       Borda suave (--border-soft) pra ficar com o mesmo peso visual do
+       switch e do botão de marcar como feito, que também têm borda de
+       2px -- sem ela, ficavam parecendo "menores" mesmo com o mesmo
+       tamanho de caixa (30px), por não terem contorno próprio. */
     .dash-registro-icon .btn-imagens-exercicio {
         width: 100%;
         height: 100%;
-        border: none;
+        border: 2px solid var(--border-soft);
         background: transparent;
         color: inherit;
         display: flex;
@@ -269,12 +280,13 @@
     }
     .dash-registro-icon .btn-imagens-exercicio:hover {
         background: rgba(242, 140, 51, 0.22);
+        border-color: var(--primary-orange);
         color: var(--primary-orange);
     }
     .dash-registro-icon .btn-instrucoes-exercicio {
         width: 100%;
         height: 100%;
-        border: none;
+        border: 2px solid var(--border-soft);
         background: transparent;
         color: inherit;
         display: flex;
@@ -286,6 +298,7 @@
     }
     .dash-registro-icon .btn-instrucoes-exercicio:hover {
         background: rgba(242, 140, 51, 0.22);
+        border-color: var(--primary-orange);
         color: var(--primary-orange);
     }
 
@@ -830,6 +843,7 @@
             vertical-align: middle;
         }
 
+
         /* ======================================================
                Ajustes para aproximar os campos no mobile
                ====================================================== */
@@ -1302,6 +1316,17 @@
     #modalImagensExercicio .exmodal-media-frame img,
     #modalImagensExercicio .exmodal-media-frame video {
         max-height: 49vh;
+    }
+    /* ...e ainda ~30% menor no celular (49vh * 0.7 ≈ 34vh) -- essa regra
+       precisa vir DEPOIS da geral acima pra vencer o empate de
+       especificidade (mesmo seletor); se ficasse antes, a regra geral
+       (sem media query, então sempre válida) sobrescrevia essa aqui em
+       qualquer largura de tela, mobile incluído. */
+    @media (max-width: 767.98px) {
+        #modalImagensExercicio .exmodal-media-frame img,
+        #modalImagensExercicio .exmodal-media-frame video {
+            max-height: 34vh;
+        }
     }
 
     /* O backdrop (fundo escuro) precisa ficar ACIMA do modo treino em tela
@@ -2742,9 +2767,10 @@ function aplicarEstadoExercicio(row, ativo) {
 }
 
 /* Botão "marcar como feito": ação 100% visual, não mexe em nenhum campo
-   nem no que é enviado no submit -- só alterna a classe "is-feito" no
-   card, que troca a cor da borda lateral (laranja -> verde), pra o
-   usuário acompanhar quais exercícios já concluiu na sessão. */
+   nem no que é enviado no submit -- alterna a classe "is-feito" no card
+   (troca a cor da borda lateral, laranja -> verde) E a classe "is-ativo"
+   no próprio botão (troca o visual dele pra fundo verde + ícone branco),
+   pra o usuário acompanhar quais exercícios já concluiu na sessão. */
 function inicializarBotoesMarcarFeito() {
     document.querySelectorAll('.btn-marcar-feito').forEach(function (btn) {
         const row = btn.closest('.exercise-row');
@@ -2757,6 +2783,7 @@ function inicializarBotoesMarcarFeito() {
 
             const feito = !row.classList.contains('is-feito');
             row.classList.toggle('is-feito', feito);
+            btn.classList.toggle('is-ativo', feito);
             btn.setAttribute('aria-pressed', String(feito));
         });
     });
