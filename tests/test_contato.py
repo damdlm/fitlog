@@ -1,4 +1,4 @@
-"""Testes da tela de Contato: renderização, autenticação, envio de mensagem e transcrição de áudio."""
+"""Testes da tela de Contato: renderização, autenticação, envio de mensagem e transcrição de áudio. """
 import io
 
 
