@@ -12,6 +12,7 @@
     :root {
         --primary-orange: #F28C33;
         --light-orange: #FFB366;
+        --success-green: #2FA84F;
         --dark-bg: #2D2D2D;
         --surface: #ffffff;
         --surface-muted: #f7f5f2;
@@ -41,6 +42,47 @@
     .exercise-row.is-complete {
         border-left-color: var(--dark-bg);
         background: linear-gradient(180deg, rgba(45, 45, 45, 0.04), var(--surface) 40%);
+    }
+
+    /* Marcar exercício como já feito: puramente visual (não interfere em
+       nada no envio/gravação do form) -- só troca a cor da borda lateral
+       esquerda do card, de laranja (padrão) para verde, pra dar um feedback
+       rápido pro usuário de quais exercícios ele já concluiu na sessão. */
+    .exercise-row.is-feito {
+        border-left-color: var(--success-green);
+    }
+
+    /* Botão "marcar como feito": fica do lado oposto ao switch de
+       desmarcar exercício (que é exibido perto dos campos de carga/reps).
+       Visual fixo em cinza claro com borda e ícone verdes; não muda de
+       aparência ao ser clicado -- quem muda é a borda lateral do card. */
+    .btn-marcar-feito {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: #f2f2f2;
+        border: 2px solid var(--success-green);
+        color: var(--success-green);
+        font-size: 0.95rem;
+        line-height: 1;
+        padding: 0;
+        cursor: pointer;
+        transition: transform 0.15s ease;
+    }
+    .btn-marcar-feito:hover {
+        transform: scale(1.06);
+    }
+    .btn-marcar-feito:focus-visible {
+        outline: 2px solid var(--success-green);
+        outline-offset: 2px;
+    }
+    .exercise-row.is-desativado .btn-marcar-feito {
+        pointer-events: none;
+        opacity: 0.5;
     }
 
     /* Exercício desmarcado (não vai ser treinado hoje): o card fica
@@ -2080,6 +2122,12 @@
                                  data-musculos-secundarios="{{ ex.musculos_secundarios_lista|join(', ') if ex.musculos_secundarios_lista else '' }}">
                                 <div class="dash-registro-top">
                                     <span class="dash-registro-exercicio exercicio-nome-trunc" data-full-nome="{{ ex.nome }}">{{ ex.nome }}</span>
+                                    <button type="button" class="btn-marcar-feito"
+                                            data-target-exercicio="{{ chave_ex }}"
+                                            aria-pressed="false"
+                                            aria-label="Marcar {{ ex.nome }} como feito">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
                                 </div>
                                 {% if ex.observacao_treino %}
                                 <div class="dash-registro-obs">
@@ -2305,6 +2353,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Liga/desliga por exercício ("vou treinar hoje?")
     inicializarSwitchesExercicio();
     atualizarResumo();
+
+    // Marcar exercício como já feito (só visual, muda a cor da borda)
+    inicializarBotoesMarcarFeito();
     
     // Garantir que o campo de data sempre comece preenchido com o dia
     // atual quando vier vazio. Setar dataInput.value direto não é
@@ -2577,6 +2628,18 @@ function inicializarPopoverDescricaoExercicio() {
             });
             nomeEl.dataset.focusinIsolado = '1';
         }
+
+        // O botão "marcar como feito" (.btn-marcar-feito) também fica
+        // DENTRO desta região -- mesmo isolamento do focusin acima, senão
+        // clicar nele (que foca o botão) abriria o popover de descrição
+        // junto com o toggle visual.
+        const btnFeitoEl = el.querySelector('.btn-marcar-feito');
+        if (btnFeitoEl && !btnFeitoEl.dataset.focusinIsolado) {
+            btnFeitoEl.addEventListener('focusin', function (evt) {
+                evt.stopPropagation();
+            });
+            btnFeitoEl.dataset.focusinIsolado = '1';
+        }
     });
 }
 
@@ -2629,6 +2692,27 @@ function aplicarEstadoExercicio(row, ativo) {
     if (!ativo) {
         row.classList.remove('is-complete');
     }
+}
+
+/* Botão "marcar como feito": ação 100% visual, não mexe em nenhum campo
+   nem no que é enviado no submit -- só alterna a classe "is-feito" no
+   card, que troca a cor da borda lateral (laranja -> verde), pra o
+   usuário acompanhar quais exercícios já concluiu na sessão. */
+function inicializarBotoesMarcarFeito() {
+    document.querySelectorAll('.btn-marcar-feito').forEach(function (btn) {
+        const row = btn.closest('.exercise-row');
+        if (!row || btn.dataset.feitoInicializado) return;
+        btn.dataset.feitoInicializado = '1';
+
+        btn.addEventListener('click', function (evt) {
+            evt.preventDefault();
+            evt.stopPropagation();
+
+            const feito = !row.classList.contains('is-feito');
+            row.classList.toggle('is-feito', feito);
+            btn.setAttribute('aria-pressed', String(feito));
+        });
+    });
 }
 
 function inicializarSwitchesExercicio() {
