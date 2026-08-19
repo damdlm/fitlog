@@ -147,11 +147,12 @@
         align-items: center;
     }
     .exercicio-switch-wrap .form-check-input {
-        width: 1.35em;
-        height: 1.35em;
+        width: 30px;
+        height: 30px;
         cursor: pointer;
         accent-color: var(--primary-orange);
         border: 2px solid var(--border-soft);
+        border-radius: var(--radius-sm);
     }
     .exercicio-switch-wrap .form-check-input:checked {
         background-color: var(--primary-orange);
@@ -236,6 +237,20 @@
         .empty-icon.is-play-trigger { animation: none; }
     }
 
+    /* Padronização de tamanho dos 4 "botões" da linha de exercício
+       (imagem/gif, instruções, switch de ativar/desativar e marcar como
+       feito): todos em 30px, a mesma altura dos campos de carga/reps/
+       séries, pra ficarem visualmente alinhados e do mesmo tamanho.
+       .dash-registro-icon vem do base.html (compartilhada com o card
+       "Último Treino" do dashboard, lá em 40px) -- aqui sobrescrevemos
+       só pra esta tela, escopado em .exercise-row. */
+    .exercise-row .dash-registro-icon {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        border-radius: var(--radius-sm);
+    }
+
     /* O botão de imagens do exercício precisa preencher o quadrado
        .dash-registro-icon (classe global, compartilhada com o card
        "Último Treino" do dashboard) em vez do próprio tamanho padrão. */
@@ -248,9 +263,9 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.15rem;
+        font-size: 1rem;
         padding: 0;
-        border-radius: 10px;
+        border-radius: var(--radius-sm);
     }
     .dash-registro-icon .btn-imagens-exercicio:hover {
         background: rgba(242, 140, 51, 0.22);
@@ -265,9 +280,9 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.15rem;
+        font-size: 1rem;
         padding: 0;
-        border-radius: 10px;
+        border-radius: var(--radius-sm);
     }
     .dash-registro-icon .btn-instrucoes-exercicio:hover {
         background: rgba(242, 140, 51, 0.22);
@@ -338,9 +353,6 @@
             max-width: 110px;
             margin-left: auto;
             margin-right: auto;
-        }
-        .inputs-row-label {
-            text-align: center;
         }
     }
 
@@ -611,6 +623,7 @@
         letter-spacing: 0.03em;
         font-weight: 600;
         margin-bottom: 1px;
+        text-align: center;
     }
 
     /* Linha dos rótulos Carga/Repetições/Séries -- controlada à parte
@@ -878,12 +891,24 @@
             padding: 2px 20px 2px 6px !important;
         }
 
-        /* Demais ajustes visuais */
-        .dash-registro-icon {
-            width: 34px;
-            height: 34px;
-            min-width: 34px;
-            border-radius: 9px;
+        /* Demais ajustes visuais -- os mesmos 4 "botões" padronizados em
+           30px no desktop (ver regra .exercise-row .dash-registro-icon
+           mais acima) encolhem juntos aqui pra 27px, acompanhando a
+           altura dos campos de carga/reps/séries no mobile (27px). */
+        .exercise-row .dash-registro-icon {
+            width: 27px;
+            height: 27px;
+            min-width: 27px;
+        }
+
+        .exercicio-switch-wrap .form-check-input {
+            width: 27px;
+            height: 27px;
+        }
+
+        .btn-marcar-feito {
+            width: 27px;
+            height: 27px;
         }
 
         .dash-registro-exercicio {
@@ -1261,6 +1286,22 @@
     #modalImagensExercicio,
     #modalInstrucoesExercicio {
         z-index: 2000;
+    }
+
+    /* Vídeo/gif de demonstração do exercício ~30% menor, só nesta tela.
+       #modalImagensExercicio é um modal GLOBAL (vem do base.html) e é
+       reaproveitado em outras telas também (cadastrar/editar treino) --
+       por isso o ajuste de tamanho fica aqui, escopado ao <style> desta
+       página, em vez de mudar o base.html e afetar todo mundo.
+       modal-lg (classe do Bootstrap no HTML) tem max-width padrão de
+       800px -> 800 * 0.7 = 560px. A mídia em si usa max-height: 70vh no
+       base.html -> 70 * 0.7 = 49vh. */
+    #modalImagensExercicio .modal-dialog {
+        max-width: 560px;
+    }
+    #modalImagensExercicio .exmodal-media-frame img,
+    #modalImagensExercicio .exmodal-media-frame video {
+        max-height: 49vh;
     }
 
     /* O backdrop (fundo escuro) precisa ficar ACIMA do modo treino em tela
