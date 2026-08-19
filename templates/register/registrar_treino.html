@@ -40,7 +40,6 @@
         box-shadow: var(--shadow-md);
     }
     .exercise-row.is-complete {
-        border-left-color: var(--dark-bg);
         background: linear-gradient(180deg, rgba(45, 45, 45, 0.04), var(--surface) 40%);
     }
 
@@ -53,9 +52,13 @@
     }
 
     /* Botão "marcar como feito": fica do lado oposto ao switch de
-       desmarcar exercício (que é exibido perto dos campos de carga/reps).
-       Visual fixo em cinza claro com borda e ícone verdes; não muda de
-       aparência ao ser clicado -- quem muda é a borda lateral do card. */
+       desmarcar exercício -- switch na coluna 1 (esquerda), este botão
+       na coluna 3 (direita), colado no campo de Séries, na mesma linha
+       dos inputs. Visual fixo em cinza claro com borda e ícone verdes;
+       não muda de aparência ao ser clicado -- quem muda é a borda
+       lateral do card (.exercise-row.is-feito). Quadrado (não círculo)
+       e com a mesma altura de 30px dos inputs de carga/reps/séries,
+       pra alinhar certinho com eles. */
     .btn-marcar-feito {
         display: flex;
         align-items: center;
@@ -63,7 +66,7 @@
         width: 30px;
         height: 30px;
         flex-shrink: 0;
-        border-radius: 50%;
+        border-radius: var(--radius-sm);
         background: #f2f2f2;
         border: 2px solid var(--success-green);
         color: var(--success-green);
@@ -112,13 +115,16 @@
         flex-shrink: 0;
     }
 
-    /* Grid de 2 colunas x 2 linhas: coluna 1 é o checkbox (só aparece
+    /* Grid de 3 colunas x 2 linhas: coluna 1 é o checkbox (só aparece
        na linha 2, a dos campos de valor -- a linha 1/coluna 1 fica
        vazia, o que empurra o checkbox pra baixo e o alinha exatamente
-       com Carga/Repetições/Séries, não com a linha de rótulos). */
+       com Carga/Repetições/Séries, não com a linha de rótulos).
+       Coluna 3 (nova) segue o mesmo padrão, espelhado do outro lado,
+       pro botão "marcar como feito" ficar colado nos campos de Séries,
+       na mesma linha dos inputs. */
     .exercicio-valores-grid {
         display: grid;
-        grid-template-columns: auto 1fr;
+        grid-template-columns: auto 1fr auto;
         grid-template-rows: auto auto;
         column-gap: 8px;
     }
@@ -133,6 +139,12 @@
     .exercicio-valores-grid .inputs-row {
         grid-column: 2;
         grid-row: 2;
+    }
+    .exercicio-valores-grid .exercicio-marcar-feito-wrap {
+        grid-column: 3;
+        grid-row: 2;
+        display: flex;
+        align-items: center;
     }
     .exercicio-switch-wrap .form-check-input {
         width: 1.35em;
@@ -2117,17 +2129,10 @@
                             </div>
                             <div class="dash-registro-info exercicio-info-trigger"
                                  role="button" tabindex="0"
-                                 data-descricao="{{ ex.descricao_completa }}"
                                  data-musculo-principal="{{ ex.musculo or '' }}"
                                  data-musculos-secundarios="{{ ex.musculos_secundarios_lista|join(', ') if ex.musculos_secundarios_lista else '' }}">
                                 <div class="dash-registro-top">
                                     <span class="dash-registro-exercicio exercicio-nome-trunc" data-full-nome="{{ ex.nome }}">{{ ex.nome }}</span>
-                                    <button type="button" class="btn-marcar-feito"
-                                            data-target-exercicio="{{ chave_ex }}"
-                                            aria-pressed="false"
-                                            aria-label="Marcar {{ ex.nome }} como feito">
-                                        <i class="bi bi-check-lg"></i>
-                                    </button>
                                 </div>
                                 {% if ex.observacao_treino %}
                                 <div class="dash-registro-obs">
@@ -2197,6 +2202,14 @@
                                             {% endfor %}
                                 </select>
                             </div>
+                        </div>
+                        <div class="exercicio-marcar-feito-wrap">
+                            <button type="button" class="btn-marcar-feito"
+                                    data-target-exercicio="{{ chave_ex }}"
+                                    aria-pressed="false"
+                                    aria-label="Marcar {{ ex.nome }} como feito">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
                         </div>
                     </div>
                     </div>
@@ -2569,6 +2582,7 @@ function inicializarTruncamentoNomesExercicio() {
 }
 
 // Popover com a descrição completa do exercício e os músculos trabalhados
+// Popover com o nome completo do exercício e os músculos trabalhados
 // (principal + secundários), aberto ao clicar/focar na região do nome e
 // dos valores do último treino (ver .exercicio-info-trigger no HTML).
 function inicializarPopoverDescricaoExercicio() {
@@ -2583,13 +2597,17 @@ function inicializarPopoverDescricaoExercicio() {
         if (instanciaAnterior) instanciaAnterior.dispose();
         if (!window.bootstrap) return;
 
-        const descricao = (el.dataset.descricao || '').trim();
+        // Nome completo do exercício: reaproveita o data-full-nome que já
+        // existe no span truncado (.exercicio-nome-trunc), em vez de
+        // duplicar o mesmo valor em outro atributo.
+        const nomeTruncEl = el.querySelector('.exercicio-nome-trunc');
+        const nome = (nomeTruncEl && nomeTruncEl.dataset.fullNome || '').trim();
         const musculoPrincipal = (el.dataset.musculoPrincipal || '').trim();
         const musculosSecundarios = (el.dataset.musculosSecundarios || '').trim();
 
-        // Sem nenhuma informação pra mostrar (exercício sem descrição e
-        // sem músculo cadastrado): não faz sentido a região virar clicável.
-        if (!descricao && !musculoPrincipal && !musculosSecundarios) {
+        // Sem nenhum músculo cadastrado: não faz sentido a região virar
+        // clicável (o nome sozinho já é visível na tela).
+        if (!musculoPrincipal && !musculosSecundarios) {
             el.classList.remove('exercicio-info-trigger');
             el.removeAttribute('role');
             el.removeAttribute('tabindex');
@@ -2597,8 +2615,8 @@ function inicializarPopoverDescricaoExercicio() {
         }
 
         const partes = [];
-        if (descricao) {
-            partes.push('<p class="mb-2">' + escaparHtml(descricao) + '</p>');
+        if (nome) {
+            partes.push('<p class="mb-2">' + escaparHtml(nome) + '</p>');
         }
         if (musculoPrincipal) {
             partes.push('<div class="popover-musculo-linha"><strong>Músculo principal:</strong> ' + escaparHtml(musculoPrincipal) + '</div>');
@@ -2627,18 +2645,6 @@ function inicializarPopoverDescricaoExercicio() {
                 evt.stopPropagation();
             });
             nomeEl.dataset.focusinIsolado = '1';
-        }
-
-        // O botão "marcar como feito" (.btn-marcar-feito) também fica
-        // DENTRO desta região -- mesmo isolamento do focusin acima, senão
-        // clicar nele (que foca o botão) abriria o popover de descrição
-        // junto com o toggle visual.
-        const btnFeitoEl = el.querySelector('.btn-marcar-feito');
-        if (btnFeitoEl && !btnFeitoEl.dataset.focusinIsolado) {
-            btnFeitoEl.addEventListener('focusin', function (evt) {
-                evt.stopPropagation();
-            });
-            btnFeitoEl.dataset.focusinIsolado = '1';
         }
     });
 }
