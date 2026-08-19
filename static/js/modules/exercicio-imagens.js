@@ -44,9 +44,18 @@
         return partes.length > 1 ? partes.pop().toLowerCase() : '';
     }
 
+    function frameDoSpinner(els) {
+        return els.spinner.closest('.exmodal-media-frame');
+    }
+
     function mostrarSpinner(els) {
         els.spinner.classList.remove('d-none');
         els.erro.classList.remove('is-visible');
+        // Dá espaço mínimo pra moldura enquanto não há mídia real visível
+        // (nem carregada, nem em erro) -- ver .exmodal-media-frame.is-vazia.
+        // Removida assim que a mídia carrega de verdade (onload/oncanplay
+        // abaixo), pra moldura passar a abraçar só o tamanho real dela.
+        frameDoSpinner(els).classList.add('is-vazia');
     }
 
     function esconderSpinner(els) {
@@ -58,6 +67,9 @@
         els.erro.classList.add('is-visible');
         els.img.classList.add('d-none');
         els.video.classList.add('d-none');
+        // Continua "vazia" (sem mídia real) -- mantém o espaço mínimo
+        // pra mensagem de erro não ficar sem altura pra aparecer.
+        frameDoSpinner(els).classList.add('is-vazia');
     }
 
     window.abrirModalImagensExercicio = function (btn) {
@@ -88,6 +100,7 @@
             els.video.onerror = function () { mostrarErro(els); };
             els.video.oncanplay = function () {
                 esconderSpinner(els);
+                frameDoSpinner(els).classList.remove('is-vazia');
                 els.video.classList.remove('d-none');
             };
             els.video.src = url;
@@ -96,6 +109,7 @@
             els.img.onerror = function () { mostrarErro(els); };
             els.img.onload = function () {
                 esconderSpinner(els);
+                frameDoSpinner(els).classList.remove('is-vazia');
                 els.img.classList.remove('d-none');
             };
             els.img.alt = nome;

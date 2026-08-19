@@ -825,13 +825,23 @@
             background: #1e1e1e;
             border-radius: 14px;
             overflow: hidden;
-            min-height: 220px;
             display: flex;
             align-items: center;
             justify-content: center;
             width: fit-content;
             max-width: 100%;
             margin: 0 auto;
+        }
+
+        /* Altura mínima só enquanto não há mídia real visível (carregando
+           ou em erro -- classe alternada via JS em exercicio-imagens.js).
+           É só pra dar espaço pro spinner/mensagem de erro centralizados
+           antes do tamanho real do vídeo/gif ser conhecido. Se ficasse
+           fixa o tempo todo, sobrava espaço escuro em cima/embaixo
+           sempre que o vídeo carregado, depois de encolhido pra caber
+           na largura do modal, resultava mais baixo que 220px. */
+        .exmodal-media-frame.is-vazia {
+            min-height: 220px;
         }
 
         /* width/height "auto" (em vez de width:100% fixo) faz a moldura
