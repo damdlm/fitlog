@@ -6,6 +6,7 @@ from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
 from extensions import limiter
+from services.billing_service import BillingService
 from services.fitbot_service import FitBotService
 
 fitbot_bp = Blueprint("fitbot", __name__)
@@ -56,6 +57,17 @@ def chat():
     service sempre revalida a permissão (vínculo professor/aluno ativo,
     ou admin) contra a sessão autenticada antes de usar esse valor.
     """
+    # Gate de assinatura: só o ALUNO (usando o FitBot para si mesmo)
+    # precisa de trial válido ou Plano Fit ativo. Professor/admin nunca
+    # são bloqueados aqui -- inclusive quando usam o FitBot em nome de
+    # um aluno (via aluno_id abaixo), a regra de cobrança que vale é a
+    # do professor, não a do aluno consultado.
+    if current_user.is_aluno() and not BillingService.aluno_tem_acesso_premium(current_user):
+        return jsonify({
+            "ok": False,
+            "resposta": "Assine o Plano Fit para continuar conversando com o FitBot.",
+        }), 403
+
     dados = request.get_json(silent=True) or {}
 
     mensagem = (dados.get("mensagem") or "").strip()

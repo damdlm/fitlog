@@ -6,6 +6,7 @@ from services.exercicio_service import ExercicioService
 from services.versao_service import VersaoService
 from services.registro_service import RegistroService
 from services.estatistica_service import EstatisticaService
+from utils.decorators import aluno_premium_required
 from utils.exercise_utils import buscar_musculo_no_catalogo, remover_acentos
 import json
 import hashlib
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 @api_bp.route("/progresso")
 @login_required
+@aluno_premium_required
 def api_progresso():
     """
     API de dados de progresso para o gráfico de evolução.

@@ -19,6 +19,7 @@ from models import (
     db, User, AlunoProfessor, Musculo, ExercicioUsuario, ExercicioSistema,
     Treino, VersaoGlobal, TreinoVersao, VersaoExercicio, RegistroTreino, HistoricoTreino,
 )
+from services.billing_service import BillingService
 
 
 def _criar_usuario(username, tipo_usuario='aluno', is_admin=False):
@@ -26,6 +27,12 @@ def _criar_usuario(username, tipo_usuario='aluno', is_admin=False):
                 tipo_usuario=tipo_usuario, is_admin=is_admin, nome_completo=username.title())
     user.set_password('123456')
     db.session.add(user)
+    db.session.flush()
+    if tipo_usuario == 'aluno':
+        # Trial de 30 dias, igual ao cadastro real -- essas rotas
+        # exigem acesso premium (ver aluno_premium_required) e este
+        # arquivo testa IDOR/isolamento, não cobrança.
+        BillingService.iniciar_trial_aluno(user)
     db.session.commit()
     return user
 

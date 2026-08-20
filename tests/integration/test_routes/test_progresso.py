@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from models import db, User, Treino, VersaoGlobal, RegistroTreino, HistoricoTreino, Musculo, ExercicioUsuario
+from services.billing_service import BillingService
 
 
 def _login(client, user):
@@ -14,6 +15,8 @@ def test_progresso_sem_registro_retorna_vazio(client, app):
         u = User(username='sem_treino_pt', email='sem_pt@t.com', tipo_usuario='aluno')
         u.set_password('x' * 12)
         db.session.add(u)
+        db.session.flush()
+        BillingService.iniciar_trial_aluno(u)
         db.session.commit()
         user_id = u.id
 
@@ -30,6 +33,8 @@ def test_progresso_ultimos_30_dias_com_registro(client, app):
         u = User(username='com_treino_pt', email='com_pt@t.com', tipo_usuario='aluno')
         u.set_password('x' * 12)
         db.session.add(u)
+        db.session.flush()
+        BillingService.iniciar_trial_aluno(u)
         db.session.commit()
 
         m = Musculo(nome='peito_pt', nome_exibicao='Peito')

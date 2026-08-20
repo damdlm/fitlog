@@ -178,6 +178,38 @@ def create_app(config_class=None):
     register_all_routes(app)
 
     # =============================================================
+    # COMANDOS CLI (cobrança/assinatura)
+    # =============================================================
+    # Rodar via Railway Cron (ou qualquer scheduler externo) apontando
+    # pra "flask billing-expirar-carencias" / "flask billing-verificar-tiers"
+    # -- ver services/billing_service.py. Não existe scheduler embutido
+    # no processo web (gunicorn já roda com múltiplos workers; um job
+    # dentro do próprio processo rodaria uma vez por worker).
+    @app.cli.command("billing-expirar-carencias")
+    def billing_expirar_carencias():
+        """Move para 'blocked' assinaturas com carência de pagamento
+        atrasado vencida. Rodar a cada hora."""
+        from services.billing_service import BillingService
+        total = BillingService.expirar_carencias_vencidas()
+        print(f"{total} assinatura(s) movida(s) para blocked.")
+
+    @app.cli.command("billing-verificar-tiers")
+    def billing_verificar_tiers():
+        """Lista professores cujo tier calculado (pela contagem atual de
+        alunos) difere do tier hoje associado à assinatura -- não aplica
+        nada, só reporta para virar notificação/aviso antes de qualquer
+        mudança de cobrança. Rodar diariamente."""
+        from services.billing_service import BillingService
+        mudancas = BillingService.verificar_mudancas_tier_professores()
+        if not mudancas:
+            print("Nenhuma mudança de tier pendente.")
+            return
+        for m in mudancas:
+            atual = m['tier_atual'].codigo if m['tier_atual'] else 'gratuito'
+            novo = m['tier_novo'].codigo if m['tier_novo'] else 'gratuito'
+            print(f"professor_id={m['professor'].id} {atual} -> {novo}")
+
+    # =============================================================
     # CONTEXT
     # =============================================================
     from utils.format_utils import (

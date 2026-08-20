@@ -213,6 +213,16 @@ class AlunoService(BaseService):
             aluno.set_password(dados['password'])
             
             db.session.add(aluno)
+            db.session.flush()
+
+            # Mesmo trial de 30 dias do cadastro público (auth.register) e
+            # do cadastro pelo professor (professor.cadastrar_aluno) -- sem
+            # isso, um aluno criado por admin ficaria bloqueado de
+            # Estatísticas/FitBot desde o primeiro acesso, sem nunca ter
+            # tido o período de teste. Ver services/billing_service.py.
+            from services.billing_service import BillingService
+            BillingService.iniciar_trial_aluno(aluno)
+
             db.session.commit()
             
             logger.info(f"Aluno {aluno.username} criado por admin {current_user.id}")

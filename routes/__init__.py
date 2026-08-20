@@ -13,6 +13,7 @@ from .professor_routes import professor_bp
 from .aluno import aluno_bp          # ← módulo modular, não o arquivo antigo
 from .fitbot_routes import fitbot_bp
 from .contato_routes import contato_bp
+from .billing_routes import billing_bp
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ def register_all_routes(app):
         (api_bp, '/api'),
         (fitbot_bp, '/fitbot'),
         (contato_bp, '/contato'),
+        (billing_bp, '/billing'),
     ]
     
     for blueprint, url_prefix in blueprints:
@@ -39,3 +41,14 @@ def register_all_routes(app):
             app.logger.info(f"Blueprint {blueprint.name} registrado em {url_prefix or '/'}")
         except Exception:
             app.logger.exception(f"Erro ao registrar {blueprint.name}")
+
+    # A rota de webhook é chamada pelo servidor do Asaas, não pelo
+    # navegador de um usuário logado -- não existe token CSRF de sessão
+    # possível nesse cenário. A autenticidade é garantida à parte, pelo
+    # token 'asaas-access-token' validado dentro da própria rota (ver
+    # routes/billing_routes.py). csrf.exempt é aplicado aqui, depois do
+    # blueprint já registrado, em vez de no módulo da rota, para não
+    # precisar importar o objeto csrf (definido em app.py) de dentro de
+    # routes/billing_routes.py.
+    from app import csrf
+    csrf.exempt(app.view_functions['billing.webhook_asaas'])

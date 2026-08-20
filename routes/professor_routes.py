@@ -6,6 +6,7 @@ from services.exercicio_service import ExercicioService
 from services.versao_service import VersaoService
 from services.estatistica_service import EstatisticaService
 from services.musculo_service import MusculoService
+from services.billing_service import BillingService
 from datetime import datetime, timezone
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
@@ -121,7 +122,12 @@ def novo_aluno():
             ativo=True
         )
         db.session.add(vinculo)
-        
+
+        # Mesmo trial de 30 dias do cadastro público (auth.register) --
+        # ver services/billing_service.py:iniciar_trial_aluno. Entra na
+        # mesma transação (commit único logo abaixo).
+        BillingService.iniciar_trial_aluno(aluno)
+
         db.session.commit()
         
         logger.info(f"Professor {current_user.id} cadastrou novo aluno {aluno.id}")

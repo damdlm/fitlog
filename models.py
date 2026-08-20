@@ -256,6 +256,122 @@ class PasswordResetToken(db.Model):
 
 
 # =====================================================
+# COBRANÇA / ASSINATURAS
+# =====================================================
+
+class Plano(db.Model):
+    """Planos de assinatura disponíveis. Ficam no banco (não hardcoded
+    no código) para permitir ajustar preço/faixas de alunos sem precisar
+    de deploy -- só um update direto na tabela.
+
+    tipo_usuario define para qual perfil o plano vale ('aluno' ou
+    'professor'). Para planos de professor, min_alunos/max_alunos
+    definem a faixa de alunos ativos que enquadra o professor nesse
+    plano (max_alunos=None significa "sem teto", usado no Premium)."""
+    __tablename__ = 'planos'
+
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(30), unique=True, nullable=False)
+    nome = db.Column(db.String(60), nullable=False)
+    tipo_usuario = db.Column(db.String(20), nullable=False)  # 'aluno' ou 'professor'
+    preco_centavos = db.Column(db.Integer, nullable=False)
+    min_alunos = db.Column(db.Integer, nullable=True)  # só usado em planos de professor
+    max_alunos = db.Column(db.Integer, nullable=True)  # None = sem teto
+    ativo = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<Plano {self.codigo} R${self.preco_centavos/100:.2f}>'
+
+
+class Assinatura(db.Model):
+    """Estado de cobrança de um usuário (aluno ou professor). Espelha o
+    status vindo do gateway de pagamento (Asaas) -- é o backend quem
+    escreve aqui, sempre a partir de um webhook validado (nunca a partir
+    de uma resposta direta ao navegador do usuário, que é falsificável).
+    Ver services/billing_service.py.
+
+    status possíveis:
+      'trialing'  -- dentro do período de teste grátis (só para aluno)
+      'active'    -- assinatura paga e em dia
+      'past_due'  -- pagamento atrasado, dentro da carência
+      'blocked'   -- carência esgotada, acesso premium bloqueado
+      'canceled'  -- cancelada pelo usuário ou pelo gateway
+    """
+    __tablename__ = 'assinaturas'
+
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, unique=True, index=True)
+    plano_id = db.Column(db.Integer, db.ForeignKey('planos.id'), nullable=True)
+
+    status = db.Column(db.String(20), nullable=False, default='trialing', index=True)
+
+    gateway_customer_id = db.Column(db.String(60), nullable=True)
+    gateway_subscription_id = db.Column(db.String(60), nullable=True, index=True)
+
+    trial_termina_em = db.Column(db.DateTime(timezone=True), nullable=True)
+    periodo_atual_fim = db.Column(db.DateTime(timezone=True), nullable=True)
+    carencia_termina_em = db.Column(db.DateTime(timezone=True), nullable=True)
+    cancelado_em = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    usuario = db.relationship('User', foreign_keys=[usuario_id], backref=db.backref('assinatura', uselist=False))
+    plano = db.relationship('Plano', foreign_keys=[plano_id])
+
+    @staticmethod
+    def _aware(dt):
+        """SQLite não guarda timezone: um DateTime(timezone=True) volta
+        do banco 'naive' mesmo tendo sido salvo com tzinfo (ao contrário
+        do Postgres, que preserva). Sem isso, comparar com datetime.now
+        (aware) gera TypeError. Mesmo padrão usado em
+        PasswordResetToken._lookup_valid_reset_token."""
+        if dt is not None and dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt
+
+    def acesso_premium_ativo(self):
+        """True se o usuário deve ter acesso às telas premium agora
+        (Estatísticas/FitBot para aluno). Único ponto de verdade
+        consultado pelo decorator -- só lê o status já sincronizado via
+        webhook, nunca recalcula nada chamando o gateway aqui."""
+        agora = datetime.now(timezone.utc)
+        if self.status == 'active':
+            return True
+        if self.status == 'trialing':
+            trial_termina_em = self._aware(self.trial_termina_em)
+            return trial_termina_em is None or trial_termina_em > agora
+        if self.status == 'past_due':
+            # Carência: mantém acesso até carencia_termina_em mesmo com
+            # pagamento atrasado -- dá tempo do Asaas tentar recobrar
+            # automaticamente antes de bloquear.
+            carencia_termina_em = self._aware(self.carencia_termina_em)
+            return carencia_termina_em is not None and carencia_termina_em > agora
+        return False
+
+    def __repr__(self):
+        return f'<Assinatura usuario={self.usuario_id} status={self.status}>'
+
+
+class EventoWebhookAsaas(db.Model):
+    """Registro de eventos de webhook do Asaas já processados, para
+    idempotência -- gateways de pagamento reenviam o mesmo evento em
+    caso de timeout na resposta anterior, e processá-lo duas vezes pode
+    gerar dupla liberação de acesso ou dupla contabilização. event_id
+    vem do próprio payload enviado pelo Asaas (campo "id" do evento)."""
+    __tablename__ = 'eventos_webhook_asaas'
+
+    id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(db.String(80), unique=True, nullable=False, index=True)
+    tipo_evento = db.Column(db.String(60), nullable=False)
+    processado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<EventoWebhookAsaas {self.tipo_evento} {self.event_id}>'
+
+
+# =====================================================
 # MODELOS DE DADOS
 # =====================================================
 

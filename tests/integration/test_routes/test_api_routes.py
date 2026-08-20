@@ -13,6 +13,7 @@ from datetime import date
 from models import db, User, Musculo, ExercicioUsuario, RegistroTreino, HistoricoTreino
 from services.versao_service import VersaoService
 from services.treino_service import TreinoService
+from services.billing_service import BillingService
 
 
 def _criar_usuario(username):
@@ -20,6 +21,12 @@ def _criar_usuario(username):
                 tipo_usuario='aluno', nome_completo=username.title())
     user.set_password('123456')
     db.session.add(user)
+    db.session.flush()
+    # Trial de 30 dias, igual ao que o cadastro de verdade concede --
+    # sem isso o aluno cai bloqueado das telas premium (ver
+    # utils/decorators.py:aluno_premium_required) e testes que não são
+    # sobre cobrança quebram por um motivo alheio ao que testam.
+    BillingService.iniciar_trial_aluno(user)
     db.session.commit()
     return user
 

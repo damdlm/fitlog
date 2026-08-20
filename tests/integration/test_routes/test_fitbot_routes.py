@@ -12,6 +12,7 @@ from models import (
     db, User, AlunoProfessor, Treino, VersaoGlobal, TreinoVersao,
     VersaoExercicio, ExercicioSistema, RegistroTreino, HistoricoTreino,
 )
+from services.billing_service import BillingService
 
 
 def _criar_usuario(username, tipo_usuario='aluno', nome_completo=None):
@@ -21,6 +22,12 @@ def _criar_usuario(username, tipo_usuario='aluno', nome_completo=None):
     )
     user.set_password('123456')
     db.session.add(user)
+    db.session.flush()
+    if tipo_usuario == 'aluno':
+        # Trial de 30 dias, igual ao cadastro real -- o FitBot bloqueia
+        # aluno sem trial/assinatura ativa (ver routes/fitbot_routes.py),
+        # e esses testes são sobre isolamento de dados, não sobre cobrança.
+        BillingService.iniciar_trial_aluno(user)
     db.session.commit()
     return user
 

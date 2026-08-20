@@ -162,6 +162,17 @@ class Config:
     # isso: é a mesma variável de ambiente em qualquer ambiente.
     APP_BASE_URL = os.getenv('APP_BASE_URL')
 
+    # Cobrança/assinaturas (Asaas) -- ver services/billing_service.py.
+    # ASAAS_API_KEY nunca é exposta ao navegador -- só o backend fala
+    # com a API do Asaas (o dado de cartão do usuário vai direto pro
+    # checkout hospedado do Asaas, nunca passa pelo nosso servidor).
+    # ASAAS_WEBHOOK_TOKEN é o token configurado no painel do Asaas em
+    # Integrações > Webhooks, usado para validar que um POST em
+    # /billing/webhook/asaas realmente veio do Asaas.
+    ASAAS_API_KEY = os.getenv('ASAAS_API_KEY')
+    ASAAS_WEBHOOK_TOKEN = os.getenv('ASAAS_WEBHOOK_TOKEN')
+    ASAAS_ENV = os.getenv('ASAAS_ENV', 'sandbox')  # 'sandbox' ou 'production'
+
 
 class DevelopmentConfig(Config):
     DEBUG = True

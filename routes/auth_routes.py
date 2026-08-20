@@ -8,6 +8,7 @@ import logging
 from utils.validators import validar_email, validar_senha
 from utils.email_utils import enviar_email
 from services.base_service import CacheService
+from services.billing_service import BillingService
 
 auth_bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
@@ -263,6 +264,13 @@ def register():
         db.session.flush()
 
         if user.tipo_usuario == 'aluno':
+            # Trial de 30 dias do Plano Fit começa junto com o cadastro
+            # -- ver services/billing_service.py:iniciar_trial_aluno.
+            # Chamado antes do commit final abaixo: o INSERT do User já
+            # foi enviado ao banco pelo flush() logo acima (só falta
+            # confirmar a transação), então o commit feito dentro do
+            # service confirma User + Assinatura juntos.
+            BillingService.iniciar_trial_aluno(user)
             flash('Conta criada com sucesso!', 'success')
         else:
             flash('Conta de professor criada com sucesso!', 'success')
