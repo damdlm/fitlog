@@ -4,8 +4,10 @@ from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
 from services.musculo_service import MusculoService
 from services.versao_service import VersaoService
+from services.billing_service import BillingService
 from utils.exercise_utils import buscar_musculo_no_catalogo
-from models import db, ExercicioCustomizado, ExercicioUsuario, Musculo, RegistroTreino, HistoricoTreino, ExercicioSistema, TreinoVersao, VersaoExercicio
+from utils.decorators import admin_required
+from models import db, ExercicioCustomizado, ExercicioUsuario, Musculo, RegistroTreino, HistoricoTreino, ExercicioSistema, TreinoVersao, VersaoExercicio, Plano
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
 import logging
@@ -377,3 +379,40 @@ def api_verificar_treino():
     codigo = request.args.get("id", "").upper()
     treino = TreinoService.get_by_codigo(codigo, user_id=current_user.id)
     return jsonify({"existe": treino is not None})
+
+# =============================================
+# COBRANÇA -- painel de contas (só admin)
+# =============================================
+
+@admin_bp.route("/contas")
+@admin_required
+def contas():
+    """Lista alunos e professores com a situação de cobrança calculada,
+    com filtros por tipo de usuário, plano e situação (inclusive
+    'inadimplente', que junta past_due/blocked/pendente num filtro só).
+    Ver BillingService.listar_contas para a lógica de cálculo."""
+    tipo_usuario = request.args.get("tipo", "").strip() or None
+    busca = request.args.get("busca", "").strip() or None
+    situacao_codigo = request.args.get("situacao", "").strip() or None
+    plano_codigo = request.args.get("plano", "").strip() or None
+
+    contas_lista = BillingService.listar_contas(
+        tipo_usuario=tipo_usuario,
+        busca=busca,
+        situacao_codigo=situacao_codigo,
+        plano_codigo=plano_codigo,
+    )
+
+    total_inadimplentes = sum(1 for c in contas_lista if c["inadimplente"])
+    planos = Plano.query.filter_by(ativo=True).order_by(Plano.tipo_usuario, Plano.preco_centavos).all()
+
+    return render_template(
+        "admin/contas.html",
+        contas=contas_lista,
+        total_inadimplentes=total_inadimplentes,
+        planos=planos,
+        filtro_tipo=tipo_usuario or "",
+        filtro_busca=busca or "",
+        filtro_situacao=situacao_codigo or "",
+        filtro_plano=plano_codigo or "",
+    )

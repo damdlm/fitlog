@@ -77,6 +77,15 @@ class BillingService:
         return assinatura.acesso_premium_ativo()
 
     @staticmethod
+    def contar_alunos_ativos(professor: User) -> int:
+        """Quantidade de alunos ativos vinculados ao professor -- base
+        do cálculo de tier, exposta à parte pra telas que precisam só
+        do número (sem recalcular o Plano)."""
+        return AlunoProfessor.query.filter_by(
+            professor_id=professor.id, ativo=True
+        ).count()
+
+    @staticmethod
     def calcular_tier_professor(professor: User) -> Plano | None:
         """Calcula qual Plano de professor corresponde à contagem ATUAL
         de alunos ativos vinculados. Retorna None para a faixa gratuita
@@ -84,9 +93,7 @@ class BillingService:
         o plano efetivamente sendo cobrado hoje (assinatura.plano_id),
         que só muda via aplicar_mudanca_tier_professor após notificação
         (ver verificar_mudancas_tier_professores)."""
-        total_alunos = AlunoProfessor.query.filter_by(
-            professor_id=professor.id, ativo=True
-        ).count()
+        total_alunos = BillingService.contar_alunos_ativos(professor)
 
         if total_alunos <= 2:
             return None
@@ -140,6 +147,102 @@ class BillingService:
     # ================================================================
 
     @staticmethod
+    def garantir_registro_assinatura(usuario: User) -> Assinatura:
+        """Garante que o usuário tenha uma linha em `assinaturas` pra
+        anexar IDs do gateway -- necessário pro professor, que (ao
+        contrário do aluno) não ganha uma Assinatura no cadastro, só
+        quando de fato ultrapassa a faixa gratuita e vai pagar.
+        Idempotente: se já existir, só retorna a existente."""
+        if usuario.assinatura is not None:
+            return usuario.assinatura
+        assinatura = Assinatura(usuario_id=usuario.id, status='canceled')
+        db.session.add(assinatura)
+        db.session.commit()
+        return assinatura
+
+    @staticmethod
+    def situacao_conta(usuario: User) -> dict:
+        """Resume a situação de cobrança de um usuário pro painel do
+        admin: um código estável pra filtrar, um rótulo pra exibir, se
+        está inadimplente e qual plano ocupa hoje. `codigo` nunca muda
+        de nome com a tradução do rótulo -- é nele que os filtros da
+        tela de contas se baseiam."""
+        if usuario.is_professor():
+            tier = BillingService.calcular_tier_professor(usuario)
+            assinatura = usuario.assinatura
+
+            if tier is None:
+                return {'codigo': 'gratuito', 'rotulo': 'Faixa gratuita', 'inadimplente': False, 'plano_codigo': None}
+
+            plano_codigo = tier.codigo
+            if assinatura is None or assinatura.status == 'canceled':
+                # Já tem alunos suficientes pra dever um plano pago, mas
+                # nunca assinou (ou cancelou) -- é o caso mais direto de
+                # "professor inadimplente" pro admin de olho.
+                return {'codigo': 'pendente', 'rotulo': 'Pendente de pagamento', 'inadimplente': True, 'plano_codigo': plano_codigo}
+            if assinatura.status == 'past_due':
+                return {'codigo': 'past_due', 'rotulo': 'Pagamento atrasado', 'inadimplente': True, 'plano_codigo': plano_codigo}
+            if assinatura.status == 'active' and assinatura.plano_id != tier.id:
+                # Pagando, mas por um tier diferente do calculado agora
+                # (contagem de alunos mudou) -- não é inadimplência, é
+                # ajuste de valor pendente (ver verificar_mudancas_tier_professores).
+                return {'codigo': 'desatualizado', 'rotulo': 'Tier desatualizado', 'inadimplente': False, 'plano_codigo': plano_codigo}
+            if assinatura.status == 'active':
+                return {'codigo': 'active', 'rotulo': 'Ativo', 'inadimplente': False, 'plano_codigo': plano_codigo}
+            return {'codigo': assinatura.status, 'rotulo': assinatura.status, 'inadimplente': False, 'plano_codigo': plano_codigo}
+
+        # aluno
+        assinatura = usuario.assinatura
+        if assinatura is None:
+            return {'codigo': 'sem_registro', 'rotulo': 'Sem registro', 'inadimplente': False, 'plano_codigo': None}
+
+        rotulos = {
+            'trialing': 'Em teste',
+            'active': 'Ativo',
+            'past_due': 'Pagamento atrasado',
+            'blocked': 'Bloqueado',
+            'canceled': 'Cancelado',
+        }
+        return {
+            'codigo': assinatura.status,
+            'rotulo': rotulos.get(assinatura.status, assinatura.status),
+            'inadimplente': assinatura.status in ('past_due', 'blocked'),
+            'plano_codigo': 'aluno_fit' if assinatura.status in ('active', 'past_due', 'blocked') else None,
+        }
+
+    @staticmethod
+    def listar_contas(tipo_usuario=None, busca=None, situacao_codigo=None, plano_codigo=None):
+        """Lista alunos e professores com a situação de cobrança
+        calculada, pro painel /admin/contas. Filtros de tipo/busca vão
+        pro SQL; situação/plano são calculados (dependem do tier
+        dinâmico do professor) e por isso filtrados em Python -- ok
+        pro volume de usuários de um app desse porte."""
+        query = User.query.filter(User.tipo_usuario.in_(['aluno', 'professor']))
+        if tipo_usuario in ('aluno', 'professor'):
+            query = query.filter(User.tipo_usuario == tipo_usuario)
+        if busca:
+            termo = f'%{busca}%'
+            query = query.filter(db.or_(
+                User.username.ilike(termo),
+                User.email.ilike(termo),
+                User.nome_completo.ilike(termo),
+            ))
+
+        contas = []
+        for usuario in query.order_by(User.tipo_usuario, User.username).all():
+            situacao = BillingService.situacao_conta(usuario)
+            contas.append({'usuario': usuario, **situacao})
+
+        if situacao_codigo == 'inadimplente':
+            contas = [c for c in contas if c['inadimplente']]
+        elif situacao_codigo:
+            contas = [c for c in contas if c['codigo'] == situacao_codigo]
+        if plano_codigo:
+            contas = [c for c in contas if c['plano_codigo'] == plano_codigo]
+
+        return contas
+
+    @staticmethod
     def _base_url() -> str:
         env = current_app.config.get('ASAAS_ENV', 'sandbox')
         return ASAAS_BASE_URL_PRODUCAO if env == 'production' else ASAAS_BASE_URL_SANDBOX
@@ -166,10 +269,13 @@ class BillingService:
         API do Asaas no momento em que este serviço foi desenhado --
         conferir contra https://docs.asaas.com/reference antes do
         primeiro teste real em sandbox, e ajustar se necessário.
+
+        Chama garantir_registro_assinatura por conta própria -- quem
+        chama este método não precisa ter criado o registro antes
+        (relevante pro professor, que só ganha uma Assinatura aqui, na
+        hora que efetivamente vai pagar).
         """
-        assinatura = usuario.assinatura
-        if assinatura is None:
-            raise ValueError('Usuário sem registro de Assinatura -- chame iniciar_trial_aluno ou crie o registro primeiro.')
+        assinatura = BillingService.garantir_registro_assinatura(usuario)
 
         customer_id = assinatura.gateway_customer_id
         if not customer_id:

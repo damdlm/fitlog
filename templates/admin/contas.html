@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-cash-coin" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Contas e Cobrança{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h2 class="mb-0">
+        <i class="bi bi-cash-coin me-2" style="color: #F28C33;"></i>
+        Contas e Cobrança
+    </h2>
+    {% if total_inadimplentes > 0 %}
+    <span class="badge bg-danger" style="font-size: 0.9rem;">
+        <i class="bi bi-exclamation-triangle"></i> {{ total_inadimplentes }} inadimplente(s)
+    </span>
+    {% endif %}
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Buscar</label>
+                <input type="text" name="busca" class="form-control" placeholder="Nome, usuário ou e-mail..." value="{{ filtro_busca }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Tipo</label>
+                <select name="tipo" class="form-select">
+                    <option value="" {% if not filtro_tipo %}selected{% endif %}>Todos</option>
+                    <option value="aluno" {% if filtro_tipo == 'aluno' %}selected{% endif %}>Aluno</option>
+                    <option value="professor" {% if filtro_tipo == 'professor' %}selected{% endif %}>Professor</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Plano</label>
+                <select name="plano" class="form-select">
+                    <option value="" {% if not filtro_plano %}selected{% endif %}>Todos</option>
+                    {% for p in planos %}
+                    <option value="{{ p.codigo }}" {% if filtro_plano == p.codigo %}selected{% endif %}>{{ p.nome }} ({{ 'Aluno' if p.tipo_usuario == 'aluno' else 'Professor' }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Situação</label>
+                <select name="situacao" class="form-select">
+                    <option value="" {% if not filtro_situacao %}selected{% endif %}>Todas</option>
+                    <option value="inadimplente" {% if filtro_situacao == 'inadimplente' %}selected{% endif %}>Inadimplentes</option>
+                    <option value="trialing" {% if filtro_situacao == 'trialing' %}selected{% endif %}>Em teste</option>
+                    <option value="active" {% if filtro_situacao == 'active' %}selected{% endif %}>Ativo</option>
+                    <option value="past_due" {% if filtro_situacao == 'past_due' %}selected{% endif %}>Pagamento atrasado</option>
+                    <option value="blocked" {% if filtro_situacao == 'blocked' %}selected{% endif %}>Bloqueado</option>
+                    <option value="pendente" {% if filtro_situacao == 'pendente' %}selected{% endif %}>Pendente de pagamento</option>
+                    <option value="gratuito" {% if filtro_situacao == 'gratuito' %}selected{% endif %}>Faixa gratuita</option>
+                </select>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Tipo</th>
+                        <th>Plano</th>
+                        <th>Situação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in contas %}
+                    <tr>
+                        <td>
+                            <strong>{{ c.usuario.nome_completo or c.usuario.username }}</strong><br>
+                            <span class="text-muted" style="font-size: 0.85rem;">{{ c.usuario.email }}</span>
+                        </td>
+                        <td>
+                            {% if c.usuario.is_professor() %}
+                                <span class="badge bg-info">Professor</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Aluno</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ c.plano_codigo or '—' }}</td>
+                        <td>
+                            {% if c.inadimplente %}
+                                <span class="badge bg-danger">{{ c.rotulo }}</span>
+                            {% elif c.codigo in ('active',) %}
+                                <span class="badge bg-success">{{ c.rotulo }}</span>
+                            {% elif c.codigo == 'trialing' %}
+                                <span class="badge bg-warning text-dark">{{ c.rotulo }}</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark border">{{ c.rotulo }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">Nenhuma conta encontrada com esses filtros.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

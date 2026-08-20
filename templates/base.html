@@ -1042,6 +1042,13 @@
                                     <span class="mega-desc">Publique e organize versões do catálogo</span>
                                 </span>
                             </a>
+                            <a class="mega-card" href="{{ url_for('admin.contas') }}">
+                                <span class="mega-icon"><i class="bi bi-cash-coin"></i></span>
+                                <span>
+                                    <span class="mega-title">Contas e Cobrança</span>
+                                    <span class="mega-desc">Alunos e professores por plano e inadimplência</span>
+                                </span>
+                            </a>
                         </div>
                     </div>
                 </li>
@@ -1210,6 +1217,13 @@
                                 <i class="bi bi-person"></i> Meu Perfil
                             </a>
                         </li>
+                        {% if current_user.is_professor() or current_user.is_aluno() %}
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('billing.minha_assinatura') }}">
+                                <i class="bi bi-credit-card"></i> Minha Assinatura
+                            </a>
+                        </li>
+                        {% endif %}
                         {% if current_user.is_professor() %}
                         <li class="d-lg-none">
                             <a class="dropdown-item" href="{{ url_for('professor.listar_alunos') }}">

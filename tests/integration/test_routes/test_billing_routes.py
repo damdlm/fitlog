@@ -3,7 +3,7 @@ de acesso premium aplicado em Estatísticas/FitBot
 (utils/decorators.py:aluno_premium_required)."""
 from datetime import datetime, timedelta, timezone
 
-from models import db, User, Assinatura, EventoWebhookAsaas
+from models import db, User, Assinatura, EventoWebhookAsaas, Plano
 from services.billing_service import BillingService
 
 
@@ -92,12 +92,46 @@ class TestWebhookAsaas:
 
 
 # ---------------------------------------------------------------------
-# GET /billing/minha-assinatura
+# GET /billing/minha-assinatura (tela HTML)
 # ---------------------------------------------------------------------
 
-class TestMinhaAssinatura:
+class TestMinhaAssinaturaTela:
     def test_exige_login(self, client):
         resp = client.get('/billing/minha-assinatura')
+        assert resp.status_code in (302, 401)
+
+    def test_aluno_em_trial_ve_tela(self, client, app):
+        with app.app_context():
+            aluno = _criar_usuario('minha_assinatura_trial_html')
+            BillingService.iniciar_trial_aluno(aluno)
+            db.session.commit()
+            aluno_id = aluno.id
+            aluno_ref = User.query.get(aluno_id)
+
+        _login(client, aluno_ref)
+        resp = client.get('/billing/minha-assinatura')
+        assert resp.status_code == 200
+        assert b'text/html' in resp.headers.get('Content-Type', '').encode()
+
+    def test_professor_ve_tela(self, client, app):
+        with app.app_context():
+            professor = _criar_usuario('minha_assinatura_prof_html', tipo_usuario='professor')
+            db.session.commit()
+            professor_id = professor.id
+            professor_ref = User.query.get(professor_id)
+
+        _login(client, professor_ref)
+        resp = client.get('/billing/minha-assinatura')
+        assert resp.status_code == 200
+
+
+# ---------------------------------------------------------------------
+# GET /billing/api/minha-assinatura (JSON)
+# ---------------------------------------------------------------------
+
+class TestApiMinhaAssinatura:
+    def test_exige_login(self, client):
+        resp = client.get('/billing/api/minha-assinatura')
         assert resp.status_code in (302, 401)
 
     def test_aluno_em_trial_ve_status_trialing(self, client, app):
@@ -109,7 +143,7 @@ class TestMinhaAssinatura:
             aluno_ref = User.query.get(aluno_id)
 
         _login(client, aluno_ref)
-        resp = client.get('/billing/minha-assinatura')
+        resp = client.get('/billing/api/minha-assinatura')
         data = resp.get_json()
         assert resp.status_code == 200
         assert data['status'] == 'trialing'
@@ -123,10 +157,81 @@ class TestMinhaAssinatura:
             professor_ref = User.query.get(professor_id)
 
         _login(client, professor_ref)
-        resp = client.get('/billing/minha-assinatura')
+        resp = client.get('/billing/api/minha-assinatura')
         data = resp.get_json()
         assert resp.status_code == 200
         assert data['tier_atual'] == 'gratuito'
+
+
+# ---------------------------------------------------------------------
+# POST /billing/assinar
+# ---------------------------------------------------------------------
+
+class TestAssinar:
+    def test_exige_login(self, client):
+        resp = client.post('/billing/assinar')
+        assert resp.status_code in (302, 401)
+
+    def test_professor_na_faixa_gratuita_nao_chama_gateway(self, client, app, monkeypatch):
+        chamou = {'valor': False}
+
+        def _fake_checkout(*a, **k):
+            chamou['valor'] = True
+            return 'https://sandbox.asaas.com/i/fake'
+
+        monkeypatch.setattr(BillingService, 'criar_assinatura_checkout', staticmethod(_fake_checkout))
+
+        with app.app_context():
+            professor = _criar_usuario('assinar_prof_gratuito', tipo_usuario='professor')
+            db.session.commit()
+            professor_id = professor.id
+            professor_ref = User.query.get(professor_id)
+
+        _login(client, professor_ref)
+        resp = client.post('/billing/assinar', follow_redirects=False)
+        assert resp.status_code == 302
+        assert '/billing/minha-assinatura' in resp.headers.get('Location', '')
+        assert chamou['valor'] is False
+
+    def test_aluno_redireciona_para_checkout_gerado(self, client, app, monkeypatch):
+        monkeypatch.setattr(
+            BillingService, 'criar_assinatura_checkout',
+            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake-checkout'),
+        )
+
+        with app.app_context():
+            db.session.add(Plano(codigo='aluno_fit', nome='Plano Fit', tipo_usuario='aluno', preco_centavos=599))
+            aluno = _criar_usuario('assinar_aluno_ok')
+            BillingService.iniciar_trial_aluno(aluno)
+            db.session.commit()
+            aluno_id = aluno.id
+            aluno_ref = User.query.get(aluno_id)
+
+        _login(client, aluno_ref)
+        resp = client.post('/billing/assinar', follow_redirects=False)
+        assert resp.status_code == 302
+        assert resp.headers.get('Location') == 'https://sandbox.asaas.com/i/fake-checkout'
+
+    def test_falha_no_gateway_nao_quebra_a_pagina(self, client, app, monkeypatch):
+        import requests
+
+        def _fake_falha(*a, **k):
+            raise requests.RequestException('timeout simulado')
+
+        monkeypatch.setattr(BillingService, 'criar_assinatura_checkout', staticmethod(_fake_falha))
+
+        with app.app_context():
+            db.session.add(Plano(codigo='aluno_fit', nome='Plano Fit', tipo_usuario='aluno', preco_centavos=599))
+            aluno = _criar_usuario('assinar_aluno_falha')
+            BillingService.iniciar_trial_aluno(aluno)
+            db.session.commit()
+            aluno_id = aluno.id
+            aluno_ref = User.query.get(aluno_id)
+
+        _login(client, aluno_ref)
+        resp = client.post('/billing/assinar', follow_redirects=False)
+        assert resp.status_code == 302
+        assert '/billing/minha-assinatura' in resp.headers.get('Location', '')
 
 
 # ---------------------------------------------------------------------
