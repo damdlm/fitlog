@@ -198,16 +198,6 @@
     .ct-add-treino-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(242, 140, 51, 0.45); }
     .ct-add-treino-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
-    .ct-finalizar-box {
-        margin-top: 28px;
-        padding-top: 20px;
-        border-top: 1px solid var(--ct-line);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
     .ct-finalizar-hint { font-size: 0.82rem; color: var(--ct-muted); max-width: 480px; }
 </style>
 
@@ -241,10 +231,8 @@
 {# ================= ESTADO B: versão ativa (rascunho) ================= #}
 {% set total_treinos = treinos_versao|length %}
 {% set total_ex = namespace(value=0) %}
-{% set treinos_sem_exercicio = namespace(count=0) %}
 {% for tv in treinos_versao %}
     {% set total_ex.value = total_ex.value + tv.exercicios|length %}
-    {% if tv.exercicios|length == 0 %}{% set treinos_sem_exercicio.count = treinos_sem_exercicio.count + 1 %}{% endif %}
 {% endfor %}
 
 <div class="ct-hero">
@@ -261,11 +249,7 @@
     </div>
 </div>
 
-{% if total_treinos < max_treinos %}
-<button type="button" class="ct-add-treino-btn" data-bs-toggle="modal" data-bs-target="#modalNovoTreino">
-    <i class="bi bi-plus-circle"></i> Adicionar treino ({{ total_treinos }}/{{ max_treinos }})
-</button>
-{% else %}
+{% if total_treinos >= max_treinos %}
 <div class="ct-finalizar-hint text-center" style="margin-bottom: 20px;">
     <i class="bi bi-info-circle"></i> Limite de {{ max_treinos }} treinos por versão atingido.
 </div>
@@ -338,28 +322,11 @@
     {% endfor %}
 {% endif %}
 
-<div class="ct-finalizar-box">
-    <div class="ct-finalizar-hint">
-        {% if treinos_sem_exercicio.count > 0 or total_treinos == 0 %}
-        <i class="bi bi-exclamation-triangle text-danger"></i>
-        Finalize a versão quando todos os treinos tiverem pelo menos um exercício.
-        {% else %}
-        <i class="bi bi-check-circle text-success"></i>
-        Tudo pronto! Você pode finalizar esta versão quando quiser.
-        {% endif %}
-    </div>
-    <button type="button" class="btn btn-lg"
-            style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;"
-            {% if treinos_sem_exercicio.count > 0 or total_treinos == 0 %}disabled{% endif %}
-            data-confirm-url="{{ url_for('aluno.cadastrar_treinos_finalizar', versao_id=versao.id) }}"
-            data-confirm-title="Finalizar a versão {{ versao.numero_versao }}?"
-            data-confirm-text="A data de hoje será gravada como o fim desta versão. Depois de finalizada, ela não poderá mais ser editada."
-            data-confirm-variant="warning"
-            data-confirm-icon="bi-flag-fill"
-            data-confirm-label="Sim, finalizar">
-        <i class="bi bi-flag-fill"></i> Finalizar versão
-    </button>
-</div>
+{% if total_treinos < max_treinos %}
+<button type="button" class="ct-add-treino-btn" data-bs-toggle="modal" data-bs-target="#modalNovoTreino">
+    <i class="bi bi-plus-circle"></i> Adicionar treino ({{ total_treinos }}/{{ max_treinos }})
+</button>
+{% endif %}
 
 <!-- ===== Modal: Novo Treino ===== -->
 <div class="modal fade" id="modalNovoTreino" tabindex="-1" aria-hidden="true">
