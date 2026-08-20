@@ -91,6 +91,81 @@ class TestSalvarRegistros:
             registros = RegistroService.get_all(user_id=u.id, load_series=True)
             assert registros[0].series[0].tempo_treino == 1800
 
+    def test_editar_sessao_sem_recronometrar_preserva_tempo_original(self, app):
+        """Reabrir e resalvar um treino já registrado (ex: só corrigir a
+        carga de um exercício) sempre exige clicar em "Iniciar treino"
+        de novo na tela -- o que reinicia o cronômetro do zero. Esse
+        tempinho de edição (poucos segundos) não pode sobrescrever a
+        duração real da sessão original."""
+        with app.app_context():
+            u, t, v, ex = _criar_cenario_base('rs_salvar_5')
+            dados = {ex.id: {'exercicio_id': ex.id, 'tipo': 'usuario', 'carga': 50,
+                              'repeticoes': 10, 'num_series': 1}}
+            # Sessão original: 40 minutos de treino de verdade.
+            RegistroService.salvar_registros(t.id, v.id, 'Janeiro/2024', 1, dados,
+                                              user_id=u.id, tempo_treino=2400)
+
+            # Reedição: usuário corrige a carga, mas o cronômetro da tela
+            # mal chegou a rodar (poucos segundos entre abrir e salvar).
+            dados_editados = {ex.id: {'exercicio_id': ex.id, 'tipo': 'usuario', 'carga': 55,
+                                       'repeticoes': 10, 'num_series': 1}}
+            RegistroService.salvar_registros(t.id, v.id, 'Janeiro/2024', 1, dados_editados,
+                                              user_id=u.id, tempo_treino=8)
+
+            registros = RegistroService.get_all(user_id=u.id, load_series=True)
+            assert len(registros) == 1
+            assert float(registros[0].series[0].carga) == 55  # a edição em si vale
+            assert registros[0].series[0].tempo_treino == 2400  # tempo original preservado
+
+    def test_valor_absurdo_de_tempo_nao_sobrescreve_o_anterior(self, app):
+        """Aba/PWA esquecida aberta rodando o cronômetro por muito tempo
+        (o cronômetro é só relógio de parede, sem pausa automática) não
+        deve produzir um valor maluco no dashboard."""
+        with app.app_context():
+            u, t, v, ex = _criar_cenario_base('rs_salvar_6')
+            dados = {ex.id: {'exercicio_id': ex.id, 'tipo': 'usuario', 'carga': 50,
+                              'repeticoes': 10, 'num_series': 1}}
+            RegistroService.salvar_registros(t.id, v.id, 'Janeiro/2024', 1, dados,
+                                              user_id=u.id, tempo_treino=2400)
+
+            # 30 horas -- claramente uma aba esquecida aberta, não uma
+            # sessão de treino real.
+            RegistroService.salvar_registros(t.id, v.id, 'Janeiro/2024', 1, dados,
+                                              user_id=u.id, tempo_treino=30 * 3600)
+
+            registros = RegistroService.get_all(user_id=u.id, load_series=True)
+            assert registros[0].series[0].tempo_treino == 2400
+
+    def test_novo_tempo_plausivel_substitui_o_anterior(self, app):
+        """Se o usuário genuinamente re-cronometra um treino mais longo
+        (ex: fez séries extras), o novo valor -- por estar numa faixa
+        plausível -- deve substituir o anterior normalmente."""
+        with app.app_context():
+            u, t, v, ex = _criar_cenario_base('rs_salvar_7')
+            dados = {ex.id: {'exercicio_id': ex.id, 'tipo': 'usuario', 'carga': 50,
+                              'repeticoes': 10, 'num_series': 1}}
+            RegistroService.salvar_registros(t.id, v.id, 'Janeiro/2024', 1, dados,
+                                              user_id=u.id, tempo_treino=1800)
+            RegistroService.salvar_registros(t.id, v.id, 'Janeiro/2024', 1, dados,
+                                              user_id=u.id, tempo_treino=3300)
+
+            registros = RegistroService.get_all(user_id=u.id, load_series=True)
+            assert registros[0].series[0].tempo_treino == 3300
+
+    def test_primeira_sessao_sem_cronometro_real_fica_sem_tempo(self, app):
+        """Primeira vez que essa sessão é salva (não é uma edição) -- se
+        não veio um tempo plausível, não há valor anterior pra cair de
+        volta, então fica None (dashboard não mostra o badge)."""
+        with app.app_context():
+            u, t, v, ex = _criar_cenario_base('rs_salvar_8')
+            dados = {ex.id: {'exercicio_id': ex.id, 'tipo': 'usuario', 'carga': 50,
+                              'repeticoes': 10, 'num_series': 1}}
+            RegistroService.salvar_registros(t.id, v.id, 'Janeiro/2024', 1, dados,
+                                              user_id=u.id, tempo_treino=5)
+
+            registros = RegistroService.get_all(user_id=u.id, load_series=True)
+            assert registros[0].series[0].tempo_treino is None
+
 
 class TestGetAll:
     def test_vazio_sem_registros(self, app):

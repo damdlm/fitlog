@@ -11,6 +11,43 @@ logger = logging.getLogger(__name__)
 
 class RegistroService(BaseService):
     """Gerencia operações relacionadas a registros de treino"""
+
+    # Faixa de duração plausível pra uma sessão de treino, usada ao
+    # decidir se um tempo_treino recém-enviado deve substituir o que já
+    # estava salvo (ver _resolver_tempo_treino). Abaixo do mínimo é quase
+    # sempre só o tempinho de reabrir/editar um treino já salvo (a tela
+    # sempre exige clicar em "Iniciar treino" de novo pra liberar os
+    # campos, mesmo em edição -- o que reinicia o cronômetro do zero).
+    # Acima do máximo é quase sempre uma aba/PWA esquecida aberta rodando
+    # (o cronômetro é só relógio de parede, sem pausa automática por
+    # inatividade) -- nenhum dos dois reflete a duração real do treino.
+    TEMPO_TREINO_MIN_SEGUNDOS = 60
+    TEMPO_TREINO_MAX_SEGUNDOS = 6 * 60 * 60  # 6 horas
+
+    @staticmethod
+    def _resolver_tempo_treino(tempo_novo, tempo_anterior):
+        """Decide qual tempo_treino gravar ao (re)salvar uma sessão.
+
+        Existe pra cobrir o caso de EDITAR um treino já salvo: como a
+        tela de registro sempre exige clicar em "Iniciar treino" pra
+        liberar os campos -- mesmo reabrindo um dia já registrado só pra
+        corrigir um exercício -- o cronômetro reinicia do zero a cada
+        vez. Sem esse tratamento, reabrir e resalvar um treino já feito
+        sobrescrevia a duração REAL da sessão original com esse tempinho
+        de edição (quase sempre perto de 0, ou às vezes um valor enorme
+        se a aba ficou esquecida aberta rodando), fazendo o "tempo do
+        último treino" no dashboard mostrar 00:00 ou um número absurdo.
+
+        Um valor novo só "vence" o que já estava salvo se estiver dentro
+        de uma faixa plausível pra uma sessão de treino de verdade
+        (nem tempo demais de curto -- só o clique de editar -- nem tempo
+        demais de longo -- aba esquecida aberta). Fora dessa faixa,
+        mantém o valor anterior (se houver).
+        """
+        if (tempo_novo is not None
+                and RegistroService.TEMPO_TREINO_MIN_SEGUNDOS <= tempo_novo <= RegistroService.TEMPO_TREINO_MAX_SEGUNDOS):
+            return tempo_novo
+        return tempo_anterior
     
     @staticmethod
     def get_all(filtros=None, user_id=None, load_series=False, data_inicio=None, data_fim=None):
@@ -184,7 +221,24 @@ class RegistroService(BaseService):
                 user_id = BaseService.get_current_user_id()
             if not user_id:
                 return False
-            
+
+            # Antes de apagar a sessão antiga (se existir), guarda o
+            # tempo_treino que já estava salvo -- é o candidato a manter
+            # caso o valor recém-enviado não pareça uma medição real de
+            # cronômetro (ver _resolver_tempo_treino).
+            registro_existente = RegistroTreino.query.filter_by(
+                treino_id=treino_id,
+                periodo=periodo,
+                semana=semana,
+                versao_id=versao_id,
+                user_id=user_id
+            ).options(selectinload(RegistroTreino.series)).first()
+            tempo_treino_anterior = None
+            if registro_existente and registro_existente.series:
+                tempo_treino_anterior = registro_existente.series[0].tempo_treino
+
+            tempo_treino = RegistroService._resolver_tempo_treino(tempo_treino, tempo_treino_anterior)
+
             # Remover registros antigos da mesma sessão
             RegistroTreino.query.filter_by(
                 treino_id=treino_id,
