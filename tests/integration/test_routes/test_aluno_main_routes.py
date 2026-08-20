@@ -3,7 +3,9 @@ Testes de regressão para routes/aluno/main.py (dashboard + fluxo de
 vínculo aluno-professor). Tinha 23% de cobertura -- é a página inicial
 de qualquer aluno logado.
 """
-from models import db, User, AlunoProfessor, SolicitacaoVinculo, Treino
+from datetime import datetime, timezone, timedelta
+from models import db, User, AlunoProfessor, SolicitacaoVinculo, Treino, \
+    VersaoGlobal, RegistroTreino, HistoricoTreino, Musculo, ExercicioUsuario
 from services.treino_service import TreinoService
 
 
@@ -40,6 +42,76 @@ class TestDashboard:
         assert resp.status_code == 200
         # 2 treinos criados devem refletir na página (contagem exibida)
         assert b'2' in resp.data
+
+    def test_tempo_ultimo_treino_pega_a_sessao_mais_recente_no_mesmo_dia(self, client, app):
+        """Regressão: data_registro só guarda o DIA (sem hora), então duas
+        sessões diferentes registradas no mesmo dia empatavam nesse
+        critério de ordenação. Sem um desempate (created_at), o dashboard
+        podia mostrar o tempo de uma sessão antiga em vez da última salva
+        de fato."""
+        with app.app_context():
+            u = _criar_usuario('am_dash_tempo')
+
+            m = Musculo(nome='peito_am_dash', nome_exibicao='Peito')
+            db.session.add(m)
+            db.session.commit()
+
+            ex = ExercicioUsuario(usuario_id=u.id, nome='Supino', musculo_id=m.id)
+            db.session.add(ex)
+            db.session.commit()
+
+            treino_a = Treino(user_id=u.id, codigo='A', nome='Treino A', descricao='d')
+            treino_b = Treino(user_id=u.id, codigo='B', nome='Treino B', descricao='d')
+            db.session.add_all([treino_a, treino_b])
+            db.session.commit()
+
+            versao = VersaoGlobal(
+                numero_versao=1, descricao='v1', divisao='A',
+                data_inicio=datetime.now(timezone.utc).date(),
+                user_id=u.id
+            )
+            db.session.add(versao)
+            db.session.commit()
+
+            hoje = datetime.now(timezone.utc).date()
+            agora = datetime.now(timezone.utc)
+
+            # A sessão MAIS RECENTE (created_at mais novo) é inserida
+            # PRIMEIRO no banco (rowid menor) -- de propósito, pra
+            # diferenciar do bug antigo. Sem um ORDER BY com desempate
+            # explícito, o SQLite tende a devolver linhas empatadas em
+            # data_registro na ordem física (rowid) por padrão, o que
+            # bateria com a ordem de inserção abaixo e mascararia o bug
+            # se a sessão "certa" também fosse a inserida por último.
+            r_recente = RegistroTreino(
+                treino_id=treino_b.id, versao_id=versao.id, periodo='Julho/2026', semana=1,
+                exercicio_usuario_id=ex.id, data_registro=hoje, user_id=u.id,
+                created_at=agora
+            )
+            db.session.add(r_recente)
+            db.session.commit()
+            db.session.add(HistoricoTreino(registro_id=r_recente.id, carga=60, repeticoes=8, tempo_treino=2700))
+            db.session.commit()
+
+            # Sessão mais ANTIGA (created_at 2h atrás), inserida DEPOIS
+            # (rowid maior) -- mesmo dia. Tempo de treino de 10 minutos.
+            r_antiga = RegistroTreino(
+                treino_id=treino_a.id, versao_id=versao.id, periodo='Julho/2026', semana=1,
+                exercicio_usuario_id=ex.id, data_registro=hoje, user_id=u.id,
+                created_at=agora - timedelta(hours=2)
+            )
+            db.session.add(r_antiga)
+            db.session.commit()
+            db.session.add(HistoricoTreino(registro_id=r_antiga.id, carga=50, repeticoes=10, tempo_treino=600))
+            db.session.commit()
+
+        _login(client, 'am_dash_tempo')
+        resp = client.get('/aluno/dashboard')
+        assert resp.status_code == 200
+        # 2700s = 00:45 -- deve mostrar o tempo da sessão mais recente
+        assert b'00:45' in resp.data
+        # Não deve mostrar o tempo da sessão antiga (00:10)
+        assert b'00:10' not in resp.data
 
     def test_professor_acessa_o_proprio_dashboard(self, client, app):
         with app.app_context():

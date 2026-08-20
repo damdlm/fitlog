@@ -1,8 +1,10 @@
 """
 Testes para o popover de descrição do exercício na tela de registrar
 treino: o badge de músculo fixo foi removido; ao clicar na região do
-nome + valores do último treino, um popover mostra a descrição completa
-do exercício e os músculos trabalhados (principal + secundários).
+nome + valores do último treino, um popover mostra o nome completo do
+exercício e os músculos trabalhados (principal + secundários) -- não
+mais a descrição do exercício (data-descricao foi removido do HTML;
+o JS lê o nome a partir do data-full-nome já usado pelo truncamento).
 """
 from datetime import date
 
@@ -93,7 +95,10 @@ class TestPopoverDescricaoExercicioUsuario:
         html = resp.get_data(as_text=True)
 
         assert 'exercicio-info-trigger' in html
-        assert 'data-descricao="Deite no banco e empurre a barra."' in html
+        # O popover não mostra mais a descrição do exercício (nem o
+        # atributo data-descricao é renderizado) -- só o nome + músculos.
+        assert 'data-descricao=' not in html
+        assert 'data-full-nome="Supino Reto Livre"' in html
         assert 'data-musculo-principal="Peito"' in html
         # Exercício de usuário não tem músculos secundários cadastrados.
         assert 'data-musculos-secundarios=""' in html
@@ -118,7 +123,8 @@ class TestPopoverDescricaoExercicioCatalogo:
         resp = client.get(f'/registrar/registrar-treino?data=2026-01-05&treino={treino_id}')
         html = resp.get_data(as_text=True)
 
-        assert 'data-descricao="Incline o tronco e puxe a barra até o abdômen."' in html
+        assert 'data-descricao=' not in html
+        assert 'data-full-nome="Remada Curvada"' in html
         assert 'data-musculo-principal="Costas"' in html
         assert 'data-musculos-secundarios="Bíceps, Trapézio"' in html
 

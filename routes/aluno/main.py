@@ -28,8 +28,17 @@ def dashboard():
     # últimos 5 registros por data, o que podia misturar exercícios de
     # sessões diferentes — agora buscamos o registro mais recente e todos
     # os outros que pertencem à mesma sessão dele.
+    #
+    # data_registro guarda só o DIA escolhido no formulário (sem hora --
+    # é um date puro, não um timestamp), então duas sessões diferentes
+    # registradas no mesmo dia (dois treinos no mesmo dia, por exemplo)
+    # empatam nesse critério. Sem um desempate, ".first()" podia devolver
+    # a sessão errada (não necessariamente a última salva de fato), o que
+    # fazia o tempo mostrado no dashboard não bater com o último treino
+    # real. created_at tem timestamp completo (é preenchido automaticamente
+    # no insert) e resolve esse empate de forma determinística.
     ultimo_registro = RegistroTreino.query.filter_by(user_id=current_user.id)\
-        .order_by(RegistroTreino.data_registro.desc())\
+        .order_by(RegistroTreino.data_registro.desc(), RegistroTreino.created_at.desc())\
         .first()
 
     ultimos_registros = []
@@ -41,12 +50,12 @@ def dashboard():
             periodo=ultimo_registro.periodo,
             semana=ultimo_registro.semana,
             versao_id=ultimo_registro.versao_id
-        ).order_by(RegistroTreino.data_registro.desc()).all()
+        ).order_by(RegistroTreino.data_registro.desc(), RegistroTreino.created_at.desc()).all()
 
         for registro in ultimos_registros:
             if registro.series:
                 tt = registro.series[0].tempo_treino
-                if tt:
+                if tt is not None:
                     tempo_ultimo_treino = f"{tt // 3600:02d}:{(tt % 3600) // 60:02d}"
                     break
 
