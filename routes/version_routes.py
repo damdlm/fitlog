@@ -221,7 +221,7 @@ def novo_treino_na_versao(versao_id):
             treino_padrao_id = request.form.get("treino_padrao")
             exercicios_padrao = ExercicioService.get_by_treino(treino_padrao_id)
             exercicios_ids = [ex.id for ex in exercicios_padrao]
-        if VersaoService.adicionar_treino(versao_id, treino_codigo, nome_treino, descricao_treino, exercicios_ids):
+        if VersaoService.adicionar_treino(versao_id, treino_codigo, nome_treino, descricao_treino, exercicios_ids, []):
             logger.info(f"Treino {treino_codigo} adicionado à versão {versao_id}")
             flash(f"Treino {treino_codigo} adicionado com sucesso!", "success")
             return redirect(url_for("version.ver_versao", versao_id=versao_id))

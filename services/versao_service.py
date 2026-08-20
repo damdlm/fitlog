@@ -1,6 +1,6 @@
 """Serviço para operações com versões de treino"""
 
-from models import db, VersaoGlobal, TreinoVersao, VersaoExercicio, Treino, ExercicioCustomizado, Musculo, RegistroTreino
+from models import db, VersaoGlobal, TreinoVersao, VersaoExercicio, Treino, ExercicioCustomizado, Musculo, RegistroTreino, User
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm.attributes import set_committed_value
@@ -163,6 +163,16 @@ class VersaoService(BaseService):
     def clone(versao_id, user_id=None):
         """Clona uma versão existente"""
         try:
+            # NOTA (bug corrigido): user_id nunca era resolvido via
+            # BaseService.get_current_user_id() aqui -- ficava None
+            # sempre que o chamador não passasse explicitamente (como é
+            # o caso da rota version.clonar_versao_global), e a criação
+            # de `nova_versao` mais abaixo usava esse None diretamente,
+            # violando a constraint NOT NULL de user_id e sempre
+            # revertendo com False.
+            user_id = user_id or BaseService.get_current_user_id()
+            if not user_id:
+                return False
             versao_origem = VersaoService.get_by_id(versao_id, user_id, load_relations=True)
             if not versao_origem:
                 return False
@@ -1017,8 +1027,16 @@ class VersaoService(BaseService):
     @staticmethod
     def excluir_treino_versao(versao_id, treino_codigo, user_id, current_user):
         """Exclui um treino de uma versão."""
+        # NOTA (bug corrigido): User.pode_acessar_dados_de(outro_usuario)
+        # espera um objeto User (acessa outro_usuario.id internamente),
+        # mas aqui recebíamos `user_id` já como int -- sempre lançava
+        # AttributeError para professores (não admin, alvo != o próprio
+        # usuário). Resolvendo o User alvo antes de checar a permissão.
+        usuario_alvo = User.query.get(user_id)
+        if not usuario_alvo:
+            raise ValueError("Usuário não encontrado")
         if not (current_user.is_admin or current_user.id == user_id or
-                (current_user.is_professor() and current_user.pode_acessar_dados_de(user_id))):
+                (current_user.is_professor() and current_user.pode_acessar_dados_de(usuario_alvo))):
             raise PermissionError("Sem permissão para excluir este treino.")
         
         versao = VersaoGlobal.query.filter_by(id=versao_id, user_id=user_id).first()

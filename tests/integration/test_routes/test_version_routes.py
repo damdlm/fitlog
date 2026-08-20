@@ -142,25 +142,13 @@ class TestVerVersao:
         assert resp.status_code == 200
         assert 'n\u00e3o encontrada'.encode() in resp.data
 
-    def test_get_falha_bug_conhecido_template_ausente(self, client, app):
+    def test_get_exibe_versao(self, client, app):
         """
-        NOTA (bug conhecido): a rota renderiza "version/ver_versao.html",
-        mas esse arquivo não existe em templates/version/ (só existem
-        novo_treino_versao.html, gerenciar_versoes_global.html,
-        editar_treino_versao.html e confirmar_exclusao_versao.html).
-        Provavelmente foi removido/renomeado num refactor (existe hoje um
-        template equivalente em templates/aluno/ver_versao.html, usado
-        por routes/aluno/versao.py) e a referência em version_routes.py
-        ficou desatualizada. Toda visita a /version/ver/<id> (GET, com
-        versão existente e do usuário certo) sempre lança
-        TemplateNotFound. Como TESTING=True propaga exceções em vez de
-        retornar 500, o client.get levanta a exceção diretamente. Isso
-        também derruba, por tabela, toda rota que redireciona para
-        version.ver_versao após uma operação bem-sucedida ou bloqueada
-        (novo_treino_na_versao, editar_treino_na_versao,
-        excluir_treino_da_versao) -- ver os testes dessas rotas abaixo,
-        que evitam seguir esse redirect para não mascarar a asserção
-        de negócio com esta exceção.
+        Bug corrigido: a rota renderizava "version/ver_versao.html", mas
+        esse arquivo não existia em templates/version/ (foi removido num
+        refactor anterior; o equivalente hoje é templates/aluno/ver_versao.html,
+        de outro blueprint). Criado um template consistente com o estilo
+        dos demais em templates/version/.
         """
         with app.app_context():
             u = _criar_usuario('vr_ver_2')
@@ -168,16 +156,11 @@ class TestVerVersao:
             versao_id, username = versao.id, u.username
 
         _login(client, username)
-        import pytest
-        from jinja2.exceptions import TemplateNotFound
-        with pytest.raises(TemplateNotFound):
-            client.get(f'/version/ver/{versao_id}')
+        resp = client.get(f'/version/ver/{versao_id}')
+        assert resp.status_code == 200
+        assert versao.descricao.encode() in resp.data
 
-    def test_post_atualiza_versao_apesar_do_bug_de_template(self, client, app):
-        """O POST persiste a alteração e responde com um redirect 302 (não
-        renderiza template diretamente) -- só o GET subsequente para
-        version.ver_versao é que quebra (ver teste acima). Não seguimos o
-        redirect aqui para não disparar esse bug."""
+    def test_post_atualiza_versao(self, client, app):
         with app.app_context():
             u = _criar_usuario('vr_ver_3')
             versao = _criar_versao(u.id)
@@ -187,9 +170,8 @@ class TestVerVersao:
         resp = client.post(f'/version/ver/{versao_id}', data={
             'descricao': 'Descricao atualizada', 'divisao': 'ABCD',
             'data_inicio': '2024-01-15'
-        }, follow_redirects=False)
-        assert resp.status_code == 302
-        assert f'/version/ver/{versao_id}' in resp.location
+        }, follow_redirects=True)
+        assert resp.status_code == 200
 
         with app.app_context():
             v = db.session.get(VersaoGlobal, versao_id)
@@ -235,23 +217,17 @@ class TestFinalizarVersaoGlobal:
 
 
 class TestClonarVersaoGlobal:
-    def test_falha_bug_conhecido_user_id_nunca_resolvido(self, client, app):
+    def test_clona_versao_com_sucesso(self, client, app):
         """
-        NOTA (bug conhecido): a rota chama VersaoService.clone(versao_id)
-        sem passar user_id. Dentro de clone(versao_id, user_id=None), esse
-        parâmetro local nunca é reatribuído a partir de
-        BaseService.get_current_user_id() (diferente de outros métodos do
-        serviço, como get_by_id/get_ativa, que fazem
-        `user_id = user_id or BaseService.get_current_user_id()` logo no
-        início) -- ele só é resolvido "por dentro" das chamadas
-        VersaoService.get_by_id(...) e get_ativa(...) usadas internamente,
-        mas isso não propaga de volta para a variável local `user_id` de
-        clone(). Quando o código chega em
-        `VersaoGlobal(..., user_id=user_id)`, `user_id` continua None,
-        violando a constraint NOT NULL da coluna e lançando
-        IntegrityError -- capturado pelo try/except do método, que faz
-        rollback e retorna False. Ou seja, clonar uma versão pela rota
-        SEMPRE falha hoje, mesmo quando não há versão ativa bloqueando.
+        Bug corrigido: dentro de clone(versao_id, user_id=None), o
+        parâmetro user_id nunca era reatribuído a partir de
+        BaseService.get_current_user_id() -- diferente de outros métodos
+        do serviço, como get_by_id/get_ativa. Quando a rota chamava
+        clone(versao_id) sem passar user_id, ele ficava None até a
+        construção de `VersaoGlobal(..., user_id=user_id)`, violando a
+        constraint NOT NULL e sempre revertendo com False. Corrigido
+        resolvendo user_id no início do método, no mesmo padrão dos
+        demais.
         """
         with app.app_context():
             u = _criar_usuario('vr_clonar_1')
@@ -264,7 +240,7 @@ class TestClonarVersaoGlobal:
 
         with app.app_context():
             u = User.query.filter_by(username=username).first()
-            assert VersaoGlobal.query.filter_by(user_id=u.id).count() == 1
+            assert VersaoGlobal.query.filter_by(user_id=u.id).count() == 2
 
     def test_falha_se_ja_existe_versao_ativa(self, client, app):
         with app.app_context():
@@ -371,31 +347,56 @@ class TestNovoTreinoNaVersao:
         assert resp.status_code == 302
         assert f'/version/ver/{versao_id}' in resp.location
 
-    def test_post_falha_bug_conhecido_adicionar_treino(self, client, app):
+    def test_post_adiciona_treino_com_sucesso(self, client, app):
         """
-        NOTA (bug conhecido): a rota chama
-        VersaoService.adicionar_treino(versao_id, treino_codigo, nome_treino,
-        descricao_treino, exercicios_ids) com 5 argumentos posicionais, mas
-        a assinatura atual do serviço é
-        adicionar_treino(versao_id, treino_codigo, nome_treino,
-        descricao_treino, usuarios_ids, bases_ids, user_id=None,
-        observacoes=None) -- falta 'bases_ids'. Toda submissão deste
-        formulário (criar um novo treino dentro de uma versão) sempre
-        lança TypeError hoje. Como TESTING=True propaga exceções em vez
-        de retornar 500, o client.post levanta a exceção diretamente.
+        Bug corrigido: a rota chamava VersaoService.adicionar_treino(...)
+        com 5 argumentos posicionais, mas a assinatura do serviço exige
+        também 'bases_ids'. Isso lançava TypeError sempre. Corrigido
+        passando bases_ids=[] explicitamente na chamada.
+
+        NOTA: esta rota espera que o Treino já exista (criado antes via
+        o endpoint AJAX /version/api/criar-treino, usado pelo frontend
+        antes de submeter este formulário) -- ela só vincula um Treino
+        já existente à versão, não cria um do zero.
         """
         with app.app_context():
             u = _criar_usuario('vr_novotreino_3')
             versao = _criar_versao(u.id)
+            _criar_treino(u.id, codigo='A')
             versao_id, username = versao.id, u.username
 
         _login(client, username)
-        import pytest
-        with pytest.raises(TypeError):
-            client.post(f'/version/versao/{versao_id}/novo-treino', data={
-                'treino_id': 'A', 'nome_treino': 'Treino A',
-                'descricao_treino': 'desc', 'tipo_criacao': 'vazio'
-            })
+        resp = client.post(f'/version/versao/{versao_id}/novo-treino', data={
+            'treino_id': 'A', 'nome_treino': 'Treino A',
+            'descricao_treino': 'desc', 'tipo_criacao': 'vazio'
+        }, follow_redirects=False)
+        assert resp.status_code == 302
+        assert f'/version/ver/{versao_id}' in resp.location
+
+        with app.app_context():
+            u = User.query.filter_by(username=username).first()
+            treino = Treino.query.filter_by(codigo='A', user_id=u.id).first()
+            assert treino is not None
+            tv = TreinoVersao.query.filter_by(versao_id=versao_id, treino_id=treino.id).first()
+            assert tv is not None
+
+    def test_post_falha_se_treino_nao_foi_criado_antes(self, client, app):
+        """Sem o Treino pré-criado (via /version/api/criar-treino), a
+        rota não encontra o código e não vincula nada."""
+        with app.app_context():
+            u = _criar_usuario('vr_novotreino_4')
+            versao = _criar_versao(u.id)
+            versao_id, username = versao.id, u.username
+
+        _login(client, username)
+        resp = client.post(f'/version/versao/{versao_id}/novo-treino', data={
+            'treino_id': 'A', 'nome_treino': 'Treino A',
+            'descricao_treino': 'desc', 'tipo_criacao': 'vazio'
+        }, follow_redirects=False)
+        assert resp.status_code == 302
+
+        with app.app_context():
+            assert TreinoVersao.query.filter_by(versao_id=versao_id).count() == 0
 
 
 class TestEditarTreinoNaVersao:
@@ -625,18 +626,15 @@ class TestAdicionarExercicioNaVersao:
 
 
 class TestRemoverExercicioDaVersao:
-    def test_falha_bug_conhecido_sempre_404(self, client, app):
+    def test_remove_com_sucesso(self, client, app):
         """
-        NOTA (bug conhecido): a rota faz
-        VersaoExercicio.query.filter_by(treino_versao_id=..., exercicio_id=exercicio_id).delete(),
-        mas `exercicio_id` em VersaoExercicio é uma @property Python comum
-        (não uma coluna real nem uma hybrid_property com expressão SQL) --
-        ela deriva de exercicio_usuario_id/exercicio_base_id só a nível de
-        instância Python. filter_by(exercicio_id=...) não corresponde a
-        nenhuma linha no banco, então o .delete() nunca remove nada e a
-        rota sempre responde 404 "Exercício não encontrado", mesmo quando
-        o exercício de fato existe na versão. Este teste documenta o
-        comportamento atual.
+        Bug corrigido: `exercicio_id` em VersaoExercicio era uma @property
+        Python comum, sem expressão SQL, então filter_by(exercicio_id=...)
+        nunca casava com nada no banco e a remoção nunca acontecia (sempre
+        404). Corrigido transformando exercicio_id numa hybrid_property
+        com expressão SQL equivalente (coalesce de exercicio_usuario_id e
+        exercicio_base_id), que agora funciona tanto em acesso Python
+        quanto em filtros de query.
         """
         with app.app_context():
             u = _criar_usuario('vr_removeex_1')
@@ -652,12 +650,26 @@ class TestRemoverExercicioDaVersao:
         _login(client, username)
         resp = client.post(
             f'/version/versao/{versao_id}/treino/A/exercicio/{ex_id}/remover')
-        assert resp.status_code == 404
-        assert resp.get_json()['success'] is False
+        assert resp.status_code == 200
+        assert resp.get_json()['success'] is True
 
         with app.app_context():
-            # O exercício continua na versão -- a remoção nunca aconteceu.
-            assert VersaoExercicio.query.filter_by(exercicio_usuario_id=ex_id).count() == 1
+            assert VersaoExercicio.query.filter_by(exercicio_usuario_id=ex_id).count() == 0
+
+    def test_404_para_exercicio_nao_associado(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('vr_removeex_2')
+            versao = _criar_versao(u.id)
+            treino = _criar_treino(u.id)
+            _criar_treino_versao(versao.id, treino.id)
+            ex = _criar_exercicio(u.id)
+            versao_id, ex_id, username = versao.id, ex.id, u.username
+
+        _login(client, username)
+        resp = client.post(
+            f'/version/versao/{versao_id}/treino/A/exercicio/{ex_id}/remover')
+        assert resp.status_code == 404
+        assert resp.get_json()['success'] is False
 
 
 class TestExcluirVersaoGlobal:

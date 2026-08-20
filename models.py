@@ -478,10 +478,14 @@ class VersaoExercicio(db.Model):
     # NOVAS PROPERTIES PARA COMPATIBILIDADE
     # ============================================================
 
-    @property
+    @hybrid_property
     def exercicio_id(self):
         """Retorna o ID do exercício, independente da origem."""
         return self.exercicio_usuario_id or self.exercicio_base_id
+
+    @exercicio_id.expression
+    def exercicio_id(cls):
+        return db.func.coalesce(cls.exercicio_usuario_id, cls.exercicio_base_id)
 
     @property
     def tipo_exercicio(self):

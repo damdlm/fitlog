@@ -710,8 +710,7 @@ def novo_exercicio_aluno(aluno_id):
             user_id=aluno.id,
             nome=nome,
             musculo_nome=musculo or 'Outros',
-            descricao=descricao,
-            treino_id=treino_id
+            descricao=descricao
         )
         
         if exercicio:

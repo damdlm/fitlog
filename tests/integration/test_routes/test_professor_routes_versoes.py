@@ -400,27 +400,27 @@ class TestNovoExercicioAluno:
         resp = client.get(f'/professor/aluno/{aluno_id}/exercicio/novo')
         assert resp.status_code == 200
 
-    def test_post_falha_bug_conhecido_treino_id_invalido(self, client, app):
+    def test_post_cria_exercicio_com_sucesso(self, client, app):
         """
-        NOTA (bug conhecido): a rota chama
-        ExercicioService.criar_exercicio_customizado(user_id=..., nome=...,
-        musculo_nome=..., descricao=..., treino_id=treino_id), mas a
-        assinatura atual do serviço é
-        criar_exercicio_customizado(user_id, nome, musculo_nome,
-        descricao='') -- não aceita `treino_id`. Toda submissão deste
-        formulário (criar exercício para um aluno) sempre lança TypeError
-        hoje. Como TESTING=True propaga exceções em vez de retornar 500,
-        o client.post levanta a exceção diretamente.
+        Bug corrigido: a rota chamava
+        ExercicioService.criar_exercicio_customizado(..., treino_id=treino_id),
+        mas a assinatura do serviço não aceita esse parâmetro -- sempre
+        lançava TypeError. Corrigido removendo o argumento inválido da
+        chamada (o vínculo com um treino específico não fazia parte do
+        que o serviço de fato implementa).
         """
         with app.app_context():
             prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_novoex2')
 
         _login(client, username)
-        import pytest
-        with pytest.raises(TypeError):
-            client.post(f'/professor/aluno/{aluno_id}/exercicio/novo', data={
-                'nome': 'Supino', 'musculo': 'Peito', 'descricao': 'd'
-            })
+        resp = client.post(f'/professor/aluno/{aluno_id}/exercicio/novo', data={
+            'nome': 'Supino', 'musculo': 'Peito', 'descricao': 'd'
+        }, follow_redirects=True)
+        assert resp.status_code == 200
+
+        with app.app_context():
+            ex = ExercicioUsuario.query.filter_by(usuario_id=aluno_id, nome='Supino').first()
+            assert ex is not None
 
     def test_post_falha_sem_nome(self, client, app):
         with app.app_context():
@@ -629,23 +629,17 @@ class TestEditarTreinoVersaoAluno:
 
 
 class TestExcluirTreinoVersaoAluno:
-    def test_falha_bug_conhecido_pode_acessar_dados_de_recebe_int(self, client, app):
+    def test_professor_remove_treino_da_versao_do_aluno(self, client, app):
         """
-        NOTA (bug conhecido): VersaoService.excluir_treino_versao(versao_id,
-        treino_codigo, user_id, current_user) chama internamente
-        `current_user.pode_acessar_dados_de(user_id)` -- mas passa o
-        `user_id` (um int, o ID do aluno) em vez do objeto User completo.
-        User.pode_acessar_dados_de(outro_usuario) espera um objeto com
-        atributo .id (ela mesma acessa outro_usuario.id), então recebe um
-        int e lança AttributeError: 'int' object has no attribute 'id'.
-        Isso só é alcançado quando quem chama é um professor (não admin,
-        e o alvo não é o próprio usuário) -- ou seja, a checagem de
-        permissão por trás desta rota está quebrada para o caso mais
-        comum de uso (professor excluindo treino de um aluno vinculado):
-        a exceção cai no `except Exception` genérico da rota, que só
-        loga e mostra uma mensagem de erro, então o resultado visível
-        para o professor é "Não foi possível concluir a operação",
-        mesmo tendo permissão de verdade.
+        Bug corrigido: VersaoService.excluir_treino_versao(versao_id,
+        treino_codigo, user_id, current_user) chamava internamente
+        `current_user.pode_acessar_dados_de(user_id)` -- mas passava o
+        `user_id` (um int) em vez do objeto User completo, e
+        pode_acessar_dados_de espera um objeto (acessa .id nele). Isso
+        sempre lançava AttributeError quando quem chamava era um
+        professor (não admin, alvo != o próprio usuário) -- o caso mais
+        comum de uso desta rota. Corrigido resolvendo o User alvo antes
+        de checar a permissão.
         """
         with app.app_context():
             prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_excltv1')
@@ -660,12 +654,9 @@ class TestExcluirTreinoVersaoAluno:
         assert resp.status_code == 200
 
         with app.app_context():
-            # O treino continua na versão -- a exclusão nunca aconteceu.
-            assert db.session.get(TreinoVersao, tv_id) is not None
+            assert db.session.get(TreinoVersao, tv_id) is None
 
-    def test_admin_consegue_excluir_pois_nao_atinge_o_bug(self, client, app):
-        """Para admin, `current_user.is_admin` retorna True antes de chegar
-        na chamada quebrada de pode_acessar_dados_de -- então funciona."""
+    def test_admin_tambem_consegue_excluir(self, client, app):
         with app.app_context():
             admin = _criar_usuario('pr_excltv2_admin', is_admin=True)
             aluno = _criar_usuario('pr_excltv2_aluno')
@@ -681,6 +672,23 @@ class TestExcluirTreinoVersaoAluno:
 
         with app.app_context():
             assert db.session.get(TreinoVersao, tv_id) is None
+
+    def test_professor_sem_vinculo_nao_consegue_excluir(self, client, app):
+        with app.app_context():
+            _, aluno_id, _ = _setup_prof_aluno(app, 'pr_excltv3')
+            outro_prof = _criar_usuario('pr_excltv3_outro', tipo_usuario='professor')
+            versao = _criar_versao(aluno_id)
+            treino = _criar_treino(aluno_id)
+            tv = _criar_treino_versao(versao.id, treino.id)
+            versao_id, tv_id, username = versao.id, tv.id, outro_prof.username
+
+        _login(client, username)
+        resp = client.post(f'/professor/aluno/{aluno_id}/versao/{versao_id}/treino/A/excluir',
+                            follow_redirects=True)
+        assert resp.status_code == 200
+
+        with app.app_context():
+            assert db.session.get(TreinoVersao, tv_id) is not None
 
 
 class TestEstatisticasAluno:
