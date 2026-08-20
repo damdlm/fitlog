@@ -153,10 +153,6 @@
         padding: 4px 11px;
         font-size: 0.74rem;
     }
-    .exs-carga-valor {
-        font-weight: 700;
-        color: #198754;
-    }
     .exs-acao-btn {
         width: 34px;
         height: 34px;
@@ -194,30 +190,6 @@
         display: flex;
         gap: 6px;
         flex-wrap: wrap;
-    }
-    .exs-card-metrics {
-        display: flex;
-        gap: 10px;
-        margin-top: 10px;
-    }
-    .exs-card-metric {
-        flex: 1;
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 8px 10px;
-        text-align: center;
-    }
-    .exs-card-metric-valor {
-        font-weight: 700;
-        font-size: 1.02rem;
-        color: var(--secondary-color);
-    }
-    .exs-card-metric-valor.exs-tem-carga { color: #198754; }
-    .exs-card-metric-label {
-        font-size: 0.66rem;
-        color: #999;
-        text-transform: uppercase;
-        letter-spacing: .02em;
     }
     .exs-card-acoes {
         display: flex;
@@ -279,10 +251,6 @@
             <div class="exs-hero-stat-num">{{ exercicios|length }}</div>
             <div class="exs-hero-stat-label">Exercícios</div>
         </div>
-        <div>
-            <div class="exs-hero-stat-num">{{ total_registros }}</div>
-            <div class="exs-hero-stat-label">Registros no total</div>
-        </div>
     </div>
 </div>
 
@@ -324,8 +292,6 @@
                     <tr>
                         <th>Exercício</th>
                         <th>Músculo</th>
-                        <th>Última Carga</th>
-                        <th>Total Registros</th>
                         <th class="text-end">Ações</th>
                     </tr>
                 </thead>
@@ -339,14 +305,6 @@
                                 {{ exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else 'N/A' }}
                             </span>
                         </td>
-                        <td>
-                            {% if ultimas_cargas.get(exercicio.id) %}
-                                <span class="exs-carga-valor">{{ ultimas_cargas[exercicio.id] }} kg</span>
-                            {% else %}
-                                <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ exercicio.registros|length }}</td>
                         <td class="text-end">
                             <div class="btn-group btn-group-sm">
                                 <a href="{{ url_for('aluno.editar_exercicio', exercicio_id=exercicio.id) }}"
@@ -368,7 +326,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="text-center text-muted py-4">
+                        <td colspan="3" class="text-center text-muted py-4">
                             <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
                             Nenhum exercício cadastrado.
                             <a href="{{ url_for('aluno.novo_exercicio') }}" class="d-block mt-2">Criar primeiro exercício</a>
@@ -411,18 +369,6 @@
                         <i class="bi bi-trash"></i>
                     </button>
                 </form>
-            </div>
-        </div>
-        <div class="exs-card-metrics">
-            <div class="exs-card-metric">
-                <div class="exs-card-metric-valor {% if ultimas_cargas.get(exercicio.id) %}exs-tem-carga{% endif %}">
-                    {% if ultimas_cargas.get(exercicio.id) %}{{ ultimas_cargas[exercicio.id] }} kg{% else %}-{% endif %}
-                </div>
-                <div class="exs-card-metric-label">Última carga</div>
-            </div>
-            <div class="exs-card-metric">
-                <div class="exs-card-metric-valor">{{ exercicio.registros|length }}</div>
-                <div class="exs-card-metric-label">Registros</div>
             </div>
         </div>
     </div>

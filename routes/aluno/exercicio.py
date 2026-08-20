@@ -1,11 +1,10 @@
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from . import aluno_bp
-from models import db, ExercicioCustomizado, ExercicioSistema, RegistroTreino, HistoricoTreino
+from models import db, ExercicioCustomizado, ExercicioSistema
 from services.exercicio_service import ExercicioService
 from services.musculo_service import MusculoService
 from sqlalchemy.orm import joinedload
-from sqlalchemy import func
 import logging
 
 logger = logging.getLogger(__name__)
@@ -21,36 +20,6 @@ def exercicios():
             .order_by(ExercicioCustomizado.nome) \
             .all()
 
-        # Esta página só lista ExercicioCustomizado, então "ultimas_cargas"
-        # precisa ser calculado só a partir de registros contra exercícios
-        # do próprio usuário -- usar RegistroTreino.exercicio_id (hybrid
-        # property = COALESCE(exercicio_usuario_id, exercicio_base_id))
-        # aqui é um bug real: como ExercicioCustomizado e ExercicioSistema
-        # têm sequências de ID independentes, um exercício de sistema pode
-        # colidir numericamente com um exercício customizado do usuário, e
-        # a carga de um "vaza" pro outro no dict (confirmado com teste).
-        # Usar direto a coluna exercicio_usuario_id evita a ambiguidade.
-        subq = db.session.query(
-            RegistroTreino.exercicio_usuario_id,
-            func.max(RegistroTreino.data_registro).label('max_data')
-        ).filter(
-            RegistroTreino.user_id == current_user.id,
-            RegistroTreino.exercicio_usuario_id.isnot(None)
-        ).group_by(RegistroTreino.exercicio_usuario_id).subquery()
-
-        cargas_query = db.session.query(
-            RegistroTreino.exercicio_usuario_id,
-            HistoricoTreino.carga
-        ).join(
-            subq,
-            (RegistroTreino.exercicio_usuario_id == subq.c.exercicio_usuario_id) &
-            (RegistroTreino.data_registro == subq.c.max_data)
-        ).join(
-            HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id
-        ).filter(HistoricoTreino.ordem == 1).all()
-
-        ultimas_cargas = {ex_id: float(carga) for ex_id, carga in cargas_query}
-
         # Resumo exibido no cabeçalho da tela (cards de destaque). Contagem
         # simples em Python sobre a lista já carregada -- sem query extra,
         # já que `exercicios` já veio com musculo_ref via joinedload acima.
@@ -63,9 +32,7 @@ def exercicios():
 
         return render_template('aluno/exercicios.html',
                              exercicios=exercicios,
-                             ultimas_cargas=ultimas_cargas,
-                             musculo_destaque=musculo_destaque,
-                             total_registros=sum(len(ex.registros) for ex in exercicios))
+                             musculo_destaque=musculo_destaque)
     except Exception:
         logger.exception("Erro ao carregar exercícios")
         flash(f'Erro ao carregar exercícios.', 'danger')
