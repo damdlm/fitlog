@@ -703,7 +703,7 @@ class ExercicioSistema(db.Model):
 
     @property
     def imagem_execucao(self):
-        """Compat: usa o gif (se houver) como imagem de execução, senão a mesma imagem."""
+        """Compat: usa o gif (se houver) como imagem de execução, senão a mesma imagem. """
         return self.gif_url or self.imagem
 
     # nivel, forca e mecanica não existem no dataset de exercicios_sistema
