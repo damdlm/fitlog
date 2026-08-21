@@ -195,7 +195,23 @@
     }
     .ct-save-order-btn.is-visible { display: inline-flex; }
 
-    .ct-ex-list { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 0 44px; }
+    /* user-select:none na lista inteira (não só na alça) -- durante o
+       arraste, o dedo passa por cima do texto dos outros itens, e sem
+       isso o navegador ainda tenta selecionar esse texto por baixo do
+       drag (mobile Safari/Chrome mostram a "lupa" de seleção mesmo com
+       a alça tendo touch-action:none, que só evita o scroll/zoom
+       padrão -- não evita a seleção de texto, que é uma gesture
+       separada). -webkit-touch-callout:none tira o menu de
+       copiar/colar que o iOS mostra num toque mais longo. */
+    .ct-ex-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin: 12px 0 0 44px;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
     .ct-ex-item {
         display: flex;
         align-items: center;
@@ -207,7 +223,15 @@
         padding: 7px 12px;
         border-radius: 10px;
     }
-    .ct-ex-drag-handle { cursor: grab; color: #B0B5BD; flex-shrink: 0; touch-action: none; }
+    .ct-ex-drag-handle {
+        cursor: grab;
+        color: #B0B5BD;
+        flex-shrink: 0;
+        /* Impede o navegador de tratar o toque na alça como
+           scroll/pinch-zoom, deixando o gesto livre pro SortableJS
+           decidir que é um arraste. */
+        touch-action: none;
+    }
     .ct-ex-drag-handle:active { cursor: grabbing; }
     .ct-ex-item.sortable-ghost { opacity: 0.5; background: var(--accent-soft); }
     .ct-ex-item.sortable-drag { opacity: 0.4; }
