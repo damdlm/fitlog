@@ -88,7 +88,21 @@
         padding: 20px 24px;
         margin-bottom: 24px;
     }
-    .ct-hero-desc { font-size: 1.15rem; font-weight: 700; color: var(--ct-ink); margin-bottom: 6px; }
+    .ct-hero-desc { font-size: 1.15rem; font-weight: 700; color: var(--ct-ink); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .ct-hero-edit-btn {
+        border: none;
+        background: var(--ct-bg-soft);
+        color: var(--ct-muted);
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    .ct-hero-edit-btn:hover { background: rgba(242, 140, 51, 0.12); color: var(--ct-orange); }
     .ct-hero-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--ct-muted); }
     .ct-hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
     .ct-status-pill {
@@ -159,15 +173,44 @@
     .ct-count-chip.is-empty { background: #FEF2F2; color: #DC2626; }
     .ct-treino-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    .ct-ex-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0 44px; }
-    .ct-ex-chip {
-        font-size: 0.78rem;
+    .ct-ex-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin: 12px 0 6px 44px;
+    }
+    .ct-ex-toolbar-hint { font-size: 0.74rem; color: var(--ct-muted); display: flex; align-items: center; gap: 5px; }
+    .ct-save-order-btn {
+        display: none;
+        align-items: center;
+        gap: 6px;
+        border: none;
+        background: var(--ct-orange);
+        color: white;
+        font-size: 0.74rem;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 999px;
+    }
+    .ct-save-order-btn.is-visible { display: inline-flex; }
+
+    .ct-ex-list { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 0 44px; }
+    .ct-ex-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
         background: var(--ct-bg-soft);
         border: 1px solid var(--ct-line);
         color: var(--ct-ink);
-        padding: 4px 10px;
-        border-radius: 999px;
+        padding: 7px 12px;
+        border-radius: 10px;
     }
+    .ct-ex-drag-handle { cursor: grab; color: #B0B5BD; flex-shrink: 0; touch-action: none; }
+    .ct-ex-drag-handle:active { cursor: grabbing; }
+    .ct-ex-item.sortable-ghost { opacity: 0.5; background: var(--accent-soft); }
+    .ct-ex-item.sortable-drag { opacity: 0.4; }
     .ct-ex-empty {
         margin: 12px 0 0 44px;
         font-size: 0.82rem;
@@ -239,6 +282,9 @@
     <div>
         <div class="ct-hero-desc">
             {{ versao.descricao }}
+            <button type="button" class="ct-hero-edit-btn" data-bs-toggle="modal" data-bs-target="#modalEditarVersao" title="Editar descrição da versão">
+                <i class="bi bi-pencil"></i>
+            </button>
             <span class="ct-status-pill"><span class="dot"></span>Em edição</span>
         </div>
         <div class="ct-hero-meta">
@@ -305,11 +351,25 @@
             </div>
         </div>
 
+        {% if qtd_ex > 1 %}
+        <div class="ct-ex-toolbar">
+            <span class="ct-ex-toolbar-hint"><i class="bi bi-grip-vertical"></i> Arraste para reordenar</span>
+            <button type="button" class="ct-save-order-btn" data-treino-codigo="{{ codigo }}">
+                <i class="bi bi-save"></i> Salvar ordem
+            </button>
+        </div>
+        {% endif %}
         {% if qtd_ex > 0 %}
-        <div class="ct-ex-chips">
+        <div class="ct-ex-list" data-treino-codigo="{{ codigo }}">
             {% for ve in tv.exercicios %}
             {% set ex = ve.exercicio_usuario or ve.exercicio_base %}
-            {% if ex %}<span class="ct-ex-chip">{{ ex.nome }}</span>{% endif %}
+            {% set chave = ('u_' ~ ve.exercicio_usuario_id) if ve.exercicio_usuario_id else ('b_' ~ ve.exercicio_base_id) %}
+            {% if ex %}
+            <div class="ct-ex-item" data-exercicio-id="{{ chave }}">
+                {% if qtd_ex > 1 %}<span class="ct-ex-drag-handle"><i class="bi bi-grip-vertical"></i></span>{% endif %}
+                <span class="ct-ex-nome">{{ ex.nome }}</span>
+            </div>
+            {% endif %}
             {% endfor %}
         </div>
         {% else %}
@@ -327,6 +387,34 @@
     <i class="bi bi-plus-circle"></i> Adicionar treino ({{ total_treinos }}/{{ max_treinos }})
 </button>
 {% endif %}
+
+<!-- ===== Modal: Editar Versão ===== -->
+<div class="modal fade" id="modalEditarVersao" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Versão</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ url_for('aluno.cadastrar_treinos_editar_versao', versao_id=versao.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-1">
+                        <label class="form-label fw-bold">Descrição da versão</label>
+                        <input type="text" name="descricao" class="form-control form-control-lg"
+                               value="{{ versao.descricao }}" maxlength="200" required autofocus>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn" style="background: #F28C33; color: white; border: none;">
+                        <i class="bi bi-save"></i> Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <!-- ===== Modal: Novo Treino ===== -->
 <div class="modal fade" id="modalNovoTreino" tabindex="-1" aria-hidden="true">
@@ -510,6 +598,7 @@
     // de volta ao servidor, são puramente para a experiência de edição.
     window.CT_TREINO_EXERCICIOS = {{ treino_exercicios_map|tojson }};
     window.CT_TREINO_OBSERVACOES = {{ treino_observacoes_map|tojson }};
+    window.CT_VERSAO_ID = {{ versao.id }};
 </script>
 {% endif %}
 
@@ -521,6 +610,8 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js"></script>
 <script src="{{ url_for('static', filename='js/editar-treino-versao.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cadastrar-treinos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cadastrar-treinos-reordenar.js') }}"></script>
 {% endblock %}

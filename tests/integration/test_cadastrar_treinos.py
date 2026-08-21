@@ -243,6 +243,71 @@ class TestSalvarExerciciosEIdor:
             assert tv.nome_treino == 'X'  # não foi alterado
 
 
+class TestEditarVersaoLivre:
+    def _criar_versao(self, client):
+        client.post('/aluno/cadastrar-treinos/versao', data={'descricao': 'Original'})
+
+    def test_edita_descricao_com_sucesso(self, aluno_client, app, aluno):
+        self._criar_versao(aluno_client)
+        with app.app_context():
+            versao_id = VersaoGlobal.query.filter_by(user_id=aluno).first().id
+
+        aluno_client.post(f'/aluno/cadastrar-treinos/{versao_id}/editar', data={
+            'descricao': 'Foco em hipertrofia - Setembro'
+        })
+
+        with app.app_context():
+            versao = db.session.get(VersaoGlobal, versao_id)
+            assert versao.descricao == 'Foco em hipertrofia - Setembro'
+
+    def test_descricao_vazia_e_rejeitada(self, aluno_client, app, aluno):
+        self._criar_versao(aluno_client)
+        with app.app_context():
+            versao_id = VersaoGlobal.query.filter_by(user_id=aluno).first().id
+
+        aluno_client.post(f'/aluno/cadastrar-treinos/{versao_id}/editar', data={'descricao': '   '})
+
+        with app.app_context():
+            versao = db.session.get(VersaoGlobal, versao_id)
+            assert versao.descricao == 'Original'
+
+    def test_idor_nao_permite_editar_versao_de_outro_usuario(
+        self, aluno_client, app, aluno, outro_aluno
+    ):
+        with app.app_context():
+            versao_outro = VersaoGlobal(
+                numero_versao=1, descricao='Do outro', divisao='LIVRE',
+                data_inicio=date.today(), user_id=outro_aluno
+            )
+            db.session.add(versao_outro)
+            db.session.commit()
+            versao_outro_id = versao_outro.id
+
+        aluno_client.post(f'/aluno/cadastrar-treinos/{versao_outro_id}/editar', data={
+            'descricao': 'Invadido'
+        })
+
+        with app.app_context():
+            versao = db.session.get(VersaoGlobal, versao_outro_id)
+            assert versao.descricao == 'Do outro'
+
+    def test_nao_permite_editar_versao_finalizada(self, aluno_client, app, aluno):
+        self._criar_versao(aluno_client)
+        with app.app_context():
+            versao = VersaoGlobal.query.filter_by(user_id=aluno).first()
+            versao.data_fim = date.today()
+            db.session.commit()
+            versao_id = versao.id
+
+        aluno_client.post(f'/aluno/cadastrar-treinos/{versao_id}/editar', data={
+            'descricao': 'Tentando editar finalizada'
+        })
+
+        with app.app_context():
+            versao = db.session.get(VersaoGlobal, versao_id)
+            assert versao.descricao == 'Original'
+
+
 class TestFinalizarVersaoLivre:
     def _preparar(self, client, app, user_id, com_exercicio=True):
         client.post('/aluno/cadastrar-treinos/versao', data={'descricao': 'v'})

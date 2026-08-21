@@ -110,6 +110,26 @@ def cadastrar_treinos_criar_versao():
     return redirect(url_for('aluno.cadastrar_treinos'))
 
 
+@aluno_bp.route('/cadastrar-treinos/<int:versao_id>/editar', methods=['POST'])
+@login_required
+@limiter.limit("30 per hour", key_func=_chave_por_usuario)
+def cadastrar_treinos_editar_versao(versao_id):
+    if not current_user.pode_gerenciar_treino_proprio():
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('main.index'))
+
+    descricao = request.form.get('descricao', '')
+    try:
+        VersaoService.editar_descricao_livre(versao_id, descricao, user_id=current_user.id)
+        flash('Versão atualizada!', 'success')
+    except ValueError as e:
+        flash(str(e), 'danger')
+    except Exception:
+        logger.exception("Erro inesperado ao editar versão (cadastro livre)")
+        flash('Não foi possível concluir a operação.', 'danger')
+    return redirect(url_for('aluno.cadastrar_treinos'))
+
+
 @aluno_bp.route('/cadastrar-treinos/<int:versao_id>/treino', methods=['POST'])
 @login_required
 @limiter.limit("60 per hour", key_func=_chave_por_usuario)

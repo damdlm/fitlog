@@ -1132,6 +1132,33 @@ class VersaoService(BaseService):
         return versao
 
     @staticmethod
+    def editar_descricao_livre(versao_id, nova_descricao, user_id=None):
+        """Atualiza só a descrição de uma versão "livre" ainda em edição.
+        Não mexe em numero_versao/data_inicio/divisao -- esses são
+        definidos na criação e não fazem sentido editar depois."""
+        user_id = user_id or BaseService.get_current_user_id()
+        if not user_id:
+            raise ValueError("Usuário não autenticado.")
+
+        versao = VersaoService._get_versao_editavel(versao_id, user_id)
+
+        nova_descricao = (nova_descricao or '').strip()
+        if not nova_descricao:
+            raise ValueError("Descrição da versão é obrigatória.")
+        if len(nova_descricao) > 200:
+            raise ValueError("Descrição deve ter no máximo 200 caracteres.")
+
+        try:
+            versao.descricao = nova_descricao
+            db.session.commit()
+            logger.info(f"Descrição da versão {versao_id} editada (cadastro livre) pelo usuário {user_id}")
+            return versao
+        except Exception:
+            db.session.rollback()
+            logger.exception(f"Erro ao editar descrição da versão {versao_id}")
+            raise ValueError("Não foi possível salvar a descrição.")
+
+    @staticmethod
     def adicionar_treino_livre(versao_id, nome_treino, descricao_treino, user_id=None):
         """
         Adiciona um novo treino à versão "livre", sem pedir letra/código
