@@ -45,6 +45,7 @@ Idempotente: pode ser executado várias vezes sem duplicar nada.
 import sys
 import argparse
 from pathlib import Path
+from collections import defaultdict
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -72,24 +73,58 @@ def _slug(nome_exibicao: str) -> str:
 def sincronizar(dry_run: bool):
     app = create_app()
     with app.app_context():
-        # 1) Conjunto alvo, a partir de exercicios_sistema.
+        # 1) Conjunto alvo, a partir de exercicios_sistema -- agrupado por
+        #    slug (não só por string exata), pra tolerar variações de texto
+        #    (ex: "Peito" e "peito", ou espaço extra) que já existiam na
+        #    coluna grupo_muscular e apontam pro mesmo músculo. Sem isso, a
+        #    segunda variante tentava criar um Musculo com o mesmo slug e
+        #    estourava a constraint UNIQUE de musculos.nome.
         linhas = db.session.query(ExercicioSistema.grupo_muscular).distinct().all()
-        novo_conjunto = sorted({
-            (nome or "").strip() for (nome,) in linhas if nome and nome.strip()
-        })
-        print(f"{len(novo_conjunto)} grupos musculares distintos encontrados em exercicios_sistema.")
+        brutos = [(nome or "").strip() for (nome,) in linhas if nome and nome.strip()]
 
-        musculos_por_nome = {m.nome_exibicao: m for m in Musculo.query.all()}
+        por_slug = defaultdict(list)
+        for nome in brutos:
+            por_slug[_slug(nome)].append(nome)
 
-        # 2) Cria os que faltam.
+        musculos_existentes = Musculo.query.all()
+        existentes_por_slug = {m.nome: m for m in musculos_existentes}
+        musculos_por_nome = {m.nome_exibicao: m for m in musculos_existentes}
+
+        def _escolher_canonico(variantes, slug):
+            # Se já existe um músculo com esse slug, usa o nome_exibicao
+            # dele como canônico (não renomeia algo que já está estável).
+            existente = existentes_por_slug.get(slug)
+            if existente:
+                return existente.nome_exibicao
+            # Senão, prefere a variante com inicial maiúscula; entre
+            # empatadas, ordem alfabética decide.
+            com_maiuscula = sorted(v for v in variantes if v[:1].isupper())
+            return com_maiuscula[0] if com_maiuscula else sorted(variantes)[0]
+
+        variantes_por_slug = {slug: vs for slug, vs in por_slug.items() if len(vs) > 1}
+        novo_conjunto = sorted(_escolher_canonico(vs, slug) for slug, vs in por_slug.items())
+
+        print(f"{len(novo_conjunto)} grupos musculares distintos (por slug) encontrados em exercicios_sistema.")
+        if variantes_por_slug:
+            print(f"\nAviso: {len(variantes_por_slug)} slug(s) com mais de uma variante de texto "
+                  f"em exercicios_sistema.grupo_muscular (tratadas como um único músculo):")
+            for slug, vs in variantes_por_slug.items():
+                print(f"  {slug}: {vs}")
+
+        # 2) Cria os que faltam -- checando por slug também (não só por
+        #    nome_exibicao), como segunda camada de proteção contra a
+        #    mesma classe de colisão.
         criados = []
         for nome in novo_conjunto:
-            if nome not in musculos_por_nome:
-                novo = Musculo(nome=_slug(nome), nome_exibicao=nome)
-                db.session.add(novo)
-                db.session.flush()
-                musculos_por_nome[nome] = novo
-                criados.append(nome)
+            slug = _slug(nome)
+            if nome in musculos_por_nome or slug in existentes_por_slug:
+                continue
+            novo = Musculo(nome=slug, nome_exibicao=nome)
+            db.session.add(novo)
+            db.session.flush()
+            musculos_por_nome[nome] = novo
+            existentes_por_slug[slug] = novo
+            criados.append(nome)
 
         # 3) Trata os músculos antigos que não estão no novo conjunto.
         remapeados = []      # (nome_antigo, nome_novo, qtd_exercicios)
