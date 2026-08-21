@@ -410,7 +410,15 @@ class ExercicioService(BaseService):
     @staticmethod
     def criar_exercicio_customizado(user_id, nome, musculo_nome, descricao=''):
         """
-        Cria um novo exercício customizado para o usuário
+        Cria um novo exercício customizado para o usuário.
+
+        Se quem está criando é um PROFESSOR, o mesmo exercício também é
+        copiado automaticamente pra cada aluno vinculado a ele (ativo),
+        pra que os alunos possam usar o mesmo exercício nos treinos
+        deles -- ver copiado_de_professor_id. As cópias são
+        independentes: viram exercícios normais do próprio aluno,
+        editáveis/removíveis por ele sem afetar o exercício original do
+        professor (e vice-versa).
         """
         try:
             # Buscar ou criar músculo
@@ -431,6 +439,11 @@ class ExercicioService(BaseService):
             )
             db.session.add(exercicio)
             db.session.flush()
+
+            ExercicioService._propagar_exercicio_para_alunos(
+                professor_id=user_id, exercicio_professor=exercicio, musculo=musculo
+            )
+
             db.session.commit()
             
             logger.info(f"Exercício customizado '{nome}' criado para usuário {user_id}")
@@ -438,7 +451,45 @@ class ExercicioService(BaseService):
         except Exception as e:
             BaseService.handle_error(e, f"Erro ao criar exercício customizado")
             return None
-    
+
+    @staticmethod
+    def _propagar_exercicio_para_alunos(professor_id, exercicio_professor, musculo):
+        """
+        Copia exercicio_professor pra cada aluno ativo vinculado a
+        professor_id, marcando a origem em copiado_de_professor_id.
+
+        Não faz nada se professor_id não pertencer a um professor (ex:
+        um aluno comum criando um exercício próprio) -- get_alunos() já
+        retorna lista vazia nesse caso, então o loop simplesmente não
+        roda. Pula alunos que já têm um exercício com esse nome (mesmo
+        músculo, sem diferenciar maiúsculas/acentos exatos) pra não
+        duplicar se o professor cadastrar o mesmo exercício mais de uma
+        vez, ou se o aluno já tivesse criado um igual por conta própria.
+        """
+        from models import User
+
+        professor = User.query.get(professor_id)
+        if not professor or not professor.is_professor():
+            return
+
+        for aluno in professor.get_alunos():
+            ja_existe = ExercicioCustomizado.query.filter(
+                ExercicioCustomizado.usuario_id == aluno.id,
+                func.lower(ExercicioCustomizado.nome) == exercicio_professor.nome.lower()
+            ).first()
+            if ja_existe:
+                continue
+
+            copia = ExercicioCustomizado(
+                usuario_id=aluno.id,
+                nome=exercicio_professor.nome,
+                descricao=exercicio_professor.descricao,
+                musculo_id=musculo.id,
+                copiado_de_professor_id=professor_id,
+                copiado_de_exercicio_id=exercicio_professor.id
+            )
+            db.session.add(copia)
+
     @staticmethod
     def update_exercicio_usuario(exercicio_usuario_id, user_id=None, **kwargs):
         """
@@ -477,9 +528,56 @@ class ExercicioService(BaseService):
             return None
     
     @staticmethod
+    def _propagar_edicao_para_alunos(exercicio_professor):
+        """
+        Reflete uma edição de exercício do professor em todas as cópias
+        já existentes dos alunos vinculados (as que apontam pra este
+        exercício via copiado_de_exercicio_id).
+
+        Sincronização direta -- sobrescreve nome/descrição/músculo da
+        cópia com o valor atual do exercício do professor, mesmo que o
+        aluno tenha personalizado a própria cópia antes. É o
+        comportamento pedido: a alteração do professor deve valer pros
+        alunos vinculados. O que continua independente é a direção
+        contrária -- o aluno editar a cópia dele não afeta o exercício
+        original do professor (ver _propagar_exercicio_para_alunos e o
+        teste test_copias_sao_independentes_do_original).
+
+        Não propaga pra alunos com vínculo inativo (mesmo critério da
+        propagação inicial em _propagar_exercicio_para_alunos) -- se o
+        vínculo foi desfeito, a cópia já existente do ex-aluno fica como
+        está, sem novas sincronizações.
+        """
+        from models import User
+
+        professor = User.query.get(exercicio_professor.usuario_id)
+        if not professor or not professor.is_professor():
+            return
+
+        ids_alunos_ativos = {aluno.id for aluno in professor.get_alunos()}
+        if not ids_alunos_ativos:
+            return
+
+        copias = ExercicioCustomizado.query.filter_by(
+            copiado_de_exercicio_id=exercicio_professor.id
+        ).all()
+
+        for copia in copias:
+            if copia.usuario_id not in ids_alunos_ativos:
+                continue
+            copia.nome = exercicio_professor.nome
+            copia.descricao = exercicio_professor.descricao
+            copia.musculo_id = exercicio_professor.musculo_id
+
+    @staticmethod
     def update_exercicio_customizado(exercicio_custom_id, user_id=None, **kwargs):
         """
-        Atualiza um exercício customizado
+        Atualiza um exercício customizado.
+
+        Se quem edita é um PROFESSOR e o exercício já foi propagado pra
+        alunos vinculados (ver criar_exercicio_customizado), a edição
+        também é refletida em cada cópia -- ver
+        _propagar_edicao_para_alunos.
         """
         try:
             if user_id is None:
@@ -503,7 +601,9 @@ class ExercicioService(BaseService):
                 exercicio.descricao = kwargs['descricao']
             if 'musculo_id' in kwargs:
                 exercicio.musculo_id = kwargs['musculo_id']
-            
+
+            ExercicioService._propagar_edicao_para_alunos(exercicio)
+
             db.session.commit()
             logger.info(f"Exercício customizado {exercicio_custom_id} atualizado")
             return exercicio

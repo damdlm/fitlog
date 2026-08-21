@@ -423,10 +423,7 @@ class TreinoVersao(db.Model):
     descricao_treino = db.Column(db.String(200))
     ordem = db.Column(db.Integer, default=0)
     
-    exercicios = db.relationship(
-        'VersaoExercicio', back_populates='treino_versao', lazy=True,
-        cascade='all, delete-orphan', order_by='VersaoExercicio.ordem'
-    )
+    exercicios = db.relationship('VersaoExercicio', back_populates='treino_versao', lazy=True, cascade='all, delete-orphan')
     
     __table_args__ = (
         db.UniqueConstraint('versao_id', 'treino_id', name='unique_treino_na_versao'),
@@ -618,15 +615,28 @@ class ExercicioUsuario(db.Model):
     musculo_id = db.Column(db.Integer, db.ForeignKey('musculos.id'))
     observacoes = db.Column(db.Text)
     copiado_de_professor_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    # Aponta pro exercício ESPECÍFICO do professor que originou esta cópia
+    # (auto-referência na mesma tabela). copiado_de_professor_id sozinho
+    # só diz QUEM é o professor -- não dá pra saber DE QUAL exercício veio
+    # a cópia depois que o professor renomeia o original (o nome não é
+    # mais um jeito confiável de re-encontrar o vínculo). Esse campo
+    # resolve isso: usado pra propagar edições do professor pras cópias
+    # já existentes dos alunos (ver ExercicioService._propagar_edicao_para_alunos).
+    # ondelete='SET NULL' -- se o exercício original do professor for
+    # excluído, a cópia do aluno continua existindo (é independente),
+    # só perde a referência de origem.
+    copiado_de_exercicio_id = db.Column(db.Integer, db.ForeignKey('exercicios_usuario.id', ondelete='SET NULL'), nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     musculo_ref = db.relationship('Musculo', foreign_keys=[musculo_id], backref='exercicios_usuario')
     usuario = db.relationship('User', foreign_keys=[usuario_id], backref='exercicios')
     copiado_de = db.relationship('User', foreign_keys=[copiado_de_professor_id])
+    copiado_de_exercicio = db.relationship('ExercicioUsuario', foreign_keys=[copiado_de_exercicio_id], remote_side=[id])
 
     __table_args__ = (
         db.Index('idx_exercicio_usuario_usuario', 'usuario_id'),
         db.Index('idx_exercicio_usuario_musculo', 'musculo_id'),
+        db.Index('idx_exercicio_usuario_copiado_de_exercicio', 'copiado_de_exercicio_id'),
     )
 
 class ExercicioSistema(db.Model):
