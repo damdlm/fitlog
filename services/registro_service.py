@@ -239,6 +239,25 @@ class RegistroService(BaseService):
 
             tempo_treino = RegistroService._resolver_tempo_treino(tempo_treino, tempo_treino_anterior)
 
+            if registro_existente:
+                # Remove da identity map da sessão -- se não fizer isso,
+                # os objetos HistoricoTreino/RegistroTreino antigos (já
+                # carregados acima via selectinload) continuam "vivos" na
+                # sessão mesmo depois do DELETE em massa logo abaixo
+                # (query.delete() não sabe que precisa expirar objetos já
+                # carregados). Como o SQLite reaproveita o menor rowid
+                # livre, os novos registros/séries criados nesta mesma
+                # chamada podem receber os MESMOS IDs dos que acabaram de
+                # ser apagados, e o SQLAlchemy emite um SAWarning ao dar
+                # flush ("Identity map already had an identity for...").
+                # Sem prejuízo funcional aqui (os objetos antigos não são
+                # mais referenciados depois deste ponto), mas o aviso é
+                # sintoma de estado obsoleto sobrando na sessão -- melhor
+                # descartar explicitamente.
+                for serie_antiga in registro_existente.series:
+                    db.session.expunge(serie_antiga)
+                db.session.expunge(registro_existente)
+
             # Remover registros antigos da mesma sessão
             RegistroTreino.query.filter_by(
                 treino_id=treino_id,
