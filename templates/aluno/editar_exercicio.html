@@ -25,8 +25,9 @@
                 <label class="form-label fw-bold">Músculo</label>
                 <select name="musculo" class="form-select" required>
                     <option value="">Selecione...</option>
+                    {% set musculo_atual = exercicio.musculo_ref.nome_exibicao if exercicio.musculo_ref else None %}
                     {% for musculo in musculos %}
-                    <option value="{{ musculo }}" {% if exercicio.musculo == musculo %}selected{% endif %}>
+                    <option value="{{ musculo }}" {% if musculo_atual == musculo %}selected{% endif %}>
                         {{ musculo }}
                     </option>
                     {% endfor %}

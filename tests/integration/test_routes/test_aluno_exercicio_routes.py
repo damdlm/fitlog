@@ -77,6 +77,30 @@ class TestNovoExercicio:
 
 
 class TestEditarExercicio:
+    def test_form_de_edicao_vem_com_musculo_pre_selecionado(self, client, app):
+        """Regressão: o template comparava exercicio.musculo (atributo
+        que não existe no modelo -- só musculo_id/musculo_ref), então o
+        <select> sempre caía em 'Selecione...' ao abrir a tela de
+        edição, mesmo o exercício já tendo um músculo cadastrado."""
+        with app.app_context():
+            u = _criar_usuario('ae_edit_0')
+            musc = Musculo(nome=f'm_{u.id}', nome_exibicao='Costas')
+            db.session.add(musc)
+            db.session.commit()
+            ex = ExercicioCustomizado(usuario_id=u.id, nome='Puxada Frontal', musculo_id=musc.id)
+            db.session.add(ex)
+            db.session.commit()
+            ex_id = ex.id
+        _login(client, 'ae_edit_0')
+
+        resp = client.get(f'/aluno/exercicio/{ex_id}')
+        html = resp.get_data(as_text=True)
+
+        assert resp.status_code == 200
+        assert '<option value="Costas" selected>' in html
+        # Nenhuma outra opção do dropdown pode vir marcada.
+        assert 'selected' not in html.replace('<option value="Costas" selected>', '', 1)
+
     def test_edita_exercicio_customizado(self, client, app):
         with app.app_context():
             u = _criar_usuario('ae_edit_1')
