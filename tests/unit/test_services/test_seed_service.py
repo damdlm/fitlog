@@ -126,7 +126,7 @@ class TestCreateDefaultWorkouts:
             assert supino is not None
             musculo = db.session.get(Musculo, supino.musculo_id)
             assert musculo is not None
-            assert musculo.nome_exibicao == 'Peitoral'
+            assert musculo.nome_exibicao == 'Peito'
 
     def test_nao_duplica_treino_ja_existente_mas_mantem_exercicios(self, app):
         with app.app_context():

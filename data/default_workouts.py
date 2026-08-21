@@ -210,14 +210,20 @@ WORKOUTS_5X = {
 
 # Mapeamento de músculos para garantir consistência
 MUSCLE_MAPPING = {
-    "Peitoral": "Peitoral",
+    # Chave = nome usado nos WORKOUTS_* acima (não muda). Valor = nome
+    # de exibição do músculo, alinhado com exercicios_sistema.grupo_muscular
+    # (ver scripts/sync_musculos_de_exercicios_sistema.py) -- assim
+    # get_or_create_musculo() reaproveita os músculos do novo taxonomy
+    # em vez de recriar os nomes antigos ("Peitoral", "Costas", etc)
+    # pra cada novo usuário cadastrado.
+    "Peitoral": "Peito",
     "Ombros": "Ombros",
     "Tríceps": "Tríceps",
-    "Costas": "Costas",
+    "Costas": "Dorsais",
     "Bíceps": "Bíceps",
     "Quadríceps": "Quadríceps",
-    "Posterior de Coxa": "Posterior de Coxa",
+    "Posterior de Coxa": "Isquiotibiais",
     "Glúteos": "Glúteos",
     "Panturrilhas": "Panturrilhas",
-    "Abdômen": "Abdômen",
+    "Abdômen": "Abdominais",
 }
