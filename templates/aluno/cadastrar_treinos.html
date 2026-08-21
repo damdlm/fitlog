@@ -242,6 +242,20 @@
     .ct-add-treino-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
     .ct-finalizar-hint { font-size: 0.82rem; color: var(--ct-muted); max-width: 480px; }
+
+    /* Filtro (busca + chips de músculo) do modal "Editar treino" fica
+       fora do quadro de exercícios do catálogo nesta tela -- diferente
+       do padrão usado em editar_treino_versao.html (mesmo CSS base,
+       .etv-toolbar fica dentro/sticky de .etv-scroll lá). Sobrescreve
+       só aqui via seletor com #modalExercicios, sem tocar em
+       editar-treino-versao.css (compartilhado com outras 5 telas). */
+    #modalExercicios .etv-toolbar {
+        position: static;
+        background: transparent;
+        padding: 0;
+        margin: 0 0 14px;
+        border-bottom: none;
+    }
 </style>
 
 <div class="ct-header">
@@ -477,36 +491,36 @@
 
                     <label class="etv-field-label">Exercícios do catálogo</label>
 
-                    <div class="etv-scroll">
-                        <div class="etv-toolbar">
-                            <div class="etv-toolbar-row">
-                                <div class="etv-search input-group">
-                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                                    <input type="text" id="etvBusca" class="form-control"
-                                           placeholder="Digite para filtrar exercícios..." autocomplete="off">
-                                    <button class="btn btn-outline-secondary" type="button" id="etvLimparFiltro">
-                                        <i class="bi bi-x"></i> Limpar
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="etv-toolbar-row">
-                                <div class="etv-chip-row" id="etvChipsMusculo">
-                                    <button type="button" class="etv-chip is-active" data-musculo="" aria-pressed="true">
-                                        Todos <span class="etv-chip-count">{{ exercicios_catalogo|length }}</span>
-                                    </button>
-                                    {% for m in musculos_catalogo %}
-                                    {% set ns = namespace(count=0) %}
-                                    {% for ex in exercicios_catalogo %}
-                                        {% if (ex.musculo_nome or ex.musculo or 'N/A') == m %}{% set ns.count = ns.count + 1 %}{% endif %}
-                                    {% endfor %}
-                                    <button type="button" class="etv-chip" data-musculo="{{ m }}" aria-pressed="false">
-                                        {{ m }} <span class="etv-chip-count">{{ ns.count }}</span>
-                                    </button>
-                                    {% endfor %}
-                                </div>
+                    <div class="etv-toolbar">
+                        <div class="etv-toolbar-row">
+                            <div class="etv-search input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" id="etvBusca" class="form-control"
+                                       placeholder="Digite para filtrar exercícios..." autocomplete="off">
+                                <button class="btn btn-outline-secondary" type="button" id="etvLimparFiltro">
+                                    <i class="bi bi-x"></i> Limpar
+                                </button>
                             </div>
                         </div>
+                        <div class="etv-toolbar-row">
+                            <div class="etv-chip-row" id="etvChipsMusculo">
+                                <button type="button" class="etv-chip is-active" data-musculo="" aria-pressed="true">
+                                    Todos <span class="etv-chip-count">{{ exercicios_catalogo|length }}</span>
+                                </button>
+                                {% for m in musculos_catalogo %}
+                                {% set ns = namespace(count=0) %}
+                                {% for ex in exercicios_catalogo %}
+                                    {% if (ex.musculo_nome or ex.musculo or 'N/A') == m %}{% set ns.count = ns.count + 1 %}{% endif %}
+                                {% endfor %}
+                                <button type="button" class="etv-chip" data-musculo="{{ m }}" aria-pressed="false">
+                                    {{ m }} <span class="etv-chip-count">{{ ns.count }}</span>
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
 
+                    <div class="etv-scroll">
                         <div class="etv-grid" id="etvGrid">
                             {% for ex in exercicios_catalogo %}
                             {% set musculo_nome = ex.musculo_nome or ex.musculo or 'N/A' %}
