@@ -75,6 +75,7 @@
     <div class="ma-price">R$ {{ '%.2f'|format(plano.preco_centavos / 100) }}<small> /mês</small></div>
     <p class="text-muted mb-3">{{ plano.nome }} — Estatísticas e FitBot liberados</p>
     <form method="POST" action="{{ url_for('billing.assinar') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="ma-btn-assinar">
             <i class="bi bi-credit-card-2-front me-1"></i>
             {% if assinatura and assinatura.status == 'active' %}Gerenciar assinatura{% else %}Assinar agora{% endif %}
@@ -121,6 +122,7 @@
     <div class="ma-price">R$ {{ '%.2f'|format(tier.preco_centavos / 100) }}<small> /mês</small></div>
     <p class="text-muted mb-3">{{ tier.nome }}</p>
     <form method="POST" action="{{ url_for('billing.assinar') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="ma-btn-assinar">
             <i class="bi bi-credit-card-2-front me-1"></i> Assinar agora
         </button>

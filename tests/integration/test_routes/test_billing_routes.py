@@ -124,6 +124,24 @@ class TestMinhaAssinaturaTela:
         resp = client.get('/billing/minha-assinatura')
         assert resp.status_code == 200
 
+    def test_formulario_de_assinar_inclui_csrf_token(self, client, app):
+        """Regressão: os <form> desta tela precisam do campo hidden
+        csrf_token -- a suíte roda com WTF_CSRF_ENABLED=False (ver
+        tests/conftest.py), então um POST via client.post() direto NÃO
+        pega a falta desse campo; só olhar o HTML renderizado pega."""
+        with app.app_context():
+            db.session.add(Plano(codigo='aluno_fit', nome='Plano Fit', tipo_usuario='aluno', preco_centavos=599))
+            aluno = _criar_usuario('minha_assinatura_csrf_html')
+            BillingService.iniciar_trial_aluno(aluno)
+            db.session.commit()
+            aluno_id = aluno.id
+            aluno_ref = User.query.get(aluno_id)
+
+        _login(client, aluno_ref)
+        resp = client.get('/billing/minha-assinatura')
+        assert resp.status_code == 200
+        assert b'name="csrf_token"' in resp.data
+
 
 # ---------------------------------------------------------------------
 # GET /billing/api/minha-assinatura (JSON)
