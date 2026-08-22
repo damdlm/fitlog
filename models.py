@@ -442,7 +442,10 @@ class TreinoVersao(db.Model):
     descricao_treino = db.Column(db.String(200))
     ordem = db.Column(db.Integer, default=0)
     
-    exercicios = db.relationship('VersaoExercicio', back_populates='treino_versao', lazy=True, cascade='all, delete-orphan')
+    exercicios = db.relationship(
+        'VersaoExercicio', back_populates='treino_versao', lazy=True,
+        cascade='all, delete-orphan', order_by='VersaoExercicio.ordem'
+    )
     
     __table_args__ = (
         db.UniqueConstraint('versao_id', 'treino_id', name='unique_treino_na_versao'),
