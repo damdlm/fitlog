@@ -340,6 +340,7 @@ def excluir_exercicio(exercicio_id):
 def exercicio_detalhes(exercicio_id):
     """Detalhes de um exercício"""
     
+    exercicio = None
     # Buscar em ambas as tabelas
     exercicio_usuario = ExercicioUsuario.query.filter_by(
         id=exercicio_id, usuario_id=current_user.id
@@ -362,7 +363,7 @@ def exercicio_detalhes(exercicio_id):
     versoes = verificar_exercicio_em_versoes(exercicio_id, tipo_exercicio=exercicio.tipo)
 
     return render_template(
-        "admin/exercicio_detalhes.html",
+        "admin/exercicios_detalhes.html",
         exercicio=exercicio,
         versoes=versoes
     )

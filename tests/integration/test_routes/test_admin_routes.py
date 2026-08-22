@@ -147,3 +147,59 @@ class TestEditarExercicioRequerLogin:
     def test_requer_autenticacao(self, client):
         resp = client.post('/admin/editar/exercicio', data={'id': '1', 'nome': 'x'})
         assert resp.status_code in (302, 401)
+
+
+class TestExercicioDetalhes:
+    """
+    Bug corrigido: a rota renderizava "admin/exercicio_detalhes.html"
+    (singular), mas o arquivo no disco é
+    templates/admin/exercicios_detalhes.html (plural, com 's'). Toda
+    visita a /admin/exercicio/detalhes/<id> sempre lançava
+    TemplateNotFound. Corrigido ajustando o nome do template na chamada
+    de render_template para bater com o arquivo real.
+    """
+
+    def test_exibe_detalhes_de_exercicio_do_usuario(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('user_detalhes_1', tipo_usuario='aluno')
+            ex = ExercicioCustomizado(usuario_id=u.id, nome='Supino Reto')
+            db.session.add(ex)
+            db.session.commit()
+            ex_id = ex.id
+        _login(client, 'user_detalhes_1')
+
+        resp = client.get(f'/admin/exercicio/detalhes/{ex_id}')
+        assert resp.status_code == 200
+        assert 'Supino Reto'.encode() in resp.data
+
+    def test_exibe_detalhes_de_exercicio_do_sistema(self, client, app):
+        from models import ExercicioSistema
+        with app.app_context():
+            u = _criar_usuario('user_detalhes_2', tipo_usuario='aluno')
+            ex_sistema = ExercicioSistema(id_original='9999', nome='Agachamento Livre',
+                                           grupo_muscular='Quadríceps')
+            db.session.add(ex_sistema)
+            db.session.commit()
+            ex_id = ex_sistema.id
+        _login(client, 'user_detalhes_2')
+
+        resp = client.get(f'/admin/exercicio/detalhes/{ex_id}')
+        assert resp.status_code == 200
+
+    def test_redireciona_se_exercicio_nao_encontrado(self, client, app):
+        """
+        Bug corrigido: faltava `exercicio = None` antes do bloco de
+        busca, então quando o exercício não existia em nenhuma das duas
+        tabelas, `if not exercicio:` lançava UnboundLocalError em vez de
+        mostrar a mensagem de "não encontrado" e redirecionar.
+        """
+        with app.app_context():
+            _criar_usuario('user_detalhes_3', tipo_usuario='aluno')
+        _login(client, 'user_detalhes_3')
+
+        resp = client.get('/admin/exercicio/detalhes/99999', follow_redirects=True)
+        assert resp.status_code == 200
+
+    def test_requer_login(self, client):
+        resp = client.get('/admin/exercicio/detalhes/1')
+        assert resp.status_code in (302, 401)
