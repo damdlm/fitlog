@@ -6,29 +6,35 @@ antigo de ~10 músculos criado manualmente em data/default_workouts.py).
 
 POR QUE NÃO É SÓ "DELETE + INSERT"
 -----------------------------------
-`exercicios_usuario.musculo_id` referencia `musculos.id` via FK sem
-ondelete definido (padrão RESTRICT/NO ACTION) -- apagar um músculo
-ainda referenciado por algum exercício de usuário falha no banco (ou,
-se a constraint não estivesse lá, deixaria o exercício "orfão", sem
-músculo, silenciosamente).
+Qualquer tabela com FK pra `musculos.id` (sem ondelete definido, padrão
+RESTRICT/NO ACTION) impede apagar um músculo ainda referenciado. O óbvio
+é `exercicios_usuario.musculo_id` -- mas o banco de produção também tem
+`exercicios_base` (tabela legada, descontinuada e sem model no
+SQLAlchemy, então invisível pra quem só olha models.py) com a mesma FK.
+Por isso este script NÃO usa uma lista fixa de tabelas: ele descobre
+via introspecção do banco (SQLAlchemy Inspector) toda tabela+coluna que
+referencia musculos.id, incluindo tabelas legadas -- e trata todas elas
+igual, com UPDATE/COUNT via SQL bruto (não dá pra usar um Model do
+SQLAlchemy pra uma tabela que não tem Model).
 
 O que este script faz, em ordem:
 1. Lê os valores distintos de `grupo_muscular` em exercicios_sistema
-   (ignora nulos/vazios) -- esse é o novo conjunto "alvo".
+   (ignora nulos/vazios), agrupados por slug pra tolerar variações de
+   texto (ex: "Peito" e "peito") que apontam pro mesmo músculo -- esse
+   é o novo conjunto "alvo".
 2. Cria os músculos do novo conjunto que ainda não existem (match por
-   nome_exibicao -- se já existir um músculo com esse nome, reaproveita
-   em vez de duplicar).
-3. Para cada músculo ANTIGO que não faz parte do novo conjunto:
-   - Se estiver em MAPEAMENTO_ANTIGO_NOVO abaixo, remapeia todo
-     ExercicioUsuario.musculo_id que apontava pra ele para o músculo
-     novo equivalente, e então apaga o músculo antigo (já sem
-     referências).
+   nome_exibicao e por slug -- se já existir, reaproveita em vez de
+   duplicar).
+3. Descobre todas as tabelas com FK pra musculos.id (introspecção).
+4. Para cada músculo ANTIGO que não faz parte do novo conjunto:
+   - Se estiver em MAPEAMENTO_ANTIGO_NOVO abaixo, remapeia (UPDATE) a
+     referência em TODAS as tabelas dependentes pro músculo novo
+     equivalente, e então apaga o músculo antigo (já sem referências).
    - Se NÃO estiver no mapeamento:
-       - sem nenhum ExercicioUsuario apontando pra ele -> apaga (é só
-         lixo não usado);
-       - com algum ExercicioUsuario apontando pra ele -> MANTÉM e avisa
-         no relatório final. Nunca apaga algo em uso sem saber pra
-         onde mandar.
+       - sem nenhuma referência em nenhuma tabela dependente -> apaga
+         (é só lixo não usado);
+       - com alguma referência -> MANTÉM e avisa no relatório final.
+         Nunca apaga algo em uso sem saber pra onde mandar.
 
 MAPEAMENTO_ANTIGO_NOVO foi definido a partir do taxonomy atual
 (data/default_workouts.py:MUSCLE_MAPPING) comparado com os 28 valores
@@ -49,8 +55,9 @@ from collections import defaultdict
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app import create_app                              # noqa: E402
-from models import db, Musculo, ExercicioSistema, ExercicioUsuario  # noqa: E402
+from sqlalchemy import text, inspect as sa_inspect       # noqa: E402
+from app import create_app                                # noqa: E402
+from models import db, Musculo, ExercicioSistema          # noqa: E402
 
 # Nome antigo (como está hoje em `musculos.nome_exibicao`) -> nome novo
 # (como aparece em exercicios_sistema.grupo_muscular). Só precisa de
@@ -68,6 +75,57 @@ MAPEAMENTO_ANTIGO_NOVO = {
 
 def _slug(nome_exibicao: str) -> str:
     return nome_exibicao.strip().lower()
+
+
+def _tabelas_dependentes_de_musculos():
+    """Descobre, via introspecção do banco, toda tabela+coluna com FK
+    pra musculos.id -- inclusive tabelas legadas sem model no
+    SQLAlchemy (ex: exercicios_base), que uma busca no código-fonte
+    (models.py, services/) não enxergaria.
+
+    Importante: a introspecção usa db.session.connection() -- a MESMA
+    conexão/transação já aberta pela sessão -- e não db.engine (que
+    pega uma conexão nova do pool). Especialmente em SQLite (onde só
+    existe uma transação por conexão), inspecionar via uma conexão
+    separada faz o Inspector encerrar/fazer rollback da SUA própria
+    transação ao terminar, e como é a MESMA conexão física por baixo,
+    isso derruba silenciosamente qualquer INSERT/UPDATE que a sessão
+    já tinha dado flush() mas ainda não tinha commitado -- os
+    músculos recém-criados na etapa 2 desapareciam antes do
+    remapeamento rodar. Em Postgres cada conexão é isolada de verdade,
+    então esse sintoma específico não apareceria lá -- mas usar a
+    conexão da sessão é a forma correta em qualquer banco."""
+    insp = sa_inspect(db.session.connection())
+    dependentes = []
+    for nome_tabela in insp.get_table_names():
+        if nome_tabela == "musculos":
+            continue
+        for fk in insp.get_foreign_keys(nome_tabela):
+            if fk.get("referred_table") == "musculos":
+                for coluna in fk.get("constrained_columns") or []:
+                    dependentes.append((nome_tabela, coluna))
+    return dependentes
+
+
+def _contar_uso(dependentes, musculo_id):
+    total = 0
+    for tabela, coluna in dependentes:
+        total += db.session.execute(
+            text(f'SELECT COUNT(*) FROM "{tabela}" WHERE "{coluna}" = :id'),
+            {"id": musculo_id}
+        ).scalar()
+    return total
+
+
+def _remapear(dependentes, antigo_id, novo_id):
+    total = 0
+    for tabela, coluna in dependentes:
+        resultado = db.session.execute(
+            text(f'UPDATE "{tabela}" SET "{coluna}" = :novo WHERE "{coluna}" = :antigo'),
+            {"novo": novo_id, "antigo": antigo_id}
+        )
+        total += resultado.rowcount
+    return total
 
 
 def sincronizar(dry_run: bool):
@@ -126,10 +184,16 @@ def sincronizar(dry_run: bool):
             existentes_por_slug[slug] = novo
             criados.append(nome)
 
-        # 3) Trata os músculos antigos que não estão no novo conjunto.
-        remapeados = []      # (nome_antigo, nome_novo, qtd_exercicios)
+        # 3) Descobre todas as tabelas com FK pra musculos.id -- inclusive
+        #    legadas sem model (ex: exercicios_base).
+        dependentes = _tabelas_dependentes_de_musculos()
+        print(f"\nTabelas com FK para musculos.id: "
+              f"{', '.join(f'{t}.{c}' for t, c in dependentes) or '(nenhuma)'}")
+
+        # 4) Trata os músculos antigos que não estão no novo conjunto.
+        remapeados = []      # (nome_antigo, nome_novo, qtd_referencias)
         removidos_sem_uso = []
-        mantidos_sem_mapeamento = []  # (nome_antigo, qtd_exercicios)
+        mantidos_sem_mapeamento = []  # (nome_antigo, qtd_referencias)
 
         antigos = [m for m in musculos_por_nome.values() if m.nome_exibicao not in novo_conjunto]
         for antigo in antigos:
@@ -138,14 +202,12 @@ def sincronizar(dry_run: bool):
 
             if destino_nome and destino_nome in musculos_por_nome:
                 destino = musculos_por_nome[destino_nome]
-                qtd = ExercicioUsuario.query.filter_by(musculo_id=antigo.id).update(
-                    {"musculo_id": destino.id}
-                )
+                qtd = _remapear(dependentes, antigo.id, destino.id)
                 db.session.delete(antigo)
                 remapeados.append((nome_antigo, destino_nome, qtd))
                 continue
 
-            qtd_em_uso = ExercicioUsuario.query.filter_by(musculo_id=antigo.id).count()
+            qtd_em_uso = _contar_uso(dependentes, antigo.id)
             if qtd_em_uso == 0:
                 db.session.delete(antigo)
                 removidos_sem_uso.append(nome_antigo)
@@ -159,7 +221,7 @@ def sincronizar(dry_run: bool):
 
         print(f"\nMúsculos remapeados e removidos ({len(remapeados)}):")
         for antigo, novo, qtd in remapeados:
-            print(f"  {antigo} -> {novo}  ({qtd} exercício(s) de usuário atualizados)")
+            print(f"  {antigo} -> {novo}  ({qtd} referência(s) atualizadas)")
 
         print(f"\nMúsculos antigos sem uso, removidos ({len(removidos_sem_uso)}):")
         for nome in removidos_sem_uso:
@@ -167,11 +229,11 @@ def sincronizar(dry_run: bool):
 
         if mantidos_sem_mapeamento:
             print(f"\nATENÇÃO -- músculos antigos MANTIDOS por segurança "
-                  f"({len(mantidos_sem_mapeamento)}), pois ainda têm exercícios de "
-                  f"usuário apontando pra eles e não têm mapeamento definido em "
+                  f"({len(mantidos_sem_mapeamento)}), pois ainda têm referências "
+                  f"em alguma tabela e não têm mapeamento definido em "
                   f"MAPEAMENTO_ANTIGO_NOVO:")
             for nome, qtd in mantidos_sem_mapeamento:
-                print(f"  ! {nome}  ({qtd} exercício(s) de usuário)")
+                print(f"  ! {nome}  ({qtd} referência(s))")
             print("  Adicione uma entrada pra esses nomes em MAPEAMENTO_ANTIGO_NOVO "
                   "e rode de novo, ou trate manualmente.")
 
