@@ -30,6 +30,15 @@ document.addEventListener('DOMContentLoaded', function () {
             handle: '.ct-ex-drag-handle',
             ghostClass: 'sortable-ghost',
             dragClass: 'sortable-drag',
+            // Força o SortableJS a usar a própria simulação de arraste
+            // (baseada em toque/ponteiro) em vez do drag-and-drop nativo
+            // HTML5 do navegador -- em boa parte dos navegadores/webviews
+            // mobile, o nativo simplesmente não funciona bem (ou não
+            // funciona) via toque, mesmo com a alça correta configurada.
+            // Essa era provavelmente a causa de "não seleciona o
+            // exercício" no celular.
+            forceFallback: true,
+            fallbackTolerance: 3,
             onEnd: function () {
                 if (btnSalvar) btnSalvar.classList.add('is-visible');
             }

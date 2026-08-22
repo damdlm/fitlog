@@ -227,6 +227,18 @@
         cursor: grab;
         color: #B0B5BD;
         flex-shrink: 0;
+        /* Área de toque maior que o glifo do ícone sozinho (que sai
+           bem pequeno com font-size:0.85rem herdado -- abaixo do
+           mínimo recomendado de ~40px pra "pegar" com precisão no
+           dedo). display+width/height fixos garantem uma área de
+           toque generosa com o ícone sempre centralizado dentro dela. */
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        margin: -4px 0;
+        font-size: 1.05rem;
         /* Impede o navegador de tratar o toque na alça como
            scroll/pinch-zoom, deixando o gesto livre pro SortableJS
            decidir que é um arraste. */
@@ -242,6 +254,19 @@
         display: flex;
         align-items: center;
         gap: 6px;
+    }
+
+    /* No celular, a largura já é curta -- o recuo de 44px (alinhado
+       com o texto do nome do treino, que fica ao lado do círculo/badge
+       acima) tira espaço útil da lista de exercícios sem necessidade.
+       Recuo zerado só pra essa lista (toolbar + itens + estado vazio),
+       mantendo o resto do card como está. */
+    @media (max-width: 575.98px) {
+        .ct-ex-toolbar,
+        .ct-ex-list,
+        .ct-ex-empty {
+            margin-left: 0;
+        }
     }
 
     /* ===== Botão adicionar treino ===== */
