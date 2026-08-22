@@ -347,19 +347,26 @@ class BillingService:
 
     @staticmethod
     def criar_assinatura_checkout(usuario: User, plano: Plano) -> str:
-        """Cria (ou reaproveita) o cliente no Asaas e uma assinatura
-        recorrente para ele, retornando a URL de checkout hospedado pelo
-        Asaas -- o navegador do usuário é redirecionado para lá, e o
-        dado de cartão nunca passa pelo nosso servidor (mantém o fitlog
-        em PCI SAQ A, o nível mais simples de conformidade).
+        """Cria (ou reaproveita) o cliente no Asaas e um Checkout de
+        assinatura recorrente, retornando o link da página de
+        pagamento hospedada pelo Asaas -- o navegador do usuário é
+        redirecionado para lá, e o dado de cartão nunca passa pelo
+        nosso servidor (mantém o fitlog em PCI SAQ A, o nível mais
+        simples de conformidade).
 
-        ATENÇÃO: nomes de campo/endpoint aqui seguem a documentação da
-        API do Asaas no momento em que este serviço foi desenhado --
-        conferir contra https://docs.asaas.com/reference antes do
-        primeiro teste real em sandbox, e ajustar se necessário.
+        Usa POST /checkouts (não /subscriptions diretamente) porque é
+        o endpoint que devolve uma página hospedada deixando o pagador
+        escolher Pix/cartão/boleto -- /subscriptions cria a cobrança
+        direto com uma forma de pagamento já definida, sem página de
+        escolha. Documentação: https://docs.asaas.com/reference/create-new-checkout
 
-        Garante o registro por conta própria -- quem chama este método
-        não precisa ter criado a Assinatura antes.
+        A assinatura real só é criada pelo Asaas DEPOIS que o pagador
+        escolhe a forma de pagamento e confirma -- por isso ainda não
+        temos gateway_subscription_id aqui. Mandamos o id da nossa
+        própria Assinatura em externalReference pra conseguir casar o
+        primeiro webhook que chegar com este registro (ver
+        processar_webhook), e só a partir daí gravamos o
+        gateway_subscription_id de verdade.
         """
         assinatura = BillingService.garantir_registro_assinatura(usuario)
 
@@ -376,14 +383,26 @@ class BillingService:
             assinatura.gateway_customer_id = customer_id
             db.session.commit()
 
+        callback_url = BillingService._url_minha_assinatura()
         resp = requests.post(
-            f'{BillingService._base_url()}/subscriptions',
+            f'{BillingService._base_url()}/checkouts',
             json={
+                'billingTypes': ['PIX', 'CREDIT_CARD', 'BOLETO'],
+                'chargeTypes': ['RECURRENT'],
+                'minutesToExpire': 60,
+                'callback': {
+                    'successUrl': callback_url,
+                    'cancelUrl': callback_url,
+                    'expiredUrl': callback_url,
+                },
                 'customer': customer_id,
-                'billingType': 'UNDEFINED',  # deixa o usuário escolher cartão/pix/boleto no checkout
-                'value': plano.preco_centavos / 100,
-                'cycle': 'MONTHLY',
-                'description': plano.nome,
+                'externalReference': str(assinatura.id),
+                'subscription': {
+                    'cycle': 'MONTHLY',
+                    'nextDueDate': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+                    'value': plano.preco_centavos / 100,
+                    'description': plano.nome,
+                },
             },
             headers=BillingService._headers(),
             timeout=REQUEST_TIMEOUT_SECONDS,
@@ -391,11 +410,27 @@ class BillingService:
         resp.raise_for_status()
         dados = resp.json()
 
-        assinatura.gateway_subscription_id = dados['id']
         assinatura.plano_id = plano.id
         db.session.commit()
 
-        return dados.get('invoiceUrl') or dados.get('checkoutUrl')
+        return dados.get('link')
+
+    @staticmethod
+    def _url_minha_assinatura() -> str:
+        """Monta a URL absoluta de /billing/minha-assinatura pra usar
+        nos callbacks do checkout (successUrl/cancelUrl/expiredUrl).
+        Quando APP_BASE_URL está configurada, concatena direto (nem
+        chama url_for -- fora de uma requisição real, url_for exige
+        SERVER_NAME configurado, o que não é o caso em todo ambiente).
+        Sem APP_BASE_URL, cai no url_for padrão (funciona normalmente
+        dentro do request real que chama esta função, mas depende do
+        Host recebido -- mesmo trade-off de
+        routes/auth_routes.py:_build_trusted_url)."""
+        base_url = current_app.config.get('APP_BASE_URL')
+        if base_url:
+            return base_url.rstrip('/') + '/billing/minha-assinatura'
+        from flask import url_for
+        return url_for('billing.minha_assinatura', _external=True)
 
     @staticmethod
     def _validar_token_webhook(token_recebido: str) -> bool:
@@ -433,16 +468,30 @@ class BillingService:
 
         payment = payload.get('payment') or {}
         subscription_id = payment.get('subscription')
+        external_reference = payment.get('externalReference')
 
+        # Primeira cobrança de uma assinatura criada via /checkouts
+        # ainda não tem gateway_subscription_id gravado no nosso banco
+        # (só sabemos o ID da nossa própria Assinatura, mandado como
+        # externalReference na criação do checkout -- ver
+        # criar_assinatura_checkout). Tenta achar por subscription_id
+        # primeiro; se não achar, cai pro externalReference e já
+        # aproveita pra gravar o subscription_id que faltava.
+        assinatura = None
         if subscription_id:
             assinatura = Assinatura.query.filter_by(gateway_subscription_id=subscription_id).first()
-            if assinatura:
-                BillingService._aplicar_evento(assinatura, tipo_evento)
-            else:
-                logger.warning(
-                    'Webhook Asaas para subscription %s sem Assinatura correspondente no banco',
-                    subscription_id,
-                )
+        if assinatura is None and external_reference and external_reference.isdigit():
+            assinatura = Assinatura.query.get(int(external_reference))
+            if assinatura and subscription_id and not assinatura.gateway_subscription_id:
+                assinatura.gateway_subscription_id = subscription_id
+
+        if assinatura:
+            BillingService._aplicar_evento(assinatura, tipo_evento)
+        elif subscription_id or external_reference:
+            logger.warning(
+                'Webhook Asaas (subscription=%s, externalReference=%s) sem Assinatura correspondente no banco',
+                subscription_id, external_reference,
+            )
 
         db.session.add(EventoWebhookAsaas(event_id=event_id, tipo_evento=tipo_evento))
         db.session.commit()

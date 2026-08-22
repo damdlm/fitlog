@@ -620,3 +620,157 @@ class TestExpirarCarenciasVencidas:
             db.session.refresh(assinatura)
             assert total == 0
             assert assinatura.status == 'past_due'
+
+
+# ---------------------------------------------------------------------
+# criar_assinatura_checkout -- chamada HTTP real (mockada) pro Asaas
+# ---------------------------------------------------------------------
+
+class _RespostaFake:
+    """Substitui requests.Response nos testes -- só o que
+    criar_assinatura_checkout usa (raise_for_status/json)."""
+    def __init__(self, json_data, status_code=200):
+        self._json = json_data
+        self.status_code = status_code
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            import requests
+            raise requests.HTTPError(f'{self.status_code} erro simulado')
+
+    def json(self):
+        return self._json
+
+
+class TestCriarAssinaturaCheckout:
+    def test_usa_endpoint_checkouts_com_next_due_date_e_external_reference(self, app, monkeypatch):
+        """Regressão: a versão antiga chamava /subscriptions sem
+        nextDueDate (campo obrigatório) e com billingType='UNDEFINED'
+        (valor inválido pra esse endpoint) -- o Asaas respondia 400 e
+        o botão "Assinar" nunca funcionava de verdade."""
+        chamadas = []
+
+        def _fake_post(url, json=None, headers=None, timeout=None):
+            chamadas.append({'url': url, 'json': json})
+            if url.endswith('/customers'):
+                return _RespostaFake({'id': 'cus_fake123'})
+            if url.endswith('/checkouts'):
+                return _RespostaFake({
+                    'id': 'chk_fake123',
+                    'link': 'https://sandbox.asaas.com/checkoutSession/show/chk_fake123',
+                    'status': 'ACTIVE',
+                })
+            raise AssertionError(f'URL inesperada: {url}')
+
+        monkeypatch.setattr('services.billing_service.requests.post', _fake_post)
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            app.config['APP_BASE_URL'] = 'https://fitlog.up.railway.app'
+            _, _, fit = _criar_planos_professor()
+            aluno = _criar_usuario('checkout_fields')
+            assinatura = BillingService.iniciar_trial(aluno)
+            db.session.commit()
+
+            link = BillingService.criar_assinatura_checkout(aluno, fit)
+
+            assert link == 'https://sandbox.asaas.com/checkoutSession/show/chk_fake123'
+
+            chamada_checkout = next(c for c in chamadas if c['url'].endswith('/checkouts'))
+            payload = chamada_checkout['json']
+            assert 'nextDueDate' in payload['subscription']
+            assert payload['subscription']['cycle'] == 'MONTHLY'
+            assert payload['externalReference'] == str(assinatura.id)
+            assert payload['chargeTypes'] == ['RECURRENT']
+            assert 'callback' in payload and payload['callback']['successUrl']
+
+            # A assinatura de gateway só se confirma depois que o
+            # pagador escolhe forma de pagamento -- não temos
+            # gateway_subscription_id ainda neste ponto.
+            db.session.refresh(assinatura)
+            assert assinatura.gateway_subscription_id is None
+            assert assinatura.plano_id == fit.id
+
+    def test_erro_400_do_asaas_propaga_como_http_error(self, app, monkeypatch):
+        import requests
+
+        def _fake_post(url, json=None, headers=None, timeout=None):
+            if url.endswith('/customers'):
+                return _RespostaFake({'id': 'cus_fake456'})
+            return _RespostaFake({'errors': [{'description': 'campo inválido'}]}, status_code=400)
+
+        monkeypatch.setattr('services.billing_service.requests.post', _fake_post)
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            app.config['APP_BASE_URL'] = 'https://fitlog.up.railway.app'
+            _, _, fit = _criar_planos_professor()
+            aluno = _criar_usuario('checkout_erro_400')
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+
+            try:
+                BillingService.criar_assinatura_checkout(aluno, fit)
+                assert False, 'deveria ter levantado HTTPError'
+            except requests.HTTPError:
+                pass
+
+
+# ---------------------------------------------------------------------
+# Casamento do webhook por externalReference (antes de termos
+# gateway_subscription_id gravado)
+# ---------------------------------------------------------------------
+
+class TestWebhookPorExternalReference:
+    def test_primeiro_evento_casa_por_external_reference_e_grava_subscription_id(self, app):
+        with app.app_context():
+            aluno = _criar_usuario('webhook_external_ref')
+            assinatura = BillingService.iniciar_trial(aluno)
+            db.session.commit()
+            assinatura_id = assinatura.id
+
+            payload = {
+                'id': 'evt_ext_ref_1',
+                'event': 'PAYMENT_CONFIRMED',
+                'payment': {
+                    'subscription': 'sub_novo_123',
+                    'externalReference': str(assinatura_id),
+                },
+            }
+            ok = BillingService.processar_webhook(payload)
+
+            assert ok is True
+            assinatura = Assinatura.query.get(assinatura_id)
+            assert assinatura.status == 'active'
+            assert assinatura.gateway_subscription_id == 'sub_novo_123'
+
+    def test_evento_seguinte_ja_casa_direto_por_subscription_id(self, app):
+        with app.app_context():
+            aluno = _criar_usuario('webhook_subscription_ja_gravado')
+            assinatura = BillingService.iniciar_trial(aluno)
+            assinatura.gateway_subscription_id = 'sub_ja_existente'
+            db.session.commit()
+            assinatura_id = assinatura.id
+
+            # externalReference errado de propósito -- prova que o
+            # match por subscription_id tem prioridade e nem chega a
+            # olhar o externalReference quando já encontrou por lá.
+            payload = {
+                'id': 'evt_subscription_direto',
+                'event': 'PAYMENT_OVERDUE',
+                'payment': {'subscription': 'sub_ja_existente', 'externalReference': '999999'},
+            }
+            BillingService.processar_webhook(payload)
+
+            assinatura = Assinatura.query.get(assinatura_id)
+            assert assinatura.status == 'past_due'
+
+    def test_external_reference_nao_numerico_e_ignorado_com_seguranca(self, app):
+        with app.app_context():
+            payload = {
+                'id': 'evt_ext_ref_invalido',
+                'event': 'PAYMENT_CONFIRMED',
+                'payment': {'externalReference': 'não-é-um-numero'},
+            }
+            ok = BillingService.processar_webhook(payload)
+            assert ok is True  # não quebra, só não encontra nada pra atualizar
