@@ -91,9 +91,11 @@
                         </td>
                         <td>{{ c.plano_codigo or '—' }}</td>
                         <td>
-                            {% if c.inadimplente %}
+                            {% if c.acesso_alunos_bloqueado %}
+                                <span class="badge bg-danger"><i class="bi bi-lock"></i> {{ c.rotulo }}</span>
+                            {% elif c.inadimplente %}
                                 <span class="badge bg-danger">{{ c.rotulo }}</span>
-                            {% elif c.codigo in ('active',) %}
+                            {% elif c.codigo == 'active' %}
                                 <span class="badge bg-success">{{ c.rotulo }}</span>
                             {% elif c.codigo == 'trialing' %}
                                 <span class="badge bg-warning text-dark">{{ c.rotulo }}</span>

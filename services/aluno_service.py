@@ -221,7 +221,7 @@ class AlunoService(BaseService):
             # Estatísticas/FitBot desde o primeiro acesso, sem nunca ter
             # tido o período de teste. Ver services/billing_service.py.
             from services.billing_service import BillingService
-            BillingService.iniciar_trial_aluno(aluno)
+            BillingService.iniciar_trial(aluno)
 
             db.session.commit()
             

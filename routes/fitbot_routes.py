@@ -57,12 +57,14 @@ def chat():
     service sempre revalida a permissão (vínculo professor/aluno ativo,
     ou admin) contra a sessão autenticada antes de usar esse valor.
     """
-    # Gate de assinatura: só o ALUNO (usando o FitBot para si mesmo)
-    # precisa de trial válido ou Plano Fit ativo. Professor/admin nunca
-    # são bloqueados aqui -- inclusive quando usam o FitBot em nome de
-    # um aluno (via aluno_id abaixo), a regra de cobrança que vale é a
-    # do professor, não a do aluno consultado.
-    if current_user.is_aluno() and not BillingService.aluno_tem_acesso_premium(current_user):
+    # Gate de assinatura: quem usa o FitBot para si mesmo (aluno OU
+    # professor treinando por conta própria) precisa de trial válido ou
+    # Plano Fit pessoal ativo. Só admin nunca é bloqueado aqui --
+    # inclusive quando um professor usa o FitBot em nome de um aluno
+    # (via aluno_id abaixo), a regra de cobrança que vale é a do
+    # PRÓPRIO professor (Plano Fit pessoal dele), não a do aluno
+    # consultado -- ver services/billing_service.py:usuario_tem_acesso_premium.
+    if not current_user.is_admin and not BillingService.usuario_tem_acesso_premium(current_user):
         return jsonify({
             "ok": False,
             "resposta": "Assine o Plano Fit para continuar conversando com o FitBot.",

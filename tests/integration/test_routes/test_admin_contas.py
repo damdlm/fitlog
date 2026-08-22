@@ -47,7 +47,7 @@ class TestAdminContas:
         with app.app_context():
             admin = _criar_usuario('contas_admin', is_admin=True)
             aluno = _criar_usuario('contas_aluno_trial')
-            BillingService.iniciar_trial_aluno(aluno)
+            BillingService.iniciar_trial(aluno)
             professor = _criar_usuario('contas_professor', tipo_usuario='professor')
             db.session.commit()
             admin_ref = User.query.get(admin.id)
@@ -63,10 +63,10 @@ class TestAdminContas:
             admin = _criar_usuario('contas_admin_filtro', is_admin=True)
 
             aluno_ok = _criar_usuario('contas_aluno_ok')
-            BillingService.iniciar_trial_aluno(aluno_ok)
+            BillingService.iniciar_trial(aluno_ok)
 
             aluno_bloqueado = _criar_usuario('contas_aluno_bloqueado')
-            assinatura = BillingService.iniciar_trial_aluno(aluno_bloqueado)
+            assinatura = BillingService.iniciar_trial(aluno_bloqueado)
             assinatura.status = 'blocked'
 
             db.session.commit()
@@ -92,15 +92,15 @@ class TestAdminContas:
         assert b'contas_professor_tipo' in resp.data
         assert b'contas_aluno_tipo' not in resp.data
 
-    def test_professor_com_11_alunos_aparece_pendente_de_pagamento(self, client, app):
+    def test_professor_com_10_alunos_aparece_pendente_de_pagamento(self, client, app):
         with app.app_context():
             db.session.add(Plano(codigo='professor_pro', nome='Plano Pró', tipo_usuario='professor',
-                                  preco_centavos=2990, min_alunos=3, max_alunos=10))
+                                  preco_centavos=2990, min_alunos=3, max_alunos=9))
             db.session.add(Plano(codigo='professor_premium', nome='Plano Premium', tipo_usuario='professor',
-                                  preco_centavos=9990, min_alunos=11, max_alunos=None))
+                                  preco_centavos=9990, min_alunos=10, max_alunos=None))
             admin = _criar_usuario('contas_admin_pendente', is_admin=True)
             professor = _criar_usuario('contas_prof_pendente', tipo_usuario='professor')
-            for i in range(11):
+            for i in range(10):
                 aluno = _criar_usuario(f'contas_aluno_pend_{i}')
                 _vincular(professor, aluno)
             db.session.commit()
@@ -110,3 +110,25 @@ class TestAdminContas:
         resp = client.get('/admin/contas?situacao=pendente')
         assert resp.status_code == 200
         assert b'contas_prof_pendente' in resp.data
+
+    def test_professor_blocked_no_pro_aparece_com_acesso_bloqueado(self, client, app):
+        from models import Assinatura
+
+        with app.app_context():
+            pro = Plano(codigo='professor_pro', nome='Plano Pró', tipo_usuario='professor',
+                        preco_centavos=2990, min_alunos=3, max_alunos=9)
+            db.session.add(pro)
+            db.session.flush()
+            admin = _criar_usuario('contas_admin_bloqueado', is_admin=True)
+            professor = _criar_usuario('contas_prof_bloqueado', tipo_usuario='professor')
+            for i in range(5):
+                aluno = _criar_usuario(f'contas_aluno_bloq_{i}')
+                _vincular(professor, aluno)
+            db.session.add(Assinatura(usuario_id=professor.id, status='blocked', plano_id=pro.id))
+            db.session.commit()
+            admin_ref = User.query.get(admin.id)
+
+        _login(client, admin_ref)
+        resp = client.get('/admin/contas?situacao=inadimplente')
+        assert resp.status_code == 200
+        assert b'contas_prof_bloqueado' in resp.data

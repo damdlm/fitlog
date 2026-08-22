@@ -76,27 +76,26 @@ def aluno_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def aluno_premium_required(f):
-    """Decorator para telas premium do aluno (Estatísticas, FitBot) --
-    bloqueia aluno sem trial válido nem assinatura ativa (ver
-    services/billing_service.py:aluno_tem_acesso_premium). Lê só o
-    banco local (uma query O(1) por FK única em usuario_id), nunca
+def acesso_premium_required(f):
+    """Decorator para telas de Estatísticas/FitBot -- bloqueia aluno OU
+    professor sem trial válido nem assinatura ativa (Fit, Pró ou
+    Premium: qualquer uma libera essas telas -- ver
+    services/billing_service.py:usuario_tem_acesso_premium). Lê só o
+    banco local (uma query O(1) via FK única em usuario_id), nunca
     chama o gateway de pagamento a cada requisição.
 
-    Professor e admin nunca são bloqueados aqui -- a regra de cobrança
-    do Plano Fit é só para aluno; o professor tem sua própria regra
-    (tier por quantidade de alunos), tratada à parte."""
+    Só admin nunca é bloqueado aqui."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
             flash('Faça login para acessar esta página.', 'warning')
             return redirect(url_for('auth.login'))
 
-        if current_user.is_admin or current_user.is_professor():
+        if current_user.is_admin:
             return f(*args, **kwargs)
 
         from services.billing_service import BillingService
-        if not BillingService.aluno_tem_acesso_premium(current_user):
+        if not BillingService.usuario_tem_acesso_premium(current_user):
             # Endpoints de API (ex: /api/progresso, que alimenta o
             # gráfico da tela de Estatísticas via fetch) não podem
             # devolver um redirect para uma página HTML de login -- o
@@ -106,6 +105,36 @@ def aluno_premium_required(f):
             if request.blueprint == 'api':
                 return jsonify({'erro': 'assinatura_necessaria'}), 403
             flash('Assine o Plano Fit para continuar acessando esta área.', 'warning')
+            return redirect(url_for('billing.minha_assinatura'))
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def professor_acesso_alunos_required(f):
+    """Decorator para as telas do professor que operam sobre um aluno
+    específico (ver rotas com <int:aluno_id> em professor_routes.py) --
+    bloqueia quando o professor já passou da faixa gratuita (mais de 2
+    alunos, exigindo Pró/Premium) e está com a assinatura 'blocked'
+    (carência de 15 dias de atraso esgotada -- ver
+    services/billing_service.py:professor_acesso_alunos_liberado). O
+    vínculo com os alunos não é apagado, só o acesso às telas.
+
+    Só bloqueia professor -- aluno e admin nunca são afetados aqui (a
+    checagem de posse do aluno em si continua sendo feita dentro de
+    cada view, este decorator só cuida da cobrança)."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            flash('Faça login para acessar esta página.', 'warning')
+            return redirect(url_for('auth.login'))
+
+        if current_user.is_admin or not current_user.is_professor():
+            return f(*args, **kwargs)
+
+        from services.billing_service import BillingService
+        if not BillingService.professor_acesso_alunos_liberado(current_user):
+            flash('Regularize o pagamento do seu plano para voltar a acessar seus alunos.', 'warning')
             return redirect(url_for('billing.minha_assinatura'))
 
         return f(*args, **kwargs)

@@ -1,9 +1,9 @@
 """Testes de integração para routes/billing_routes.py e para o gating
 de acesso premium aplicado em Estatísticas/FitBot
-(utils/decorators.py:aluno_premium_required)."""
+(utils/decorators.py:acesso_premium_required)."""
 from datetime import datetime, timedelta, timezone
 
-from models import db, User, Assinatura, EventoWebhookAsaas, Plano
+from models import db, User, AlunoProfessor, Assinatura, EventoWebhookAsaas, Plano
 from services.billing_service import BillingService
 
 
@@ -13,6 +13,20 @@ def _criar_usuario(username, tipo_usuario='aluno'):
     db.session.add(user)
     db.session.flush()
     return user
+
+
+def _criar_planos():
+    db.session.add(Plano(codigo='aluno_fit', nome='Plano Fit', tipo_usuario='aluno', preco_centavos=599))
+    db.session.add(Plano(codigo='professor_pro', nome='Plano Pró', tipo_usuario='professor',
+                          preco_centavos=2990, min_alunos=3, max_alunos=9))
+    db.session.add(Plano(codigo='professor_premium', nome='Plano Premium', tipo_usuario='professor',
+                          preco_centavos=9990, min_alunos=10, max_alunos=None))
+
+
+def _vincular_alunos(professor, quantidade):
+    for i in range(quantidade):
+        aluno = _criar_usuario(f'{professor.username}_aluno_{i}')
+        db.session.add(AlunoProfessor(aluno_id=aluno.id, professor_id=professor.id, ativo=True))
 
 
 def _login(client, user):
@@ -103,10 +117,9 @@ class TestMinhaAssinaturaTela:
     def test_aluno_em_trial_ve_tela(self, client, app):
         with app.app_context():
             aluno = _criar_usuario('minha_assinatura_trial_html')
-            BillingService.iniciar_trial_aluno(aluno)
+            BillingService.iniciar_trial(aluno)
             db.session.commit()
-            aluno_id = aluno.id
-            aluno_ref = User.query.get(aluno_id)
+            aluno_ref = User.query.get(aluno.id)
 
         _login(client, aluno_ref)
         resp = client.get('/billing/minha-assinatura')
@@ -117,25 +130,23 @@ class TestMinhaAssinaturaTela:
         with app.app_context():
             professor = _criar_usuario('minha_assinatura_prof_html', tipo_usuario='professor')
             db.session.commit()
-            professor_id = professor.id
-            professor_ref = User.query.get(professor_id)
+            professor_ref = User.query.get(professor.id)
 
         _login(client, professor_ref)
         resp = client.get('/billing/minha-assinatura')
         assert resp.status_code == 200
 
     def test_formulario_de_assinar_inclui_csrf_token(self, client, app):
-        """Regressão: os <form> desta tela precisam do campo hidden
+        """Regressão: o <form> desta tela precisa do campo hidden
         csrf_token -- a suíte roda com WTF_CSRF_ENABLED=False (ver
         tests/conftest.py), então um POST via client.post() direto NÃO
         pega a falta desse campo; só olhar o HTML renderizado pega."""
         with app.app_context():
-            db.session.add(Plano(codigo='aluno_fit', nome='Plano Fit', tipo_usuario='aluno', preco_centavos=599))
+            _criar_planos()
             aluno = _criar_usuario('minha_assinatura_csrf_html')
-            BillingService.iniciar_trial_aluno(aluno)
+            BillingService.iniciar_trial(aluno)
             db.session.commit()
-            aluno_id = aluno.id
-            aluno_ref = User.query.get(aluno_id)
+            aluno_ref = User.query.get(aluno.id)
 
         _login(client, aluno_ref)
         resp = client.get('/billing/minha-assinatura')
@@ -155,10 +166,9 @@ class TestApiMinhaAssinatura:
     def test_aluno_em_trial_ve_status_trialing(self, client, app):
         with app.app_context():
             aluno = _criar_usuario('minha_assinatura_trial')
-            BillingService.iniciar_trial_aluno(aluno)
+            BillingService.iniciar_trial(aluno)
             db.session.commit()
-            aluno_id = aluno.id
-            aluno_ref = User.query.get(aluno_id)
+            aluno_ref = User.query.get(aluno.id)
 
         _login(client, aluno_ref)
         resp = client.get('/billing/api/minha-assinatura')
@@ -167,18 +177,17 @@ class TestApiMinhaAssinatura:
         assert data['status'] == 'trialing'
         assert data['acesso_premium'] is True
 
-    def test_professor_ve_tier_gratuito_sem_alunos(self, client, app):
+    def test_professor_sem_alunos_nao_precisa_de_plano_gestao(self, client, app):
         with app.app_context():
             professor = _criar_usuario('minha_assinatura_prof', tipo_usuario='professor')
             db.session.commit()
-            professor_id = professor.id
-            professor_ref = User.query.get(professor_id)
+            professor_ref = User.query.get(professor.id)
 
         _login(client, professor_ref)
         resp = client.get('/billing/api/minha-assinatura')
         data = resp.get_json()
         assert resp.status_code == 200
-        assert data['tier_atual'] == 'gratuito'
+        assert data['plano_gestao_necessario'] is None
 
 
 # ---------------------------------------------------------------------
@@ -190,26 +199,50 @@ class TestAssinar:
         resp = client.post('/billing/assinar')
         assert resp.status_code in (302, 401)
 
-    def test_professor_na_faixa_gratuita_nao_chama_gateway(self, client, app, monkeypatch):
-        chamou = {'valor': False}
+    def test_professor_sem_alunos_e_oferecido_plano_fit(self, client, app, monkeypatch):
+        """Até 2 alunos, o único plano relevante pro professor é o
+        Fit (Estatísticas/FitBot) -- não existe mais um botão
+        separado de "gestão"."""
+        capturado = {}
 
-        def _fake_checkout(*a, **k):
-            chamou['valor'] = True
+        def _fake_checkout(usuario, plano):
+            capturado['plano_codigo'] = plano.codigo
             return 'https://sandbox.asaas.com/i/fake'
 
         monkeypatch.setattr(BillingService, 'criar_assinatura_checkout', staticmethod(_fake_checkout))
 
         with app.app_context():
-            professor = _criar_usuario('assinar_prof_gratuito', tipo_usuario='professor')
+            _criar_planos()
+            professor = _criar_usuario('assinar_prof_sem_alunos', tipo_usuario='professor')
             db.session.commit()
-            professor_id = professor.id
-            professor_ref = User.query.get(professor_id)
+            professor_ref = User.query.get(professor.id)
 
         _login(client, professor_ref)
         resp = client.post('/billing/assinar', follow_redirects=False)
         assert resp.status_code == 302
-        assert '/billing/minha-assinatura' in resp.headers.get('Location', '')
-        assert chamou['valor'] is False
+        assert resp.headers.get('Location') == 'https://sandbox.asaas.com/i/fake'
+        assert capturado['plano_codigo'] == 'aluno_fit'
+
+    def test_professor_com_5_alunos_e_oferecido_plano_pro(self, client, app, monkeypatch):
+        capturado = {}
+
+        def _fake_checkout(usuario, plano):
+            capturado['plano_codigo'] = plano.codigo
+            return 'https://sandbox.asaas.com/i/fake-pro'
+
+        monkeypatch.setattr(BillingService, 'criar_assinatura_checkout', staticmethod(_fake_checkout))
+
+        with app.app_context():
+            _criar_planos()
+            professor = _criar_usuario('assinar_prof_5_alunos', tipo_usuario='professor')
+            _vincular_alunos(professor, 5)
+            db.session.commit()
+            professor_ref = User.query.get(professor.id)
+
+        _login(client, professor_ref)
+        resp = client.post('/billing/assinar', follow_redirects=False)
+        assert resp.status_code == 302
+        assert capturado['plano_codigo'] == 'professor_pro'
 
     def test_aluno_redireciona_para_checkout_gerado(self, client, app, monkeypatch):
         monkeypatch.setattr(
@@ -218,12 +251,11 @@ class TestAssinar:
         )
 
         with app.app_context():
-            db.session.add(Plano(codigo='aluno_fit', nome='Plano Fit', tipo_usuario='aluno', preco_centavos=599))
+            _criar_planos()
             aluno = _criar_usuario('assinar_aluno_ok')
-            BillingService.iniciar_trial_aluno(aluno)
+            BillingService.iniciar_trial(aluno)
             db.session.commit()
-            aluno_id = aluno.id
-            aluno_ref = User.query.get(aluno_id)
+            aluno_ref = User.query.get(aluno.id)
 
         _login(client, aluno_ref)
         resp = client.post('/billing/assinar', follow_redirects=False)
@@ -239,12 +271,11 @@ class TestAssinar:
         monkeypatch.setattr(BillingService, 'criar_assinatura_checkout', staticmethod(_fake_falha))
 
         with app.app_context():
-            db.session.add(Plano(codigo='aluno_fit', nome='Plano Fit', tipo_usuario='aluno', preco_centavos=599))
+            _criar_planos()
             aluno = _criar_usuario('assinar_aluno_falha')
-            BillingService.iniciar_trial_aluno(aluno)
+            BillingService.iniciar_trial(aluno)
             db.session.commit()
-            aluno_id = aluno.id
-            aluno_ref = User.query.get(aluno_id)
+            aluno_ref = User.query.get(aluno.id)
 
         _login(client, aluno_ref)
         resp = client.post('/billing/assinar', follow_redirects=False)
@@ -253,7 +284,7 @@ class TestAssinar:
 
 
 # ---------------------------------------------------------------------
-# Gating de Estatísticas / FitBot (aluno_premium_required)
+# Gating de Estatísticas / FitBot (acesso_premium_required)
 # ---------------------------------------------------------------------
 
 class TestGatingAcessoPremium:
@@ -261,8 +292,7 @@ class TestGatingAcessoPremium:
         with app.app_context():
             aluno = _criar_usuario('sem_trial_estatisticas')
             db.session.commit()
-            aluno_id = aluno.id
-            aluno_ref = User.query.get(aluno_id)
+            aluno_ref = User.query.get(aluno.id)
 
         _login(client, aluno_ref)
         resp = client.get('/estatisticas/estatisticas', follow_redirects=False)
@@ -272,21 +302,33 @@ class TestGatingAcessoPremium:
     def test_aluno_em_trial_acessa_estatisticas(self, client, app):
         with app.app_context():
             aluno = _criar_usuario('com_trial_estatisticas')
-            BillingService.iniciar_trial_aluno(aluno)
+            BillingService.iniciar_trial(aluno)
             db.session.commit()
-            aluno_id = aluno.id
-            aluno_ref = User.query.get(aluno_id)
+            aluno_ref = User.query.get(aluno.id)
 
         _login(client, aluno_ref)
         resp = client.get('/estatisticas/estatisticas')
         assert resp.status_code == 200
 
-    def test_professor_nunca_e_bloqueado_em_estatisticas(self, client, app):
+    def test_professor_sem_trial_e_bloqueado_em_estatisticas(self, client, app):
+        """Regressão: professor agora é gateado pelo Plano Fit igual
+        ao aluno -- antes era isento por completo."""
         with app.app_context():
             professor = _criar_usuario('prof_sem_billing_estatisticas', tipo_usuario='professor')
             db.session.commit()
-            professor_id = professor.id
-            professor_ref = User.query.get(professor_id)
+            professor_ref = User.query.get(professor.id)
+
+        _login(client, professor_ref)
+        resp = client.get('/estatisticas/estatisticas', follow_redirects=False)
+        assert resp.status_code == 302
+        assert '/billing/minha-assinatura' in resp.headers.get('Location', '')
+
+    def test_professor_com_trial_acessa_estatisticas(self, client, app):
+        with app.app_context():
+            professor = _criar_usuario('prof_com_trial_estatisticas', tipo_usuario='professor')
+            BillingService.iniciar_trial(professor)
+            db.session.commit()
+            professor_ref = User.query.get(professor.id)
 
         _login(client, professor_ref)
         resp = client.get('/estatisticas/estatisticas')
@@ -296,8 +338,7 @@ class TestGatingAcessoPremium:
         with app.app_context():
             aluno = _criar_usuario('sem_trial_api')
             db.session.commit()
-            aluno_id = aluno.id
-            aluno_ref = User.query.get(aluno_id)
+            aluno_ref = User.query.get(aluno.id)
 
         _login(client, aluno_ref)
         resp = client.get('/api/progresso')
@@ -307,12 +348,48 @@ class TestGatingAcessoPremium:
     def test_aluno_trial_expirado_e_bloqueado(self, client, app):
         with app.app_context():
             aluno = _criar_usuario('trial_expirado_estatisticas')
-            assinatura = BillingService.iniciar_trial_aluno(aluno)
+            assinatura = BillingService.iniciar_trial(aluno)
             assinatura.trial_termina_em = datetime.now(timezone.utc) - timedelta(days=1)
             db.session.commit()
-            aluno_id = aluno.id
-            aluno_ref = User.query.get(aluno_id)
+            aluno_ref = User.query.get(aluno.id)
 
         _login(client, aluno_ref)
         resp = client.get('/estatisticas/estatisticas', follow_redirects=False)
         assert resp.status_code == 302
+
+
+# ---------------------------------------------------------------------
+# Gating de acesso aos alunos (professor_acesso_alunos_required)
+# ---------------------------------------------------------------------
+
+class TestGatingAcessoAosAlunos:
+    def test_professor_pro_blocked_e_bloqueado_ao_ver_aluno(self, client, app):
+        with app.app_context():
+            _criar_planos()
+            professor = _criar_usuario('prof_bloqueado_ve_aluno', tipo_usuario='professor')
+            _vincular_alunos(professor, 5)
+            pro = Plano.query.filter_by(codigo='professor_pro').first()
+            assinatura = BillingService.iniciar_trial(professor)
+            assinatura.status = 'blocked'
+            assinatura.plano_id = pro.id
+            db.session.commit()
+            professor_ref = User.query.get(professor.id)
+            aluno_id = AlunoProfessor.query.filter_by(professor_id=professor.id).first().aluno_id
+
+        _login(client, professor_ref)
+        resp = client.get(f'/professor/aluno/{aluno_id}', follow_redirects=False)
+        assert resp.status_code == 302
+        assert '/billing/minha-assinatura' in resp.headers.get('Location', '')
+
+    def test_professor_ate_2_alunos_nunca_e_bloqueado(self, client, app):
+        with app.app_context():
+            _criar_planos()
+            professor = _criar_usuario('prof_2alunos_sempre_ve', tipo_usuario='professor')
+            _vincular_alunos(professor, 2)
+            db.session.commit()
+            professor_ref = User.query.get(professor.id)
+            aluno_id = AlunoProfessor.query.filter_by(professor_id=professor.id).first().aluno_id
+
+        _login(client, professor_ref)
+        resp = client.get(f'/professor/aluno/{aluno_id}')
+        assert resp.status_code == 200

@@ -23,11 +23,12 @@ def _criar_usuario(username, tipo_usuario='aluno', nome_completo=None):
     user.set_password('123456')
     db.session.add(user)
     db.session.flush()
-    if tipo_usuario == 'aluno':
+    if tipo_usuario in ('aluno', 'professor'):
         # Trial de 30 dias, igual ao cadastro real -- o FitBot bloqueia
-        # aluno sem trial/assinatura ativa (ver routes/fitbot_routes.py),
-        # e esses testes são sobre isolamento de dados, não sobre cobrança.
-        BillingService.iniciar_trial_aluno(user)
+        # quem usa pra si mesmo (aluno OU professor) sem trial/
+        # assinatura pessoal ativa (ver routes/fitbot_routes.py), e
+        # esses testes são sobre isolamento de dados, não sobre cobrança.
+        BillingService.iniciar_trial(user)
     db.session.commit()
     return user
 
@@ -212,3 +213,34 @@ class TestPermissaoProfessor:
 def test_endpoint_fitbot_exige_login(client):
     resp = client.post('/fitbot/chat', json={'mensagem': 'oi'})
     assert resp.status_code in (302, 401)
+
+
+class TestGateDeAssinaturaPessoal:
+    """Regressão: professor agora é gateado pelo Plano Fit pessoal
+    igual ao aluno (antes era isento por completo -- ver commit da
+    implementação de cobrança)."""
+
+    def test_professor_sem_trial_nem_assinatura_e_bloqueado(self, client, app):
+        with app.app_context():
+            # tipo_usuario='professor' SEM chamar iniciar_trial
+            # -- simula o estado que um professor teria antes do
+            # backfill da migration b9c0d1e2f3a4, ou um professor cujo
+            # trial e assinatura expiraram.
+            professor = User(username='prof_sem_trial', email='prof_sem_trial@teste.com',
+                              tipo_usuario='professor', nome_completo='Prof Sem Trial')
+            professor.set_password('123456')
+            db.session.add(professor)
+            db.session.commit()
+
+        resp = _login(client, 'prof_sem_trial')
+        resp = client.post('/fitbot/chat', json={'mensagem': 'oi'})
+        assert resp.status_code == 403
+
+    def test_professor_com_trial_valido_tem_acesso(self, client, app, monkeypatch):
+        with app.app_context():
+            professor = _criar_usuario('prof_com_trial', tipo_usuario='professor')
+
+        capturado = _mock_groq(monkeypatch, app)
+        _login(client, 'prof_com_trial')
+        resp = client.post('/fitbot/chat', json={'mensagem': 'oi'})
+        assert resp.status_code == 200

@@ -285,17 +285,34 @@ class Plano(db.Model):
 
 
 class Assinatura(db.Model):
-    """Estado de cobrança de um usuário (aluno ou professor). Espelha o
-    status vindo do gateway de pagamento (Asaas) -- é o backend quem
-    escreve aqui, sempre a partir de um webhook validado (nunca a partir
-    de uma resposta direta ao navegador do usuário, que é falsificável).
-    Ver services/billing_service.py.
+    """Estado de cobrança de um usuário (aluno ou professor) -- UMA
+    linha por usuário. Espelha o status vindo do gateway de pagamento
+    (Asaas) -- é o backend quem escreve aqui, sempre a partir de um
+    webhook validado (nunca a partir de uma resposta direta ao
+    navegador do usuário, que é falsificável). Ver
+    services/billing_service.py.
+
+    O `plano_id` referencia qual plano está sendo cobrado: 'aluno_fit'
+    (aluno OU professor com até 2 alunos -- destrava só Estatísticas/
+    FitBot), 'professor_pro'/'professor_premium' (só professor com mais
+    alunos -- destrava Estatísticas/FitBot E a capacidade de gerenciar
+    mais alunos). Um professor nunca tem duas assinaturas simultâneas;
+    se a contagem de alunos exige upgrade, é o MESMO registro que muda
+    de plano_id, não um registro novo.
 
     status possíveis:
-      'trialing'  -- dentro do período de teste grátis (só para aluno)
+      'trialing'  -- dentro do período de teste grátis (30 dias, dá
+                     acesso a Estatísticas/FitBot mas NÃO à gestão de
+                     mais de 2 alunos -- ver
+                     BillingService.pode_cadastrar_aluno)
       'active'    -- assinatura paga e em dia
-      'past_due'  -- pagamento atrasado, dentro da carência
-      'blocked'   -- carência esgotada, acesso premium bloqueado
+      'past_due'  -- pagamento atrasado, dentro da carência (3 dias
+                     para Plano Fit, 15 dias para Pró/Premium -- ver
+                     CARENCIA_DIAS_PADRAO / CARENCIA_DIAS_PROFESSOR_GESTAO)
+      'blocked'   -- carência esgotada: bloqueia Estatísticas/FitBot
+                     sempre, e também a gestão de alunos quando o plano
+                     era Pró/Premium (o vínculo com os alunos NÃO é
+                     apagado, só o acesso às telas)
       'canceled'  -- cancelada pelo usuário ou pelo gateway
     """
     __tablename__ = 'assinaturas'
@@ -332,10 +349,12 @@ class Assinatura(db.Model):
         return dt
 
     def acesso_premium_ativo(self):
-        """True se o usuário deve ter acesso às telas premium agora
-        (Estatísticas/FitBot para aluno). Único ponto de verdade
-        consultado pelo decorator -- só lê o status já sincronizado via
-        webhook, nunca recalcula nada chamando o gateway aqui."""
+        """True se o usuário deve ter acesso às telas de Estatísticas/
+        FitBot agora. Único ponto de verdade consultado pelo decorator
+        -- só lê o status já sincronizado via webhook, nunca recalcula
+        nada chamando o gateway aqui. Vale pra aluno e professor: um
+        professor com Pró/Premium ativo passa aqui tanto quanto um com
+        Plano Fit -- o que importa é só o status, não qual plano."""
         agora = datetime.now(timezone.utc)
         if self.status == 'active':
             return True

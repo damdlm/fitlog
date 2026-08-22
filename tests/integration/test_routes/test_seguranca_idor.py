@@ -30,9 +30,9 @@ def _criar_usuario(username, tipo_usuario='aluno', is_admin=False):
     db.session.flush()
     if tipo_usuario == 'aluno':
         # Trial de 30 dias, igual ao cadastro real -- essas rotas
-        # exigem acesso premium (ver aluno_premium_required) e este
+        # exigem acesso premium (ver acesso_premium_required) e este
         # arquivo testa IDOR/isolamento, não cobrança.
-        BillingService.iniciar_trial_aluno(user)
+        BillingService.iniciar_trial(user)
     db.session.commit()
     return user
 

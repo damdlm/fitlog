@@ -6,7 +6,7 @@ from services.exercicio_service import ExercicioService
 from services.musculo_service import MusculoService
 from services.registro_service import RegistroService
 from services.estatistica_service import EstatisticaService
-from utils.decorators import aluno_premium_required
+from utils.decorators import acesso_premium_required
 import logging
 
 stats_bp = Blueprint('stats', __name__)
@@ -56,7 +56,7 @@ def _get_treino_codigo(exercicio):
 
 @stats_bp.route("/estatisticas")
 @login_required
-@aluno_premium_required
+@acesso_premium_required
 def estatisticas():
     """Página de estatísticas"""
     # `registros` e `exercicios` eram buscados aqui (histórico inteiro +
@@ -95,7 +95,7 @@ def estatisticas():
 
 @stats_bp.route("/visualizar/tabela")
 @login_required
-@aluno_premium_required
+@acesso_premium_required
 def visualizar_tabela():
     """Tabela de progresso"""
     treino_selecionado = request.args.get("treino", "")

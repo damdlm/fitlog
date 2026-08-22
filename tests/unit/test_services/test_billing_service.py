@@ -1,14 +1,17 @@
 """Testes para BillingService -- regras de cobrança/assinatura.
 
-Cobrem: trial de 30 dias do aluno, gating de acesso premium (trial
-ativo/expirado, assinatura ativa, carência de pagamento atrasado,
-cancelada), cálculo do tier do professor pela contagem de alunos, e
+Cobrem: trial de 30 dias (aluno e professor), gating de acesso premium
+(trial ativo/expirado, assinatura ativa, carência de pagamento
+atrasado, cancelada), plano de gestão do professor pela contagem de
+alunos (3-9 = Pró, 10+ = Premium), bloqueio de cadastro de novo aluno
+sem upgrade, carência diferenciada (3 dias padrão / 15 dias pro
+Pró-Premium) e bloqueio de acesso aos alunos após a carência, e
 processamento idempotente de webhook do Asaas.
 """
 from datetime import datetime, timedelta, timezone
 
 from models import db, User, AlunoProfessor, Assinatura, EventoWebhookAsaas, Plano
-from services.billing_service import BillingService, TRIAL_DIAS_ALUNO
+from services.billing_service import BillingService, TRIAL_DIAS
 
 
 def _criar_usuario(username, tipo_usuario='aluno'):
@@ -21,12 +24,14 @@ def _criar_usuario(username, tipo_usuario='aluno'):
 
 def _criar_planos_professor():
     pro = Plano(codigo='professor_pro', nome='Plano Pró', tipo_usuario='professor',
-                 preco_centavos=2990, min_alunos=3, max_alunos=10, ativo=True)
+                 preco_centavos=2990, min_alunos=3, max_alunos=9, ativo=True)
     premium = Plano(codigo='professor_premium', nome='Plano Premium', tipo_usuario='professor',
-                     preco_centavos=9990, min_alunos=11, max_alunos=None, ativo=True)
-    db.session.add_all([pro, premium])
+                     preco_centavos=9990, min_alunos=10, max_alunos=None, ativo=True)
+    fit = Plano(codigo='aluno_fit', nome='Plano Fit', tipo_usuario='aluno',
+                preco_centavos=599, ativo=True)
+    db.session.add_all([pro, premium, fit])
     db.session.flush()
-    return pro, premium
+    return pro, premium, fit
 
 
 def _vincular_alunos(professor, quantidade):
@@ -37,14 +42,14 @@ def _vincular_alunos(professor, quantidade):
 
 
 # ---------------------------------------------------------------------
-# Trial do aluno
+# Trial (aluno e professor)
 # ---------------------------------------------------------------------
 
-class TestIniciarTrialAluno:
+class TestIniciarTrial:
     def test_cria_assinatura_em_trialing(self, app):
         with app.app_context():
             aluno = _criar_usuario('aluno1')
-            assinatura = BillingService.iniciar_trial_aluno(aluno)
+            assinatura = BillingService.iniciar_trial(aluno)
 
             assert assinatura.status == 'trialing'
             assert assinatura.usuario_id == aluno.id
@@ -54,11 +59,11 @@ class TestIniciarTrialAluno:
         with app.app_context():
             aluno = _criar_usuario('aluno2')
             antes = datetime.now(timezone.utc)
-            assinatura = BillingService.iniciar_trial_aluno(aluno)
+            assinatura = BillingService.iniciar_trial(aluno)
             depois = datetime.now(timezone.utc)
 
-            esperado_min = antes + timedelta(days=TRIAL_DIAS_ALUNO)
-            esperado_max = depois + timedelta(days=TRIAL_DIAS_ALUNO)
+            esperado_min = antes + timedelta(days=TRIAL_DIAS)
+            esperado_max = depois + timedelta(days=TRIAL_DIAS)
             trial_termina_em = assinatura.trial_termina_em.replace(tzinfo=timezone.utc) \
                 if assinatura.trial_termina_em.tzinfo is None else assinatura.trial_termina_em
             assert esperado_min <= trial_termina_em <= esperado_max
@@ -66,99 +71,132 @@ class TestIniciarTrialAluno:
     def test_e_idempotente_nao_duplica(self, app):
         with app.app_context():
             aluno = _criar_usuario('aluno3')
-            primeira = BillingService.iniciar_trial_aluno(aluno)
-            segunda = BillingService.iniciar_trial_aluno(aluno)
+            primeira = BillingService.iniciar_trial(aluno)
+            segunda = BillingService.iniciar_trial(aluno)
 
             assert primeira.id == segunda.id
             assert Assinatura.query.filter_by(usuario_id=aluno.id).count() == 1
 
+    def test_professor_tambem_ganha_trial(self, app):
+        """Regra nova: professor também precisa do Plano Fit (ou
+        trial) pra acessar Estatísticas/FitBot -- antes ele era isento."""
+        with app.app_context():
+            professor = _criar_usuario('prof_trial', tipo_usuario='professor')
+            assinatura = BillingService.iniciar_trial(professor)
+
+            assert assinatura.status == 'trialing'
+            assert BillingService.usuario_tem_acesso_premium(professor) is True
+
+    def test_usuario_so_pode_ter_uma_assinatura(self, app):
+        """Um professor nunca tem duas cobranças -- é sempre a MESMA
+        linha, mesmo depois de precisar upgrade pra Pró/Premium."""
+        with app.app_context():
+            professor = _criar_usuario('prof_uma_so', tipo_usuario='professor')
+            BillingService.iniciar_trial(professor)
+            BillingService.garantir_registro_assinatura(professor)
+
+            assert Assinatura.query.filter_by(usuario_id=professor.id).count() == 1
+
 
 # ---------------------------------------------------------------------
-# Gating de acesso premium (Estatísticas/FitBot)
+# Gating de acesso premium (Estatísticas/FitBot) -- aluno e professor
 # ---------------------------------------------------------------------
 
-class TestAlunoTemAcessoPremium:
+class TestUsuarioTemAcessoPremium:
     def test_sem_assinatura_nao_tem_acesso(self, app):
         with app.app_context():
             aluno = _criar_usuario('sem_assinatura')
-            assert BillingService.aluno_tem_acesso_premium(aluno) is False
+            assert BillingService.usuario_tem_acesso_premium(aluno) is False
 
     def test_trial_valido_tem_acesso(self, app):
         with app.app_context():
             aluno = _criar_usuario('trial_valido')
-            BillingService.iniciar_trial_aluno(aluno)
-            assert BillingService.aluno_tem_acesso_premium(aluno) is True
+            BillingService.iniciar_trial(aluno)
+            assert BillingService.usuario_tem_acesso_premium(aluno) is True
 
     def test_trial_expirado_bloqueia(self, app):
         with app.app_context():
             aluno = _criar_usuario('trial_expirado')
-            assinatura = BillingService.iniciar_trial_aluno(aluno)
+            assinatura = BillingService.iniciar_trial(aluno)
             assinatura.trial_termina_em = datetime.now(timezone.utc) - timedelta(days=1)
             db.session.commit()
 
-            assert BillingService.aluno_tem_acesso_premium(aluno) is False
+            assert BillingService.usuario_tem_acesso_premium(aluno) is False
 
     def test_assinatura_ativa_tem_acesso_mesmo_apos_trial(self, app):
         with app.app_context():
             aluno = _criar_usuario('assinante_ativo')
-            assinatura = BillingService.iniciar_trial_aluno(aluno)
+            assinatura = BillingService.iniciar_trial(aluno)
             assinatura.status = 'active'
             assinatura.trial_termina_em = datetime.now(timezone.utc) - timedelta(days=1)
             db.session.commit()
 
-            assert BillingService.aluno_tem_acesso_premium(aluno) is True
+            assert BillingService.usuario_tem_acesso_premium(aluno) is True
+
+    def test_professor_com_pro_ativo_tambem_tem_acesso(self, app):
+        """'os planos pró e premium já liberam essas telas também' --
+        não precisa de nenhum plano separado."""
+        with app.app_context():
+            pro, _, _ = _criar_planos_professor()
+            professor = _criar_usuario('prof_pro_stats', tipo_usuario='professor')
+            assinatura = BillingService.iniciar_trial(professor)
+            assinatura.status = 'active'
+            assinatura.plano_id = pro.id
+            db.session.commit()
+
+            assert BillingService.usuario_tem_acesso_premium(professor) is True
 
     def test_past_due_dentro_da_carencia_mantem_acesso(self, app):
         with app.app_context():
             aluno = _criar_usuario('atrasado_carencia')
-            assinatura = BillingService.iniciar_trial_aluno(aluno)
+            assinatura = BillingService.iniciar_trial(aluno)
             assinatura.status = 'past_due'
             assinatura.carencia_termina_em = datetime.now(timezone.utc) + timedelta(days=1)
             db.session.commit()
 
-            assert BillingService.aluno_tem_acesso_premium(aluno) is True
+            assert BillingService.usuario_tem_acesso_premium(aluno) is True
 
     def test_past_due_apos_carencia_bloqueia(self, app):
         with app.app_context():
             aluno = _criar_usuario('atrasado_sem_carencia')
-            assinatura = BillingService.iniciar_trial_aluno(aluno)
+            assinatura = BillingService.iniciar_trial(aluno)
             assinatura.status = 'past_due'
             assinatura.carencia_termina_em = datetime.now(timezone.utc) - timedelta(hours=1)
             db.session.commit()
 
-            assert BillingService.aluno_tem_acesso_premium(aluno) is False
+            assert BillingService.usuario_tem_acesso_premium(aluno) is False
 
     def test_cancelada_bloqueia(self, app):
         with app.app_context():
             aluno = _criar_usuario('cancelado')
-            assinatura = BillingService.iniciar_trial_aluno(aluno)
+            assinatura = BillingService.iniciar_trial(aluno)
             assinatura.status = 'canceled'
             db.session.commit()
 
-            assert BillingService.aluno_tem_acesso_premium(aluno) is False
+            assert BillingService.usuario_tem_acesso_premium(aluno) is False
 
     def test_blocked_bloqueia(self, app):
         with app.app_context():
             aluno = _criar_usuario('bloqueado')
-            assinatura = BillingService.iniciar_trial_aluno(aluno)
+            assinatura = BillingService.iniciar_trial(aluno)
             assinatura.status = 'blocked'
             db.session.commit()
 
-            assert BillingService.aluno_tem_acesso_premium(aluno) is False
+            assert BillingService.usuario_tem_acesso_premium(aluno) is False
 
 
 # ---------------------------------------------------------------------
-# Tier do professor pela contagem de alunos
+# Plano de gestão do professor pela contagem de alunos
 # ---------------------------------------------------------------------
 
-class TestCalcularTierProfessor:
+class TestPlanoGestaoNecessario:
     def test_ate_2_alunos_fica_na_faixa_gratuita(self, app):
         with app.app_context():
             _criar_planos_professor()
             professor = _criar_usuario('prof_gratis', tipo_usuario='professor')
             _vincular_alunos(professor, 2)
 
-            assert BillingService.calcular_tier_professor(professor) is None
+            assert BillingService.plano_gestao_necessario(professor) is None
 
     def test_3_alunos_entra_no_pro(self, app):
         with app.app_context():
@@ -166,39 +204,256 @@ class TestCalcularTierProfessor:
             professor = _criar_usuario('prof_pro_min', tipo_usuario='professor')
             _vincular_alunos(professor, 3)
 
-            tier = BillingService.calcular_tier_professor(professor)
-            assert tier is not None
-            assert tier.codigo == 'professor_pro'
+            plano = BillingService.plano_gestao_necessario(professor)
+            assert plano is not None
+            assert plano.codigo == 'professor_pro'
 
-    def test_10_alunos_ainda_no_pro(self, app):
+    def test_9_alunos_ainda_no_pro(self, app):
         with app.app_context():
             _criar_planos_professor()
             professor = _criar_usuario('prof_pro_max', tipo_usuario='professor')
-            _vincular_alunos(professor, 10)
+            _vincular_alunos(professor, 9)
 
-            tier = BillingService.calcular_tier_professor(professor)
-            assert tier.codigo == 'professor_pro'
+            plano = BillingService.plano_gestao_necessario(professor)
+            assert plano.codigo == 'professor_pro'
 
-    def test_11_alunos_vira_premium(self, app):
+    def test_10_alunos_vira_premium(self, app):
         with app.app_context():
             _criar_planos_professor()
             professor = _criar_usuario('prof_premium_min', tipo_usuario='professor')
-            _vincular_alunos(professor, 11)
+            _vincular_alunos(professor, 10)
 
-            tier = BillingService.calcular_tier_professor(professor)
-            assert tier.codigo == 'professor_premium'
+            plano = BillingService.plano_gestao_necessario(professor)
+            assert plano.codigo == 'professor_premium'
 
     def test_alunos_inativos_nao_contam(self, app):
         with app.app_context():
             _criar_planos_professor()
             professor = _criar_usuario('prof_inativos', tipo_usuario='professor')
             _vincular_alunos(professor, 2)
-            # aluno extra, mas com vínculo inativo -- não deve empurrar pro Pró
             aluno_extra = _criar_usuario('prof_inativos_aluno_extra')
             db.session.add(AlunoProfessor(aluno_id=aluno_extra.id, professor_id=professor.id, ativo=False))
             db.session.commit()
 
-            assert BillingService.calcular_tier_professor(professor) is None
+            assert BillingService.plano_gestao_necessario(professor) is None
+
+
+class TestPlanoRecomendadoProfessor:
+    def test_ate_2_alunos_oferece_plano_fit(self, app):
+        with app.app_context():
+            _criar_planos_professor()
+            professor = _criar_usuario('prof_recomenda_fit', tipo_usuario='professor')
+            _vincular_alunos(professor, 1)
+
+            plano = BillingService.plano_recomendado_professor(professor)
+            assert plano.codigo == 'aluno_fit'
+
+    def test_5_alunos_oferece_pro(self, app):
+        with app.app_context():
+            _criar_planos_professor()
+            professor = _criar_usuario('prof_recomenda_pro', tipo_usuario='professor')
+            _vincular_alunos(professor, 5)
+
+            plano = BillingService.plano_recomendado_professor(professor)
+            assert plano.codigo == 'professor_pro'
+
+
+# ---------------------------------------------------------------------
+# Bloqueio de cadastro de novo aluno sem upgrade
+# ---------------------------------------------------------------------
+
+class TestPodeCadastrarAluno:
+    def test_ate_2_alunos_sempre_pode(self, app):
+        with app.app_context():
+            _criar_planos_professor()
+            professor = _criar_usuario('prof_pode_ate2', tipo_usuario='professor')
+            _vincular_alunos(professor, 1)
+
+            pode, mensagem = BillingService.pode_cadastrar_aluno(professor)
+            assert pode is True
+            assert mensagem is None
+
+    def test_terceiro_aluno_sem_assinatura_e_bloqueado(self, app):
+        with app.app_context():
+            _criar_planos_professor()
+            professor = _criar_usuario('prof_bloqueia_3', tipo_usuario='professor')
+            _vincular_alunos(professor, 2)
+
+            pode, mensagem = BillingService.pode_cadastrar_aluno(professor)
+            assert pode is False
+            assert 'Pró' in mensagem
+
+    def test_trial_nao_libera_cadastro_alem_de_2(self, app):
+        """Trial só dá acesso a Estatísticas/FitBot -- não libera
+        gerenciar mais de 2 alunos."""
+        with app.app_context():
+            _criar_planos_professor()
+            professor = _criar_usuario('prof_trial_nao_libera', tipo_usuario='professor')
+            BillingService.iniciar_trial(professor)
+            _vincular_alunos(professor, 2)
+
+            pode, _ = BillingService.pode_cadastrar_aluno(professor)
+            assert pode is False
+
+    def test_terceiro_aluno_com_pro_ativo_e_permitido(self, app):
+        with app.app_context():
+            pro, _, _ = _criar_planos_professor()
+            professor = _criar_usuario('prof_com_pro', tipo_usuario='professor')
+            _vincular_alunos(professor, 2)
+            assinatura = BillingService.iniciar_trial(professor)
+            assinatura.status = 'active'
+            assinatura.plano_id = pro.id
+            db.session.commit()
+
+            pode, mensagem = BillingService.pode_cadastrar_aluno(professor)
+            assert pode is True
+            assert mensagem is None
+
+    def test_decimo_aluno_com_pro_ativo_e_bloqueado_pede_premium(self, app):
+        with app.app_context():
+            pro, _, _ = _criar_planos_professor()
+            professor = _criar_usuario('prof_pro_no_limite', tipo_usuario='professor')
+            _vincular_alunos(professor, 9)
+            assinatura = BillingService.iniciar_trial(professor)
+            assinatura.status = 'active'
+            assinatura.plano_id = pro.id
+            db.session.commit()
+
+            pode, mensagem = BillingService.pode_cadastrar_aluno(professor)
+            assert pode is False
+            assert 'Premium' in mensagem
+
+    def test_decimo_aluno_com_premium_ativo_e_permitido(self, app):
+        with app.app_context():
+            _, premium, _ = _criar_planos_professor()
+            professor = _criar_usuario('prof_com_premium', tipo_usuario='professor')
+            _vincular_alunos(professor, 9)
+            assinatura = BillingService.iniciar_trial(professor)
+            assinatura.status = 'active'
+            assinatura.plano_id = premium.id
+            db.session.commit()
+
+            pode, mensagem = BillingService.pode_cadastrar_aluno(professor)
+            assert pode is True
+            assert mensagem is None
+
+    def test_pro_com_pagamento_atrasado_nao_permite_novo_aluno(self, app):
+        """Só assinatura com status 'active' conta -- past_due (mesmo
+        dentro da carência de acesso) não libera cadastrar mais gente."""
+        with app.app_context():
+            pro, _, _ = _criar_planos_professor()
+            professor = _criar_usuario('prof_pro_atrasado', tipo_usuario='professor')
+            _vincular_alunos(professor, 2)
+            assinatura = BillingService.iniciar_trial(professor)
+            assinatura.status = 'past_due'
+            assinatura.plano_id = pro.id
+            assinatura.carencia_termina_em = datetime.now(timezone.utc) + timedelta(days=10)
+            db.session.commit()
+
+            pode, mensagem = BillingService.pode_cadastrar_aluno(professor)
+            assert pode is False
+
+
+# ---------------------------------------------------------------------
+# Bloqueio de acesso aos alunos após 15 dias de inadimplência
+# ---------------------------------------------------------------------
+
+class TestProfessorAcessoAlunosLiberado:
+    def test_ate_2_alunos_nunca_bloqueia(self, app):
+        with app.app_context():
+            _criar_planos_professor()
+            professor = _criar_usuario('prof_acesso_ate2', tipo_usuario='professor')
+            _vincular_alunos(professor, 2)
+            # nem precisa de assinatura pra continuar liberado
+
+            assert BillingService.professor_acesso_alunos_liberado(professor) is True
+
+    def test_pro_ativo_libera_acesso(self, app):
+        with app.app_context():
+            pro, _, _ = _criar_planos_professor()
+            professor = _criar_usuario('prof_acesso_pro_ativo', tipo_usuario='professor')
+            _vincular_alunos(professor, 5)
+            assinatura = BillingService.iniciar_trial(professor)
+            assinatura.status = 'active'
+            assinatura.plano_id = pro.id
+            db.session.commit()
+
+            assert BillingService.professor_acesso_alunos_liberado(professor) is True
+
+    def test_pro_blocked_bloqueia_acesso_aos_alunos(self, app):
+        """Regra pedida: 15 dias de inadimplência -> perde acesso aos
+        alunos (vínculo continua existindo, só a tela é bloqueada)."""
+        with app.app_context():
+            pro, _, _ = _criar_planos_professor()
+            professor = _criar_usuario('prof_acesso_bloqueado', tipo_usuario='professor')
+            _vincular_alunos(professor, 5)
+            assinatura = BillingService.iniciar_trial(professor)
+            assinatura.status = 'blocked'
+            assinatura.plano_id = pro.id
+            db.session.commit()
+
+            assert BillingService.professor_acesso_alunos_liberado(professor) is False
+            # o vínculo em si nunca é removido por isso
+            assert BillingService.contar_alunos_ativos(professor) == 5
+
+    def test_pro_past_due_dentro_da_carencia_ainda_libera(self, app):
+        with app.app_context():
+            pro, _, _ = _criar_planos_professor()
+            professor = _criar_usuario('prof_acesso_carencia', tipo_usuario='professor')
+            _vincular_alunos(professor, 5)
+            assinatura = BillingService.iniciar_trial(professor)
+            assinatura.status = 'past_due'
+            assinatura.plano_id = pro.id
+            assinatura.carencia_termina_em = datetime.now(timezone.utc) + timedelta(days=10)
+            db.session.commit()
+
+            assert BillingService.professor_acesso_alunos_liberado(professor) is True
+
+
+class TestCarenciaDiferenciadaPorPlano:
+    def test_atraso_no_plano_pro_da_15_dias_de_carencia(self, app):
+        with app.app_context():
+            pro, _, _ = _criar_planos_professor()
+            professor = _criar_usuario('prof_carencia_15', tipo_usuario='professor')
+            assinatura = BillingService.iniciar_trial(professor)
+            assinatura.status = 'active'
+            assinatura.plano_id = pro.id
+            assinatura.gateway_subscription_id = 'sub_pro_carencia'
+            db.session.commit()
+
+            BillingService.processar_webhook({
+                'id': 'evt_carencia_pro', 'event': 'PAYMENT_OVERDUE',
+                'payment': {'subscription': 'sub_pro_carencia'},
+            })
+
+            db.session.refresh(assinatura)
+            agora = datetime.now(timezone.utc)
+            carencia = assinatura.carencia_termina_em.replace(tzinfo=timezone.utc) \
+                if assinatura.carencia_termina_em.tzinfo is None else assinatura.carencia_termina_em
+            dias_restantes = (carencia - agora).days
+            assert 14 <= dias_restantes <= 15
+
+    def test_atraso_no_plano_fit_da_3_dias_de_carencia(self, app):
+        with app.app_context():
+            _, _, fit = _criar_planos_professor()
+            aluno = _criar_usuario('aluno_carencia_3')
+            assinatura = BillingService.iniciar_trial(aluno)
+            assinatura.status = 'active'
+            assinatura.plano_id = fit.id
+            assinatura.gateway_subscription_id = 'sub_fit_carencia'
+            db.session.commit()
+
+            BillingService.processar_webhook({
+                'id': 'evt_carencia_fit', 'event': 'PAYMENT_OVERDUE',
+                'payment': {'subscription': 'sub_fit_carencia'},
+            })
+
+            db.session.refresh(assinatura)
+            agora = datetime.now(timezone.utc)
+            carencia = assinatura.carencia_termina_em.replace(tzinfo=timezone.utc) \
+                if assinatura.carencia_termina_em.tzinfo is None else assinatura.carencia_termina_em
+            dias_restantes = (carencia - agora).days
+            assert 2 <= dias_restantes <= 3
 
 
 class TestVerificarMudancasTierProfessores:
@@ -221,13 +476,23 @@ class TestVerificarMudancasTierProfessores:
 
     def test_nao_reporta_professor_sem_mudanca(self, app):
         with app.app_context():
-            pro, _ = _criar_planos_professor()
+            pro, _, _ = _criar_planos_professor()
             professor = _criar_usuario('prof_estavel', tipo_usuario='professor')
             _vincular_alunos(professor, 3)
 
             assinatura = Assinatura(usuario_id=professor.id, status='active', plano_id=pro.id)
             db.session.add(assinatura)
             db.session.commit()
+
+            mudancas = BillingService.verificar_mudancas_tier_professores()
+            professores_com_mudanca = [m['professor'].id for m in mudancas]
+            assert professor.id not in professores_com_mudanca
+
+    def test_nao_reporta_professor_na_faixa_gratuita(self, app):
+        with app.app_context():
+            _criar_planos_professor()
+            professor = _criar_usuario('prof_gratis_sem_mudanca', tipo_usuario='professor')
+            _vincular_alunos(professor, 1)
 
             mudancas = BillingService.verificar_mudancas_tier_professores()
             professores_com_mudanca = [m['professor'].id for m in mudancas]
@@ -331,7 +596,7 @@ class TestExpirarCarenciasVencidas:
     def test_move_para_blocked_apos_carencia_vencida(self, app):
         with app.app_context():
             aluno = _criar_usuario('carencia_vencida')
-            assinatura = BillingService.iniciar_trial_aluno(aluno)
+            assinatura = BillingService.iniciar_trial(aluno)
             assinatura.status = 'past_due'
             assinatura.carencia_termina_em = datetime.now(timezone.utc) - timedelta(minutes=1)
             db.session.commit()
@@ -345,7 +610,7 @@ class TestExpirarCarenciasVencidas:
     def test_nao_mexe_em_carencia_ainda_valida(self, app):
         with app.app_context():
             aluno = _criar_usuario('carencia_valida')
-            assinatura = BillingService.iniciar_trial_aluno(aluno)
+            assinatura = BillingService.iniciar_trial(aluno)
             assinatura.status = 'past_due'
             assinatura.carencia_termina_em = datetime.now(timezone.utc) + timedelta(hours=1)
             db.session.commit()

@@ -7,6 +7,7 @@ from services.versao_service import VersaoService
 from services.estatistica_service import EstatisticaService
 from services.musculo_service import MusculoService
 from services.billing_service import BillingService
+from utils.decorators import professor_acesso_alunos_required
 from datetime import datetime, timezone
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
@@ -76,6 +77,12 @@ def novo_aluno():
         return redirect(url_for('main.index'))
     
     if request.method == 'POST':
+        if not current_user.is_admin:
+            pode, mensagem = BillingService.pode_cadastrar_aluno(current_user)
+            if not pode:
+                flash(mensagem, 'warning')
+                return redirect(url_for('professor.novo_aluno'))
+
         username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
@@ -124,9 +131,9 @@ def novo_aluno():
         db.session.add(vinculo)
 
         # Mesmo trial de 30 dias do cadastro público (auth.register) --
-        # ver services/billing_service.py:iniciar_trial_aluno. Entra na
+        # ver services/billing_service.py:iniciar_trial. Entra na
         # mesma transação (commit único logo abaixo).
-        BillingService.iniciar_trial_aluno(aluno)
+        BillingService.iniciar_trial(aluno)
 
         db.session.commit()
         
@@ -139,6 +146,7 @@ def novo_aluno():
 
 @professor_bp.route('/aluno/<int:aluno_id>')
 @login_required
+@professor_acesso_alunos_required
 def visualizar_aluno(aluno_id):
     """Visualiza detalhes de um aluno específico"""
     aluno = User.query.get_or_404(aluno_id)
@@ -168,6 +176,7 @@ def visualizar_aluno(aluno_id):
 
 @professor_bp.route('/aluno/desativar/<int:aluno_id>', methods=['POST'])
 @login_required
+@professor_acesso_alunos_required
 def desativar_aluno(aluno_id):
     """Desativa um aluno — ação restrita ao admin"""
     aluno = User.query.get_or_404(aluno_id)
@@ -184,6 +193,7 @@ def desativar_aluno(aluno_id):
 
 @professor_bp.route('/aluno/reativar/<int:aluno_id>', methods=['POST'])
 @login_required
+@professor_acesso_alunos_required
 def reativar_aluno(aluno_id):
     """Reativa um aluno — ação restrita ao admin"""
     aluno = User.query.get_or_404(aluno_id)
@@ -200,6 +210,7 @@ def reativar_aluno(aluno_id):
 
 @professor_bp.route('/aluno/remover-vinculo/<int:aluno_id>', methods=['POST'])
 @login_required
+@professor_acesso_alunos_required
 def remover_vinculo(aluno_id):
     """Remove o vínculo entre professor e aluno"""
     aluno = User.query.get_or_404(aluno_id)
@@ -219,6 +230,7 @@ def remover_vinculo(aluno_id):
 
 @professor_bp.route('/aluno/editar/<int:aluno_id>', methods=['GET', 'POST'])
 @login_required
+@professor_acesso_alunos_required
 def editar_aluno(aluno_id):
     """Edita os dados de um aluno — ação restrita ao admin"""
     aluno = User.query.get_or_404(aluno_id)
@@ -293,7 +305,13 @@ def aprovar_solicitacao(solicitacao_id):
     if solicitacao.status != 'pendente':
         flash('Esta solicitação já foi processada.', 'warning')
         return redirect(url_for('professor.solicitacoes'))
-    
+
+    if not current_user.is_admin:
+        pode, mensagem = BillingService.pode_cadastrar_aluno(current_user)
+        if not pode:
+            flash(mensagem, 'warning')
+            return redirect(url_for('professor.solicitacoes'))
+
     solicitacao.status = 'aprovado'
     solicitacao.data_resposta = datetime.now(timezone.utc)
     
@@ -347,6 +365,7 @@ def recusar_solicitacao(solicitacao_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/versoes')
 @login_required
+@professor_acesso_alunos_required
 def versoes_aluno(aluno_id):
     """Lista todas as versões do aluno"""
     aluno = User.query.get_or_404(aluno_id)
@@ -361,6 +380,7 @@ def versoes_aluno(aluno_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/nova', methods=['GET', 'POST'])
 @login_required
+@professor_acesso_alunos_required
 def nova_versao_aluno(aluno_id):
     """Cria uma nova versão para o aluno"""
     aluno = User.query.get_or_404(aluno_id)
@@ -401,6 +421,7 @@ def nova_versao_aluno(aluno_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>', methods=['GET', 'POST'])
 @login_required
+@professor_acesso_alunos_required
 def ver_versao_aluno(aluno_id, versao_id):
     """Visualiza e edita uma versão específica do aluno"""
     aluno = User.query.get_or_404(aluno_id)
@@ -442,6 +463,7 @@ def ver_versao_aluno(aluno_id, versao_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/finalizar', methods=['POST'])
 @login_required
+@professor_acesso_alunos_required
 def finalizar_versao_aluno(aluno_id, versao_id):
     """Finaliza uma versão do aluno"""
     aluno = User.query.get_or_404(aluno_id)
@@ -473,6 +495,7 @@ def finalizar_versao_aluno(aluno_id, versao_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/clonar', methods=['POST'])
 @login_required
+@professor_acesso_alunos_required
 def clonar_versao_aluno(aluno_id, versao_id):
     """Clona uma versão do aluno"""
     aluno = User.query.get_or_404(aluno_id)
@@ -492,6 +515,7 @@ def clonar_versao_aluno(aluno_id, versao_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/excluir', methods=['POST'])
 @login_required
+@professor_acesso_alunos_required
 def excluir_versao_aluno(aluno_id, versao_id):
     """Exclui uma versão do aluno (se não tiver registros)"""
     aluno = User.query.get_or_404(aluno_id)
@@ -536,6 +560,7 @@ def excluir_versao_aluno(aluno_id, versao_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/treinos')
 @login_required
+@professor_acesso_alunos_required
 def treinos_aluno(aluno_id):
     """Lista todos os treinos do aluno"""
     aluno = User.query.get_or_404(aluno_id)
@@ -560,6 +585,7 @@ def treinos_aluno(aluno_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/treino/novo')
 @login_required
+@professor_acesso_alunos_required
 def novo_treino_aluno(aluno_id):
     """
     Treinos agora só existem dentro de uma versão (ver
@@ -584,6 +610,7 @@ def novo_treino_aluno(aluno_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/treino/<int:treino_id>', methods=['GET', 'POST'])
 @login_required
+@professor_acesso_alunos_required
 def editar_treino_aluno(aluno_id, treino_id):
     """Edita um treino do aluno"""
     aluno = User.query.get_or_404(aluno_id)
@@ -624,6 +651,7 @@ def editar_treino_aluno(aluno_id, treino_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/treino/<int:treino_id>/excluir', methods=['POST'])
 @login_required
+@professor_acesso_alunos_required
 def excluir_treino_aluno(aluno_id, treino_id):
     """Exclui um treino do aluno"""
     aluno = User.query.get_or_404(aluno_id)
@@ -653,6 +681,7 @@ def excluir_treino_aluno(aluno_id, treino_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/exercicios')
 @login_required
+@professor_acesso_alunos_required
 def exercicios_aluno(aluno_id):
     """Lista todos os exercícios do aluno"""
     aluno = User.query.get_or_404(aluno_id)
@@ -688,6 +717,7 @@ def exercicios_aluno(aluno_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/exercicio/novo', methods=['GET', 'POST'])
 @login_required
+@professor_acesso_alunos_required
 def novo_exercicio_aluno(aluno_id):
     """Cria um novo exercício para o aluno"""
     aluno = User.query.get_or_404(aluno_id)
@@ -731,6 +761,7 @@ def novo_exercicio_aluno(aluno_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/exercicio/<int:exercicio_id>', methods=['GET', 'POST'])
 @login_required
+@professor_acesso_alunos_required
 def editar_exercicio_aluno(aluno_id, exercicio_id):
     """Edita um exercício do aluno"""
     aluno = User.query.get_or_404(aluno_id)
@@ -783,6 +814,7 @@ def editar_exercicio_aluno(aluno_id, exercicio_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/exercicio/<int:exercicio_id>/excluir', methods=['POST'])
 @login_required
+@professor_acesso_alunos_required
 def excluir_exercicio_aluno(aluno_id, exercicio_id):
     """Exclui um exercício do aluno"""
     aluno = User.query.get_or_404(aluno_id)
@@ -823,6 +855,7 @@ def excluir_exercicio_aluno(aluno_id, exercicio_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/treino/novo', methods=['GET', 'POST'])
 @login_required
+@professor_acesso_alunos_required
 def novo_treino_versao_aluno(aluno_id, versao_id):
     """Adiciona um treino existente a uma versão"""
     aluno = User.query.get_or_404(aluno_id)
@@ -903,6 +936,7 @@ def novo_treino_versao_aluno(aluno_id, versao_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/treino/<string:treino_codigo>/editar', methods=['GET', 'POST'])
 @login_required
+@professor_acesso_alunos_required
 def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
     """Edita um treino específico dentro de uma versão do aluno (visão do professor)"""
     if not current_user.is_professor() and not current_user.is_admin:
@@ -986,6 +1020,7 @@ def editar_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/treino/<string:treino_codigo>/excluir', methods=['POST'])
 @login_required
+@professor_acesso_alunos_required
 def excluir_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
     """Remove um treino de uma versão do aluno"""
     if not current_user.is_professor() and not current_user.is_admin:
@@ -1020,6 +1055,7 @@ def excluir_treino_versao_aluno(aluno_id, versao_id, treino_codigo):
 
 @professor_bp.route('/aluno/<int:aluno_id>/estatisticas')
 @login_required
+@professor_acesso_alunos_required
 def estatisticas_aluno(aluno_id):
     """Estatísticas detalhadas de um aluno"""
     aluno = User.query.get_or_404(aluno_id)
@@ -1077,6 +1113,7 @@ def estatisticas_aluno(aluno_id):
 
 @professor_bp.route('/aluno/<int:aluno_id>/calendario')
 @login_required
+@professor_acesso_alunos_required
 def calendario_aluno(aluno_id):
     """Calendário de treinos de um aluno específico.
 

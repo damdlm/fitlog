@@ -123,7 +123,7 @@ def upgrade():
     # a todo aluno. Dá o mesmo trial de 30 dias a partir de AGORA pra
     # quem já era aluno antes desta migration -- alunos criados DEPOIS
     # já ganham o trial no próprio cadastro (ver
-    # BillingService.iniciar_trial_aluno, chamado em auth_routes.py,
+    # BillingService.iniciar_trial, chamado em auth_routes.py,
     # professor_routes.py e aluno_service.py), então não duplicam aqui.
     connection = op.get_bind()
     agora = datetime.now(timezone.utc)

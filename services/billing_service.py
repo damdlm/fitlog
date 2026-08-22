@@ -1,5 +1,11 @@
 """Serviço de cobrança/assinaturas (Asaas).
 
+Cada usuário (aluno ou professor) tem NO MÁXIMO uma linha em
+`assinaturas` -- nunca duas. O mesmo registro que hoje representa "sem
+plano pago" pode depois passar a representar Plano Fit, Pró ou Premium,
+conforme o que o usuário assina; um professor nunca paga duas cobranças
+simultâneas.
+
 Duas responsabilidades bem separadas de propósito:
 
 1. Cálculo de acesso/tier -- sempre lendo o estado JÁ sincronizado no
@@ -25,9 +31,14 @@ from models import db, AlunoProfessor, Assinatura, EventoWebhookAsaas, Plano, Us
 
 logger = logging.getLogger(__name__)
 
-TRIAL_DIAS_ALUNO = 30
-CARENCIA_DIAS_PAGAMENTO_ATRASADO = 3
+TRIAL_DIAS = 30
+CARENCIA_DIAS_PADRAO = 3
+CARENCIA_DIAS_PROFESSOR_GESTAO = 15
+LIMITE_ALUNOS_GRATIS = 2
 REQUEST_TIMEOUT_SECONDS = 10
+
+PLANOS_GESTAO_PROFESSOR = ('professor_pro', 'professor_premium')
+ORDEM_PLANOS_GESTAO = {'professor_pro': 1, 'professor_premium': 2}
 
 ASAAS_BASE_URL_SANDBOX = "https://sandbox.asaas.com/api/v3"
 ASAAS_BASE_URL_PRODUCAO = "https://api.asaas.com/v3"
@@ -48,29 +59,37 @@ class BillingService:
     # ================================================================
 
     @staticmethod
-    def iniciar_trial_aluno(usuario: User) -> Assinatura:
-        """Cria a assinatura em estado 'trialing' para um aluno recém-
-        cadastrado. Chamar uma única vez, no fluxo de registro (idealmente
-        na mesma transação que cria o User) -- é idempotente por
-        segurança (se já existir, só retorna a existente sem duplicar)."""
+    def iniciar_trial(usuario: User) -> Assinatura:
+        """Cria a Assinatura em estado 'trialing' -- vale pra aluno E
+        professor (ambos podem treinar por conta própria e usar
+        Estatísticas/FitBot). Chamar uma única vez, no fluxo de
+        registro (idealmente na mesma transação que cria o User) --
+        idempotente por segurança (se já existir, só retorna a
+        existente sem duplicar).
+
+        O trial dá acesso a Estatísticas/FitBot, mas NÃO permite ao
+        professor gerenciar mais de 2 alunos -- isso sempre exige
+        assinatura ATIVA e paga do Pró/Premium (ver pode_cadastrar_aluno)."""
         if usuario.assinatura is not None:
             return usuario.assinatura
 
         assinatura = Assinatura(
             usuario_id=usuario.id,
             status='trialing',
-            trial_termina_em=datetime.now(timezone.utc) + timedelta(days=TRIAL_DIAS_ALUNO),
+            trial_termina_em=datetime.now(timezone.utc) + timedelta(days=TRIAL_DIAS),
         )
         db.session.add(assinatura)
         db.session.commit()
-        logger.info('Trial de %s dias iniciado para aluno %s', TRIAL_DIAS_ALUNO, usuario.id)
+        logger.info('Trial de %s dias iniciado para usuário %s', TRIAL_DIAS, usuario.id)
         return assinatura
 
     @staticmethod
-    def aluno_tem_acesso_premium(usuario: User) -> bool:
-        """Único ponto de verdade para gatear Estatísticas/FitBot.
-        Usado pelo decorator aluno_premium_required -- ver
-        utils/decorators.py."""
+    def usuario_tem_acesso_premium(usuario: User) -> bool:
+        """Único ponto de verdade para gatear Estatísticas/FitBot --
+        vale pra aluno e professor por igual, e não importa qual plano
+        está associado (Fit, Pró ou Premium todos liberam essas telas
+        enquanto a assinatura estiver com status válido). A exceção de
+        admin fica a cargo de quem chama, não daqui."""
         assinatura = usuario.assinatura
         if assinatura is None:
             return False
@@ -78,26 +97,18 @@ class BillingService:
 
     @staticmethod
     def contar_alunos_ativos(professor: User) -> int:
-        """Quantidade de alunos ativos vinculados ao professor -- base
-        do cálculo de tier, exposta à parte pra telas que precisam só
-        do número (sem recalcular o Plano)."""
+        """Quantidade de alunos ativos vinculados ao professor."""
         return AlunoProfessor.query.filter_by(
             professor_id=professor.id, ativo=True
         ).count()
 
     @staticmethod
-    def calcular_tier_professor(professor: User) -> Plano | None:
-        """Calcula qual Plano de professor corresponde à contagem ATUAL
-        de alunos ativos vinculados. Retorna None para a faixa gratuita
-        (0-2 alunos). Isto é o tier "correto" agora -- não confundir com
-        o plano efetivamente sendo cobrado hoje (assinatura.plano_id),
-        que só muda via aplicar_mudanca_tier_professor após notificação
-        (ver verificar_mudancas_tier_professores)."""
-        total_alunos = BillingService.contar_alunos_ativos(professor)
-
-        if total_alunos <= 2:
+    def _plano_gestao_para_total(total_alunos: int) -> Plano | None:
+        """Qual Plano de gestão (Pró/Premium) é exigido pra um professor
+        com essa quantidade de alunos ativos. None quando a faixa
+        gratuita (até 2 alunos) já cobre."""
+        if total_alunos <= LIMITE_ALUNOS_GRATIS:
             return None
-
         return (
             Plano.query
             .filter(
@@ -110,92 +121,115 @@ class BillingService:
         )
 
     @staticmethod
+    def plano_gestao_necessario(professor: User) -> Plano | None:
+        """Plano de gestão (Pró/Premium) exigido pela quantidade ATUAL
+        de alunos ativos do professor. None = ainda na faixa gratuita
+        (até 2 alunos), sem exigência de plano pago pra continuar
+        gerenciando os alunos que já tem."""
+        return BillingService._plano_gestao_para_total(BillingService.contar_alunos_ativos(professor))
+
+    @staticmethod
+    def plano_recomendado_professor(professor: User) -> Plano | None:
+        """O plano que o botão "Assinar" do professor deve oferecer:
+        Pró/Premium se a quantidade de alunos já exigir, senão o Plano
+        Fit (mesma cobrança do aluno -- só destrava Estatísticas/
+        FitBot, não muda nada sobre gestão de alunos)."""
+        necessario = BillingService.plano_gestao_necessario(professor)
+        if necessario is not None:
+            return necessario
+        return Plano.query.filter_by(codigo='aluno_fit', ativo=True).first()
+
+    @staticmethod
+    def pode_cadastrar_aluno(professor: User) -> tuple[bool, str | None]:
+        """Confere ANTES de vincular um novo aluno se o professor pode
+        fazer isso agora. Até 2 alunos é sempre livre; passar disso
+        exige assinatura ATIVA (paga) do Plano Pró/Premium que já cubra
+        o novo total -- trial e Plano Fit NÃO contam pra isso (eles só
+        liberam Estatísticas/FitBot, não gestão de mais alunos).
+
+        Retorna (True, None) se pode, ou (False, mensagem) explicando
+        pra qual plano o professor precisa fazer upgrade."""
+        novo_total = BillingService.contar_alunos_ativos(professor) + 1
+        if novo_total <= LIMITE_ALUNOS_GRATIS:
+            return True, None
+
+        plano_necessario = BillingService._plano_gestao_para_total(novo_total)
+        assinatura = professor.assinatura
+        plano_atual_codigo = None
+        if assinatura is not None and assinatura.status == 'active' and assinatura.plano is not None:
+            plano_atual_codigo = assinatura.plano.codigo
+
+        if plano_atual_codigo and ORDEM_PLANOS_GESTAO.get(plano_atual_codigo, 0) >= ORDEM_PLANOS_GESTAO.get(plano_necessario.codigo, 0):
+            return True, None
+
+        return False, f'Para cadastrar mais alunos, faça upgrade para o {plano_necessario.nome}.'
+
+    @staticmethod
+    def professor_acesso_alunos_liberado(professor: User) -> bool:
+        """True se o professor pode acessar as telas de gerenciamento/
+        visualização dos alunos já vinculados. Só fica bloqueado quando
+        ele já ultrapassou a faixa gratuita (mais de 2 alunos, exigindo
+        Pró/Premium) e a assinatura está com status 'blocked' --
+        carência de 15 dias de atraso esgotada (ver
+        CARENCIA_DIAS_PROFESSOR_GESTAO e expirar_carencias_vencidas).
+        O vínculo com os alunos nunca é apagado por isso, só o acesso
+        às telas. Até 2 alunos, nunca é bloqueado por cobrança."""
+        if BillingService.contar_alunos_ativos(professor) <= LIMITE_ALUNOS_GRATIS:
+            return True
+        assinatura = professor.assinatura
+        if assinatura is None:
+            # Não deveria acontecer (pode_cadastrar_aluno já teria
+            # barrado chegar a mais de 2 alunos sem assinatura), mas
+            # não é uma checagem de autorização/IDOR -- é só uma regra
+            # de cobrança, então falha aberta aqui não é um risco de
+            # segurança, só uma inconsistência de dados a investigar.
+            return True
+        return assinatura.status != 'blocked'
+
+    @staticmethod
     def verificar_mudancas_tier_professores() -> list[dict]:
-        """Varre todos os professores com assinatura ativa e retorna os
-        que estão num tier diferente do calculado agora pela contagem
-        de alunos -- SEM aplicar nada. Pensado para rodar como job
-        periódico (ex: diário) cujo resultado alimenta um e-mail de aviso
-        ("seu plano vai mudar de X para Y") -- a troca de valor cobrado
-        só deve ser aplicada depois dessa notificação e nunca no mesmo
-        ciclo em que o aluno passou a faixa, para não surpreender o
-        professor com uma cobrança diferente sem aviso prévio (CDC,
+        """Varre todos os professores e retorna os que estão com um
+        plano de gestão diferente do exigido agora pela contagem de
+        alunos -- SEM aplicar nada. Pensado para rodar como job
+        periódico (ex: diário) cujo resultado alimenta um e-mail de
+        aviso ("seu plano vai mudar de X para Y") -- a troca de valor
+        cobrado só deve ser aplicada depois dessa notificação e nunca
+        no mesmo ciclo em que o professor passou a faixa, para não
+        surpreendê-lo com uma cobrança diferente sem aviso prévio (CDC,
         art. 6º -- direito à informação clara sobre o serviço).
 
         A aplicação em si (trocar assinatura.plano_id e sincronizar o
         valor no Asaas) é um passo separado, deliberadamente não
-        automático aqui.
-        """
+        automático aqui."""
         mudancas = []
         professores = User.query.filter_by(tipo_usuario='professor', ativo=True).all()
         for professor in professores:
-            tier_novo = BillingService.calcular_tier_professor(professor)
+            plano_necessario = BillingService.plano_gestao_necessario(professor)
+            if plano_necessario is None:
+                continue  # faixa gratuita, sem exigência de plano de gestão
+
             assinatura = professor.assinatura
-            tier_atual = assinatura.plano if assinatura else None
-            if (tier_atual is None and tier_novo is None):
+            plano_atual = assinatura.plano if assinatura else None
+            if plano_atual is not None and plano_atual.id == plano_necessario.id:
                 continue
-            if tier_atual is not None and tier_novo is not None and tier_atual.id == tier_novo.id:
-                continue
+
             mudancas.append({
                 'professor': professor,
-                'tier_atual': tier_atual,
-                'tier_novo': tier_novo,
+                'tier_atual': plano_atual,
+                'tier_novo': plano_necessario,
             })
         return mudancas
 
     # ================================================================
-    # Integração com o gateway (Asaas)
+    # Painel do admin
     # ================================================================
-
-    @staticmethod
-    def garantir_registro_assinatura(usuario: User) -> Assinatura:
-        """Garante que o usuário tenha uma linha em `assinaturas` pra
-        anexar IDs do gateway -- necessário pro professor, que (ao
-        contrário do aluno) não ganha uma Assinatura no cadastro, só
-        quando de fato ultrapassa a faixa gratuita e vai pagar.
-        Idempotente: se já existir, só retorna a existente."""
-        if usuario.assinatura is not None:
-            return usuario.assinatura
-        assinatura = Assinatura(usuario_id=usuario.id, status='canceled')
-        db.session.add(assinatura)
-        db.session.commit()
-        return assinatura
 
     @staticmethod
     def situacao_conta(usuario: User) -> dict:
         """Resume a situação de cobrança de um usuário pro painel do
         admin: um código estável pra filtrar, um rótulo pra exibir, se
-        está inadimplente e qual plano ocupa hoje. `codigo` nunca muda
-        de nome com a tradução do rótulo -- é nele que os filtros da
-        tela de contas se baseiam."""
-        if usuario.is_professor():
-            tier = BillingService.calcular_tier_professor(usuario)
-            assinatura = usuario.assinatura
-
-            if tier is None:
-                return {'codigo': 'gratuito', 'rotulo': 'Faixa gratuita', 'inadimplente': False, 'plano_codigo': None}
-
-            plano_codigo = tier.codigo
-            if assinatura is None or assinatura.status == 'canceled':
-                # Já tem alunos suficientes pra dever um plano pago, mas
-                # nunca assinou (ou cancelou) -- é o caso mais direto de
-                # "professor inadimplente" pro admin de olho.
-                return {'codigo': 'pendente', 'rotulo': 'Pendente de pagamento', 'inadimplente': True, 'plano_codigo': plano_codigo}
-            if assinatura.status == 'past_due':
-                return {'codigo': 'past_due', 'rotulo': 'Pagamento atrasado', 'inadimplente': True, 'plano_codigo': plano_codigo}
-            if assinatura.status == 'active' and assinatura.plano_id != tier.id:
-                # Pagando, mas por um tier diferente do calculado agora
-                # (contagem de alunos mudou) -- não é inadimplência, é
-                # ajuste de valor pendente (ver verificar_mudancas_tier_professores).
-                return {'codigo': 'desatualizado', 'rotulo': 'Tier desatualizado', 'inadimplente': False, 'plano_codigo': plano_codigo}
-            if assinatura.status == 'active':
-                return {'codigo': 'active', 'rotulo': 'Ativo', 'inadimplente': False, 'plano_codigo': plano_codigo}
-            return {'codigo': assinatura.status, 'rotulo': assinatura.status, 'inadimplente': False, 'plano_codigo': plano_codigo}
-
-        # aluno
-        assinatura = usuario.assinatura
-        if assinatura is None:
-            return {'codigo': 'sem_registro', 'rotulo': 'Sem registro', 'inadimplente': False, 'plano_codigo': None}
-
+        está inadimplente, qual plano ocupa hoje e (só relevante pra
+        professor) se o acesso aos alunos está bloqueado agora."""
         rotulos = {
             'trialing': 'Em teste',
             'active': 'Ativo',
@@ -203,11 +237,47 @@ class BillingService:
             'blocked': 'Bloqueado',
             'canceled': 'Cancelado',
         }
+        assinatura = usuario.assinatura
+
+        if usuario.is_professor():
+            plano_necessario = BillingService.plano_gestao_necessario(usuario)
+            acesso_alunos_bloqueado = not BillingService.professor_acesso_alunos_liberado(usuario)
+
+            if plano_necessario is None:
+                # Faixa gratuita de gestão -- a situação relevante aqui
+                # é só sobre o Plano Fit pessoal (se aderiu) ou trial.
+                if assinatura is None:
+                    return {'codigo': 'sem_registro', 'rotulo': 'Sem registro', 'inadimplente': False, 'plano_codigo': None, 'acesso_alunos_bloqueado': False}
+                return {
+                    'codigo': assinatura.status,
+                    'rotulo': rotulos.get(assinatura.status, assinatura.status),
+                    'inadimplente': assinatura.status in ('past_due', 'blocked'),
+                    'plano_codigo': assinatura.plano.codigo if assinatura.plano else None,
+                    'acesso_alunos_bloqueado': False,
+                }
+
+            plano_codigo = plano_necessario.codigo
+            if assinatura is None or assinatura.status == 'canceled':
+                return {'codigo': 'pendente', 'rotulo': 'Pendente de pagamento', 'inadimplente': True, 'plano_codigo': plano_codigo, 'acesso_alunos_bloqueado': acesso_alunos_bloqueado}
+            if assinatura.status == 'blocked':
+                return {'codigo': 'blocked', 'rotulo': 'Bloqueado (alunos)', 'inadimplente': True, 'plano_codigo': plano_codigo, 'acesso_alunos_bloqueado': True}
+            if assinatura.status == 'past_due':
+                return {'codigo': 'past_due', 'rotulo': 'Pagamento atrasado', 'inadimplente': True, 'plano_codigo': plano_codigo, 'acesso_alunos_bloqueado': False}
+            if assinatura.status == 'active' and assinatura.plano_id != plano_necessario.id:
+                return {'codigo': 'desatualizado', 'rotulo': 'Tier desatualizado', 'inadimplente': False, 'plano_codigo': plano_codigo, 'acesso_alunos_bloqueado': False}
+            if assinatura.status == 'active':
+                return {'codigo': 'active', 'rotulo': 'Ativo', 'inadimplente': False, 'plano_codigo': plano_codigo, 'acesso_alunos_bloqueado': False}
+            return {'codigo': assinatura.status, 'rotulo': assinatura.status, 'inadimplente': False, 'plano_codigo': plano_codigo, 'acesso_alunos_bloqueado': False}
+
+        # aluno
+        if assinatura is None:
+            return {'codigo': 'sem_registro', 'rotulo': 'Sem registro', 'inadimplente': False, 'plano_codigo': None, 'acesso_alunos_bloqueado': False}
         return {
             'codigo': assinatura.status,
             'rotulo': rotulos.get(assinatura.status, assinatura.status),
             'inadimplente': assinatura.status in ('past_due', 'blocked'),
             'plano_codigo': 'aluno_fit' if assinatura.status in ('active', 'past_due', 'blocked') else None,
+            'acesso_alunos_bloqueado': False,
         }
 
     @staticmethod
@@ -242,6 +312,24 @@ class BillingService:
 
         return contas
 
+    # ================================================================
+    # Integração com o gateway (Asaas)
+    # ================================================================
+
+    @staticmethod
+    def garantir_registro_assinatura(usuario: User) -> Assinatura:
+        """Garante que o usuário tenha uma linha em `assinaturas` pra
+        anexar IDs do gateway. Idempotente: se já existir, só retorna a
+        existente. Normalmente desnecessário chamar diretamente -- todo
+        aluno/professor já ganha uma via iniciar_trial no cadastro;
+        existe pra cobrir o caso raro de checkout sem trial prévio."""
+        if usuario.assinatura is not None:
+            return usuario.assinatura
+        assinatura = Assinatura(usuario_id=usuario.id, status='canceled')
+        db.session.add(assinatura)
+        db.session.commit()
+        return assinatura
+
     @staticmethod
     def _base_url() -> str:
         env = current_app.config.get('ASAAS_ENV', 'sandbox')
@@ -270,10 +358,8 @@ class BillingService:
         conferir contra https://docs.asaas.com/reference antes do
         primeiro teste real em sandbox, e ajustar se necessário.
 
-        Chama garantir_registro_assinatura por conta própria -- quem
-        chama este método não precisa ter criado o registro antes
-        (relevante pro professor, que só ganha uma Assinatura aqui, na
-        hora que efetivamente vai pagar).
+        Garante o registro por conta própria -- quem chama este método
+        não precisa ter criado a Assinatura antes.
         """
         assinatura = BillingService.garantir_registro_assinatura(usuario)
 
@@ -370,7 +456,15 @@ class BillingService:
             assinatura.carencia_termina_em = None
         elif tipo_evento in EVENTOS_ATRASO:
             assinatura.status = 'past_due'
-            assinatura.carencia_termina_em = agora + timedelta(days=CARENCIA_DIAS_PAGAMENTO_ATRASADO)
+            # Professor pagando Pró/Premium tem carência maior (15 dias)
+            # antes de perder acesso aos alunos -- o restante (aluno, ou
+            # professor no Plano Fit) usa a carência padrão de 3 dias.
+            plano_codigo = assinatura.plano.codigo if assinatura.plano else None
+            dias_carencia = (
+                CARENCIA_DIAS_PROFESSOR_GESTAO if plano_codigo in PLANOS_GESTAO_PROFESSOR
+                else CARENCIA_DIAS_PADRAO
+            )
+            assinatura.carencia_termina_em = agora + timedelta(days=dias_carencia)
         elif tipo_evento in EVENTOS_CANCELAMENTO:
             assinatura.status = 'canceled'
             assinatura.cancelado_em = agora
@@ -380,10 +474,13 @@ class BillingService:
     @staticmethod
     def expirar_carencias_vencidas():
         """Job periódico (ex: a cada hora): move para 'blocked' quem
-        esgotou a carência de pagamento atrasado sem regularizar. Não é
-        feito dentro de acesso_premium_ativo() -- esse método só LÊ o
-        status; quem escreve é sempre um processo explícito (webhook ou
-        este job), nunca uma leitura incidental."""
+        esgotou a carência de pagamento atrasado sem regularizar (3 dias
+        pro Plano Fit, 15 dias pro Pró/Premium -- o prazo já foi
+        calculado em carencia_termina_em quando o atraso foi registrado,
+        então este job só compara contra a data, sem recalcular nada).
+        Não é feito dentro de acesso_premium_ativo() -- esse método só
+        LÊ o status; quem escreve é sempre um processo explícito
+        (webhook ou este job), nunca uma leitura incidental."""
         agora = datetime.now(timezone.utc)
         vencidas = Assinatura.query.filter(
             Assinatura.status == 'past_due',

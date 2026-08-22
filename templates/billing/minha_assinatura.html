@@ -40,7 +40,93 @@
 
 <h2 class="mb-4"><i class="bi bi-credit-card me-2" style="color: #F28C33;"></i> Minha Assinatura</h2>
 
-{% if perfil == 'aluno' %}
+{% if perfil == 'professor' %}
+<div class="ma-card">
+    <p class="mb-2 text-muted" style="font-size: 0.9rem;">
+        <i class="bi bi-people"></i> Você tem <strong>{{ total_alunos }}</strong> aluno(s) ativo(s).
+    </p>
+
+    {% if not acesso_alunos_liberado %}
+        <span class="ma-status-pill ma-status-bloqueado"><i class="bi bi-lock"></i> Acesso aos alunos bloqueado</span>
+        <p class="mt-3 mb-0">
+            O pagamento do {{ plano_gestao_necessario.nome if plano_gestao_necessario else 'seu plano' }} está
+            atrasado há mais de 15 dias. Suas telas de alunos, Estatísticas e FitBot ficam bloqueadas até
+            regularizar -- os vínculos com seus alunos continuam intactos.
+        </p>
+    {% elif acesso_premium and assinatura and assinatura.status == 'trialing' %}
+        <span class="ma-status-pill ma-status-atencao"><i class="bi bi-hourglass-split"></i> Período de teste</span>
+        <p class="mt-3 mb-0">
+            Você está no teste grátis de 30 dias, com acesso completo às telas de
+            <strong>Estatísticas</strong> e <strong>FitBot</strong>.
+            {% if assinatura.trial_termina_em %}
+                Termina em <strong>{{ assinatura.trial_termina_em.strftime('%d/%m/%Y') }}</strong>.
+            {% endif %}
+        </p>
+    {% elif plano_gestao_necessario and assinatura and assinatura.status == 'active' and assinatura.plano_id == plano_gestao_necessario.id %}
+        <span class="ma-status-pill ma-status-ok"><i class="bi bi-check-circle"></i> Assinatura ativa</span>
+        <p class="mt-3 mb-0">Seu {{ plano_gestao_necessario.nome }} está em dia.</p>
+    {% elif plano_gestao_necessario and (assinatura is none or assinatura.status in ('canceled',) or assinatura.plano_id != plano_gestao_necessario.id) %}
+        <span class="ma-status-pill ma-status-bloqueado"><i class="bi bi-exclamation-triangle"></i> Pendente de pagamento</span>
+        <p class="mt-3 mb-0">
+            Sua quantidade de alunos já exige o <strong>{{ plano_gestao_necessario.nome }}</strong>. Assine para
+            regularizar e continuar cadastrando novos alunos.
+        </p>
+    {% elif assinatura and assinatura.status == 'past_due' %}
+        <span class="ma-status-pill ma-status-atencao"><i class="bi bi-exclamation-triangle"></i> Pagamento atrasado</span>
+        <p class="mt-3 mb-0">
+            Identificamos um atraso no pagamento. Você ainda tem acesso enquanto tentamos cobrar novamente --
+            regularize para não perder o acesso aos seus alunos e às telas de Estatísticas/FitBot.
+        </p>
+    {% elif acesso_premium and assinatura and assinatura.status == 'active' %}
+        <span class="ma-status-pill ma-status-ok"><i class="bi bi-check-circle"></i> Assinatura ativa</span>
+        <p class="mt-3 mb-0">Seu Plano Fit está em dia. Acesso completo às telas de Estatísticas e FitBot.</p>
+    {% else %}
+        <span class="ma-status-pill ma-status-bloqueado"><i class="bi bi-lock"></i> Acesso bloqueado</span>
+        <p class="mt-3 mb-0">
+            Seu período de teste terminou (ou o pagamento não foi confirmado). As telas de
+            <strong>Estatísticas</strong> e <strong>FitBot</strong> ficam disponíveis de novo assim que a
+            assinatura for confirmada.
+        </p>
+    {% endif %}
+</div>
+
+{% if plano_oferecido %}
+<div class="ma-card text-center">
+    <div class="ma-price">R$ {{ '%.2f'|format(plano_oferecido.preco_centavos / 100) }}<small> /mês</small></div>
+    <p class="text-muted mb-3">
+        {{ plano_oferecido.nome }}
+        {% if plano_gestao_necessario %} — libera Estatísticas, FitBot e gestão dos seus alunos
+        {% else %} — libera Estatísticas e FitBot{% endif %}
+    </p>
+    <form method="POST" action="{{ url_for('billing.assinar') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="ma-btn-assinar">
+            <i class="bi bi-credit-card-2-front me-1"></i>
+            {% if assinatura and assinatura.status == 'active' and assinatura.plano_id == plano_oferecido.id %}Gerenciar assinatura{% else %}Assinar agora{% endif %}
+        </button>
+    </form>
+    <p class="text-muted mt-3 mb-0" style="font-size: 0.85rem;">
+        <i class="bi bi-shield-lock"></i> Pagamento processado pelo Asaas. Seu cartão nunca passa pelo FitLog.
+    </p>
+</div>
+{% endif %}
+
+<div class="ma-card">
+    <h3 class="h6 mb-3"><i class="bi bi-info-circle me-1"></i> Faixas de plano</h3>
+    <table class="table table-sm mb-0">
+        <thead>
+            <tr><th>Faixa</th><th>Alunos ativos</th><th>Valor</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Plano Fit</td><td>até 2</td><td>R$ 5,99/mês</td></tr>
+            <tr><td>Plano Pró</td><td>3 a 9</td><td>R$ 29,90/mês</td></tr>
+            <tr><td>Plano Premium</td><td>10 ou mais</td><td>R$ 99,90/mês</td></tr>
+        </tbody>
+    </table>
+</div>
+
+{% else %}
+{# perfil == 'aluno' #}
 <div class="ma-card">
     {% if acesso_premium and assinatura and assinatura.status == 'trialing' %}
         <span class="ma-status-pill ma-status-atencao"><i class="bi bi-hourglass-split"></i> Período de teste</span>
@@ -70,10 +156,10 @@
     {% endif %}
 </div>
 
-{% if plano %}
+{% if plano_oferecido %}
 <div class="ma-card text-center">
-    <div class="ma-price">R$ {{ '%.2f'|format(plano.preco_centavos / 100) }}<small> /mês</small></div>
-    <p class="text-muted mb-3">{{ plano.nome }} — Estatísticas e FitBot liberados</p>
+    <div class="ma-price">R$ {{ '%.2f'|format(plano_oferecido.preco_centavos / 100) }}<small> /mês</small></div>
+    <p class="text-muted mb-3">{{ plano_oferecido.nome }} — Estatísticas e FitBot liberados</p>
     <form method="POST" action="{{ url_for('billing.assinar') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="ma-btn-assinar">
@@ -86,66 +172,6 @@
     </p>
 </div>
 {% endif %}
-
-{% else %}
-{# perfil == 'professor' #}
-<div class="ma-card">
-    {% if situacao.codigo == 'gratuito' %}
-        <span class="ma-status-pill ma-status-ok"><i class="bi bi-check-circle"></i> Faixa gratuita</span>
-        <p class="mt-3 mb-0">
-            Você tem <strong>{{ total_alunos }}</strong> aluno(s) ativo(s). Até 2 alunos, o uso do
-            FitLog é gratuito para professores.
-        </p>
-    {% elif situacao.codigo == 'pendente' %}
-        <span class="ma-status-pill ma-status-bloqueado"><i class="bi bi-exclamation-triangle"></i> Pendente de pagamento</span>
-        <p class="mt-3 mb-0">
-            Você tem <strong>{{ total_alunos }}</strong> aluno(s) ativo(s), o que já enquadra sua conta
-            no <strong>{{ tier.nome }}</strong>. Assine para regularizar.
-        </p>
-    {% elif situacao.codigo == 'past_due' %}
-        <span class="ma-status-pill ma-status-atencao"><i class="bi bi-exclamation-triangle"></i> Pagamento atrasado</span>
-        <p class="mt-3 mb-0">Regularize o pagamento do {{ tier.nome }} para continuar em dia.</p>
-    {% elif situacao.codigo == 'desatualizado' %}
-        <span class="ma-status-pill ma-status-atencao"><i class="bi bi-arrow-repeat"></i> Plano desatualizado</span>
-        <p class="mt-3 mb-0">
-            Sua quantidade de alunos mudou e agora corresponde ao <strong>{{ tier.nome }}</strong>.
-            Entraremos em contato para ajustar o valor cobrado.
-        </p>
-    {% else %}
-        <span class="ma-status-pill ma-status-ok"><i class="bi bi-check-circle"></i> Assinatura ativa</span>
-        <p class="mt-3 mb-0">Seu {{ tier.nome }} está em dia. Total de {{ total_alunos }} aluno(s) ativo(s).</p>
-    {% endif %}
-</div>
-
-{% if tier and situacao.codigo in ('pendente', 'past_due') %}
-<div class="ma-card text-center">
-    <div class="ma-price">R$ {{ '%.2f'|format(tier.preco_centavos / 100) }}<small> /mês</small></div>
-    <p class="text-muted mb-3">{{ tier.nome }}</p>
-    <form method="POST" action="{{ url_for('billing.assinar') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="ma-btn-assinar">
-            <i class="bi bi-credit-card-2-front me-1"></i> Assinar agora
-        </button>
-    </form>
-    <p class="text-muted mt-3 mb-0" style="font-size: 0.85rem;">
-        <i class="bi bi-shield-lock"></i> Pagamento processado pelo Asaas. Seu cartão nunca passa pelo FitLog.
-    </p>
-</div>
-{% endif %}
-
-<div class="ma-card">
-    <h3 class="h6 mb-3"><i class="bi bi-info-circle me-1"></i> Faixas de plano</h3>
-    <table class="table table-sm mb-0">
-        <thead>
-            <tr><th>Faixa</th><th>Alunos ativos</th><th>Valor</th></tr>
-        </thead>
-        <tbody>
-            <tr><td>Gratuito</td><td>até 2</td><td>R$ 0,00</td></tr>
-            <tr><td>Plano Pró</td><td>3 a 10</td><td>R$ 29,90/mês</td></tr>
-            <tr><td>Plano Premium</td><td>11 ou mais</td><td>R$ 99,90/mês</td></tr>
-        </tbody>
-    </table>
-</div>
 {% endif %}
 
 {% endblock %}

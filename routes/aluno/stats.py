@@ -4,12 +4,14 @@ from . import aluno_bp
 from models import User
 from services.estatistica_service import EstatisticaService
 from services.treino_service import TreinoService
+from utils.decorators import acesso_premium_required
 import logging
 
 logger = logging.getLogger(__name__)
 
 @aluno_bp.route('/estatisticas')
 @login_required
+@acesso_premium_required
 def estatisticas():
     """Estatísticas detalhadas do aluno"""
     if not current_user.pode_gerenciar_treino_proprio():

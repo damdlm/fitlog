@@ -16,7 +16,7 @@ def test_progresso_sem_registro_retorna_vazio(client, app):
         u.set_password('x' * 12)
         db.session.add(u)
         db.session.flush()
-        BillingService.iniciar_trial_aluno(u)
+        BillingService.iniciar_trial(u)
         db.session.commit()
         user_id = u.id
 
@@ -34,7 +34,7 @@ def test_progresso_ultimos_30_dias_com_registro(client, app):
         u.set_password('x' * 12)
         db.session.add(u)
         db.session.flush()
-        BillingService.iniciar_trial_aluno(u)
+        BillingService.iniciar_trial(u)
         db.session.commit()
 
         m = Musculo(nome='peito_pt', nome_exibicao='Peito')

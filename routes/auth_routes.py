@@ -265,14 +265,19 @@ def register():
 
         if user.tipo_usuario == 'aluno':
             # Trial de 30 dias do Plano Fit começa junto com o cadastro
-            # -- ver services/billing_service.py:iniciar_trial_aluno.
+            # -- ver services/billing_service.py:iniciar_trial.
             # Chamado antes do commit final abaixo: o INSERT do User já
             # foi enviado ao banco pelo flush() logo acima (só falta
             # confirmar a transação), então o commit feito dentro do
             # service confirma User + Assinatura juntos.
-            BillingService.iniciar_trial_aluno(user)
+            BillingService.iniciar_trial(user)
             flash('Conta criada com sucesso!', 'success')
         else:
+            # Professor também treina por conta própria no mesmo
+            # sistema (telas de aluno reaproveitadas) -- mesmo trial de
+            # 30 dias do Plano Fit pessoal, independente do plano de
+            # gestão de alunos (Pró/Premium), que é cobrado à parte.
+            BillingService.iniciar_trial(user)
             flash('Conta de professor criada com sucesso!', 'success')
 
         db.session.commit()

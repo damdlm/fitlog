@@ -24,9 +24,9 @@ def _criar_usuario(username):
     db.session.flush()
     # Trial de 30 dias, igual ao que o cadastro de verdade concede --
     # sem isso o aluno cai bloqueado das telas premium (ver
-    # utils/decorators.py:aluno_premium_required) e testes que não são
+    # utils/decorators.py:acesso_premium_required) e testes que não são
     # sobre cobrança quebram por um motivo alheio ao que testam.
-    BillingService.iniciar_trial_aluno(user)
+    BillingService.iniciar_trial(user)
     db.session.commit()
     return user
 

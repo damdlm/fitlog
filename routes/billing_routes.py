@@ -40,34 +40,31 @@ def webhook_asaas():
 @billing_bp.route('/minha-assinatura')
 @login_required
 def minha_assinatura():
-    """Tela de status da assinatura do usuário logado -- aluno vê
-    trial/ativa/bloqueada com botão de assinar; professor vê o tier
-    atual calculado pela contagem de alunos, com botão de assinar
-    quando deve e ainda não está pago."""
-    if current_user.is_aluno():
-        assinatura = current_user.assinatura
-        plano = Plano.query.filter_by(codigo='aluno_fit', ativo=True).first()
-        return render_template(
-            'billing/minha_assinatura.html',
-            perfil='aluno',
-            assinatura=assinatura,
-            acesso_premium=assinatura.acesso_premium_ativo() if assinatura else False,
-            plano=plano,
-        )
+    """Tela de status da assinatura do usuário logado -- uma cobrança
+    só (aluno OU professor). Aluno vê trial/ativa/bloqueada do Plano
+    Fit. Professor vê o mesmo tipo de status, mas o plano em jogo pode
+    ser Fit (até 2 alunos), Pró ou Premium (conforme a quantidade de
+    alunos), com o botão de assinar sempre oferecendo o plano certo
+    pra situação atual dele."""
+    if not (current_user.is_aluno() or current_user.is_professor()):
+        return redirect(url_for('main.index'))
+
+    assinatura = current_user.assinatura
+    contexto = dict(
+        perfil='professor' if current_user.is_professor() else 'aluno',
+        assinatura=assinatura,
+        acesso_premium=assinatura.acesso_premium_ativo() if assinatura else False,
+    )
 
     if current_user.is_professor():
-        tier = BillingService.calcular_tier_professor(current_user)
-        total_alunos = BillingService.contar_alunos_ativos(current_user)
-        situacao = BillingService.situacao_conta(current_user)
-        return render_template(
-            'billing/minha_assinatura.html',
-            perfil='professor',
-            tier=tier,
-            situacao=situacao,
-            total_alunos=total_alunos,
-        )
+        contexto['total_alunos'] = BillingService.contar_alunos_ativos(current_user)
+        contexto['plano_gestao_necessario'] = BillingService.plano_gestao_necessario(current_user)
+        contexto['plano_oferecido'] = BillingService.plano_recomendado_professor(current_user)
+        contexto['acesso_alunos_liberado'] = BillingService.professor_acesso_alunos_liberado(current_user)
+    else:
+        contexto['plano_oferecido'] = Plano.query.filter_by(codigo='aluno_fit', ativo=True).first()
 
-    return redirect(url_for('main.index'))
+    return render_template('billing/minha_assinatura.html', **contexto)
 
 
 @billing_bp.route('/api/minha-assinatura')
@@ -76,24 +73,24 @@ def api_minha_assinatura():
     """Mesma informação da tela acima, em JSON -- pra outras telas do
     front-end que precisam checar o status sem navegar pra cá (ex: um
     badge no menu)."""
-    if current_user.is_aluno():
-        assinatura = current_user.assinatura
-        if assinatura is None:
-            return jsonify({'status': 'sem_assinatura'})
-        return jsonify({
-            'status': assinatura.status,
-            'acesso_premium': assinatura.acesso_premium_ativo(),
-            'trial_termina_em': assinatura.trial_termina_em.isoformat() if assinatura.trial_termina_em else None,
-        })
+    if not (current_user.is_aluno() or current_user.is_professor()):
+        return redirect(url_for('main.index'))
 
+    assinatura = current_user.assinatura
+    resultado = {
+        'status': assinatura.status if assinatura else 'sem_assinatura',
+        'acesso_premium': assinatura.acesso_premium_ativo() if assinatura else False,
+        'trial_termina_em': (
+            assinatura.trial_termina_em.isoformat()
+            if assinatura and assinatura.trial_termina_em else None
+        ),
+    }
     if current_user.is_professor():
-        tier = BillingService.calcular_tier_professor(current_user)
-        return jsonify({
-            'tier_atual': tier.codigo if tier else 'gratuito',
-            'preco_centavos': tier.preco_centavos if tier else 0,
-        })
+        plano_necessario = BillingService.plano_gestao_necessario(current_user)
+        resultado['plano_gestao_necessario'] = plano_necessario.codigo if plano_necessario else None
+        resultado['acesso_alunos_liberado'] = BillingService.professor_acesso_alunos_liberado(current_user)
 
-    return redirect(url_for('main.index'))
+    return jsonify(resultado)
 
 
 @billing_bp.route('/assinar', methods=['POST'])
@@ -103,20 +100,21 @@ def assinar():
     """Inicia (ou reaproveita) o checkout hospedado do Asaas e
     redireciona o navegador pra lá -- protegido por CSRF normal (essa
     view não está na lista de exceção em routes/__init__.py, só o
-    webhook está)."""
+    webhook está). Uma assinatura só por usuário: o plano oferecido é
+    sempre o certo pra situação atual (Fit pro aluno; Fit, Pró ou
+    Premium pro professor, conforme a quantidade de alunos -- ver
+    BillingService.plano_recomendado_professor)."""
     if current_user.is_aluno():
         plano = Plano.query.filter_by(codigo='aluno_fit', ativo=True).first()
-        if plano is None:
-            logger.error('Plano aluno_fit não encontrado/ativo -- checar seed de planos')
-            flash('Não foi possível iniciar a assinatura agora. Tente novamente em instantes.', 'danger')
-            return redirect(url_for('billing.minha_assinatura'))
     elif current_user.is_professor():
-        plano = BillingService.calcular_tier_professor(current_user)
-        if plano is None:
-            flash('Você ainda está na faixa gratuita (até 2 alunos) -- não há cobrança a fazer.', 'info')
-            return redirect(url_for('billing.minha_assinatura'))
+        plano = BillingService.plano_recomendado_professor(current_user)
     else:
         return redirect(url_for('main.index'))
+
+    if plano is None:
+        logger.error('Nenhum plano encontrado/ativo pra oferecer ao usuário %s -- checar seed de planos', current_user.id)
+        flash('Não foi possível iniciar a assinatura agora. Tente novamente em instantes.', 'danger')
+        return redirect(url_for('billing.minha_assinatura'))
 
     try:
         checkout_url = BillingService.criar_assinatura_checkout(current_user, plano)
