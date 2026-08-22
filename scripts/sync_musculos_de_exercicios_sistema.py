@@ -20,8 +20,9 @@ SQLAlchemy pra uma tabela que não tem Model).
 O que este script faz, em ordem:
 1. Lê os valores distintos de `grupo_muscular` em exercicios_sistema
    (ignora nulos/vazios), agrupados por slug pra tolerar variações de
-   texto (ex: "Peito" e "peito") que apontam pro mesmo músculo -- esse
-   é o novo conjunto "alvo".
+   texto (ex: "Peito" e "peito") que apontam pro mesmo músculo, e
+   junta com CATEGORIAS_ADICIONAIS abaixo -- esse é o novo conjunto
+   "alvo" (grupo_muscular + categorias aprovadas manualmente).
 2. Cria os músculos do novo conjunto que ainda não existem (match por
    nome_exibicao e por slug -- se já existir, reaproveita em vez de
    duplicar).
@@ -34,7 +35,12 @@ O que este script faz, em ordem:
        - sem nenhuma referência em nenhuma tabela dependente -> apaga
          (é só lixo não usado);
        - com alguma referência -> MANTÉM e avisa no relatório final.
-         Nunca apaga algo em uso sem saber pra onde mandar.
+         Nunca apaga algo em uso sem saber pra onde mandar. Se depois
+         de olhar o aviso você decidir que aquele nome deve continuar
+         existindo como categoria própria (em vez de remapear pra uma
+         existente), adicione ele em CATEGORIAS_ADICIONAIS e rode de
+         novo -- ele passa a fazer parte do conjunto alvo e some do
+         aviso.
 
 MAPEAMENTO_ANTIGO_NOVO foi definido a partir do taxonomy atual
 (data/default_workouts.py:MUSCLE_MAPPING) comparado com os 28 valores
@@ -71,6 +77,18 @@ MAPEAMENTO_ANTIGO_NOVO = {
     "Posterior de Coxa": "Isquiotibiais",
     "Abdômen": "Abdominais",
 }
+
+# Categorias que NÃO existem em exercicios_sistema.grupo_muscular, mas
+# devem ser tratadas como parte oficial do catálogo novo mesmo assim
+# (mantidas/criadas via INSERT, nunca removidas ou remapeadas). Use
+# isso pros músculos antigos que o relatório de "MANTIDOS por
+# segurança" apontar e que você decidiu que continuam válidos como
+# categoria própria, em vez de remapear pra um músculo existente.
+CATEGORIAS_ADICIONAIS = [
+    "Abdutores",
+    "Adutores",
+    "Pescoço",
+]
 
 
 def _slug(nome_exibicao: str) -> str:
@@ -139,6 +157,7 @@ def sincronizar(dry_run: bool):
         #    estourava a constraint UNIQUE de musculos.nome.
         linhas = db.session.query(ExercicioSistema.grupo_muscular).distinct().all()
         brutos = [(nome or "").strip() for (nome,) in linhas if nome and nome.strip()]
+        brutos += CATEGORIAS_ADICIONAIS
 
         por_slug = defaultdict(list)
         for nome in brutos:
@@ -162,7 +181,9 @@ def sincronizar(dry_run: bool):
         variantes_por_slug = {slug: vs for slug, vs in por_slug.items() if len(vs) > 1}
         novo_conjunto = sorted(_escolher_canonico(vs, slug) for slug, vs in por_slug.items())
 
-        print(f"{len(novo_conjunto)} grupos musculares distintos (por slug) encontrados em exercicios_sistema.")
+        print(f"{len(novo_conjunto)} categorias no conjunto alvo "
+              f"({len(brutos) - len(CATEGORIAS_ADICIONAIS)} de exercicios_sistema.grupo_muscular "
+              f"+ {len(CATEGORIAS_ADICIONAIS)} em CATEGORIAS_ADICIONAIS).")
         if variantes_por_slug:
             print(f"\nAviso: {len(variantes_por_slug)} slug(s) com mais de uma variante de texto "
                   f"em exercicios_sistema.grupo_muscular (tratadas como um único músculo):")
