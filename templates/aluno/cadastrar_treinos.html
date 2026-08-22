@@ -302,8 +302,39 @@
         position: static;
         background: transparent;
         padding: 0;
-        margin: 0 0 14px;
+        margin: 0 0 12px;
         border-bottom: none;
+    }
+    /* Compactação geral do modal: nome/descrição do treino em cima,
+       separados por uma linha fina do bloco de exercícios do catálogo
+       embaixo -- deixa mais claro que são duas etapas diferentes
+       (editar dados do treino vs. escolher exercícios), sem precisar
+       de mais texto/título pra isso. */
+    #modalExercicios .modal-body {
+        padding-top: 18px;
+        padding-bottom: 14px;
+    }
+    #modalExercicios .ct-modal-dados-treino {
+        margin-bottom: 10px;
+    }
+    #modalExercicios .ct-modal-dados-treino .etv-field-label {
+        margin-bottom: 4px;
+        font-size: 0.68rem;
+    }
+    #modalExercicios .ct-modal-divider {
+        border: none;
+        border-top: 1px solid #ececec;
+        margin: 2px 0 14px;
+    }
+    #modalExercicios label.etv-field-label {
+        margin-bottom: 8px;
+    }
+    #modalExercicios .etv-toolbar-row {
+        margin-bottom: 8px;
+    }
+    #modalExercicios .etv-chip {
+        padding: 4px 12px;
+        font-size: 0.74rem;
     }
 </style>
 
@@ -527,7 +558,7 @@
             <form method="post" id="formEditarTreino">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
-                    <div class="row mb-3">
+                    <div class="row g-3 ct-modal-dados-treino">
                         <div class="col-md-6">
                             <label class="etv-field-label">Nome do treino</label>
                             <input type="text" name="nome_treino" id="ctInputNome" class="form-control" maxlength="100" required>
@@ -537,6 +568,8 @@
                             <input type="text" name="descricao_treino" id="ctInputDescricao" class="form-control" maxlength="200">
                         </div>
                     </div>
+
+                    <hr class="ct-modal-divider">
 
                     <label class="etv-field-label">Exercícios do catálogo</label>
 
