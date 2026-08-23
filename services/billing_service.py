@@ -433,6 +433,12 @@ class BillingService:
                 },
                 'customer': customer_id,
                 'externalReference': str(assinatura.id),
+                'items': [{
+                    'name': plano.nome,
+                    'description': f'Assinatura mensal -- {plano.nome}',
+                    'quantity': 1,
+                    'value': plano.preco_centavos / 100,
+                }],
                 'subscription': {
                     'cycle': 'MONTHLY',
                     'nextDueDate': datetime.now(timezone.utc).strftime('%Y-%m-%d'),

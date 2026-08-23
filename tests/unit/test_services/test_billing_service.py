@@ -685,6 +685,11 @@ class TestCriarAssinaturaCheckout:
             payload = chamada_checkout['json']
             assert 'nextDueDate' in payload['subscription']
             assert payload['subscription']['cycle'] == 'MONTHLY'
+            # Regressão: o Asaas rejeita o checkout com
+            # "O campo 'items' é obrigatório." se esse array não vier
+            # -- documentação não deixa isso claro, só os exemplos.
+            assert len(payload['items']) == 1
+            assert payload['items'][0]['value'] == fit.preco_centavos / 100
             assert payload['externalReference'] == str(assinatura.id)
             assert payload['chargeTypes'] == ['RECURRENT']
             assert 'callback' in payload and payload['callback']['successUrl']
