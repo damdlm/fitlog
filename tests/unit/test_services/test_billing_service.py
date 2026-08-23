@@ -692,6 +692,10 @@ class TestCriarAssinaturaCheckout:
             assert payload['items'][0]['value'] == fit.preco_centavos / 100
             assert payload['externalReference'] == str(assinatura.id)
             assert payload['chargeTypes'] == ['RECURRENT']
+            # Regressão: o Asaas rejeita billingTypes com PIX/BOLETO
+            # quando chargeTypes inclui RECURRENT -- só CREDIT_CARD é
+            # aceito pra cobrança recorrente nesse fluxo de checkout.
+            assert payload['billingTypes'] == ['CREDIT_CARD']
             assert 'callback' in payload and payload['callback']['successUrl']
 
             # A assinatura de gateway só se confirma depois que o

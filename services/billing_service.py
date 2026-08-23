@@ -423,7 +423,13 @@ class BillingService:
         resp = requests.post(
             f'{BillingService._base_url()}/checkouts',
             json={
-                'billingTypes': ['PIX', 'CREDIT_CARD', 'BOLETO'],
+                # Só CREDIT_CARD é aceito quando chargeTypes inclui
+                # RECURRENT -- confirmado pela própria API do Asaas:
+                # "O método de pagamento CREDIT_CARD é o único método
+                # de pagamento permitido para operações RECURRENT".
+                # Pix/boleto não têm suporte a cobrança recorrente
+                # automática nesse fluxo de Checkout.
+                'billingTypes': ['CREDIT_CARD'],
                 'chargeTypes': ['RECURRENT'],
                 'minutesToExpire': 60,
                 'callback': {
