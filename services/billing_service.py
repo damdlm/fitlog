@@ -52,6 +52,15 @@ EVENTOS_ATRASO = ('PAYMENT_OVERDUE',)
 EVENTOS_CANCELAMENTO = ('PAYMENT_DELETED', 'PAYMENT_REFUNDED', 'SUBSCRIPTION_DELETED')
 
 
+class CpfCnpjNecessarioError(Exception):
+    """Levantada por criar_assinatura_checkout quando o usuário ainda
+    não tem cpf_cnpj cadastrado -- o Asaas exige o dado pra gerar
+    qualquer cobrança de verdade. A rota que chama deve pedir o CPF/
+    CNPJ antes de tentar de novo, em vez de tratar como falha de rede
+    genérica."""
+    pass
+
+
 class BillingService:
 
     # ================================================================
@@ -347,9 +356,9 @@ class BillingService:
 
     @staticmethod
     def criar_assinatura_checkout(usuario: User, plano: Plano) -> str:
-        """Cria (ou reaproveita) o cliente no Asaas e um Checkout de
-        assinatura recorrente, retornando o link da página de
-        pagamento hospedada pelo Asaas -- o navegador do usuário é
+        """Cria (ou reaproveita/atualiza) o cliente no Asaas e um
+        Checkout de assinatura recorrente, retornando o link da página
+        de pagamento hospedada pelo Asaas -- o navegador do usuário é
         redirecionado para lá, e o dado de cartão nunca passa pelo
         nosso servidor (mantém o fitlog em PCI SAQ A, o nível mais
         simples de conformidade).
@@ -367,21 +376,48 @@ class BillingService:
         primeiro webhook que chegar com este registro (ver
         processar_webhook), e só a partir daí gravamos o
         gateway_subscription_id de verdade.
+
+        Levanta CpfCnpjNecessarioError se o usuário ainda não tem
+        cpf_cnpj cadastrado -- é campo obrigatório pro Asaas gerar
+        qualquer cobrança de verdade (exigência da Receita Federal, não
+        só do gateway). Quem chama deve pedir o dado antes de tentar
+        de novo (ver routes/billing_routes.py:assinar).
         """
+        if not usuario.cpf_cnpj:
+            raise CpfCnpjNecessarioError()
+
         assinatura = BillingService.garantir_registro_assinatura(usuario)
 
+        dados_cliente = {
+            'name': usuario.nome_completo or usuario.username,
+            'email': usuario.email,
+            'cpfCnpj': usuario.cpf_cnpj,
+        }
         customer_id = assinatura.gateway_customer_id
         if not customer_id:
             resp = requests.post(
                 f'{BillingService._base_url()}/customers',
-                json={'name': usuario.nome_completo or usuario.username, 'email': usuario.email},
+                json=dados_cliente,
                 headers=BillingService._headers(),
                 timeout=REQUEST_TIMEOUT_SECONDS,
             )
-            resp.raise_for_status()
+            BillingService._checar_resposta(resp, 'criar cliente')
             customer_id = resp.json()['id']
             assinatura.gateway_customer_id = customer_id
             db.session.commit()
+        else:
+            # Atualiza o cadastro existente com o cpfCnpj mais recente
+            # -- cobre o caso de um cliente já ter sido criado ANTES do
+            # usuário preencher o CPF/CNPJ (ex: tentativas de checkout
+            # de antes desta correção), que ficariam pra sempre sem o
+            # dado e nunca conseguiriam gerar cobrança nenhuma.
+            resp = requests.put(
+                f'{BillingService._base_url()}/customers/{customer_id}',
+                json=dados_cliente,
+                headers=BillingService._headers(),
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+            BillingService._checar_resposta(resp, 'atualizar cliente')
 
         callback_url = BillingService._url_minha_assinatura()
         resp = requests.post(
@@ -407,13 +443,26 @@ class BillingService:
             headers=BillingService._headers(),
             timeout=REQUEST_TIMEOUT_SECONDS,
         )
-        resp.raise_for_status()
+        BillingService._checar_resposta(resp, 'criar checkout')
         dados = resp.json()
 
         assinatura.plano_id = plano.id
         db.session.commit()
 
         return dados.get('link')
+
+    @staticmethod
+    def _checar_resposta(resp: requests.Response, contexto: str):
+        """Substitui resp.raise_for_status() puro -- loga o corpo da
+        resposta de erro ANTES de levantar a exceção. O
+        requests.HTTPError padrão não inclui o corpo, e o corpo é
+        exatamente onde o Asaas explica qual campo está inválido/
+        faltando (ex: {"errors":[{"description":"..."}]}) -- sem isso
+        só sabíamos "400 Client Error", sem motivo nenhum, toda vez que
+        algo dava errado."""
+        if resp.status_code >= 400:
+            logger.error('Asaas respondeu %s ao %s: %s', resp.status_code, contexto, resp.text[:2000])
+        resp.raise_for_status()
 
     @staticmethod
     def _url_minha_assinatura() -> str:

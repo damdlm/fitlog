@@ -100,6 +100,14 @@
     </p>
     <form method="POST" action="{{ url_for('billing.assinar') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if not cpf_cnpj %}
+        <div class="mb-3 text-start">
+            <label class="form-label" style="font-size: 0.85rem;">CPF ou CNPJ <span class="text-danger">*</span></label>
+            <input type="text" name="cpf_cnpj" class="form-control" placeholder="Só números" required
+                   inputmode="numeric" maxlength="18">
+            <small class="text-muted">Exigido pelo Asaas para gerar a cobrança. Pedimos só uma vez.</small>
+        </div>
+        {% endif %}
         <button type="submit" class="ma-btn-assinar">
             <i class="bi bi-credit-card-2-front me-1"></i>
             {% if assinatura and assinatura.status == 'active' and assinatura.plano_id == plano_oferecido.id %}Gerenciar assinatura{% else %}Assinar agora{% endif %}
@@ -162,6 +170,14 @@
     <p class="text-muted mb-3">{{ plano_oferecido.nome }} — Estatísticas e FitBot liberados</p>
     <form method="POST" action="{{ url_for('billing.assinar') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if not cpf_cnpj %}
+        <div class="mb-3 text-start">
+            <label class="form-label" style="font-size: 0.85rem;">CPF ou CNPJ <span class="text-danger">*</span></label>
+            <input type="text" name="cpf_cnpj" class="form-control" placeholder="Só números" required
+                   inputmode="numeric" maxlength="18">
+            <small class="text-muted">Exigido pelo Asaas para gerar a cobrança. Pedimos só uma vez.</small>
+        </div>
+        {% endif %}
         <button type="submit" class="ma-btn-assinar">
             <i class="bi bi-credit-card-2-front me-1"></i>
             {% if assinatura and assinatura.status == 'active' %}Gerenciar assinatura{% else %}Assinar agora{% endif %}

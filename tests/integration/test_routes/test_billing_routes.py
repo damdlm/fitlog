@@ -3,8 +3,10 @@ de acesso premium aplicado em Estatísticas/FitBot
 (utils/decorators.py:acesso_premium_required)."""
 from datetime import datetime, timedelta, timezone
 
+import requests
+
 from models import db, User, AlunoProfessor, Assinatura, EventoWebhookAsaas, Plano
-from services.billing_service import BillingService
+from services.billing_service import BillingService, CpfCnpjNecessarioError
 
 
 def _criar_usuario(username, tipo_usuario='aluno'):
@@ -214,6 +216,7 @@ class TestAssinar:
         with app.app_context():
             _criar_planos()
             professor = _criar_usuario('assinar_prof_sem_alunos', tipo_usuario='professor')
+            professor.cpf_cnpj = '12345678900'
             db.session.commit()
             professor_ref = User.query.get(professor.id)
 
@@ -236,6 +239,7 @@ class TestAssinar:
             _criar_planos()
             professor = _criar_usuario('assinar_prof_5_alunos', tipo_usuario='professor')
             _vincular_alunos(professor, 5)
+            professor.cpf_cnpj = '12345678900'
             db.session.commit()
             professor_ref = User.query.get(professor.id)
 
@@ -253,6 +257,7 @@ class TestAssinar:
         with app.app_context():
             _criar_planos()
             aluno = _criar_usuario('assinar_aluno_ok')
+            aluno.cpf_cnpj = '12345678900'
             BillingService.iniciar_trial(aluno)
             db.session.commit()
             aluno_ref = User.query.get(aluno.id)
@@ -263,7 +268,6 @@ class TestAssinar:
         assert resp.headers.get('Location') == 'https://sandbox.asaas.com/i/fake-checkout'
 
     def test_falha_no_gateway_nao_quebra_a_pagina(self, client, app, monkeypatch):
-        import requests
 
         def _fake_falha(*a, **k):
             raise requests.RequestException('timeout simulado')
@@ -281,6 +285,98 @@ class TestAssinar:
         resp = client.post('/billing/assinar', follow_redirects=False)
         assert resp.status_code == 302
         assert '/billing/minha-assinatura' in resp.headers.get('Location', '')
+
+
+# ---------------------------------------------------------------------
+# CPF/CNPJ obrigatório (exigência do Asaas pra gerar qualquer cobrança)
+# ---------------------------------------------------------------------
+
+class TestCpfCnpjObrigatorio:
+    def test_sem_cpf_cnpj_no_form_nao_chama_o_gateway(self, client, app, monkeypatch):
+        chamou = {'valor': False}
+
+        def _fake_checkout(*a, **k):
+            chamou['valor'] = True
+            return 'https://sandbox.asaas.com/i/nao-deveria-chegar-aqui'
+
+        monkeypatch.setattr(BillingService, 'criar_assinatura_checkout', staticmethod(_fake_checkout))
+
+        with app.app_context():
+            _criar_planos()
+            aluno = _criar_usuario('assinar_sem_cpf')
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        resp = client.post('/billing/assinar', follow_redirects=False)
+        assert resp.status_code == 302
+        assert '/billing/minha-assinatura' in resp.headers.get('Location', '')
+        assert chamou['valor'] is False
+
+    def test_cpf_cnpj_com_formato_invalido_e_rejeitado(self, client, app, monkeypatch):
+        monkeypatch.setattr(
+            BillingService, 'criar_assinatura_checkout',
+            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake'),
+        )
+
+        with app.app_context():
+            _criar_planos()
+            aluno = _criar_usuario('assinar_cpf_invalido')
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        resp = client.post('/billing/assinar', data={'cpf_cnpj': '123'}, follow_redirects=False)
+        assert resp.status_code == 302
+        assert '/billing/minha-assinatura' in resp.headers.get('Location', '')
+
+        with app.app_context():
+            aluno_ref = User.query.get(aluno_ref.id)
+            assert aluno_ref.cpf_cnpj is None
+
+    def test_cpf_cnpj_valido_no_form_e_salvo_e_prossegue_pro_checkout(self, client, app, monkeypatch):
+        monkeypatch.setattr(
+            BillingService, 'criar_assinatura_checkout',
+            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake-com-cpf'),
+        )
+
+        with app.app_context():
+            _criar_planos()
+            aluno = _criar_usuario('assinar_cpf_valido')
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        # CPF com pontuação -- o backend deve limpar antes de salvar.
+        resp = client.post('/billing/assinar', data={'cpf_cnpj': '123.456.789-00'}, follow_redirects=False)
+        assert resp.status_code == 302
+        assert resp.headers.get('Location') == 'https://sandbox.asaas.com/i/fake-com-cpf'
+
+        with app.app_context():
+            aluno_ref = User.query.get(aluno_ref.id)
+            assert aluno_ref.cpf_cnpj == '12345678900'
+
+    def test_usuario_que_ja_tem_cpf_cnpj_nao_precisa_reenviar(self, client, app, monkeypatch):
+        monkeypatch.setattr(
+            BillingService, 'criar_assinatura_checkout',
+            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake-ja-tinha-cpf'),
+        )
+
+        with app.app_context():
+            _criar_planos()
+            aluno = _criar_usuario('assinar_ja_tem_cpf')
+            aluno.cpf_cnpj = '11144477735'
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        resp = client.post('/billing/assinar', follow_redirects=False)
+        assert resp.status_code == 302
+        assert resp.headers.get('Location') == 'https://sandbox.asaas.com/i/fake-ja-tinha-cpf'
 
 
 # ---------------------------------------------------------------------

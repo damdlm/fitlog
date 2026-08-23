@@ -11,7 +11,7 @@ processamento idempotente de webhook do Asaas.
 from datetime import datetime, timedelta, timezone
 
 from models import db, User, AlunoProfessor, Assinatura, EventoWebhookAsaas, Plano
-from services.billing_service import BillingService, TRIAL_DIAS
+from services.billing_service import BillingService, CpfCnpjNecessarioError, TRIAL_DIAS
 
 
 def _criar_usuario(username, tipo_usuario='aluno'):
@@ -628,10 +628,11 @@ class TestExpirarCarenciasVencidas:
 
 class _RespostaFake:
     """Substitui requests.Response nos testes -- só o que
-    criar_assinatura_checkout usa (raise_for_status/json)."""
+    criar_assinatura_checkout usa (raise_for_status/json/text)."""
     def __init__(self, json_data, status_code=200):
         self._json = json_data
         self.status_code = status_code
+        self.text = str(json_data)
 
     def raise_for_status(self):
         if self.status_code >= 400:
@@ -669,12 +670,16 @@ class TestCriarAssinaturaCheckout:
             app.config['APP_BASE_URL'] = 'https://fitlog.up.railway.app'
             _, _, fit = _criar_planos_professor()
             aluno = _criar_usuario('checkout_fields')
+            aluno.cpf_cnpj = '12345678900'
             assinatura = BillingService.iniciar_trial(aluno)
             db.session.commit()
 
             link = BillingService.criar_assinatura_checkout(aluno, fit)
 
             assert link == 'https://sandbox.asaas.com/checkoutSession/show/chk_fake123'
+
+            chamada_cliente = next(c for c in chamadas if c['url'].endswith('/customers'))
+            assert chamada_cliente['json']['cpfCnpj'] == '12345678900'
 
             chamada_checkout = next(c for c in chamadas if c['url'].endswith('/checkouts'))
             payload = chamada_checkout['json']
@@ -691,6 +696,69 @@ class TestCriarAssinaturaCheckout:
             assert assinatura.gateway_subscription_id is None
             assert assinatura.plano_id == fit.id
 
+    def test_sem_cpf_cnpj_levanta_erro_especifico_sem_chamar_gateway(self, app, monkeypatch):
+        chamou = {'valor': False}
+
+        def _fake_post(*a, **k):
+            chamou['valor'] = True
+            return _RespostaFake({'id': 'cus_nao_deveria_chamar'})
+
+        monkeypatch.setattr('services.billing_service.requests.post', _fake_post)
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            _, _, fit = _criar_planos_professor()
+            aluno = _criar_usuario('checkout_sem_cpf')
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+
+            try:
+                BillingService.criar_assinatura_checkout(aluno, fit)
+                assert False, 'deveria ter levantado CpfCnpjNecessarioError'
+            except CpfCnpjNecessarioError:
+                pass
+
+            assert chamou['valor'] is False
+
+    def test_cliente_ja_existente_e_atualizado_via_put_com_cpf(self, app, monkeypatch):
+        """Cobre o caso real que já aconteceu em produção: um cliente
+        criado ANTES do usuário ter CPF/CNPJ cadastrado (tentativa de
+        checkout anterior a esta correção) precisa ser atualizado, não
+        recriado, senão fica pra sempre sem o dado."""
+        chamadas = []
+
+        def _fake_post(url, json=None, headers=None, timeout=None):
+            chamadas.append(('POST', url, json))
+            return _RespostaFake({
+                'id': 'chk_fake789',
+                'link': 'https://sandbox.asaas.com/checkoutSession/show/chk_fake789',
+            })
+
+        def _fake_put(url, json=None, headers=None, timeout=None):
+            chamadas.append(('PUT', url, json))
+            return _RespostaFake({'id': 'cus_ja_existente'})
+
+        monkeypatch.setattr('services.billing_service.requests.post', _fake_post)
+        monkeypatch.setattr('services.billing_service.requests.put', _fake_put)
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            app.config['APP_BASE_URL'] = 'https://fitlog.up.railway.app'
+            _, _, fit = _criar_planos_professor()
+            aluno = _criar_usuario('checkout_cliente_existente')
+            aluno.cpf_cnpj = '98765432100'
+            assinatura = BillingService.iniciar_trial(aluno)
+            assinatura.gateway_customer_id = 'cus_ja_existente'
+            db.session.commit()
+
+            BillingService.criar_assinatura_checkout(aluno, fit)
+
+            chamada_put = next(c for c in chamadas if c[0] == 'PUT')
+            assert chamada_put[1].endswith('/customers/cus_ja_existente')
+            assert chamada_put[2]['cpfCnpj'] == '98765432100'
+            # Não deve ter criado um cliente novo por engano
+            assert not any(c[0] == 'POST' and c[1].endswith('/customers') for c in chamadas)
+
     def test_erro_400_do_asaas_propaga_como_http_error(self, app, monkeypatch):
         import requests
 
@@ -706,6 +774,7 @@ class TestCriarAssinaturaCheckout:
             app.config['APP_BASE_URL'] = 'https://fitlog.up.railway.app'
             _, _, fit = _criar_planos_professor()
             aluno = _criar_usuario('checkout_erro_400')
+            aluno.cpf_cnpj = '11122233344'
             BillingService.iniciar_trial(aluno)
             db.session.commit()
 

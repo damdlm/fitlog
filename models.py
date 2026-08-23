@@ -74,6 +74,12 @@ class User(UserMixin, db.Model):
     nome_completo = db.Column(db.String(200))
     telefone = db.Column(db.String(20))
     data_nascimento = db.Column(db.Date)
+    # Só dígitos (11 = CPF, 14 = CNPJ), sem pontuação -- exigido pelo
+    # Asaas (e pela Receita Federal) pra gerar qualquer cobrança de
+    # verdade. Nulo até o usuário preencher na hora de assinar pela
+    # primeira vez (ver routes/billing_routes.py:assinar). Nunca
+    # solicitado no cadastro pra não travar quem nunca vai assinar.
+    cpf_cnpj = db.Column(db.String(20), nullable=True)
     ativo = db.Column(db.Boolean, default=True)
     
     is_admin = db.Column(db.Boolean, default=False)

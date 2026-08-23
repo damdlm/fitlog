@@ -1,14 +1,15 @@
 """Rotas de cobrança/assinatura (Asaas)."""
 
 import logging
+import re
 
 import requests
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from extensions import limiter
-from models import Plano
-from services.billing_service import BillingService
+from models import db, Plano
+from services.billing_service import BillingService, CpfCnpjNecessarioError
 
 billing_bp = Blueprint('billing', __name__)
 logger = logging.getLogger(__name__)
@@ -54,6 +55,7 @@ def minha_assinatura():
         perfil='professor' if current_user.is_professor() else 'aluno',
         assinatura=assinatura,
         acesso_premium=assinatura.acesso_premium_ativo() if assinatura else False,
+        cpf_cnpj=current_user.cpf_cnpj,
     )
 
     if current_user.is_professor():
@@ -93,6 +95,21 @@ def api_minha_assinatura():
     return jsonify(resultado)
 
 
+def _cpf_cnpj_valido(valor: str) -> str | None:
+    """Valida o formato mínimo (só quantidade de dígitos -- 11 pra CPF,
+    14 pra CNPJ) e devolve só os dígitos, sem pontuação. None se
+    inválido. Não faz validação de dígito verificador -- se o número
+    não existir de verdade, o próprio Asaas rejeita na hora de criar o
+    cliente, e a mensagem de erro específica dele é melhor do que a
+    gente tentar adivinhar a regra de validação por conta própria."""
+    if not valor:
+        return None
+    digitos = re.sub(r'\D', '', valor)
+    if len(digitos) in (11, 14):
+        return digitos
+    return None
+
+
 @billing_bp.route('/assinar', methods=['POST'])
 @login_required
 @limiter.limit("10 per minute")
@@ -103,7 +120,20 @@ def assinar():
     webhook está). Uma assinatura só por usuário: o plano oferecido é
     sempre o certo pra situação atual (Fit pro aluno; Fit, Pró ou
     Premium pro professor, conforme a quantidade de alunos -- ver
-    BillingService.plano_recomendado_professor)."""
+    BillingService.plano_recomendado_professor).
+
+    Pede CPF/CNPJ antes de tentar o checkout -- é exigido pelo Asaas
+    pra gerar qualquer cobrança de verdade (Receita Federal), mas nunca
+    pedimos isso no cadastro pra não criar fricção. Só pergunta na
+    primeira vez; depois fica salvo no usuário."""
+    if not current_user.cpf_cnpj:
+        cpf_cnpj = _cpf_cnpj_valido(request.form.get('cpf_cnpj', ''))
+        if not cpf_cnpj:
+            flash('Informe um CPF ou CNPJ válido para continuar -- é exigido para gerar a cobrança.', 'warning')
+            return redirect(url_for('billing.minha_assinatura'))
+        current_user.cpf_cnpj = cpf_cnpj
+        db.session.commit()
+
     if current_user.is_aluno():
         plano = Plano.query.filter_by(codigo='aluno_fit', ativo=True).first()
     elif current_user.is_professor():
@@ -118,6 +148,11 @@ def assinar():
 
     try:
         checkout_url = BillingService.criar_assinatura_checkout(current_user, plano)
+    except CpfCnpjNecessarioError:
+        # Não deveria acontecer (já validamos acima), mas cobre
+        # qualquer chamada futura a este método vinda de outro lugar.
+        flash('Informe um CPF ou CNPJ válido para continuar -- é exigido para gerar a cobrança.', 'warning')
+        return redirect(url_for('billing.minha_assinatura'))
     except RuntimeError:
         # ASAAS_API_KEY não configurada -- erro de operação, não do
         # usuário. Já logado dentro de BillingService.
