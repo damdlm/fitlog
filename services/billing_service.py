@@ -560,8 +560,21 @@ class BillingService:
         event_id = payload.get('id')
         tipo_evento = payload.get('event')
         if not event_id or not tipo_evento:
-            logger.warning('Webhook Asaas sem id/event no payload, ignorado')
+            logger.warning('Webhook Asaas sem id/event no payload, ignorado. Payload: %s', payload)
             return False
+
+        payment = payload.get('payment') or {}
+        subscription_id = payment.get('subscription')
+        external_reference = payment.get('externalReference')
+
+        # Sempre em INFO (não DEBUG) -- app.logger está configurado pra
+        # INFO em produção (ver app.py), então isso é o que garante dar
+        # pra ver no log do Railway exatamente o que o Asaas mandou,
+        # mesmo quando o evento não bate com nada que esperávamos.
+        logger.info(
+            'Webhook Asaas recebido: event=%s id=%s subscription=%s externalReference=%s payment.status=%s',
+            tipo_evento, event_id, subscription_id, external_reference, payment.get('status'),
+        )
 
         # Idempotência: Asaas reenvia o mesmo evento se não recebeu 200
         # a tempo da tentativa anterior -- processar duas vezes pode
@@ -569,10 +582,6 @@ class BillingService:
         if EventoWebhookAsaas.query.filter_by(event_id=event_id).first():
             logger.info('Webhook Asaas %s já processado antes, ignorando', event_id)
             return True
-
-        payment = payload.get('payment') or {}
-        subscription_id = payment.get('subscription')
-        external_reference = payment.get('externalReference')
 
         # Primeira cobrança de uma assinatura criada via /checkouts
         # ainda não tem gateway_subscription_id gravado no nosso banco
@@ -590,8 +599,18 @@ class BillingService:
                 assinatura.gateway_subscription_id = subscription_id
 
         if assinatura:
+            status_antes = assinatura.status
             BillingService._aplicar_evento(assinatura, tipo_evento)
-        elif subscription_id or external_reference:
+            logger.info(
+                'Assinatura %s (usuario=%s): status %s -> %s (evento %s)',
+                assinatura.id, assinatura.usuario_id, status_antes, assinatura.status, tipo_evento,
+            )
+        else:
+            # Antes só logava quando subscription_id OU external_reference
+            # vinham preenchidos -- se os dois viessem vazios (payload
+            # de formato diferente do esperado), passava batido em
+            # silêncio total, sem tocar em nenhuma Assinatura e sem
+            # deixar rastro nenhum no log pra investigar depois.
             logger.warning(
                 'Webhook Asaas (subscription=%s, externalReference=%s) sem Assinatura correspondente no banco',
                 subscription_id, external_reference,
@@ -622,7 +641,12 @@ class BillingService:
             assinatura.status = 'canceled'
             assinatura.cancelado_em = agora
         else:
-            logger.debug('Evento Asaas %s sem tratamento específico, ignorado', tipo_evento)
+            # Antes era logger.debug -- INVISÍVEL em produção, já que
+            # app.logger está configurado pra nível INFO (ver app.py).
+            # Foi exatamente isso que impediu diagnosticar o webhook
+            # que chegou (200 OK) mas não ativou a assinatura: o tipo
+            # de evento provavelmente caiu aqui sem deixar rastro nenhum.
+            logger.info('Evento Asaas %s sem tratamento específico (assinatura %s inalterada)', tipo_evento, assinatura.id)
 
     @staticmethod
     def expirar_carencias_vencidas():

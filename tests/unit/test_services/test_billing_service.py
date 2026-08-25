@@ -599,6 +599,45 @@ class TestProcessarWebhook:
             ok = BillingService.processar_webhook(payload)
             assert ok is True
 
+    def test_payload_sem_subscription_nem_external_reference_e_registrado_mas_nao_quebra(self, app, caplog):
+        """Regressão: se o payment não tem 'subscription' NEM
+        'externalReference' (payload de formato inesperado, diferente
+        do que documentamos), o código antes passava em silêncio total
+        -- nenhuma Assinatura tocada e nenhum log gerado. Agora precisa
+        pelo menos avisar (nível WARNING, visível em produção)."""
+        import logging
+        with app.app_context():
+            with caplog.at_level(logging.WARNING, logger='services.billing_service'):
+                payload = {
+                    'id': 'evt_sem_identificadores', 'event': 'PAYMENT_CONFIRMED',
+                    'payment': {'status': 'CONFIRMED'},  # sem subscription, sem externalReference
+                }
+                ok = BillingService.processar_webhook(payload)
+
+            assert ok is True
+            assert any('sem Assinatura correspondente' in r.message for r in caplog.records)
+            # Mesmo sem achar a Assinatura, o evento fica registrado
+            # pra idempotência (não reprocessa se o Asaas reenviar).
+            assert EventoWebhookAsaas.query.filter_by(event_id='evt_sem_identificadores').count() == 1
+
+    def test_evento_recebido_e_sempre_logado_em_info(self, app, caplog):
+        """Regressão: o webhook precisa deixar rastro do que recebeu
+        (tipo de evento, subscription, externalReference) em nível
+        INFO -- é isso que torna possível diagnosticar quando um evento
+        chega com 200 OK mas não muda nada (ex: tipo de evento que
+        ainda não tratamos)."""
+        import logging
+        with app.app_context():
+            with caplog.at_level(logging.INFO, logger='services.billing_service'):
+                payload = {
+                    'id': 'evt_tipo_desconhecido', 'event': 'CHECKOUT_PAID',
+                    'payment': {'subscription': 'sub_nao_importa'},
+                }
+                BillingService.processar_webhook(payload)
+
+            mensagens = [r.message for r in caplog.records]
+            assert any('Webhook Asaas recebido' in m and 'CHECKOUT_PAID' in m for m in mensagens)
+
 
 # ---------------------------------------------------------------------
 # Expiração de carência (job periódico)
