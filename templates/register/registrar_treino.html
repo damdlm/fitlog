@@ -2494,6 +2494,22 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarSwitchesExercicio();
     atualizarResumo();
 
+    // Seleciona todo o texto ao focar nos inputs de carga/reps, pra
+    // digitar por cima direto sem precisar apagar o valor anterior.
+    document.querySelectorAll('.carga-input, .reps-input').forEach(function(input) {
+        input.addEventListener('focus', function() {
+            this.select();
+        });
+        // Sem isso, o próprio clique que dá o foco também move o cursor
+        // e desfaz a seleção feita acima (comportamento padrão do
+        // navegador em inputs numéricos).
+        input.addEventListener('mouseup', function(e) {
+            if (document.activeElement === this) {
+                e.preventDefault();
+            }
+        });
+    });
+
     // Marcar exercício como já feito (só visual, muda a cor da borda)
     inicializarBotoesMarcarFeito();
     
