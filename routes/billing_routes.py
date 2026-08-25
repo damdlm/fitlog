@@ -9,7 +9,7 @@ from flask_login import current_user, login_required
 
 from extensions import limiter
 from models import db, Plano
-from services.billing_service import BillingService, CpfCnpjNecessarioError
+from services.billing_service import BillingService, DadosCobrancaIncompletosError
 
 billing_bp = Blueprint('billing', __name__)
 logger = logging.getLogger(__name__)
@@ -56,6 +56,9 @@ def minha_assinatura():
         assinatura=assinatura,
         acesso_premium=assinatura.acesso_premium_ativo() if assinatura else False,
         cpf_cnpj=current_user.cpf_cnpj,
+        telefone=current_user.telefone,
+        endereco_cep=current_user.endereco_cep,
+        endereco_numero=current_user.endereco_numero,
     )
 
     if current_user.is_professor():
@@ -110,6 +113,23 @@ def _cpf_cnpj_valido(valor: str) -> str | None:
     return None
 
 
+def _cep_valido(valor: str) -> str | None:
+    """8 dígitos, sem hífen. None se inválido."""
+    if not valor:
+        return None
+    digitos = re.sub(r'\D', '', valor)
+    return digitos if len(digitos) == 8 else None
+
+
+def _telefone_valido(valor: str) -> str | None:
+    """10 ou 11 dígitos (fixo ou celular, com DDD), sem pontuação.
+    None se inválido."""
+    if not valor:
+        return None
+    digitos = re.sub(r'\D', '', valor)
+    return digitos if len(digitos) in (10, 11) else None
+
+
 @billing_bp.route('/assinar', methods=['POST'])
 @login_required
 @limiter.limit("10 per minute")
@@ -122,16 +142,28 @@ def assinar():
     Premium pro professor, conforme a quantidade de alunos -- ver
     BillingService.plano_recomendado_professor).
 
-    Pede CPF/CNPJ antes de tentar o checkout -- é exigido pelo Asaas
-    pra gerar qualquer cobrança de verdade (Receita Federal), mas nunca
-    pedimos isso no cadastro pra não criar fricção. Só pergunta na
-    primeira vez; depois fica salvo no usuário."""
-    if not current_user.cpf_cnpj:
-        cpf_cnpj = _cpf_cnpj_valido(request.form.get('cpf_cnpj', ''))
-        if not cpf_cnpj:
-            flash('Informe um CPF ou CNPJ válido para continuar -- é exigido para gerar a cobrança.', 'warning')
+    Pede CPF/CNPJ, telefone, CEP e número do endereço antes de tentar o
+    checkout -- todos exigidos pelo Asaas pra gerar cobrança de cartão
+    recorrente de verdade (confirmado pela própria API, não é chute):
+    Receita Federal exige documento; endereço/telefone são exigidos
+    especificamente pro checkout RECURRENT+CREDIT_CARD. Nunca pedimos
+    isso no cadastro pra não criar fricção -- só na primeira vez que
+    tenta assinar; depois fica salvo no usuário."""
+    campos_faltando = BillingService.campos_cobranca_faltando(current_user)
+    if campos_faltando:
+        cpf_cnpj = _cpf_cnpj_valido(request.form.get('cpf_cnpj', '')) if 'cpf_cnpj' in campos_faltando else current_user.cpf_cnpj
+        telefone = _telefone_valido(request.form.get('telefone', '')) if 'telefone' in campos_faltando else current_user.telefone
+        cep = _cep_valido(request.form.get('endereco_cep', '')) if 'endereco_cep' in campos_faltando else current_user.endereco_cep
+        numero = request.form.get('endereco_numero', '').strip() if 'endereco_numero' in campos_faltando else current_user.endereco_numero
+
+        if not (cpf_cnpj and telefone and cep and numero):
+            flash('Preencha CPF/CNPJ, telefone, CEP e número do endereço para continuar -- são exigidos para gerar a cobrança.', 'warning')
             return redirect(url_for('billing.minha_assinatura'))
+
         current_user.cpf_cnpj = cpf_cnpj
+        current_user.telefone = telefone
+        current_user.endereco_cep = cep
+        current_user.endereco_numero = numero
         db.session.commit()
 
     if current_user.is_aluno():
@@ -148,10 +180,10 @@ def assinar():
 
     try:
         checkout_url = BillingService.criar_assinatura_checkout(current_user, plano)
-    except CpfCnpjNecessarioError:
+    except DadosCobrancaIncompletosError:
         # Não deveria acontecer (já validamos acima), mas cobre
         # qualquer chamada futura a este método vinda de outro lugar.
-        flash('Informe um CPF ou CNPJ válido para continuar -- é exigido para gerar a cobrança.', 'warning')
+        flash('Preencha CPF/CNPJ, telefone, CEP e número do endereço para continuar.', 'warning')
         return redirect(url_for('billing.minha_assinatura'))
     except RuntimeError:
         # ASAAS_API_KEY não configurada -- erro de operação, não do

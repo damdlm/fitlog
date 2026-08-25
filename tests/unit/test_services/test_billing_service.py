@@ -11,7 +11,7 @@ processamento idempotente de webhook do Asaas.
 from datetime import datetime, timedelta, timezone
 
 from models import db, User, AlunoProfessor, Assinatura, EventoWebhookAsaas, Plano
-from services.billing_service import BillingService, CpfCnpjNecessarioError, TRIAL_DIAS
+from services.billing_service import BillingService, DadosCobrancaIncompletosError, TRIAL_DIAS
 
 
 def _criar_usuario(username, tipo_usuario='aluno'):
@@ -20,6 +20,18 @@ def _criar_usuario(username, tipo_usuario='aluno'):
     db.session.add(user)
     db.session.flush()
     return user
+
+
+def _preencher_dados_cobranca(usuario, cpf_cnpj='12345678900'):
+    """Preenche os 4 campos que o Asaas exige pra checkout de cartão
+    recorrente (cpf_cnpj, telefone, endereco_cep, endereco_numero) --
+    usado nos testes que precisam passar de campos_cobranca_faltando()
+    e chegar de fato na chamada HTTP."""
+    usuario.cpf_cnpj = cpf_cnpj
+    usuario.telefone = '11987654321'
+    usuario.endereco_cep = '01310100'
+    usuario.endereco_numero = '100'
+    return usuario
 
 
 def _criar_planos_professor():
@@ -670,7 +682,7 @@ class TestCriarAssinaturaCheckout:
             app.config['APP_BASE_URL'] = 'https://fitlog.up.railway.app'
             _, _, fit = _criar_planos_professor()
             aluno = _criar_usuario('checkout_fields')
-            aluno.cpf_cnpj = '12345678900'
+            _preencher_dados_cobranca(aluno)
             assinatura = BillingService.iniciar_trial(aluno)
             db.session.commit()
 
@@ -680,6 +692,9 @@ class TestCriarAssinaturaCheckout:
 
             chamada_cliente = next(c for c in chamadas if c['url'].endswith('/customers'))
             assert chamada_cliente['json']['cpfCnpj'] == '12345678900'
+            assert chamada_cliente['json']['phone'] == '11987654321'
+            assert chamada_cliente['json']['postalCode'] == '01310100'
+            assert chamada_cliente['json']['addressNumber'] == '100'
 
             chamada_checkout = next(c for c in chamadas if c['url'].endswith('/checkouts'))
             payload = chamada_checkout['json']
@@ -705,7 +720,7 @@ class TestCriarAssinaturaCheckout:
             assert assinatura.gateway_subscription_id is None
             assert assinatura.plano_id == fit.id
 
-    def test_sem_cpf_cnpj_levanta_erro_especifico_sem_chamar_gateway(self, app, monkeypatch):
+    def test_sem_dados_de_cobranca_levanta_erro_especifico_sem_chamar_gateway(self, app, monkeypatch):
         chamou = {'valor': False}
 
         def _fake_post(*a, **k):
@@ -723,9 +738,36 @@ class TestCriarAssinaturaCheckout:
 
             try:
                 BillingService.criar_assinatura_checkout(aluno, fit)
-                assert False, 'deveria ter levantado CpfCnpjNecessarioError'
-            except CpfCnpjNecessarioError:
-                pass
+                assert False, 'deveria ter levantado DadosCobrancaIncompletosError'
+            except DadosCobrancaIncompletosError as e:
+                assert set(e.campos) == {'cpf_cnpj', 'telefone', 'endereco_cep', 'endereco_numero'}
+
+            assert chamou['valor'] is False
+
+    def test_faltando_so_um_campo_ja_bloqueia(self, app, monkeypatch):
+        """Não basta ter 3 dos 4 campos -- todos são exigidos."""
+        chamou = {'valor': False}
+
+        def _fake_post(*a, **k):
+            chamou['valor'] = True
+            return _RespostaFake({'id': 'cus_nao_deveria_chamar'})
+
+        monkeypatch.setattr('services.billing_service.requests.post', _fake_post)
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            _, _, fit = _criar_planos_professor()
+            aluno = _criar_usuario('checkout_falta_numero')
+            _preencher_dados_cobranca(aluno)
+            aluno.endereco_numero = None  # só este falta
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+
+            try:
+                BillingService.criar_assinatura_checkout(aluno, fit)
+                assert False, 'deveria ter levantado DadosCobrancaIncompletosError'
+            except DadosCobrancaIncompletosError as e:
+                assert e.campos == ['endereco_numero']
 
             assert chamou['valor'] is False
 
@@ -755,7 +797,7 @@ class TestCriarAssinaturaCheckout:
             app.config['APP_BASE_URL'] = 'https://fitlog.up.railway.app'
             _, _, fit = _criar_planos_professor()
             aluno = _criar_usuario('checkout_cliente_existente')
-            aluno.cpf_cnpj = '98765432100'
+            _preencher_dados_cobranca(aluno, cpf_cnpj='98765432100')
             assinatura = BillingService.iniciar_trial(aluno)
             assinatura.gateway_customer_id = 'cus_ja_existente'
             db.session.commit()
@@ -783,7 +825,7 @@ class TestCriarAssinaturaCheckout:
             app.config['APP_BASE_URL'] = 'https://fitlog.up.railway.app'
             _, _, fit = _criar_planos_professor()
             aluno = _criar_usuario('checkout_erro_400')
-            aluno.cpf_cnpj = '11122233344'
+            _preencher_dados_cobranca(aluno, cpf_cnpj='11122233344')
             BillingService.iniciar_trial(aluno)
             db.session.commit()
 

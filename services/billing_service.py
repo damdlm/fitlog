@@ -22,6 +22,7 @@ Duas responsabilidades bem separadas de propósito:
 
 import hmac
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 
 import requests
@@ -52,16 +53,43 @@ EVENTOS_ATRASO = ('PAYMENT_OVERDUE',)
 EVENTOS_CANCELAMENTO = ('PAYMENT_DELETED', 'PAYMENT_REFUNDED', 'SUBSCRIPTION_DELETED')
 
 
-class CpfCnpjNecessarioError(Exception):
-    """Levantada por criar_assinatura_checkout quando o usuário ainda
-    não tem cpf_cnpj cadastrado -- o Asaas exige o dado pra gerar
-    qualquer cobrança de verdade. A rota que chama deve pedir o CPF/
-    CNPJ antes de tentar de novo, em vez de tratar como falha de rede
-    genérica."""
-    pass
+class DadosCobrancaIncompletosError(Exception):
+    """Levantada por criar_assinatura_checkout quando falta algum dado
+    obrigatório pro Asaas gerar a cobrança -- CPF/CNPJ, telefone, CEP
+    ou número do endereço. `campos` traz os nomes que faltam (mesmos
+    nomes dos campos do User: cpf_cnpj, telefone, endereco_cep,
+    endereco_numero), pra rota que chama pedir só o que falta em vez
+    de tratar como falha de rede genérica."""
+    def __init__(self, campos):
+        self.campos = campos
+        super().__init__(f'Dados de cobrança incompletos: {", ".join(campos)}')
+
+
+# Nome antigo mantido como alias -- CpfCnpjNecessarioError virou um
+# caso específico de DadosCobrancaIncompletosError quando descobrimos
+# que CPF/CNPJ sozinho não bastava (telefone/CEP/número também são
+# exigidos pelo Asaas pra checkout de cartão recorrente).
+CpfCnpjNecessarioError = DadosCobrancaIncompletosError
 
 
 class BillingService:
+
+    @staticmethod
+    def campos_cobranca_faltando(usuario: User) -> list[str]:
+        """Lista os campos ainda não preenchidos que o Asaas exige pra
+        gerar uma cobrança de cartão recorrente: cpf_cnpj, telefone,
+        endereco_cep, endereco_numero. Lista vazia = pode prosseguir
+        pro checkout."""
+        campos = []
+        if not usuario.cpf_cnpj:
+            campos.append('cpf_cnpj')
+        if not usuario.telefone:
+            campos.append('telefone')
+        if not usuario.endereco_cep:
+            campos.append('endereco_cep')
+        if not usuario.endereco_numero:
+            campos.append('endereco_numero')
+        return campos
 
     # ================================================================
     # Acesso / tier -- só lê o banco local, sem chamar o gateway
@@ -357,34 +385,46 @@ class BillingService:
     @staticmethod
     def criar_assinatura_checkout(usuario: User, plano: Plano) -> str:
         """Cria (ou reaproveita/atualiza) o cliente no Asaas e um
-        Checkout de assinatura recorrente, retornando o link da página
-        de pagamento hospedada pelo Asaas -- o navegador do usuário é
-        redirecionado para lá, e o dado de cartão nunca passa pelo
-        nosso servidor (mantém o fitlog em PCI SAQ A, o nível mais
-        simples de conformidade).
+        Checkout de assinatura recorrente por cartão de crédito,
+        retornando o link da página de pagamento hospedada pelo Asaas
+        -- o navegador do usuário é redirecionado para lá, e o dado de
+        cartão nunca passa pelo nosso servidor (mantém o fitlog em PCI
+        SAQ A, o nível mais simples de conformidade).
 
         Usa POST /checkouts (não /subscriptions diretamente) porque é
-        o endpoint que devolve uma página hospedada deixando o pagador
-        escolher Pix/cartão/boleto -- /subscriptions cria a cobrança
-        direto com uma forma de pagamento já definida, sem página de
-        escolha. Documentação: https://docs.asaas.com/reference/create-new-checkout
+        o endpoint que devolve uma página hospedada de pagamento --
+        /subscriptions cria a cobrança direto, sem página. Documentação
+        de referência (lida por completo antes desta versão, depois de
+        3 rodadas de erro 400 corrigindo campo por campo -- não repetir
+        esse padrão): https://docs.asaas.com/reference/create-new-checkout
+        e https://docs.asaas.com/reference/criar-novo-cliente
+
+        billingTypes é só ['CREDIT_CARD']: a própria API confirmou que
+        é o único método aceito quando chargeTypes inclui RECURRENT --
+        Pix/boleto não têm suporte a cobrança recorrente automática
+        nesse fluxo.
+
+        Exige cpf_cnpj, telefone, endereco_cep e endereco_numero
+        preenchidos no usuário -- a API também confirmou (erro
+        explícito) que phone/address/addressNumber/postalCode/
+        province/city precisam existir no cliente pra criar um
+        checkout RECURRENT+CREDIT_CARD. Mandando só o CEP, o próprio
+        Asaas preenche address/province/city automaticamente; só
+        addressNumber e phone precisam ser enviados à parte. Levanta
+        DadosCobrancaIncompletosError se faltar algum -- quem chama
+        deve pedir os dados antes de tentar de novo (ver
+        routes/billing_routes.py:assinar).
 
         A assinatura real só é criada pelo Asaas DEPOIS que o pagador
-        escolhe a forma de pagamento e confirma -- por isso ainda não
-        temos gateway_subscription_id aqui. Mandamos o id da nossa
-        própria Assinatura em externalReference pra conseguir casar o
-        primeiro webhook que chegar com este registro (ver
-        processar_webhook), e só a partir daí gravamos o
-        gateway_subscription_id de verdade.
-
-        Levanta CpfCnpjNecessarioError se o usuário ainda não tem
-        cpf_cnpj cadastrado -- é campo obrigatório pro Asaas gerar
-        qualquer cobrança de verdade (exigência da Receita Federal, não
-        só do gateway). Quem chama deve pedir o dado antes de tentar
-        de novo (ver routes/billing_routes.py:assinar).
+        confirma o pagamento -- por isso ainda não temos
+        gateway_subscription_id aqui. Mandamos o id da nossa própria
+        Assinatura em externalReference pra conseguir casar o primeiro
+        webhook que chegar com este registro (ver processar_webhook), e
+        só a partir daí gravamos o gateway_subscription_id de verdade.
         """
-        if not usuario.cpf_cnpj:
-            raise CpfCnpjNecessarioError()
+        faltando = BillingService.campos_cobranca_faltando(usuario)
+        if faltando:
+            raise DadosCobrancaIncompletosError(faltando)
 
         assinatura = BillingService.garantir_registro_assinatura(usuario)
 
@@ -392,6 +432,9 @@ class BillingService:
             'name': usuario.nome_completo or usuario.username,
             'email': usuario.email,
             'cpfCnpj': usuario.cpf_cnpj,
+            'phone': re.sub(r'\D', '', usuario.telefone),
+            'postalCode': usuario.endereco_cep,
+            'addressNumber': usuario.endereco_numero,
         }
         customer_id = assinatura.gateway_customer_id
         if not customer_id:
@@ -406,11 +449,11 @@ class BillingService:
             assinatura.gateway_customer_id = customer_id
             db.session.commit()
         else:
-            # Atualiza o cadastro existente com o cpfCnpj mais recente
+            # Atualiza o cadastro existente com os dados mais recentes
             # -- cobre o caso de um cliente já ter sido criado ANTES do
-            # usuário preencher o CPF/CNPJ (ex: tentativas de checkout
-            # de antes desta correção), que ficariam pra sempre sem o
-            # dado e nunca conseguiriam gerar cobrança nenhuma.
+            # usuário preencher CPF/telefone/endereço (tentativas de
+            # checkout de antes destas correções), que ficariam pra
+            # sempre incompletos e nunca conseguiriam gerar cobrança.
             resp = requests.put(
                 f'{BillingService._base_url()}/customers/{customer_id}',
                 json=dados_cliente,

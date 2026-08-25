@@ -17,6 +17,18 @@ def _criar_usuario(username, tipo_usuario='aluno'):
     return user
 
 
+def _preencher_dados_cobranca(usuario, cpf_cnpj='12345678900'):
+    """Preenche os 4 campos que o Asaas exige pra checkout de cartão
+    recorrente -- usado nos testes que só querem testar o fluxo de
+    /billing/assinar em si, sem estarem testando a validação desses
+    campos (essa fica em TestDadosCobrancaObrigatorios)."""
+    usuario.cpf_cnpj = cpf_cnpj
+    usuario.telefone = '11987654321'
+    usuario.endereco_cep = '01310100'
+    usuario.endereco_numero = '100'
+    return usuario
+
+
 def _criar_planos():
     db.session.add(Plano(codigo='aluno_fit', nome='Plano Fit', tipo_usuario='aluno', preco_centavos=599))
     db.session.add(Plano(codigo='professor_pro', nome='Plano Pró', tipo_usuario='professor',
@@ -216,7 +228,7 @@ class TestAssinar:
         with app.app_context():
             _criar_planos()
             professor = _criar_usuario('assinar_prof_sem_alunos', tipo_usuario='professor')
-            professor.cpf_cnpj = '12345678900'
+            _preencher_dados_cobranca(professor)
             db.session.commit()
             professor_ref = User.query.get(professor.id)
 
@@ -239,7 +251,7 @@ class TestAssinar:
             _criar_planos()
             professor = _criar_usuario('assinar_prof_5_alunos', tipo_usuario='professor')
             _vincular_alunos(professor, 5)
-            professor.cpf_cnpj = '12345678900'
+            _preencher_dados_cobranca(professor)
             db.session.commit()
             professor_ref = User.query.get(professor.id)
 
@@ -257,7 +269,7 @@ class TestAssinar:
         with app.app_context():
             _criar_planos()
             aluno = _criar_usuario('assinar_aluno_ok')
-            aluno.cpf_cnpj = '12345678900'
+            _preencher_dados_cobranca(aluno)
             BillingService.iniciar_trial(aluno)
             db.session.commit()
             aluno_ref = User.query.get(aluno.id)
@@ -277,6 +289,7 @@ class TestAssinar:
         with app.app_context():
             _criar_planos()
             aluno = _criar_usuario('assinar_aluno_falha')
+            _preencher_dados_cobranca(aluno)
             BillingService.iniciar_trial(aluno)
             db.session.commit()
             aluno_ref = User.query.get(aluno.id)
@@ -288,11 +301,11 @@ class TestAssinar:
 
 
 # ---------------------------------------------------------------------
-# CPF/CNPJ obrigatório (exigência do Asaas pra gerar qualquer cobrança)
+# Dados de cobrança obrigatórios (exigência do Asaas pra gerar qualquer cobrança)
 # ---------------------------------------------------------------------
 
-class TestCpfCnpjObrigatorio:
-    def test_sem_cpf_cnpj_no_form_nao_chama_o_gateway(self, client, app, monkeypatch):
+class TestDadosCobrancaObrigatorios:
+    def test_sem_nenhum_dado_no_form_nao_chama_o_gateway(self, client, app, monkeypatch):
         chamou = {'valor': False}
 
         def _fake_checkout(*a, **k):
@@ -303,7 +316,7 @@ class TestCpfCnpjObrigatorio:
 
         with app.app_context():
             _criar_planos()
-            aluno = _criar_usuario('assinar_sem_cpf')
+            aluno = _criar_usuario('assinar_sem_dados')
             BillingService.iniciar_trial(aluno)
             db.session.commit()
             aluno_ref = User.query.get(aluno.id)
@@ -323,6 +336,9 @@ class TestCpfCnpjObrigatorio:
         with app.app_context():
             _criar_planos()
             aluno = _criar_usuario('assinar_cpf_invalido')
+            aluno.telefone = '11987654321'
+            aluno.endereco_cep = '01310100'
+            aluno.endereco_numero = '100'
             BillingService.iniciar_trial(aluno)
             db.session.commit()
             aluno_ref = User.query.get(aluno.id)
@@ -336,39 +352,97 @@ class TestCpfCnpjObrigatorio:
             aluno_ref = User.query.get(aluno_ref.id)
             assert aluno_ref.cpf_cnpj is None
 
-    def test_cpf_cnpj_valido_no_form_e_salvo_e_prossegue_pro_checkout(self, client, app, monkeypatch):
+    def test_cep_com_formato_invalido_e_rejeitado(self, client, app, monkeypatch):
         monkeypatch.setattr(
             BillingService, 'criar_assinatura_checkout',
-            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake-com-cpf'),
+            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake'),
         )
 
         with app.app_context():
             _criar_planos()
-            aluno = _criar_usuario('assinar_cpf_valido')
+            aluno = _criar_usuario('assinar_cep_invalido')
+            aluno.cpf_cnpj = '12345678900'
+            aluno.telefone = '11987654321'
+            aluno.endereco_numero = '100'
             BillingService.iniciar_trial(aluno)
             db.session.commit()
             aluno_ref = User.query.get(aluno.id)
 
         _login(client, aluno_ref)
-        # CPF com pontuação -- o backend deve limpar antes de salvar.
-        resp = client.post('/billing/assinar', data={'cpf_cnpj': '123.456.789-00'}, follow_redirects=False)
+        resp = client.post('/billing/assinar', data={'endereco_cep': 'não é um cep'}, follow_redirects=False)
         assert resp.status_code == 302
-        assert resp.headers.get('Location') == 'https://sandbox.asaas.com/i/fake-com-cpf'
+        assert '/billing/minha-assinatura' in resp.headers.get('Location', '')
 
         with app.app_context():
             aluno_ref = User.query.get(aluno_ref.id)
-            assert aluno_ref.cpf_cnpj == '12345678900'
+            assert aluno_ref.endereco_cep is None
 
-    def test_usuario_que_ja_tem_cpf_cnpj_nao_precisa_reenviar(self, client, app, monkeypatch):
+    def test_todos_os_dados_no_form_sao_limpos_salvos_e_prosseguem_pro_checkout(self, client, app, monkeypatch):
         monkeypatch.setattr(
             BillingService, 'criar_assinatura_checkout',
-            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake-ja-tinha-cpf'),
+            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake-com-dados'),
         )
 
         with app.app_context():
             _criar_planos()
-            aluno = _criar_usuario('assinar_ja_tem_cpf')
-            aluno.cpf_cnpj = '11144477735'
+            aluno = _criar_usuario('assinar_dados_completos')
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        # Com pontuação de propósito -- o backend deve limpar antes de salvar.
+        resp = client.post('/billing/assinar', data={
+            'cpf_cnpj': '123.456.789-00',
+            'telefone': '(11) 98765-4321',
+            'endereco_cep': '01310-100',
+            'endereco_numero': '100',
+        }, follow_redirects=False)
+        assert resp.status_code == 302
+        assert resp.headers.get('Location') == 'https://sandbox.asaas.com/i/fake-com-dados'
+
+        with app.app_context():
+            aluno_ref = User.query.get(aluno_ref.id)
+            assert aluno_ref.cpf_cnpj == '12345678900'
+            assert aluno_ref.telefone == '11987654321'
+            assert aluno_ref.endereco_cep == '01310100'
+            assert aluno_ref.endereco_numero == '100'
+
+    def test_falta_so_o_endereco_pede_so_o_que_falta(self, client, app, monkeypatch):
+        """Quem já tem CPF/telefone salvos (ex: preencheu o perfil
+        antes) só precisa completar o que falta -- não reenvia tudo."""
+        monkeypatch.setattr(
+            BillingService, 'criar_assinatura_checkout',
+            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake-so-endereco'),
+        )
+
+        with app.app_context():
+            _criar_planos()
+            aluno = _criar_usuario('assinar_so_falta_endereco')
+            aluno.cpf_cnpj = '12345678900'
+            aluno.telefone = '11987654321'
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        resp = client.post('/billing/assinar', data={
+            'endereco_cep': '01310100',
+            'endereco_numero': '100',
+        }, follow_redirects=False)
+        assert resp.status_code == 302
+        assert resp.headers.get('Location') == 'https://sandbox.asaas.com/i/fake-so-endereco'
+
+    def test_usuario_que_ja_tem_tudo_nao_precisa_reenviar_nada(self, client, app, monkeypatch):
+        monkeypatch.setattr(
+            BillingService, 'criar_assinatura_checkout',
+            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake-ja-tinha-tudo'),
+        )
+
+        with app.app_context():
+            _criar_planos()
+            aluno = _criar_usuario('assinar_ja_tem_tudo')
+            _preencher_dados_cobranca(aluno, cpf_cnpj='11144477735')
             BillingService.iniciar_trial(aluno)
             db.session.commit()
             aluno_ref = User.query.get(aluno.id)
@@ -376,7 +450,7 @@ class TestCpfCnpjObrigatorio:
         _login(client, aluno_ref)
         resp = client.post('/billing/assinar', follow_redirects=False)
         assert resp.status_code == 302
-        assert resp.headers.get('Location') == 'https://sandbox.asaas.com/i/fake-ja-tinha-cpf'
+        assert resp.headers.get('Location') == 'https://sandbox.asaas.com/i/fake-ja-tinha-tudo'
 
 
 # ---------------------------------------------------------------------

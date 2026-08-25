@@ -79,6 +79,15 @@ class User(UserMixin, db.Model):
     # verdade. Nulo até o usuário preencher na hora de assinar pela
     # primeira vez (ver routes/billing_routes.py:assinar). Nunca
     # solicitado no cadastro pra não travar quem nunca vai assinar.
+    # Só dígitos (8), sem hífen -- exigido junto com cpf_cnpj pro
+    # Asaas gerar checkout de cartão de crédito RECORRENTE (a API
+    # respondeu explicitamente: "phone, address, addressNumber,
+    # postalCode, province, city [devem existir para o customer]").
+    # Mandando só o CEP, o próprio Asaas preenche address/province/city
+    # automaticamente -- só addressNumber e phone continuam precisando
+    # ser enviados à parte (ver services/billing_service.py).
+    endereco_cep = db.Column(db.String(9), nullable=True)
+    endereco_numero = db.Column(db.String(20), nullable=True)
     cpf_cnpj = db.Column(db.String(20), nullable=True)
     ativo = db.Column(db.Boolean, default=True)
     

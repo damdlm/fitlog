@@ -100,12 +100,25 @@
     </p>
     <form method="POST" action="{{ url_for('billing.assinar') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        {% if not cpf_cnpj %}
+        {% if not cpf_cnpj or not telefone or not endereco_cep or not endereco_numero %}
         <div class="mb-3 text-start">
-            <label class="form-label" style="font-size: 0.85rem;">CPF ou CNPJ <span class="text-danger">*</span></label>
-            <input type="text" name="cpf_cnpj" class="form-control" placeholder="Só números" required
+            <label class="form-label" style="font-size: 0.85rem;">Dados para cobrança <span class="text-danger">*</span></label>
+            <small class="text-muted d-block mb-2">Exigidos pelo Asaas para gerar a cobrança por cartão. Pedimos só uma vez.</small>
+            {% if not cpf_cnpj %}
+            <input type="text" name="cpf_cnpj" class="form-control mb-2" placeholder="CPF ou CNPJ (só números)" required
                    inputmode="numeric" maxlength="18">
-            <small class="text-muted">Exigido pelo Asaas para gerar a cobrança. Pedimos só uma vez.</small>
+            {% endif %}
+            {% if not telefone %}
+            <input type="text" name="telefone" class="form-control mb-2" placeholder="Telefone com DDD (só números)" required
+                   inputmode="numeric" maxlength="15">
+            {% endif %}
+            {% if not endereco_cep %}
+            <input type="text" name="endereco_cep" class="form-control mb-2" placeholder="CEP (só números)" required
+                   inputmode="numeric" maxlength="9">
+            {% endif %}
+            {% if not endereco_numero %}
+            <input type="text" name="endereco_numero" class="form-control mb-2" placeholder="Número do endereço" required maxlength="20">
+            {% endif %}
         </div>
         {% endif %}
         <button type="submit" class="ma-btn-assinar">
@@ -170,12 +183,25 @@
     <p class="text-muted mb-3">{{ plano_oferecido.nome }} — Estatísticas e FitBot liberados</p>
     <form method="POST" action="{{ url_for('billing.assinar') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        {% if not cpf_cnpj %}
+        {% if not cpf_cnpj or not telefone or not endereco_cep or not endereco_numero %}
         <div class="mb-3 text-start">
-            <label class="form-label" style="font-size: 0.85rem;">CPF ou CNPJ <span class="text-danger">*</span></label>
-            <input type="text" name="cpf_cnpj" class="form-control" placeholder="Só números" required
+            <label class="form-label" style="font-size: 0.85rem;">Dados para cobrança <span class="text-danger">*</span></label>
+            <small class="text-muted d-block mb-2">Exigidos pelo Asaas para gerar a cobrança por cartão. Pedimos só uma vez.</small>
+            {% if not cpf_cnpj %}
+            <input type="text" name="cpf_cnpj" class="form-control mb-2" placeholder="CPF ou CNPJ (só números)" required
                    inputmode="numeric" maxlength="18">
-            <small class="text-muted">Exigido pelo Asaas para gerar a cobrança. Pedimos só uma vez.</small>
+            {% endif %}
+            {% if not telefone %}
+            <input type="text" name="telefone" class="form-control mb-2" placeholder="Telefone com DDD (só números)" required
+                   inputmode="numeric" maxlength="15">
+            {% endif %}
+            {% if not endereco_cep %}
+            <input type="text" name="endereco_cep" class="form-control mb-2" placeholder="CEP (só números)" required
+                   inputmode="numeric" maxlength="9">
+            {% endif %}
+            {% if not endereco_numero %}
+            <input type="text" name="endereco_numero" class="form-control mb-2" placeholder="Número do endereço" required maxlength="20">
+            {% endif %}
         </div>
         {% endif %}
         <button type="submit" class="ma-btn-assinar">
