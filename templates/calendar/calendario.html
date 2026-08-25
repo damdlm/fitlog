@@ -954,6 +954,22 @@
     let viewStart = null;
     let viewEnd = null;
 
+    // Meses (chave "YYYY-MM") cujos eventos já foram buscados no backend,
+    // pra nunca refazer a mesma requisição ao navegar de volta a um mês
+    // já visitado.
+    const mesesCarregados = new Set();
+
+    // Base da API de eventos -- quando um professor está vendo o
+    // calendário de um aluno, esta URL já vem com ?aluno_id=... (ver
+    // professor_routes.py); por isso os parâmetros ano/mes abaixo são
+    // sempre concatenados, nunca hardcoded com "?".
+    const EVENTOS_API_BASE = '{{ eventos_api_url or url_for("calendar.api_eventos") }}';
+
+    function urlEventosDoMes(ano, mes) {
+        const separador = EVENTOS_API_BASE.includes('?') ? '&' : '?';
+        return `${EVENTOS_API_BASE}${separador}ano=${ano}&mes=${mes}`;
+    }
+
     const THEME_STORAGE_KEY = 'fitlog_calendar_theme';
 
     function aplicarTema(tema) {
@@ -1049,7 +1065,13 @@
             datesSet: function(info) {
                 viewStart = info.view.currentStart;
                 viewEnd = info.view.currentEnd;
-                atualizarResumoMes();
+                // activeStart/activeEnd cobrem também os dias de
+                // preenchimento do mês anterior/seguinte que aparecem no
+                // grid (ex: os 3 primeiros dias de uma semana que
+                // pertencem ao mês anterior) -- carregando por eles,
+                // nenhum desses dias fica sem os treinos que já tem.
+                carregarMesesDoIntervalo(info.view.activeStart, info.view.activeEnd)
+                    .then(atualizarResumoMes);
             },
             windowResize: function() {
                 // Reajusta a altura das linhas do calendário ao girar a tela no celular
@@ -1072,29 +1094,68 @@
         calendar.render();
         habilitarSwipeCalendario(calendarEl);
         habilitarArrastarSheet();
-        
-        // Carrega TODOS os treinos já registrados de uma vez. Assim, ao
-        // navegar entre os meses com os botões do próprio calendário,
-        // os dados já estão carregados no navegador e aparecem na hora,
-        // sem precisar de uma nova requisição a cada clique.
-        carregarEventos();
+
+        // Ao abrir a tela, carrega só os últimos dois meses (mês atual e
+        // o anterior) -- cobre o caso mais comum (usuário olhando o
+        // treino recente) sem puxar o histórico inteiro. O mês atual já
+        // é carregado pelo datesSet inicial (disparado pelo render()
+        // acima); chamar de novo aqui não duplica a requisição porque
+        // carregarMes() já marca o mês como carregado antes do fetch
+        // resolver. Os demais meses só entram conforme o usuário navega
+        // (ver datesSet).
+        const hoje = new Date();
+        const doisMesesAtras = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+        const fimIntervaloInicial = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);
+        carregarMesesDoIntervalo(doisMesesAtras, fimIntervaloInicial).then(atualizarResumoMes);
     }
-    
-    function carregarEventos() {
-        fetch('{{ eventos_api_url or url_for("calendar.api_eventos") }}')
+
+    function chaveMes(ano, mes) {
+        return `${ano}-${String(mes).padStart(2, '0')}`;
+    }
+
+    // Busca os eventos de um único mês no backend (usa o filtro
+    // ano/mes já suportado por /api/eventos, que filtra no banco pelo
+    // índice idx_registro_user_data em vez de carregar o histórico
+    // inteiro). Idempotente: se o mês já foi carregado (ou está sendo
+    // carregado), não refaz a requisição.
+    function carregarMes(ano, mes) {
+        const chave = chaveMes(ano, mes);
+        if (mesesCarregados.has(chave)) {
+            return Promise.resolve();
+        }
+        // Marca como carregado já aqui (antes do fetch resolver) pra
+        // evitar corrida: se datesSet e o carregamento inicial pedirem
+        // o mesmo mês quase ao mesmo tempo, só uma requisição sai.
+        mesesCarregados.add(chave);
+
+        const url = urlEventosDoMes(ano, mes);
+        return fetch(url)
             .then(response => response.json())
             .then(data => {
-                eventos = data;
-                calendar.removeAllEvents();
+                eventos = eventos.concat(data);
                 calendar.addEventSource(data);
-                atualizarResumoMes();
             })
             .catch(error => {
-                console.error('Erro ao carregar eventos:', error);
+                // Falhou -- desmarca pra permitir tentar de novo numa
+                // próxima navegação até esse mês.
+                mesesCarregados.delete(chave);
+                console.error(`Erro ao carregar eventos de ${chave}:`, error);
                 if (typeof FitLogUtils !== 'undefined') {
                     FitLogUtils.showToast('Erro ao carregar calendário', 'danger');
                 }
             });
+    }
+
+    // Carrega todos os meses que se sobrepõem ao intervalo [inicio, fim),
+    // onde fim é exclusivo (mesma convenção usada no backend).
+    function carregarMesesDoIntervalo(inicio, fim) {
+        const promessas = [];
+        let cursor = new Date(inicio.getFullYear(), inicio.getMonth(), 1);
+        while (cursor < fim) {
+            promessas.push(carregarMes(cursor.getFullYear(), cursor.getMonth() + 1));
+            cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+        }
+        return Promise.all(promessas);
     }
 
     function atualizarResumoMes() {
