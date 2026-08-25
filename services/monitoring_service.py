@@ -36,24 +36,96 @@ _PROCESS_START = time.time()
 class MonitoringService:
 
     # =========================================================
-    # PROCESSO (CPU / MEMÓRIA DO WORKER)
+    # PROCESSO (CPU / MEMÓRIA -- AGREGADO DE TODOS OS WORKERS)
     # =========================================================
     @staticmethod
-    def get_process_metrics():
-        """CPU/memória do processo atual (um worker do Gunicorn) e do
-        sistema onde ele roda. Requer psutil -- se não estiver
-        instalado, retorna disponível=False em vez de quebrar a página."""
+    def _workers_do_gunicorn(psutil_mod, processo_atual):
+        """Retorna a lista de processos-worker do Gunicorn no mesmo
+        container -- não só o processo que atendeu esta requisição.
+
+        A app roda com `workers = 2` (gthread) no gunicorn.conf.py: são
+        2 processos do SO, filhos do processo arbiter/master do
+        Gunicorn. Sem esse passo, o painel só enxergaria o worker que
+        por acaso atendeu cada requisição, fazendo CPU/memória
+        "pularem" entre os dois processos a cada refresh sem isso
+        representar uma variação real de carga.
+
+        A relação usada é puramente pai->filhos via psutil (PID/PPID),
+        não por nome de processo -- o Gunicorn só renomeia processos
+        (para "gunicorn: worker [...]") quando o pacote `setproctitle`
+        está instalado, o que não é o caso aqui (ver requirements.txt).
+        Pai->filhos funciona independente disso.
+        """
+        try:
+            pai = processo_atual.parent()
+        except Exception:
+            pai = None
+
+        if pai is None:
+            return [processo_atual]
+
+        try:
+            nome_pai = (pai.name() or "").lower()
+            cmdline_pai = " ".join(pai.cmdline()).lower()
+        except Exception:
+            nome_pai = ""
+            cmdline_pai = ""
+
+        eh_gunicorn = "gunicorn" in nome_pai or "gunicorn" in cmdline_pai
+        if not eh_gunicorn:
+            # Não está rodando sob um master do Gunicorn (ex: `flask run`
+            # local) -- só o processo atual mesmo.
+            return [processo_atual]
+
+        try:
+            irmaos = pai.children()
+        except Exception:
+            irmaos = [processo_atual]
+
+        return irmaos or [processo_atual]
+
+    @classmethod
+    def get_process_metrics(cls):
+        """CPU/memória agregadas de TODOS os workers do Gunicorn (não
+        só do processo que atendeu esta requisição) e do sistema onde
+        eles rodam. Requer psutil -- se não estiver instalado, retorna
+        disponivel=False em vez de quebrar a página."""
         try:
             import psutil
         except ImportError:
             return {"disponivel": False, "erro": "psutil não instalado"}
 
         try:
-            processo = psutil.Process(os.getpid())
-            with processo.oneshot():
-                cpu_processo = processo.cpu_percent(interval=0.1)
-                mem_info = processo.memory_info()
-                num_threads = processo.num_threads()
+            processo_atual = psutil.Process(os.getpid())
+            workers_proc = cls._workers_do_gunicorn(psutil, processo_atual)
+
+            workers_info = []
+            cpu_total = 0.0
+            memoria_total_mb = 0.0
+            threads_total = 0
+
+            for p in workers_proc:
+                try:
+                    with p.oneshot():
+                        # interval curto por processo -- com 2 workers,
+                        # ~0.1-0.2s de latência extra no endpoint, aceitável
+                        # para um painel que atualiza a cada 10s.
+                        cpu_pct = p.cpu_percent(interval=0.1)
+                        mem_mb = p.memory_info().rss / (1024 * 1024)
+                        threads = p.num_threads()
+                    workers_info.append({
+                        "pid": p.pid,
+                        "cpu_pct": round(cpu_pct, 1),
+                        "memoria_mb": round(mem_mb, 1),
+                        "threads": threads,
+                    })
+                    cpu_total += cpu_pct
+                    memoria_total_mb += mem_mb
+                    threads_total += threads
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    # Worker morreu/reiniciou entre a listagem e a leitura --
+                    # ignora esse processo, não derruba a métrica inteira.
+                    continue
 
             mem_sistema = psutil.virtual_memory()
             cpu_sistema = psutil.cpu_percent(interval=0.1)
@@ -62,13 +134,17 @@ class MonitoringService:
 
             return {
                 "disponivel": True,
-                "cpu_processo_pct": round(cpu_processo, 1),
+                "num_workers": len(workers_info),
+                "workers": workers_info,
+                # Agregado -- soma de todos os workers do Gunicorn, não
+                # só do que atendeu esta requisição.
+                "cpu_processo_pct": round(cpu_total, 1),
+                "memoria_processo_mb": round(memoria_total_mb, 1),
+                "num_threads": threads_total,
                 "cpu_sistema_pct": round(cpu_sistema, 1),
-                "memoria_processo_mb": round(mem_info.rss / (1024 * 1024), 1),
                 "memoria_sistema_usada_pct": round(mem_sistema.percent, 1),
                 "memoria_sistema_total_mb": round(mem_sistema.total / (1024 * 1024), 1),
                 "memoria_sistema_usada_mb": round(mem_sistema.used / (1024 * 1024), 1),
-                "num_threads": num_threads,
                 "pid": os.getpid(),
                 "uptime_segundos": int(uptime_segundos),
             }

@@ -20,13 +20,13 @@
 <!-- ========================================= -->
 <div class="card mb-4">
     <div class="card-body">
-        <h5 class="card-title mb-3"><i class="bi bi-cpu me-2" style="color: #F28C33;"></i>Processo (App)</h5>
+        <h5 class="card-title mb-3"><i class="bi bi-cpu me-2" style="color: #F28C33;"></i>Processo (App) <span id="mon-num-workers" class="badge bg-secondary fw-normal ms-1">--</span></h5>
         <div id="mon-processo-indisponivel" class="text-muted small d-none">
             <i class="bi bi-exclamation-circle"></i> <span id="mon-processo-erro"></span>
         </div>
         <div id="mon-processo-conteudo" class="row g-4">
             <div class="col-6 col-md-3">
-                <div class="text-muted small">CPU (processo)</div>
+                <div class="text-muted small">CPU (todos os workers)</div>
                 <div class="d-flex align-items-center gap-2">
                     <div class="progress flex-grow-1" style="height: 8px;">
                         <div id="mon-cpu-processo-bar" class="progress-bar" style="width:0%; background-color:#F28C33;"></div>
@@ -44,7 +44,7 @@
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="text-muted small">Memória (processo)</div>
+                <div class="text-muted small">Memória (todos os workers)</div>
                 <div class="fw-bold" id="mon-mem-processo-val">--</div>
             </div>
             <div class="col-6 col-md-3">
@@ -65,9 +65,28 @@
                 <div class="fw-bold" id="mon-uptime-val">--</div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="text-muted small">PID</div>
+                <div class="text-muted small">PID (worker atual)</div>
                 <div class="fw-bold" id="mon-pid-val">--</div>
             </div>
+        </div>
+
+        <!-- Detalhamento por worker -- o resumo acima é a SOMA de todos
+             os workers do Gunicorn; aqui vai o valor individual de cada
+             um, para quem quiser granularidade. -->
+        <div class="table-responsive mt-3">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr class="text-muted small">
+                        <th>Worker (PID)</th>
+                        <th class="text-end">CPU</th>
+                        <th class="text-end">Memória</th>
+                        <th class="text-end">Threads</th>
+                    </tr>
+                </thead>
+                <tbody id="mon-workers-tbody">
+                    <tr><td colspan="4" class="text-muted">carregando...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

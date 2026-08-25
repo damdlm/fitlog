@@ -64,6 +64,30 @@
         document.getElementById("mon-threads-val").textContent = p.num_threads ?? "--";
         document.getElementById("mon-uptime-val").textContent = formatarDuracao(p.uptime_segundos);
         document.getElementById("mon-pid-val").textContent = p.pid ?? "--";
+
+        const badge = document.getElementById("mon-num-workers");
+        if (badge) {
+            const n = p.num_workers ?? 0;
+            badge.textContent = n === 1 ? "1 worker" : `${n} workers`;
+        }
+
+        const tbody = document.getElementById("mon-workers-tbody");
+        if (tbody) {
+            const workers = p.workers || [];
+            if (workers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-muted">nenhum worker encontrado</td></tr>';
+            } else {
+                tbody.innerHTML = workers.map(w => {
+                    const destaque = w.pid === p.pid ? ' <span class="badge bg-light text-dark border">este</span>' : '';
+                    return `<tr>
+                        <td>${w.pid}${destaque}</td>
+                        <td class="text-end">${formatarPct(w.cpu_pct)}</td>
+                        <td class="text-end">${formatarBytes(w.memoria_mb)}</td>
+                        <td class="text-end">${w.threads ?? "--"}</td>
+                    </tr>`;
+                }).join("");
+            }
+        }
     }
 
     function renderizarBanco(b) {
