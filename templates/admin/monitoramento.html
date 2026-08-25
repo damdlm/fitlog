@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-activity" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Monitoramento{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h2 class="mb-0">
+        <i class="bi bi-activity me-2" style="color: #F28C33;"></i>
+        Monitoramento da Aplicação
+    </h2>
+    <div class="d-flex align-items-center gap-2">
+        <span id="mon-status" class="badge bg-success"><i class="bi bi-broadcast"></i> ao vivo</span>
+        <span class="text-muted small">atualizado <span id="mon-atualizado-em">agora</span></span>
+    </div>
+</div>
+
+<!-- ========================================= -->
+<!-- PROCESSO (CPU / MEMÓRIA)                   -->
+<!-- ========================================= -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3"><i class="bi bi-cpu me-2" style="color: #F28C33;"></i>Processo (App)</h5>
+        <div id="mon-processo-indisponivel" class="text-muted small d-none">
+            <i class="bi bi-exclamation-circle"></i> <span id="mon-processo-erro"></span>
+        </div>
+        <div id="mon-processo-conteudo" class="row g-4">
+            <div class="col-6 col-md-3">
+                <div class="text-muted small">CPU (processo)</div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height: 8px;">
+                        <div id="mon-cpu-processo-bar" class="progress-bar" style="width:0%; background-color:#F28C33;"></div>
+                    </div>
+                    <span id="mon-cpu-processo-val" class="fw-bold" style="min-width:3.5em; text-align:right;">--</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-muted small">CPU (sistema)</div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height: 8px;">
+                        <div id="mon-cpu-sistema-bar" class="progress-bar" style="width:0%; background-color:#F28C33;"></div>
+                    </div>
+                    <span id="mon-cpu-sistema-val" class="fw-bold" style="min-width:3.5em; text-align:right;">--</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-muted small">Memória (processo)</div>
+                <div class="fw-bold" id="mon-mem-processo-val">--</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-muted small">Memória (sistema)</div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height: 8px;">
+                        <div id="mon-mem-sistema-bar" class="progress-bar" style="width:0%; background-color:#F28C33;"></div>
+                    </div>
+                    <span id="mon-mem-sistema-val" class="fw-bold" style="min-width:3.5em; text-align:right;">--</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-muted small">Threads</div>
+                <div class="fw-bold" id="mon-threads-val">--</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-muted small">Uptime (worker)</div>
+                <div class="fw-bold" id="mon-uptime-val">--</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-muted small">PID</div>
+                <div class="fw-bold" id="mon-pid-val">--</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- ========================================= -->
+    <!-- BANCO DE DADOS                             -->
+    <!-- ========================================= -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title mb-3"><i class="bi bi-database me-2" style="color: #F28C33;"></i>Banco de Dados</h5>
+                <div id="mon-banco-indisponivel" class="text-muted small d-none">
+                    <i class="bi bi-exclamation-circle"></i> <span id="mon-banco-erro"></span>
+                </div>
+                <div id="mon-banco-conteudo">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            <tr><td class="text-muted">Dialeto</td><td class="text-end fw-bold" id="mon-db-dialeto">--</td></tr>
+                            <tr><td class="text-muted">Tamanho</td><td class="text-end fw-bold" id="mon-db-tamanho">--</td></tr>
+                            <tr><td class="text-muted">Conexões (total / ativas)</td><td class="text-end fw-bold" id="mon-db-conexoes">--</td></tr>
+                            <tr><td class="text-muted">Limite de conexões</td><td class="text-end fw-bold" id="mon-db-max-conexoes">--</td></tr>
+                            <tr><td class="text-muted">Cache hit ratio</td><td class="text-end fw-bold" id="mon-db-hit-ratio">--</td></tr>
+                            <tr><td class="text-muted">Pool (em uso / tamanho / overflow)</td><td class="text-end fw-bold" id="mon-db-pool">--</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- CACHE / REDIS                              -->
+    <!-- ========================================= -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title mb-3"><i class="bi bi-lightning-charge me-2" style="color: #F28C33;"></i>Cache (Redis)</h5>
+                <div id="mon-cache-indisponivel" class="text-muted small d-none">
+                    <i class="bi bi-exclamation-circle"></i> <span id="mon-cache-erro"></span>
+                </div>
+                <div id="mon-cache-conteudo">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            <tr><td class="text-muted">Versão</td><td class="text-end fw-bold" id="mon-cache-versao">--</td></tr>
+                            <tr><td class="text-muted">Memória usada (pico)</td><td class="text-end fw-bold" id="mon-cache-memoria">--</td></tr>
+                            <tr><td class="text-muted">Clientes conectados</td><td class="text-end fw-bold" id="mon-cache-clientes">--</td></tr>
+                            <tr><td class="text-muted">Total de chaves</td><td class="text-end fw-bold" id="mon-cache-chaves">--</td></tr>
+                            <tr><td class="text-muted">Hit rate</td><td class="text-end fw-bold" id="mon-cache-hitrate">--</td></tr>
+                            <tr><td class="text-muted">Uptime</td><td class="text-end fw-bold" id="mon-cache-uptime">--</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================= -->
+<!-- NEGÓCIO (visão rápida de uso)              -->
+<!-- ========================================= -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3"><i class="bi bi-graph-up me-2" style="color: #F28C33;"></i>Uso da Aplicação</h5>
+        <div id="mon-negocio-indisponivel" class="text-muted small d-none">
+            <i class="bi bi-exclamation-circle"></i> <span id="mon-negocio-erro"></span>
+        </div>
+        <div id="mon-negocio-conteudo" class="row g-4 text-center">
+            <div class="col-6 col-md-3 col-lg">
+                <div class="fs-3 fw-bold" id="mon-total-usuarios">--</div>
+                <div class="text-muted small">Usuários ativos</div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="fs-3 fw-bold" id="mon-total-alunos">--</div>
+                <div class="text-muted small">Alunos</div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="fs-3 fw-bold" id="mon-total-professores">--</div>
+                <div class="text-muted small">Professores</div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="fs-3 fw-bold" id="mon-total-treinos">--</div>
+                <div class="text-muted small">Treinos cadastrados</div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="fs-3 fw-bold" id="mon-registros-hoje">--</div>
+                <div class="text-muted small">Registros hoje</div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="fs-3 fw-bold text-success" id="mon-assinaturas-ativas">--</div>
+                <div class="text-muted small">Assinaturas ativas</div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="fs-3 fw-bold text-warning" id="mon-assinaturas-trial">--</div>
+                <div class="text-muted small">Em teste</div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="fs-3 fw-bold text-danger" id="mon-assinaturas-inadimplentes">--</div>
+                <div class="text-muted small">Inadimplentes</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Dados da primeira carga (renderizados pelo servidor) -- evita
+    // tela em branco enquanto o primeiro fetch() não volta.
+    window.MON_METRICAS_INICIAIS = {{ metricas | tojson }};
+    window.MON_API_URL = "{{ url_for('admin.api_monitoramento') }}";
+</script>
+<script src="{{ url_for('static', filename='js/admin-monitoramento.js') }}"></script>
+{% endblock %}

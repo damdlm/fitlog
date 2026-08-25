@@ -5,6 +5,7 @@ from services.exercicio_service import ExercicioService
 from services.musculo_service import MusculoService
 from services.versao_service import VersaoService
 from services.billing_service import BillingService
+from services.monitoring_service import MonitoringService
 from utils.exercise_utils import buscar_musculo_no_catalogo
 from utils.decorators import admin_required
 from models import db, ExercicioCustomizado, ExercicioUsuario, Musculo, RegistroTreino, HistoricoTreino, ExercicioSistema, TreinoVersao, VersaoExercicio, Plano
@@ -417,3 +418,27 @@ def contas():
         filtro_situacao=situacao_codigo or "",
         filtro_plano=plano_codigo or "",
     )
+
+
+# =============================================
+# MONITORAMENTO -- painel de saúde da aplicação (só admin)
+# =============================================
+
+@admin_bp.route("/monitoramento")
+@admin_required
+def monitoramento():
+    """Painel de monitoramento: CPU/memória do processo, saúde do
+    banco (Postgres), do cache (Redis) e indicadores rápidos de uso da
+    aplicação. Renderiza com os dados já coletados na primeira carga;
+    a partir daí, o próprio template atualiza via /admin/api/monitoramento
+    (evita servir uma página em branco enquanto o JS carrega)."""
+    metricas = MonitoringService.get_all_metrics()
+    return render_template("admin/monitoramento.html", metricas=metricas)
+
+
+@admin_bp.route("/api/monitoramento")
+@admin_required
+def api_monitoramento():
+    """Mesmo conteúdo da página acima, em JSON -- usado pelo
+    auto-refresh no front-end (ver static/js/admin-monitoramento.js)."""
+    return jsonify(MonitoringService.get_all_metrics())
