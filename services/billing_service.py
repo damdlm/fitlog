@@ -417,10 +417,12 @@ class BillingService:
 
         A assinatura real só é criada pelo Asaas DEPOIS que o pagador
         confirma o pagamento -- por isso ainda não temos
-        gateway_subscription_id aqui. Mandamos o id da nossa própria
-        Assinatura em externalReference pra conseguir casar o primeiro
-        webhook que chegar com este registro (ver processar_webhook), e
-        só a partir daí gravamos o gateway_subscription_id de verdade.
+        gateway_subscription_id aqui. Mandamos externalReference, mas
+        na prática o Asaas NÃO o propaga pro payment/subscription
+        gerados a partir do checkout (confirmado com pagamento real) --
+        quem realmente casa o primeiro webhook com este registro é o
+        gateway_customer_id (ver processar_webhook), que já sabemos
+        certo desde a criação do cliente aqui embaixo.
         """
         faltando = BillingService.campos_cobranca_faltando(usuario)
         if faltando:
@@ -566,14 +568,15 @@ class BillingService:
         payment = payload.get('payment') or {}
         subscription_id = payment.get('subscription')
         external_reference = payment.get('externalReference')
+        customer_id = payment.get('customer')
 
         # Sempre em INFO (não DEBUG) -- app.logger está configurado pra
         # INFO em produção (ver app.py), então isso é o que garante dar
         # pra ver no log do Railway exatamente o que o Asaas mandou,
         # mesmo quando o evento não bate com nada que esperávamos.
         logger.info(
-            'Webhook Asaas recebido: event=%s id=%s subscription=%s externalReference=%s payment.status=%s',
-            tipo_evento, event_id, subscription_id, external_reference, payment.get('status'),
+            'Webhook Asaas recebido: event=%s id=%s subscription=%s externalReference=%s customer=%s payment.status=%s',
+            tipo_evento, event_id, subscription_id, external_reference, customer_id, payment.get('status'),
         )
 
         # Idempotência: Asaas reenvia o mesmo evento se não recebeu 200
@@ -584,19 +587,25 @@ class BillingService:
             return True
 
         # Primeira cobrança de uma assinatura criada via /checkouts
-        # ainda não tem gateway_subscription_id gravado no nosso banco
-        # (só sabemos o ID da nossa própria Assinatura, mandado como
-        # externalReference na criação do checkout -- ver
-        # criar_assinatura_checkout). Tenta achar por subscription_id
-        # primeiro; se não achar, cai pro externalReference e já
-        # aproveita pra gravar o subscription_id que faltava.
+        # ainda não tem gateway_subscription_id gravado no nosso banco.
+        # Tenta achar por subscription_id primeiro; se não achar, cai
+        # pro externalReference -- só que na prática o Asaas NÃO
+        # propaga o externalReference mandado na criação do checkout
+        # pro payment/subscription gerados a partir dele (confirmado
+        # com um pagamento real: chegou com externalReference=None).
+        # Por isso o fallback que realmente funciona é achar pelo
+        # gateway_customer_id -- esse sim sempre vem preenchido em
+        # payment.customer, e nós já sabemos o customer_id certo desde
+        # a criação do cliente (ver criar_assinatura_checkout).
         assinatura = None
         if subscription_id:
             assinatura = Assinatura.query.filter_by(gateway_subscription_id=subscription_id).first()
         if assinatura is None and external_reference and external_reference.isdigit():
             assinatura = Assinatura.query.get(int(external_reference))
-            if assinatura and subscription_id and not assinatura.gateway_subscription_id:
-                assinatura.gateway_subscription_id = subscription_id
+        if assinatura is None and customer_id:
+            assinatura = Assinatura.query.filter_by(gateway_customer_id=customer_id).first()
+        if assinatura and subscription_id and not assinatura.gateway_subscription_id:
+            assinatura.gateway_subscription_id = subscription_id
 
         if assinatura:
             status_antes = assinatura.status
@@ -612,8 +621,8 @@ class BillingService:
             # silêncio total, sem tocar em nenhuma Assinatura e sem
             # deixar rastro nenhum no log pra investigar depois.
             logger.warning(
-                'Webhook Asaas (subscription=%s, externalReference=%s) sem Assinatura correspondente no banco',
-                subscription_id, external_reference,
+                'Webhook Asaas (subscription=%s, externalReference=%s, customer=%s) sem Assinatura correspondente no banco',
+                subscription_id, external_reference, customer_id,
             )
 
         db.session.add(EventoWebhookAsaas(event_id=event_id, tipo_evento=tipo_evento))

@@ -924,6 +924,36 @@ class TestWebhookPorExternalReference:
             assinatura = Assinatura.query.get(assinatura_id)
             assert assinatura.status == 'past_due'
 
+    def test_sem_external_reference_casa_por_customer_id(self, app):
+        """Cenário real observado em produção com um pagamento de
+        verdade: o Asaas NÃO propaga o externalReference mandado na
+        criação do checkout pro payment/subscription gerados a partir
+        dele -- chega None. O fallback que realmente funciona é achar
+        pelo gateway_customer_id, que sabemos certo desde a criação do
+        cliente."""
+        with app.app_context():
+            aluno = _criar_usuario('webhook_customer_id')
+            assinatura = BillingService.iniciar_trial(aluno)
+            assinatura.gateway_customer_id = 'cus_real_123'
+            db.session.commit()
+            assinatura_id = assinatura.id
+
+            payload = {
+                'id': 'evt_customer_id_1',
+                'event': 'PAYMENT_CONFIRMED',
+                'payment': {
+                    'subscription': 'sub_vqkmkskl6re589th',
+                    'externalReference': None,
+                    'customer': 'cus_real_123',
+                },
+            }
+            ok = BillingService.processar_webhook(payload)
+
+            assert ok is True
+            assinatura = Assinatura.query.get(assinatura_id)
+            assert assinatura.status == 'active'
+            assert assinatura.gateway_subscription_id == 'sub_vqkmkskl6re589th'
+
     def test_external_reference_nao_numerico_e_ignorado_com_seguranca(self, app):
         with app.app_context():
             payload = {
