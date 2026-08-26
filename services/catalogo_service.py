@@ -2,12 +2,20 @@
 Serviço para gerenciar o catálogo de exercícios - AGORA USA O BANCO DE DADOS
 (catálogo global = exercicios_sistema, importado de data/exercises.json)
 """
-from .base_service import BaseService
+from .base_service import BaseService, CacheService
 from models import db, ExercicioSistema
 import logging
 from utils.exercise_utils import remover_acentos
 
 logger = logging.getLogger(__name__)
+
+# TTL longo -- ExercicioSistema só é alterado por script de importação
+# (nenhuma rota HTTP cria/edita/deleta esse catálogo, ver
+# grep de "ExercicioSistema(" em routes/), nunca durante o uso normal
+# do app. 10 min de possível atraso após uma reimportação manual é
+# aceitável -- e quem reimporta pode reiniciar os workers pra forçar
+# cache-miss imediato, se precisar ver a mudança na hora.
+CATALOGO_CACHE_TTL_SEGUNDOS = 600
 
 class CatalogoService:
     """Serviço para acessar o catálogo de exercícios do BANCO DE DADOS"""
@@ -22,6 +30,11 @@ class CatalogoService:
         """
         Retorna todos os exercícios do catálogo (do banco)
         """
+        cache_key = f"catalogo:todos:{limite}"
+        cache_hit = CacheService.get(cache_key)
+        if cache_hit is not None:
+            return cache_hit
+
         try:
             exercicios = ExercicioSistema.query.order_by(
                 ExercicioSistema.nome
@@ -43,6 +56,7 @@ class CatalogoService:
                     "instructions": ex.instrucoes or []
                 })
             
+            CacheService.set(cache_key, resultados, ttl_seconds=CATALOGO_CACHE_TTL_SEGUNDOS)
             return resultados
             
         except Exception:

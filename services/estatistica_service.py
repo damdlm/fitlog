@@ -217,6 +217,11 @@ class EstatisticaService(BaseService):
             if not user_id:
                 return []
 
+            cache_key = f"estatistica:{user_id}:progresso_30d:{treino_id or 'todos'}"
+            cache_hit = CacheService.get(cache_key)
+            if cache_hit is not None:
+                return cache_hit
+
             limite = datetime.now(timezone.utc) - timedelta(days=30)
 
             query = db.session.query(
@@ -231,7 +236,9 @@ class EstatisticaService(BaseService):
             if treino_id:
                 query = query.filter(RegistroTreino.treino_id == treino_id)
 
-            return query.order_by(func.date(RegistroTreino.data_registro)).all()
+            resultado = query.order_by(func.date(RegistroTreino.data_registro)).all()
+            CacheService.set(cache_key, resultado, ttl_seconds=ESTATISTICA_CACHE_TTL_SEGUNDOS)
+            return resultado
         except Exception as e:
             BaseService.handle_error(e, "Erro ao calcular progresso dos últimos 30 dias")
             return []
