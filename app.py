@@ -25,20 +25,18 @@ def setup_logging(app):
 
     log_path = os.path.join(log_dir, 'fitlog.log')
 
+    formatter = logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    )
+
     file_handler = RotatingFileHandler(
         log_path,
         maxBytes=10_485_760,
         backupCount=10,
         encoding='utf-8'
     )
-
-    file_handler.setFormatter(logging.Formatter(
-        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
-    ))
-
+    file_handler.setFormatter(formatter)
     file_handler.setLevel(logging.INFO)
-
-    app.logger.addHandler(file_handler)
 
     # RotatingFileHandler sozinho não é suficiente no Railway: o volume
     # onde logs/fitlog.log é escrito não é coletado pela plataforma, só
@@ -46,13 +44,43 @@ def setup_logging(app):
     # stream, logger.exception(...) e afins não aparecem no painel de
     # logs do Railway -- só localmente, no arquivo.
     stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(logging.Formatter(
-        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
-    ))
+    stream_handler.setFormatter(formatter)
     stream_handler.setLevel(logging.INFO)
-    app.logger.addHandler(stream_handler)
 
-    app.logger.setLevel(logging.INFO)
+    # CRÍTICO: os dois handlers acima são anexados no logger RAIZ do
+    # Python (logging.getLogger(), sem nome), não em app.logger. Todo
+    # módulo do projeto usa o padrão `logger = logging.getLogger(__name__)`
+    # (services/, routes/, utils/) -- isso cria um logger com nome
+    # próprio (ex: "services.billing_service"), numa hierarquia
+    # DIFERENTE da de app.logger, que só existiria se algum ancestral
+    # dele tivesse handler configurado. Configurar só em app.logger (como
+    # era antes) deixava logger.info(...) de QUALQUER lugar fora deste
+    # arquivo INVISÍVEL tanto no Railway quanto no arquivo local -- só
+    # logger.warning()+ aparecia, via o handler de último recurso do
+    # próprio Python (logging.lastResort, que só cobre WARNING+), o que
+    # mascarou esse buraco por um bom tempo (foi o que impediu
+    # diagnosticar direito os webhooks do Asaas por várias rodadas).
+    # Configurar no logger raiz cobre app.logger também, por propagação
+    # -- não precisa mais configurar os dois separadamente.
+    root_logger = logging.getLogger()
+    # Evita duplicar handlers se create_app() rodar mais de uma vez no
+    # mesmo processo (acontece na suíte de testes, um app por teste).
+    if not any(getattr(h, '_fitlog_root_handler', False) for h in root_logger.handlers):
+        file_handler._fitlog_root_handler = True
+        stream_handler._fitlog_root_handler = True
+        root_logger.addHandler(file_handler)
+        root_logger.addHandler(stream_handler)
+    root_logger.setLevel(logging.INFO)
+
+    # O Flask anexa seu próprio handler padrão em app.logger na
+    # primeira vez que ele é acessado (comportamento antigo, anterior a
+    # esta correção também) -- sem remover, toda chamada via
+    # app.logger especificamente (só dentro deste arquivo) sai
+    # duplicada: uma vez no formato do Flask, outra no nosso. Módulos
+    # que usam logging.getLogger(__name__) (todo o resto do código)
+    # não têm esse problema, só propagam pro root uma vez.
+    app.logger.handlers.clear()
+
     app.logger.info('FitLog iniciado')
 
 
