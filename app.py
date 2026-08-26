@@ -126,6 +126,33 @@ def create_app(config_class=None):
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.json.ensure_ascii = False
 
+    # ---------------------------------------------------------------
+    # CACHE-BUSTING PARA ESTÁTICOS
+    # ---------------------------------------------------------------
+    # SEND_FILE_MAX_AGE_DEFAULT (config.py) manda o navegador guardar
+    # JS/CSS em cache por 1 dia -- ótimo para performance, mas sem
+    # versionamento no nome do arquivo, qualquer deploy que altere um
+    # .js/.css existente fica "invisível" pro navegador de quem já
+    # tinha aberto o site: ele continua servindo a versão antiga do
+    # cache local até o cache expirar ou um refresh forçado (Ctrl+Shift+R).
+    #
+    # `static_v('js/arquivo.js')` resolve isso adicionando `?v=<mtime>`
+    # na URL -- o navegador trata URL diferente como recurso diferente,
+    # então uma mudança no arquivo (mtime novo) automaticamente vira
+    # cache-miss, sem precisar renomear nada nem esperar expirar.
+    # Uso no template: {{ static_v('js/admin-monitoramento.js') }}
+    # em vez de {{ url_for('static', filename='js/admin-monitoramento.js') }}.
+    def static_v(filename):
+        from flask import url_for
+        caminho_completo = os.path.join(app.static_folder, filename)
+        try:
+            versao = int(os.path.getmtime(caminho_completo))
+        except OSError:
+            versao = 0  # arquivo não encontrado -- não quebra o template
+        return f"{url_for('static', filename=filename)}?v={versao}"
+
+    app.jinja_env.globals['static_v'] = static_v
+
     # extensões
     db.init_app(app)
     login_manager.init_app(app)

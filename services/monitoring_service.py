@@ -337,12 +337,27 @@ class MonitoringService:
         # valores em si), pra dar pra investigar pelo log do Railway
         # sem expor dado nenhum da aplicação. Temporário enquanto
         # validamos o painel em produção; pode ser removido depois.
-        logger.info(
-            "Monitoramento coletado: processo=%s banco=%s(%s) cache=%s(%s) negocio=%s(%s)",
-            processo.get("disponivel"),
-            banco.get("disponivel"), banco.get("erro", ""),
-            cache.get("disponivel"), cache.get("erro", ""),
+        #
+        # Usa current_app.logger (não um logger de módulo solto) porque
+        # é o único logger com handlers de fato conectados ao stdout
+        # que o Railway coleta -- ver setup_logging() em app.py. Um
+        # `logging.getLogger(__name__)` comum aqui não aparecia nos
+        # logs do Railway mesmo com a chamada executando normalmente.
+        try:
+            from flask import current_app
+            log = current_app.logger
+        except RuntimeError:
+            log = logger  # fora de um app/request context (ex: script avulso)
+
+        log.info(
+            "Monitoramento coletado: processo=%s(workers=%s) "
+            "banco=%s(%s, pool=%s) cache=%s(%s, chaves=%s) "
+            "negocio=%s(%s, usuarios=%s treinos=%s)",
+            processo.get("disponivel"), processo.get("num_workers"),
+            banco.get("disponivel"), banco.get("erro", ""), banco.get("pool"),
+            cache.get("disponivel"), cache.get("erro", ""), cache.get("total_chaves"),
             negocio.get("disponivel"), negocio.get("erro", ""),
+            negocio.get("total_usuarios"), negocio.get("total_treinos"),
         )
 
         return {

@@ -197,5 +197,5 @@
     window.MON_METRICAS_INICIAIS = {{ metricas | tojson }};
     window.MON_API_URL = "{{ url_for('admin.api_monitoramento') }}";
 </script>
-<script src="{{ url_for('static', filename='js/admin-monitoramento.js') }}"></script>
+<script src="{{ static_v('js/admin-monitoramento.js') }}"></script>
 {% endblock %}
