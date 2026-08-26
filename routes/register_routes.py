@@ -6,6 +6,7 @@ from services.versao_service import VersaoService
 from services.exercicio_service import ExercicioService
 from services.registro_service import RegistroService
 from utils.date_utils import data_para_periodo, data_para_semana, formatar_data_br, validar_data
+from utils.format_utils import data_atual_iso, _agora_brasil
 import logging
 
 register_bp = Blueprint('register', __name__)
@@ -18,7 +19,7 @@ def registrar_treino():
     Página de registro de treino - Nova versão com seleção por data
     Agora os treinos são filtrados pela versão ativa na data selecionada
     """
-    data_selecionada_str = request.args.get("data") or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    data_selecionada_str = request.args.get("data") or data_atual_iso()
     treino_selecionado = request.args.get("treino")
     
     exercicios = []
@@ -32,7 +33,7 @@ def registrar_treino():
     data_valida, data_obj = validar_data(data_selecionada_str)
     if not data_valida:
         flash(data_obj, "danger")
-        data_obj = datetime.now().date()
+        data_obj = _agora_brasil().date()
         data_selecionada_str = data_obj.strftime("%Y-%m-%d")
     else:
         data_obj = data_obj

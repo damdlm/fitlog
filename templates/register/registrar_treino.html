@@ -2212,12 +2212,9 @@
     <div class="card-header bg-white p-3">
         <h4 class="mb-0">
             <i class="bi bi-list-check me-2" style="color: var(--primary-orange);"></i>
-            Exercícios do Treino
+            {% if ns.descricao_treino %}{{ ns.descricao_treino }}{% else %}Exercícios do Treino{% endif %}
             <span class="badge bg-secondary ms-2">{{ exercicios|length }} exercícios</span>
         </h4>
-        {% if ns.descricao_treino %}
-        <p class="mb-0 mt-2 text-muted small">{{ ns.descricao_treino }}</p>
-        {% endif %}
     </div>
     <div class="card-body p-4">
         <form method="post" id="registroForm">

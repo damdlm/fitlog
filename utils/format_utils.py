@@ -1,4 +1,18 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
+FUSO_BRASIL = ZoneInfo("America/Sao_Paulo")
+
+
+def _agora_brasil():
+    """Retorna o datetime atual no fuso horário de Brasília (America/Sao_Paulo).
+
+    O servidor roda em UTC, então usar datetime.now() puro fazia o app
+    considerar "hoje" com até 3h de adiantamento em relação ao horário
+    real do usuário no Brasil (ex: 21h-23h59 em BR já é o dia seguinte em UTC).
+    """
+    return datetime.now(FUSO_BRASIL)
+
 
 def formatar_data(data_str):
     """
@@ -61,13 +75,13 @@ def formatar_data_para_input(data_str):
 
 
 def data_atual_formatada():
-    """Retorna a data atual no formato DD/MM/AAAA"""
-    return datetime.now().strftime("%d/%m/%Y")
+    """Retorna a data atual (horário de Brasília) no formato DD/MM/AAAA"""
+    return _agora_brasil().strftime("%d/%m/%Y")
 
 
 def data_atual_iso():
-    """Retorna a data atual no formato YYYY-MM-DD para inputs"""
-    return datetime.now().strftime("%Y-%m-%d")
+    """Retorna a data atual (horário de Brasília) no formato YYYY-MM-DD para inputs"""
+    return _agora_brasil().strftime("%Y-%m-%d")
 
 
 def formatar_data_completa(data_str):

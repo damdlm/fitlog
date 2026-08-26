@@ -40,6 +40,7 @@ psutil==6.1.1
 # UTILITÁRIOS
 # =========================
 python-dateutil==2.8.2
+tzdata==2025.2
 
 # =========================
 # PROD SERVER
