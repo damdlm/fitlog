@@ -836,7 +836,8 @@ class VersaoService(BaseService):
                 Treino.id,
                 Treino.codigo,
                 TreinoVersao.nome_treino,
-                TreinoVersao.descricao_treino
+                TreinoVersao.descricao_treino,
+                Treino.descricao
             ).join(
                 TreinoVersao, TreinoVersao.treino_id == Treino.id
             ).filter(
@@ -844,12 +845,17 @@ class VersaoService(BaseService):
                 Treino.user_id == user_id
             ).order_by(Treino.codigo).all()
             treinos_disponiveis = []
-            for treino_id, codigo, nome_treino, descricao_treino in resultados:
+            for treino_id, codigo, nome_treino, descricao_treino, descricao_geral_treino in resultados:
                 treinos_disponiveis.append({
                     "id": treino_id,
                     "codigo": codigo,
                     "nome": nome_treino,
-                    "descricao": descricao_treino
+                    # Prioriza a descrição específica desta versão
+                    # (TreinoVersao.descricao_treino); se o usuário nunca
+                    # preencheu essa (é opcional), cai pra descrição geral
+                    # do treino (Treino.descricao), cadastrada em "Meus
+                    # Treinos" -- assim sempre mostra algo, se existir.
+                    "descricao": descricao_treino or descricao_geral_treino
                 })
             return treinos_disponiveis
         except Exception as e:
