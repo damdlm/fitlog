@@ -328,10 +328,27 @@ class MonitoringService:
     # =========================================================
     @classmethod
     def get_all_metrics(cls):
+        processo = cls.get_process_metrics()
+        banco = cls.get_database_metrics()
+        cache = cls.get_cache_metrics()
+        negocio = cls.get_business_metrics()
+
+        # Diagnóstico leve -- só booleanos e mensagens de erro (nunca
+        # valores em si), pra dar pra investigar pelo log do Railway
+        # sem expor dado nenhum da aplicação. Temporário enquanto
+        # validamos o painel em produção; pode ser removido depois.
+        logger.info(
+            "Monitoramento coletado: processo=%s banco=%s(%s) cache=%s(%s) negocio=%s(%s)",
+            processo.get("disponivel"),
+            banco.get("disponivel"), banco.get("erro", ""),
+            cache.get("disponivel"), cache.get("erro", ""),
+            negocio.get("disponivel"), negocio.get("erro", ""),
+        )
+
         return {
             "coletado_em": datetime.now(timezone.utc).isoformat(),
-            "processo": cls.get_process_metrics(),
-            "banco": cls.get_database_metrics(),
-            "cache": cls.get_cache_metrics(),
-            "negocio": cls.get_business_metrics(),
+            "processo": processo,
+            "banco": banco,
+            "cache": cache,
+            "negocio": negocio,
         }

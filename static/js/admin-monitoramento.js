@@ -147,11 +147,25 @@
         document.getElementById("mon-assinaturas-inadimplentes").textContent = n.assinaturas_inadimplentes ?? "--";
     }
 
+    /**
+     * Roda fn isoladamente: se um bloco (ex: cache) lançar uma
+     * exceção -- por um dado inesperado vindo da API -- os demais
+     * blocos continuam atualizando normalmente. Sem isso, um erro no
+     * meio de renderizarTudo() travava tudo que vinha depois dele.
+     */
+    function renderizarBlocoSeguro(fn, rotulo) {
+        try {
+            fn();
+        } catch (e) {
+            console.error(`[monitoramento] falha ao renderizar bloco "${rotulo}":`, e);
+        }
+    }
+
     function renderizarTudo(metricas) {
-        renderizarProcesso(metricas.processo);
-        renderizarBanco(metricas.banco);
-        renderizarCache(metricas.cache);
-        renderizarNegocio(metricas.negocio);
+        renderizarBlocoSeguro(() => renderizarProcesso(metricas.processo), "processo");
+        renderizarBlocoSeguro(() => renderizarBanco(metricas.banco), "banco");
+        renderizarBlocoSeguro(() => renderizarCache(metricas.cache), "cache");
+        renderizarBlocoSeguro(() => renderizarNegocio(metricas.negocio), "negocio");
 
         const atualizadoEm = document.getElementById("mon-atualizado-em");
         if (atualizadoEm) {
