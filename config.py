@@ -77,9 +77,14 @@ class Config:
         'pool_recycle': 300,
     }
 
-    SESSION_TYPE = 'filesystem'
-    SESSION_PERMANENT = False
-    SESSION_USE_SIGNER = True
+    # NOTA: sessão é o cookie assinado padrão do Flask (client-side),
+    # não sessão em arquivo/Redis no servidor -- o pacote Flask-Session
+    # nunca foi instalado, então um antigo `SESSION_TYPE = 'filesystem'`
+    # aqui não tinha efeito nenhum (config morta, o Flask ignora
+    # silenciosamente chave de config que a extensão dona dela não
+    # existe pra ler). Isso é bom pra escalar: qualquer réplica com o
+    # mesmo SECRET_KEY valida a sessão de qualquer outra, sem precisar
+    # de storage compartilhado.
 
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
