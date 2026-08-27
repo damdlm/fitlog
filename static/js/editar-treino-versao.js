@@ -19,6 +19,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let musculoAtivo = '';
 
+    // Remove acentos para a busca não diferenciar "peito" de "pé" ->
+    // "supino inclinado" bater buscando "inclinaddo" sem acento,
+    // "tríceps" bater buscando "triceps", etc. NFD separa a letra do
+    // acento (combining diacritical mark) e o regex descarta a marca.
+    function normalizarTexto(texto) {
+        return (texto || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+    }
+
     function itens() {
         return grid ? Array.from(grid.querySelectorAll('.etv-card')) : [];
     }
@@ -31,11 +41,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // Filtro (texto + músculo)
     // -----------------------------------------------------
     function filtrar() {
-        const termo = (busca?.value || '').toLowerCase().trim();
+        const termo = normalizarTexto((busca?.value || '').toLowerCase().trim());
         let visiveis = 0;
 
         itens().forEach(item => {
-            const nome = item.dataset.nome || '';
+            const nome = normalizarTexto(item.dataset.nome || '');
             const musculo = item.dataset.musculo || '';
             let mostrar = true;
 
