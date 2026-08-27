@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 import requests
 
 from models import db, User, AlunoProfessor, Assinatura, EventoWebhookAsaas, Plano
-from services.billing_service import BillingService, CpfCnpjNecessarioError
+from services.billing_service import BillingService, CpfCnpjNecessarioError, AssinaturaAtualizadaError, AssinaturaJaAtivaError, NadaParaCancelarError
 
 
 def _criar_usuario(username, tipo_usuario='aluno'):
@@ -563,3 +563,140 @@ class TestGatingAcessoAosAlunos:
         _login(client, professor_ref)
         resp = client.get(f'/professor/aluno/{aluno_id}')
         assert resp.status_code == 200
+
+
+# ---------------------------------------------------------------------
+# POST /billing/assinar -- prevenção de cobrança dupla
+# ---------------------------------------------------------------------
+
+class TestAssinarPrevencaoCobrancaDupla:
+    def test_ja_ativo_no_mesmo_plano_mostra_mensagem_tranquilizadora(self, client, app, monkeypatch):
+        monkeypatch.setattr(
+            BillingService, 'criar_assinatura_checkout',
+            staticmethod(lambda usuario, plano: (_ for _ in ()).throw(AssinaturaJaAtivaError(plano))),
+        )
+
+        with app.app_context():
+            _criar_planos()
+            aluno = _criar_usuario('assinar_ja_ativo_route')
+            _preencher_dados_cobranca(aluno)
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        resp = client.post('/billing/assinar', follow_redirects=False)
+        assert resp.status_code == 302
+        assert '/billing/minha-assinatura' in resp.headers.get('Location', '')
+
+    def test_mudanca_de_plano_mostra_mensagem_de_atualizacao(self, client, app, monkeypatch):
+        with app.app_context():
+            _criar_planos()
+            premium = Plano.query.filter_by(codigo='professor_premium').first()
+
+        monkeypatch.setattr(
+            BillingService, 'criar_assinatura_checkout',
+            staticmethod(lambda usuario, plano: (_ for _ in ()).throw(AssinaturaAtualizadaError(premium))),
+        )
+
+        with app.app_context():
+            professor = _criar_usuario('assinar_atualiza_route', tipo_usuario='professor')
+            _preencher_dados_cobranca(professor)
+            _vincular_alunos(professor, 10)
+            BillingService.iniciar_trial(professor)
+            db.session.commit()
+            professor_ref = User.query.get(professor.id)
+
+        _login(client, professor_ref)
+        resp = client.post('/billing/assinar', follow_redirects=False)
+        assert resp.status_code == 302
+        assert '/billing/minha-assinatura' in resp.headers.get('Location', '')
+
+
+# ---------------------------------------------------------------------
+# POST /billing/cancelar
+# ---------------------------------------------------------------------
+
+class TestCancelarRota:
+    def test_exige_login(self, client):
+        resp = client.post('/billing/cancelar')
+        assert resp.status_code in (302, 401)
+
+    def test_sem_nada_pra_cancelar_mostra_mensagem_informativa(self, client, app, monkeypatch):
+        monkeypatch.setattr(
+            BillingService, 'cancelar_assinatura',
+            staticmethod(lambda usuario: (_ for _ in ()).throw(NadaParaCancelarError())),
+        )
+
+        with app.app_context():
+            aluno = _criar_usuario('cancelar_route_nada')
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        resp = client.post('/billing/cancelar', follow_redirects=False)
+        assert resp.status_code == 302
+        assert '/billing/minha-assinatura' in resp.headers.get('Location', '')
+
+    def test_cancela_com_sucesso_e_redireciona(self, client, app, monkeypatch):
+        chamou = {'usuario_id': None}
+
+        def _fake_cancelar(usuario):
+            chamou['usuario_id'] = usuario.id
+
+        monkeypatch.setattr(BillingService, 'cancelar_assinatura', staticmethod(_fake_cancelar))
+
+        with app.app_context():
+            aluno = _criar_usuario('cancelar_route_sucesso')
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+            aluno_id = aluno.id
+
+        _login(client, aluno_ref)
+        resp = client.post('/billing/cancelar', follow_redirects=False)
+        assert resp.status_code == 302
+        assert '/billing/minha-assinatura' in resp.headers.get('Location', '')
+        assert chamou['usuario_id'] == aluno_id
+
+    def test_falha_no_gateway_nao_quebra_a_pagina(self, client, app, monkeypatch):
+        def _fake_falha(usuario):
+            raise requests.RequestException('timeout simulado')
+
+        monkeypatch.setattr(BillingService, 'cancelar_assinatura', staticmethod(_fake_falha))
+
+        with app.app_context():
+            aluno = _criar_usuario('cancelar_route_falha')
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        resp = client.post('/billing/cancelar', follow_redirects=False)
+        assert resp.status_code == 302
+        assert '/billing/minha-assinatura' in resp.headers.get('Location', '')
+
+    def test_botao_de_cancelar_so_aparece_quando_ativa(self, client, app):
+        with app.app_context():
+            _criar_planos()
+            aluno = _criar_usuario('cancelar_botao_visivel')
+            assinatura = BillingService.iniciar_trial(aluno)
+            assinatura.status = 'active'
+            assinatura.gateway_subscription_id = 'sub_visivel'
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        resp = client.get('/billing/minha-assinatura')
+        assert resp.status_code == 200
+        assert b'Cancelar assinatura' in resp.data
+
+    def test_botao_de_cancelar_nao_aparece_em_trial(self, client, app):
+        with app.app_context():
+            aluno = _criar_usuario('cancelar_botao_trial')
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        resp = client.get('/billing/minha-assinatura')
+        assert resp.status_code == 200
+        assert b'Cancelar assinatura' not in resp.data

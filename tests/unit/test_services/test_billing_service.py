@@ -11,7 +11,10 @@ processamento idempotente de webhook do Asaas.
 from datetime import datetime, timedelta, timezone
 
 from models import db, User, AlunoProfessor, Assinatura, EventoWebhookAsaas, Plano
-from services.billing_service import BillingService, DadosCobrancaIncompletosError, TRIAL_DIAS
+from services.billing_service import (
+    AssinaturaAtualizadaError, AssinaturaJaAtivaError, BillingService,
+    DadosCobrancaIncompletosError, NadaParaCancelarError, TRIAL_DIAS,
+)
 
 
 def _criar_usuario(username, tipo_usuario='aluno'):
@@ -963,3 +966,226 @@ class TestWebhookPorExternalReference:
             }
             ok = BillingService.processar_webhook(payload)
             assert ok is True  # não quebra, só não encontra nada pra atualizar
+
+
+# ---------------------------------------------------------------------
+# Prevenção de cobrança dupla: já ativo no mesmo plano, ou mudança de
+# plano vira atualização de valor (nunca uma segunda assinatura)
+# ---------------------------------------------------------------------
+
+class TestPrevencaoDeCobrancaDupla:
+    def test_assinatura_ja_ativa_no_mesmo_plano_nao_chama_gateway(self, app, monkeypatch):
+        chamou = {'valor': False}
+
+        def _fake_post(*a, **k):
+            chamou['valor'] = True
+            return _RespostaFake({'id': 'nao_deveria_chamar'})
+
+        monkeypatch.setattr('services.billing_service.requests.post', _fake_post)
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            _, _, fit = _criar_planos_professor()
+            aluno = _criar_usuario('ja_ativo_mesmo_plano')
+            _preencher_dados_cobranca(aluno)
+            assinatura = BillingService.iniciar_trial(aluno)
+            assinatura.status = 'active'
+            assinatura.plano_id = fit.id
+            assinatura.gateway_subscription_id = 'sub_ja_ativo'
+            db.session.commit()
+
+            try:
+                BillingService.criar_assinatura_checkout(aluno, fit)
+                assert False, 'deveria ter levantado AssinaturaJaAtivaError'
+            except AssinaturaJaAtivaError as e:
+                assert e.plano.codigo == 'aluno_fit'
+
+            assert chamou['valor'] is False
+
+    def test_mudanca_de_plano_atualiza_valor_em_vez_de_criar_assinatura_nova(self, app, monkeypatch):
+        """Cenário real: professor cresceu de Pró pra Premium enquanto
+        já estava em dia -- tem que atualizar o VALOR da assinatura
+        existente, nunca criar uma segunda cobrança recorrente."""
+        chamadas = []
+
+        def _fake_put(url, json=None, headers=None, timeout=None):
+            chamadas.append(('PUT', url, json))
+            return _RespostaFake({'id': 'sub_existente'})
+
+        def _fake_post(*a, **k):
+            chamadas.append(('POST', a, {}))
+            return _RespostaFake({'id': 'nao_deveria_criar'})
+
+        monkeypatch.setattr('services.billing_service.requests.put', _fake_put)
+        monkeypatch.setattr('services.billing_service.requests.post', _fake_post)
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            pro, premium, _ = _criar_planos_professor()
+            professor = _criar_usuario('cresceu_pro_premium', tipo_usuario='professor')
+            _preencher_dados_cobranca(professor)
+            assinatura = BillingService.iniciar_trial(professor)
+            assinatura.status = 'active'
+            assinatura.plano_id = pro.id
+            assinatura.gateway_subscription_id = 'sub_existente'
+            db.session.commit()
+
+            try:
+                BillingService.criar_assinatura_checkout(professor, premium)
+                assert False, 'deveria ter levantado AssinaturaAtualizadaError'
+            except AssinaturaAtualizadaError as e:
+                assert e.plano.codigo == 'professor_premium'
+
+            # Só PUT na assinatura já existente -- nenhum POST criando
+            # customer/checkout novo.
+            assert all(c[0] == 'PUT' for c in chamadas)
+            chamada_put = chamadas[0]
+            assert chamada_put[1].endswith('/subscriptions/sub_existente')
+            assert chamada_put[2]['value'] == premium.preco_centavos / 100
+
+            assinatura_atualizada = Assinatura.query.filter_by(usuario_id=professor.id).first()
+            assert assinatura_atualizada.plano_id == premium.id
+            assert assinatura_atualizada.gateway_subscription_id == 'sub_existente'  # não mudou
+
+    def test_assinatura_past_due_ainda_permite_checkout_normal(self, app, monkeypatch):
+        """Só status='active' aciona a proteção -- past_due (atrasado)
+        deve poder gerar um checkout novo pra regularizar."""
+        monkeypatch.setattr(
+            'services.billing_service.requests.post',
+            lambda url, **k: _RespostaFake({'id': 'cus_ok'}) if url.endswith('/customers') else _RespostaFake({'id': 'chk_ok', 'link': 'https://sandbox.asaas.com/i/regulariza'}),
+        )
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            app.config['APP_BASE_URL'] = 'https://fitlog.up.railway.app'
+            _, _, fit = _criar_planos_professor()
+            aluno = _criar_usuario('atrasado_pode_checkout')
+            _preencher_dados_cobranca(aluno)
+            assinatura = BillingService.iniciar_trial(aluno)
+            assinatura.status = 'past_due'
+            db.session.commit()
+
+            link = BillingService.criar_assinatura_checkout(aluno, fit)
+            assert link == 'https://sandbox.asaas.com/i/regulariza'
+
+
+# ---------------------------------------------------------------------
+# Cancelamento de assinatura
+# ---------------------------------------------------------------------
+
+class TestCancelarAssinatura:
+    def test_sem_assinatura_levanta_erro_especifico(self, app):
+        with app.app_context():
+            aluno = _criar_usuario('cancelar_sem_assinatura')
+            db.session.commit()
+
+            try:
+                BillingService.cancelar_assinatura(aluno)
+                assert False, 'deveria ter levantado NadaParaCancelarError'
+            except NadaParaCancelarError:
+                pass
+
+    def test_sem_gateway_subscription_id_levanta_erro_especifico(self, app):
+        """Trial nunca chegou a virar assinatura de verdade no Asaas --
+        não tem nada pra cancelar do lado de lá."""
+        with app.app_context():
+            aluno = _criar_usuario('cancelar_so_trial')
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+
+            try:
+                BillingService.cancelar_assinatura(aluno)
+                assert False, 'deveria ter levantado NadaParaCancelarError'
+            except NadaParaCancelarError:
+                pass
+
+    def test_cancela_com_sucesso_chama_delete_e_atualiza_status(self, app, monkeypatch):
+        chamadas = []
+
+        def _fake_delete(url, headers=None, timeout=None):
+            chamadas.append(url)
+            return _RespostaFake({}, status_code=200)
+
+        monkeypatch.setattr('services.billing_service.requests.delete', _fake_delete)
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            aluno = _criar_usuario('cancelar_com_sucesso')
+            assinatura = BillingService.iniciar_trial(aluno)
+            assinatura.status = 'active'
+            assinatura.gateway_subscription_id = 'sub_pra_cancelar'
+            db.session.commit()
+
+            BillingService.cancelar_assinatura(aluno)
+
+            assert chamadas[0].endswith('/subscriptions/sub_pra_cancelar')
+            assinatura_atualizada = Assinatura.query.filter_by(usuario_id=aluno.id).first()
+            assert assinatura_atualizada.status == 'canceled'
+            assert assinatura_atualizada.cancelado_em is not None
+
+    def test_cancelamento_revoga_acesso_premium_imediatamente(self, app, monkeypatch):
+        monkeypatch.setattr(
+            'services.billing_service.requests.delete',
+            lambda *a, **k: _RespostaFake({}, status_code=200),
+        )
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            aluno = _criar_usuario('cancelar_revoga_acesso')
+            assinatura = BillingService.iniciar_trial(aluno)
+            assinatura.status = 'active'
+            assinatura.gateway_subscription_id = 'sub_revoga'
+            db.session.commit()
+
+            assert BillingService.usuario_tem_acesso_premium(aluno) is True
+            BillingService.cancelar_assinatura(aluno)
+            assert BillingService.usuario_tem_acesso_premium(aluno) is False
+
+    def test_404_do_asaas_e_tratado_como_ja_cancelada(self, app, monkeypatch):
+        """Se a assinatura já não existe mais no Asaas (ex: uma
+        tentativa anterior falhou antes de atualizarmos o banco local),
+        trata como sucesso -- o resultado desejado já é realidade."""
+        monkeypatch.setattr(
+            'services.billing_service.requests.delete',
+            lambda *a, **k: _RespostaFake({}, status_code=404),
+        )
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            aluno = _criar_usuario('cancelar_ja_sumiu_no_asaas')
+            assinatura = BillingService.iniciar_trial(aluno)
+            assinatura.status = 'active'
+            assinatura.gateway_subscription_id = 'sub_ja_sumiu'
+            db.session.commit()
+
+            BillingService.cancelar_assinatura(aluno)  # não deve levantar exceção
+
+            assinatura_atualizada = Assinatura.query.filter_by(usuario_id=aluno.id).first()
+            assert assinatura_atualizada.status == 'canceled'
+
+    def test_erro_real_do_asaas_propaga_e_nao_atualiza_status_local(self, app, monkeypatch):
+        """Um 500/erro de verdade do Asaas não deve deixar o banco
+        local mentindo que cancelou quando não cancelou."""
+        import requests
+
+        monkeypatch.setattr(
+            'services.billing_service.requests.delete',
+            lambda *a, **k: _RespostaFake({'errors': [{'description': 'erro interno'}]}, status_code=500),
+        )
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            aluno = _criar_usuario('cancelar_erro_real')
+            assinatura = BillingService.iniciar_trial(aluno)
+            assinatura.status = 'active'
+            assinatura.gateway_subscription_id = 'sub_erro'
+            db.session.commit()
+
+            try:
+                BillingService.cancelar_assinatura(aluno)
+                assert False, 'deveria ter levantado HTTPError'
+            except requests.HTTPError:
+                pass
+
+            assinatura_atualizada = Assinatura.query.filter_by(usuario_id=aluno.id).first()
+            assert assinatura_atualizada.status == 'active'  # não mudou

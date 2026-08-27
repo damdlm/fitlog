@@ -9,7 +9,7 @@ from flask_login import current_user, login_required
 
 from extensions import limiter
 from models import db, Plano
-from services.billing_service import BillingService, DadosCobrancaIncompletosError
+from services.billing_service import BillingService, AssinaturaAtualizadaError, AssinaturaJaAtivaError, DadosCobrancaIncompletosError, NadaParaCancelarError
 
 billing_bp = Blueprint('billing', __name__)
 logger = logging.getLogger(__name__)
@@ -180,6 +180,18 @@ def assinar():
 
     try:
         checkout_url = BillingService.criar_assinatura_checkout(current_user, plano)
+    except AssinaturaAtualizadaError as e:
+        # Usuário mudou de plano enquanto já estava ativo (ex: professor
+        # cresceu de Pró pra Premium) -- atualizamos o valor da MESMA
+        # assinatura no Asaas, nunca criamos uma segunda cobrança.
+        flash(f'Sua assinatura foi atualizada para o {e.plano.nome} -- nenhuma cobrança nova foi criada.', 'success')
+        return redirect(url_for('billing.minha_assinatura'))
+    except AssinaturaJaAtivaError:
+        # Duplo clique, aba duplicada, ou usuário não percebeu que já
+        # está em dia -- nunca cria uma segunda cobrança pro mesmo
+        # plano. Mensagem tranquilizadora, não é um erro de verdade.
+        flash('Você já tem uma assinatura ativa desse plano -- nenhuma cobrança nova foi criada.', 'info')
+        return redirect(url_for('billing.minha_assinatura'))
     except DadosCobrancaIncompletosError:
         # Não deveria acontecer (já validamos acima), mas cobre
         # qualquer chamada futura a este método vinda de outro lugar.
@@ -201,3 +213,29 @@ def assinar():
         return redirect(url_for('billing.minha_assinatura'))
 
     return redirect(checkout_url)
+
+
+@billing_bp.route('/cancelar', methods=['POST'])
+@login_required
+@limiter.limit("10 per minute")
+def cancelar():
+    """Cancela a assinatura do usuário logado -- protegido por CSRF
+    normal, e o template já pede confirmação via diálogo do navegador
+    antes de enviar o form (ver templates/billing/minha_assinatura.html).
+    Revoga o acesso premium imediatamente (ver
+    BillingService.cancelar_assinatura)."""
+    try:
+        BillingService.cancelar_assinatura(current_user)
+    except NadaParaCancelarError:
+        flash('Você não tem nenhuma assinatura ativa para cancelar.', 'info')
+        return redirect(url_for('billing.minha_assinatura'))
+    except RuntimeError:
+        flash('Cobrança ainda não está disponível. Tente novamente mais tarde.', 'danger')
+        return redirect(url_for('billing.minha_assinatura'))
+    except requests.RequestException:
+        logger.exception('Falha ao cancelar assinatura no Asaas para usuário %s', current_user.id)
+        flash('Não foi possível cancelar agora. Tente novamente em instantes.', 'danger')
+        return redirect(url_for('billing.minha_assinatura'))
+
+    flash('Assinatura cancelada. Você não será cobrado novamente.', 'info')
+    return redirect(url_for('billing.minha_assinatura'))

@@ -72,6 +72,35 @@ class DadosCobrancaIncompletosError(Exception):
 CpfCnpjNecessarioError = DadosCobrancaIncompletosError
 
 
+class AssinaturaJaAtivaError(Exception):
+    """Levantada por criar_assinatura_checkout quando o usuário já tem
+    uma assinatura ATIVA para o mesmo plano que está tentando assinar
+    de novo -- evita criar uma segunda cobrança recorrente pro mesmo
+    cliente por duplo clique, aba duplicada, ou clicar em "Assinar"
+    sem perceber que já está em dia."""
+    def __init__(self, plano):
+        self.plano = plano
+        super().__init__(f'Já existe assinatura ativa do plano {plano.codigo}')
+
+
+class NadaParaCancelarError(Exception):
+    """Levantada por cancelar_assinatura quando o usuário não tem
+    nenhuma assinatura com gateway_subscription_id pra cancelar (nunca
+    assinou, ou já está cancelada)."""
+    pass
+
+
+class AssinaturaAtualizadaError(Exception):
+    """Não é um erro de verdade -- sinaliza que criar_assinatura_checkout
+    atualizou o VALOR de uma assinatura já ativa em vez de criar um
+    checkout novo (usuário mudou de plano, ex: professor que cresceu de
+    Pró pra Premium). Quem chama deve tratar como sucesso e mostrar uma
+    mensagem de confirmação, não redirecionar pra um link de checkout."""
+    def __init__(self, plano):
+        self.plano = plano
+        super().__init__(f'Assinatura atualizada para o plano {plano.codigo}, sem checkout novo')
+
+
 class BillingService:
 
     @staticmethod
@@ -423,12 +452,40 @@ class BillingService:
         quem realmente casa o primeiro webhook com este registro é o
         gateway_customer_id (ver processar_webhook), que já sabemos
         certo desde a criação do cliente aqui embaixo.
+
+        Nunca cria um checkout novo pra quem já tem assinatura ATIVA:
+        se o plano pedido é o mesmo que já está ativo, levanta
+        AssinaturaJaAtivaError (nada a fazer). Se é diferente (ex:
+        professor que cresceu de Pró pra Premium), chama
+        atualizar_valor_assinatura() -- PUT na assinatura já existente
+        no Asaas, nunca cria uma segunda cobrança recorrente pro mesmo
+        cliente. Ver https://docs.asaas.com/reference/atualizar-assinatura-existente
         """
         faltando = BillingService.campos_cobranca_faltando(usuario)
         if faltando:
             raise DadosCobrancaIncompletosError(faltando)
 
-        assinatura = BillingService.garantir_registro_assinatura(usuario)
+        # Trava a linha da Assinatura pra essa checagem + eventual
+        # criação serem atômicas -- sem isso, duas requisições quase
+        # simultâneas (duplo clique, aba duplicada) poderiam passar as
+        # duas pela checagem "não está ativa ainda" antes de qualquer
+        # uma commitar, e cada uma criar seu próprio checkout/assinatura
+        # no Asaas. SQLite (usado nos testes) ignora o FOR UPDATE sem
+        # erro; em produção (Postgres) o lock é real.
+        assinatura = (
+            Assinatura.query
+            .filter_by(usuario_id=usuario.id)
+            .with_for_update()
+            .first()
+        )
+        if assinatura is None:
+            assinatura = BillingService.garantir_registro_assinatura(usuario)
+
+        if assinatura.status == 'active' and assinatura.gateway_subscription_id:
+            if assinatura.plano_id == plano.id:
+                raise AssinaturaJaAtivaError(plano)
+            BillingService.atualizar_valor_assinatura(assinatura, plano)
+            raise AssinaturaAtualizadaError(plano)
 
         dados_cliente = {
             'name': usuario.nome_completo or usuario.username,
@@ -507,6 +564,72 @@ class BillingService:
         db.session.commit()
 
         return dados.get('link')
+
+    @staticmethod
+    def atualizar_valor_assinatura(assinatura: Assinatura, plano: Plano):
+        """Atualiza o VALOR (e plano local) de uma assinatura já ativa
+        no Asaas -- usado quando o usuário precisa mudar de plano (ex:
+        professor que passou a ter mais alunos) enquanto já está em
+        dia. Nunca cria uma assinatura nova nesse caso -- é assim que
+        se evita cobrar duas vezes o mesmo cliente. Ver
+        https://docs.asaas.com/reference/atualizar-assinatura-existente
+
+        updatePendingPayments=False (padrão da API se omitido) -- só
+        cobranças futuras usam o valor novo; qualquer cobrança pendente
+        já gerada com o valor antigo não é mexida, pra não surpreender
+        o pagador com uma cobrança diferente do que ele já esperava."""
+        resp = requests.put(
+            f'{BillingService._base_url()}/subscriptions/{assinatura.gateway_subscription_id}',
+            json={
+                'billingType': 'CREDIT_CARD',
+                'cycle': 'MONTHLY',
+                'value': plano.preco_centavos / 100,
+                'description': plano.nome,
+            },
+            headers=BillingService._headers(),
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
+        BillingService._checar_resposta(resp, 'atualizar valor da assinatura')
+
+        assinatura.plano_id = plano.id
+        db.session.commit()
+        logger.info(
+            'Assinatura %s (usuario=%s) atualizada pro plano %s sem criar cobrança nova',
+            assinatura.id, assinatura.usuario_id, plano.codigo,
+        )
+
+    @staticmethod
+    def cancelar_assinatura(usuario: User):
+        """Cancela definitivamente a assinatura do usuário no Asaas --
+        DELETE /subscriptions/{id}, que encerra a recorrência e remove
+        cobranças pendentes/vencidas (as já pagas ficam no histórico,
+        sem estorno automático). Ver
+        https://docs.asaas.com/reference/remover-assinatura
+
+        Revoga o acesso premium IMEDIATAMENTE (status='canceled' já
+        bloqueia Estatísticas/FitBot na próxima checagem) -- não guarda
+        acesso até o fim do período já pago. Levanta
+        NadaParaCancelarError se não houver nada pra cancelar."""
+        assinatura = usuario.assinatura
+        if assinatura is None or not assinatura.gateway_subscription_id:
+            raise NadaParaCancelarError()
+
+        resp = requests.delete(
+            f'{BillingService._base_url()}/subscriptions/{assinatura.gateway_subscription_id}',
+            headers=BillingService._headers(),
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
+        # 404 significa que a assinatura já não existe mais no Asaas
+        # (ex: já foi removida numa tentativa anterior que falhou antes
+        # de atualizarmos o banco local) -- trata como sucesso, já que
+        # o resultado desejado (nenhuma cobrança futura) já é realidade.
+        if resp.status_code != 404:
+            BillingService._checar_resposta(resp, 'cancelar assinatura')
+
+        assinatura.status = 'canceled'
+        assinatura.cancelado_em = datetime.now(timezone.utc)
+        db.session.commit()
+        logger.info('Assinatura %s (usuario=%s) cancelada pelo usuário', assinatura.id, usuario.id)
 
     @staticmethod
     def _checar_resposta(resp: requests.Response, contexto: str):
