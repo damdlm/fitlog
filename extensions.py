@@ -36,7 +36,7 @@ def _chave_rate_limit():
     Agora: usuário logado -> conta pelo ID dele (cada um com seu
     próprio orçamento, não importa a rede). Anônimo (ex: tela de
     login) -> continua por IP, que é exatamente onde faz sentido
-    proteger contra brute-force/scraping de quem ainda não autenticou.
+    proteger contra brute-force/scraping de quem ainda não autenticou. 
     """
     from flask_login import current_user
     if current_user.is_authenticated:
