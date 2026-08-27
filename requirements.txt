@@ -37,6 +37,13 @@ Flask-Compress==1.15
 psutil==6.1.1
 
 # =========================
+# STORAGE (bucket S3-compatível p/ mídia de exercícios --
+# necessário pra escalar horizontalmente, volumes do Railway não
+# funcionam com múltiplas réplicas)
+# =========================
+boto3==1.35.0
+
+# =========================
 # UTILITÁRIOS
 # =========================
 python-dateutil==2.8.2

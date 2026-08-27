@@ -367,17 +367,38 @@ def create_app(config_class=None):
         return response
 
     # =============================================================
-    # MÍDIA DOS EXERCÍCIOS (VOLUME DO RAILWAY)
+    # MÍDIA DOS EXERCÍCIOS (BUCKET S3-COMPATÍVEL, COM FALLBACK PRO
+    # VOLUME LOCAL DO RAILWAY ENQUANTO A MIGRAÇÃO NÃO TERMINA)
     # =============================================================
-    # O volume "exercicios" é montado em /app/exercicios em produção
-    # (fora da pasta static/, que vem do repo). gif_url/imagem em
-    # exercicios_sistema guardam caminhos relativos tipo
-    # "videos/0001-2gPfomN.gif" dentro dessa pasta.
+    # Histórico: essa mídia vivia só no volume "exercicios", montado em
+    # /app/exercicios. Volumes do Railway não funcionam com múltiplas
+    # réplicas ("Replicas cannot be used with volumes" -- doc oficial),
+    # então pra escalar horizontalmente a mídia precisou migrar pra um
+    # bucket S3-compatível (ver services/storage_service.py e
+    # scripts/migrar_midia_para_bucket.py).
+    #
+    # Enquanto gif_url/imagem ainda apontam pra arquivos que só
+    # existem no volume (migração gradual, sem downtime), o fallback
+    # abaixo mantém tudo funcionando dos dois jeitos.
     EXERCICIOS_MEDIA_DIR = os.environ.get("EXERCICIOS_MEDIA_DIR", "/app/exercicios")
 
     @app.route("/exercicios-media/<path:caminho>")
     def exercicios_media(caminho):
-        from flask import send_from_directory
+        from flask import send_from_directory, redirect
+        from services.storage_service import StorageService
+
+        if StorageService.is_configured():
+            url = StorageService.generate_presigned_url(caminho)
+            if url:
+                # 302 em vez de 301: a URL pré-assinada expira e muda a
+                # cada geração (tem assinatura com validade), então não
+                # é seguro deixar o navegador cachear o redirecionamento
+                # em si -- só o conteúdo final (isso já é resolvido pelo
+                # max_age da própria URL assinada / cache-control do bucket).
+                return redirect(url, code=302)
+            # Presigned falhou (ex: chave não existe no bucket ainda,
+            # migração em andamento) -- cai pro volume local abaixo.
+
         # Arquivos são endereçados por hash (ex: "0001-2gPfomN.gif" —
         # media_id no nome), então o mesmo caminho nunca muda de conteúdo:
         # seguro cachear por muito tempo no navegador/CDN de borda, em vez
