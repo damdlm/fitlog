@@ -80,5 +80,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 obsInput.value = deveEstarMarcado ? (observacoes[cb.value] || '') : '';
             }
         });
+
+        // Traz os exercícios já marcados pra esse treino pro início
+        // da lista (editar-treino-versao.js escuta esse evento).
+        grid?.dispatchEvent(new CustomEvent('etv:reordenar'));
     });
 });

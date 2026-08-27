@@ -38,6 +38,35 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // -----------------------------------------------------
+    // Reordenação (selecionados primeiro)
+    // -----------------------------------------------------
+    // Move os cards já marcados para o início da lista, mantendo a
+    // ordem original dentro de cada grupo (selecionados / não
+    // selecionados). appendChild em um nó que já existe no DOM só
+    // move ele -- não duplica -- então isso não perde listeners nem
+    // o estado do checkbox.
+    function reordenarSelecionados() {
+        if (!grid) return;
+        const selecionados = [];
+        const outros = [];
+
+        itens().forEach(item => {
+            const cb = item.querySelector('.etv-checkbox');
+            (cb && cb.checked ? selecionados : outros).push(item);
+        });
+
+        selecionados.forEach(item => grid.appendChild(item));
+        outros.forEach(item => grid.appendChild(item));
+    }
+
+    // cadastrar-treinos.js reaproveita este grid num modal compartilhado
+    // entre vários treinos; quando ele marca os checkboxes de um treino
+    // específico ao abrir o modal, dispara este evento pra reordenar de
+    // novo (não dá pra chamar reordenarSelecionados() direto, ela é
+    // local a este closure).
+    grid?.addEventListener('etv:reordenar', reordenarSelecionados);
+
+    // -----------------------------------------------------
     // Filtro (texto + músculo)
     // -----------------------------------------------------
     function filtrar() {
@@ -157,4 +186,5 @@ document.addEventListener('DOMContentLoaded', function () {
     // Estado inicial
     atualizarContador();
     filtrar();
+    reordenarSelecionados();
 });
