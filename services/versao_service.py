@@ -609,20 +609,26 @@ class VersaoService(BaseService):
             raise ValueError("Não foi possível criar a versão.")
 
     @staticmethod
-    def _get_versao_editavel(versao_id, user_id):
-        """Busca a versão garantindo posse (IDOR) e que ainda não foi
-        finalizada. Levanta ValueError com mensagem segura em qualquer
-        caso inválido -- usado por todas as mutações da tela "Cadastrar
-        Treinos" abaixo."""
+    def _get_versao_editavel(versao_id, user_id, permitir_finalizada=False):
+        """Busca a versão garantindo posse (IDOR) e, por padrão, que ainda
+        não foi finalizada. Levanta ValueError com mensagem segura em
+        qualquer caso inválido -- usado por todas as mutações da tela
+        "Cadastrar Treinos" abaixo.
+
+        permitir_finalizada=True: usado pela tela "Ver Versão" (histórico),
+        que permite editar também versões já arquivadas -- ex: corrigir o
+        nome de um treino antigo. As travas de integridade que dependem de
+        RegistroTreino (remover_treino_livre) continuam se aplicando
+        independente deste parâmetro."""
         versao = VersaoGlobal.query.filter_by(id=versao_id, user_id=user_id).first()
         if not versao:
             raise ValueError("Versão não encontrada.")
-        if versao.data_fim is not None:
+        if versao.data_fim is not None and not permitir_finalizada:
             raise ValueError("Esta versão já foi finalizada e não pode mais ser alterada.")
         return versao
 
     @staticmethod
-    def editar_descricao_livre(versao_id, nova_descricao, user_id=None):
+    def editar_descricao_livre(versao_id, nova_descricao, user_id=None, permitir_finalizada=False):
         """Atualiza só a descrição de uma versão "livre" ainda em edição.
         Não mexe em numero_versao/data_inicio/divisao -- esses são
         definidos na criação e não fazem sentido editar depois."""
@@ -630,7 +636,7 @@ class VersaoService(BaseService):
         if not user_id:
             raise ValueError("Usuário não autenticado.")
 
-        versao = VersaoService._get_versao_editavel(versao_id, user_id)
+        versao = VersaoService._get_versao_editavel(versao_id, user_id, permitir_finalizada=permitir_finalizada)
 
         nova_descricao = (nova_descricao or '').strip()
         if not nova_descricao:
@@ -649,7 +655,7 @@ class VersaoService(BaseService):
             raise ValueError("Não foi possível salvar a descrição.")
 
     @staticmethod
-    def adicionar_treino_livre(versao_id, nome_treino, descricao_treino, user_id=None):
+    def adicionar_treino_livre(versao_id, nome_treino, descricao_treino, user_id=None, permitir_finalizada=False):
         """
         Adiciona um novo treino à versão "livre", sem pedir letra/código
         do usuário: o código (A, B, C...) é escolhido automaticamente pelo
@@ -662,7 +668,7 @@ class VersaoService(BaseService):
         if not user_id:
             raise ValueError("Usuário não autenticado.")
 
-        versao = VersaoService._get_versao_editavel(versao_id, user_id)
+        versao = VersaoService._get_versao_editavel(versao_id, user_id, permitir_finalizada=permitir_finalizada)
 
         nome_treino = (nome_treino or '').strip()
         descricao_treino = (descricao_treino or '').strip()
@@ -714,13 +720,13 @@ class VersaoService(BaseService):
             raise ValueError("Não foi possível adicionar o treino.")
 
     @staticmethod
-    def _get_treino_versao_editavel(versao_id, treino_versao_id, user_id):
+    def _get_treino_versao_editavel(versao_id, treino_versao_id, user_id, permitir_finalizada=False):
         """Garante que o treino_versao_id realmente pertence à versao_id,
         que por sua vez pertence ao user_id, e que a versão não está
-        finalizada. Sem este check, um usuário autenticado poderia tentar
-        editar/remover um treino_versao_id de OUTRO usuário só adivinhando
-        o ID (IDOR)."""
-        versao = VersaoService._get_versao_editavel(versao_id, user_id)
+        finalizada (a menos que permitir_finalizada=True). Sem este check,
+        um usuário autenticado poderia tentar editar/remover um
+        treino_versao_id de OUTRO usuário só adivinhando o ID (IDOR)."""
+        versao = VersaoService._get_versao_editavel(versao_id, user_id, permitir_finalizada=permitir_finalizada)
         treino_versao = TreinoVersao.query.filter_by(
             id=treino_versao_id, versao_id=versao_id
         ).first()
@@ -730,7 +736,7 @@ class VersaoService(BaseService):
 
     @staticmethod
     def salvar_treino_livre(versao_id, treino_versao_id, nome_treino, descricao_treino,
-                             exercicios_raw, user_id=None, observacoes=None):
+                             exercicios_raw, user_id=None, observacoes=None, permitir_finalizada=False):
         """Atualiza nome/descrição de um treino da versão e substitui a
         lista de exercícios associados (mesma semântica de
         adicionar_exercicios_a_treino_versao: a lista enviada substitui a
@@ -744,7 +750,9 @@ class VersaoService(BaseService):
         if not user_id:
             raise ValueError("Usuário não autenticado.")
 
-        _, treino_versao = VersaoService._get_treino_versao_editavel(versao_id, treino_versao_id, user_id)
+        _, treino_versao = VersaoService._get_treino_versao_editavel(
+            versao_id, treino_versao_id, user_id, permitir_finalizada=permitir_finalizada
+        )
 
         nome_treino = (nome_treino or '').strip()
         descricao_treino = (descricao_treino or '').strip()
@@ -783,20 +791,24 @@ class VersaoService(BaseService):
             raise ValueError("Não foi possível salvar o treino.")
 
     @staticmethod
-    def remover_treino_livre(versao_id, treino_versao_id, user_id=None):
+    def remover_treino_livre(versao_id, treino_versao_id, user_id=None, permitir_finalizada=False):
         """Remove um treino (e seus exercícios, via cascade) da versão.
 
         Bloqueia a remoção se já existir histórico de registro (RegistroTreino)
         para esse treino -- ao contrário dos exercícios da versão (que não têm
         histórico próprio), aqui excluir apagaria dados de treino já registrados
         pelo usuário, então pedimos confirmação fora de banda (a mensagem
-        explica o motivo) em vez de perder o histórico silenciosamente.
+        explica o motivo) em vez de perder o histórico silenciosamente. Essa
+        trava vale independente de permitir_finalizada -- não existe caso em
+        que apagar um treino já registrado é seguro.
         """
         user_id = user_id or BaseService.get_current_user_id()
         if not user_id:
             raise ValueError("Usuário não autenticado.")
 
-        _, treino_versao = VersaoService._get_treino_versao_editavel(versao_id, treino_versao_id, user_id)
+        _, treino_versao = VersaoService._get_treino_versao_editavel(
+            versao_id, treino_versao_id, user_id, permitir_finalizada=permitir_finalizada
+        )
 
         tem_registros = db.session.query(RegistroTreino.id).filter_by(
             treino_versao_id=treino_versao_id
@@ -858,3 +870,119 @@ class VersaoService(BaseService):
             db.session.rollback()
             logger.exception(f"Erro ao finalizar versão {versao_id}")
             raise ValueError("Não foi possível finalizar a versão.")
+
+    @staticmethod
+    def clonar_versao(versao_id, user_id=None):
+        """Cria uma nova versão ATIVA copiando a estrutura (treinos +
+        exercícios, com suas observações) de uma versão existente do
+        mesmo usuário -- ativa ou finalizada. Não copia nenhum histórico
+        de registro (RegistroTreino/HistoricoTreino): a cópia começa
+        "zerada", só com a estrutura de treinos.
+
+        Segue a mesma regra de create_livre: só é permitido se o usuário
+        não tiver nenhuma versão ativa no momento.
+        """
+        user_id = user_id or BaseService.get_current_user_id()
+        if not user_id:
+            raise ValueError("Usuário não autenticado.")
+
+        origem = VersaoGlobal.query.filter_by(id=versao_id, user_id=user_id).first()
+        if not origem:
+            raise ValueError("Versão não encontrada.")
+
+        versao_atual = VersaoService.get_ativa(user_id=user_id)
+        if versao_atual:
+            raise ValueError(
+                f"Já existe uma versão ativa (v{versao_atual.numero_versao} - "
+                f"{versao_atual.descricao}). Finalize-a antes de clonar outra."
+            )
+
+        try:
+            data_inicio = datetime.now(timezone.utc).date()
+            ultima_versao = db.session.query(func.max(VersaoGlobal.numero_versao)) \
+                .filter_by(user_id=user_id).scalar() or 0
+
+            descricao_clone = f"{origem.descricao} (cópia)"[:200]
+
+            nova_versao = VersaoGlobal(
+                numero_versao=ultima_versao + 1,
+                descricao=descricao_clone,
+                divisao='LIVRE',
+                data_inicio=data_inicio,
+                data_fim=None,
+                user_id=user_id
+            )
+            db.session.add(nova_versao)
+            db.session.flush()
+
+            treinos_origem = TreinoVersao.query.filter_by(versao_id=origem.id) \
+                .options(joinedload(TreinoVersao.exercicios)) \
+                .order_by(TreinoVersao.ordem).all()
+
+            for tv in treinos_origem:
+                novo_tv = TreinoVersao(
+                    versao_id=nova_versao.id,
+                    codigo=tv.codigo,
+                    nome_treino=tv.nome_treino,
+                    descricao_treino=tv.descricao_treino,
+                    ordem=tv.ordem,
+                )
+                db.session.add(novo_tv)
+                db.session.flush()
+                for ve in tv.exercicios:
+                    db.session.add(VersaoExercicio(
+                        treino_versao_id=novo_tv.id,
+                        exercicio_usuario_id=ve.exercicio_usuario_id,
+                        exercicio_base_id=ve.exercicio_base_id,
+                        ordem=ve.ordem,
+                        observacao=ve.observacao,
+                    ))
+
+            db.session.commit()
+            logger.info(f"Versão {versao_id} clonada como {nova_versao.id} (usuário {user_id})")
+            return nova_versao
+        except ValueError:
+            db.session.rollback()
+            raise
+        except Exception:
+            db.session.rollback()
+            logger.exception(f"Erro ao clonar versão {versao_id}")
+            raise ValueError("Não foi possível clonar a versão.")
+
+    @staticmethod
+    def excluir_versao(versao_id, user_id=None):
+        """Exclui uma versão inteira (e seus treinos/exercícios, via
+        cascade). Só é permitido para versão já FINALIZADA (a versão
+        ativa precisa ser finalizada antes -- mesma regra do fluxo
+        antigo) e somente se não existir nenhum RegistroTreino vinculado:
+        histórico de treino já registrado nunca é apagado por aqui.
+        """
+        user_id = user_id or BaseService.get_current_user_id()
+        if not user_id:
+            raise ValueError("Usuário não autenticado.")
+
+        versao = VersaoGlobal.query.filter_by(id=versao_id, user_id=user_id).first()
+        if not versao:
+            raise ValueError("Versão não encontrada.")
+
+        if versao.data_fim is None:
+            raise ValueError("Não é possível excluir a versão ativa. Finalize-a primeiro.")
+
+        tem_registros = db.session.query(RegistroTreino.id).filter_by(
+            versao_id=versao_id
+        ).first() is not None
+        if tem_registros:
+            raise ValueError(
+                "Esta versão tem treinos já registrados e não pode ser excluída, "
+                "para não perder seu histórico."
+            )
+
+        try:
+            db.session.delete(versao)
+            db.session.commit()
+            logger.info(f"Versão {versao_id} excluída pelo usuário {user_id}")
+            return True
+        except Exception:
+            db.session.rollback()
+            logger.exception(f"Erro ao excluir versão {versao_id}")
+            raise ValueError("Não foi possível excluir a versão.")

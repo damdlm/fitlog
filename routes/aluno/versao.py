@@ -1,322 +1,248 @@
-from flask import render_template, redirect, url_for, flash, request
-from flask_login import login_required, current_user
-from . import aluno_bp
-from models import db, TreinoVersao, VersaoExercicio, ExercicioCustomizado, ExercicioSistema, Musculo
-from services.versao_service import VersaoService
-from services.treino_service import TreinoService
-from services.exercicio_service import ExercicioService
-from services.musculo_service import MusculoService
-from datetime import datetime
-import json
+"""
+Rotas de "Minhas Versões" -- histórico de versões do aluno (ativa e
+finalizadas), reconstruída após a remoção da tabela `treinos`
+compartilhada (ver migration e1f2a3b4c5d6).
+
+Diferente da tela "Cadastrar Treinos" (routes/aluno/cadastro_treinos.py),
+que só enxerga a versão ATIVA, aqui o aluno pode ver e editar QUALQUER
+versão sua, inclusive as já finalizadas -- por isso todas as chamadas ao
+VersaoService abaixo passam permitir_finalizada=True. As travas de posse
+(IDOR) e de integridade de histórico (RegistroTreino) continuam
+aplicadas pelo service independente disso.
+"""
+
 import logging
 
+from flask import render_template, redirect, url_for, flash, request
+from flask_login import login_required, current_user
+
+from . import aluno_bp
+from extensions import limiter
+from services.versao_service import VersaoService
+from services.exercicio_service import ExercicioService
+from services.musculo_service import MusculoService
+
 logger = logging.getLogger(__name__)
+
+
+def _chave_por_usuario():
+    return f"minhas-versoes-{current_user.id}"
+
+
+def _acesso_negado():
+    flash('Acesso negado.', 'danger')
+    return redirect(url_for('main.index'))
+
 
 @aluno_bp.route('/versoes')
 @login_required
 def versoes():
+    """Lista todas as versões do aluno (ativa + finalizadas), mais recente primeiro."""
     if not current_user.pode_gerenciar_treino_proprio():
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('main.index'))
-    versoes = VersaoService.get_all(user_id=current_user.id)
-    return render_template('aluno/versoes.html', versoes=versoes)
+        return _acesso_negado()
 
-@aluno_bp.route('/versao/nova', methods=['GET', 'POST'])
-@login_required
-def nova_versao():
-    if not current_user.pode_gerenciar_treino_proprio():
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('main.index'))
-    if request.method == 'POST':
-        descricao = request.form.get('descricao')
-        divisao = request.form.get('divisao', 'ABC')
-        data_inicio = datetime.strptime(request.form.get('data_inicio'), '%Y-%m-%d').date()
-        data_fim_str = request.form.get('data_fim')
-        data_fim = datetime.strptime(data_fim_str, '%Y-%m-%d').date() if data_fim_str else None
-        versao_atual = VersaoService.get_ativa(user_id=current_user.id)
-        if versao_atual and not data_fim:
-            versao_atual.data_fim = data_inicio
-            db.session.add(versao_atual)
-        nova_versao = VersaoService.create(
-            descricao=descricao,
-            data_inicio=data_inicio,
-            divisao=divisao,
-            data_fim=data_fim,
-            user_id=current_user.id
-        )
-        if nova_versao:
-            flash('Versão criada com sucesso!', 'success')
-            return redirect(url_for('aluno.versoes'))
-        else:
-            flash('Erro ao criar versão!', 'danger')
-    return render_template('aluno/nova_versao.html')
+    todas_versoes = VersaoService.get_all(user_id=current_user.id)
+    return render_template('aluno/versoes.html', versoes=todas_versoes)
 
-@aluno_bp.route('/versao/<int:versao_id>', methods=['GET', 'POST'])
+
+@aluno_bp.route('/versao/<int:versao_id>')
 @login_required
 def ver_versao(versao_id):
+    """Detalhe de uma versão (ativa ou finalizada): treinos + exercícios."""
     if not current_user.pode_gerenciar_treino_proprio():
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('main.index'))
+        return _acesso_negado()
+
     versao = VersaoService.get_by_id(versao_id, user_id=current_user.id, load_relations=True)
     if not versao:
         flash('Versão não encontrada!', 'danger')
         return redirect(url_for('aluno.versoes'))
-    if request.method == 'POST':
-        versao.descricao = request.form.get('descricao')
-        nova_divisao = request.form.get('divisao')
-        if nova_divisao in ['ABC', 'ABCD', 'ABCDE']:
-            versao.divisao = nova_divisao
-        versao.data_inicio = datetime.strptime(request.form.get('data_inicio'), '%Y-%m-%d').date()
-        data_fim_str = request.form.get('data_fim')
-        versao.data_fim = datetime.strptime(data_fim_str, '%Y-%m-%d').date() if data_fim_str else None
-        db.session.commit()
+
+    treinos_versao = sorted(versao.treinos, key=lambda tv: tv.ordem or 0)
+    exercicios_catalogo = ExercicioService.get_exercicios_completos(user_id=current_user.id)
+    musculos_catalogo = MusculoService.get_all_nomes()
+
+    treino_exercicios_map = {}
+    treino_observacoes_map = {}
+    for tv in treinos_versao:
+        ids_prefixados = []
+        observacoes_tv = {}
+        for ve in tv.exercicios:
+            if ve.exercicio_usuario_id is not None:
+                chave = f"u_{ve.exercicio_usuario_id}"
+            elif ve.exercicio_base_id is not None:
+                chave = f"b_{ve.exercicio_base_id}"
+            else:
+                continue
+            ids_prefixados.append(chave)
+            if ve.observacao:
+                observacoes_tv[chave] = ve.observacao
+        treino_exercicios_map[tv.id] = ids_prefixados
+        treino_observacoes_map[tv.id] = observacoes_tv
+
+    return render_template(
+        'aluno/ver_versao.html',
+        versao=versao,
+        treinos_versao=treinos_versao,
+        exercicios_catalogo=exercicios_catalogo,
+        musculos_catalogo=musculos_catalogo,
+        treino_exercicios_map=treino_exercicios_map,
+        treino_observacoes_map=treino_observacoes_map,
+        max_treinos=VersaoService.MAX_TREINOS_POR_VERSAO,
+    )
+
+
+@aluno_bp.route('/versao/<int:versao_id>/editar', methods=['POST'])
+@login_required
+@limiter.limit("30 per hour", key_func=_chave_por_usuario)
+def versao_editar_descricao(versao_id):
+    """Edita a descrição de uma versão -- ativa ou finalizada."""
+    if not current_user.pode_gerenciar_treino_proprio():
+        return _acesso_negado()
+
+    descricao = request.form.get('descricao', '')
+    try:
+        VersaoService.editar_descricao_livre(
+            versao_id, descricao, user_id=current_user.id, permitir_finalizada=True
+        )
         flash('Versão atualizada!', 'success')
-        return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
-    treinos_dict = VersaoService.get_treinos(versao.id, user_id=current_user.id)
-    exercicios = ExercicioService.get_exercicios_completos(user_id=current_user.id)
-    treinos_disponiveis = TreinoService.get_all(user_id=current_user.id)
-    return render_template('aluno/ver_versao.html',
-                         versao=versao,
-                         treinos=treinos_dict,
-                         exercicios=exercicios,
-                         treinos_disponiveis=treinos_disponiveis)
+    except ValueError as e:
+        flash(str(e), 'danger')
+    except Exception:
+        logger.exception("Erro inesperado ao editar versão (histórico)")
+        flash('Não foi possível concluir a operação.', 'danger')
+    return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
+
+
+@aluno_bp.route('/versao/<int:versao_id>/treino', methods=['POST'])
+@login_required
+@limiter.limit("60 per hour", key_func=_chave_por_usuario)
+def versao_adicionar_treino(versao_id):
+    """Adiciona um treino a uma versão -- ativa ou finalizada."""
+    if not current_user.pode_gerenciar_treino_proprio():
+        return _acesso_negado()
+
+    nome_treino = request.form.get('nome_treino', '')
+    descricao_treino = request.form.get('descricao_treino', '')
+    try:
+        VersaoService.adicionar_treino_livre(
+            versao_id, nome_treino, descricao_treino,
+            user_id=current_user.id, permitir_finalizada=True
+        )
+        flash('Treino adicionado! Agora selecione os exercícios.', 'success')
+    except ValueError as e:
+        flash(str(e), 'danger')
+    except Exception:
+        logger.exception("Erro inesperado ao adicionar treino (histórico)")
+        flash('Não foi possível concluir a operação.', 'danger')
+    return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
+
+
+@aluno_bp.route('/versao/<int:versao_id>/treino/<int:treino_versao_id>', methods=['POST'])
+@login_required
+@limiter.limit("120 per hour", key_func=_chave_por_usuario)
+def versao_salvar_treino(versao_id, treino_versao_id):
+    """Salva nome/descrição/exercícios de um treino -- versão ativa ou finalizada."""
+    if not current_user.pode_gerenciar_treino_proprio():
+        return _acesso_negado()
+
+    nome_treino = request.form.get('nome_treino', '')
+    descricao_treino = request.form.get('descricao_treino', '')
+    exercicios_raw = request.form.getlist('exercicios[]')
+    observacoes = {
+        chave: request.form.get(f'observacao_{chave}', '').strip()[:60]
+        for chave in exercicios_raw if chave and chave.strip()
+    }
+    try:
+        VersaoService.salvar_treino_livre(
+            versao_id, treino_versao_id, nome_treino, descricao_treino,
+            exercicios_raw, user_id=current_user.id, observacoes=observacoes,
+            permitir_finalizada=True
+        )
+        flash('Treino salvo com sucesso!', 'success')
+    except ValueError as e:
+        flash(str(e), 'danger')
+    except Exception:
+        logger.exception("Erro inesperado ao salvar treino (histórico)")
+        flash('Não foi possível concluir a operação.', 'danger')
+    return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
+
+
+@aluno_bp.route('/versao/<int:versao_id>/treino/<int:treino_versao_id>/remover', methods=['POST'])
+@login_required
+@limiter.limit("60 per hour", key_func=_chave_por_usuario)
+def versao_remover_treino(versao_id, treino_versao_id):
+    """Remove um treino de uma versão -- ativa ou finalizada (bloqueado
+    pelo service se já houver histórico de registro para esse treino)."""
+    if not current_user.pode_gerenciar_treino_proprio():
+        return _acesso_negado()
+
+    try:
+        VersaoService.remover_treino_livre(
+            versao_id, treino_versao_id, user_id=current_user.id, permitir_finalizada=True
+        )
+        flash('Treino removido da versão.', 'success')
+    except ValueError as e:
+        flash(str(e), 'danger')
+    except Exception:
+        logger.exception("Erro inesperado ao remover treino (histórico)")
+        flash('Não foi possível concluir a operação.', 'danger')
+    return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
+
 
 @aluno_bp.route('/versao/<int:versao_id>/finalizar', methods=['POST'])
 @login_required
-def finalizar_versao(versao_id):
+@limiter.limit("10 per hour", key_func=_chave_por_usuario)
+def versao_finalizar(versao_id):
+    """Finaliza a versão ativa (mesma regra de negócio de cadastrar_treinos_finalizar)."""
     if not current_user.pode_gerenciar_treino_proprio():
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('main.index'))
-    versao = VersaoService.get_by_id(versao_id, user_id=current_user.id)
-    if not versao:
-        flash('Versão não encontrada!', 'danger')
-        return redirect(url_for('aluno.versoes'))
-    if versao.data_fim:
-        flash('Versão já finalizada!', 'warning')
-        return redirect(url_for('aluno.versoes'))
-    data_atual = datetime.now().date()
-    if VersaoService.finalizar(versao_id, data_atual, user_id=current_user.id):
-        flash('Versão finalizada!', 'success')
-    else:
-        flash('Erro ao finalizar versão!', 'danger')
-    return redirect(url_for('aluno.versoes'))
+        return _acesso_negado()
+
+    try:
+        versao = VersaoService.finalizar_livre(versao_id, user_id=current_user.id)
+        flash(f'Versão {versao.numero_versao} finalizada!', 'success')
+    except ValueError as e:
+        flash(str(e), 'danger')
+    except Exception:
+        logger.exception("Erro inesperado ao finalizar versão (histórico)")
+        flash('Não foi possível concluir a operação.', 'danger')
+    return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
+
 
 @aluno_bp.route('/versao/<int:versao_id>/clonar', methods=['POST'])
 @login_required
-def clonar_versao(versao_id):
+@limiter.limit("10 per hour", key_func=_chave_por_usuario)
+def versao_clonar(versao_id):
+    """Cria uma nova versão ativa copiando a estrutura de treinos desta versão."""
     if not current_user.pode_gerenciar_treino_proprio():
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('main.index'))
-    if VersaoService.clone(versao_id, user_id=current_user.id):
-        flash('Versão clonada com sucesso!', 'success')
-    else:
-        flash('Erro ao clonar versão!', 'danger')
-    return redirect(url_for('aluno.versoes'))
+        return _acesso_negado()
+
+    try:
+        nova_versao = VersaoService.clonar_versao(versao_id, user_id=current_user.id)
+        flash(f'Versão clonada como v{nova_versao.numero_versao}!', 'success')
+        return redirect(url_for('aluno.ver_versao', versao_id=nova_versao.id))
+    except ValueError as e:
+        flash(str(e), 'danger')
+    except Exception:
+        logger.exception("Erro inesperado ao clonar versão")
+        flash('Não foi possível concluir a operação.', 'danger')
+    return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
+
 
 @aluno_bp.route('/versao/<int:versao_id>/excluir', methods=['POST'])
 @login_required
-def excluir_versao(versao_id):
+@limiter.limit("10 per hour", key_func=_chave_por_usuario)
+def versao_excluir(versao_id):
+    """Exclui uma versão finalizada sem histórico de registro."""
     if not current_user.pode_gerenciar_treino_proprio():
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('main.index'))
-    versao = VersaoService.get_by_id(versao_id, user_id=current_user.id)
-    if not versao:
-        flash('Versão não encontrada!', 'danger')
-        return redirect(url_for('aluno.versoes'))
-    versao_ativa = VersaoService.get_ativa(user_id=current_user.id)
-    if versao_ativa and versao_ativa.id == versao_id:
-        flash('Não é possível excluir a versão ativa. Finalize-a primeiro.', 'warning')
-        return redirect(url_for('aluno.versoes'))
-    from models import RegistroTreino
-    registros = RegistroTreino.query.filter_by(versao_id=versao_id, user_id=current_user.id).first()
-    if registros:
-        flash('Não é possível excluir esta versão pois existem registros vinculados.', 'danger')
-        return redirect(url_for('aluno.versoes'))
-    confirmado = request.args.get('confirmar', 'false').lower() == 'true'
-    if not confirmado:
-        flash('⚠️ Clique novamente para confirmar a exclusão.', 'warning')
-        return redirect(url_for('aluno.versoes'))
-    if VersaoService.delete(versao_id, user_id=current_user.id):
-        flash('Versão excluída com sucesso!', 'success')
-    else:
-        flash('Erro ao excluir versão!', 'danger')
-    return redirect(url_for('aluno.versoes'))
+        return _acesso_negado()
 
-@aluno_bp.route('/versao/<int:versao_id>/treino/novo', methods=['GET', 'POST'])
-@login_required
-def novo_treino_versao(versao_id):
-    if not current_user.pode_gerenciar_treino_proprio():
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('main.index'))
-    versao = VersaoService.get_by_id(versao_id, user_id=current_user.id)
-    if not versao:
-        flash('Versão não encontrada!', 'danger')
-        return redirect(url_for('aluno.versoes'))
-    if versao.data_fim is not None:
-        flash('Esta versão está arquivada e não pode ser alterada.', 'warning')
-        return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
-    if request.method == 'POST':
-        treino_codigo = request.form.get('treino_id', '').strip().upper()
-        nome_treino = request.form.get('nome_treino')
-        descricao_treino = request.form.get('descricao_treino', '')
-        if not treino_codigo or not treino_codigo.isalpha() or len(treino_codigo) != 1:
-            flash('Selecione uma letra válida para o treino.', 'danger')
-            return redirect(url_for('aluno.novo_treino_versao', versao_id=versao_id))
-        treino = TreinoService.get_or_create(treino_codigo, nome_treino, descricao_treino, user_id=current_user.id)
-        if not treino:
-            flash('Erro ao criar treino!', 'danger')
-            return redirect(url_for('aluno.novo_treino_versao', versao_id=versao_id))
-        existe = TreinoVersao.query.filter_by(versao_id=versao_id, treino_id=treino.id).first()
-        if existe:
-            flash(f'Treino {treino.codigo} já existe nesta versão!', 'warning')
-            return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
-        exercicios = ExercicioService.get_by_treino(treino.id, user_id=current_user.id)
-        exercicios_ids = [ex.id for ex in exercicios]
-        observacoes = {
-            f"{ex.prefixo}{ex.id}": ex.observacao_treino
-            for ex in exercicios if getattr(ex, 'observacao_treino', None)
-        }
-        try:
-            treino_versao = TreinoVersao(
-                versao_id=versao_id,
-                treino_id=treino.id,
-                nome_treino=nome_treino,
-                descricao_treino=descricao_treino,
-                ordem=len(versao.treinos)
-            )
-            db.session.add(treino_versao)
-            db.session.flush()
-            VersaoService.adicionar_exercicios_a_treino_versao(treino_versao.id, exercicios_ids, [], observacoes=observacoes)
-            db.session.commit()
-            flash(f'Treino {treino.codigo} adicionado!', 'success')
-            return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
-        except Exception:
-            db.session.rollback()
-            logger.exception("Erro ao adicionar treino à versão")
-            flash('Erro ao adicionar treino.', 'danger')
-    letras_em_uso = {tv.treino_ref.codigo for tv in versao.treinos}
-    letras_disponiveis = [l for l in versao.divisao if l not in letras_em_uso]
-    return render_template('aluno/novo_treino_versao.html', versao=versao, letras=letras_disponiveis)
-
-@aluno_bp.route('/versao/<int:versao_id>/treino/<string:treino_codigo>/editar', methods=['GET', 'POST'])
-@login_required
-def editar_treino_versao(versao_id, treino_codigo):
-    """Edita um treino específico dentro de uma versão do aluno"""
-    if not current_user.pode_gerenciar_treino_proprio():
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('main.index'))
-    
-    from models import VersaoExercicio, ExercicioCustomizado, ExercicioSistema
-    import traceback
-
-    versao = VersaoService.get_by_id(versao_id, user_id=current_user.id, load_relations=True)
-
-    if not versao:
-        flash('Versão não encontrada!', 'danger')
-        return redirect(url_for('aluno.versoes'))
-
-    if versao.data_fim is not None:
-        flash('Esta versão está arquivada e não pode ser editada.', 'warning')
-        return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
-
-    treino_ref = TreinoService.get_by_codigo(treino_codigo, user_id=current_user.id)
-
-    if not treino_ref:
-        flash(f'Treino {treino_codigo} não encontrado!', 'danger')
-        return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
-
-    # Encontrar o treino na versão
-    treino_versao = None
-    for tv in versao.treinos:
-        if tv.treino_id == treino_ref.id:
-            treino_versao = tv
-            break
-
-    if not treino_versao:
-        flash(f'Treino {treino_codigo} não encontrado nesta versão!', 'danger')
-        return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
-
-    # ==========================================================
-    # MÉTODO POST - SALVAR
-    # ==========================================================
-    if request.method == 'POST':
-        nome_treino = request.form.get('nome_treino', '').strip()
-        descricao_treino = request.form.get('descricao_treino', '').strip()
-
-        exercicios_raw = request.form.getlist('exercicios[]')
-
-        # Método compartilhado com a rota do professor (routes/professor_routes.py)
-        # -- mesma validação/parsing, evita duas implementações divergentes.
-        usuarios_ids_validos, bases_ids_validos = VersaoService.processar_exercicios_formulario(
-            exercicios_raw, current_user.id
-        )
-
-        if not usuarios_ids_validos and not bases_ids_validos:
-            flash('Selecione pelo menos um exercício!', 'danger')
-            return redirect(request.url)
-
-        # Observação por exercício (campo observacao_<chave>, até 60 chars)
-        observacoes = {
-            chave: request.form.get(f'observacao_{chave}', '').strip()[:60]
-            for chave in exercicios_raw if chave and chave.strip()
-        }
-
-        treino_versao.nome_treino = nome_treino
-        treino_versao.descricao_treino = descricao_treino
-
-        try:
-            VersaoService.adicionar_exercicios_a_treino_versao(
-                treino_versao.id, usuarios_ids_validos, bases_ids_validos, observacoes=observacoes
-            )
-            db.session.commit()
-            flash(f'Treino {treino_codigo} atualizado!', 'success')
-            return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
-        except Exception as e:
-            db.session.rollback()
-            logger.exception("Erro ao salvar treino da versão (aluno)")
-            flash(f'Erro: {str(e)}', 'danger')
-            return redirect(request.url)
-
-    # ==========================================================
-    # MÉTODO GET - CARREGAR FORMULÁRIO
-    # ==========================================================
-    # Mesmo serviço usado pela visão do professor (routes/professor_routes.py) --
-    # já traz imagem/descrição de cada exercício, o que a montagem manual
-    # anterior aqui não trazia.
-    exercicios_display, exercicios_atuais, observacoes_atuais = VersaoService.get_exercicios_para_edicao(
-        current_user.id, treino_versao
-    )
-
-    musculos = MusculoService.get_all_nomes()
-
-    return render_template('aluno/editar_treino_versao.html',
-                         versao=versao,
-                         treino_id=treino_codigo,
-                         treino={
-                             "nome": treino_versao.nome_treino,
-                             "descricao": treino_versao.descricao_treino,
-                             "exercicios": exercicios_atuais
-                         },
-                         exercicios=exercicios_display,
-                         observacoes_atuais=observacoes_atuais,
-                         musculos=musculos)
-
-@aluno_bp.route('/versao/<int:versao_id>/treino/<string:treino_codigo>/excluir', methods=['POST'])
-@login_required
-def excluir_treino_versao(versao_id, treino_codigo):
-    if not current_user.pode_gerenciar_treino_proprio():
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('main.index'))
     try:
-        VersaoService.excluir_treino_versao(versao_id, treino_codigo, current_user.id, current_user)
-        flash(f'Treino {treino_codigo} removido da versão!', 'success')
-    except (ValueError, PermissionError) as e:
-        # Mensagens de validação de negócio (texto seguro e fixo,
-        # definidas no service) -- ok mostrar direto ao usuário.
+        VersaoService.excluir_versao(versao_id, user_id=current_user.id)
+        flash('Versão excluída com sucesso!', 'success')
+        return redirect(url_for('aluno.versoes'))
+    except ValueError as e:
         flash(str(e), 'danger')
     except Exception:
-        # CORREÇÃO seção 13 (hardening de segurança): qualquer outra
-        # exceção (não prevista) fica só no log -- nunca no flash.
-        logger.exception("Erro ao excluir treino da versão (aluno)")
+        logger.exception("Erro inesperado ao excluir versão")
         flash('Não foi possível concluir a operação.', 'danger')
     return redirect(url_for('aluno.ver_versao', versao_id=versao_id))

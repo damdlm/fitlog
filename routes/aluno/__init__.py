@@ -6,5 +6,6 @@ aluno_bp = Blueprint('aluno', __name__, url_prefix='/aluno')
 from . import main
 from . import exercicio
 from . import cadastro_treinos
+from . import versao
 from . import stats
 from . import ranking

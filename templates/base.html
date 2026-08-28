@@ -1204,6 +1204,13 @@
                                             <span class="mega-desc">Monte sua versão, treinos e exercícios</span>
                                         </span>
                                     </a>
+                                    <a class="mega-card" href="{{ url_for('aluno.versoes') }}">
+                                        <span class="mega-icon"><i class="bi bi-layers"></i></span>
+                                        <span>
+                                            <span class="mega-title">Minhas Versões</span>
+                                            <span class="mega-desc">Histórico de versões, ver e editar</span>
+                                        </span>
+                                    </a>
                                     <a class="mega-card" href="{{ url_for('aluno.exercicios') }}">
                                         <span class="mega-icon"><i class="bi bi-list-check"></i></span>
                                         <span>
@@ -1367,6 +1374,7 @@
             <div class="mais-section">
             <!-- <span class="mais-section-label">Treino</span> -->
                 <a class="mais-link" href="{{ url_for('aluno.cadastrar_treinos') }}"><i class="bi bi-clipboard2-plus"></i> Cadastrar Treinos</a>
+                <a class="mais-link" href="{{ url_for('aluno.versoes') }}"><i class="bi bi-layers"></i> Minhas Versões</a>
                 <a class="mais-link" href="{{ url_for('aluno.exercicios') }}"><i class="bi bi-list-check"></i> Meus Exercícios</a>
                 <a class="mais-link" href="{{ url_for('aluno.ranking') }}"><i class="bi bi-trophy-fill"></i> Melhores Alunos</a>
             </div>

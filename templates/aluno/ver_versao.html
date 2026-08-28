@@ -1,35 +1,35 @@
 {% extends "base.html" %}
-{% from "macros/exercicio_imagens.html" import botao_imagens_exercicio %}
 
-{% block page_icon %}<i class="bi bi-pencil-square" style="color: #F28C33;"></i>{% endblock %}
+{% block page_icon %}<i class="bi bi-layers" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Versão {{ versao.numero_versao }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/editar-treino-versao.css') }}">
+{% endblock %}
 
 {% block content %}
 <style>
     :root {
-        --vv-orange: #F28C33;
-        --vv-orange-light: #FFB366;
-        --vv-ink: #1F2937;
-        --vv-muted: #6B7280;
-        --vv-line: #EEF0F3;
-        --vv-bg-soft: #F9FAFB;
+        --ct-orange: #F28C33;
+        --ct-orange-light: #FFB366;
+        --ct-ink: #1F2937;
+        --ct-muted: #6B7280;
+        --ct-line: #EEF0F3;
+        --ct-bg-soft: #F9FAFB;
     }
 
-    /* Paleta de identificação por treino (A, B, C, D, E) -- não é decoração:
-       ajuda a reconhecer de relance qual treino é qual, tanto no indicador
-       de progresso quanto no card correspondente. */
-    .vv-accent-0 { --accent: #F28C33; --accent-soft: rgba(242, 140, 51, 0.12); }
-    .vv-accent-1 { --accent: #3B82F6; --accent-soft: rgba(59, 130, 246, 0.12); }
-    .vv-accent-2 { --accent: #10B981; --accent-soft: rgba(16, 185, 129, 0.12); }
-    .vv-accent-3 { --accent: #8B5CF6; --accent-soft: rgba(139, 92, 246, 0.12); }
-    .vv-accent-4 { --accent: #EC4899; --accent-soft: rgba(236, 72, 153, 0.12); }
+    .ct-accent-0 { --accent: #F28C33; --accent-soft: rgba(242, 140, 51, 0.12); }
+    .ct-accent-1 { --accent: #3B82F6; --accent-soft: rgba(59, 130, 246, 0.12); }
+    .ct-accent-2 { --accent: #10B981; --accent-soft: rgba(16, 185, 129, 0.12); }
+    .ct-accent-3 { --accent: #8B5CF6; --accent-soft: rgba(139, 92, 246, 0.12); }
+    .ct-accent-4 { --accent: #EC4899; --accent-soft: rgba(236, 72, 153, 0.12); }
+    .ct-accent-5 { --accent: #06B6D4; --accent-soft: rgba(6, 182, 212, 0.12); }
+    .ct-accent-6 { --accent: #F59E0B; --accent-soft: rgba(245, 158, 11, 0.12); }
+    .ct-accent-7 { --accent: #EF4444; --accent-soft: rgba(239, 68, 68, 0.12); }
+    .ct-accent-8 { --accent: #14B8A6; --accent-soft: rgba(20, 184, 166, 0.12); }
+    .ct-accent-9 { --accent: #6366F1; --accent-soft: rgba(99, 102, 241, 0.12); }
 
-    @media (prefers-reduced-motion: reduce) {
-        * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-    }
-
-    /* ===== Header ===== */
-    .vv-header {
+    .ct-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -37,761 +37,641 @@
         gap: 12px;
         margin-bottom: 20px;
     }
-    .vv-header h1 {
+    .ct-header h1 {
         font-size: 1.5rem;
         font-weight: 700;
-        color: var(--vv-ink);
+        color: var(--ct-ink);
         margin: 0;
         display: flex;
         align-items: center;
         gap: 10px;
         flex-wrap: wrap;
     }
-    .vv-status-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 0.72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        padding: 4px 11px;
-        border-radius: 999px;
-    }
-    .vv-status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-    .vv-status-pill.is-active { background: #E9F9EF; color: #16A34A; }
-    .vv-status-pill.is-archived { background: #F1F2F4; color: #6B7280; }
 
-    .vv-icon-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .vv-icon-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        border: 1px solid var(--vv-line);
-        background: white;
-        color: var(--vv-muted);
-        padding: 9px 15px;
-        border-radius: 12px;
-        font-size: 0.82rem;
-        font-weight: 700;
-        text-decoration: none;
-        transition: all 0.15s ease;
-    }
-    .vv-icon-btn:hover { border-color: var(--vv-orange-light); color: var(--vv-orange); background: #FFF8F2; }
-
-    /* ===== Hero ===== */
-    .vv-hero {
-        background: white;
-        border: 1px solid var(--vv-line);
-        border-radius: 18px;
-        padding: 24px;
-        margin-bottom: 20px;
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 20px;
-        align-items: center;
-        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
-    }
-    @media (max-width: 768px) {
-        .vv-hero { grid-template-columns: 1fr; }
-    }
-    .vv-hero-desc { font-size: 1.15rem; font-weight: 700; color: var(--vv-ink); margin-bottom: 10px; }
-    .vv-hero-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--vv-muted); }
-    .vv-hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
-    .vv-divisao-tag {
-        background: linear-gradient(135deg, var(--vv-orange) 0%, var(--vv-orange-light) 100%);
-        color: white;
-        font-weight: 700;
-        padding: 3px 12px;
-        border-radius: 999px;
-        font-size: 0.78rem;
-        letter-spacing: 0.03em;
-    }
-
-    /* Indicador segmentado de progresso -- elemento de assinatura da tela:
-       cada bolinha é um treino da divisão (A, B, C...); preenchida = montado,
-       vazia = falta montar. Clicável: leva direto pro treino ou pra criação. */
-    .vv-progress-seq { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-    .vv-progress-dots { display: flex; gap: 8px; }
-    .vv-progress-dot {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
+    .ct-hero {
         display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 800;
-        font-size: 0.95rem;
-        text-decoration: none;
-        transition: transform 0.15s ease;
-        border: 2px dashed var(--vv-line);
-        color: var(--vv-muted);
-    }
-    .vv-progress-dot:hover { transform: translateY(-2px); }
-    .vv-progress-dot.is-filled {
-        border: none;
-        background: var(--accent);
-        color: white;
-        box-shadow: 0 4px 12px var(--accent-soft);
-    }
-    .vv-progress-label { font-size: 0.72rem; color: var(--vv-muted); font-weight: 600; }
-
-    /* ===== Painel de edição (recolhido por padrão) ===== */
-    .vv-edit-toggle {
-        width: 100%;
-        display: flex;
-        align-items: center;
         justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
         background: white;
-        border: 1px solid #E3E6EB;
-        border-radius: 14px;
-        padding: 14px 18px;
-        margin-bottom: 12px;
-        font-weight: 700;
-        color: var(--vv-ink);
-        font-size: 0.92rem;
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-        transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-    .vv-edit-toggle:hover { border-color: var(--vv-orange-light); box-shadow: 0 4px 14px rgba(242, 140, 51, 0.12); }
-    .vv-edit-toggle .bi-chevron-down { transition: transform 0.2s ease; color: var(--vv-muted); }
-    .vv-edit-toggle[aria-expanded="true"] .bi-chevron-down { transform: rotate(180deg); }
-
-    .vv-edit-panel {
-        background: var(--vv-bg-soft);
-        border: 1px solid var(--vv-line);
-        border-radius: 14px;
-        padding: 22px;
+        border: 1px solid var(--ct-line);
+        border-radius: 16px;
+        padding: 20px 24px;
         margin-bottom: 24px;
     }
-    .vv-edit-panel label { font-weight: 700; font-size: 0.82rem; color: var(--vv-ink); }
-    .vv-danger-zone {
-        margin-top: 20px;
-        padding-top: 18px;
-        border-top: 1px dashed #D1D5DB;
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    /* ===== Seção de treinos ===== */
-    .vv-section-title {
-        display: flex;
-        justify-content: space-between;
+    .ct-hero-desc { font-size: 1.15rem; font-weight: 700; color: var(--ct-ink); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .ct-hero-edit-btn {
+        border: none;
+        background: var(--ct-bg-soft);
+        color: var(--ct-muted);
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        display: inline-flex;
         align-items: center;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-bottom: 16px;
+        justify-content: center;
+        font-size: 0.8rem;
+        transition: background 0.15s ease, color 0.15s ease;
     }
-    .vv-section-title h2 {
-        font-size: 1.05rem;
+    .ct-hero-edit-btn:hover { background: rgba(242, 140, 51, 0.12); color: var(--ct-orange); }
+    .ct-hero-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--ct-muted); }
+    .ct-hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
+    .ct-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
         font-weight: 700;
-        color: var(--vv-ink);
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        vertical-align: middle;
     }
+    .ct-status-pill.ativa { background: #E9F9EF; color: #16A34A; }
+    .ct-status-pill.ativa .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .ct-status-pill.finalizada { background: var(--ct-bg-soft); color: var(--ct-muted); }
+    .ct-hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    .vv-treino-card {
-        background: white;
-        border: 1px solid var(--vv-line);
-        border-radius: 16px;
-        margin-bottom: 16px;
-        overflow: hidden;
-        border-left: 4px solid var(--accent);
-    }
-    .vv-treino-header {
+    .ct-section-title {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 24px 0 14px;
+    }
+    .ct-section-title h2 { font-size: 1.05rem; font-weight: 700; color: var(--ct-ink); margin: 0; }
+
+    .ct-treino-card {
+        background: white;
+        border: 1px solid var(--ct-line);
+        border-left: 4px solid var(--accent, var(--ct-orange));
+        border-radius: 14px;
+        padding: 18px 20px;
+        margin-bottom: 14px;
+    }
+    .ct-treino-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
         gap: 12px;
         flex-wrap: wrap;
-        padding: 16px 18px;
-        cursor: pointer;
-        user-select: none;
     }
-    .vv-treino-header:hover { background: var(--vv-bg-soft); }
-    .vv-treino-heading { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .vv-treino-badge {
+    .ct-treino-heading { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .ct-treino-badge {
         width: 34px;
         height: 34px;
         border-radius: 10px;
-        background: var(--accent);
-        color: white;
-        font-weight: 800;
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: white;
+        background: var(--accent, var(--ct-orange));
         flex-shrink: 0;
     }
-    .vv-treino-nome { font-weight: 700; color: var(--vv-ink); }
-    .vv-count-chip {
-        background: var(--vv-bg-soft);
-        color: var(--vv-muted);
+    .ct-treino-nome { font-weight: 700; color: var(--ct-ink); font-size: 1rem; }
+    .ct-treino-desc { color: var(--ct-muted); font-size: 0.85rem; margin: 2px 0 0 44px; }
+    .ct-count-chip {
         font-size: 0.75rem;
         font-weight: 700;
         padding: 3px 10px;
         border-radius: 999px;
+        background: var(--accent-soft, var(--ct-bg-soft));
+        color: var(--accent, var(--ct-ink));
+        white-space: nowrap;
     }
-    .vv-archived-chip {
-        background: #F1F2F4;
-        color: #6B7280;
-        font-size: 0.75rem;
-        font-weight: 700;
-        padding: 4px 12px;
-        border-radius: 999px;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-    }
-    .vv-treino-actions { display: flex; gap: 6px; align-items: center; }
-    .vv-icon-action {
-        width: 34px;
-        height: 34px;
-        border-radius: 10px;
-        border: 1px solid var(--vv-line);
-        background: white;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--vv-muted);
-        transition: all 0.15s ease;
-        cursor: pointer;
-        font-family: inherit;
-        text-decoration: none;
-    }
-    .vv-icon-action:hover { border-color: var(--vv-orange); color: var(--vv-orange); }
-    .vv-icon-action.variant-danger:hover { border-color: #EF4444; color: #EF4444; background: #FDECEC; }
-    .vv-treino-collapse-icon { color: var(--vv-muted); transition: transform 0.2s ease; }
-    .vv-treino-card.is-collapsed .vv-treino-collapse-icon { transform: rotate(-90deg); }
+    .ct-count-chip.is-empty { background: #FEF2F2; color: #DC2626; }
+    .ct-treino-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    .vv-treino-body { padding: 4px 18px 18px; }
-    .vv-treino-card.is-collapsed .vv-treino-body { display: none; }
-    .vv-treino-desc { color: var(--vv-muted); font-size: 0.85rem; margin-bottom: 12px; }
-
-    .vv-exercicios-toolbar {
+    .ct-ex-toolbar {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 10px;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-    .vv-exercicios-toolbar h6 {
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: var(--vv-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .vv-save-order-btn {
-        display: none;
-        align-items: center;
-        gap: 6px;
-        border: none;
-        background: var(--accent);
-        color: white;
-        font-size: 0.78rem;
-        font-weight: 700;
-        padding: 6px 13px;
-        border-radius: 9px;
-    }
-
-    .vv-exercicio-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        background: var(--vv-bg-soft);
-        border: 1px solid transparent;
-        border-radius: 12px;
-        padding: 10px 12px;
-        margin-bottom: 8px;
-        transition: background 0.15s ease, border-color 0.15s ease;
-    }
-    .vv-exercicio-item:hover { border-color: var(--vv-line); background: white; }
-    .vv-exercicio-item.sortable-drag { opacity: 0.4; }
-    .vv-exercicio-item.sortable-ghost { opacity: 0.5; background: var(--accent-soft); }
-    .vv-drag-handle { cursor: grab; color: #B0B5BD; font-size: 1.1rem; flex-shrink: 0; touch-action: none; }
-    .vv-drag-handle:active { cursor: grabbing; }
-    .vv-exercicio-content { flex: 1 1 auto; min-width: 0; }
-    .vv-exercicio-name-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
-    .vv-exercicio-nome {
-        font-weight: 700;
-        color: var(--vv-ink);
-        font-size: 0.92rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        min-width: 0;
-        flex: 1 1 auto;
-        cursor: default;
-    }
-    .vv-exercicio-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
-    .vv-tag {
-        font-size: 0.72rem;
-        font-weight: 700;
-        padding: 2px 9px;
-        border-radius: 999px;
-    }
-    .vv-tag.variant-meu { background: var(--accent-soft); color: var(--accent); }
-    .vv-tag.variant-catalogo { background: #EEF0F3; color: var(--vv-muted); }
-    .vv-tag.variant-musculo { background: white; border: 1px solid var(--vv-line); color: var(--vv-muted); }
-
-    /* ===== Estado vazio ===== */
-    .vv-empty {
-        text-align: center;
-        padding: 48px 20px;
-        border: 1.5px dashed #D1D5DB;
-        border-radius: 16px;
-        background: var(--vv-bg-soft);
-    }
-    .vv-empty i { font-size: 2.2rem; color: var(--vv-orange-light); margin-bottom: 10px; display: inline-block; }
-    .vv-empty p { color: var(--vv-muted); margin-bottom: 14px; }
-
-    /* ===== Botão flutuante ===== */
-    .vv-fab {
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        z-index: 1000;
-        display: none;
-        align-items: center;
-        gap: 8px;
-        border: none;
-        background: linear-gradient(135deg, var(--vv-orange) 0%, var(--vv-orange-light) 100%);
-        color: white;
-        font-weight: 700;
-        padding: 13px 22px;
-        border-radius: 999px;
-        box-shadow: 0 8px 24px rgba(242, 140, 51, 0.35);
-    }
-
-    .vv-footer-actions {
-        display: flex;
-        justify-content: center;
         gap: 10px;
-        flex-wrap: wrap;
-        margin-top: 32px;
-        padding-top: 24px;
-        border-top: 1px solid var(--vv-line);
+        margin: 12px 0 6px 44px;
+    }
+    .ct-ex-toolbar-hint { font-size: 0.74rem; color: var(--ct-muted); display: flex; align-items: center; gap: 5px; }
+    .ct-save-order-btn {
+        display: none;
+        align-items: center;
+        gap: 6px;
+        border: none;
+        background: var(--ct-orange);
+        color: white;
+        font-size: 0.74rem;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 999px;
+    }
+    .ct-save-order-btn.is-visible { display: inline-flex; }
+
+    .ct-ex-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin: 12px 0 0 44px;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+    .ct-ex-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+        background: var(--ct-bg-soft);
+        border: 1px solid var(--ct-line);
+        color: var(--ct-ink);
+        padding: 7px 12px;
+        border-radius: 10px;
+    }
+    .ct-ex-drag-handle {
+        cursor: grab;
+        color: #B0B5BD;
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        margin: -4px 0;
+        font-size: 1.05rem;
+        touch-action: none;
+    }
+    .ct-ex-drag-handle:active { cursor: grabbing; }
+    .ct-ex-item.sortable-ghost { opacity: 0.5; background: var(--accent-soft); }
+    .ct-ex-item.sortable-drag { opacity: 0.4; }
+    .ct-ex-empty {
+        margin: 12px 0 0 44px;
+        font-size: 0.82rem;
+        color: #DC2626;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    @media (max-width: 575.98px) {
+        .ct-ex-toolbar,
+        .ct-ex-list,
+        .ct-ex-empty {
+            margin-left: 0;
+        }
+    }
+
+    .ct-add-treino-btn {
+        width: 100%;
+        border: none;
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        border-radius: 14px;
+        padding: 16px;
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 4px 14px rgba(242, 140, 51, 0.35);
+        margin-bottom: 20px;
+        transition: transform .15s, box-shadow .15s;
+    }
+    .ct-add-treino-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(242, 140, 51, 0.45); }
+    .ct-add-treino-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .ct-finalizar-hint { font-size: 0.82rem; color: var(--ct-muted); max-width: 480px; }
+
+    #modalExercicios .etv-toolbar {
+        position: static;
+        background: transparent;
+        padding: 0;
+        margin: 0 0 12px;
+        border-bottom: none;
+    }
+    #modalExercicios .modal-body {
+        padding-top: 18px;
+        padding-bottom: 14px;
+    }
+    #modalExercicios .ct-modal-dados-treino {
+        margin-bottom: 10px;
+    }
+    #modalExercicios .ct-modal-dados-treino .etv-field-label {
+        margin-bottom: 4px;
+        font-size: 0.68rem;
+    }
+    #modalExercicios .ct-modal-divider {
+        border: none;
+        border-top: 1px solid #ececec;
+        margin: 2px 0 14px;
+    }
+    #modalExercicios label.etv-field-label {
+        margin-bottom: 8px;
+    }
+    #modalExercicios .etv-toolbar-row {
+        margin-bottom: 8px;
+    }
+    #modalExercicios .etv-chip {
+        padding: 4px 12px;
+        font-size: 0.74rem;
     }
 </style>
 
-<div class="vv-header">
+<div class="ct-header">
     <h1>
-        <i class="bi bi-pencil-square" style="color: #F28C33;"></i>
+        <i class="bi bi-layers me-2" style="color: #F28C33;"></i>
         Versão {{ versao.numero_versao }}
-        {% if versao.data_fim %}
-        <span class="vv-status-pill is-archived"><span class="dot"></span>Arquivada</span>
-        {% else %}
-        <span class="vv-status-pill is-active"><span class="dot"></span>Ativa</span>
-        {% endif %}
     </h1>
-    <div class="vv-icon-actions">
-        <a href="{{ url_for('aluno.versoes') }}" class="vv-icon-btn">
-            <i class="bi bi-arrow-left"></i> Minhas Versões
-        </a>
-    </div>
+    <a href="{{ url_for('aluno.versoes') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Minhas Versões
+    </a>
 </div>
 
-{% set total_treinos = treinos|length %}
-{% set max_treinos = 3 if versao.divisao == 'ABC' else 4 if versao.divisao == 'ABCD' else 5 %}
-{% set letras = ['A', 'B', 'C', 'D', 'E'] %}
+{% set total_treinos = treinos_versao|length %}
+{% set total_ex = namespace(value=0) %}
+{% for tv in treinos_versao %}
+    {% set total_ex.value = total_ex.value + tv.exercicios|length %}
+{% endfor %}
+{% set esta_ativa = versao.data_fim is none %}
 
-<!-- ===== Hero: dados principais + indicador de progresso ===== -->
-<div class="vv-hero">
+<div class="ct-hero">
     <div>
-        <div class="vv-hero-desc">{{ versao.descricao }}</div>
-        <div class="vv-hero-meta">
-            <span><span class="vv-divisao-tag">{{ versao.divisao }}</span></span>
-            <span>
-                <i class="bi bi-calendar3"></i>
-                {{ versao.data_inicio.strftime('%d/%m/%Y') if versao.data_inicio else '?' }}
-                até {{ versao.data_fim.strftime('%d/%m/%Y') if versao.data_fim else 'hoje' }}
-            </span>
-            <span><i class="bi bi-list-check"></i>
-                {% set total_ex = namespace(value=0) %}
-                {% for treino in treinos.values() %}
-                    {% set total_ex.value = total_ex.value + treino.exercicios|length %}
-                {% endfor %}
-                {{ total_ex.value }} exercício{{ 's' if total_ex.value != 1 else '' }} no total
-            </span>
+        <div class="ct-hero-desc">
+            {{ versao.descricao }}
+            <button type="button" class="ct-hero-edit-btn" data-bs-toggle="modal" data-bs-target="#modalEditarVersao" title="Editar descrição da versão">
+                <i class="bi bi-pencil"></i>
+            </button>
+            {% if esta_ativa %}
+            <span class="ct-status-pill ativa"><span class="dot"></span>Ativa</span>
+            {% else %}
+            <span class="ct-status-pill finalizada"><i class="bi bi-archive"></i> Finalizada</span>
+            {% endif %}
+        </div>
+        <div class="ct-hero-meta">
+            <span><i class="bi bi-calendar3"></i> Início em {{ versao.data_inicio.strftime('%d/%m/%Y') if versao.data_inicio else '?' }}</span>
+            {% if versao.data_fim %}
+            <span><i class="bi bi-calendar-check"></i> Encerrada em {{ versao.data_fim.strftime('%d/%m/%Y') }}</span>
+            {% endif %}
+            <span><i class="bi bi-trophy"></i> {{ total_treinos }}/{{ max_treinos }} treinos</span>
+            <span><i class="bi bi-list-check"></i> {{ total_ex.value }} exercício{{ 's' if total_ex.value != 1 else '' }}</span>
         </div>
     </div>
-
-    <div class="vv-progress-seq">
-        <div class="vv-progress-dots">
-            {% for i in range(max_treinos) %}
-                {% set letra = letras[i] %}
-                {% set preenchido = letra in treinos %}
-                {% if preenchido %}
-                <a href="#treino-{{ letra }}" class="vv-progress-dot vv-accent-{{ i % 5 }} is-filled" title="Treino {{ letra }}: montado">{{ letra }}</a>
-                {% else %}
-                    {% if not versao.data_fim %}
-                    <a href="{{ url_for('aluno.cadastrar_treinos') }}" class="vv-progress-dot vv-accent-{{ i % 5 }}" title="Treino {{ letra }}: ainda não montado, clique para adicionar">{{ letra }}</a>
-                    {% else %}
-                    <span class="vv-progress-dot vv-accent-{{ i % 5 }}" title="Treino {{ letra }}: não montado">{{ letra }}</span>
-                    {% endif %}
-                {% endif %}
-            {% endfor %}
-        </div>
-        <div class="vv-progress-label">{{ total_treinos }} de {{ max_treinos }} treinos montados</div>
-    </div>
-</div>
-
-<!-- ===== Painel de edição da versão (recolhido por padrão) ===== -->
-<button type="button" class="vv-edit-toggle" id="vvEditToggle" aria-expanded="false" aria-controls="vvEditPanel">
-    <span><i class="bi bi-sliders me-2" style="color:#F28C33;"></i>Editar dados da versão</span>
-    <i class="bi bi-chevron-down"></i>
-</button>
-
-<div class="vv-edit-panel" id="vvEditPanel" style="display: none;">
-    <form method="post">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Descrição</label>
-                <input type="text" name="descricao" class="form-control"
-                       value="{{ versao.descricao }}" required>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Divisão (Split)</label>
-                <select name="divisao" class="form-select">
-                    <option value="ABC" {% if versao.divisao == 'ABC' %}selected{% endif %}>ABC (3 treinos)</option>
-                    <option value="ABCD" {% if versao.divisao == 'ABCD' %}selected{% endif %}>ABCD (4 treinos)</option>
-                    <option value="ABCDE" {% if versao.divisao == 'ABCDE' %}selected{% endif %}>ABCDE (5 treinos)</option>
-                </select>
-                <small class="text-muted">Alterar a divisão afeta quantos treinos podem ser adicionados</small>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Data de Início</label>
-                <input type="date" name="data_inicio" class="form-control"
-                       value="{{ versao.data_inicio }}" required>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Data de Fim</label>
-                <input type="date" name="data_fim" class="form-control"
-                       value="{{ versao.data_fim or '' }}">
-                <small class="text-muted">Deixe em branco se for a versão atual</small>
-            </div>
-        </div>
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-save"></i> Salvar Alterações da Versão
+    <div class="ct-hero-actions">
+        {% if esta_ativa %}
+        <button type="button" class="btn btn-sm" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;"
+                data-confirm-url="{{ url_for('aluno.versao_finalizar', versao_id=versao.id) }}"
+                data-confirm-title="Finalizar esta versão?"
+                data-confirm-text="Depois de finalizada, ela sai do modo de edição rápida e passa a fazer parte do seu histórico. Você ainda pode editá-la por aqui depois, se precisar."
+                data-confirm-variant="warning"
+                data-confirm-icon="bi-flag"
+                data-confirm-label="Sim, finalizar">
+            <i class="bi bi-flag"></i> Finalizar versão
         </button>
-
-        <div class="vv-danger-zone">
-            {% if not versao.data_fim %}
-            <button type="button" class="btn btn-outline-warning btn-sm"
-                    data-confirm-url="{{ url_for('aluno.finalizar_versao', versao_id=versao.id) }}"
-                    data-confirm-title="Finalizar esta versão?"
-                    data-confirm-text="Depois de finalizada, ela não poderá mais ser usada para novos registros."
-                    data-confirm-variant="warning"
-                    data-confirm-icon="bi-calendar-x"
-                    data-confirm-label="Sim, finalizar">
-                <i class="bi bi-calendar-x"></i> Finalizar Versão
-            </button>
-            {% endif %}
-            <button type="button" class="btn btn-outline-info btn-sm"
-                    data-confirm-url="{{ url_for('aluno.clonar_versao', versao_id=versao.id) }}"
-                    data-confirm-title="Clonar esta versão?"
-                    data-confirm-text="Cria uma nova versão com os mesmos treinos e exercícios desta."
-                    data-confirm-variant="info"
-                    data-confirm-icon="bi-copy"
-                    data-confirm-label="Sim, clonar">
-                <i class="bi bi-copy"></i> Clonar Versão
-            </button>
-            <button type="button" class="btn btn-outline-danger btn-sm"
-                    data-confirm-url="{{ url_for('aluno.excluir_versao', versao_id=versao.id, confirmar='true') }}"
-                    data-confirm-title="Excluir esta versão?"
-                    data-confirm-text="Esta ação não pode ser desfeita."
-                    data-confirm-icon="bi-trash"
-                    data-confirm-label="Sim, excluir versão">
-                <i class="bi bi-trash"></i> Excluir Versão
-            </button>
-        </div>
-    </form>
-</div>
-
-<!-- ===== Treinos da versão ===== -->
-<div class="vv-section-title">
-    <h2><i class="bi bi-trophy" style="color:#F28C33;"></i> Treinos da Versão ({{ total_treinos }})</h2>
-    {% if not versao.data_fim and total_treinos < max_treinos %}
-    <a href="{{ url_for('aluno.cadastrar_treinos') }}" class="btn btn-success btn-sm">
-        <i class="bi bi-plus-circle"></i> Adicionar Treino
-    </a>
-    {% endif %}
-</div>
-
-{% if treinos %}
-    {% for treino_id, treino in treinos.items() %}
-    <div class="vv-treino-card vv-accent-{{ loop.index0 % 5 }}" id="treino-{{ treino_id }}" data-treino-codigo="{{ treino_id }}">
-        <div class="vv-treino-header" onclick="toggleTreino(this.closest('.vv-treino-card'))">
-            <div class="vv-treino-heading">
-                <span class="vv-treino-badge">{{ treino_id }}</span>
-                <span class="vv-treino-nome">{{ treino.nome }}</span>
-                <span class="vv-count-chip">{{ treino.exercicios|length }} exercício{{ 's' if treino.exercicios|length != 1 else '' }}</span>
-            </div>
-            <div class="vv-treino-actions" onclick="event.stopPropagation()">
-                {% if not versao.data_fim %}
-                <a href="{{ url_for('aluno.editar_treino_versao', versao_id=versao.id, treino_codigo=treino_id) }}"
-                   class="vv-icon-action" title="Editar treino">
-                    <i class="bi bi-pencil"></i>
-                </a>
-                <form method="POST" action="{{ url_for('aluno.excluir_treino_versao', versao_id=versao.id, treino_codigo=treino_id) }}" class="d-inline">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <button type="submit" class="vv-icon-action variant-danger" title="Remover da versão"
-                            data-confirm-title="Remover este treino da versão?"
-                            data-confirm-text="Os exercícios não serão excluídos do catálogo."
-                            data-confirm-icon="bi-trash"
-                            data-confirm-label="Sim, remover">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </form>
-                {% else %}
-                <span class="vv-archived-chip"><i class="bi bi-lock"></i> Arquivada</span>
-                {% endif %}
-                <i class="bi bi-chevron-down vv-treino-collapse-icon"></i>
-            </div>
-        </div>
-
-        <div class="vv-treino-body">
-            {% if treino.descricao %}
-            <p class="vv-treino-desc">{{ treino.descricao }}</p>
-            {% endif %}
-
-            <div class="vv-exercicios-toolbar">
-                <h6><i class="bi bi-grip-vertical"></i> Arraste para reordenar</h6>
-                <button type="button" class="vv-save-order-btn save-order-btn" data-treino-codigo="{{ treino_id }}">
-                    <i class="bi bi-save"></i> Salvar ordem
-                </button>
-            </div>
-
-            <div class="exercicios-container" data-treino-codigo="{{ treino_id }}">
-                {% for ex_id_completo in treino.exercicios %}
-                    {% if ex_id_completo is string and ex_id_completo.startswith('u_') %}
-                        {% set ex_id = ex_id_completo[2:]|int %}
-                        {% set exercicio_encontrado = namespace(obj=None) %}
-                        {% for ex in exercicios %}
-                            {% if ex.id == ex_id and ex.tipo == 'usuario' %}
-                                {% set exercicio_encontrado.obj = ex %}
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if exercicio_encontrado.obj %}
-                        <div class="vv-exercicio-item" data-exercicio-id="{{ ex_id_completo }}">
-                            <div class="vv-drag-handle"><i class="bi bi-grip-vertical"></i></div>
-                            <div class="vv-exercicio-content">
-                                <div class="vv-exercicio-name-row">
-                                    <span class="vv-exercicio-nome" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ exercicio_encontrado.obj.nome }}">{{ exercicio_encontrado.obj.nome }}</span>
-                                    {{ botao_imagens_exercicio(exercicio_encontrado.obj, extra_class='flex-shrink-0') }}
-                                </div>
-                                <div class="vv-exercicio-tags">
-                                    <span class="vv-tag variant-meu">Meu exercício</span>
-                                    <span class="vv-tag variant-musculo">{{ exercicio_encontrado.obj.musculo_nome or exercicio_encontrado.obj.musculo or 'N/A' }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                    {% elif ex_id_completo is string and ex_id_completo.startswith('b_') %}
-                        {% set ex_id = ex_id_completo[2:]|int %}
-                        {% set exercicio_encontrado = namespace(obj=None) %}
-                        {% for ex in exercicios %}
-                            {% if ex.id == ex_id and ex.tipo == 'base' %}
-                                {% set exercicio_encontrado.obj = ex %}
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if exercicio_encontrado.obj %}
-                        <div class="vv-exercicio-item" data-exercicio-id="{{ ex_id_completo }}">
-                            <div class="vv-drag-handle"><i class="bi bi-grip-vertical"></i></div>
-                            <div class="vv-exercicio-content">
-                                <div class="vv-exercicio-name-row">
-                                    <span class="vv-exercicio-nome" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ exercicio_encontrado.obj.nome }}">{{ exercicio_encontrado.obj.nome }}</span>
-                                    {{ botao_imagens_exercicio(exercicio_encontrado.obj, extra_class='flex-shrink-0') }}
-                                </div>
-                                <div class="vv-exercicio-tags">
-                                    <span class="vv-tag variant-catalogo">Catálogo</span>
-                                    <span class="vv-tag variant-musculo">{{ exercicio_encontrado.obj.musculo_nome or exercicio_encontrado.obj.musculo or 'N/A' }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                    {% endif %}
-                {% endfor %}
-            </div>
-
-            {% set treino_base = treinos_disponiveis|selectattr('id', 'equalto', treino_id)|first if treinos_disponiveis else None %}
-            {% if treino_base %}
-            <div class="mt-2">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i>
-                    Treino base: {{ treino_base.codigo }} - {{ treino_base.nome }}
-                </small>
-            </div>
-            {% endif %}
-        </div>
+        {% else %}
+        <button type="button" class="btn btn-sm btn-outline-primary"
+                data-confirm-url="{{ url_for('aluno.versao_clonar', versao_id=versao.id) }}"
+                data-confirm-title="Clonar esta versão?"
+                data-confirm-text="Cria uma nova versão ativa com os mesmos treinos e exercícios desta. Só é possível se você não tiver nenhuma versão ativa no momento."
+                data-confirm-variant="primary"
+                data-confirm-icon="bi-copy"
+                data-confirm-label="Sim, clonar">
+            <i class="bi bi-copy"></i> Clonar
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-danger"
+                data-confirm-url="{{ url_for('aluno.versao_excluir', versao_id=versao.id) }}"
+                data-confirm-title="Excluir esta versão?"
+                data-confirm-text="Essa ação não pode ser desfeita. Só é possível excluir se nenhum treino desta versão já tiver sido registrado."
+                data-confirm-variant="danger"
+                data-confirm-icon="bi-trash"
+                data-confirm-label="Sim, excluir">
+            <i class="bi bi-trash"></i> Excluir
+        </button>
+        {% endif %}
     </div>
-    {% endfor %}
-{% else %}
-<div class="vv-empty">
-    <i class="bi bi-trophy"></i>
-    <p>Nenhum treino cadastrado nesta versão ainda.</p>
-    {% if not versao.data_fim %}
-    <a href="{{ url_for('aluno.cadastrar_treinos') }}" class="btn btn-success">
-        <i class="bi bi-plus-circle"></i> Adicionar primeiro treino
-    </a>
-    {% endif %}
+</div>
+
+{% if total_treinos >= max_treinos %}
+<div class="ct-finalizar-hint text-center" style="margin-bottom: 20px;">
+    <i class="bi bi-info-circle"></i> Limite de {{ max_treinos }} treinos por versão atingido.
 </div>
 {% endif %}
 
-<div class="vv-footer-actions">
-    <a href="{{ url_for('aluno.versoes') }}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Minhas Versões
-    </a>
-    <a href="{{ url_for('aluno.dashboard') }}" class="btn btn-outline-secondary">
-        <i class="bi bi-speedometer2"></i> Dashboard
-    </a>
+<div class="ct-section-title">
+    <h2><i class="bi bi-trophy" style="color:#F28C33;"></i> Treinos desta versão</h2>
 </div>
 
-<!-- Botão flutuante para salvar ordem -->
-<button id="globalSaveOrderBtn" class="vv-fab">
-    <i class="bi bi-save"></i> Salvar todas as ordens
+{% if not treinos_versao %}
+<div class="ct-empty-card" style="background:white;border:1px solid var(--ct-line);border-radius:16px;padding:32px 24px;text-align:center;margin:0 0 20px;">
+    <div class="ct-empty-icon" style="width:64px;height:64px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg, rgba(242,140,51,0.12) 0%, rgba(255,179,102,0.12) 100%);color:var(--ct-orange);font-size:1.7rem;margin-bottom:16px;">
+        <i class="bi bi-trophy"></i>
+    </div>
+    <h2 style="font-size:1.2rem;font-weight:700;color:var(--ct-ink);margin-bottom:6px;">Nenhum treino ainda</h2>
+    <p style="color:var(--ct-muted);font-size:0.92rem;margin-bottom:0;">Adicione o primeiro treino desta versão (ex: "Treino A - Peito e Tríceps").</p>
+</div>
+{% else %}
+    {% for tv in treinos_versao %}
+    {% set codigo = tv.codigo %}
+    {% set qtd_ex = tv.exercicios|length %}
+    <div class="ct-treino-card ct-accent-{{ loop.index0 % 10 }}">
+        <div class="ct-treino-top">
+            <div>
+                <div class="ct-treino-heading">
+                    <span class="ct-treino-badge">{{ codigo }}</span>
+                    <span class="ct-treino-nome">{{ tv.nome_treino }}</span>
+                    <span class="ct-count-chip {{ 'is-empty' if qtd_ex == 0 else '' }}">
+                        {{ qtd_ex }} exercício{{ 's' if qtd_ex != 1 else '' }}
+                    </span>
+                </div>
+                {% if tv.descricao_treino %}
+                <div class="ct-treino-desc">{{ tv.descricao_treino }}</div>
+                {% endif %}
+            </div>
+            <div class="ct-treino-actions">
+                <button type="button" class="btn btn-sm btn-outline-primary ct-btn-editar-exercicios"
+                        data-bs-toggle="modal" data-bs-target="#modalExercicios"
+                        data-treino-versao-id="{{ tv.id }}"
+                        data-treino-codigo="{{ codigo }}"
+                        data-treino-nome="{{ tv.nome_treino }}"
+                        data-treino-descricao="{{ tv.descricao_treino or '' }}"
+                        data-action="{{ url_for('aluno.versao_salvar_treino', versao_id=versao.id, treino_versao_id=tv.id) }}">
+                    <i class="bi bi-pencil-square"></i> Editar
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger"
+                        data-confirm-url="{{ url_for('aluno.versao_remover_treino', versao_id=versao.id, treino_versao_id=tv.id) }}"
+                        data-confirm-title="Remover o treino {{ codigo }}?"
+                        data-confirm-text="&quot;{{ tv.nome_treino }}&quot; e todos os seus exercícios associados serão removidos desta versão. Essa ação não pode ser desfeita. Se este treino já tiver sido registrado alguma vez, a remoção será bloqueada para não perder o histórico."
+                        data-confirm-variant="danger"
+                        data-confirm-icon="bi-trash"
+                        data-confirm-label="Sim, remover">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+
+        {% if qtd_ex > 1 %}
+        <div class="ct-ex-toolbar">
+            <span class="ct-ex-toolbar-hint"><i class="bi bi-grip-vertical"></i> Arraste para reordenar</span>
+            <button type="button" class="ct-save-order-btn" data-treino-codigo="{{ codigo }}">
+                <i class="bi bi-save"></i> Salvar ordem
+            </button>
+        </div>
+        {% endif %}
+        {% if qtd_ex > 0 %}
+        <div class="ct-ex-list" data-treino-codigo="{{ codigo }}">
+            {% for ve in tv.exercicios %}
+            {% set ex = ve.exercicio_usuario or ve.exercicio_base %}
+            {% set chave = ('u_' ~ ve.exercicio_usuario_id) if ve.exercicio_usuario_id else ('b_' ~ ve.exercicio_base_id) %}
+            {% if ex %}
+            <div class="ct-ex-item" data-exercicio-id="{{ chave }}">
+                {% if qtd_ex > 1 %}<span class="ct-ex-drag-handle"><i class="bi bi-grip-vertical"></i></span>{% endif %}
+                <span class="ct-ex-nome">{{ ex.nome }}</span>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="ct-ex-empty">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            Sem exercícios ainda — clique em "Editar" para adicionar.
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% endif %}
+
+{% if total_treinos < max_treinos %}
+<button type="button" class="ct-add-treino-btn" data-bs-toggle="modal" data-bs-target="#modalNovoTreino">
+    <i class="bi bi-plus-circle"></i> Adicionar treino ({{ total_treinos }}/{{ max_treinos }})
 </button>
+{% endif %}
 
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js"></script>
+<!-- ===== Modal: Editar Versão ===== -->
+<div class="modal fade" id="modalEditarVersao" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Versão</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ url_for('aluno.versao_editar_descricao', versao_id=versao.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-1">
+                        <label class="form-label fw-bold">Descrição da versão</label>
+                        <input type="text" name="descricao" class="form-control form-control-lg"
+                               value="{{ versao.descricao }}" maxlength="200" required autofocus>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn" style="background: #F28C33; color: white; border: none;">
+                        <i class="bi bi-save"></i> Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal: Novo Treino ===== -->
+<div class="modal fade" id="modalNovoTreino" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+                <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Adicionar Treino</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ url_for('aluno.versao_adicionar_treino', versao_id=versao.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nome do treino</label>
+                        <input type="text" name="nome_treino" class="form-control form-control-lg"
+                               placeholder="Ex: Treino A - Peito e Tríceps" maxlength="100" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descrição <span class="text-muted fw-normal">(opcional)</span></label>
+                        <input type="text" name="descricao_treino" class="form-control" maxlength="200"
+                               placeholder="Ex: Foco em peito e tríceps">
+                    </div>
+                    <div class="alert alert-info mb-0 py-2 small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        A letra do treino (A, B, C...) é definida automaticamente.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn" style="background: #F28C33; color: white; border: none;">
+                        <i class="bi bi-save"></i> Adicionar treino
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal: Editar treino + exercícios (compartilhado entre os treinos) ===== -->
+<div class="modal fade" id="modalExercicios" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+                <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Editar treino <span id="ctModalCodigo"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" id="formEditarTreino">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="row g-3 ct-modal-dados-treino">
+                        <div class="col-md-6">
+                            <label class="etv-field-label">Nome do treino</label>
+                            <input type="text" name="nome_treino" id="ctInputNome" class="form-control" maxlength="100" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="etv-field-label">Descrição</label>
+                            <input type="text" name="descricao_treino" id="ctInputDescricao" class="form-control" maxlength="200">
+                        </div>
+                    </div>
+
+                    <hr class="ct-modal-divider">
+
+                    <label class="etv-field-label">Exercícios do catálogo</label>
+
+                    <div class="etv-toolbar">
+                        <div class="etv-toolbar-row">
+                            <div class="etv-search input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" id="etvBusca" class="form-control"
+                                       placeholder="Digite para filtrar exercícios..." autocomplete="off">
+                                <button class="btn btn-outline-secondary" type="button" id="etvLimparFiltro">
+                                    <i class="bi bi-x"></i> Limpar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="etv-toolbar-row">
+                            <div class="etv-chip-row" id="etvChipsMusculo">
+                                <button type="button" class="etv-chip is-active" data-musculo="" aria-pressed="true">
+                                    Todos <span class="etv-chip-count">{{ exercicios_catalogo|length }}</span>
+                                </button>
+                                {% for m in musculos_catalogo %}
+                                {% set ns = namespace(count=0) %}
+                                {% for ex in exercicios_catalogo %}
+                                    {% if (ex.musculo_nome or ex.musculo or 'N/A') == m %}{% set ns.count = ns.count + 1 %}{% endif %}
+                                {% endfor %}
+                                <button type="button" class="etv-chip" data-musculo="{{ m }}" aria-pressed="false">
+                                    {{ m }} <span class="etv-chip-count">{{ ns.count }}</span>
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="etv-scroll">
+                        <div class="etv-grid" id="etvGrid">
+                            {% for ex in exercicios_catalogo %}
+                            {% set musculo_nome = ex.musculo_nome or ex.musculo or 'N/A' %}
+                            <label class="etv-card"
+                                   for="ex_{{ ex.tipo }}_{{ ex.id }}"
+                                   data-nome="{{ ex.nome|lower }}"
+                                   data-nome-display="{{ ex.nome }}"
+                                   data-musculo="{{ musculo_nome }}"
+                                   data-valor="{{ ex.prefixo }}{{ ex.id }}">
+                                <input class="etv-checkbox"
+                                       type="checkbox"
+                                       name="exercicios[]"
+                                       value="{{ ex.prefixo }}{{ ex.id }}"
+                                       id="ex_{{ ex.tipo }}_{{ ex.id }}">
+
+                                <div class="etv-card-body">
+                                    <div class="etv-card-nome" data-bs-toggle="tooltip" data-bs-placement="top"
+                                         title="{{ ex.descricao or ex.nome }}">
+                                        {{ ex.nome }}
+                                    </div>
+                                    <span class="badge etv-card-musculo">{{ musculo_nome }}</span>
+                                    <input type="text"
+                                           class="etv-obs-input"
+                                           name="observacao_{{ ex.prefixo }}{{ ex.id }}"
+                                           maxlength="60"
+                                           placeholder="Observação (opcional)"
+                                           value=""
+                                           onclick="event.stopPropagation()"
+                                           disabled>
+                                </div>
+
+                                {% if ex.tipo == 'usuario' %}
+                                <span class="etv-tipo-badge" title="Exercício personalizado">
+                                    <i class="bi bi-person-fill"></i>
+                                </span>
+                                {% endif %}
+
+                                <button type="button" class="btn btn-outline-secondary etv-video-btn"
+                                        title="{{ 'Ver vídeo do exercício' if ex.gif_url else 'Sem vídeo disponível' }}"
+                                        data-nome="{{ ex.nome }}"
+                                        data-gif="{{ ex.gif_url or '' }}"
+                                        onclick="event.stopPropagation(); abrirModalImagensExercicio(this)"
+                                        {% if not ex.gif_url %}disabled{% endif %}>
+                                    <i class="bi bi-play-circle"></i>
+                                </button>
+                            </label>
+                            {% else %}
+                            <div class="etv-empty-state">
+                                <i class="bi bi-exclamation-triangle display-6 d-block mb-2"></i>
+                                Você ainda não tem exercícios no seu catálogo.
+                                <br>
+                                <a href="{{ url_for('aluno.novo_exercicio') }}" class="btn btn-sm btn-success mt-2">
+                                    <i class="bi bi-plus-circle"></i> Cadastrar exercício
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="text-center text-muted py-4 d-none" id="etvSemResultados">
+                            <i class="bi bi-search display-6 d-block mb-2"></i>
+                            Nenhum exercício encontrado para esse filtro.
+                            <br>
+                            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="etvLimparFiltroVazio">
+                                <i class="bi bi-x-circle"></i> Limpar filtros
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer etv-footer-bar">
+                    <div class="etv-footer-status">
+                        <i class="bi bi-info-circle"></i>
+                        <span><span data-etv-contador-selecionados>0</span> exercício(s) selecionado(s)</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn etv-btn-save">
+                            <i class="bi bi-save"></i> Salvar treino
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
-let sortableInstances = {};
-
-function toggleTreino(card) {
-    card.classList.toggle('is-collapsed');
-}
-
-function inicializarSortable() {
-    document.querySelectorAll('.exercicios-container').forEach(container => {
-        const treinoCodigo = container.dataset.treinoCodigo;
-
-        sortableInstances[treinoCodigo] = new Sortable(container, {
-            animation: 300,
-            handle: '.vv-drag-handle',
-            ghostClass: 'sortable-ghost',
-            dragClass: 'sortable-drag',
-            onEnd: function() {
-                const saveBtn = document.querySelector(`.save-order-btn[data-treino-codigo="${treinoCodigo}"]`);
-                if (saveBtn) saveBtn.style.display = 'inline-flex';
-                document.getElementById('globalSaveOrderBtn').style.display = 'inline-flex';
-            }
-        });
-    });
-}
-
-async function salvarOrdem(treinoCodigo) {
-    const container = document.querySelector(`.exercicios-container[data-treino-codigo="${treinoCodigo}"]`);
-    const itens = container.querySelectorAll('.vv-exercicio-item');
-    const novaOrdem = [];
-
-    itens.forEach(item => {
-        const exId = item.dataset.exercicioId;
-        if (exId) novaOrdem.push(exId);
-    });
-
-    if (novaOrdem.length === 0) return false;
-
-    try {
-        const response = await fetch('{{ url_for("api.api_reordenar_exercicios") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({
-                versao_id: {{ versao.id }},
-                treino_codigo: treinoCodigo,
-                nova_ordem: novaOrdem
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            const saveBtn = document.querySelector(`.save-order-btn[data-treino-codigo="${treinoCodigo}"]`);
-            if (saveBtn) saveBtn.style.display = 'none';
-
-            if (typeof FitLogUtils !== 'undefined') {
-                FitLogUtils.showToast('Ordem salva!', 'success');
-            }
-            return true;
-        } else {
-            if (typeof FitLogUtils !== 'undefined') {
-                FitLogUtils.showToast('Erro ao salvar ordem', 'danger');
-            }
-            return false;
-        }
-    } catch (error) {
-        console.error('Erro:', error);
-        if (typeof FitLogUtils !== 'undefined') {
-            FitLogUtils.showToast('Erro ao comunicar com o servidor', 'danger');
-        }
-        return false;
-    }
-}
-
-async function salvarTodasOrdens() {
-    const botoes = document.querySelectorAll('.save-order-btn');
-    let salvos = 0;
-
-    for (const btn of botoes) {
-        if (btn.style.display === 'inline-flex') {
-            const treinoCodigo = btn.dataset.treinoCodigo;
-            const sucesso = await salvarOrdem(treinoCodigo);
-            if (sucesso) salvos++;
-        }
-    }
-
-    if (salvos > 0) {
-        document.getElementById('globalSaveOrderBtn').style.display = 'none';
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    inicializarSortable();
-
-    document.querySelectorAll('.save-order-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const treinoCodigo = this.dataset.treinoCodigo;
-            salvarOrdem(treinoCodigo);
-        });
-    });
-
-    document.getElementById('globalSaveOrderBtn')?.addEventListener('click', function() {
-        salvarTodasOrdens();
-    });
-
-    // Painel de edição da versão: recolhido por padrão
-    const editToggle = document.getElementById('vvEditToggle');
-    const editPanel = document.getElementById('vvEditPanel');
-    if (editToggle && editPanel) {
-        editToggle.addEventListener('click', function() {
-            const expanded = editToggle.getAttribute('aria-expanded') === 'true';
-            editToggle.setAttribute('aria-expanded', String(!expanded));
-            editPanel.style.display = expanded ? 'none' : 'block';
-            // Se o form tinha erro de validação recém-submetido, o navegador
-            // já cuida de focar o campo -- não precisamos reabrir manualmente.
-        });
-    }
-
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function(tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-});
+    // Mapas treino_versao_id -> ... usados só para popular o modal
+    // compartilhado com o estado correto ao abrir -- nunca são enviados
+    // de volta ao servidor, são puramente para a experiência de edição.
+    // Mesmas variáveis globais que cadastrar_treinos.html usa -- os JS
+    // abaixo são compartilhados entre as duas telas.
+    window.CT_TREINO_EXERCICIOS = {{ treino_exercicios_map|tojson }};
+    window.CT_TREINO_OBSERVACOES = {{ treino_observacoes_map|tojson }};
+    window.CT_VERSAO_ID = {{ versao.id }};
 </script>
+
+<div class="text-center mt-4">
+    <a href="{{ url_for('aluno.versoes') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Voltar para Minhas Versões
+    </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js"></script>
+<script src="{{ url_for('static', filename='js/editar-treino-versao.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cadastrar-treinos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cadastrar-treinos-reordenar.js') }}"></script>
 {% endblock %}

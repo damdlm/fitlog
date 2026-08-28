@@ -407,7 +407,7 @@
 </div>
 {% else %}
     {% for tv in treinos_versao %}
-    {% set codigo = tv.treino_ref.codigo if tv.treino_ref else '?' %}
+    {% set codigo = tv.codigo %}
     {% set qtd_ex = tv.exercicios|length %}
     <div class="ct-treino-card ct-accent-{{ loop.index0 % 10 }}">
         <div class="ct-treino-top">
