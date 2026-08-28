@@ -146,7 +146,13 @@ class Config:
     GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-3.5-flash-lite')
 
     GROQ_API_KEY = os.getenv('GROQ_API_KEY')
-    GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
+    # llama-3.3-70b-versatile foi descontinuado pela Groq (deprecation
+    # anunciada em 17/06/2026) -- chamadas para ele retornam 404
+    # model_not_found. openai/gpt-oss-120b é a migração recomendada
+    # oficialmente pela Groq para esse caso de uso. Se GROQ_MODEL já
+    # estiver setada como env var no Railway apontando pro modelo
+    # antigo, atualize-a também.
+    GROQ_MODEL = os.getenv('GROQ_MODEL', 'openai/gpt-oss-120b')
     # Modelo de transcrição de áudio (tela "Contato") -- mesma chave da
     # Groq acima, endpoint diferente (audio/transcriptions). turbo é o
     # mais rápido e já cobre português; troque para whisper-large-v3 se
