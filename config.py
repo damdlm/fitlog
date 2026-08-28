@@ -126,10 +126,16 @@ class Config:
     # Estratégia de roteamento (pensada para os limites do plano gratuito):
     #   - Mensagem SEM foto  -> Groq (Llama), texto puro, limite bem mais folgado.
     #   - Mensagem COM foto  -> Gemini (Flash-Lite), é o único dos dois com visão.
+    #   - Reserva (texto E foto) -> OpenAI (gpt-4o-mini), entra automaticamente
+    #     se o Groq ou o Gemini falharem (chave inválida, modelo descontinuado,
+    #     erro do provedor etc.). Um alerta por e-mail é disparado pros admins
+    #     quando isso acontece -- ver services/fitbot_service.py.
     #
-    # Ambas as chaves ficam só no servidor — nunca são expostas ao navegador.
+    # As chaves ficam só no servidor — nunca são expostas ao navegador.
     # Se GEMINI_API_KEY ou GROQ_API_KEY não estiverem definidas, o FitBot
-    # responde com uma mensagem de erro amigável em vez de quebrar.
+    # responde com uma mensagem de erro amigável em vez de quebrar. Se
+    # OPENAI_API_KEY não estiver definida, o FitBot simplesmente não tem
+    # reserva (comportamento antigo: mensagem de erro se o principal cair).
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
     # gemini-1.5-flash foi desativado pelo Google (todo o Gemini 1.5/1.0 já
     # foi encerrado -- chamadas para ele retornam 404). gemini-2.5-flash-lite
@@ -146,6 +152,12 @@ class Config:
     # mais rápido e já cobre português; troque para whisper-large-v3 se
     # precisar de mais precisão.
     GROQ_WHISPER_MODEL = os.getenv('GROQ_WHISPER_MODEL', 'whisper-large-v3-turbo')
+
+    # Reserva única (texto E imagem) do FitBot quando Groq ou Gemini falham.
+    # gpt-4o-mini é barato e enxerga imagem, cobrindo os dois casos com uma
+    # única chave em vez de duas.
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
 
     # Cache (Flask-Caching) — SimpleCache (em memória do processo) é
     # suficiente em dev/testes. ProductionConfig sobrescreve para Redis,
