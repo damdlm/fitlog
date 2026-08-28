@@ -206,6 +206,34 @@ class BillingService:
         return Plano.query.filter_by(codigo='aluno_fit', ativo=True).first()
 
     @staticmethod
+    def planos_disponiveis_professor(professor: User) -> list[Plano]:
+        """Planos que o professor pode ESCOLHER assinar (upgrade
+        voluntário incluído, não só o mínimo automático). O piso é
+        sempre plano_gestao_necessario -- nunca oferece um plano
+        abaixo do que a quantidade atual de alunos já exige, pra não
+        deixar o professor se auto-rebaixar pra um plano que não cobre
+        os alunos que já tem. Acima do piso, todas as faixas de
+        professor (Pró/Premium) entram, na ordem Fit -> Pró -> Premium
+        -- ex: um professor com 1 aluno (piso = nenhum) pode escolher
+        adiantar pro Pró ou Premium se quiser margem de crescimento;
+        um professor com 5 alunos (piso = Pró) só pode escolher entre
+        Pró e Premium, nunca Fit."""
+        necessario = BillingService.plano_gestao_necessario(professor)
+        piso = ORDEM_PLANOS_GESTAO.get(necessario.codigo, 0) if necessario else 0
+
+        planos = []
+        if piso == 0:
+            fit = Plano.query.filter_by(codigo='aluno_fit', ativo=True).first()
+            if fit is not None:
+                planos.append(fit)
+        for codigo in PLANOS_GESTAO_PROFESSOR:
+            if ORDEM_PLANOS_GESTAO.get(codigo, 0) >= piso:
+                plano = Plano.query.filter_by(codigo=codigo, ativo=True).first()
+                if plano is not None:
+                    planos.append(plano)
+        return planos
+
+    @staticmethod
     def pode_cadastrar_aluno(professor: User) -> tuple[bool, str | None]:
         """Confere ANTES de vincular um novo aluno se o professor pode
         fazer isso agora. Até 2 alunos é sempre livre; passar disso

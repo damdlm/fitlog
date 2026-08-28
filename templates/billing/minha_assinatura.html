@@ -92,14 +92,35 @@
 
 {% if plano_oferecido %}
 <div class="ma-card text-center">
-    <div class="ma-price">R$ {{ '%.2f'|format(plano_oferecido.preco_centavos / 100) }}<small> /mês</small></div>
-    <p class="text-muted mb-3">
-        {{ plano_oferecido.nome }}
-        {% if plano_gestao_necessario %} — libera Estatísticas, FitBot e gestão dos seus alunos
-        {% else %} — libera Estatísticas e FitBot{% endif %}
-    </p>
-    <form method="POST" action="{{ url_for('billing.assinar') }}">
+    <form method="POST" action="{{ url_for('billing.assinar') }}" id="form-assinar-professor">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if planos_disponiveis and planos_disponiveis|length > 1 %}
+        <div class="mb-3 text-start">
+            <label class="form-label" style="font-size: 0.85rem;">Escolha o plano</label>
+            <small class="text-muted d-block mb-2">
+                Você pode adiantar para um plano maior a qualquer momento. Nunca é possível escolher
+                um plano abaixo do exigido pela sua quantidade atual de alunos.
+            </small>
+            {% for plano in planos_disponiveis %}
+            <label class="d-flex align-items-center justify-content-between border rounded-3 px-3 py-2 mb-2" style="cursor: pointer;">
+                <span>
+                    <input type="radio" name="plano_codigo" value="{{ plano.codigo }}" class="form-check-input me-2"
+                           {% if plano.id == plano_oferecido.id %}checked{% endif %}>
+                    {{ plano.nome }}
+                </span>
+                <strong>R$ {{ '%.2f'|format(plano.preco_centavos / 100) }}/mês</strong>
+            </label>
+            {% endfor %}
+        </div>
+        {% else %}
+        <input type="hidden" name="plano_codigo" value="{{ plano_oferecido.codigo }}">
+        <div class="ma-price">R$ {{ '%.2f'|format(plano_oferecido.preco_centavos / 100) }}<small> /mês</small></div>
+        <p class="text-muted mb-3">
+            {{ plano_oferecido.nome }}
+            {% if plano_gestao_necessario %} — libera Estatísticas, FitBot e gestão dos seus alunos
+            {% else %} — libera Estatísticas e FitBot{% endif %}
+        </p>
+        {% endif %}
         {% if not cpf_cnpj or not telefone or not endereco_cep or not endereco_numero %}
         <div class="mb-3 text-start">
             <label class="form-label" style="font-size: 0.85rem;">Dados para cobrança <span class="text-danger">*</span></label>
@@ -123,7 +144,7 @@
         {% endif %}
         <button type="submit" class="ma-btn-assinar">
             <i class="bi bi-credit-card-2-front me-1"></i>
-            {% if assinatura and assinatura.status == 'active' and assinatura.plano_id == plano_oferecido.id %}Gerenciar assinatura{% else %}Assinar agora{% endif %}
+            {% if assinatura and assinatura.status == 'active' %}Confirmar plano{% else %}Assinar agora{% endif %}
         </button>
     </form>
     <p class="text-muted mt-3 mb-0" style="font-size: 0.85rem;">

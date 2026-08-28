@@ -260,6 +260,56 @@ class TestAssinar:
         assert resp.status_code == 302
         assert capturado['plano_codigo'] == 'professor_pro'
 
+    def test_professor_pode_escolher_plano_maior_que_o_necessario(self, client, app, monkeypatch):
+        """Professor com 1 aluno (piso = nenhum) escolhe adiantar pro
+        Premium -- deve respeitar a escolha, não forçar o Fit."""
+        capturado = {}
+
+        def _fake_checkout(usuario, plano):
+            capturado['plano_codigo'] = plano.codigo
+            return 'https://sandbox.asaas.com/i/fake-upgrade'
+
+        monkeypatch.setattr(BillingService, 'criar_assinatura_checkout', staticmethod(_fake_checkout))
+
+        with app.app_context():
+            _criar_planos()
+            professor = _criar_usuario('assinar_prof_escolhe_premium', tipo_usuario='professor')
+            _vincular_alunos(professor, 1)
+            _preencher_dados_cobranca(professor)
+            db.session.commit()
+            professor_ref = User.query.get(professor.id)
+
+        _login(client, professor_ref)
+        resp = client.post('/billing/assinar', data={'plano_codigo': 'professor_premium'}, follow_redirects=False)
+        assert resp.status_code == 302
+        assert capturado['plano_codigo'] == 'professor_premium'
+
+    def test_professor_nao_consegue_escolher_plano_abaixo_do_exigido(self, client, app, monkeypatch):
+        """Professor com 5 alunos (piso = Pró) não consegue escolher
+        Fit no formulário, mesmo manipulando o valor enviado -- a
+        validação é sempre no servidor contra planos_disponiveis_professor."""
+        chamado = {'vezes': 0}
+
+        def _fake_checkout(usuario, plano):
+            chamado['vezes'] += 1
+            return 'https://sandbox.asaas.com/i/nao-deveria-chegar-aqui'
+
+        monkeypatch.setattr(BillingService, 'criar_assinatura_checkout', staticmethod(_fake_checkout))
+
+        with app.app_context():
+            _criar_planos()
+            professor = _criar_usuario('assinar_prof_burla_fit', tipo_usuario='professor')
+            _vincular_alunos(professor, 5)
+            _preencher_dados_cobranca(professor)
+            db.session.commit()
+            professor_ref = User.query.get(professor.id)
+
+        _login(client, professor_ref)
+        resp = client.post('/billing/assinar', data={'plano_codigo': 'aluno_fit'}, follow_redirects=True)
+        assert resp.status_code == 200
+        assert chamado['vezes'] == 0
+        assert 'não está disponível' in resp.get_data(as_text=True)
+
     def test_aluno_redireciona_para_checkout_gerado(self, client, app, monkeypatch):
         monkeypatch.setattr(
             BillingService, 'criar_assinatura_checkout',

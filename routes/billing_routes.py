@@ -66,6 +66,12 @@ def minha_assinatura():
         contexto['plano_gestao_necessario'] = BillingService.plano_gestao_necessario(current_user)
         contexto['plano_oferecido'] = BillingService.plano_recomendado_professor(current_user)
         contexto['acesso_alunos_liberado'] = BillingService.professor_acesso_alunos_liberado(current_user)
+        # Planos que o professor pode escolher (não só o recomendado
+        # automaticamente) -- alimenta o seletor de plano na tela,
+        # permitindo upgrade voluntário (ex: adiantar pro Premium) ou
+        # trocar entre Pró/Premium quando ambos já cobririam a
+        # quantidade atual de alunos.
+        contexto['planos_disponiveis'] = BillingService.planos_disponiveis_professor(current_user)
     else:
         contexto['plano_oferecido'] = Plano.query.filter_by(codigo='aluno_fit', ativo=True).first()
 
@@ -169,7 +175,23 @@ def assinar():
     if current_user.is_aluno():
         plano = Plano.query.filter_by(codigo='aluno_fit', ativo=True).first()
     elif current_user.is_professor():
-        plano = BillingService.plano_recomendado_professor(current_user)
+        # Se o professor escolheu um plano específico no seletor (ex:
+        # adiantar pro Premium por vontade própria), respeita a
+        # escolha -- mas só entre as opções que planos_disponiveis_professor
+        # realmente permite pra ele agora (nunca abaixo do piso exigido
+        # pela quantidade atual de alunos). Sem escolha explícita (ou
+        # escolha inválida/manipulada), cai no comportamento automático
+        # de sempre, oferecendo o plano recomendado.
+        plano_codigo_escolhido = request.form.get('plano_codigo', '').strip()
+        plano = None
+        if plano_codigo_escolhido:
+            disponiveis = BillingService.planos_disponiveis_professor(current_user)
+            plano = next((p for p in disponiveis if p.codigo == plano_codigo_escolhido), None)
+            if plano is None:
+                flash('Plano selecionado não está disponível para sua quantidade atual de alunos.', 'warning')
+                return redirect(url_for('billing.minha_assinatura'))
+        else:
+            plano = BillingService.plano_recomendado_professor(current_user)
     else:
         return redirect(url_for('main.index'))
 

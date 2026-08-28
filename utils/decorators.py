@@ -171,17 +171,3 @@ def owner_or_admin(model_getter):
             return redirect(url_for('main.index'))
         return decorated_function
     return decorator
-
-def versao_ativa_required(f):
-    """Decorator para verificar se existe versão ativa"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        from services.versao_service import VersaoService
-        
-        versao_ativa = VersaoService.get_ativa()
-        if not versao_ativa:
-            flash('Não há versão ativa. Crie uma versão primeiro.', 'warning')
-            return redirect(url_for('version.gerenciar_versoes_global'))
-        
-        return f(*args, **kwargs)
-    return decorated_function

@@ -273,6 +273,39 @@ class TestPlanoRecomendadoProfessor:
             assert plano.codigo == 'professor_pro'
 
 
+class TestPlanosDisponiveisProfessor:
+    """planos_disponiveis_professor -- opções que o professor pode
+    ESCOLHER (upgrade voluntário incluído), nunca abaixo do piso
+    exigido pela quantidade atual de alunos."""
+
+    def test_ate_2_alunos_oferece_as_3_faixas(self, app):
+        with app.app_context():
+            _criar_planos_professor()
+            professor = _criar_usuario('prof_disp_fit', tipo_usuario='professor')
+            _vincular_alunos(professor, 1)
+
+            codigos = [p.codigo for p in BillingService.planos_disponiveis_professor(professor)]
+            assert codigos == ['aluno_fit', 'professor_pro', 'professor_premium']
+
+    def test_3_a_9_alunos_nao_oferece_fit(self, app):
+        with app.app_context():
+            _criar_planos_professor()
+            professor = _criar_usuario('prof_disp_pro', tipo_usuario='professor')
+            _vincular_alunos(professor, 5)
+
+            codigos = [p.codigo for p in BillingService.planos_disponiveis_professor(professor)]
+            assert codigos == ['professor_pro', 'professor_premium']
+
+    def test_10_ou_mais_alunos_so_oferece_premium(self, app):
+        with app.app_context():
+            _criar_planos_professor()
+            professor = _criar_usuario('prof_disp_premium', tipo_usuario='professor')
+            _vincular_alunos(professor, 12)
+
+            codigos = [p.codigo for p in BillingService.planos_disponiveis_professor(professor)]
+            assert codigos == ['professor_premium']
+
+
 # ---------------------------------------------------------------------
 # Bloqueio de cadastro de novo aluno sem upgrade
 # ---------------------------------------------------------------------
