@@ -784,12 +784,29 @@ class VersaoService(BaseService):
 
     @staticmethod
     def remover_treino_livre(versao_id, treino_versao_id, user_id=None):
-        """Remove um treino (e seus exercícios, via cascade) da versão."""
+        """Remove um treino (e seus exercícios, via cascade) da versão.
+
+        Bloqueia a remoção se já existir histórico de registro (RegistroTreino)
+        para esse treino -- ao contrário dos exercícios da versão (que não têm
+        histórico próprio), aqui excluir apagaria dados de treino já registrados
+        pelo usuário, então pedimos confirmação fora de banda (a mensagem
+        explica o motivo) em vez de perder o histórico silenciosamente.
+        """
         user_id = user_id or BaseService.get_current_user_id()
         if not user_id:
             raise ValueError("Usuário não autenticado.")
 
         _, treino_versao = VersaoService._get_treino_versao_editavel(versao_id, treino_versao_id, user_id)
+
+        tem_registros = db.session.query(RegistroTreino.id).filter_by(
+            treino_versao_id=treino_versao_id
+        ).first() is not None
+        if tem_registros:
+            raise ValueError(
+                "Esse treino já tem registros salvos e não pode ser removido. "
+                "Você pode editar o nome/descrição ou trocar os exercícios, "
+                "mas a exclusão não é permitida para não perder seu histórico."
+            )
 
         try:
             db.session.delete(treino_versao)

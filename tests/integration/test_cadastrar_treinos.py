@@ -393,6 +393,44 @@ class TestRemoverTreinoLivre:
         with app.app_context():
             assert db.session.get(TreinoVersao, tv_outro_id) is not None
 
+    def test_nao_remove_treino_com_registros_salvos(self, aluno_client, app, aluno):
+        """Regressão de produção: excluir um treino que já tem RegistroTreino
+        associado violava a constraint NOT NULL de treino_versao_id (a
+        remoção tentava, via ORM, zerar a FK antes de apagar o pai). Agora
+        a remoção deve ser bloqueada com uma mensagem clara, preservando
+        o histórico."""
+        from models import RegistroTreino, ExercicioSistema
+        from datetime import datetime, timezone
+
+        aluno_client.post('/aluno/cadastrar-treinos/versao', data={'descricao': 'v'})
+        with app.app_context():
+            versao_id = VersaoGlobal.query.filter_by(user_id=aluno).first().id
+        aluno_client.post(f'/aluno/cadastrar-treinos/{versao_id}/treino', data={
+            'nome_treino': 'Treino A', 'descricao_treino': ''
+        })
+        with app.app_context():
+            tv = TreinoVersao.query.filter_by(versao_id=versao_id).first()
+            tv_id = tv.id
+            ex = ExercicioSistema(id_original='reg-1', nome='Agachamento', grupo_muscular='Pernas')
+            db.session.add(ex)
+            db.session.commit()
+            registro = RegistroTreino(
+                treino_versao_id=tv_id, versao_id=versao_id, periodo='Agosto/2026', semana=1,
+                exercicio_base_id=ex.id, data_registro=datetime.now(timezone.utc), user_id=aluno,
+            )
+            db.session.add(registro)
+            db.session.commit()
+
+        resp = aluno_client.post(
+            f'/aluno/cadastrar-treinos/{versao_id}/treino/{tv_id}/remover',
+            follow_redirects=True
+        )
+
+        assert resp.status_code == 200
+        assert 'não pode ser removido' in resp.get_data(as_text=True)
+        with app.app_context():
+            assert db.session.get(TreinoVersao, tv_id) is not None
+
 
 class TestAcessoNaoAutenticado:
     def test_get_sem_login_redireciona(self, client):
