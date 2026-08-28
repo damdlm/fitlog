@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from models import db, User, Treino, VersaoGlobal, RegistroTreino, HistoricoTreino, Musculo, ExercicioUsuario
+from models import db, User, TreinoVersao, VersaoGlobal, RegistroTreino, HistoricoTreino, Musculo, ExercicioUsuario
 from services.billing_service import BillingService
 
 
@@ -45,15 +45,6 @@ def test_progresso_ultimos_30_dias_com_registro(client, app):
         db.session.add(ex)
         db.session.commit()
 
-        treino = Treino(user_id=u.id, codigo='A', nome='Treino A', descricao='desc')
-        db.session.add(treino)
-        db.session.commit()
-
-        # NOTA: versao_id referenciava um id fixo (1) que nunca era
-        # criado neste teste -- só "funcionava" porque o SQLite de
-        # testes não aplicava a FOREIGN KEY (ver tests/conftest.py).
-        # Criando a versão de verdade para refletir o comportamento
-        # real (Postgres em produção sempre aplica a constraint).
         versao = VersaoGlobal(
             numero_versao=1, descricao='v1', divisao='A',
             data_inicio=datetime.now(timezone.utc).date(),
@@ -62,10 +53,14 @@ def test_progresso_ultimos_30_dias_com_registro(client, app):
         db.session.add(versao)
         db.session.commit()
 
+        treino = TreinoVersao(versao_id=versao.id, codigo='A', nome_treino='Treino A', descricao_treino='desc')
+        db.session.add(treino)
+        db.session.commit()
+
         hoje = datetime.now(timezone.utc)
         for dias_atras in [0, 5, 40]:  # 40 deve ficar fora da janela
             r = RegistroTreino(
-                treino_id=treino.id, versao_id=versao.id, periodo='Julho/2026', semana=1,
+                treino_versao_id=treino.id, versao_id=versao.id, periodo='Julho/2026', semana=1,
                 exercicio_usuario_id=ex.id, data_registro=hoje - timedelta(days=dias_atras),
                 user_id=u.id
             )

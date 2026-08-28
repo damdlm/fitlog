@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 
 from flask_login import login_user
 
-from models import db, User, Treino, VersaoGlobal, ExercicioUsuario
+from models import db, User, TreinoVersao, VersaoGlobal, ExercicioUsuario
 from services.registro_service import RegistroService
 
 
@@ -19,13 +19,14 @@ def _criar_usuario(username):
 def _criar_cenario_base(username):
     """Cria usuário + treino + versão + exercício de usuário, sem registros."""
     u = _criar_usuario(username)
-    t = Treino(codigo='A', nome='Treino A', descricao='d', user_id=u.id)
-    db.session.add(t)
-    db.session.commit()
 
     v = VersaoGlobal(numero_versao=1, descricao='v1', divisao='ABC',
                       data_inicio=date(2024, 1, 1), user_id=u.id)
     db.session.add(v)
+    db.session.commit()
+
+    t = TreinoVersao(versao_id=v.id, codigo='A', nome_treino='Treino A', descricao_treino='d')
+    db.session.add(t)
     db.session.commit()
 
     ex = ExercicioUsuario(usuario_id=u.id, nome='Supino')
@@ -255,7 +256,7 @@ class TestGetTreinoPorData:
 
             resultado = RegistroService.get_treino_por_data('2024-06-15', user_id=u.id)
             assert resultado is not None
-            assert resultado.treino_id == t.id
+            assert resultado.treino_versao_id == t.id
 
     def test_none_para_dia_sem_registro(self, app):
         with app.app_context():

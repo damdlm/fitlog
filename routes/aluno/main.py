@@ -1,7 +1,7 @@
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from . import aluno_bp
-from models import db, User, AlunoProfessor, SolicitacaoVinculo, Treino, ExercicioCustomizado, VersaoGlobal, RegistroTreino
+from models import db, User, AlunoProfessor, SolicitacaoVinculo, TreinoVersao, VersaoGlobal, ExercicioCustomizado, RegistroTreino
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 import logging
@@ -17,7 +17,9 @@ def dashboard():
         return redirect(url_for('main.index'))
     
     # Estatísticas básicas
-    total_treinos = Treino.query.filter_by(user_id=current_user.id).count()
+    total_treinos = TreinoVersao.query.join(
+        VersaoGlobal, TreinoVersao.versao_id == VersaoGlobal.id
+    ).filter(VersaoGlobal.user_id == current_user.id).count()
     total_exercicios = ExercicioCustomizado.query.filter_by(usuario_id=current_user.id).count()
     total_versoes = VersaoGlobal.query.filter_by(user_id=current_user.id).count()
     total_registros = RegistroTreino.query.filter_by(user_id=current_user.id).count()
@@ -46,7 +48,7 @@ def dashboard():
     if ultimo_registro:
         ultimos_registros = RegistroTreino.query.filter_by(
             user_id=current_user.id,
-            treino_id=ultimo_registro.treino_id,
+            treino_versao_id=ultimo_registro.treino_versao_id,
             periodo=ultimo_registro.periodo,
             semana=ultimo_registro.semana,
             versao_id=ultimo_registro.versao_id

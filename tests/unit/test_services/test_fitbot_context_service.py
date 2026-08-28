@@ -8,7 +8,7 @@ import pytest
 from flask_login import login_user
 
 from models import (
-    db, User, Treino, VersaoGlobal, TreinoVersao, VersaoExercicio,
+    db, User, VersaoGlobal, TreinoVersao, VersaoExercicio,
     ExercicioSistema, RegistroTreino, HistoricoTreino,
 )
 from services.fitbot_context_service import (
@@ -37,9 +37,6 @@ def _criar_usuario_com_treino_e_registro(username, nome_exercicio, carga=20.0, r
     )
     db.session.add(ex_sistema)
 
-    treino = Treino(user_id=user.id, codigo='A', nome='Treino A', descricao='Treino A')
-    db.session.add(treino)
-
     versao = VersaoGlobal(
         numero_versao=1, descricao='V1', divisao='ABC',
         data_inicio=date.today(), data_fim=None, user_id=user.id,
@@ -47,7 +44,7 @@ def _criar_usuario_com_treino_e_registro(username, nome_exercicio, carga=20.0, r
     db.session.add(versao)
     db.session.flush()
 
-    treino_versao = TreinoVersao(versao_id=versao.id, treino_id=treino.id, nome_treino='Treino A')
+    treino_versao = TreinoVersao(versao_id=versao.id, codigo='A', nome_treino='Treino A')
     db.session.add(treino_versao)
     db.session.flush()
 
@@ -58,7 +55,7 @@ def _criar_usuario_com_treino_e_registro(username, nome_exercicio, carga=20.0, r
 
     data_registro = datetime.now(timezone.utc) - timedelta(days=dias_atras)
     registro = RegistroTreino(
-        treino_id=treino.id, versao_id=versao.id, periodo='2026-01', semana=1,
+        treino_versao_id=treino_versao.id, versao_id=versao.id, periodo='2026-01', semana=1,
         exercicio_base_id=ex_sistema.id, data_registro=data_registro, user_id=user.id,
     )
     db.session.add(registro)
@@ -139,7 +136,7 @@ def test_contexto_evolucao_compara_primeira_e_ultima_carga(app):
         )
         # segundo registro, mais recente, carga maior
         registro2 = RegistroTreino(
-            treino_id=Treino.query.filter_by(user_id=user.id).first().id,
+            treino_versao_id=TreinoVersao.query.join(VersaoGlobal, TreinoVersao.versao_id == VersaoGlobal.id).filter(VersaoGlobal.user_id == user.id).first().id,
             versao_id=VersaoGlobal.query.filter_by(user_id=user.id).first().id,
             periodo='2026-02', semana=1, exercicio_base_id=ex.id,
             data_registro=datetime.now(timezone.utc), user_id=user.id,

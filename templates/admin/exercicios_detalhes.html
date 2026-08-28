@@ -67,7 +67,6 @@
                             <th>Descrição</th>
                             <th>Treino</th>
                             <th>Período</th>
-                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -81,15 +80,6 @@
                                 </span>
                             </td>
                             <td>{{ v.data_inicio }} até {{ v.data_fim or 'Atual' }}</td>
-                            <td>
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{{ url_for('version.ver_versao', versao_id=v.versao_id) }}" 
-                                       class="btn btn-outline-primary" 
-                                       title="Visualizar Versão">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                </div>
-                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

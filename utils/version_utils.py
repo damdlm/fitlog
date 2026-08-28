@@ -2,7 +2,6 @@ import logging
 
 from .date_utils import converter_periodo_para_data
 from .exercise_utils import get_series_from_registro
-from models import Treino
 
 logger = logging.getLogger(__name__)
 
@@ -329,8 +328,8 @@ def verificar_exercicio_em_versoes(exercicio_id, tipo_exercicio=None):
         exercicio_id: ID do exercício
         tipo_exercicio: 'usuario' ou 'base' (se None, busca em ambos)
     """
-    from models import VersaoExercicio, Treino, ExercicioUsuario, ExercicioSistema
-    
+    from models import VersaoExercicio
+
     resultados = []
     
     if tipo_exercicio is None or tipo_exercicio == 'usuario':
@@ -342,17 +341,15 @@ def verificar_exercicio_em_versoes(exercicio_id, tipo_exercicio=None):
             treino_versao = ve.treino_versao
             if treino_versao:
                 versao = treino_versao.versao_ref
-                treino = Treino.query.get(treino_versao.treino_id)
-                if treino:
-                    resultados.append({
-                        "versao_id": versao.id,
-                        "versao": versao.numero_versao,
-                        "versao_descricao": versao.descricao,
-                        "treino_id": treino.codigo,
-                        "data_inicio": versao.data_inicio.isoformat() if versao.data_inicio else None,
-                        "data_fim": versao.data_fim.isoformat() if versao.data_fim else None,
-                        "tipo": "usuario"
-                    })
+                resultados.append({
+                    "versao_id": versao.id,
+                    "versao": versao.numero_versao,
+                    "versao_descricao": versao.descricao,
+                    "treino_id": treino_versao.codigo,
+                    "data_inicio": versao.data_inicio.isoformat() if versao.data_inicio else None,
+                    "data_fim": versao.data_fim.isoformat() if versao.data_fim else None,
+                    "tipo": "usuario"
+                })
     
     if tipo_exercicio is None or tipo_exercicio == 'base':
         ocorrencias_base = VersaoExercicio.query.filter_by(
@@ -363,17 +360,15 @@ def verificar_exercicio_em_versoes(exercicio_id, tipo_exercicio=None):
             treino_versao = ve.treino_versao
             if treino_versao:
                 versao = treino_versao.versao_ref
-                treino = Treino.query.get(treino_versao.treino_id)
-                if treino:
-                    resultados.append({
-                        "versao_id": versao.id,
-                        "versao": versao.numero_versao,
-                        "versao_descricao": versao.descricao,
-                        "treino_id": treino.codigo,
-                        "data_inicio": versao.data_inicio.isoformat() if versao.data_inicio else None,
-                        "data_fim": versao.data_fim.isoformat() if versao.data_fim else None,
-                        "tipo": "base"
-                    })
+                resultados.append({
+                    "versao_id": versao.id,
+                    "versao": versao.numero_versao,
+                    "versao_descricao": versao.descricao,
+                    "treino_id": treino_versao.codigo,
+                    "data_inicio": versao.data_inicio.isoformat() if versao.data_inicio else None,
+                    "data_fim": versao.data_fim.isoformat() if versao.data_fim else None,
+                    "tipo": "base"
+                })
     
     return resultados
 

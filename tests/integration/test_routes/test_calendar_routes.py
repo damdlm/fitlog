@@ -7,7 +7,7 @@ continua idêntico ao comportamento anterior.
 """
 from datetime import datetime, timezone
 from models import (
-    db, User, Treino, VersaoGlobal, RegistroTreino, HistoricoTreino,
+    db, User, TreinoVersao, VersaoGlobal, RegistroTreino, HistoricoTreino,
     Musculo, ExercicioUsuario, AlunoProfessor,
 )
 
@@ -38,8 +38,6 @@ def _criar_exercicio(user):
 
 
 def _criar_treino(user, codigo='A'):
-    treino = Treino(user_id=user.id, codigo=codigo, nome=f'Treino {codigo}', descricao='desc')
-    db.session.add(treino)
     # numero_versao é único por (user_id, numero_versao) -- conta quantas
     # versões esse usuário já tem para não colidir quando o teste chama
     # _criar_treino mais de uma vez para o mesmo usuário (ex: dois
@@ -49,12 +47,15 @@ def _criar_treino(user, codigo='A'):
                            data_inicio=datetime.now(timezone.utc).date(), user_id=user.id)
     db.session.add(versao)
     db.session.commit()
+    treino = TreinoVersao(versao_id=versao.id, codigo=codigo, nome_treino=f'Treino {codigo}', descricao_treino='desc')
+    db.session.add(treino)
+    db.session.commit()
     return treino, versao
 
 
 def _criar_registro(user, treino, versao, ex, data, carga=50, repeticoes=10):
     r = RegistroTreino(
-        treino_id=treino.id, versao_id=versao.id, periodo='periodo', semana=1,
+        treino_versao_id=treino.id, versao_id=versao.id, periodo='periodo', semana=1,
         exercicio_usuario_id=ex.id, data_registro=data, user_id=user.id,
     )
     db.session.add(r)
@@ -215,7 +216,7 @@ def test_eventos_com_exercicio_do_catalogo_sistema(client, app):
         db.session.commit()
 
         r = RegistroTreino(
-            treino_id=treino.id, versao_id=versao.id, periodo='periodo', semana=1,
+            treino_versao_id=treino.id, versao_id=versao.id, periodo='periodo', semana=1,
             exercicio_base_id=ex_sistema.id, data_registro=datetime.now(timezone.utc),
             user_id=u.id,
         )

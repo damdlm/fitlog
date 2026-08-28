@@ -142,10 +142,6 @@
         Gerenciar Catálogo de Exercícios
     </h2>
     <div class="d-flex gap-2">
-        <button type="button" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;" 
-                data-bs-toggle="modal" data-bs-target="#modalNovoTreino">
-            <i class="bi bi-plus-circle me-2"></i>Novo Treino
-        </button>
         <button type="button" class="btn" style="background: #2D2D2D; color: white; border: none;" 
                 data-bs-toggle="modal" data-bs-target="#modalNovoExercicio">
             <i class="bi bi-database-add me-2"></i>Novo Exercício
@@ -154,55 +150,7 @@
 </div>
 
 <!-- ============================================= -->
-<!-- MODAL NOVO TREINO
-<!-- ============================================= -->
-<div class="modal fade" id="modalNovoTreino" tabindex="-1" aria-labelledby="modalNovoTreinoLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
-                <h5 class="modal-title" id="modalNovoTreinoLabel">
-                    <i class="bi bi-plus-circle me-2"></i>Novo Treino
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="{{ url_for('admin.salvar_treino') }}" method="post">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">ID do Treino</label>
-                        <input type="text" name="id" class="form-control" 
-                               placeholder="Ex: F, G, H..." maxlength="1" required 
-                               pattern="[A-Za-z]" title="Uma única letra">
-                        <div class="form-text">Uma única letra (será convertida para maiúscula)</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Nome do Treino</label>
-                        <input type="text" name="nome" class="form-control" 
-                               placeholder="Ex: Treino de Costas" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Descrição</label>
-                        <input type="text" name="descricao" class="form-control" 
-                               placeholder="Ex: Foco em dorsais" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle me-2"></i>Cancelar
-                    </button>
-                    <button type="submit" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
-                        <i class="bi bi-save me-2"></i>Salvar Treino
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- ============================================= -->
-<!-- CONTEÚDO PRINCIPAL
+<!-- CONTEÚDO PRINCIPAL -->
 <!-- ============================================= -->
 <div class="row">
     <!-- Coluna de Treinos -->
@@ -225,23 +173,6 @@
                             <strong>{{ t.nome }}</strong>
                             <br>
                             <small class="text-muted">{{ t.descricao }}</small>
-                        </div>
-                        <div class="btn-group btn-group-sm">
-                            <a href="{{ url_for('version.gerenciar_versoes_global') }}" 
-                               class="btn btn-outline-info" 
-                               title="Versões">
-                                <i class="bi bi-clock-history"></i>
-                            </a>
-                            <button class="btn btn-outline-warning" 
-                                    onclick="editarTreino('{{ t.id }}', '{{ t.codigo }}', '{{ t.nome }}', '{{ t.descricao }}')"
-                                    title="Editar">
-                                <i class="bi bi-pencil"></i>
-                            </button>					
-                            <button class="btn btn-outline-danger" 
-                                    onclick="confirmarExclusaoTreino('{{ t.id }}', '{{ t.codigo }} - {{ t.nome }}')"
-                                    title="Excluir">
-                                <i class="bi bi-trash"></i>
-                            </button>					
                         </div>
                     </div>
                     {% else %}
@@ -369,55 +300,6 @@
 </div>
 
 <!-- ============================================= -->
-<!-- MODAL EDITAR TREINO
-<!-- ============================================= -->
-<div class="modal fade" id="modalEditarTreino" tabindex="-1" aria-labelledby="modalEditarTreinoLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%); color: white;">
-                <h5 class="modal-title" id="modalEditarTreinoLabel">
-                    <i class="bi bi-pencil-square me-2"></i>Editar Treino
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="{{ url_for('admin.editar_treino') }}" method="post" id="formEditarTreino">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <div class="modal-body">
-                    <input type="hidden" name="id_original" id="edit_treino_id_original">
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">ID do Treino</label>
-                        <input type="text" name="id" id="edit_treino_id" class="form-control" 
-                               maxlength="1" pattern="[A-Za-z]" required>
-                        <div class="form-text">Uma única letra (será convertida para maiúscula)</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Nome do Treino</label>
-                        <input type="text" name="nome" id="edit_treino_nome" class="form-control" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Descrição</label>
-                        <input type="text" name="descricao" id="edit_treino_descricao" class="form-control" required>
-                    </div>
-                    
-                    <div class="alert alert-warning" id="edit_treino_alerta" style="display: none;">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <span id="edit_treino_mensagem"></span>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle me-2"></i>Cancelar
-                    </button>
-                    <button type="submit" class="btn" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%); color: white; border: none;">
-                        <i class="bi bi-save me-2"></i>Salvar Alterações
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 </div>
 
 <!-- ============================================= -->
@@ -669,21 +551,6 @@ function debounce(func, wait) {
 }
 
 // =============================================
-// FUNÇÕES PARA GERENCIAR TREINOS
-// =============================================
-
-function editarTreino(id, codigo, nome, descricao) {
-    document.getElementById('edit_treino_id_original').value = id;
-    document.getElementById('edit_treino_id').value = codigo;
-    document.getElementById('edit_treino_nome').value = nome;
-    document.getElementById('edit_treino_descricao').value = descricao;
-    document.getElementById('edit_treino_alerta').style.display = 'none';
-    
-    const modal = new bootstrap.Modal(document.getElementById('modalEditarTreino'));
-    modal.show();
-}
-
-// =============================================
 // FUNÇÕES PARA EDITAR EXERCÍCIO
 // =============================================
 function editarExercicio(id, nome, musculo, treinoId, descricao) {
@@ -759,28 +626,6 @@ function salvarEdicaoExercicio() {
     });
     
     return false;
-}
-
-function confirmarExclusaoTreino(id, descricao) {
-    window.FitLogConfirm({
-        title: `Excluir treino ${descricao}?`,
-        text: 'Isso também excluirá todos os exercícios e registros associados.',
-        icon: 'bi-trash',
-        confirmLabel: 'Sim, excluir treino',
-        onConfirm: function () {
-            showLoading(true);
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `/admin/excluir/treino/${id}`;
-            const csrf = document.createElement('input');
-            csrf.type = 'hidden';
-            csrf.name = 'csrf_token';
-            csrf.value = '{{ csrf_token() }}';
-            form.appendChild(csrf);
-            document.body.appendChild(form);
-            form.submit();
-        }
-    });
 }
 
 function confirmarExclusaoExercicio(id, nome) {
@@ -961,48 +806,6 @@ function carregarMaisResultados() {
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Página de gerenciamento carregada');
-    
-    // Validação de ID único no modal de edição
-    document.getElementById('edit_treino_id')?.addEventListener('input', function() {
-        const novoId = this.value.toUpperCase();
-        const idOriginal = document.getElementById('edit_treino_id_original').value;
-        const alertaDiv = document.getElementById('edit_treino_alerta');
-        const mensagemSpan = document.getElementById('edit_treino_mensagem');
-        
-        this.value = novoId;
-        
-        if (novoId === idOriginal || !novoId || novoId.length === 0) {
-            alertaDiv.style.display = 'none';
-            return;
-        }
-        
-        fetch(`/api/verificar-treino?id=${encodeURIComponent(novoId)}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.existe) {
-                    mensagemSpan.textContent = `O ID "${novoId}" já está em uso por outro treino.`;
-                    alertaDiv.style.display = 'block';
-                } else {
-                    alertaDiv.style.display = 'none';
-                }
-            })
-            .catch(error => {
-                console.error('Erro ao verificar treino:', error);
-                mensagemSpan.textContent = 'Não foi possível verificar a disponibilidade do ID.';
-                alertaDiv.style.display = 'block';
-                alertaDiv.className = 'alert alert-warning';
-            });
-    });
-    
-    // Bloquear submit se houver conflito de ID
-    document.getElementById('formEditarTreino')?.addEventListener('submit', function(e) {
-        const alertaDiv = document.getElementById('edit_treino_alerta');
-        if (alertaDiv.style.display === 'block') {
-            e.preventDefault();
-            alert('O ID informado já está em uso. Escolha outro.');
-            return false;
-        }
-    });
     
     // Configurar busca de exercícios com debounce melhorado
     const buscaInput = document.getElementById('buscaExercicio');

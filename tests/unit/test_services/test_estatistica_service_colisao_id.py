@@ -12,7 +12,7 @@ from datetime import date, datetime, timezone
 
 from models import (
     db, User, Musculo, ExercicioUsuario, ExercicioSistema,
-    Treino, VersaoGlobal, TreinoVersao, VersaoExercicio,
+    VersaoGlobal, TreinoVersao, VersaoExercicio,
     RegistroTreino, HistoricoTreino,
 )
 from services.estatistica_service import EstatisticaService
@@ -56,14 +56,12 @@ def test_ids_colidentes_nao_se_misturam_na_tabela(app, db):
         db.session.commit()
         ex_sistema_id = ex_usuario.id  # agora colidem de propósito
 
-        treino = Treino(user_id=user.id, codigo='A', nome='Treino A', descricao='')
-        db.session.add(treino)
         versao = VersaoGlobal(numero_versao=1, descricao='V1', divisao='ABC',
                                data_inicio=date.today(), user_id=user.id)
         db.session.add(versao)
         db.session.commit()
 
-        tv = TreinoVersao(versao_id=versao.id, treino_id=treino.id, nome_treino=treino.nome, descricao_treino='')
+        tv = TreinoVersao(versao_id=versao.id, codigo='A', nome_treino='Treino A', descricao_treino='')
         db.session.add(tv)
         db.session.commit()
         db.session.add(VersaoExercicio(treino_versao_id=tv.id, exercicio_usuario_id=ex_usuario.id, ordem=1))
@@ -72,7 +70,7 @@ def test_ids_colidentes_nao_se_misturam_na_tabela(app, db):
 
         # Um registro para cada um dos dois exercícios com o mesmo id numérico
         reg_usuario = RegistroTreino(
-            treino_id=treino.id, versao_id=versao.id, periodo='periodo', semana=1,
+            treino_versao_id=tv.id, versao_id=versao.id, periodo='periodo', semana=1,
             exercicio_usuario_id=ex_usuario.id, data_registro=datetime.now(timezone.utc), user_id=user.id,
         )
         db.session.add(reg_usuario)
@@ -80,7 +78,7 @@ def test_ids_colidentes_nao_se_misturam_na_tabela(app, db):
         db.session.add(HistoricoTreino(registro_id=reg_usuario.id, carga=100, repeticoes=10))
 
         reg_sistema = RegistroTreino(
-            treino_id=treino.id, versao_id=versao.id, periodo='periodo', semana=1,
+            treino_versao_id=tv.id, versao_id=versao.id, periodo='periodo', semana=1,
             exercicio_base_id=ex_sistema_id, data_registro=datetime.now(timezone.utc), user_id=user.id,
         )
         db.session.add(reg_sistema)

@@ -8,7 +8,7 @@ Testes para a UI de "iniciar treino" na tela de registrar treino:
 """
 from datetime import date
 
-from models import db, User, Treino, VersaoGlobal, TreinoVersao, VersaoExercicio, ExercicioUsuario, Musculo
+from models import db, User, VersaoGlobal, TreinoVersao, VersaoExercicio, ExercicioUsuario, Musculo
 
 
 def _criar_usuario(username):
@@ -32,15 +32,12 @@ def _montar_treino_com_exercicio(user):
     exercicio = ExercicioUsuario(usuario_id=user.id, nome='Supino Reto', musculo_id=musculo.id)
     db.session.add(exercicio)
 
-    treino = Treino(user_id=user.id, codigo='A', nome='Treino A', descricao='Treino A')
-    db.session.add(treino)
-
     versao = VersaoGlobal(numero_versao=1, descricao='V1', divisao='ABC',
                            data_inicio=date(2026, 1, 1), user_id=user.id)
     db.session.add(versao)
     db.session.flush()
 
-    treino_versao = TreinoVersao(versao_id=versao.id, treino_id=treino.id, nome_treino='Treino A')
+    treino_versao = TreinoVersao(versao_id=versao.id, codigo='A', nome_treino='Treino A')
     db.session.add(treino_versao)
     db.session.flush()
 
@@ -48,7 +45,7 @@ def _montar_treino_com_exercicio(user):
     db.session.add(ve)
     db.session.commit()
 
-    return treino
+    return treino_versao
 
 
 class TestBotaoIniciarTreinoSubstituidoPeloPlay:

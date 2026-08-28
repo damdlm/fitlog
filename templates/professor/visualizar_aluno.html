@@ -214,13 +214,8 @@
                 <h5 class="card-title mb-3">Acompanhamento</h5>
                 <div class="row g-2">
                     <div class="col-6 col-md-4 col-lg">
-                        <a href="{{ url_for('professor.treinos_aluno', aluno_id=aluno.id) }}" class="dash-quick-tile">
-                            <i class="bi bi-trophy"></i> Treinos
-                        </a>
-                    </div>
-                    <div class="col-6 col-md-4 col-lg">
-                        <a href="{{ url_for('professor.versoes_aluno', aluno_id=aluno.id) }}" class="dash-quick-tile">
-                            <i class="bi bi-clock-history"></i> Versões
+                        <a href="{{ url_for('professor.exercicios_aluno', aluno_id=aluno.id) }}" class="dash-quick-tile">
+                            <i class="bi bi-list-check"></i> Exercícios
                         </a>
                     </div>
                     <div class="col-6 col-md-4 col-lg">

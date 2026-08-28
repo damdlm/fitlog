@@ -9,7 +9,7 @@ enviada à IA para confirmar de quem são os dados ali dentro.
 import json
 
 from models import (
-    db, User, AlunoProfessor, Treino, VersaoGlobal, TreinoVersao,
+    db, User, AlunoProfessor, VersaoGlobal, TreinoVersao,
     VersaoExercicio, ExercicioSistema, RegistroTreino, HistoricoTreino,
 )
 from services.billing_service import BillingService
@@ -39,15 +39,12 @@ def _dar_treino_e_registro(user, nome_exercicio, carga):
     ex_sistema = ExercicioSistema(id_original=f'ex-{user.username}', nome=nome_exercicio, grupo_muscular='Peito')
     db.session.add(ex_sistema)
 
-    treino = Treino(user_id=user.id, codigo='A', nome='Treino A', descricao='Treino A')
-    db.session.add(treino)
-
     versao = VersaoGlobal(numero_versao=1, descricao='V1', divisao='ABC',
                            data_inicio=date.today(), data_fim=None, user_id=user.id)
     db.session.add(versao)
     db.session.flush()
 
-    treino_versao = TreinoVersao(versao_id=versao.id, treino_id=treino.id, nome_treino='Treino A')
+    treino_versao = TreinoVersao(versao_id=versao.id, codigo='A', nome_treino='Treino A')
     db.session.add(treino_versao)
     db.session.flush()
 
@@ -55,7 +52,7 @@ def _dar_treino_e_registro(user, nome_exercicio, carga):
     db.session.flush()
 
     registro = RegistroTreino(
-        treino_id=treino.id, versao_id=versao.id, periodo='2026-01', semana=1,
+        treino_versao_id=treino_versao.id, versao_id=versao.id, periodo='2026-01', semana=1,
         exercicio_base_id=ex_sistema.id, data_registro=datetime.now(timezone.utc), user_id=user.id,
     )
     db.session.add(registro)

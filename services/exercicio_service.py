@@ -245,13 +245,13 @@ class ExercicioService(BaseService):
             if not user_id:
                 return []
 
-            from models import Musculo, VersaoGlobal, TreinoVersao, Treino
+            from models import Musculo, VersaoGlobal, TreinoVersao
 
             # Todas as associações exercício <-> treino do usuário,
             # em todas as versões (para manter o histórico completo),
             # da mais recente para a mais antiga.
             ve_rows = (
-                db.session.query(VersaoExercicio, TreinoVersao.treino_id)
+                db.session.query(VersaoExercicio, TreinoVersao)
                 .join(TreinoVersao, VersaoExercicio.treino_versao_id == TreinoVersao.id)
                 .join(VersaoGlobal, TreinoVersao.versao_id == VersaoGlobal.id)
                 .filter(VersaoGlobal.user_id == user_id)
@@ -259,22 +259,17 @@ class ExercicioService(BaseService):
                 .all()
             )
 
-            # Mantém o treino_id mais recente de cada exercício (um exercício
-            # pode ter mudado de treino entre versões diferentes)
+            # Mantém o treino_versao mais recente de cada exercício (um
+            # exercício pode ter mudado de treino entre versões diferentes)
             usuario_map = {}
             base_map = {}
-            for ve, treino_id in ve_rows:
-                if ve.exercicio_usuario_id is not None:
-                    usuario_map.setdefault(ve.exercicio_usuario_id, treino_id)
-                elif ve.exercicio_base_id is not None:
-                    base_map.setdefault(ve.exercicio_base_id, treino_id)
-
-            # Busca os treinos (A, B, C...) de uma vez só, para montar treino_ref
-            treino_ids = {tid for tid in list(usuario_map.values()) + list(base_map.values()) if tid}
             treinos_by_id = {}
-            if treino_ids:
-                for t in Treino.query.filter(Treino.id.in_(treino_ids)).all():
-                    treinos_by_id[t.id] = t
+            for ve, treino_versao in ve_rows:
+                treinos_by_id[treino_versao.id] = treino_versao
+                if ve.exercicio_usuario_id is not None:
+                    usuario_map.setdefault(ve.exercicio_usuario_id, treino_versao.id)
+                elif ve.exercicio_base_id is not None:
+                    base_map.setdefault(ve.exercicio_base_id, treino_versao.id)
 
             exercicios = []
 
@@ -936,8 +931,6 @@ class ExercicioService(BaseService):
             bool: True se sucesso
         """
         try:
-            from services.versao_service import VersaoService
-            from services.treino_service import TreinoService
             from models import TreinoVersao, VersaoExercicio, db
             
             if user_id is None:
@@ -947,21 +940,16 @@ class ExercicioService(BaseService):
                 return False
             
             # Buscar versão
+            from services.versao_service import VersaoService
             versao = VersaoService.get_by_id(versao_id, user_id)
             if not versao:
                 logger.warning(f"Versão {versao_id} não encontrada")
                 return False
             
-            # Buscar treino pelo código
-            treino = TreinoService.get_by_codigo(treino_codigo, user_id)
-            if not treino:
-                logger.warning(f"Treino {treino_codigo} não encontrado")
-                return False
-            
-            # Buscar treino_versao
+            # Buscar treino_versao diretamente pelo código (único dentro da versão)
             treino_versao = TreinoVersao.query.filter_by(
                 versao_id=versao_id,
-                treino_id=treino.id
+                codigo=(treino_codigo or '').upper()
             ).first()
             
             if not treino_versao:

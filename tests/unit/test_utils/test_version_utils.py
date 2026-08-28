@@ -18,7 +18,7 @@ from datetime import date
 
 import pytest
 
-from models import db, User, Treino, VersaoGlobal, TreinoVersao, VersaoExercicio, ExercicioUsuario
+from models import db, User, VersaoGlobal, TreinoVersao, VersaoExercicio, ExercicioUsuario
 from utils.version_utils import (
     verificar_exercicio_em_versoes,
     get_versoes_treino_antigo,
@@ -38,16 +38,12 @@ def _criar_cenario_com_exercicio(username, tipo='usuario'):
     db.session.add(u)
     db.session.commit()
 
-    t = Treino(codigo='A', nome='A', descricao='d', user_id=u.id)
-    db.session.add(t)
-    db.session.commit()
-
     v = VersaoGlobal(numero_versao=1, descricao='v1', divisao='ABC',
                       data_inicio=date(2024, 1, 1), user_id=u.id)
     db.session.add(v)
     db.session.commit()
 
-    tv = TreinoVersao(versao_id=v.id, treino_id=t.id, nome_treino='Treino A',
+    tv = TreinoVersao(versao_id=v.id, codigo='A', nome_treino='Treino A',
                        descricao_treino='desc')
     db.session.add(tv)
     db.session.commit()
@@ -63,7 +59,7 @@ def _criar_cenario_com_exercicio(username, tipo='usuario'):
     db.session.add(ve)
     db.session.commit()
 
-    return u, t, v, tv, ex
+    return u, v, tv, ex
 
 
 class TestVerificarExercicioEmVersoes:
@@ -71,7 +67,7 @@ class TestVerificarExercicioEmVersoes:
 
     def test_encontra_exercicio_de_usuario(self, app):
         with app.app_context():
-            u, t, v, tv, ex = _criar_cenario_com_exercicio('vu_verif_1', tipo='usuario')
+            u, v, tv, ex = _criar_cenario_com_exercicio('vu_verif_1', tipo='usuario')
 
             resultado = verificar_exercicio_em_versoes(ex.id, 'usuario')
             assert len(resultado) == 1
@@ -81,7 +77,7 @@ class TestVerificarExercicioEmVersoes:
 
     def test_encontra_exercicio_com_tipo_none_busca_ambos(self, app):
         with app.app_context():
-            u, t, v, tv, ex = _criar_cenario_com_exercicio('vu_verif_2', tipo='usuario')
+            u, v, tv, ex = _criar_cenario_com_exercicio('vu_verif_2', tipo='usuario')
 
             resultado = verificar_exercicio_em_versoes(ex.id, tipo_exercicio=None)
             assert len(resultado) == 1
@@ -93,14 +89,14 @@ class TestVerificarExercicioEmVersoes:
 
     def test_nao_encontra_tipo_base_quando_e_usuario(self, app):
         with app.app_context():
-            u, t, v, tv, ex = _criar_cenario_com_exercicio('vu_verif_3', tipo='usuario')
+            u, v, tv, ex = _criar_cenario_com_exercicio('vu_verif_3', tipo='usuario')
 
             resultado = verificar_exercicio_em_versoes(ex.id, 'base')
             assert resultado == []
 
     def test_inclui_datas_formatadas(self, app):
         with app.app_context():
-            u, t, v, tv, ex = _criar_cenario_com_exercicio('vu_verif_4', tipo='usuario')
+            u, v, tv, ex = _criar_cenario_com_exercicio('vu_verif_4', tipo='usuario')
 
             resultado = verificar_exercicio_em_versoes(ex.id, 'usuario')
             assert resultado[0]['data_inicio'] == '2024-01-01'

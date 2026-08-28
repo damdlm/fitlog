@@ -76,7 +76,7 @@ class RegistroService(BaseService):
             
             if filtros:
                 if 'treino_id' in filtros and filtros['treino_id']:
-                    query = query.filter_by(treino_id=filtros['treino_id'])
+                    query = query.filter_by(treino_versao_id=filtros['treino_id'])
                 if 'periodo' in filtros and filtros['periodo']:
                     query = query.filter_by(periodo=filtros['periodo'])
                 if 'semana' in filtros and filtros['semana'] is not None:
@@ -149,7 +149,7 @@ class RegistroService(BaseService):
 
             RegistroTreino.query.filter(
                 RegistroTreino.user_id == user_id,
-                RegistroTreino.treino_id == treino_id,
+                RegistroTreino.treino_versao_id == treino_id,
                 RegistroTreino.versao_id == versao_id,
                 RegistroTreino.data_registro == data_meia_noite
             ).delete()
@@ -195,7 +195,7 @@ class RegistroService(BaseService):
             # Buscar registros do dia
             registros = RegistroTreino.query.filter(
                 RegistroTreino.user_id == user_id,
-                RegistroTreino.treino_id == treino_id,
+                RegistroTreino.treino_versao_id == treino_id,
                 RegistroTreino.versao_id == versao_id,
                 RegistroTreino.data_registro == data_meia_noite
             ).all()
@@ -227,7 +227,7 @@ class RegistroService(BaseService):
             # caso o valor recém-enviado não pareça uma medição real de
             # cronômetro (ver _resolver_tempo_treino).
             registro_existente = RegistroTreino.query.filter_by(
-                treino_id=treino_id,
+                treino_versao_id=treino_id,
                 periodo=periodo,
                 semana=semana,
                 versao_id=versao_id,
@@ -260,7 +260,7 @@ class RegistroService(BaseService):
 
             # Remover registros antigos da mesma sessão
             RegistroTreino.query.filter_by(
-                treino_id=treino_id,
+                treino_versao_id=treino_id,
                 periodo=periodo,
                 semana=semana,
                 versao_id=versao_id,
@@ -277,7 +277,7 @@ class RegistroService(BaseService):
                     is_usuario = dados.get('tipo') == 'usuario'
                     
                     registro = RegistroTreino(
-                        treino_id=treino_id,
+                        treino_versao_id=treino_id,
                         versao_id=versao_id,
                         periodo=periodo,
                         semana=semana,
@@ -330,7 +330,7 @@ class RegistroService(BaseService):
             
             # Remover registros antigos do mesmo exercício na mesma sessão
             delete_query = RegistroTreino.query.filter(
-                RegistroTreino.treino_id == treino_id,
+                RegistroTreino.treino_versao_id == treino_id,
                 RegistroTreino.periodo == periodo,
                 RegistroTreino.semana == semana,
                 RegistroTreino.versao_id == versao_id,
@@ -344,7 +344,7 @@ class RegistroService(BaseService):
             
             # Criar novo registro
             registro = RegistroTreino(
-                treino_id=treino_id,
+                treino_versao_id=treino_id,
                 versao_id=versao_id,
                 periodo=periodo,
                 semana=semana,

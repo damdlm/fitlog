@@ -6,9 +6,7 @@ desta rodada, so via efeito colateral de outros testes).
 """
 from datetime import date
 
-from models import db, User, Musculo, ExercicioUsuario, VersaoGlobal, RegistroTreino
-from services.versao_service import VersaoService
-from services.treino_service import TreinoService
+from models import db, User, Musculo, ExercicioUsuario, VersaoGlobal, TreinoVersao, VersaoExercicio, RegistroTreino
 
 
 def _criar_usuario(username):
@@ -29,15 +27,23 @@ def _montar_versao_com_treino_e_exercicio(user_id, data_inicio=date(2026, 1, 1))
     db.session.add(musc)
     db.session.commit()
 
-    versao = VersaoService.create('Bloco', data_inicio, user_id=user_id)
-    TreinoService.create('A', 'Treino A', 'peito', user_id=user_id)
+    versao = VersaoGlobal(numero_versao=1, descricao='Bloco', divisao='ABC',
+                           data_inicio=data_inicio, user_id=user_id)
+    db.session.add(versao)
+    db.session.commit()
+
+    treino_versao = TreinoVersao(versao_id=versao.id, codigo='A', nome_treino='Treino A', descricao_treino='peito')
+    db.session.add(treino_versao)
+    db.session.commit()
+
     ex = ExercicioUsuario(usuario_id=user_id, nome='Supino', musculo_id=musc.id)
     db.session.add(ex)
     db.session.commit()
-    VersaoService.adicionar_treino(versao.id, 'A', 'Treino A', 'peito', [ex.id], [], user_id=user_id)
 
-    treinos = VersaoService.get_treinos_para_registro(versao.id, user_id=user_id)
-    treino_id = treinos[0]['id']
+    db.session.add(VersaoExercicio(treino_versao_id=treino_versao.id, exercicio_usuario_id=ex.id, ordem=0))
+    db.session.commit()
+
+    treino_id = treino_versao.id
     return versao, treino_id, ex
 
 
@@ -139,7 +145,8 @@ class TestSalvarRegistro:
         with app.app_context():
             u = _criar_usuario('reg_post_4')
             versao, treino_id, ex = _montar_versao_com_treino_e_exercicio(u.id)
-            VersaoService.finalizar(versao.id, date(2026, 2, 1), user_id=u.id)
+            versao.data_fim = date(2026, 2, 1)
+            db.session.commit()
             chave = f'u_{ex.id}'
 
         _login(client, 'reg_post_4')

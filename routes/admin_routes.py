@@ -47,15 +47,16 @@ def gerenciar():
     exercicio_treino_map = {}
     versao_ativa = VersaoService.get_ativa(user_id=current_user.id)
     if versao_ativa:
-        treinos_versao_ativa = TreinoVersao.query.filter_by(versao_id=versao_ativa.id).all()
-        tv_id_para_treino_id = {tv.id: tv.treino_id for tv in treinos_versao_ativa}
-        if tv_id_para_treino_id:
+        tv_ids_ativa = [
+            tv.id for tv in TreinoVersao.query.filter_by(versao_id=versao_ativa.id).all()
+        ]
+        if tv_ids_ativa:
             versao_exercicios = VersaoExercicio.query.filter(
-                VersaoExercicio.treino_versao_id.in_(tv_id_para_treino_id.keys())
+                VersaoExercicio.treino_versao_id.in_(tv_ids_ativa)
             ).all()
             for ve in versao_exercicios:
                 if ve.exercicio_usuario_id:
-                    exercicio_treino_map[ve.exercicio_usuario_id] = tv_id_para_treino_id[ve.treino_versao_id]
+                    exercicio_treino_map[ve.exercicio_usuario_id] = ve.treino_versao_id
 
     # Contagem de exercícios por treino (baseada na versão ativa)
     exercicios_por_treino = {}
@@ -103,83 +104,6 @@ def gerenciar():
 
 
 # =============================================
-# TREINOS
-# =============================================
-
-@admin_bp.route("/salvar/treino", methods=["POST"])
-@login_required
-def salvar_treino():
-    """Salva um novo treino para o usuário atual"""
-    codigo = request.form.get("id", "").strip().upper()
-    nome = request.form.get("nome", codigo).strip()
-    descricao = request.form.get("descricao", "").strip()
-
-    if not codigo:
-        flash("Código do treino é obrigatório.", "danger")
-        return redirect(url_for("admin.gerenciar"))
-
-    if TreinoService.get_by_codigo(codigo, user_id=current_user.id):
-        flash(f"Treino {codigo} já existe!", "danger")
-        return redirect(url_for("admin.gerenciar"))
-
-    treino = TreinoService.create(codigo, nome, descricao, user_id=current_user.id)
-
-    if treino:
-        logger.info(f"Treino {codigo} criado pelo usuário {current_user.id} ({current_user.tipo_usuario})")
-        flash(f"Treino {codigo} criado com sucesso!", "success")
-    else:
-        flash("Erro ao criar treino!", "danger")
-
-    return redirect(url_for("admin.gerenciar"))
-
-
-@admin_bp.route("/editar/treino", methods=["POST"])
-@login_required
-def editar_treino():
-    """Edita um treino do usuário atual"""
-    treino_id = request.form.get("id_original", "").strip()
-    novo_codigo = request.form.get("id", "").strip().upper()
-    novo_nome = request.form.get("nome", novo_codigo).strip()
-    nova_descricao = request.form.get("descricao", "").strip()
-
-    if not treino_id or not novo_codigo:
-        flash("Dados inválidos para edição.", "danger")
-        return redirect(url_for("admin.gerenciar"))
-
-    # Confirma que o treino pertence ao usuário atual
-    if not TreinoService.get_by_id(treino_id, user_id=current_user.id):
-        flash("Treino não encontrado ou sem permissão.", "danger")
-        return redirect(url_for("admin.gerenciar"))
-
-    treino = TreinoService.update(treino_id, novo_codigo, novo_nome, nova_descricao, user_id=current_user.id)
-
-    if treino:
-        logger.info(f"Treino {treino_id} atualizado pelo usuário {current_user.id}")
-        flash("Treino atualizado com sucesso!", "success")
-    else:
-        flash("Erro ao atualizar treino!", "danger")
-
-    return redirect(url_for("admin.gerenciar"))
-
-
-@admin_bp.route("/excluir/treino/<int:treino_id>", methods=["POST"])
-@login_required
-def excluir_treino(treino_id):
-    """Exclui um treino do usuário atual"""
-    if not TreinoService.get_by_id(treino_id, user_id=current_user.id):
-        flash("Treino não encontrado ou sem permissão.", "danger")
-        return redirect(url_for("admin.gerenciar"))
-
-    if TreinoService.delete(treino_id, user_id=current_user.id):
-        logger.info(f"Treino {treino_id} excluído pelo usuário {current_user.id}")
-        flash("Treino excluído com sucesso!", "success")
-    else:
-        flash("Erro ao excluir treino!", "danger")
-
-    return redirect(url_for("admin.gerenciar"))
-
-
-# =============================================
 # EXERCÍCIOS
 # =============================================
 
@@ -189,7 +113,6 @@ def salvar_exercicio():
     """Cria um novo exercício customizado para o usuário atual"""
     nome_exercicio = request.form.get("nome", "").strip()
     musculo = request.form.get("musculo", "").strip()
-    treino_id = request.form.get("treino") or None
     descricao = request.form.get("descricao", "").strip()
 
     if not nome_exercicio:
@@ -210,8 +133,7 @@ def salvar_exercicio():
         user_id=current_user.id,
         nome=nome_exercicio,
         musculo_nome=musculo,
-        descricao=descricao,
-        treino_id=treino_id
+        descricao=descricao
     )
 
     if exercicio:
@@ -246,7 +168,6 @@ def editar_exercicio():
     exercicio_id = request.form.get("id", "").strip()
     nome_exercicio = request.form.get("nome", "").strip()
     musculo_nome = request.form.get("musculo", "").strip()
-    treino_id = request.form.get("treino") or None
     descricao = request.form.get("descricao", "").strip()
 
     if not exercicio_id or not nome_exercicio:
@@ -369,18 +290,6 @@ def exercicio_detalhes(exercicio_id):
         versoes=versoes
     )
 
-
-# =============================================
-# APIS
-# =============================================
-
-@admin_bp.route("/api/verificar-treino")
-@login_required
-def api_verificar_treino():
-    """Verifica se código de treino já existe para o usuário atual"""
-    codigo = request.args.get("id", "").upper()
-    treino = TreinoService.get_by_codigo(codigo, user_id=current_user.id)
-    return jsonify({"existe": treino is not None})
 
 # =============================================
 # COBRANÇA -- painel de contas (só admin)

@@ -10,7 +10,7 @@ from datetime import date, datetime
 
 from models import (
     db, User, Musculo, ExercicioUsuario, ExercicioSistema,
-    Treino, VersaoGlobal, RegistroTreino, HistoricoTreino,
+    TreinoVersao, VersaoGlobal, RegistroTreino, HistoricoTreino,
 )
 from services.estatistica_service import EstatisticaService
 
@@ -24,18 +24,19 @@ def _criar_usuario(email):
 
 
 def _criar_treino_e_versao(user, codigo='A', numero_versao=1):
-    treino = Treino(user_id=user.id, codigo=codigo, nome=f'Treino {codigo}', descricao=f'Treino {codigo}')
-    db.session.add(treino)
     versao = VersaoGlobal(numero_versao=numero_versao, descricao=f'V{numero_versao}', divisao='ABC',
                            data_inicio=date.today(), user_id=user.id)
     db.session.add(versao)
+    db.session.flush()
+    treino = TreinoVersao(versao_id=versao.id, codigo=codigo, nome_treino=f'Treino {codigo}', descricao_treino=f'Treino {codigo}')
+    db.session.add(treino)
     db.session.flush()
     return treino, versao
 
 
 def _criar_registro(user, treino, versao, historico_carga_rep, **exercicio_kwargs):
     registro = RegistroTreino(
-        treino_id=treino.id,
+        treino_versao_id=treino.id,
         versao_id=versao.id,
         periodo='manha',
         semana=1,

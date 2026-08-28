@@ -6,7 +6,6 @@ from .auth_routes import auth_bp
 from .admin_routes import admin_bp
 from .register_routes import register_bp
 from .stats_routes import stats_bp
-from .version_routes import version_bp
 from .api_routes import api_bp
 from .calendar_routes import calendar_bp
 from .professor_routes import professor_bp
@@ -28,7 +27,6 @@ def register_all_routes(app):
         (calendar_bp, '/calendar'),
         (register_bp, '/registrar'),
         (stats_bp, '/estatisticas'),
-        (version_bp, '/version'),
         (api_bp, '/api'),
         (fitbot_bp, '/fitbot'),
         (contato_bp, '/contato'),

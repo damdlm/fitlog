@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required
 from datetime import datetime, timezone
-from services.treino_service import TreinoService
 from services.versao_service import VersaoService
 from services.exercicio_service import ExercicioService
 from services.registro_service import RegistroService

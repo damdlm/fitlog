@@ -23,9 +23,9 @@ def _login_com_next(client, username, next_url):
 
 def test_next_relativo_valido_e_aceito(client, db):
     _cria_usuario(db)
-    resp = _login_com_next(client, 'redirectuser', '/aluno/treinos')
+    resp = _login_com_next(client, 'redirectuser', '/aluno/cadastrar-treinos')
     assert resp.status_code == 302
-    assert resp.headers['Location'].endswith('/aluno/treinos')
+    assert resp.headers['Location'].endswith('/aluno/cadastrar-treinos')
 
 
 def test_next_url_absoluta_externa_e_bloqueada(client, db):

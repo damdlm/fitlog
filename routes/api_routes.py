@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta, timezone, date
-from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
 from services.versao_service import VersaoService
 from services.registro_service import RegistroService
@@ -198,15 +197,6 @@ def api_buscar_exercicios():
 # VERIFICAÇÕES
 # ============================================================================
 
-@api_bp.route("/verificar-treino")
-@login_required
-def api_verificar_treino():
-    """Verifica se um código de treino já existe"""
-    treino_id = request.args.get("id", "").upper()
-    treino = TreinoService.get_by_codigo(treino_id)
-    return jsonify({"existe": treino is not None})
-
-
 @api_bp.route("/versao-exercicios/<int:versao_id>")
 @login_required
 def api_versao_exercicios(versao_id):
@@ -284,8 +274,7 @@ def api_criar_exercicio():
     novo_exercicio = ExercicioService.criar_exercicio_customizado(
         user_id=current_user.id,
         nome=data["nome"],
-        musculo_nome=data.get("musculo", "Outros"),
-        treino_id=data.get("treino")
+        musculo_nome=data.get("musculo", "Outros")
     )
     
     if novo_exercicio:

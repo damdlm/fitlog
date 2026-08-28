@@ -7,7 +7,7 @@ from datetime import date
 from flask_login import login_user
 
 from models import (
-    db, User, Treino, VersaoGlobal, TreinoVersao, VersaoExercicio,
+    db, User, VersaoGlobal, TreinoVersao, VersaoExercicio,
     ExercicioSistema,
 )
 from services.fitbot_service import FitBotService
@@ -27,9 +27,6 @@ def _criar_usuario_com_treino(username, nome_exercicio, grupo_muscular='Peito'):
     )
     db.session.add(ex_sistema)
 
-    treino = Treino(user_id=user.id, codigo='A', nome='Treino A', descricao='Treino A')
-    db.session.add(treino)
-
     versao = VersaoGlobal(
         numero_versao=1, descricao='V1', divisao='ABC',
         data_inicio=date.today(), data_fim=None, user_id=user.id,
@@ -37,7 +34,7 @@ def _criar_usuario_com_treino(username, nome_exercicio, grupo_muscular='Peito'):
     db.session.add(versao)
     db.session.flush()
 
-    treino_versao = TreinoVersao(versao_id=versao.id, treino_id=treino.id, nome_treino='Treino A')
+    treino_versao = TreinoVersao(versao_id=versao.id, codigo='A', nome_treino='Treino A')
     db.session.add(treino_versao)
     db.session.flush()
 

@@ -4,9 +4,8 @@ vínculo aluno-professor). Tinha 23% de cobertura -- é a página inicial
 de qualquer aluno logado.
 """
 from datetime import datetime, timezone, timedelta
-from models import db, User, AlunoProfessor, SolicitacaoVinculo, Treino, \
+from models import db, User, AlunoProfessor, SolicitacaoVinculo, TreinoVersao, \
     VersaoGlobal, RegistroTreino, HistoricoTreino, Musculo, ExercicioUsuario
-from services.treino_service import TreinoService
 
 
 def _criar_usuario(username, tipo_usuario='aluno'):
@@ -34,8 +33,13 @@ class TestDashboard:
     def test_dashboard_mostra_contagens_corretas(self, client, app):
         with app.app_context():
             u = _criar_usuario('am_dash_2')
-            TreinoService.create('A', 'Treino A', 'd', user_id=u.id)
-            TreinoService.create('B', 'Treino B', 'd', user_id=u.id)
+            versao = VersaoGlobal(numero_versao=1, descricao='v1', divisao='ABC',
+                                   data_inicio=datetime.now(timezone.utc).date(), user_id=u.id)
+            db.session.add(versao)
+            db.session.commit()
+            db.session.add(TreinoVersao(versao_id=versao.id, codigo='A', nome_treino='Treino A', descricao_treino='d'))
+            db.session.add(TreinoVersao(versao_id=versao.id, codigo='B', nome_treino='Treino B', descricao_treino='d'))
+            db.session.commit()
         _login(client, 'am_dash_2')
 
         resp = client.get('/aluno/dashboard')
@@ -60,17 +64,17 @@ class TestDashboard:
             db.session.add(ex)
             db.session.commit()
 
-            treino_a = Treino(user_id=u.id, codigo='A', nome='Treino A', descricao='d')
-            treino_b = Treino(user_id=u.id, codigo='B', nome='Treino B', descricao='d')
-            db.session.add_all([treino_a, treino_b])
-            db.session.commit()
-
             versao = VersaoGlobal(
                 numero_versao=1, descricao='v1', divisao='A',
                 data_inicio=datetime.now(timezone.utc).date(),
                 user_id=u.id
             )
             db.session.add(versao)
+            db.session.commit()
+
+            treino_a = TreinoVersao(versao_id=versao.id, codigo='A', nome_treino='Treino A', descricao_treino='d')
+            treino_b = TreinoVersao(versao_id=versao.id, codigo='B', nome_treino='Treino B', descricao_treino='d')
+            db.session.add_all([treino_a, treino_b])
             db.session.commit()
 
             hoje = datetime.now(timezone.utc).date()
@@ -84,7 +88,7 @@ class TestDashboard:
             # bateria com a ordem de inserção abaixo e mascararia o bug
             # se a sessão "certa" também fosse a inserida por último.
             r_recente = RegistroTreino(
-                treino_id=treino_b.id, versao_id=versao.id, periodo='Julho/2026', semana=1,
+                treino_versao_id=treino_b.id, versao_id=versao.id, periodo='Julho/2026', semana=1,
                 exercicio_usuario_id=ex.id, data_registro=hoje, user_id=u.id,
                 created_at=agora
             )
@@ -96,7 +100,7 @@ class TestDashboard:
             # Sessão mais ANTIGA (created_at 2h atrás), inserida DEPOIS
             # (rowid maior) -- mesmo dia. Tempo de treino de 10 minutos.
             r_antiga = RegistroTreino(
-                treino_id=treino_a.id, versao_id=versao.id, periodo='Julho/2026', semana=1,
+                treino_versao_id=treino_a.id, versao_id=versao.id, periodo='Julho/2026', semana=1,
                 exercicio_usuario_id=ex.id, data_registro=hoje, user_id=u.id,
                 created_at=agora - timedelta(hours=2)
             )

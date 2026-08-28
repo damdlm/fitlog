@@ -4,7 +4,7 @@ em vez de 'N/A'. Reproduz de ponta a ponta (requisição HTTP real) o bug
 relatado, usando o mesmo caminho que o navegador percorre."""
 from datetime import date
 
-from models import db, User, Treino, VersaoGlobal, TreinoVersao, VersaoExercicio, ExercicioSistema
+from models import db, User, VersaoGlobal, TreinoVersao, VersaoExercicio, ExercicioSistema
 
 
 def test_registrar_treino_mostra_musculo_do_catalogo(client):
@@ -17,15 +17,12 @@ def test_registrar_treino_mostra_musculo_do_catalogo(client):
         ex_sistema = ExercicioSistema(id_original='0099', nome='Supino Reto', grupo_muscular='Peito')
         db.session.add(ex_sistema)
 
-        treino = Treino(user_id=user.id, codigo='A', nome='Treino A', descricao='Treino A')
-        db.session.add(treino)
-
         versao = VersaoGlobal(numero_versao=1, descricao='V1', divisao='ABC',
                                data_inicio=date.today(), user_id=user.id)
         db.session.add(versao)
         db.session.flush()
 
-        treino_versao = TreinoVersao(versao_id=versao.id, treino_id=treino.id, nome_treino='Treino A')
+        treino_versao = TreinoVersao(versao_id=versao.id, codigo='A', nome_treino='Treino A')
         db.session.add(treino_versao)
         db.session.flush()
 
@@ -33,12 +30,12 @@ def test_registrar_treino_mostra_musculo_do_catalogo(client):
         db.session.commit()
 
         user_id = user.id
-        treino_id = treino.id
+        treino_versao_id = treino_versao.id
 
     client.post('/auth/login', data={'username': 'aluno_reg', 'password': '123456'})
 
     hoje = date.today().strftime('%Y-%m-%d')
-    resp = client.get(f'/registrar/registrar-treino?data={hoje}&treino={treino_id}')
+    resp = client.get(f'/registrar/registrar-treino?data={hoje}&treino={treino_versao_id}')
 
     assert resp.status_code == 200
     html = resp.get_data(as_text=True)

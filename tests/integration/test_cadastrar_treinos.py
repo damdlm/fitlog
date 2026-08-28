@@ -12,7 +12,7 @@ não em cobertura visual/HTML.
 import pytest
 from datetime import date, timedelta
 
-from models import db, User, VersaoGlobal, TreinoVersao, Treino, ExercicioUsuario
+from models import db, User, VersaoGlobal, TreinoVersao, ExercicioUsuario
 
 
 def _criar_aluno(username='aluno1', email='aluno1@teste.com'):
@@ -108,7 +108,7 @@ class TestAdicionarTreinoLivre:
             tv = TreinoVersao.query.filter_by(versao_id=versao_id).first()
             assert tv is not None
             assert tv.nome_treino == 'Peito e Tríceps'
-            assert tv.treino_ref.codigo == 'A'
+            assert tv.codigo == 'A'
 
     def test_codigos_sequenciais_para_multiplos_treinos(self, aluno_client, app, aluno):
         self._criar_versao(aluno_client)
@@ -120,7 +120,7 @@ class TestAdicionarTreinoLivre:
             })
         with app.app_context():
             codigos = sorted(
-                tv.treino_ref.codigo for tv in TreinoVersao.query.filter_by(versao_id=versao_id).all()
+                tv.codigo for tv in TreinoVersao.query.filter_by(versao_id=versao_id).all()
             )
             assert codigos == ['A', 'B', 'C']
 
@@ -225,10 +225,7 @@ class TestSalvarExerciciosEIdor:
             )
             db.session.add(versao_outro)
             db.session.commit()
-            treino_outro = Treino(codigo='A', nome='X', descricao='X', user_id=outro_aluno)
-            db.session.add(treino_outro)
-            db.session.commit()
-            tv_outro = TreinoVersao(versao_id=versao_outro.id, treino_id=treino_outro.id, nome_treino='X')
+            tv_outro = TreinoVersao(versao_id=versao_outro.id, codigo='A', nome_treino='X')
             db.session.add(tv_outro)
             db.session.commit()
             versao_outro_id, tv_outro_id = versao_outro.id, tv_outro.id
@@ -387,10 +384,7 @@ class TestRemoverTreinoLivre:
             )
             db.session.add(versao_outro)
             db.session.commit()
-            treino_outro = Treino(codigo='A', nome='X', descricao='X', user_id=outro_aluno)
-            db.session.add(treino_outro)
-            db.session.commit()
-            tv_outro = TreinoVersao(versao_id=versao_outro.id, treino_id=treino_outro.id, nome_treino='X')
+            tv_outro = TreinoVersao(versao_id=versao_outro.id, codigo='A', nome_treino='X')
             db.session.add(tv_outro)
             db.session.commit()
             versao_outro_id, tv_outro_id = versao_outro.id, tv_outro.id

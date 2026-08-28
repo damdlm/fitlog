@@ -108,7 +108,6 @@ class User(UserMixin, db.Model):
     aparecer_no_ranking = db.Column(db.Boolean, nullable=False, default=True)
     
     # Relacionamentos
-    treinos = db.relationship('Treino', backref='usuario', lazy=True, cascade='all, delete-orphan')
     versoes = db.relationship('VersaoGlobal', backref='usuario', lazy=True, cascade='all, delete-orphan')
     registros = db.relationship('RegistroTreino', backref='usuario', lazy=True, cascade='all, delete-orphan')
     
@@ -409,25 +408,6 @@ class EventoWebhookAsaas(db.Model):
 # MODELOS DE DADOS
 # =====================================================
 
-class Treino(db.Model):
-    __tablename__ = 'treinos'
-    id = db.Column(db.Integer, primary_key=True)
-    codigo = db.Column(db.String(1), nullable=False)
-    nome = db.Column(db.String(100), nullable=False)
-    descricao = db.Column(db.String(100), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    
-    versoes = db.relationship('TreinoVersao', backref='treino_ref', lazy=True, cascade='all, delete-orphan')
-    registros = db.relationship('RegistroTreino', backref='treino_ref', lazy=True, cascade='all, delete-orphan')
-    
-    __table_args__ = (
-        db.UniqueConstraint('user_id', 'codigo', name='unique_treino_por_usuario'),
-        db.Index('idx_treino_user', 'user_id'),
-        db.Index('idx_treino_codigo', 'codigo'),
-    )
-
-
 class VersaoGlobal(db.Model):
     __tablename__ = 'versoes_globais'
     id = db.Column(db.Integer, primary_key=True)
@@ -449,23 +429,41 @@ class VersaoGlobal(db.Model):
 
 
 class TreinoVersao(db.Model):
+    """Um treino (letra A, B, C...) dentro de uma versão do usuário.
+
+    A identidade do treino (código, nome, descrição) vive inteiramente
+    aqui, por versão -- não existe mais uma tabela "treinos" compartilhada
+    entre versões. Cada versão tem seus próprios treinos, com sua própria
+    letra, criada automaticamente em sequência (A, B, C...) conforme os
+    treinos são adicionados na tela "Cadastrar Treinos".
+    """
     __tablename__ = 'treinos_versao'
     id = db.Column(db.Integer, primary_key=True)
     versao_id = db.Column(db.Integer, db.ForeignKey('versoes_globais.id', ondelete='CASCADE'), nullable=False)
-    treino_id = db.Column(db.Integer, db.ForeignKey('treinos.id', ondelete='CASCADE'), nullable=False)
+    codigo = db.Column(db.String(1), nullable=False)
     nome_treino = db.Column(db.String(100), nullable=False)
     descricao_treino = db.Column(db.String(200))
     ordem = db.Column(db.Integer, default=0)
-    
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
     exercicios = db.relationship(
         'VersaoExercicio', back_populates='treino_versao', lazy=True,
         cascade='all, delete-orphan', order_by='VersaoExercicio.ordem'
     )
-    
+
+    @property
+    def nome(self):
+        """Alias de compatibilidade com o antigo campo Treino.nome."""
+        return self.nome_treino
+
+    @property
+    def descricao(self):
+        """Alias de compatibilidade com o antigo campo Treino.descricao."""
+        return self.descricao_treino
+
     __table_args__ = (
-        db.UniqueConstraint('versao_id', 'treino_id', name='unique_treino_na_versao'),
+        db.UniqueConstraint('versao_id', 'codigo', name='unique_treino_na_versao'),
         db.Index('idx_treino_versao_versao', 'versao_id'),
-        db.Index('idx_treino_versao_treino', 'treino_id'),
     )
 
 
@@ -534,7 +532,7 @@ class RegistroTreino(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    treino_id = db.Column(db.Integer, db.ForeignKey('treinos.id'), nullable=False)
+    treino_versao_id = db.Column(db.Integer, db.ForeignKey('treinos_versao.id', ondelete='CASCADE'), nullable=False)
     versao_id = db.Column(db.Integer, db.ForeignKey('versoes_globais.id'), nullable=False)
 
     periodo = db.Column(db.String(50), nullable=False)
@@ -570,6 +568,12 @@ class RegistroTreino(db.Model):
         cascade='all, delete-orphan'
     )
 
+    treino_ref = db.relationship(
+        'TreinoVersao',
+        backref='registros',
+        lazy=True
+    )
+
     exercicio = db.relationship(
         'ExercicioUsuario',
         foreign_keys=[exercicio_usuario_id],
@@ -589,7 +593,7 @@ class RegistroTreino(db.Model):
             name='check_registro_exactly_one_exercicio'
         ),
         db.Index('idx_registro_user_data', 'user_id', 'data_registro'),
-        db.Index('idx_registro_busca', 'user_id', 'treino_id', 'periodo', 'semana'),
+        db.Index('idx_registro_busca', 'user_id', 'treino_versao_id', 'periodo', 'semana'),
         db.Index('idx_registro_exercicio_usuario', 'exercicio_usuario_id'),
         db.Index('idx_registro_exercicio_base', 'exercicio_base_id'),
         db.Index('idx_registro_versao', 'versao_id'),

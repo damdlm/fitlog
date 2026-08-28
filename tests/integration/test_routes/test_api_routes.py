@@ -2,17 +2,17 @@
 Testes de regressão para as rotas VIVAS de routes/api_routes.py.
 
 Antes de escrever testes, foi feita uma triagem no frontend
-(templates + JS): das 12 rotas do arquivo, 5 não são chamadas por
-nenhum template/JS (evolucao/<id>, criar-exercicio, e as 3 de
-catalogo/*) -- ficaram de fora aqui de propósito, por serem código
-morto (não vale testar o que nunca roda). /debug/rotas é utilitário
-de dev, também fora do escopo.
+(templates + JS): das rotas do arquivo, algumas não são chamadas por
+nenhum template/JS (evolucao/<id>, e as de catalogo/*) -- ficaram de
+fora aqui de propósito, por serem código morto (não vale testar o que
+nunca roda). /debug/rotas é utilitário de dev, também fora do escopo.
+/api/verificar-treino foi removida junto com a tela "Meus Treinos"
+(treino deixou de ter um código único por usuário -- agora é só único
+dentro da versão).
 """
 from datetime import date
 
-from models import db, User, Musculo, ExercicioUsuario, RegistroTreino, HistoricoTreino
-from services.versao_service import VersaoService
-from services.treino_service import TreinoService
+from models import db, User, Musculo, ExercicioUsuario, TreinoVersao, VersaoGlobal, VersaoExercicio, RegistroTreino, HistoricoTreino
 from services.billing_service import BillingService
 
 
@@ -35,6 +35,28 @@ def _login(client, username):
     return client.post('/auth/login', data={'username': username, 'password': '123456'})
 
 
+def _criar_versao_com_treino(user_id, codigo='A', usuario_ids=None, base_ids=None):
+    """Cria versão + treino (TreinoVersao) + associa exercícios, direto
+    no banco -- equivalente ao que VersaoService.adicionar_treino_livre
+    faz na tela "Cadastrar Treinos"."""
+    versao = VersaoGlobal(numero_versao=1, descricao='Bloco', divisao='ABC',
+                           data_inicio=date(2026, 1, 1), user_id=user_id)
+    db.session.add(versao)
+    db.session.commit()
+
+    treino = TreinoVersao(versao_id=versao.id, codigo=codigo, nome_treino=f'Treino {codigo}', descricao_treino='d')
+    db.session.add(treino)
+    db.session.commit()
+
+    for idx, ex_id in enumerate(usuario_ids or []):
+        db.session.add(VersaoExercicio(treino_versao_id=treino.id, exercicio_usuario_id=ex_id, ordem=idx))
+    for idx, ex_id in enumerate(base_ids or [], start=len(usuario_ids or [])):
+        db.session.add(VersaoExercicio(treino_versao_id=treino.id, exercicio_base_id=ex_id, ordem=idx))
+    db.session.commit()
+
+    return versao, treino
+
+
 class TestApiProgresso:
     def test_sem_registros_retorna_listas_vazias(self, client, app):
         with app.app_context():
@@ -52,16 +74,15 @@ class TestApiProgresso:
             musc = Musculo(nome=f'm_{u.id}', nome_exibicao='Peito')
             db.session.add(musc)
             db.session.commit()
-            versao = VersaoService.create('Bloco', date(2026, 1, 1), user_id=u.id)
-            treino = TreinoService.create('A', 'Treino A', 'd', user_id=u.id)
             ex = ExercicioUsuario(usuario_id=u.id, nome='Supino', musculo_id=musc.id)
             db.session.add(ex)
             db.session.commit()
+            versao, treino = _criar_versao_com_treino(u.id, usuario_ids=[ex.id])
 
             from datetime import datetime, timezone
             hoje = datetime.now(timezone.utc)
             reg = RegistroTreino(
-                treino_id=treino.id, versao_id=versao.id, periodo='agosto/2026', semana=1,
+                treino_versao_id=treino.id, versao_id=versao.id, periodo='agosto/2026', semana=1,
                 exercicio_usuario_id=ex.id, data_registro=hoje, user_id=u.id
             )
             db.session.add(reg)
@@ -102,40 +123,6 @@ class TestApiBuscarMusculo:
         assert resp.get_json()['encontrado'] is False
 
 
-class TestApiVerificarTreino:
-    def test_codigo_inexistente(self, client, app):
-        with app.app_context():
-            _criar_usuario('api_verif_1')
-        _login(client, 'api_verif_1')
-
-        resp = client.get('/api/verificar-treino?id=Z')
-        assert resp.get_json() == {"existe": False}
-
-    def test_codigo_existente_do_proprio_usuario(self, client, app):
-        with app.app_context():
-            u = _criar_usuario('api_verif_2')
-            TreinoService.create('A', 'Treino A', 'd', user_id=u.id)
-        _login(client, 'api_verif_2')
-
-        resp = client.get('/api/verificar-treino?id=A')
-        assert resp.get_json() == {"existe": True}
-
-    def test_nao_ve_codigo_de_outro_usuario(self, client, app):
-        """Isolamento: current_user implícito no TreinoService.get_by_codigo."""
-        with app.app_context():
-            _criar_usuario('api_verif_a')
-            b = _criar_usuario('api_verif_b')
-            TreinoService.create('A', 'Treino do B', 'd', user_id=b.id)
-        _login(client, 'api_verif_a')
-
-        resp = client.get('/api/verificar-treino?id=A')
-        assert resp.get_json() == {"existe": False}
-
-    def test_requer_login(self, client):
-        resp = client.get('/api/verificar-treino?id=A')
-        assert resp.status_code == 302
-
-
 class TestApiVersaoExercicios:
     def test_retorna_exercicios_da_versao(self, client, app):
         with app.app_context():
@@ -143,12 +130,10 @@ class TestApiVersaoExercicios:
             musc = Musculo(nome=f'm_{u.id}', nome_exibicao='Peito')
             db.session.add(musc)
             db.session.commit()
-            versao = VersaoService.create('Bloco', date(2026, 1, 1), user_id=u.id)
-            TreinoService.create('A', 'Treino A', 'd', user_id=u.id)
             ex = ExercicioUsuario(usuario_id=u.id, nome='Supino', musculo_id=musc.id)
             db.session.add(ex)
             db.session.commit()
-            VersaoService.adicionar_treino(versao.id, 'A', 'Treino A', 'd', [ex.id], [], user_id=u.id)
+            versao, treino = _criar_versao_com_treino(u.id, usuario_ids=[ex.id])
             versao_id = versao.id
 
         _login(client, 'api_ve_1')
@@ -191,13 +176,11 @@ class TestApiReordenarExercicios:
             musc = Musculo(nome=f'm_{u.id}', nome_exibicao='Peito')
             db.session.add(musc)
             db.session.commit()
-            versao = VersaoService.create('Bloco', date(2026, 1, 1), user_id=u.id)
-            TreinoService.create('A', 'Treino A', 'd', user_id=u.id)
             ex1 = ExercicioUsuario(usuario_id=u.id, nome='Supino', musculo_id=musc.id)
             ex2 = ExercicioUsuario(usuario_id=u.id, nome='Crucifixo', musculo_id=musc.id)
             db.session.add_all([ex1, ex2])
             db.session.commit()
-            VersaoService.adicionar_treino(versao.id, 'A', 'Treino A', 'd', [ex1.id, ex2.id], [], user_id=u.id)
+            versao, treino = _criar_versao_com_treino(u.id, usuario_ids=[ex1.id, ex2.id])
             versao_id = versao.id
             nova_ordem = [f'u_{ex2.id}', f'u_{ex1.id}']
 

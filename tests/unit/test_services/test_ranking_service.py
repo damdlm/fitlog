@@ -7,7 +7,7 @@ de professores/inativos/opt-out, e ignorar datas futuras.
 """
 from datetime import date, datetime, timedelta, timezone
 
-from models import db, User, Musculo, ExercicioUsuario, Treino, VersaoGlobal, RegistroTreino, HistoricoTreino
+from models import db, User, Musculo, ExercicioUsuario, TreinoVersao, VersaoGlobal, RegistroTreino, HistoricoTreino
 from services.ranking_service import RankingService, DURACAO_MAXIMA_VALIDA_SEGUNDOS
 from services.base_service import CacheService
 
@@ -22,11 +22,12 @@ def _criar_aluno(email, tipo_usuario='aluno', ativo=True, aparecer_no_ranking=Tr
 
 
 def _criar_treino_e_versao(user):
-    treino = Treino(user_id=user.id, codigo='A', nome='Treino A', descricao='')
-    db.session.add(treino)
     versao = VersaoGlobal(numero_versao=1, descricao='V1', divisao='ABC',
                            data_inicio=date.today(), user_id=user.id)
     db.session.add(versao)
+    db.session.flush()
+    treino = TreinoVersao(versao_id=versao.id, codigo='A', nome_treino='Treino A', descricao_treino='')
+    db.session.add(treino)
     db.session.flush()
     return treino, versao
 
@@ -47,7 +48,7 @@ def _criar_sessao(user, treino, versao, dia, tempo_treino_segundos, num_exercici
         db.session.flush()
 
         registro = RegistroTreino(
-            treino_id=treino.id, versao_id=versao.id, periodo='manha', semana=1,
+            treino_versao_id=treino.id, versao_id=versao.id, periodo='manha', semana=1,
             user_id=user.id, exercicio_usuario_id=ex.id,
             data_registro=datetime.combine(dia, datetime.min.time()).replace(hour=10),
         )
@@ -152,7 +153,7 @@ def test_multiplas_sessoes_no_mesmo_dia_usa_a_maior_nao_soma(app, db):
             db.session.add(ex)
             db.session.flush()
             registro = RegistroTreino(
-                treino_id=treino.id, versao_id=versao.id, periodo='manha', semana=1,
+                treino_versao_id=treino.id, versao_id=versao.id, periodo='manha', semana=1,
                 user_id=aluno.id, exercicio_usuario_id=ex.id,
                 data_registro=datetime.combine(hoje, datetime.min.time()).replace(hour=10),
             )

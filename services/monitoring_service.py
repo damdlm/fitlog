@@ -23,7 +23,7 @@ import time
 import logging
 from datetime import datetime, timezone
 
-from models import db, User, Treino, RegistroTreino, Assinatura
+from models import db, User, TreinoVersao, RegistroTreino, Assinatura
 
 logger = logging.getLogger(__name__)
 
@@ -294,7 +294,7 @@ class MonitoringService:
             total_alunos = User.query.filter_by(ativo=True, tipo_usuario="aluno").count()
             total_professores = User.query.filter_by(ativo=True, tipo_usuario="professor").count()
 
-            total_treinos = Treino.query.count()
+            total_treinos = TreinoVersao.query.count()
 
             hoje = datetime.now(timezone.utc).date()
             registros_hoje = RegistroTreino.query.filter(

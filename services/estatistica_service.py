@@ -140,7 +140,7 @@ class EstatisticaService(BaseService):
             agregados_por_treino = {}
             if user_id_resolvido:
                 agregados = db.session.query(
-                    RegistroTreino.treino_id.label('treino_id'),
+                    RegistroTreino.treino_versao_id.label('treino_versao_id'),
                     db.func.count(db.distinct(RegistroTreino.exercicio_usuario_id)).label('qtd_ex_personalizados'),
                     db.func.count(db.distinct(RegistroTreino.exercicio_base_id)).label('qtd_ex_sistema'),
                     db.func.count(db.distinct(RegistroTreino.id)).label('qtd_registros'),
@@ -149,9 +149,9 @@ class EstatisticaService(BaseService):
                 ).select_from(RegistroTreino)\
                  .outerjoin(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
                  .filter(RegistroTreino.user_id == user_id_resolvido)\
-                 .group_by(RegistroTreino.treino_id)\
+                 .group_by(RegistroTreino.treino_versao_id)\
                  .all()
-                agregados_por_treino = {a.treino_id: a for a in agregados}
+                agregados_por_treino = {a.treino_versao_id: a for a in agregados}
 
             treino_stats = {}
             for t in treinos:
@@ -196,7 +196,7 @@ class EstatisticaService(BaseService):
              .group_by(RegistroTreino.periodo, RegistroTreino.semana)
             
             if treino_id:
-                query = query.filter(RegistroTreino.treino_id == treino_id)
+                query = query.filter(RegistroTreino.treino_versao_id == treino_id)
             
             resultado = query.order_by(RegistroTreino.periodo, RegistroTreino.semana).all()
             CacheService.set(cache_key, resultado, ttl_seconds=ESTATISTICA_CACHE_TTL_SEGUNDOS)
@@ -234,7 +234,7 @@ class EstatisticaService(BaseService):
              .group_by(func.date(RegistroTreino.data_registro))
 
             if treino_id:
-                query = query.filter(RegistroTreino.treino_id == treino_id)
+                query = query.filter(RegistroTreino.treino_versao_id == treino_id)
 
             resultado = query.order_by(func.date(RegistroTreino.data_registro)).all()
             CacheService.set(cache_key, resultado, ttl_seconds=ESTATISTICA_CACHE_TTL_SEGUNDOS)
@@ -271,7 +271,7 @@ class EstatisticaService(BaseService):
                         'series': [{'carga': float(s.carga), 'repeticoes': s.repeticoes} for s in r.series],
                         'periodo': r.periodo,
                         'semana': r.semana,
-                        'treino_id': r.treino_id,
+                        'treino_id': r.treino_versao_id,
                         'versao_id': r.versao_id,
                         'data_registro': r.data_registro.isoformat() if r.data_registro else None
                     }

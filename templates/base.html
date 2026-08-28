@@ -1085,13 +1085,6 @@
                                     <span class="mega-desc">Exercícios e treinos disponíveis pra todo mundo</span>
                                 </span>
                             </a>
-                            <a class="mega-card" href="{{ url_for('version.gerenciar_versoes_global') }}">
-                                <span class="mega-icon"><i class="bi bi-clock-history"></i></span>
-                                <span>
-                                    <span class="mega-title">Versões Globais</span>
-                                    <span class="mega-desc">Publique e organize versões do catálogo</span>
-                                </span>
-                            </a>
                             <a class="mega-card" href="{{ url_for('admin.contas') }}">
                                 <span class="mega-icon"><i class="bi bi-cash-coin"></i></span>
                                 <span>
@@ -1216,20 +1209,6 @@
                                         <span>
                                             <span class="mega-title">Meus Exercícios</span>
                                             <span class="mega-desc">Catálogo pessoal de exercícios</span>
-                                        </span>
-                                    </a>
-                                    <a class="mega-card" href="{{ url_for('aluno.treinos') }}">
-                                        <span class="mega-icon"><i class="bi bi-trophy"></i></span>
-                                        <span>
-                                            <span class="mega-title">Meus Treinos</span>
-                                            <span class="mega-desc">Fichas A, B, C...</span>
-                                        </span>
-                                    </a>
-                                    <a class="mega-card" href="{{ url_for('aluno.versoes') }}">
-                                        <span class="mega-icon"><i class="bi bi-clock-history"></i></span>
-                                        <span>
-                                            <span class="mega-title">Minhas Versões</span>
-                                            <span class="mega-desc">Histórico de planos de treino</span>
                                         </span>
                                     </a>
                                     {% if current_user.is_aluno() %}
@@ -1380,7 +1359,6 @@
             <div class="mais-section">
                 <span class="mais-section-label">Administração</span>
                 <a class="mais-link" href="{{ url_for('admin.gerenciar') }}"><i class="bi bi-database"></i> Catálogo Global</a>
-                <a class="mais-link" href="{{ url_for('version.gerenciar_versoes_global') }}"><i class="bi bi-clock-history"></i> Versões Globais</a>
                 <a class="mais-link" href="{{ url_for('admin.contas') }}"><i class="bi bi-cash-coin"></i> Contas e Cobrança</a>
                 <a class="mais-link" href="{{ url_for('admin.monitoramento') }}"><i class="bi bi-activity"></i> Monitoramento</a>
             </div>
@@ -1390,8 +1368,6 @@
             <!-- <span class="mais-section-label">Treino</span> -->
                 <a class="mais-link" href="{{ url_for('aluno.cadastrar_treinos') }}"><i class="bi bi-clipboard2-plus"></i> Cadastrar Treinos</a>
                 <a class="mais-link" href="{{ url_for('aluno.exercicios') }}"><i class="bi bi-list-check"></i> Meus Exercícios</a>
-                <a class="mais-link" href="{{ url_for('aluno.treinos') }}"><i class="bi bi-trophy"></i> Meus Treinos</a>
-                <a class="mais-link" href="{{ url_for('aluno.versoes') }}"><i class="bi bi-clock-history"></i> Minhas Versões</a>
                 <a class="mais-link" href="{{ url_for('aluno.ranking') }}"><i class="bi bi-trophy-fill"></i> Melhores Alunos</a>
             </div>
         </div>

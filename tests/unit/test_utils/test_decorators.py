@@ -1,8 +1,10 @@
 """Testes unitários para utils/decorators.py"""
+from datetime import date
+
 from flask import Flask
 from flask_login import login_user
 
-from models import db, User, Treino
+from models import db, User, VersaoGlobal
 from utils.decorators import (
     admin_required,
     professor_required,
@@ -165,7 +167,7 @@ class TestOwnerOrAdmin:
         with app.app_context():
             admin_id = _criar_usuario('dec_owner_admin', is_admin=True).id
             dono = _criar_usuario('dec_owner_dono')
-            treino = Treino(codigo='A', nome='T', descricao='d', user_id=dono.id)
+            treino = VersaoGlobal(numero_versao=1, descricao='T', divisao='ABC', data_inicio=date(2026, 1, 1), user_id=dono.id)
             db.session.add(treino)
             db.session.commit()
             treino_id = treino.id
@@ -173,7 +175,7 @@ class TestOwnerOrAdmin:
         with app.test_request_context():
             login_user(db.session.get(User, admin_id))
 
-            @owner_or_admin(lambda: db.session.get(Treino, treino_id))
+            @owner_or_admin(lambda: db.session.get(VersaoGlobal, treino_id))
             def view():
                 return 'ok'
 
@@ -196,7 +198,7 @@ class TestOwnerOrAdmin:
     def test_permite_acesso_se_dono_user_id(self, app):
         with app.app_context():
             dono = _criar_usuario('dec_owner_dono2')
-            treino = Treino(codigo='A', nome='T', descricao='d', user_id=dono.id)
+            treino = VersaoGlobal(numero_versao=1, descricao='T', divisao='ABC', data_inicio=date(2026, 1, 1), user_id=dono.id)
             db.session.add(treino)
             db.session.commit()
             treino_id, dono_id = treino.id, dono.id
@@ -204,7 +206,7 @@ class TestOwnerOrAdmin:
         with app.test_request_context():
             login_user(db.session.get(User, dono_id))
 
-            @owner_or_admin(lambda: db.session.get(Treino, treino_id))
+            @owner_or_admin(lambda: db.session.get(VersaoGlobal, treino_id))
             def view():
                 return 'ok'
 
@@ -214,7 +216,7 @@ class TestOwnerOrAdmin:
         with app.app_context():
             dono = _criar_usuario('dec_owner_dono3')
             outro_id = _criar_usuario('dec_owner_outro').id
-            treino = Treino(codigo='A', nome='T', descricao='d', user_id=dono.id)
+            treino = VersaoGlobal(numero_versao=1, descricao='T', divisao='ABC', data_inicio=date(2026, 1, 1), user_id=dono.id)
             db.session.add(treino)
             db.session.commit()
             treino_id = treino.id
@@ -222,7 +224,7 @@ class TestOwnerOrAdmin:
         with app.test_request_context():
             login_user(db.session.get(User, outro_id))
 
-            @owner_or_admin(lambda: db.session.get(Treino, treino_id))
+            @owner_or_admin(lambda: db.session.get(VersaoGlobal, treino_id))
             def view():
                 return 'ok'
 

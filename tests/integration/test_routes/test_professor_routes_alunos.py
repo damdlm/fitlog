@@ -9,7 +9,7 @@ estatísticas e a API de busca.
 """
 from datetime import date, datetime, timezone
 
-from models import (db, User, AlunoProfessor, SolicitacaoVinculo, Treino, VersaoGlobal,
+from models import (db, User, AlunoProfessor, SolicitacaoVinculo, VersaoGlobal,
                      TreinoVersao, ExercicioUsuario, RegistroTreino)
 
 

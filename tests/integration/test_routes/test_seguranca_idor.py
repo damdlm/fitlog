@@ -17,7 +17,7 @@ from datetime import date, datetime, timezone
 
 from models import (
     db, User, AlunoProfessor, Musculo, ExercicioUsuario, ExercicioSistema,
-    Treino, VersaoGlobal, TreinoVersao, VersaoExercicio, RegistroTreino, HistoricoTreino,
+    VersaoGlobal, TreinoVersao, VersaoExercicio, RegistroTreino, HistoricoTreino,
 )
 from services.billing_service import BillingService
 
@@ -53,21 +53,19 @@ def _criar_treino_completo(user, codigo='A'):
     db.session.add(ex)
     db.session.commit()
 
-    treino = Treino(user_id=user.id, codigo=codigo, nome=f'Treino {codigo}', descricao='desc')
-    db.session.add(treino)
     versao = VersaoGlobal(numero_versao=1, descricao='V1', divisao='ABC',
                            data_inicio=date.today(), user_id=user.id)
     db.session.add(versao)
     db.session.commit()
 
-    tv = TreinoVersao(versao_id=versao.id, treino_id=treino.id, nome_treino=treino.nome, descricao_treino='')
+    tv = TreinoVersao(versao_id=versao.id, codigo=codigo, nome_treino=f'Treino {codigo}', descricao_treino='')
     db.session.add(tv)
     db.session.commit()
     db.session.add(VersaoExercicio(treino_versao_id=tv.id, exercicio_usuario_id=ex.id, ordem=1))
     db.session.commit()
 
     registro = RegistroTreino(
-        treino_id=treino.id, versao_id=versao.id, periodo='manha', semana=1,
+        treino_versao_id=tv.id, versao_id=versao.id, periodo='manha', semana=1,
         exercicio_usuario_id=ex.id, data_registro=datetime.now(timezone.utc), user_id=user.id,
     )
     db.session.add(registro)
@@ -75,25 +73,11 @@ def _criar_treino_completo(user, codigo='A'):
     db.session.add(HistoricoTreino(registro_id=registro.id, carga=100, repeticoes=10))
     db.session.commit()
 
-    return {'treino': treino, 'versao': versao, 'exercicio': ex, 'registro': registro}
+    return {'treino': tv, 'versao': versao, 'exercicio': ex, 'registro': registro}
 
 
 class TestAcessoEntreUsuariosComuns:
     """Teste 1, 2, 3: usuário A não acessa treino/histórico/estatística de B."""
-
-    def test_usuario_nao_acessa_treino_de_outro(self, client, app):
-        with app.app_context():
-            a = _criar_usuario('user_a_treino')
-            b = _criar_usuario('user_b_treino')
-            dados_b = _criar_treino_completo(b)
-            treino_b_id = dados_b['treino'].id
-
-        _login(client, 'user_a_treino')
-        # tentativa de excluir o treino de B via rota de auto-gerenciamento
-        resp = client.post(f'/admin/excluir/treino/{treino_b_id}', follow_redirects=True)
-        assert resp.status_code == 200
-        with app.app_context():
-            assert db.session.get(Treino, treino_b_id) is not None  # não foi excluído
 
     def test_usuario_nao_acessa_historico_de_outro_via_evento_calendario(self, client, app):
         with app.app_context():
@@ -133,7 +117,7 @@ class TestProfessorAluno:
             aluno_id = aluno.id
 
         _login(client, 'prof_seg')
-        resp = client.get(f'/professor/aluno/{aluno_id}/treinos')
+        resp = client.get(f'/professor/aluno/{aluno_id}/exercicios')
         assert resp.status_code == 200
 
     def test_professor_nao_acessa_aluno_nao_vinculado(self, client, app):
@@ -144,7 +128,7 @@ class TestProfessorAluno:
             aluno_id = aluno_alheio.id
 
         _login(client, 'prof_seg2')
-        resp = client.get(f'/professor/aluno/{aluno_id}/treinos', follow_redirects=True)
+        resp = client.get(f'/professor/aluno/{aluno_id}/exercicios', follow_redirects=True)
         assert resp.status_code == 200
         assert b'permiss\xc3\xa3o' in resp.data.lower() or b'permissao' in resp.data.lower()
 
@@ -244,38 +228,6 @@ class TestIDOR:
         resp = client.get('/api/versao-exercicios/999999')
         assert resp.status_code == 200
         assert resp.get_json() == []
-
-    def test_treino_id_de_outro_usuario_nao_e_editavel(self, client, app):
-        with app.app_context():
-            atacante = _criar_usuario('idor_treino_atacante')
-            vitima = _criar_usuario('idor_treino_vitima')
-            dados_vitima = _criar_treino_completo(vitima)
-            treino_vitima_id = dados_vitima['treino'].id
-
-        _login(client, 'idor_treino_atacante')
-        resp = client.post(
-            f'/admin/excluir/treino/{treino_vitima_id}',
-            follow_redirects=True,
-        )
-        assert resp.status_code == 200
-        with app.app_context():
-            assert db.session.get(Treino, treino_vitima_id) is not None
-
-    def test_treino_id_excluido_nao_e_reeditavel(self, client, app):
-        with app.app_context():
-            user = _criar_usuario('idor_excluido')
-            dados = _criar_treino_completo(user, codigo='B')
-            treino_id = dados['treino'].id
-            registro = dados['registro']
-            # remove o registro/histórico antes, já que o treino tem FK
-            db.session.delete(registro)
-            db.session.commit()
-            db.session.delete(dados['treino'])
-            db.session.commit()
-
-        _login(client, 'idor_excluido')
-        resp = client.post(f'/admin/excluir/treino/{treino_id}', follow_redirects=True)
-        assert resp.status_code == 200  # não deve quebrar (500) num ID já excluído
 
     def test_evento_calendario_id_sem_relacionamento(self, client, app):
         """Usuário sem nenhum vínculo com o dono do registro."""

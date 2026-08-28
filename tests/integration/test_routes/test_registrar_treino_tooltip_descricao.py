@@ -9,7 +9,7 @@ o JS lê o nome a partir do data-full-nome já usado pelo truncamento).
 from datetime import date
 
 from models import (
-    db, User, Treino, VersaoGlobal, TreinoVersao, VersaoExercicio,
+    db, User, VersaoGlobal, TreinoVersao, VersaoExercicio,
     ExercicioUsuario, ExercicioSistema, Musculo,
 )
 
@@ -28,15 +28,12 @@ def _login(client, username):
 
 
 def _montar_treino(user, ex_usuario=None, ex_base=None):
-    treino = Treino(user_id=user.id, codigo='A', nome='Treino A', descricao='Treino A')
-    db.session.add(treino)
-
     versao = VersaoGlobal(numero_versao=1, descricao='V1', divisao='ABC',
                            data_inicio=date(2026, 1, 1), user_id=user.id)
     db.session.add(versao)
     db.session.flush()
 
-    treino_versao = TreinoVersao(versao_id=versao.id, treino_id=treino.id, nome_treino='Treino A')
+    treino_versao = TreinoVersao(versao_id=versao.id, codigo='A', nome_treino='Treino A')
     db.session.add(treino_versao)
     db.session.flush()
 
@@ -49,7 +46,7 @@ def _montar_treino(user, ex_usuario=None, ex_base=None):
         db.session.add(VersaoExercicio(treino_versao_id=treino_versao.id,
                                         exercicio_base_id=ex_base.id, ordem=ordem))
     db.session.commit()
-    return treino
+    return treino_versao
 
 
 class TestBadgeDeMusculoRemovido:

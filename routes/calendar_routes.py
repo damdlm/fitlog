@@ -117,7 +117,7 @@ def api_eventos():
             volumes_por_dia[data_str]['exercicios'] += 1
             
             # Adicionar detalhe do treino
-            treino = treinos_por_id.get(r.treino_id)
+            treino = treinos_por_id.get(r.treino_versao_id)
             
             # Nome do exercício (pode ser do catálogo do usuário ou global)
             exercicio_obj = r.exercicio if r.exercicio_usuario_id else r.exercicio_base
@@ -130,7 +130,7 @@ def api_eventos():
             
             volumes_por_dia[data_str]['treinos'].append({
                 'id': r.id,
-                'treino_id': r.treino_id,
+                'treino_id': r.treino_versao_id,
                 'treino_codigo': treino.codigo if treino else '?',
                 'treino_nome': treino.nome if treino else 'Treino',
                 'exercicio_nome': exercicio_nome,
@@ -196,7 +196,7 @@ def api_evento_detalhe(registro_id):
     # Buscar treino
     treino = None
     for t in TreinoService.get_all(user_id=registro.user_id):
-        if t.id == registro.treino_id:
+        if t.id == registro.treino_versao_id:
             treino = t
             break
 
