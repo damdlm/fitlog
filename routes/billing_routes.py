@@ -72,10 +72,36 @@ def minha_assinatura():
         # trocar entre Pró/Premium quando ambos já cobririam a
         # quantidade atual de alunos.
         contexto['planos_disponiveis'] = BillingService.planos_disponiveis_professor(current_user)
+        # Indicador "faltam N alunos pra próxima faixa" -- (None, 0)
+        # quando já está na faixa mais alta (Premium).
+        proxima_faixa, faltam = BillingService.proxima_faixa_professor(current_user)
+        contexto['proxima_faixa'] = proxima_faixa
+        contexto['alunos_faltam_proxima_faixa'] = faltam
     else:
         contexto['plano_oferecido'] = Plano.query.filter_by(codigo='aluno_fit', ativo=True).first()
 
     return render_template('billing/minha_assinatura.html', **contexto)
+
+
+@billing_bp.route('/minha-assinatura/faturas')
+@login_required
+def minhas_faturas():
+    """Histórico de faturas (pagas/pendentes/vencidas) do usuário
+    logado -- útil pro profissional que precisa de comprovante pra
+    contabilidade. Só chama o Asaas nessa rota específica (não na tela
+    principal de assinatura, que continua O(1) sem I/O externo -- ver
+    services/billing_service.py)."""
+    if not (current_user.is_aluno() or current_user.is_professor()):
+        return redirect(url_for('main.index'))
+
+    try:
+        faturas = BillingService.listar_faturas(current_user)
+    except (RuntimeError, requests.RequestException):
+        logger.exception('Falha ao buscar faturas Asaas para usuário %s', current_user.id)
+        flash('Não foi possível carregar o histórico de faturas agora. Tente novamente em instantes.', 'danger')
+        faturas = []
+
+    return render_template('billing/faturas.html', faturas=faturas)
 
 
 @billing_bp.route('/api/minha-assinatura')
@@ -200,8 +226,25 @@ def assinar():
         flash('Não foi possível iniciar a assinatura agora. Tente novamente em instantes.', 'danger')
         return redirect(url_for('billing.minha_assinatura'))
 
+    # forma_pagamento: 'cartao' (padrão, checkout hospedado com
+    # cobrança automática) ou 'pix' (assinatura via QR Code, pago
+    # manualmente a cada ciclo -- ver
+    # BillingService.criar_assinatura_checkout_pix). ciclo: 'mensal'
+    # (padrão) ou 'anual' (10x o valor mensal, 2 meses grátis). Sempre
+    # validados contra valores conhecidos -- nunca repassa direto o
+    # que veio do form pra Asaas.
+    forma_pagamento = request.form.get('forma_pagamento', 'cartao').strip()
+    if forma_pagamento not in ('cartao', 'pix'):
+        forma_pagamento = 'cartao'
+    ciclo = request.form.get('ciclo', 'mensal').strip()
+    if ciclo not in ('mensal', 'anual'):
+        ciclo = 'mensal'
+
     try:
-        checkout_url = BillingService.criar_assinatura_checkout(current_user, plano)
+        if forma_pagamento == 'pix':
+            checkout_url = BillingService.criar_assinatura_checkout_pix(current_user, plano, ciclo=ciclo)
+        else:
+            checkout_url = BillingService.criar_assinatura_checkout(current_user, plano, ciclo=ciclo)
     except AssinaturaAtualizadaError as e:
         # Usuário mudou de plano enquanto já estava ativo (ex: professor
         # cresceu de Pró pra Premium, ou escolheu voluntariamente upgrade/

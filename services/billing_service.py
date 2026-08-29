@@ -38,8 +38,15 @@ CARENCIA_DIAS_PROFESSOR_GESTAO = 15
 LIMITE_ALUNOS_GRATIS = 2
 REQUEST_TIMEOUT_SECONDS = 10
 
-PLANOS_GESTAO_PROFESSOR = ('professor_pro', 'professor_premium')
-ORDEM_PLANOS_GESTAO = {'professor_pro': 1, 'professor_premium': 2}
+PLANOS_GESTAO_PROFESSOR = ('professor_pro', 'professor_plus', 'professor_premium')
+ORDEM_PLANOS_GESTAO = {'professor_pro': 1, 'professor_plus': 2, 'professor_premium': 3}
+
+# Ciclo anual cobra o equivalente a (12 - MESES_GRATIS_ANUAL) meses de
+# uma vez -- "2 meses grátis" ao pagar o ano inteiro à vista. Vale só
+# como MULTIPLICADOR do preco_centavos mensal do Plano; não existe
+# linha de Plano separada pra anual (evita duplicar/dessincronizar a
+# tabela de planos -- ver Plano.preco_anual_centavos).
+MESES_GRATIS_ANUAL = 2
 
 ASAAS_BASE_URL_SANDBOX = "https://sandbox.asaas.com/api/v3"
 ASAAS_BASE_URL_PRODUCAO = "https://api.asaas.com/v3"
@@ -232,6 +239,39 @@ class BillingService:
                 if plano is not None:
                     planos.append(plano)
         return planos
+
+    @staticmethod
+    def proxima_faixa_professor(professor: User) -> tuple[Plano | None, int]:
+        """Pra alimentar o indicador "faltam N alunos pra próxima
+        faixa" na tela de assinatura. Retorna (None, 0) quando o
+        professor já está na faixa mais alta (Premium) -- não há
+        próxima faixa a mostrar. Baseado na faixa ATUAL pela contagem
+        de alunos (não pelo plano contratado), então funciona mesmo
+        pra quem ainda não assinou nada."""
+        total = BillingService.contar_alunos_ativos(professor)
+        atual = BillingService._plano_gestao_para_total(total)
+        ordem_atual = ORDEM_PLANOS_GESTAO.get(atual.codigo, 0) if atual else 0
+
+        proximo = (
+            Plano.query
+            .filter(
+                Plano.tipo_usuario == 'professor',
+                Plano.ativo.is_(True),
+                Plano.codigo.in_(PLANOS_GESTAO_PROFESSOR),
+                Plano.min_alunos > total,
+            )
+            .order_by(Plano.min_alunos.asc())
+            .first()
+        )
+        if proximo is None or ORDEM_PLANOS_GESTAO.get(proximo.codigo, 0) <= ordem_atual:
+            # Não deveria filtrar nada aqui de fato (min_alunos > total
+            # já garante que é uma faixa acima), a checagem de ordem é
+            # só uma trava extra contra inconsistência de dados na
+            # tabela planos (ex: min_alunos cadastrado fora de ordem).
+            if proximo is None:
+                return None, 0
+        faltam = proximo.min_alunos - total
+        return proximo, max(faltam, 0)
 
     @staticmethod
     def pode_cadastrar_aluno(professor: User) -> tuple[bool, str | None]:
@@ -440,7 +480,182 @@ class BillingService:
         return {'access_token': api_key, 'Content-Type': 'application/json'}
 
     @staticmethod
-    def criar_assinatura_checkout(usuario: User, plano: Plano) -> str:
+    def valor_ciclo_centavos(plano: Plano, ciclo: str) -> int:
+        """Valor a cobrar por ciclo, em centavos. 'anual' cobra
+        (12 - MESES_GRATIS_ANUAL) vezes o preço mensal, de uma vez só
+        -- mesma fórmula usada por Plano.preco_anual_centavos (que
+        existe só pra EXIBIÇÃO na tela; esta função é a fonte usada de
+        fato no valor mandado ao Asaas, pra nunca ficar dessincronizado
+        do que é mostrado)."""
+        if ciclo == 'anual':
+            return plano.preco_centavos * (12 - MESES_GRATIS_ANUAL)
+        return plano.preco_centavos
+
+    @staticmethod
+    def _obter_ou_criar_cliente_asaas(usuario: User, assinatura: Assinatura) -> str:
+        """Garante o cliente correspondente no Asaas e devolve seu id,
+        criando ou atualizando o cadastro conforme necessário. Extraído
+        de criar_assinatura_checkout pra ser reaproveitado também pelo
+        fluxo de assinatura via Pix (criar_assinatura_checkout_pix),
+        que precisa do mesmo cliente mas não passa pelo /checkouts
+        hospedado."""
+        dados_cliente = {
+            'name': usuario.nome_completo or usuario.username,
+            'email': usuario.email,
+            'cpfCnpj': usuario.cpf_cnpj,
+            'phone': re.sub(r'\D', '', usuario.telefone),
+            'postalCode': usuario.endereco_cep,
+            'addressNumber': usuario.endereco_numero,
+        }
+        customer_id = assinatura.gateway_customer_id
+        if not customer_id:
+            resp = requests.post(
+                f'{BillingService._base_url()}/customers',
+                json=dados_cliente,
+                headers=BillingService._headers(),
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+            BillingService._checar_resposta(resp, 'criar cliente')
+            customer_id = resp.json()['id']
+            assinatura.gateway_customer_id = customer_id
+            db.session.commit()
+        else:
+            resp = requests.put(
+                f'{BillingService._base_url()}/customers/{customer_id}',
+                json=dados_cliente,
+                headers=BillingService._headers(),
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+            BillingService._checar_resposta(resp, 'atualizar cliente')
+        return customer_id
+
+    @staticmethod
+    def criar_assinatura_checkout_pix(usuario: User, plano: Plano, ciclo: str = 'mensal') -> str:
+        """Alternativa ao checkout de cartão: cria a assinatura DIRETO
+        via POST /subscriptions com billingType='PIX', sem passar pela
+        página hospedada de /checkouts (que a própria API do Asaas
+        recusa combinar com Pix + RECURRENT -- ver o comentário em
+        criar_assinatura_checkout). Asaas não faz débito automático via
+        Pix: ele gera um novo QR Code/"linha" a cada vencimento do
+        ciclo, e quem assina precisa pagar manualmente todo mês (ou
+        ano). Por isso aqui devolvemos o invoiceUrl do PRIMEIRO
+        pagamento gerado, não um link de checkout -- é essa página que
+        mostra o QR Code pro usuário pagar.
+
+        IMPORTANTE -- não testado contra o Asaas (sandbox nem
+        produção): implementado seguindo o padrão documentado em
+        https://docs.asaas.com/reference/criar-nova-assinatura, mas o
+        próprio código deste arquivo registra que já foram necessárias
+        3 rodadas de erro 400 pra acertar o fluxo de cartão. Rodar
+        contra o sandbox e conferir principalmente: (1) se o primeiro
+        payment já vem no corpo da resposta de /subscriptions ou exige
+        um GET /payments?subscription={id} separado logo em seguida;
+        (2) o nome exato do campo com o QR Code/invoiceUrl na resposta.
+        """
+        faltando = BillingService.campos_cobranca_faltando(usuario)
+        if faltando:
+            raise DadosCobrancaIncompletosError(faltando)
+
+        assinatura = (
+            Assinatura.query
+            .filter_by(usuario_id=usuario.id)
+            .with_for_update()
+            .first()
+        )
+        if assinatura is None:
+            assinatura = BillingService.garantir_registro_assinatura(usuario)
+
+        if assinatura.status == 'active' and assinatura.gateway_subscription_id:
+            if assinatura.plano_id == plano.id and assinatura.ciclo == ciclo:
+                raise AssinaturaJaAtivaError(plano)
+            BillingService.atualizar_valor_assinatura(assinatura, plano, ciclo=ciclo)
+            raise AssinaturaAtualizadaError(plano)
+
+        customer_id = BillingService._obter_ou_criar_cliente_asaas(usuario, assinatura)
+        valor = BillingService.valor_ciclo_centavos(plano, ciclo) / 100
+
+        resp = requests.post(
+            f'{BillingService._base_url()}/subscriptions',
+            json={
+                'customer': customer_id,
+                'billingType': 'PIX',
+                'cycle': 'YEARLY' if ciclo == 'anual' else 'MONTHLY',
+                'value': valor,
+                'nextDueDate': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+                'description': plano.nome,
+                'externalReference': str(assinatura.id),
+            },
+            headers=BillingService._headers(),
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
+        BillingService._checar_resposta(resp, 'criar assinatura pix')
+        dados = resp.json()
+
+        assinatura.plano_id = plano.id
+        assinatura.forma_pagamento = 'pix'
+        assinatura.ciclo = ciclo
+        assinatura.gateway_subscription_id = dados.get('id')
+        assinatura.cartao_ultimos_digitos = None
+        assinatura.cartao_bandeira = None
+        db.session.commit()
+
+        # A cobrança propriamente dita (com o QR Code) é um objeto
+        # separado da assinatura -- buscamos o primeiro payment gerado
+        # pra devolver a página onde o usuário paga.
+        resp_pagamentos = requests.get(
+            f'{BillingService._base_url()}/payments',
+            params={'subscription': dados.get('id')},
+            headers=BillingService._headers(),
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
+        BillingService._checar_resposta(resp_pagamentos, 'buscar primeira cobrança pix')
+        pagamentos = resp_pagamentos.json().get('data', [])
+        if pagamentos:
+            return pagamentos[0].get('invoiceUrl')
+        # Sem payment ainda gerado -- devolve a própria assinatura pra
+        # não travar o fluxo, mas isso merece investigação se acontecer
+        # em produção (esperado sempre vir ao menos 1 payment junto).
+        return BillingService._url_minha_assinatura()
+
+    @staticmethod
+    def listar_faturas(usuario: User, limite: int = 24) -> list[dict]:
+        """Histórico de cobranças (pagas, pendentes ou vencidas) do
+        usuário, mais recentes primeiro -- pra tela de "Minhas
+        Faturas". GET /payments?customer={id} é o endpoint documentado
+        em https://docs.asaas.com/reference/listar-cobrancas ; conferir
+        contra o sandbox antes de subir (nomes de campo podem variar
+        por versão da API). Devolve lista vazia se o usuário nunca
+        chegou a ter cliente criado no Asaas (nunca tentou assinar)."""
+        assinatura = usuario.assinatura
+        if assinatura is None or not assinatura.gateway_customer_id:
+            return []
+        resp = requests.get(
+            f'{BillingService._base_url()}/payments',
+            params={
+                'customer': assinatura.gateway_customer_id,
+                'limit': limite,
+                'order': 'desc',
+                'sort': 'dueDate',
+            },
+            headers=BillingService._headers(),
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
+        BillingService._checar_resposta(resp, 'listar faturas')
+        faturas = []
+        for item in resp.json().get('data', []):
+            faturas.append({
+                'id': item.get('id'),
+                'valor_centavos': round(item.get('value', 0) * 100),
+                'status': item.get('status'),
+                'vencimento': item.get('dueDate'),
+                'pago_em': item.get('paymentDate') or item.get('clientPaymentDate'),
+                'forma_pagamento': item.get('billingType'),
+                'link': item.get('invoiceUrl'),
+            })
+        return faturas
+
+    @staticmethod
+    def criar_assinatura_checkout(usuario: User, plano: Plano, ciclo: str = 'mensal') -> str:
         """Cria (ou reaproveita/atualiza) o cliente no Asaas e um
         Checkout de assinatura recorrente por cartão de crédito,
         retornando o link da página de pagamento hospedada pelo Asaas
@@ -510,44 +725,14 @@ class BillingService:
             assinatura = BillingService.garantir_registro_assinatura(usuario)
 
         if assinatura.status == 'active' and assinatura.gateway_subscription_id:
-            if assinatura.plano_id == plano.id:
+            if assinatura.plano_id == plano.id and assinatura.ciclo == ciclo and assinatura.forma_pagamento == 'cartao':
                 raise AssinaturaJaAtivaError(plano)
-            BillingService.atualizar_valor_assinatura(assinatura, plano)
+            BillingService.atualizar_valor_assinatura(assinatura, plano, ciclo=ciclo)
             raise AssinaturaAtualizadaError(plano)
 
-        dados_cliente = {
-            'name': usuario.nome_completo or usuario.username,
-            'email': usuario.email,
-            'cpfCnpj': usuario.cpf_cnpj,
-            'phone': re.sub(r'\D', '', usuario.telefone),
-            'postalCode': usuario.endereco_cep,
-            'addressNumber': usuario.endereco_numero,
-        }
-        customer_id = assinatura.gateway_customer_id
-        if not customer_id:
-            resp = requests.post(
-                f'{BillingService._base_url()}/customers',
-                json=dados_cliente,
-                headers=BillingService._headers(),
-                timeout=REQUEST_TIMEOUT_SECONDS,
-            )
-            BillingService._checar_resposta(resp, 'criar cliente')
-            customer_id = resp.json()['id']
-            assinatura.gateway_customer_id = customer_id
-            db.session.commit()
-        else:
-            # Atualiza o cadastro existente com os dados mais recentes
-            # -- cobre o caso de um cliente já ter sido criado ANTES do
-            # usuário preencher CPF/telefone/endereço (tentativas de
-            # checkout de antes destas correções), que ficariam pra
-            # sempre incompletos e nunca conseguiriam gerar cobrança.
-            resp = requests.put(
-                f'{BillingService._base_url()}/customers/{customer_id}',
-                json=dados_cliente,
-                headers=BillingService._headers(),
-                timeout=REQUEST_TIMEOUT_SECONDS,
-            )
-            BillingService._checar_resposta(resp, 'atualizar cliente')
+        customer_id = BillingService._obter_ou_criar_cliente_asaas(usuario, assinatura)
+        valor = BillingService.valor_ciclo_centavos(plano, ciclo) / 100
+        descricao_ciclo = 'anual' if ciclo == 'anual' else 'mensal'
 
         callback_url = BillingService._url_minha_assinatura()
         resp = requests.post(
@@ -558,7 +743,8 @@ class BillingService:
                 # "O método de pagamento CREDIT_CARD é o único método
                 # de pagamento permitido para operações RECURRENT".
                 # Pix/boleto não têm suporte a cobrança recorrente
-                # automática nesse fluxo de Checkout.
+                # automática nesse fluxo de Checkout -- ver
+                # criar_assinatura_checkout_pix pra essa alternativa.
                 'billingTypes': ['CREDIT_CARD'],
                 'chargeTypes': ['RECURRENT'],
                 'minutesToExpire': 60,
@@ -571,14 +757,14 @@ class BillingService:
                 'externalReference': str(assinatura.id),
                 'items': [{
                     'name': plano.nome,
-                    'description': f'Assinatura mensal -- {plano.nome}',
+                    'description': f'Assinatura {descricao_ciclo} -- {plano.nome}',
                     'quantity': 1,
-                    'value': plano.preco_centavos / 100,
+                    'value': valor,
                 }],
                 'subscription': {
-                    'cycle': 'MONTHLY',
+                    'cycle': 'YEARLY' if ciclo == 'anual' else 'MONTHLY',
                     'nextDueDate': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
-                    'value': plano.preco_centavos / 100,
+                    'value': valor,
                     'description': plano.nome,
                 },
             },
@@ -589,12 +775,14 @@ class BillingService:
         dados = resp.json()
 
         assinatura.plano_id = plano.id
+        assinatura.forma_pagamento = 'cartao'
+        assinatura.ciclo = ciclo
         db.session.commit()
 
         return dados.get('link')
 
     @staticmethod
-    def atualizar_valor_assinatura(assinatura: Assinatura, plano: Plano):
+    def atualizar_valor_assinatura(assinatura: Assinatura, plano: Plano, ciclo: str = 'mensal'):
         """Atualiza o VALOR (e plano local) de uma assinatura já ativa
         no Asaas -- usado quando o usuário precisa mudar de plano (ex:
         professor que passou a ter mais alunos) enquanto já está em
@@ -605,13 +793,21 @@ class BillingService:
         updatePendingPayments=False (padrão da API se omitido) -- só
         cobranças futuras usam o valor novo; qualquer cobrança pendente
         já gerada com o valor antigo não é mexida, pra não surpreender
-        o pagador com uma cobrança diferente do que ele já esperava."""
+        o pagador com uma cobrança diferente do que ele já esperava.
+
+        Mantém a forma de pagamento (cartão ou Pix) que a assinatura já
+        tinha -- trocar de cartão pra Pix ou vice-versa não é suportado
+        por essa atualização de valor (exigiria cancelar e recriar a
+        assinatura no Asaas, ver observação em routes/billing_routes.py
+        sobre 'trocar forma de pagamento')."""
+        billing_type = 'PIX' if assinatura.forma_pagamento == 'pix' else 'CREDIT_CARD'
+        valor = BillingService.valor_ciclo_centavos(plano, ciclo) / 100
         resp = requests.put(
             f'{BillingService._base_url()}/subscriptions/{assinatura.gateway_subscription_id}',
             json={
-                'billingType': 'CREDIT_CARD',
-                'cycle': 'MONTHLY',
-                'value': plano.preco_centavos / 100,
+                'billingType': billing_type,
+                'cycle': 'YEARLY' if ciclo == 'anual' else 'MONTHLY',
+                'value': valor,
                 'description': plano.nome,
             },
             headers=BillingService._headers(),
@@ -620,6 +816,7 @@ class BillingService:
         BillingService._checar_resposta(resp, 'atualizar valor da assinatura')
 
         assinatura.plano_id = plano.id
+        assinatura.ciclo = ciclo
         db.session.commit()
         logger.info(
             'Assinatura %s (usuario=%s) atualizada pro plano %s sem criar cobrança nova',
@@ -768,6 +965,20 @@ class BillingService:
             assinatura = Assinatura.query.filter_by(gateway_customer_id=customer_id).first()
         if assinatura and subscription_id and not assinatura.gateway_subscription_id:
             assinatura.gateway_subscription_id = subscription_id
+
+        # Quando o payment confirmado veio de cartão, o Asaas costuma
+        # incluir um objeto 'creditCard' com os últimos dígitos e a
+        # bandeira -- guardamos só isso (nunca o número completo, que
+        # nem é enviado) pra poder mostrar "Cartão final 4242" na tela
+        # de assinatura. NÃO CONFIRMADO contra um payload real (ver
+        # aviso em criar_assinatura_checkout_pix sobre testar contra o
+        # sandbox); se o nome do campo vier diferente, isto
+        # simplesmente não preenche nada -- não quebra o resto do
+        # processamento do webhook.
+        credit_card = payment.get('creditCard') or {}
+        if assinatura and credit_card.get('creditCardNumber'):
+            assinatura.cartao_ultimos_digitos = credit_card.get('creditCardNumber')
+            assinatura.cartao_bandeira = credit_card.get('creditCardBrand')
 
         if assinatura:
             status_antes = assinatura.status

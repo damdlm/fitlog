@@ -219,7 +219,7 @@ class TestAssinar:
         separado de "gestão"."""
         capturado = {}
 
-        def _fake_checkout(usuario, plano):
+        def _fake_checkout(usuario, plano, **kwargs):
             capturado['plano_codigo'] = plano.codigo
             return 'https://sandbox.asaas.com/i/fake'
 
@@ -241,7 +241,7 @@ class TestAssinar:
     def test_professor_com_5_alunos_e_oferecido_plano_pro(self, client, app, monkeypatch):
         capturado = {}
 
-        def _fake_checkout(usuario, plano):
+        def _fake_checkout(usuario, plano, **kwargs):
             capturado['plano_codigo'] = plano.codigo
             return 'https://sandbox.asaas.com/i/fake-pro'
 
@@ -265,7 +265,7 @@ class TestAssinar:
         Premium -- deve respeitar a escolha, não forçar o Fit."""
         capturado = {}
 
-        def _fake_checkout(usuario, plano):
+        def _fake_checkout(usuario, plano, **kwargs):
             capturado['plano_codigo'] = plano.codigo
             return 'https://sandbox.asaas.com/i/fake-upgrade'
 
@@ -290,7 +290,7 @@ class TestAssinar:
         validação é sempre no servidor contra planos_disponiveis_professor."""
         chamado = {'vezes': 0}
 
-        def _fake_checkout(usuario, plano):
+        def _fake_checkout(usuario, plano, **kwargs):
             chamado['vezes'] += 1
             return 'https://sandbox.asaas.com/i/nao-deveria-chegar-aqui'
 
@@ -313,7 +313,7 @@ class TestAssinar:
     def test_aluno_redireciona_para_checkout_gerado(self, client, app, monkeypatch):
         monkeypatch.setattr(
             BillingService, 'criar_assinatura_checkout',
-            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake-checkout'),
+            staticmethod(lambda usuario, plano, **kwargs: 'https://sandbox.asaas.com/i/fake-checkout'),
         )
 
         with app.app_context():
@@ -380,7 +380,7 @@ class TestDadosCobrancaObrigatorios:
     def test_cpf_cnpj_com_formato_invalido_e_rejeitado(self, client, app, monkeypatch):
         monkeypatch.setattr(
             BillingService, 'criar_assinatura_checkout',
-            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake'),
+            staticmethod(lambda usuario, plano, **kwargs: 'https://sandbox.asaas.com/i/fake'),
         )
 
         with app.app_context():
@@ -405,7 +405,7 @@ class TestDadosCobrancaObrigatorios:
     def test_cep_com_formato_invalido_e_rejeitado(self, client, app, monkeypatch):
         monkeypatch.setattr(
             BillingService, 'criar_assinatura_checkout',
-            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake'),
+            staticmethod(lambda usuario, plano, **kwargs: 'https://sandbox.asaas.com/i/fake'),
         )
 
         with app.app_context():
@@ -430,7 +430,7 @@ class TestDadosCobrancaObrigatorios:
     def test_todos_os_dados_no_form_sao_limpos_salvos_e_prosseguem_pro_checkout(self, client, app, monkeypatch):
         monkeypatch.setattr(
             BillingService, 'criar_assinatura_checkout',
-            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake-com-dados'),
+            staticmethod(lambda usuario, plano, **kwargs: 'https://sandbox.asaas.com/i/fake-com-dados'),
         )
 
         with app.app_context():
@@ -463,7 +463,7 @@ class TestDadosCobrancaObrigatorios:
         antes) só precisa completar o que falta -- não reenvia tudo."""
         monkeypatch.setattr(
             BillingService, 'criar_assinatura_checkout',
-            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake-so-endereco'),
+            staticmethod(lambda usuario, plano, **kwargs: 'https://sandbox.asaas.com/i/fake-so-endereco'),
         )
 
         with app.app_context():
@@ -486,7 +486,7 @@ class TestDadosCobrancaObrigatorios:
     def test_usuario_que_ja_tem_tudo_nao_precisa_reenviar_nada(self, client, app, monkeypatch):
         monkeypatch.setattr(
             BillingService, 'criar_assinatura_checkout',
-            staticmethod(lambda usuario, plano: 'https://sandbox.asaas.com/i/fake-ja-tinha-tudo'),
+            staticmethod(lambda usuario, plano, **kwargs: 'https://sandbox.asaas.com/i/fake-ja-tinha-tudo'),
         )
 
         with app.app_context():
@@ -623,7 +623,7 @@ class TestAssinarPrevencaoCobrancaDupla:
     def test_ja_ativo_no_mesmo_plano_mostra_mensagem_tranquilizadora(self, client, app, monkeypatch):
         monkeypatch.setattr(
             BillingService, 'criar_assinatura_checkout',
-            staticmethod(lambda usuario, plano: (_ for _ in ()).throw(AssinaturaJaAtivaError(plano))),
+            staticmethod(lambda usuario, plano, **kwargs: (_ for _ in ()).throw(AssinaturaJaAtivaError(plano))),
         )
 
         with app.app_context():
@@ -646,7 +646,7 @@ class TestAssinarPrevencaoCobrancaDupla:
 
         monkeypatch.setattr(
             BillingService, 'criar_assinatura_checkout',
-            staticmethod(lambda usuario, plano: (_ for _ in ()).throw(AssinaturaAtualizadaError(premium))),
+            staticmethod(lambda usuario, plano, **kwargs: (_ for _ in ()).throw(AssinaturaAtualizadaError(premium))),
         )
 
         with app.app_context():

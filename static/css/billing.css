@@ -1,0 +1,134 @@
+/* Tela de Minha Assinatura / Faturas -- extraído de
+   templates/billing/minha_assinatura.html (antes era <style> inline no
+   próprio template). Reaproveita as variáveis de cor já definidas em
+   base.html (--primary-orange, --light-orange, --dark-bg). */
+
+.ma-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+.ma-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+.ma-status-ok { background: #e6f7ee; color: #1a8a4a; }
+.ma-status-atencao { background: #fff4e0; color: #b96b00; }
+.ma-status-bloqueado { background: #fde8e8; color: #c0392b; }
+
+.ma-price { font-size: 2rem; font-weight: 800; color: #222; }
+.ma-price small { font-size: 1rem; font-weight: 600; color: #888; }
+
+.ma-btn-assinar {
+    border: none;
+    background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+    border-radius: 12px;
+    padding: 14px 24px;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(242, 140, 51, 0.35);
+}
+.ma-btn-assinar:hover { color: white; opacity: 0.95; }
+.ma-btn-assinar:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Indicador "faltam N alunos pra próxima faixa" */
+.ma-proxima-faixa {
+    background: #fff4e0;
+    border: 1px dashed #F28C33;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    color: #7a4a00;
+    margin-bottom: 16px;
+}
+
+/* Comparativo de planos (professor) -- grade de cards, um por faixa */
+.ma-planos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.ma-plano-card {
+    position: relative;
+    border: 2px solid #eee;
+    border-radius: 14px;
+    padding: 16px 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+    background: #fff;
+}
+.ma-plano-card:hover { border-color: #FFB366; }
+.ma-plano-card.selecionado {
+    border-color: #F28C33;
+    box-shadow: 0 4px 14px rgba(242, 140, 51, 0.18);
+}
+.ma-plano-card input[type="radio"] { position: absolute; top: 10px; right: 10px; }
+.ma-plano-card .nome { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+.ma-plano-card .faixa { font-size: 0.78rem; color: #888; margin-bottom: 8px; }
+.ma-plano-card .preco { font-size: 1.3rem; font-weight: 800; color: #222; }
+.ma-plano-card .preco small { font-size: 0.75rem; font-weight: 600; color: #888; }
+.ma-plano-card .badge-atual {
+    position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+    background: #1a8a4a; color: #fff; font-size: 0.68rem; font-weight: 700;
+    padding: 2px 10px; border-radius: 999px; white-space: nowrap;
+}
+
+/* Seletor de ciclo (mensal/anual) e forma de pagamento (cartão/pix) */
+.ma-toggle-group {
+    display: inline-flex;
+    background: #f4f4f4;
+    border-radius: 999px;
+    padding: 4px;
+    gap: 4px;
+    margin-bottom: 16px;
+}
+.ma-toggle-group label {
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.ma-toggle-group input { display: none; }
+.ma-toggle-group input:checked + label {
+    background: #fff;
+    color: #F28C33;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+.ma-badge-desconto {
+    background: #e6f7ee; color: #1a8a4a; font-size: 0.7rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 999px; margin-left: 6px;
+}
+
+/* Cartão salvo em uso */
+.ma-cartao-salvo {
+    display: flex; align-items: center; gap: 10px;
+    border: 1px solid #eee; border-radius: 12px; padding: 12px 16px;
+    margin-bottom: 16px; font-size: 0.9rem;
+}
+.ma-cartao-salvo i { font-size: 1.3rem; color: #F28C33; }
+
+/* Revelação progressiva dos dados de cobrança -- só aparece depois que
+   o usuário confirma a intenção de assinar (ver JS no template). */
+.ma-dados-cobranca { display: none; }
+.ma-dados-cobranca.aberto { display: block; }
+
+/* Tabela de faturas */
+.ma-fatura-status {
+    font-size: 0.78rem; font-weight: 700; padding: 2px 10px; border-radius: 999px;
+}
+.ma-fatura-status.pago { background: #e6f7ee; color: #1a8a4a; }
+.ma-fatura-status.pendente { background: #fff4e0; color: #b96b00; }
+.ma-fatura-status.vencido { background: #fde8e8; color: #c0392b; }

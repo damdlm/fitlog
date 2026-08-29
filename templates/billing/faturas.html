@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-receipt" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Minhas Faturas{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/billing.css') }}">
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h2 class="mb-0"><i class="bi bi-receipt me-2" style="color: #F28C33;"></i> Minhas Faturas</h2>
+    <a href="{{ url_for('billing.minha_assinatura') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Voltar pra assinatura
+    </a>
+</div>
+
+<div class="ma-card">
+    {% if not faturas %}
+    <p class="text-muted mb-0 text-center py-4">
+        <i class="bi bi-receipt d-block mb-2" style="font-size: 2rem;"></i>
+        Nenhuma fatura por aqui ainda.
+    </p>
+    {% else %}
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Vencimento</th>
+                    <th>Valor</th>
+                    <th>Forma</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fatura in faturas %}
+                <tr>
+                    <td>{{ fatura.vencimento or '—' }}</td>
+                    <td>R$ {{ '%.2f'|format(fatura.valor_centavos / 100) }}</td>
+                    <td>
+                        {% if fatura.forma_pagamento == 'PIX' %}<i class="bi bi-qr-code me-1"></i>Pix
+                        {% elif fatura.forma_pagamento == 'CREDIT_CARD' %}<i class="bi bi-credit-card-2-front me-1"></i>Cartão
+                        {% else %}{{ fatura.forma_pagamento or '—' }}{% endif %}
+                    </td>
+                    <td>
+                        {% if fatura.status in ('RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH') %}
+                        <span class="ma-fatura-status pago">Pago{% if fatura.pago_em %} em {{ fatura.pago_em }}{% endif %}</span>
+                        {% elif fatura.status == 'OVERDUE' %}
+                        <span class="ma-fatura-status vencido">Vencida</span>
+                        {% else %}
+                        <span class="ma-fatura-status pendente">Pendente</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        {% if fatura.link %}
+                        <a href="{{ fatura.link }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>Ver
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
