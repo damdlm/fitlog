@@ -17,7 +17,7 @@ Semeia as 6 telas já mapeadas no código nesta entrega:
   em /admin/telas-controladas.
 
 Revision ID: 22250725ed4f
-Revises: e1f2a3b4c5d6
+Revises: d2e3f4a5b6c7
 Create Date: 2026-08-28 00:00:00.000000
 """
 from alembic import op
@@ -25,7 +25,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '22250725ed4f'
-down_revision = 'e1f2a3b4c5d6'
+down_revision = 'd2e3f4a5b6c7'
 branch_labels = None
 depends_on = None
 

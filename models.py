@@ -297,6 +297,16 @@ class Plano(db.Model):
     def __repr__(self):
         return f'<Plano {self.codigo} R${self.preco_centavos/100:.2f}>'
 
+    def preco_anual_centavos(self) -> int:
+        """Preço anual com desconto de MESES_GRATIS_ANUAL meses (ver
+        BillingService) -- calculado aqui, não guardado como coluna
+        separada, pra nunca ficar dessincronizado se o preço mensal
+        mudar. Usado só como número a EXIBIR; o valor que efetivamente
+        vai pro Asaas no checkout é calculado por
+        BillingService.valor_ciclo_centavos, que usa a mesma fórmula."""
+        from services.billing_service import MESES_GRATIS_ANUAL
+        return self.preco_centavos * (12 - MESES_GRATIS_ANUAL)
+
 
 class TelaControlada(db.Model):
     """Registro das telas que o admin pode escolher bloquear pra quem
@@ -372,6 +382,23 @@ class Assinatura(db.Model):
     periodo_atual_fim = db.Column(db.DateTime(timezone=True), nullable=True)
     carencia_termina_em = db.Column(db.DateTime(timezone=True), nullable=True)
     cancelado_em = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    # forma_pagamento: 'cartao' (checkout hospedado, cobrança automática)
+    # ou 'pix' (assinatura criada direto via /subscriptions com QR Pix
+    # regenerado a cada ciclo -- Asaas não faz débito automático via
+    # Pix, o pagador precisa pagar o QR a cada vencimento). Ver
+    # BillingService.criar_assinatura_checkout_pix.
+    forma_pagamento = db.Column(db.String(10), nullable=False, default='cartao')
+    # ciclo: 'mensal' ou 'anual' (anual cobra 10x o valor mensal de uma
+    # vez -- 2 meses grátis -- ver BillingService.MESES_GRATIS_ANUAL).
+    ciclo = db.Column(db.String(10), nullable=False, default='mensal')
+    # Últimos 4 dígitos e bandeira do cartão em uso, só pra EXIBIÇÃO
+    # ("Cartão final 4242") -- nunca guardamos o número completo, que
+    # nem chega a passar pelo nosso servidor. Preenchido a partir do
+    # campo creditCard do payload de payment que o Asaas manda no
+    # webhook (quando presente). Fica None pra assinaturas via Pix.
+    cartao_ultimos_digitos = db.Column(db.String(4), nullable=True)
+    cartao_bandeira = db.Column(db.String(30), nullable=True)
 
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
