@@ -4,16 +4,11 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 from flask import Flask
-from flask_login import LoginManager
-from flask_wtf.csrf import CSRFProtect
 
 from config import get_config
 from models import db, User
 
-from extensions import limiter, cache, compress
-
-login_manager = LoginManager()
-csrf = CSRFProtect()
+from extensions import login_manager, csrf, limiter, cache, compress
 
 
 # =============================================================
@@ -149,6 +144,12 @@ def create_app(config_class=None):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # Mesmo critério usado em _criar_admin_inicial() e no init_db()
+    # abaixo, além dos headers de segurança mais adiante -- um único
+    # cálculo, reaproveitado, para não divergir entre os pontos que
+    # decidem "estamos em produção?".
+    em_producao = not (app.config.get('DEBUG', False) or app.config.get('TESTING', False))
+
     # config básica
     app.config['JSON_AS_ASCII'] = False
     app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -212,7 +213,19 @@ def create_app(config_class=None):
     # =============================================================
     def init_db():
         try:
-            db.create_all()
+            if em_producao:
+                # Em produção o schema é responsabilidade do Alembic
+                # (Procfile: "release: alembic upgrade head"), não daqui.
+                # Chamar create_all() aqui também mascararia uma
+                # migração que falhou: a tabela nasceria sem passar
+                # pelo Alembic, sem revisão registrada, e o schema real
+                # divergiria do histórico de migrações sem nenhum aviso.
+                pass
+            else:
+                # Dev/testes não têm fase de release rodando migração
+                # nenhuma -- create_all() continua sendo o jeito mais
+                # simples de ter o schema pronto localmente/na suíte.
+                db.create_all()
 
             try:
                 if User.query.first() is None:
@@ -307,10 +320,8 @@ def create_app(config_class=None):
     # =============================================================
     # HEADERS DE SEGURANÇA
     # =============================================================
-    # Mesmo critério de "estamos em produção?" já usado em
-    # _criar_admin_inicial() acima, para manter consistência.
-    em_producao = not (app.config.get('DEBUG', False) or app.config.get('TESTING', False))
-
+    # em_producao já calculado no início de create_app() (reaproveitado
+    # também pelo init_db() acima).
     @app.after_request
     def add_security_headers(response):
         response.headers["X-Content-Type-Options"] = "nosniff"

@@ -716,18 +716,29 @@ class BillingService:
             logger.warning('Webhook Asaas sem id/event no payload, ignorado. Payload: %s', payload)
             return False
 
+        # Eventos PAYMENT_* trazem os dados em payload['payment'].
+        # Eventos SUBSCRIPTION_* (ex: SUBSCRIPTION_DELETED, tratado
+        # abaixo em EVENTOS_CANCELAMENTO) trazem em payload['subscription']
+        # -- é o próprio 'id' do objeto subscription que identifica a
+        # assinatura (não existe um campo 'subscription' aninhado nele,
+        # diferente do objeto payment). Sem separar os dois, todo evento
+        # de assinatura chegava com os três identificadores vazios e
+        # nunca casava com nada no banco.
         payment = payload.get('payment') or {}
-        subscription_id = payment.get('subscription')
-        external_reference = payment.get('externalReference')
-        customer_id = payment.get('customer')
+        subscription_obj = payload.get('subscription') or {}
+
+        subscription_id = payment.get('subscription') or subscription_obj.get('id')
+        external_reference = payment.get('externalReference') or subscription_obj.get('externalReference')
+        customer_id = payment.get('customer') or subscription_obj.get('customer')
 
         # Sempre em INFO (não DEBUG) -- app.logger está configurado pra
         # INFO em produção (ver app.py), então isso é o que garante dar
         # pra ver no log do Railway exatamente o que o Asaas mandou,
         # mesmo quando o evento não bate com nada que esperávamos.
         logger.info(
-            'Webhook Asaas recebido: event=%s id=%s subscription=%s externalReference=%s customer=%s payment.status=%s',
-            tipo_evento, event_id, subscription_id, external_reference, customer_id, payment.get('status'),
+            'Webhook Asaas recebido: event=%s id=%s subscription=%s externalReference=%s customer=%s payment.status=%s subscription.status=%s',
+            tipo_evento, event_id, subscription_id, external_reference, customer_id,
+            payment.get('status'), subscription_obj.get('status'),
         )
 
         # Idempotência: Asaas reenvia o mesmo evento se não recebeu 200

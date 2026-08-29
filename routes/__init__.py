@@ -46,7 +46,6 @@ def register_all_routes(app):
     # token 'asaas-access-token' validado dentro da própria rota (ver
     # routes/billing_routes.py). csrf.exempt é aplicado aqui, depois do
     # blueprint já registrado, em vez de no módulo da rota, para não
-    # precisar importar o objeto csrf (definido em app.py) de dentro de
-    # routes/billing_routes.py.
-    from app import csrf
+    # precisar importar o objeto csrf de dentro de routes/billing_routes.py.
+    from extensions import csrf
     csrf.exempt(app.view_functions['billing.webhook_asaas'])
