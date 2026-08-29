@@ -206,18 +206,25 @@ class EstatisticaService(BaseService):
             return []
 
     @staticmethod
-    def get_progresso_ultimos_30_dias(treino_id=None, user_id=None):
+    def get_progresso_ultimos_30_dias(treino_id=None, user_id=None, versao_id=None):
         """
         Retorna volume total agregado por dia, apenas dos últimos 30 dias
         corridos (calendário real, via RegistroTreino.data_registro) —
         usado no gráfico "Evolução do Volume" da tela de estatísticas.
+
+        versao_id (opcional): restringe o cálculo aos registros de uma
+        versão específica. Ignorado se treino_id for informado (um
+        treino_versao_id já pertence a uma única versão). Usado pelo
+        dashboard (routes/api_routes.py) para o filtro "Todos" mostrar
+        só a versão corrente -- sem isso, "Todos" somava o histórico
+        inteiro do usuário, de todas as versões já encerradas também.
         """
         try:
             user_id = user_id or BaseService.get_current_user_id()
             if not user_id:
                 return []
 
-            cache_key = f"estatistica:{user_id}:progresso_30d:{treino_id or 'todos'}"
+            cache_key = f"estatistica:{user_id}:progresso_30d:{treino_id or 'todos'}:{versao_id or '-'}"
             cache_hit = CacheService.get(cache_key)
             if cache_hit is not None:
                 return cache_hit
@@ -235,6 +242,8 @@ class EstatisticaService(BaseService):
 
             if treino_id:
                 query = query.filter(RegistroTreino.treino_versao_id == treino_id)
+            elif versao_id:
+                query = query.filter(RegistroTreino.versao_id == versao_id)
 
             resultado = query.order_by(func.date(RegistroTreino.data_registro)).all()
             CacheService.set(cache_key, resultado, ttl_seconds=ESTATISTICA_CACHE_TTL_SEGUNDOS)

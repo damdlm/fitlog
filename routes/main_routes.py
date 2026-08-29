@@ -8,6 +8,6 @@ main_bp = Blueprint('main', __name__)
 @login_required
 def index():
     """Página inicial"""
-    treinos = TreinoService.get_all()
+    treinos = TreinoService.get_da_versao_ativa()
 
     return render_template("index.html", treinos=treinos)

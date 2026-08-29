@@ -31,7 +31,19 @@ def api_progresso():
     """
     treino = request.args.get("treino")
 
-    dados = EstatisticaService.get_progresso_ultimos_30_dias(treino if treino != 'todos' else None)
+    if treino and treino != 'todos':
+        dados = EstatisticaService.get_progresso_ultimos_30_dias(treino_id=treino)
+    else:
+        # "Todos" mostra a versão corrente (ativa) do usuário, não o
+        # histórico inteiro desde sempre -- ver
+        # EstatisticaService.get_progresso_ultimos_30_dias e
+        # TreinoService.get_da_versao_ativa (usado para montar os
+        # botões de filtro em templates/index.html). Sem versão ativa,
+        # não há "versão corrente" pra mostrar.
+        versao_ativa = VersaoService.get_ativa()
+        if not versao_ativa:
+            return jsonify({"semanas": [], "volumes": [], "cargas_medias": []})
+        dados = EstatisticaService.get_progresso_ultimos_30_dias(versao_id=versao_ativa.id)
 
     if not dados:
         # Sem nenhum registro nos últimos 30 dias: mantém a resposta vazia
