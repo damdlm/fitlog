@@ -204,9 +204,12 @@ def assinar():
         checkout_url = BillingService.criar_assinatura_checkout(current_user, plano)
     except AssinaturaAtualizadaError as e:
         # Usuário mudou de plano enquanto já estava ativo (ex: professor
-        # cresceu de Pró pra Premium) -- atualizamos o valor da MESMA
-        # assinatura no Asaas, nunca criamos uma segunda cobrança.
-        flash(f'Sua assinatura foi atualizada para o {e.plano.nome} -- nenhuma cobrança nova foi criada.', 'success')
+        # cresceu de Pró pra Premium, ou escolheu voluntariamente upgrade/
+        # downgrade) -- atualizamos o valor da MESMA assinatura no Asaas,
+        # nunca criamos uma segunda cobrança nem cobramos diferença
+        # pró-rata: o valor novo só entra na fatura seguinte (decisão do
+        # usuário, tanto pra upgrade quanto downgrade voluntários).
+        flash(f'Plano atualizado para {e.plano.nome} -- o novo valor entra a partir da sua próxima fatura, nenhuma cobrança foi feita agora.', 'success')
         return redirect(url_for('billing.minha_assinatura'))
     except AssinaturaJaAtivaError:
         # Duplo clique, aba duplicada, ou usuário não percebeu que já
