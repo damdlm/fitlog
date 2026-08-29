@@ -6,6 +6,7 @@ from services.musculo_service import MusculoService
 from services.versao_service import VersaoService
 from services.billing_service import BillingService
 from services.monitoring_service import MonitoringService
+from services.tela_controlada_service import TelaControladaService
 from utils.exercise_utils import buscar_musculo_no_catalogo
 from utils.decorators import admin_required
 from models import db, ExercicioCustomizado, ExercicioUsuario, Musculo, RegistroTreino, HistoricoTreino, ExercicioSistema, TreinoVersao, VersaoExercicio, Plano
@@ -351,3 +352,26 @@ def api_monitoramento():
     """Mesmo conteúdo da página acima, em JSON -- usado pelo
     auto-refresh no front-end (ver static/js/admin-monitoramento.js)."""
     return jsonify(MonitoringService.get_all_metrics())
+
+
+# =============================================
+# TELAS CONTROLADAS -- quais telas exigem plano pago (só admin)
+# =============================================
+
+@admin_bp.route("/telas-controladas", methods=["GET", "POST"])
+@admin_required
+def telas_controladas():
+    """Página onde o admin escolhe quais telas ficam livres e quais
+    exigem Fit/Pró/Premium ativo pra acessar (ver
+    models.py:TelaControlada e utils/decorators.py:acesso_premium_
+    required). A lista de telas em si (quais existem) é fixa no
+    código -- o admin só liga/desliga o bloqueio de cada uma, nunca
+    cria uma tela nova por aqui."""
+    if request.method == "POST":
+        chaves_marcadas = set(request.form.getlist("bloqueia"))
+        TelaControladaService.atualizar(chaves_marcadas)
+        flash('Configuração de telas salva!', 'success')
+        return redirect(url_for('admin.telas_controladas'))
+
+    telas = TelaControladaService.listar_todas()
+    return render_template("admin/telas_controladas.html", telas=telas)

@@ -203,3 +203,63 @@ class TestExercicioDetalhes:
     def test_requer_login(self, client):
         resp = client.get('/admin/exercicio/detalhes/1')
         assert resp.status_code in (302, 401)
+
+
+class TestTelasControladas:
+    """/admin/telas-controladas -- admin escolhe quais telas exigem
+    plano pago (ver services/tela_controlada_service.py)."""
+
+    def _criar_admin(self, app, username='admin_telas'):
+        u = _criar_usuario(username, tipo_usuario='admin')
+        with app.app_context():
+            from models import User
+            User.query.filter_by(id=u.id).update({'is_admin': True})
+            db.session.commit()
+        return u
+
+    def test_requer_admin(self, client, app):
+        with app.app_context():
+            _criar_usuario('aluno_sem_permissao')
+        _login(client, 'aluno_sem_permissao')
+
+        resp = client.get('/admin/telas-controladas')
+        assert resp.status_code in (302, 403)
+
+    def test_get_lista_as_telas_seedadas(self, client, app):
+        self._criar_admin(app)
+        _login(client, 'admin_telas')
+
+        resp = client.get('/admin/telas-controladas')
+        assert resp.status_code == 200
+        corpo = resp.get_data(as_text=True)
+        assert 'Estatísticas' in corpo
+        assert 'FitBot' in corpo
+        assert 'Calendário' in corpo
+
+    def test_post_atualiza_quais_telas_bloqueiam(self, client, app):
+        from models import TelaControlada
+        self._criar_admin(app)
+        _login(client, 'admin_telas')
+
+        resp = client.post('/admin/telas-controladas', data={
+            'bloqueia': ['fitbot', 'calendario'],
+        }, follow_redirects=True)
+        assert resp.status_code == 200
+
+        with app.app_context():
+            bloqueadas = {t.chave for t in TelaControlada.query.filter_by(bloqueia_sem_plano=True).all()}
+            assert bloqueadas == {'fitbot', 'calendario'}
+            # estatisticas e tabela_progresso não vieram marcadas no
+            # form -- devem ter sido desbloqueadas.
+            assert TelaControlada.query.filter_by(chave='estatisticas').first().bloqueia_sem_plano is False
+
+    def test_post_sem_nenhuma_marcada_libera_todas(self, client, app):
+        from models import TelaControlada
+        self._criar_admin(app)
+        _login(client, 'admin_telas')
+
+        resp = client.post('/admin/telas-controladas', data={}, follow_redirects=True)
+        assert resp.status_code == 200
+
+        with app.app_context():
+            assert all(not t.bloqueia_sem_plano for t in TelaControlada.query.all())

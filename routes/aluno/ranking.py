@@ -2,6 +2,7 @@ from flask import render_template
 from flask_login import login_required, current_user
 from . import aluno_bp
 from services.ranking_service import RankingService, TOP_N
+from utils.decorators import acesso_premium_required
 import logging
 
 logger = logging.getLogger(__name__)
@@ -9,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 @aluno_bp.route('/ranking')
 @login_required
+@acesso_premium_required('ranking')
 def ranking():
     """Tela "Melhores Alunos" -- ranking geral dos últimos 30 dias."""
     top5 = RankingService.top_n(TOP_N)

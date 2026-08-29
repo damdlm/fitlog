@@ -76,39 +76,53 @@ def aluno_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def acesso_premium_required(f):
-    """Decorator para telas de Estatísticas/FitBot -- bloqueia aluno OU
-    professor sem trial válido nem assinatura ativa (Fit, Pró ou
-    Premium: qualquer uma libera essas telas -- ver
-    services/billing_service.py:usuario_tem_acesso_premium). Lê só o
-    banco local (uma query O(1) via FK única em usuario_id), nunca
-    chama o gateway de pagamento a cada requisição.
+def acesso_premium_required(tela_chave):
+    """Decorator para telas que o admin pode escolher bloquear (ver
+    models.py:TelaControlada) -- bloqueia aluno OU professor sem trial
+    válido nem assinatura ativa (Fit, Pró ou Premium: qualquer uma
+    libera -- ver services/billing_service.py:usuario_tem_acesso_
+    premium), mas SÓ se a tela em questão estiver marcada como
+    bloqueada pelo admin (services/tela_controlada_service.py). Uma
+    tela livre nunca bloqueia ninguém, mesmo sem plano nenhum.
+
+    tela_chave é o identificador estável da tela (ver seed na migration
+    de telas_controladas) -- uso: @acesso_premium_required('estatisticas').
 
     Só admin nunca é bloqueado aqui."""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated:
-            flash('Faça login para acessar esta página.', 'warning')
-            return redirect(url_for('auth.login'))
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                flash('Faça login para acessar esta página.', 'warning')
+                return redirect(url_for('auth.login'))
 
-        if current_user.is_admin:
+            if current_user.is_admin:
+                return f(*args, **kwargs)
+
+            from services.tela_controlada_service import TelaControladaService
+            if not TelaControladaService.esta_bloqueada(tela_chave):
+                return f(*args, **kwargs)
+
+            from services.billing_service import BillingService
+            if not BillingService.usuario_tem_acesso_premium(current_user):
+                # Endpoints chamados via fetch/JS (ex: /api/progresso na
+                # tela de Estatísticas, ou /calendar/api/eventos na tela
+                # de Calendário) não podem devolver um redirect para uma
+                # página HTML de login -- o JS do front-end tentaria
+                # fazer JSON.parse() nisso e quebraria silenciosamente.
+                # '/api/' aparece no path tanto nas rotas do blueprint
+                # 'api' quanto nas sub-rotas /api/... de outros
+                # blueprints (calendar, etc) -- cobre os dois casos numa
+                # checagem só. Telas normais (HTML) continuam com flash
+                # + redirect, como o resto da aplicação.
+                if request.blueprint == 'api' or '/api/' in request.path:
+                    return jsonify({'erro': 'assinatura_necessaria'}), 403
+                flash('Assine o Plano Fit para continuar acessando esta área.', 'warning')
+                return redirect(url_for('billing.minha_assinatura'))
+
             return f(*args, **kwargs)
-
-        from services.billing_service import BillingService
-        if not BillingService.usuario_tem_acesso_premium(current_user):
-            # Endpoints de API (ex: /api/progresso, que alimenta o
-            # gráfico da tela de Estatísticas via fetch) não podem
-            # devolver um redirect para uma página HTML de login -- o
-            # JS do front-end tentaria fazer JSON.parse() nisso e
-            # quebraria silenciosamente. Telas normais continuam com
-            # flash + redirect, como o resto da aplicação.
-            if request.blueprint == 'api':
-                return jsonify({'erro': 'assinatura_necessaria'}), 403
-            flash('Assine o Plano Fit para continuar acessando esta área.', 'warning')
-            return redirect(url_for('billing.minha_assinatura'))
-
-        return f(*args, **kwargs)
-    return decorated_function
+        return decorated_function
+    return decorator
 
 
 def professor_acesso_alunos_required(f):

@@ -1099,6 +1099,13 @@
                                     <span class="mega-desc">CPU, memória, banco e cache em tempo real</span>
                                 </span>
                             </a>
+                            <a class="mega-card" href="{{ url_for('admin.telas_controladas') }}">
+                                <span class="mega-icon"><i class="bi bi-toggles"></i></span>
+                                <span>
+                                    <span class="mega-title">Telas Controladas</span>
+                                    <span class="mega-desc">Escolher quais telas exigem plano pago</span>
+                                </span>
+                            </a>
                         </div>
                     </div>
                 </li>
@@ -1202,13 +1209,6 @@
                                         <span>
                                             <span class="mega-title">Cadastrar Treinos</span>
                                             <span class="mega-desc">Monte sua versão, treinos e exercícios</span>
-                                        </span>
-                                    </a>
-                                    <a class="mega-card" href="{{ url_for('aluno.versoes') }}">
-                                        <span class="mega-icon"><i class="bi bi-layers"></i></span>
-                                        <span>
-                                            <span class="mega-title">Minhas Versões</span>
-                                            <span class="mega-desc">Histórico de versões, ver e editar</span>
                                         </span>
                                     </a>
                                     <a class="mega-card" href="{{ url_for('aluno.exercicios') }}">
@@ -1368,13 +1368,13 @@
                 <a class="mais-link" href="{{ url_for('admin.gerenciar') }}"><i class="bi bi-database"></i> Catálogo Global</a>
                 <a class="mais-link" href="{{ url_for('admin.contas') }}"><i class="bi bi-cash-coin"></i> Contas e Cobrança</a>
                 <a class="mais-link" href="{{ url_for('admin.monitoramento') }}"><i class="bi bi-activity"></i> Monitoramento</a>
+                <a class="mais-link" href="{{ url_for('admin.telas_controladas') }}"><i class="bi bi-toggles"></i> Telas Controladas</a>
             </div>
             {% endif %}
 
             <div class="mais-section">
             <!-- <span class="mais-section-label">Treino</span> -->
                 <a class="mais-link" href="{{ url_for('aluno.cadastrar_treinos') }}"><i class="bi bi-clipboard2-plus"></i> Cadastrar Treinos</a>
-                <a class="mais-link" href="{{ url_for('aluno.versoes') }}"><i class="bi bi-layers"></i> Minhas Versões</a>
                 <a class="mais-link" href="{{ url_for('aluno.exercicios') }}"><i class="bi bi-list-check"></i> Meus Exercícios</a>
                 <a class="mais-link" href="{{ url_for('aluno.ranking') }}"><i class="bi bi-trophy-fill"></i> Melhores Alunos</a>
             </div>

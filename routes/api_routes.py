@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 @api_bp.route("/progresso")
 @login_required
-@acesso_premium_required
+@acesso_premium_required('estatisticas')
 def api_progresso():
     """
     API de dados de progresso para o gráfico de evolução.
@@ -31,19 +31,7 @@ def api_progresso():
     """
     treino = request.args.get("treino")
 
-    if treino and treino != 'todos':
-        dados = EstatisticaService.get_progresso_ultimos_30_dias(treino_id=treino)
-    else:
-        # "Todos" mostra a versão corrente (ativa) do usuário, não o
-        # histórico inteiro desde sempre -- ver
-        # EstatisticaService.get_progresso_ultimos_30_dias e
-        # TreinoService.get_da_versao_ativa (usado para montar os
-        # botões de filtro em templates/index.html). Sem versão ativa,
-        # não há "versão corrente" pra mostrar.
-        versao_ativa = VersaoService.get_ativa()
-        if not versao_ativa:
-            return jsonify({"semanas": [], "volumes": [], "cargas_medias": []})
-        dados = EstatisticaService.get_progresso_ultimos_30_dias(versao_id=versao_ativa.id)
+    dados = EstatisticaService.get_progresso_ultimos_30_dias(treino if treino != 'todos' else None)
 
     if not dados:
         # Sem nenhum registro nos últimos 30 dias: mantém a resposta vazia

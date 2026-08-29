@@ -56,7 +56,7 @@ def _get_treino_codigo(exercicio):
 
 @stats_bp.route("/estatisticas")
 @login_required
-@acesso_premium_required
+@acesso_premium_required('estatisticas')
 def estatisticas():
     """Página de estatísticas"""
     # `registros` e `exercicios` eram buscados aqui (histórico inteiro +
@@ -95,7 +95,7 @@ def estatisticas():
 
 @stats_bp.route("/visualizar/tabela")
 @login_required
-@acesso_premium_required
+@acesso_premium_required('tabela_progresso')
 def visualizar_tabela():
     """Tabela de progresso"""
     treino_selecionado = request.args.get("treino", "")

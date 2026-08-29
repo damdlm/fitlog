@@ -37,9 +37,26 @@ def app():
     app = create_app(TestConfig)
     with app.app_context():
         _db.create_all()
+        _seed_telas_controladas()
         yield app
         _db.session.remove()
         _db.drop_all()
+
+
+def _seed_telas_controladas():
+    """Espelha o seed da migration a1b2c3d4e5f6 -- os testes precisam
+    ver o mesmo estado inicial que a aplicação real tem em produção
+    (db.create_all() não roda migrations, só cria o schema vazio)."""
+    from models import TelaControlada
+    _db.session.bulk_save_objects([
+        TelaControlada(chave='estatisticas', nome_exibicao='Estatísticas', bloqueia_sem_plano=True),
+        TelaControlada(chave='tabela_progresso', nome_exibicao='Tabela de Progresso', bloqueia_sem_plano=True),
+        TelaControlada(chave='fitbot', nome_exibicao='FitBot', bloqueia_sem_plano=True),
+        TelaControlada(chave='calendario', nome_exibicao='Calendário', bloqueia_sem_plano=False),
+        TelaControlada(chave='ranking', nome_exibicao='Ranking', bloqueia_sem_plano=False),
+        TelaControlada(chave='dashboard', nome_exibicao='Dashboard', bloqueia_sem_plano=False),
+    ])
+    _db.session.commit()
 
 @pytest.fixture
 def client(app):

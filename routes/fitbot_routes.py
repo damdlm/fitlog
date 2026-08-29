@@ -8,6 +8,7 @@ from flask_login import current_user, login_required
 from extensions import limiter
 from services.billing_service import BillingService
 from services.fitbot_service import FitBotService
+from services.tela_controlada_service import TelaControladaService
 
 fitbot_bp = Blueprint("fitbot", __name__)
 logger = logging.getLogger(__name__)
@@ -59,12 +60,15 @@ def chat():
     """
     # Gate de assinatura: quem usa o FitBot para si mesmo (aluno OU
     # professor treinando por conta própria) precisa de trial válido ou
-    # Plano Fit pessoal ativo. Só admin nunca é bloqueado aqui --
-    # inclusive quando um professor usa o FitBot em nome de um aluno
-    # (via aluno_id abaixo), a regra de cobrança que vale é a do
-    # PRÓPRIO professor (Plano Fit pessoal dele), não a do aluno
-    # consultado -- ver services/billing_service.py:usuario_tem_acesso_premium.
-    if not current_user.is_admin and not BillingService.usuario_tem_acesso_premium(current_user):
+    # Plano Fit pessoal ativo -- SE o admin tiver marcado a tela
+    # 'fitbot' como bloqueada (ver models.py:TelaControlada); se estiver
+    # livre, todo mundo logado usa sem exigir plano. Só admin nunca é
+    # bloqueado aqui -- inclusive quando um professor usa o FitBot em
+    # nome de um aluno (via aluno_id abaixo), a regra de cobrança que
+    # vale é a do PRÓPRIO professor (Plano Fit pessoal dele), não a do
+    # aluno consultado -- ver services/billing_service.py:usuario_tem_acesso_premium.
+    if (not current_user.is_admin and TelaControladaService.esta_bloqueada('fitbot')
+            and not BillingService.usuario_tem_acesso_premium(current_user)):
         return jsonify({
             "ok": False,
             "resposta": "Assine o Plano Fit para continuar conversando com o FitBot.",

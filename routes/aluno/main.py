@@ -2,6 +2,7 @@ from flask import render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from . import aluno_bp
 from models import db, User, AlunoProfessor, SolicitacaoVinculo, TreinoVersao, VersaoGlobal, ExercicioCustomizado, RegistroTreino
+from utils.decorators import acesso_premium_required
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 import logging
@@ -10,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 @aluno_bp.route('/dashboard')
 @login_required
+@acesso_premium_required('dashboard')
 def dashboard():
     """Dashboard do aluno (também acessível pelo professor, para seus próprios treinos)"""
     if not current_user.pode_gerenciar_treino_proprio():

@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, jsonify, request
 from flask_login import login_required, current_user
 from services.registro_service import RegistroService
 from services.treino_service import TreinoService
+from utils.decorators import acesso_premium_required
 from datetime import datetime, timezone, timedelta
 import calendar
 import logging
@@ -16,6 +17,7 @@ COR_TREINO = '#F28C33'
 
 @calendar_bp.route("/calendario")
 @login_required
+@acesso_premium_required('calendario')
 def calendario():
     """Página do calendário de treinos"""
     treinos = TreinoService.get_all()
@@ -32,6 +34,7 @@ def calendario():
 
 @calendar_bp.route("/api/eventos")
 @login_required
+@acesso_premium_required('calendario')
 def api_eventos():
     """API para retornar os eventos do calendário"""
     try:
@@ -175,6 +178,7 @@ def api_eventos():
 
 @calendar_bp.route("/api/evento/<int:registro_id>")
 @login_required
+@acesso_premium_required('calendario')
 def api_evento_detalhe(registro_id):
     """Retorna detalhes de um evento (um exercício registrado) específico"""
     from models import db, RegistroTreino

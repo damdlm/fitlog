@@ -233,6 +233,28 @@ class TestGateDeAssinaturaPessoal:
         resp = client.post('/fitbot/chat', json={'mensagem': 'oi'})
         assert resp.status_code == 403
 
+    def test_tela_fitbot_liberada_pelo_admin_nao_bloqueia_mesmo_sem_plano(self, client, app):
+        """Regressão pra services/tela_controlada_service.py -- se o
+        admin desmarcar a tela 'fitbot' em /admin/telas-controladas,
+        ninguém deve ser bloqueado por falta de plano, mesmo sem
+        trial nem assinatura."""
+        with app.app_context():
+            from models import TelaControlada
+            TelaControlada.query.filter_by(chave='fitbot').update({'bloqueia_sem_plano': False})
+            db.session.commit()
+            professor = User(username='prof_fitbot_livre', email='prof_fitbot_livre@teste.com',
+                              tipo_usuario='professor', nome_completo='Prof Livre')
+            professor.set_password('123456')
+            db.session.add(professor)
+            db.session.commit()
+
+        _login(client, 'prof_fitbot_livre')
+        resp = client.post('/fitbot/chat', json={'mensagem': 'oi'})
+        # Não deve mais ser 403 por falta de plano -- pode até falhar
+        # por outro motivo (mock do Groq ausente aqui), mas não por
+        # gate de assinatura.
+        assert resp.status_code != 403 or resp.get_json().get('resposta') != 'Assine o Plano Fit para continuar conversando com o FitBot.'
+
     def test_professor_com_trial_valido_tem_acesso(self, client, app, monkeypatch):
         with app.app_context():
             professor = _criar_usuario('prof_com_trial', tipo_usuario='professor')
