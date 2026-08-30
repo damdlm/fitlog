@@ -93,9 +93,9 @@
 </style>
 
 <div class="v-header">
-    <h1><i class="bi bi-layers me-1" style="color:#F28C33;"></i> Minhas Versões</h1>
-    <a href="{{ url_for('aluno.cadastrar_treinos') }}" class="btn btn-sm" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
-        <i class="bi bi-clipboard2-plus"></i> Cadastrar Treinos
+    <h1><i class="bi bi-layers me-1" style="color:#F28C33;"></i> {{ titulo or 'Minhas Versões' }}</h1>
+    <a href="{{ voltar_url }}" class="btn btn-sm" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+        <i class="bi bi-clipboard2-plus"></i> {{ voltar_label or 'Cadastrar Treinos' }}
     </a>
 </div>
 
@@ -103,15 +103,15 @@
 <div class="v-empty-card">
     <div class="v-empty-icon"><i class="bi bi-layers"></i></div>
     <h2>Nenhuma versão ainda</h2>
-    <p>Vá em "Cadastrar Treinos" para criar sua primeira versão de treino.</p>
-    <a href="{{ url_for('aluno.cadastrar_treinos') }}" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
+    <p>{{ vazio_texto or 'Vá em "Cadastrar Treinos" para criar a primeira versão de treino.' }}</p>
+    <a href="{{ voltar_url }}" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
         <i class="bi bi-check-circle"></i> Começar agora
     </a>
 </div>
 {% else %}
     {% for v in versoes %}
     {% set total_treinos = v.treinos|length %}
-    <a href="{{ url_for('aluno.ver_versao', versao_id=v.id) }}" class="v-card">
+    <a href="{{ ver_versao_url(v.id) }}" class="v-card">
         <div>
             <div class="v-card-titulo">
                 v{{ v.numero_versao }} &middot; {{ v.descricao }}
@@ -137,8 +137,8 @@
 {% endif %}
 
 <div class="text-center mt-4">
-    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-house"></i> Voltar ao início
+    <a href="{{ pagina_inicial_url or url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-house"></i> {{ pagina_inicial_label or 'Voltar ao início' }}
     </a>
 </div>
 {% endblock %}

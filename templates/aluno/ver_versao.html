@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block page_icon %}<i class="bi bi-layers" style="color: #F28C33;"></i>{% endblock %}
-{% block page_title %}Versão {{ versao.numero_versao }}{% endblock %}
+{% block page_title %}Versão {{ versao.numero_versao }}{{ titulo_sufixo or '' }}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/editar-treino-versao.css') }}">
@@ -282,8 +282,8 @@
         <i class="bi bi-layers me-2" style="color: #F28C33;"></i>
         Versão {{ versao.numero_versao }}
     </h1>
-    <a href="{{ url_for('aluno.versoes') }}" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Minhas Versões
+    <a href="{{ voltar_url }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> {{ voltar_label or 'Minhas Versões' }}
     </a>
 </div>
 
@@ -319,7 +319,7 @@
     <div class="ct-hero-actions">
         {% if esta_ativa %}
         <button type="button" class="btn btn-sm" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;"
-                data-confirm-url="{{ url_for('aluno.versao_finalizar', versao_id=versao.id) }}"
+                data-confirm-url="{{ finalizar_url }}"
                 data-confirm-title="Finalizar esta versão?"
                 data-confirm-text="Depois de finalizada, ela sai do modo de edição rápida e passa a fazer parte do seu histórico. Você ainda pode editá-la por aqui depois, se precisar."
                 data-confirm-variant="warning"
@@ -329,7 +329,7 @@
         </button>
         {% else %}
         <button type="button" class="btn btn-sm btn-outline-primary"
-                data-confirm-url="{{ url_for('aluno.versao_clonar', versao_id=versao.id) }}"
+                data-confirm-url="{{ clonar_url }}"
                 data-confirm-title="Clonar esta versão?"
                 data-confirm-text="Cria uma nova versão ativa com os mesmos treinos e exercícios desta. Só é possível se você não tiver nenhuma versão ativa no momento."
                 data-confirm-variant="primary"
@@ -338,7 +338,7 @@
             <i class="bi bi-copy"></i> Clonar
         </button>
         <button type="button" class="btn btn-sm btn-outline-danger"
-                data-confirm-url="{{ url_for('aluno.versao_excluir', versao_id=versao.id) }}"
+                data-confirm-url="{{ excluir_url }}"
                 data-confirm-title="Excluir esta versão?"
                 data-confirm-text="Essa ação não pode ser desfeita. Só é possível excluir se nenhum treino desta versão já tiver sido registrado."
                 data-confirm-variant="danger"
@@ -393,11 +393,11 @@
                         data-treino-codigo="{{ codigo }}"
                         data-treino-nome="{{ tv.nome_treino }}"
                         data-treino-descricao="{{ tv.descricao_treino or '' }}"
-                        data-action="{{ url_for('aluno.versao_salvar_treino', versao_id=versao.id, treino_versao_id=tv.id) }}">
+                        data-action="{{ salvar_treino_url(tv.id) }}">
                     <i class="bi bi-pencil-square"></i> Editar
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-danger"
-                        data-confirm-url="{{ url_for('aluno.versao_remover_treino', versao_id=versao.id, treino_versao_id=tv.id) }}"
+                        data-confirm-url="{{ remover_treino_url(tv.id) }}"
                         data-confirm-title="Remover o treino {{ codigo }}?"
                         data-confirm-text="&quot;{{ tv.nome_treino }}&quot; e todos os seus exercícios associados serão removidos desta versão. Essa ação não pode ser desfeita. Se este treino já tiver sido registrado alguma vez, a remoção será bloqueada para não perder o histórico."
                         data-confirm-variant="danger"
@@ -453,7 +453,7 @@
                 <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Versão</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="{{ url_for('aluno.versao_editar_descricao', versao_id=versao.id) }}">
+            <form method="post" action="{{ editar_descricao_url }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-1">
@@ -481,7 +481,7 @@
                 <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Adicionar Treino</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="{{ url_for('aluno.versao_adicionar_treino', versao_id=versao.id) }}">
+            <form method="post" action="{{ adicionar_treino_url }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-3">
@@ -617,9 +617,11 @@
                                 <i class="bi bi-exclamation-triangle display-6 d-block mb-2"></i>
                                 Você ainda não tem exercícios no seu catálogo.
                                 <br>
-                                <a href="{{ url_for('aluno.novo_exercicio') }}" class="btn btn-sm btn-success mt-2">
+                                {% if novo_exercicio_url %}
+                                <a href="{{ novo_exercicio_url }}" class="btn btn-sm btn-success mt-2">
                                     <i class="bi bi-plus-circle"></i> Cadastrar exercício
                                 </a>
+                                {% endif %}
                             </div>
                             {% endfor %}
                         </div>
@@ -663,8 +665,8 @@
 </script>
 
 <div class="text-center mt-4">
-    <a href="{{ url_for('aluno.versoes') }}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left"></i> Voltar para Minhas Versões
+    <a href="{{ voltar_url }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Voltar para {{ voltar_label or 'Minhas Versões' }}
     </a>
 </div>
 {% endblock %}

@@ -42,7 +42,14 @@ def versoes():
         return _acesso_negado()
 
     todas_versoes = VersaoService.get_all(user_id=current_user.id)
-    return render_template('aluno/versoes.html', versoes=todas_versoes)
+    return render_template(
+        'aluno/versoes.html',
+        versoes=todas_versoes,
+        titulo='Minhas Versões',
+        voltar_url=url_for('aluno.cadastrar_treinos'),
+        voltar_label='Cadastrar Treinos',
+        ver_versao_url=lambda vid: url_for('aluno.ver_versao', versao_id=vid),
+    )
 
 
 @aluno_bp.route('/versao/<int:versao_id>')
@@ -88,6 +95,16 @@ def ver_versao(versao_id):
         treino_exercicios_map=treino_exercicios_map,
         treino_observacoes_map=treino_observacoes_map,
         max_treinos=VersaoService.MAX_TREINOS_POR_VERSAO,
+        voltar_url=url_for('aluno.versoes'),
+        voltar_label='Minhas Versões',
+        finalizar_url=url_for('aluno.versao_finalizar', versao_id=versao.id),
+        clonar_url=url_for('aluno.versao_clonar', versao_id=versao.id),
+        excluir_url=url_for('aluno.versao_excluir', versao_id=versao.id),
+        editar_descricao_url=url_for('aluno.versao_editar_descricao', versao_id=versao.id),
+        adicionar_treino_url=url_for('aluno.versao_adicionar_treino', versao_id=versao.id),
+        salvar_treino_url=lambda tv_id: url_for('aluno.versao_salvar_treino', versao_id=versao.id, treino_versao_id=tv_id),
+        remover_treino_url=lambda tv_id: url_for('aluno.versao_remover_treino', versao_id=versao.id, treino_versao_id=tv_id),
+        novo_exercicio_url=url_for('aluno.novo_exercicio'),
     )
 
 
