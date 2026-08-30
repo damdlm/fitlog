@@ -227,24 +227,20 @@ def assinar():
         return redirect(url_for('billing.minha_assinatura'))
 
     # forma_pagamento: 'cartao' (padrão, checkout hospedado com
-    # cobrança automática) ou 'pix' (assinatura via QR Code, pago
-    # manualmente a cada ciclo -- ver
-    # BillingService.criar_assinatura_checkout_pix). ciclo: 'mensal'
-    # (padrão) ou 'anual' (10x o valor mensal, 2 meses grátis). Sempre
-    # validados contra valores conhecidos -- nunca repassa direto o
-    # que veio do form pra Asaas.
+    # cobrança recorrente automática) ou 'pix' (pagamento avulso que
+    # ativa o plano por ~1 mês, sem débito automático -- ver
+    # BillingService.criar_pagamento_pix_ativacao). Sempre validado
+    # contra valores conhecidos -- nunca repassa direto o que veio do
+    # form pra Asaas.
     forma_pagamento = request.form.get('forma_pagamento', 'cartao').strip()
     if forma_pagamento not in ('cartao', 'pix'):
         forma_pagamento = 'cartao'
-    ciclo = request.form.get('ciclo', 'mensal').strip()
-    if ciclo not in ('mensal', 'anual'):
-        ciclo = 'mensal'
 
     try:
         if forma_pagamento == 'pix':
-            checkout_url = BillingService.criar_assinatura_checkout_pix(current_user, plano, ciclo=ciclo)
+            checkout_url = BillingService.criar_pagamento_pix_ativacao(current_user, plano)
         else:
-            checkout_url = BillingService.criar_assinatura_checkout(current_user, plano, ciclo=ciclo)
+            checkout_url = BillingService.criar_assinatura_checkout(current_user, plano)
     except AssinaturaAtualizadaError as e:
         # Usuário mudou de plano enquanto já estava ativo (ex: professor
         # cresceu de Pró pra Premium, ou escolheu voluntariamente upgrade/

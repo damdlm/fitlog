@@ -20,6 +20,7 @@ Duas responsabilidades bem separadas de propósito:
    usuário (isso seria falsificável por qualquer um que soubesse a URL).
 """
 
+import calendar
 import hmac
 import logging
 import re
@@ -38,18 +39,34 @@ CARENCIA_DIAS_PROFESSOR_GESTAO = 15
 LIMITE_ALUNOS_GRATIS = 2
 REQUEST_TIMEOUT_SECONDS = 10
 
-PLANOS_GESTAO_PROFESSOR = ('professor_pro', 'professor_plus', 'professor_premium')
-ORDEM_PLANOS_GESTAO = {'professor_pro': 1, 'professor_plus': 2, 'professor_premium': 3}
+PLANOS_GESTAO_PROFESSOR = ('professor_pro', 'professor_premium')
+ORDEM_PLANOS_GESTAO = {'professor_pro': 1, 'professor_premium': 2}
 
-# Ciclo anual cobra o equivalente a (12 - MESES_GRATIS_ANUAL) meses de
-# uma vez -- "2 meses grátis" ao pagar o ano inteiro à vista. Vale só
-# como MULTIPLICADOR do preco_centavos mensal do Plano; não existe
-# linha de Plano separada pra anual (evita duplicar/dessincronizar a
-# tabela de planos -- ver Plano.preco_anual_centavos).
-MESES_GRATIS_ANUAL = 2
+# Pix não gera cobrança recorrente automática (ver
+# criar_pagamento_pix_ativacao) -- cada pagamento confirmado ativa o
+# plano por ~1 mês. DIAS_ATIVACAO_PIX existe só como valor de
+# fallback; o padrão é usar _proximo_vencimento_mensal (mesmo dia do
+# mês seguinte, com fallback pro último dia quando o mês seguinte for
+# mais curto), não um número fixo de dias -- ver essa função.
+DIAS_ATIVACAO_PIX_FALLBACK = 30
 
 ASAAS_BASE_URL_SANDBOX = "https://sandbox.asaas.com/api/v3"
 ASAAS_BASE_URL_PRODUCAO = "https://api.asaas.com/v3"
+
+
+def _proximo_vencimento_mensal(referencia: datetime) -> datetime:
+    """"Mesmo dia do mês seguinte" -- usado pra calcular até quando um
+    pagamento Pix confirmado mantém o plano ativo (ver
+    criar_pagamento_pix_ativacao e _aplicar_evento). Quando o mês
+    seguinte é mais curto e não tem esse dia (ex: dia 31 -> não existe
+    31 de fevereiro), cai pro último dia daquele mês -- nunca estoura
+    pro mês depois disso."""
+    ano = referencia.year + (referencia.month // 12)
+    mes = referencia.month % 12 + 1
+    ultimo_dia_mes_seguinte = calendar.monthrange(ano, mes)[1]
+    dia = min(referencia.day, ultimo_dia_mes_seguinte)
+    return referencia.replace(year=ano, month=mes, day=dia)
+
 
 # Eventos do Asaas que realmente importam pro nosso ciclo de vida.
 # Lista completa de eventos: https://docs.asaas.com/docs/webhook-events
@@ -480,24 +497,12 @@ class BillingService:
         return {'access_token': api_key, 'Content-Type': 'application/json'}
 
     @staticmethod
-    def valor_ciclo_centavos(plano: Plano, ciclo: str) -> int:
-        """Valor a cobrar por ciclo, em centavos. 'anual' cobra
-        (12 - MESES_GRATIS_ANUAL) vezes o preço mensal, de uma vez só
-        -- mesma fórmula usada por Plano.preco_anual_centavos (que
-        existe só pra EXIBIÇÃO na tela; esta função é a fonte usada de
-        fato no valor mandado ao Asaas, pra nunca ficar dessincronizado
-        do que é mostrado)."""
-        if ciclo == 'anual':
-            return plano.preco_centavos * (12 - MESES_GRATIS_ANUAL)
-        return plano.preco_centavos
-
-    @staticmethod
     def _obter_ou_criar_cliente_asaas(usuario: User, assinatura: Assinatura) -> str:
         """Garante o cliente correspondente no Asaas e devolve seu id,
         criando ou atualizando o cadastro conforme necessário. Extraído
         de criar_assinatura_checkout pra ser reaproveitado também pelo
-        fluxo de assinatura via Pix (criar_assinatura_checkout_pix),
-        que precisa do mesmo cliente mas não passa pelo /checkouts
+        fluxo de ativação via Pix (criar_pagamento_pix_ativacao), que
+        precisa do mesmo cliente mas não passa pelo /checkouts
         hospedado."""
         dados_cliente = {
             'name': usuario.nome_completo or usuario.username,
@@ -530,28 +535,33 @@ class BillingService:
         return customer_id
 
     @staticmethod
-    def criar_assinatura_checkout_pix(usuario: User, plano: Plano, ciclo: str = 'mensal') -> str:
-        """Alternativa ao checkout de cartão: cria a assinatura DIRETO
-        via POST /subscriptions com billingType='PIX', sem passar pela
-        página hospedada de /checkouts (que a própria API do Asaas
-        recusa combinar com Pix + RECURRENT -- ver o comentário em
-        criar_assinatura_checkout). Asaas não faz débito automático via
-        Pix: ele gera um novo QR Code/"linha" a cada vencimento do
-        ciclo, e quem assina precisa pagar manualmente todo mês (ou
-        ano). Por isso aqui devolvemos o invoiceUrl do PRIMEIRO
-        pagamento gerado, não um link de checkout -- é essa página que
-        mostra o QR Code pro usuário pagar.
+    def criar_pagamento_pix_ativacao(usuario: User, plano: Plano) -> str:
+        """Alternativa ao cartão: gera uma cobrança Pix AVULSA (POST
+        /payments -- não é uma assinatura recorrente no Asaas, ao
+        contrário do fluxo de cartão em criar_assinatura_checkout) que,
+        quando confirmada, ativa o plano por ~1 mês (até o mesmo dia do
+        mês seguinte -- ver _proximo_vencimento_mensal e o tratamento
+        em _aplicar_evento). Não existe débito automático via Pix:
+        passado esse período, o acesso cai pra 'past_due' (mesma
+        carência de sempre) e a pessoa precisa gerar e pagar um novo
+        Pix aqui de novo pra renovar -- ver expirar_pix_vencidos.
+
+        Diferente do cartão, aqui não existe "assinatura ativa no
+        gateway" pra atualizar de valor quando o professor troca de
+        plano no meio do período -- o plano só muda de fato no próximo
+        Pix pago. Por isso: se já tem um período Pix vigente pro MESMO
+        plano, recusa com AssinaturaJaAtivaError; se é plano diferente
+        (upgrade/downgrade) ou o período já venceu, gera uma cobrança
+        nova normalmente -- ao confirmar, ela substitui o plano atual.
 
         IMPORTANTE -- não testado contra o Asaas (sandbox nem
-        produção): implementado seguindo o padrão documentado em
-        https://docs.asaas.com/reference/criar-nova-assinatura, mas o
-        próprio código deste arquivo registra que já foram necessárias
-        3 rodadas de erro 400 pra acertar o fluxo de cartão. Rodar
-        contra o sandbox e conferir principalmente: (1) se o primeiro
-        payment já vem no corpo da resposta de /subscriptions ou exige
-        um GET /payments?subscription={id} separado logo em seguida;
-        (2) o nome exato do campo com o QR Code/invoiceUrl na resposta.
-        """
+        produção): implementado seguindo https://docs.asaas.com/reference/criar-nova-cobranca,
+        mas o próprio código deste arquivo registra que já foram
+        necessárias 3 rodadas de erro 400 pra acertar o fluxo de
+        cartão. Testar no sandbox antes de liberar, conferindo
+        principalmente o nome do campo com o link/QR Code do Pix na
+        resposta (usei 'invoiceUrl', mesmo campo já usado no restante
+        do código pro link de checkout de cartão)."""
         faltando = BillingService.campos_cobranca_faltando(usuario)
         if faltando:
             raise DadosCobrancaIncompletosError(faltando)
@@ -565,57 +575,42 @@ class BillingService:
         if assinatura is None:
             assinatura = BillingService.garantir_registro_assinatura(usuario)
 
-        if assinatura.status == 'active' and assinatura.gateway_subscription_id:
-            if assinatura.plano_id == plano.id and assinatura.ciclo == ciclo:
-                raise AssinaturaJaAtivaError(plano)
-            BillingService.atualizar_valor_assinatura(assinatura, plano, ciclo=ciclo)
-            raise AssinaturaAtualizadaError(plano)
+        agora = datetime.now(timezone.utc)
+        periodo_vigente = assinatura.periodo_atual_fim and assinatura.periodo_atual_fim > agora
+        if (assinatura.status == 'active' and assinatura.forma_pagamento == 'pix'
+                and assinatura.plano_id == plano.id and periodo_vigente):
+            raise AssinaturaJaAtivaError(plano)
 
         customer_id = BillingService._obter_ou_criar_cliente_asaas(usuario, assinatura)
-        valor = BillingService.valor_ciclo_centavos(plano, ciclo) / 100
+        valor = plano.preco_centavos / 100
 
         resp = requests.post(
-            f'{BillingService._base_url()}/subscriptions',
+            f'{BillingService._base_url()}/payments',
             json={
                 'customer': customer_id,
                 'billingType': 'PIX',
-                'cycle': 'YEARLY' if ciclo == 'anual' else 'MONTHLY',
                 'value': valor,
-                'nextDueDate': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
-                'description': plano.nome,
+                'dueDate': agora.strftime('%Y-%m-%d'),
+                'description': f'{plano.nome} -- ativação de ~1 mês',
                 'externalReference': str(assinatura.id),
             },
             headers=BillingService._headers(),
             timeout=REQUEST_TIMEOUT_SECONDS,
         )
-        BillingService._checar_resposta(resp, 'criar assinatura pix')
+        BillingService._checar_resposta(resp, 'criar cobrança pix avulsa')
         dados = resp.json()
 
+        # Otimista, igual ao fluxo de cartão em criar_assinatura_checkout:
+        # o plano só passa a valer de verdade (status='active' +
+        # periodo_atual_fim) quando o webhook confirmar o pagamento --
+        # ver _aplicar_evento. Isso aqui só marca a INTENÇÃO.
         assinatura.plano_id = plano.id
         assinatura.forma_pagamento = 'pix'
-        assinatura.ciclo = ciclo
-        assinatura.gateway_subscription_id = dados.get('id')
         assinatura.cartao_ultimos_digitos = None
         assinatura.cartao_bandeira = None
         db.session.commit()
 
-        # A cobrança propriamente dita (com o QR Code) é um objeto
-        # separado da assinatura -- buscamos o primeiro payment gerado
-        # pra devolver a página onde o usuário paga.
-        resp_pagamentos = requests.get(
-            f'{BillingService._base_url()}/payments',
-            params={'subscription': dados.get('id')},
-            headers=BillingService._headers(),
-            timeout=REQUEST_TIMEOUT_SECONDS,
-        )
-        BillingService._checar_resposta(resp_pagamentos, 'buscar primeira cobrança pix')
-        pagamentos = resp_pagamentos.json().get('data', [])
-        if pagamentos:
-            return pagamentos[0].get('invoiceUrl')
-        # Sem payment ainda gerado -- devolve a própria assinatura pra
-        # não travar o fluxo, mas isso merece investigação se acontecer
-        # em produção (esperado sempre vir ao menos 1 payment junto).
-        return BillingService._url_minha_assinatura()
+        return dados.get('invoiceUrl')
 
     @staticmethod
     def listar_faturas(usuario: User, limite: int = 24) -> list[dict]:
@@ -655,7 +650,7 @@ class BillingService:
         return faturas
 
     @staticmethod
-    def criar_assinatura_checkout(usuario: User, plano: Plano, ciclo: str = 'mensal') -> str:
+    def criar_assinatura_checkout(usuario: User, plano: Plano) -> str:
         """Cria (ou reaproveita/atualiza) o cliente no Asaas e um
         Checkout de assinatura recorrente por cartão de crédito,
         retornando o link da página de pagamento hospedada pelo Asaas
@@ -725,14 +720,13 @@ class BillingService:
             assinatura = BillingService.garantir_registro_assinatura(usuario)
 
         if assinatura.status == 'active' and assinatura.gateway_subscription_id:
-            if assinatura.plano_id == plano.id and assinatura.ciclo == ciclo and assinatura.forma_pagamento == 'cartao':
+            if assinatura.plano_id == plano.id and assinatura.forma_pagamento == 'cartao':
                 raise AssinaturaJaAtivaError(plano)
-            BillingService.atualizar_valor_assinatura(assinatura, plano, ciclo=ciclo)
+            BillingService.atualizar_valor_assinatura(assinatura, plano)
             raise AssinaturaAtualizadaError(plano)
 
         customer_id = BillingService._obter_ou_criar_cliente_asaas(usuario, assinatura)
-        valor = BillingService.valor_ciclo_centavos(plano, ciclo) / 100
-        descricao_ciclo = 'anual' if ciclo == 'anual' else 'mensal'
+        valor = plano.preco_centavos / 100
 
         callback_url = BillingService._url_minha_assinatura()
         resp = requests.post(
@@ -744,7 +738,7 @@ class BillingService:
                 # de pagamento permitido para operações RECURRENT".
                 # Pix/boleto não têm suporte a cobrança recorrente
                 # automática nesse fluxo de Checkout -- ver
-                # criar_assinatura_checkout_pix pra essa alternativa.
+                # criar_pagamento_pix_ativacao pra essa alternativa.
                 'billingTypes': ['CREDIT_CARD'],
                 'chargeTypes': ['RECURRENT'],
                 'minutesToExpire': 60,
@@ -757,12 +751,12 @@ class BillingService:
                 'externalReference': str(assinatura.id),
                 'items': [{
                     'name': plano.nome,
-                    'description': f'Assinatura {descricao_ciclo} -- {plano.nome}',
+                    'description': f'Assinatura mensal -- {plano.nome}',
                     'quantity': 1,
                     'value': valor,
                 }],
                 'subscription': {
-                    'cycle': 'YEARLY' if ciclo == 'anual' else 'MONTHLY',
+                    'cycle': 'MONTHLY',
                     'nextDueDate': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
                     'value': valor,
                     'description': plano.nome,
@@ -776,13 +770,12 @@ class BillingService:
 
         assinatura.plano_id = plano.id
         assinatura.forma_pagamento = 'cartao'
-        assinatura.ciclo = ciclo
         db.session.commit()
 
         return dados.get('link')
 
     @staticmethod
-    def atualizar_valor_assinatura(assinatura: Assinatura, plano: Plano, ciclo: str = 'mensal'):
+    def atualizar_valor_assinatura(assinatura: Assinatura, plano: Plano):
         """Atualiza o VALOR (e plano local) de uma assinatura já ativa
         no Asaas -- usado quando o usuário precisa mudar de plano (ex:
         professor que passou a ter mais alunos) enquanto já está em
@@ -795,19 +788,17 @@ class BillingService:
         já gerada com o valor antigo não é mexida, pra não surpreender
         o pagador com uma cobrança diferente do que ele já esperava.
 
-        Mantém a forma de pagamento (cartão ou Pix) que a assinatura já
-        tinha -- trocar de cartão pra Pix ou vice-versa não é suportado
-        por essa atualização de valor (exigiria cancelar e recriar a
-        assinatura no Asaas, ver observação em routes/billing_routes.py
-        sobre 'trocar forma de pagamento')."""
-        billing_type = 'PIX' if assinatura.forma_pagamento == 'pix' else 'CREDIT_CARD'
-        valor = BillingService.valor_ciclo_centavos(plano, ciclo) / 100
+        Só é chamado no fluxo de cartão -- Pix agora é pagamento
+        avulso (sem assinatura recorrente no Asaas, ver
+        criar_pagamento_pix_ativacao), então não há "assinatura no
+        gateway" pra atualizar de valor nesse caso; a troca de plano
+        via Pix só passa a valer no próximo pagamento confirmado."""
         resp = requests.put(
             f'{BillingService._base_url()}/subscriptions/{assinatura.gateway_subscription_id}',
             json={
-                'billingType': billing_type,
-                'cycle': 'YEARLY' if ciclo == 'anual' else 'MONTHLY',
-                'value': valor,
+                'billingType': 'CREDIT_CARD',
+                'cycle': 'MONTHLY',
+                'value': plano.preco_centavos / 100,
                 'description': plano.nome,
             },
             headers=BillingService._headers(),
@@ -816,7 +807,6 @@ class BillingService:
         BillingService._checar_resposta(resp, 'atualizar valor da assinatura')
 
         assinatura.plano_id = plano.id
-        assinatura.ciclo = ciclo
         db.session.commit()
         logger.info(
             'Assinatura %s (usuario=%s) atualizada pro plano %s sem criar cobrança nova',
@@ -971,7 +961,7 @@ class BillingService:
         # bandeira -- guardamos só isso (nunca o número completo, que
         # nem é enviado) pra poder mostrar "Cartão final 4242" na tela
         # de assinatura. NÃO CONFIRMADO contra um payload real (ver
-        # aviso em criar_assinatura_checkout_pix sobre testar contra o
+        # aviso em criar_pagamento_pix_ativacao sobre testar contra o
         # sandbox); se o nome do campo vier diferente, isto
         # simplesmente não preenche nada -- não quebra o resto do
         # processamento do webhook.
@@ -1008,17 +998,16 @@ class BillingService:
         if tipo_evento in EVENTOS_CONFIRMACAO_PAGAMENTO:
             assinatura.status = 'active'
             assinatura.carencia_termina_em = None
+            # Pix é pagamento avulso (sem assinatura recorrente no
+            # Asaas) -- cada confirmação vale por ~1 mês a partir de
+            # AGORA, não a partir de um "próximo vencimento" que o
+            # gateway já saberia (isso só existe pra cartão, via
+            # subscription). Cartão não usa periodo_atual_fim -- quem
+            # garante a renovação dele é o próprio Asaas.
+            if assinatura.forma_pagamento == 'pix':
+                assinatura.periodo_atual_fim = _proximo_vencimento_mensal(agora)
         elif tipo_evento in EVENTOS_ATRASO:
-            assinatura.status = 'past_due'
-            # Professor pagando Pró/Premium tem carência maior (15 dias)
-            # antes de perder acesso aos alunos -- o restante (aluno, ou
-            # professor no Plano Fit) usa a carência padrão de 3 dias.
-            plano_codigo = assinatura.plano.codigo if assinatura.plano else None
-            dias_carencia = (
-                CARENCIA_DIAS_PROFESSOR_GESTAO if plano_codigo in PLANOS_GESTAO_PROFESSOR
-                else CARENCIA_DIAS_PADRAO
-            )
-            assinatura.carencia_termina_em = agora + timedelta(days=dias_carencia)
+            BillingService._iniciar_atraso(assinatura, agora)
         elif tipo_evento in EVENTOS_CANCELAMENTO:
             assinatura.status = 'canceled'
             assinatura.cancelado_em = agora
@@ -1029,6 +1018,24 @@ class BillingService:
             # que chegou (200 OK) mas não ativou a assinatura: o tipo
             # de evento provavelmente caiu aqui sem deixar rastro nenhum.
             logger.info('Evento Asaas %s sem tratamento específico (assinatura %s inalterada)', tipo_evento, assinatura.id)
+
+    @staticmethod
+    def _iniciar_atraso(assinatura: Assinatura, agora: datetime):
+        """Move a assinatura pra 'past_due' e calcula até quando a
+        carência aguenta antes de bloquear de vez -- extraído de
+        _aplicar_evento (webhook de atraso de cartão) pra ser
+        reaproveitado também por expirar_pix_vencidos (fim do período
+        de um pagamento Pix avulso, sem nenhum webhook envolvido)."""
+        assinatura.status = 'past_due'
+        # Professor pagando Pró/Premium tem carência maior (15 dias)
+        # antes de perder acesso aos alunos -- o restante (aluno, ou
+        # professor no Plano Fit) usa a carência padrão de 3 dias.
+        plano_codigo = assinatura.plano.codigo if assinatura.plano else None
+        dias_carencia = (
+            CARENCIA_DIAS_PROFESSOR_GESTAO if plano_codigo in PLANOS_GESTAO_PROFESSOR
+            else CARENCIA_DIAS_PADRAO
+        )
+        assinatura.carencia_termina_em = agora + timedelta(days=dias_carencia)
 
     @staticmethod
     def expirar_carencias_vencidas():
@@ -1051,4 +1058,28 @@ class BillingService:
         if vencidas:
             db.session.commit()
             logger.info('%d assinatura(s) movida(s) para blocked por carência vencida', len(vencidas))
+        return len(vencidas)
+
+    @staticmethod
+    def expirar_pix_vencidos():
+        """Job periódico (ex: a cada hora, junto com
+        expirar_carencias_vencidas): Pix não tem débito automático, só
+        webhook quando alguém PAGA -- nada avisa quando um período
+        Pix simplesmente TERMINA sem ninguém pagar de novo. Por isso
+        este job precisa varrer ativamente as assinaturas via Pix cujo
+        periodo_atual_fim já passou e iniciar a carência de atraso
+        (mesma lógica/prazos de sempre -- ver _iniciar_atraso), como se
+        fosse um evento de atraso vindo do gateway."""
+        agora = datetime.now(timezone.utc)
+        vencidas = Assinatura.query.filter(
+            Assinatura.status == 'active',
+            Assinatura.forma_pagamento == 'pix',
+            Assinatura.periodo_atual_fim.isnot(None),
+            Assinatura.periodo_atual_fim <= agora,
+        ).all()
+        for assinatura in vencidas:
+            BillingService._iniciar_atraso(assinatura, agora)
+        if vencidas:
+            db.session.commit()
+            logger.info('%d assinatura(s) Pix movida(s) para past_due por período vencido', len(vencidas))
         return len(vencidas)

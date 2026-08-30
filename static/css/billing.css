@@ -83,7 +83,7 @@
     padding: 2px 10px; border-radius: 999px; white-space: nowrap;
 }
 
-/* Seletor de ciclo (mensal/anual) e forma de pagamento (cartão/pix) */
+/* Seletor de forma de pagamento (cartão/pix) */
 .ma-toggle-group {
     display: inline-flex;
     background: #f4f4f4;

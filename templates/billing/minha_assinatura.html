@@ -25,27 +25,22 @@
     {% elif assinatura and assinatura.forma_pagamento == 'pix' and assinatura.status == 'active' %}
     <div class="ma-cartao-salvo">
         <i class="bi bi-qr-code"></i>
-        <span>Pagamento via <strong>Pix</strong> -- um novo QR Code é gerado a cada vencimento.</span>
+        <span>
+            Ativado via <strong>Pix</strong>{% if assinatura.periodo_atual_fim %} até <strong>{{ assinatura.periodo_atual_fim.strftime('%d/%m/%Y') }}</strong>{% endif %}.
+            <br><small class="text-muted">Sem débito automático -- pague um novo Pix aqui pra renovar.</small>
+        </span>
     </div>
     {% endif %}
 {% endmacro %}
 
-{% macro seletor_ciclo_pagamento(prefixo) %}
+{% macro seletor_pagamento(prefixo) %}
 <div class="mb-3">
-    <div class="ma-toggle-group" role="radiogroup" aria-label="Ciclo de cobrança">
-        <input type="radio" name="ciclo" id="{{ prefixo }}-ciclo-mensal" value="mensal" checked
-               onchange="atualizarResumo('{{ prefixo }}')">
-        <label for="{{ prefixo }}-ciclo-mensal">Mensal</label>
-        <input type="radio" name="ciclo" id="{{ prefixo }}-ciclo-anual" value="anual"
-               onchange="atualizarResumo('{{ prefixo }}')">
-        <label for="{{ prefixo }}-ciclo-anual">Anual <span class="ma-badge-desconto">2 meses grátis</span></label>
-    </div>
     <div class="ma-toggle-group" role="radiogroup" aria-label="Forma de pagamento">
         <input type="radio" name="forma_pagamento" id="{{ prefixo }}-pg-cartao" value="cartao" checked
-               onchange="atualizarResumo('{{ prefixo }}')">
+               onchange="atualizarNotaPagamento('{{ prefixo }}')">
         <label for="{{ prefixo }}-pg-cartao"><i class="bi bi-credit-card-2-front me-1"></i>Cartão</label>
         <input type="radio" name="forma_pagamento" id="{{ prefixo }}-pg-pix" value="pix"
-               onchange="atualizarResumo('{{ prefixo }}')">
+               onchange="atualizarNotaPagamento('{{ prefixo }}')">
         <label for="{{ prefixo }}-pg-pix"><i class="bi bi-qr-code me-1"></i>Pix</label>
     </div>
     <p class="text-muted mb-0" style="font-size: 0.8rem;" id="{{ prefixo }}-nota-pagamento">
@@ -153,7 +148,6 @@
             <div class="ma-planos-grid" id="grid-planos-professor">
                 {% for plano in planos_disponiveis %}
                 <label class="ma-plano-card {% if plano.id == plano_oferecido.id %}selecionado{% endif %}"
-                       data-mensal="{{ plano.preco_centavos }}" data-anual="{{ plano.preco_anual_centavos() }}" data-nome="{{ plano.nome }}"
                        onclick="selecionarPlanoProfessor(this, '{{ plano.codigo }}')">
                     {% if assinatura and assinatura.status == 'active' and assinatura.plano_id == plano.id %}
                     <span class="badge-atual">Plano atual</span>
@@ -166,14 +160,14 @@
                         {% elif plano.max_alunos is none %}{{ plano.min_alunos }}+ alunos
                         {% else %}{{ plano.min_alunos }}–{{ plano.max_alunos }} alunos{% endif %}
                     </div>
-                    <div class="preco">R$ <span class="valor-exibido">{{ '%.2f'|format(plano.preco_centavos / 100) }}</span><small>/<span class="ciclo-label">mês</span></small></div>
+                    <div class="preco">R$ {{ '%.2f'|format(plano.preco_centavos / 100) }}<small>/mês</small></div>
                 </label>
                 {% endfor %}
             </div>
         </div>
         {% else %}
         <input type="hidden" name="plano_codigo" value="{{ plano_oferecido.codigo }}">
-        <div class="ma-price">R$ <span id="professor-preco-unico">{{ '%.2f'|format(plano_oferecido.preco_centavos / 100) }}</span><small> /<span id="professor-ciclo-label-unico">mês</span></small></div>
+        <div class="ma-price">R$ {{ '%.2f'|format(plano_oferecido.preco_centavos / 100) }}<small> /mês</small></div>
         <p class="text-muted mb-3">
             {{ plano_oferecido.nome }}
             {% if plano_gestao_necessario %} — libera Estatísticas, FitBot e gestão dos seus alunos
@@ -181,7 +175,7 @@
         </p>
         {% endif %}
 
-        {{ seletor_ciclo_pagamento('professor') }}
+        {{ seletor_pagamento('professor') }}
         {{ campos_cobranca('professor') }}
 
         <button type="button" class="ma-btn-assinar" id="professor-btn-continuar" onclick="revelarOuEnviar('professor')">
@@ -205,16 +199,14 @@
     <h3 class="h6 mb-3"><i class="bi bi-info-circle me-1"></i> Faixas de plano</h3>
     <table class="table table-sm mb-0">
         <thead>
-            <tr><th>Faixa</th><th>Alunos ativos</th><th>Mensal</th><th>Anual</th></tr>
+            <tr><th>Faixa</th><th>Alunos ativos</th><th>Mensal</th></tr>
         </thead>
         <tbody>
-            <tr><td>Plano Fit</td><td>até 2</td><td>R$ 5,99</td><td>R$ 47,92</td></tr>
-            <tr><td>Plano Pró</td><td>3 a 9</td><td>R$ 29,90</td><td>R$ 239,20</td></tr>
-            <tr><td>Plano Plus</td><td>10 a 19</td><td>R$ 59,90</td><td>R$ 479,20</td></tr>
-            <tr><td>Plano Premium</td><td>20 ou mais</td><td>R$ 99,90</td><td>R$ 799,20</td></tr>
+            <tr><td>Plano Fit</td><td>até 2</td><td>R$ 5,99</td></tr>
+            <tr><td>Plano Pró</td><td>3 a 10</td><td>R$ 29,90</td></tr>
+            <tr><td>Plano Premium</td><td>11 ou mais</td><td>R$ 99,90</td></tr>
         </tbody>
     </table>
-    <p class="text-muted mt-2 mb-0" style="font-size: 0.78rem;">Valor anual já com 2 meses grátis.</p>
 </div>
 
 {% else %}
@@ -252,13 +244,13 @@
 
 {% if plano_oferecido %}
 <div class="ma-card text-center">
-    <div class="ma-price">R$ <span id="aluno-preco">{{ '%.2f'|format(plano_oferecido.preco_centavos / 100) }}</span><small> /<span id="aluno-ciclo-label">mês</span></small></div>
+    <div class="ma-price">R$ {{ '%.2f'|format(plano_oferecido.preco_centavos / 100) }}<small> /mês</small></div>
     <p class="text-muted mb-3">{{ plano_oferecido.nome }} — Estatísticas e FitBot liberados</p>
     <form method="POST" action="{{ url_for('billing.assinar') }}" id="form-assinar-aluno">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="plano_codigo" value="{{ plano_oferecido.codigo }}">
 
-        {{ seletor_ciclo_pagamento('aluno') }}
+        {{ seletor_pagamento('aluno') }}
         {{ campos_cobranca('aluno') }}
 
         <button type="button" class="ma-btn-assinar" id="aluno-btn-continuar" onclick="revelarOuEnviar('aluno')">
@@ -280,53 +272,21 @@
 {% endif %}
 
 <script>
-const PLANO_OFERECIDO_MENSAL = {{ (plano_oferecido.preco_centavos if plano_oferecido else 0) }};
-const PLANO_OFERECIDO_ANUAL = {{ (plano_oferecido.preco_anual_centavos() if plano_oferecido else 0) }};
-
-function formatarReais(centavos) {
-    return (centavos / 100).toFixed(2).replace('.', ',');
-}
-
 function selecionarPlanoProfessor(cardEl, codigo) {
     document.querySelectorAll('#grid-planos-professor .ma-plano-card').forEach(c => c.classList.remove('selecionado'));
     cardEl.classList.add('selecionado');
     cardEl.querySelector('input[type=radio]').checked = true;
-    atualizarResumo('professor');
 }
 
-function atualizarResumo(prefixo) {
+function atualizarNotaPagamento(prefixo) {
     const form = document.getElementById(prefixo === 'professor' ? 'form-assinar-professor' : 'form-assinar-aluno');
     if (!form) return;
-    const ciclo = form.querySelector('input[name="ciclo"]:checked').value;
     const formaPagamento = form.querySelector('input[name="forma_pagamento"]:checked').value;
     const nota = document.getElementById(prefixo + '-nota-pagamento');
     if (nota) {
         nota.textContent = formaPagamento === 'pix'
-            ? 'Pix não tem débito automático: um QR Code novo é gerado a cada vencimento, e você paga manualmente.'
+            ? 'Pix não tem débito automático: o pagamento confirmado ativa o plano por ~1 mês, e você paga de novo aqui pra renovar.'
             : 'Cartão de crédito é cobrado automaticamente todo mês. Seu cartão nunca passa pelo FitLog.';
-    }
-
-    const cards = document.querySelectorAll('#grid-planos-professor .ma-plano-card');
-    cards.forEach(card => {
-        const mensal = parseInt(card.dataset.mensal, 10);
-        const anual = parseInt(card.dataset.anual, 10);
-        const valor = ciclo === 'anual' ? anual : mensal;
-        card.querySelector('.valor-exibido').textContent = formatarReais(valor);
-        card.querySelector('.ciclo-label').textContent = ciclo === 'anual' ? 'ano' : 'mês';
-    });
-
-    const precoUnicoProfessor = document.getElementById('professor-preco-unico');
-    if (precoUnicoProfessor) {
-        const valor = ciclo === 'anual' ? PLANO_OFERECIDO_ANUAL : PLANO_OFERECIDO_MENSAL;
-        precoUnicoProfessor.textContent = formatarReais(valor);
-        document.getElementById('professor-ciclo-label-unico').textContent = ciclo === 'anual' ? 'ano' : 'mês';
-    }
-
-    const precoAluno = document.getElementById('aluno-preco');
-    if (precoAluno) {
-        const valor = ciclo === 'anual' ? PLANO_OFERECIDO_ANUAL : PLANO_OFERECIDO_MENSAL;
-        precoAluno.textContent = formatarReais(valor);
-        document.getElementById('aluno-ciclo-label').textContent = ciclo === 'anual' ? 'ano' : 'mês';
     }
 }
 

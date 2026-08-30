@@ -137,16 +137,6 @@
                                 </form>
                                 {% endif %}
                                 {% endif %}
-                                <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post" class="d-inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" class="btn btn-outline-danger" title="Remover vínculo" aria-label="Remover vínculo com {{ nome_exibicao }}"
-                                            data-confirm-title="Remover vínculo?"
-                                            data-confirm-text="Você vai perder acesso aos treinos, versões e histórico de {{ nome_exibicao }} até que um novo vínculo seja aceito. Os dados do aluno não são apagados, só a conexão com você."
-                                            data-confirm-icon="bi-link-45deg"
-                                            data-confirm-label="Remover vínculo">
-                                        <i class="bi bi-link-45deg"></i>
-                                    </button>
-                                </form>
                             </div>
                         </td>
                     </tr>
@@ -232,16 +222,6 @@
                 </form>
                 {% endif %}
                 {% endif %}
-                <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post" class="flex-fill">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <button type="submit" class="btn btn-sm btn-outline-danger w-100"
-                            data-confirm-title="Remover vínculo?"
-                            data-confirm-text="Você vai perder acesso aos treinos, versões e histórico de {{ nome_exibicao }} até que um novo vínculo seja aceito. Os dados do aluno não são apagados, só a conexão com você."
-                            data-confirm-icon="bi-link-45deg"
-                            data-confirm-label="Remover vínculo">
-                        <i class="bi bi-link-45deg"></i>
-                    </button>
-                </form>
             </div>
         </div>
     </div>
