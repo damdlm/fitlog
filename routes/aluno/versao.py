@@ -4,11 +4,12 @@ finalizadas), reconstruída após a remoção da tabela `treinos`
 compartilhada (ver migration e1f2a3b4c5d6).
 
 Diferente da tela "Cadastrar Treinos" (routes/aluno/cadastro_treinos.py),
-que só enxerga a versão ATIVA, aqui o aluno pode ver e editar QUALQUER
-versão sua, inclusive as já finalizadas -- por isso todas as chamadas ao
-VersaoService abaixo passam permitir_finalizada=True. As travas de posse
-(IDOR) e de integridade de histórico (RegistroTreino) continuam
-aplicadas pelo service independente disso.
+que só enxerga a versão ATIVA, aqui o aluno pode ver QUALQUER versão sua,
+inclusive as já finalizadas -- mas só pode EDITAR (descrição, treinos,
+exercícios) enquanto a versão estiver ativa. Uma vez finalizada, a versão
+vira histórico somente-leitura (só restam as ações Clonar/Excluir). As
+travas de posse (IDOR) e de integridade de histórico (RegistroTreino)
+continuam aplicadas pelo service independente disso.
 """
 
 import logging
@@ -112,14 +113,14 @@ def ver_versao(versao_id):
 @login_required
 @limiter.limit("30 per hour", key_func=_chave_por_usuario)
 def versao_editar_descricao(versao_id):
-    """Edita a descrição de uma versão -- ativa ou finalizada."""
+    """Edita a descrição de uma versão -- só permitido se ainda estiver ativa."""
     if not current_user.pode_gerenciar_treino_proprio():
         return _acesso_negado()
 
     descricao = request.form.get('descricao', '')
     try:
         VersaoService.editar_descricao_livre(
-            versao_id, descricao, user_id=current_user.id, permitir_finalizada=True
+            versao_id, descricao, user_id=current_user.id, permitir_finalizada=False
         )
         flash('Versão atualizada!', 'success')
     except ValueError as e:
@@ -134,7 +135,7 @@ def versao_editar_descricao(versao_id):
 @login_required
 @limiter.limit("60 per hour", key_func=_chave_por_usuario)
 def versao_adicionar_treino(versao_id):
-    """Adiciona um treino a uma versão -- ativa ou finalizada."""
+    """Adiciona um treino a uma versão -- só permitido se ainda estiver ativa."""
     if not current_user.pode_gerenciar_treino_proprio():
         return _acesso_negado()
 
@@ -143,7 +144,7 @@ def versao_adicionar_treino(versao_id):
     try:
         VersaoService.adicionar_treino_livre(
             versao_id, nome_treino, descricao_treino,
-            user_id=current_user.id, permitir_finalizada=True
+            user_id=current_user.id, permitir_finalizada=False
         )
         flash('Treino adicionado! Agora selecione os exercícios.', 'success')
     except ValueError as e:
@@ -158,7 +159,7 @@ def versao_adicionar_treino(versao_id):
 @login_required
 @limiter.limit("120 per hour", key_func=_chave_por_usuario)
 def versao_salvar_treino(versao_id, treino_versao_id):
-    """Salva nome/descrição/exercícios de um treino -- versão ativa ou finalizada."""
+    """Salva nome/descrição/exercícios de um treino -- só permitido se a versão ainda estiver ativa."""
     if not current_user.pode_gerenciar_treino_proprio():
         return _acesso_negado()
 
@@ -173,7 +174,7 @@ def versao_salvar_treino(versao_id, treino_versao_id):
         VersaoService.salvar_treino_livre(
             versao_id, treino_versao_id, nome_treino, descricao_treino,
             exercicios_raw, user_id=current_user.id, observacoes=observacoes,
-            permitir_finalizada=True
+            permitir_finalizada=False
         )
         flash('Treino salvo com sucesso!', 'success')
     except ValueError as e:
@@ -188,14 +189,14 @@ def versao_salvar_treino(versao_id, treino_versao_id):
 @login_required
 @limiter.limit("60 per hour", key_func=_chave_por_usuario)
 def versao_remover_treino(versao_id, treino_versao_id):
-    """Remove um treino de uma versão -- ativa ou finalizada (bloqueado
-    pelo service se já houver histórico de registro para esse treino)."""
+    """Remove um treino de uma versão -- só permitido se ainda estiver ativa
+    (e bloqueado pelo service se já houver histórico de registro para esse treino)."""
     if not current_user.pode_gerenciar_treino_proprio():
         return _acesso_negado()
 
     try:
         VersaoService.remover_treino_livre(
-            versao_id, treino_versao_id, user_id=current_user.id, permitir_finalizada=True
+            versao_id, treino_versao_id, user_id=current_user.id, permitir_finalizada=False
         )
         flash('Treino removido da versão.', 'success')
     except ValueError as e:

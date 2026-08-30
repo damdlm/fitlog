@@ -298,9 +298,11 @@
     <div>
         <div class="ct-hero-desc">
             {{ versao.descricao }}
+            {% if esta_ativa %}
             <button type="button" class="ct-hero-edit-btn" data-bs-toggle="modal" data-bs-target="#modalEditarVersao" title="Editar descrição da versão">
                 <i class="bi bi-pencil"></i>
             </button>
+            {% endif %}
             {% if esta_ativa %}
             <span class="ct-status-pill ativa"><span class="dot"></span>Ativa</span>
             {% else %}
@@ -387,6 +389,7 @@
                 {% endif %}
             </div>
             <div class="ct-treino-actions">
+                {% if esta_ativa %}
                 <button type="button" class="btn btn-sm btn-outline-primary ct-btn-editar-exercicios"
                         data-bs-toggle="modal" data-bs-target="#modalExercicios"
                         data-treino-versao-id="{{ tv.id }}"
@@ -405,10 +408,11 @@
                         data-confirm-label="Sim, remover">
                     <i class="bi bi-trash"></i>
                 </button>
+                {% endif %}
             </div>
         </div>
 
-        {% if qtd_ex > 1 %}
+        {% if esta_ativa and qtd_ex > 1 %}
         <div class="ct-ex-toolbar">
             <span class="ct-ex-toolbar-hint"><i class="bi bi-grip-vertical"></i> Arraste para reordenar</span>
             <button type="button" class="ct-save-order-btn" data-treino-codigo="{{ codigo }}">
@@ -423,7 +427,7 @@
             {% set chave = ('u_' ~ ve.exercicio_usuario_id) if ve.exercicio_usuario_id else ('b_' ~ ve.exercicio_base_id) %}
             {% if ex %}
             <div class="ct-ex-item" data-exercicio-id="{{ chave }}">
-                {% if qtd_ex > 1 %}<span class="ct-ex-drag-handle"><i class="bi bi-grip-vertical"></i></span>{% endif %}
+                {% if esta_ativa and qtd_ex > 1 %}<span class="ct-ex-drag-handle"><i class="bi bi-grip-vertical"></i></span>{% endif %}
                 <span class="ct-ex-nome">{{ ex.nome }}</span>
             </div>
             {% endif %}
@@ -432,14 +436,18 @@
         {% else %}
         <div class="ct-ex-empty">
             <i class="bi bi-exclamation-triangle-fill"></i>
+            {% if esta_ativa %}
             Sem exercícios ainda — clique em "Editar" para adicionar.
+            {% else %}
+            Sem exercícios registrados nesta versão.
+            {% endif %}
         </div>
         {% endif %}
     </div>
     {% endfor %}
 {% endif %}
 
-{% if total_treinos < max_treinos %}
+{% if esta_ativa and total_treinos < max_treinos %}
 <button type="button" class="ct-add-treino-btn" data-bs-toggle="modal" data-bs-target="#modalNovoTreino">
     <i class="bi bi-plus-circle"></i> Adicionar treino ({{ total_treinos }}/{{ max_treinos }})
 </button>

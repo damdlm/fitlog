@@ -772,7 +772,7 @@ def ver_versao_aluno(aluno_id, versao_id):
 @professor_acesso_alunos_required
 @limiter.limit("30 per hour", key_func=_chave_por_professor)
 def versao_editar_descricao_aluno(aluno_id, versao_id):
-    """Edita a descrição de uma versão do aluno -- ativa ou finalizada."""
+    """Edita a descrição de uma versão do aluno -- só permitido se ainda estiver ativa."""
     aluno, negado = _aluno_ou_negar(aluno_id)
     if negado:
         return negado
@@ -780,7 +780,7 @@ def versao_editar_descricao_aluno(aluno_id, versao_id):
     descricao = request.form.get('descricao', '')
     try:
         VersaoService.editar_descricao_livre(
-            versao_id, descricao, user_id=aluno.id, permitir_finalizada=True
+            versao_id, descricao, user_id=aluno.id, permitir_finalizada=False
         )
         flash('Versão atualizada!', 'success')
     except ValueError as e:
@@ -796,7 +796,7 @@ def versao_editar_descricao_aluno(aluno_id, versao_id):
 @professor_acesso_alunos_required
 @limiter.limit("60 per hour", key_func=_chave_por_professor)
 def versao_adicionar_treino_aluno(aluno_id, versao_id):
-    """Adiciona um treino a uma versão do aluno -- ativa ou finalizada."""
+    """Adiciona um treino a uma versão do aluno -- só permitido se ainda estiver ativa."""
     aluno, negado = _aluno_ou_negar(aluno_id)
     if negado:
         return negado
@@ -806,7 +806,7 @@ def versao_adicionar_treino_aluno(aluno_id, versao_id):
     try:
         VersaoService.adicionar_treino_livre(
             versao_id, nome_treino, descricao_treino,
-            user_id=aluno.id, permitir_finalizada=True
+            user_id=aluno.id, permitir_finalizada=False
         )
         flash('Treino adicionado! Agora selecione os exercícios.', 'success')
     except ValueError as e:
@@ -822,7 +822,7 @@ def versao_adicionar_treino_aluno(aluno_id, versao_id):
 @professor_acesso_alunos_required
 @limiter.limit("120 per hour", key_func=_chave_por_professor)
 def versao_salvar_treino_aluno(aluno_id, versao_id, treino_versao_id):
-    """Salva nome/descrição/exercícios de um treino do aluno -- versão ativa ou finalizada."""
+    """Salva nome/descrição/exercícios de um treino do aluno -- só permitido se a versão ainda estiver ativa."""
     aluno, negado = _aluno_ou_negar(aluno_id)
     if negado:
         return negado
@@ -838,7 +838,7 @@ def versao_salvar_treino_aluno(aluno_id, versao_id, treino_versao_id):
         VersaoService.salvar_treino_livre(
             versao_id, treino_versao_id, nome_treino, descricao_treino,
             exercicios_raw, user_id=aluno.id, observacoes=observacoes,
-            permitir_finalizada=True
+            permitir_finalizada=False
         )
         flash('Treino salvo com sucesso!', 'success')
     except ValueError as e:
@@ -854,15 +854,15 @@ def versao_salvar_treino_aluno(aluno_id, versao_id, treino_versao_id):
 @professor_acesso_alunos_required
 @limiter.limit("60 per hour", key_func=_chave_por_professor)
 def versao_remover_treino_aluno(aluno_id, versao_id, treino_versao_id):
-    """Remove um treino de uma versão do aluno -- ativa ou finalizada (bloqueado
-    pelo service se já houver histórico de registro para esse treino)."""
+    """Remove um treino de uma versão do aluno -- só permitido se ainda estiver ativa
+    (e bloqueado pelo service se já houver histórico de registro para esse treino)."""
     aluno, negado = _aluno_ou_negar(aluno_id)
     if negado:
         return negado
 
     try:
         VersaoService.remover_treino_livre(
-            versao_id, treino_versao_id, user_id=aluno.id, permitir_finalizada=True
+            versao_id, treino_versao_id, user_id=aluno.id, permitir_finalizada=False
         )
         flash('Treino removido da versão.', 'success')
     except ValueError as e:
