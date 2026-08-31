@@ -270,6 +270,77 @@ class PasswordResetToken(db.Model):
 
 
 # =====================================================
+# LGPD — CONSENTIMENTOS
+# =====================================================
+
+class ConsentimentoLGPD(db.Model):
+    """Registro de manifestações de vontade do titular dos dados
+    relacionadas à LGPD.
+
+    Só existem registros aqui para as operações que EXIGEM consentimento
+    específico do titular (base legal do Art. 7º, I) -- o uso normal do
+    app (login, montar treino, professor ver dados do aluno vinculado)
+    se sustenta em execução de contrato (Art. 7º, V) e não precisa de
+    consentimento explícito, só transparência via a política de
+    privacidade (rota /privacidade).
+
+    Hoje só dois `tipo` são gravados:
+      'fitbot_ia'                -- envio de mensagens/fotos/dados de
+                                     treino para processamento por IA
+                                     de terceiros (Groq/Google Gemini),
+                                     ver services/fitbot_service.py.
+                                     Concedido no primeiro uso do chat
+                                     (routes/fitbot_routes.py), revogável
+                                     a qualquer momento em Meu Perfil.
+      'compartilhamento_professor' -- aluno enviando solicitação de
+                                     vínculo a um professor específico
+                                     (contexto = "professor_id=<id>"),
+                                     gravado no mesmo instante em que o
+                                     próprio aluno decide compartilhar
+                                     seus dados de treino com aquele
+                                     professor (routes/aluno/main.py:
+                                     enviar_solicitacao). Não é a única
+                                     base legal dessa operação -- é só
+                                     evidência adicional de consentimento,
+                                     documentando explicitamente que o
+                                     aluno tinha ciência no momento do ato.
+
+    Histórico completo é mantido (nunca faz UPDATE em cima de um
+    registro existente) -- para saber o estado atual de um tipo de
+    consentimento, sempre olhar o mais recente
+    (`tem_consentimento_ativo`), nunca assumir que só existe um registro
+    por usuário/tipo.
+    """
+    __tablename__ = 'consentimentos_lgpd'
+
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    tipo = db.Column(db.String(40), nullable=False)
+    concedido = db.Column(db.Boolean, nullable=False, default=True)
+    contexto = db.Column(db.String(200), nullable=True)
+    criado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    usuario = db.relationship('User', foreign_keys=[usuario_id], backref='consentimentos_lgpd')
+
+    __table_args__ = (
+        db.Index('idx_consentimento_usuario_tipo', 'usuario_id', 'tipo'),
+    )
+
+    @staticmethod
+    def tem_consentimento_ativo(usuario_id, tipo):
+        """True se a manifestação mais recente desse tipo, para esse
+        usuário, foi uma concessão (não uma revogação nem inexistente)."""
+        ultimo = (ConsentimentoLGPD.query
+                  .filter_by(usuario_id=usuario_id, tipo=tipo)
+                  .order_by(ConsentimentoLGPD.criado_em.desc())
+                  .first())
+        return ultimo is not None and ultimo.concedido
+
+    def __repr__(self):
+        return f'<ConsentimentoLGPD user={self.usuario_id} tipo={self.tipo} concedido={self.concedido}>'
+
+
+# =====================================================
 # COBRANÇA / ASSINATURAS
 # =====================================================
 

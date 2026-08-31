@@ -13,6 +13,7 @@ from models import (
     VersaoExercicio, ExercicioSistema, RegistroTreino, HistoricoTreino,
 )
 from services.billing_service import BillingService
+from services.privacidade_service import PrivacidadeService, TIPO_FITBOT
 
 
 def _criar_usuario(username, tipo_usuario='aluno', nome_completo=None):
@@ -30,6 +31,10 @@ def _criar_usuario(username, tipo_usuario='aluno', nome_completo=None):
         # esses testes são sobre isolamento de dados, não sobre cobrança.
         BillingService.iniciar_trial(user)
     db.session.commit()
+    # Consentimento LGPD de uso do FitBot -- esses testes cobrem
+    # isolamento de dados/permissões, não o fluxo de consentimento em si
+    # (ver test_privacidade.py para esse), então já entra concedido.
+    PrivacidadeService.registrar_consentimento(user.id, TIPO_FITBOT, concedido=True, contexto='teste')
     return user
 
 
@@ -228,6 +233,9 @@ class TestGateDeAssinaturaPessoal:
             professor.set_password('123456')
             db.session.add(professor)
             db.session.commit()
+            # Consentimento do FitBot concedido -- este teste é sobre o
+            # gate de ASSINATURA, não sobre o de consentimento LGPD.
+            PrivacidadeService.registrar_consentimento(professor.id, TIPO_FITBOT, concedido=True, contexto='teste')
 
         resp = _login(client, 'prof_sem_trial')
         resp = client.post('/fitbot/chat', json={'mensagem': 'oi'})

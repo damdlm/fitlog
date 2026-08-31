@@ -192,7 +192,18 @@ def enviar_solicitacao(professor_id):
     )
     db.session.add(solicitacao)
     db.session.commit()
-    
+
+    # Registro de auditoria LGPD: o próprio ato de enviar a solicitação já
+    # é a manifestação de vontade do aluno em compartilhar seus dados de
+    # treino com este professor específico (ver models.py:ConsentimentoLGPD
+    # e services/privacidade_service.py) -- não é a base legal em si (essa
+    # é execução de contrato + o vínculo aceito), só evidência adicional.
+    from services.privacidade_service import PrivacidadeService, TIPO_COMPARTILHAMENTO_PROFESSOR
+    PrivacidadeService.registrar_consentimento(
+        current_user.id, TIPO_COMPARTILHAMENTO_PROFESSOR, concedido=True,
+        contexto=f"professor_id={professor_id}",
+    )
+
     flash(f'Solicitação enviada para {professor.nome_completo or professor.username}!', 'success')
     return redirect(url_for('aluno.meu_professor'))
 

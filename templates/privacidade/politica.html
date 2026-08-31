@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-shield-lock" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Política de Privacidade{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9 col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h4 class="mb-0" style="color: #F28C33;">
+                    <i class="bi bi-shield-lock"></i> Política de Privacidade do FitLog
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Última atualização: agosto de 2026.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">1. Quais dados coletamos</h5>
+                <ul>
+                    <li><strong>Cadastro:</strong> nome, e-mail, telefone e, se você assinar um plano pago, CEP e CPF/CNPJ (exigidos pelo meio de pagamento).</li>
+                    <li><strong>Uso do app:</strong> treinos que você monta, cargas, repetições e histórico de execução.</li>
+                    <li><strong>Vínculo aluno-professor:</strong> se você é aluno e se vincula a um professor, ele passa a ver seus treinos e seu progresso — só enquanto o vínculo estiver ativo.</li>
+                    <li><strong>FitBot:</strong> mensagens, fotos de equipamentos e o contexto do seu treino que você compartilha com o assistente de IA.</li>
+                </ul>
+
+                <h5 class="mt-4" style="color: #F28C33;">2. Por que usamos cada dado</h5>
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>Uso</th><th>Base legal</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Login, montar e acompanhar treinos</td><td>Execução do contrato com você</td></tr>
+                        <tr><td>Professor visualizar dados do aluno vinculado</td><td>Execução do contrato + seu pedido de vínculo</td></tr>
+                        <tr><td>Cobrança de planos pagos</td><td>Execução do contrato</td></tr>
+                        <tr><td>FitBot (IA de terceiros)</td><td>Seu consentimento específico, dado no primeiro uso do chat</td></tr>
+                    </tbody>
+                </table>
+
+                <h5 class="mt-4" style="color: #F28C33;">3. Com quem compartilhamos</h5>
+                <ul>
+                    <li><strong>Seu professor</strong>, se você tiver um vínculo ativo — só os dados de treino, nunca dados de outras pessoas.</li>
+                    <li><strong>Groq e Google (Gemini)</strong>, provedores de IA que processam as mensagens enviadas ao FitBot.</li>
+                    <li><strong>Asaas</strong>, nosso meio de pagamento, se você assinar um plano — nunca guardamos o número completo do seu cartão.</li>
+                </ul>
+                <p>Não vendemos dados pessoais a terceiros.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">4. Por quanto tempo guardamos</h5>
+                <p>Enquanto sua conta estiver ativa. Se você excluir sua conta, seus dados de identificação são removidos; registros de treino sem identificação (números de carga/repetição) podem ser mantidos de forma anônima para fins estatísticos.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">5. Seus direitos</h5>
+                <p>Você pode, a qualquer momento, direto em <strong>Meu Perfil &gt; Privacidade</strong>:</p>
+                <ul>
+                    <li>Baixar uma cópia de todos os seus dados.</li>
+                    <li>Revogar o consentimento de uso do FitBot.</li>
+                    <li>Excluir sua conta.</li>
+                </ul>
+
+                <h5 class="mt-4" style="color: #F28C33;">6. Contato</h5>
+                <p>Dúvidas sobre seus dados ou esta política? Fale com a gente pela tela de <a href="{{ url_for('contato.index') if current_user.is_authenticated else url_for('auth.login') }}">Contato</a>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

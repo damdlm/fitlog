@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-shield-lock" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Privacidade{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white">
+                <h5 class="mb-0" style="color: #F28C33;">
+                    <i class="bi bi-info-circle"></i> Como usamos seus dados
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">Veja em detalhes o que coletamos, por quê, e com quem compartilhamos.</p>
+                <a href="{{ url_for('privacidade.politica') }}" class="btn btn-outline-secondary btn-sm">
+                    Ler a Política de Privacidade
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white">
+                <h5 class="mb-0" style="color: #F28C33;">
+                    <i class="bi bi-robot"></i> FitBot (assistente de IA)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="form-check form-switch">
+                    <input type="checkbox" class="form-check-input" role="switch"
+                           id="fitbotConsentSwitch" {% if fitbot_consentido %}checked{% endif %}>
+                    <label class="form-check-label fw-bold" for="fitbotConsentSwitch">
+                        Permitir que o FitBot envie minhas mensagens e dados de treino para processamento por IA (Groq/Google Gemini)
+                    </label>
+                </div>
+                <div class="form-text">Desligar isso não afeta o resto do app — só impede o uso do FitBot até você reativar.</div>
+                <div id="fitbotConsentFeedback" class="small mt-2"></div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white">
+                <h5 class="mb-0" style="color: #F28C33;">
+                    <i class="bi bi-download"></i> Baixar meus dados
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">Baixe uma cópia de todos os seus dados pessoais e de treino em formato JSON.</p>
+                <a href="{{ url_for('privacidade.exportar_dados') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-download"></i> Baixar meus dados
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-3 border-danger-subtle">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 text-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Excluir minha conta
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    Isso remove seus dados de identificação (nome, e-mail, telefone, data de nascimento)
+                    e desativa seu acesso imediatamente. Essa ação não pode ser desfeita.
+                </p>
+                <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#excluirContaModal">
+                    <i class="bi bi-trash"></i> Excluir minha conta
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal de confirmação de exclusão -->
+<div class="modal fade" id="excluirContaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" action="{{ url_for('privacidade.excluir_conta') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">Confirmar exclusão da conta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Digite sua senha atual para confirmar. Essa ação não pode ser desfeita.</p>
+                <input type="password" name="senha_confirmacao" class="form-control" placeholder="Sua senha" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-danger">Excluir minha conta</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('fitbotConsentSwitch').addEventListener('change', function () {
+    var concedido = this.checked;
+    var feedback = document.getElementById('fitbotConsentFeedback');
+    var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+    fetch("{{ url_for('privacidade.fitbot_consentimento') }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify({ concedido: concedido }),
+    })
+        .then(function (resp) { return resp.json(); })
+        .then(function (dados) {
+            feedback.textContent = dados.concedido
+                ? 'FitBot liberado para usar IA de terceiros.'
+                : 'Consentimento revogado — o FitBot ficará indisponível até você reativar.';
+            feedback.className = 'small mt-2 text-success';
+        })
+        .catch(function () {
+            feedback.textContent = 'Não foi possível salvar agora. Tente novamente.';
+            feedback.className = 'small mt-2 text-danger';
+        });
+});
+</script>
+{% endblock %}

@@ -112,6 +112,11 @@
     var estadoTimeoutId = null;
     var conversaIniciada = false;
 
+    // Consentimento LGPD (FitBot manda dados a IA de terceiros -- Groq/
+    // Gemini). Guarda a última mensagem que ficou pendente de aceite,
+    // pra poder reenviá-la assim que o usuário confirmar.
+    var mensagemPendenteConsentimento = null;
+
     function byId(id) {
         return document.getElementById(id);
     }
@@ -446,6 +451,11 @@
     /* ------------------------------------------------------------
        Envio de mensagem
        ------------------------------------------------------------ */
+    function csrfToken() {
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.content : '';
+    }
+
     function onSubmit(evt) {
         evt.preventDefault();
 
@@ -464,6 +474,11 @@
 
         elTextarea.value = '';
         limparImagemSelecionada();
+
+        enviarAoServidor(texto, imagemBase64);
+    }
+
+    function enviarAoServidor(texto, imagemBase64) {
         setState('thinking');
 
         fetch('/fitbot/chat', {
@@ -482,6 +497,14 @@
             })
             .then(function (resultado) {
                 var dados = resultado.dados || {};
+
+                if (dados.consentimento_necessario) {
+                    mensagemPendenteConsentimento = { texto: texto, imagemBase64: imagemBase64 };
+                    setState('idle');
+                    perguntarConsentimentoFitbot(dados.resposta);
+                    return;
+                }
+
                 if (dados.ok) {
                     adicionarMensagem('bot', dados.resposta);
                     historico.push({ papel: 'bot', texto: dados.resposta });
@@ -494,6 +517,68 @@
             })
             .catch(function () {
                 adicionarMensagem('error', 'Não consegui falar com o FitBot. Verifica sua conexão.');
+                setState('error');
+            });
+    }
+
+    /* ------------------------------------------------------------
+       Consentimento LGPD (uso de IA de terceiros pelo FitBot)
+       ------------------------------------------------------------ */
+    function perguntarConsentimentoFitbot(texto) {
+        var bolha = document.createElement('div');
+        bolha.className = 'fitbot-msg from-bot';
+        bolha.textContent = texto;
+
+        var botoes = document.createElement('div');
+        botoes.className = 'mt-2 d-flex gap-2';
+
+        var btnAceitar = document.createElement('button');
+        btnAceitar.type = 'button';
+        btnAceitar.className = 'btn btn-sm';
+        btnAceitar.style.background = 'linear-gradient(135deg, #F28C33 0%, #FFB366 100%)';
+        btnAceitar.style.color = '#fff';
+        btnAceitar.textContent = 'Concordo, continuar';
+
+        var btnRecusar = document.createElement('button');
+        btnRecusar.type = 'button';
+        btnRecusar.className = 'btn btn-sm btn-outline-secondary';
+        btnRecusar.textContent = 'Agora não';
+
+        btnAceitar.addEventListener('click', function () {
+            botoes.remove();
+            responderConsentimentoFitbot(true);
+        });
+        btnRecusar.addEventListener('click', function () {
+            botoes.remove();
+            responderConsentimentoFitbot(false);
+        });
+
+        botoes.appendChild(btnAceitar);
+        botoes.appendChild(btnRecusar);
+        bolha.appendChild(botoes);
+
+        elMessages.appendChild(bolha);
+        elMessages.scrollTop = elMessages.scrollHeight;
+    }
+
+    function responderConsentimentoFitbot(concedido) {
+        fetch('/privacidade/fitbot-consentimento', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+            body: JSON.stringify({ concedido: concedido }),
+        })
+            .then(function () {
+                if (concedido && mensagemPendenteConsentimento) {
+                    var pendente = mensagemPendenteConsentimento;
+                    mensagemPendenteConsentimento = null;
+                    enviarAoServidor(pendente.texto, pendente.imagemBase64);
+                } else {
+                    mensagemPendenteConsentimento = null;
+                    adicionarMensagem('bot', 'Tudo bem, sem problemas. Se mudar de ideia, é só perguntar de novo.');
+                }
+            })
+            .catch(function () {
+                adicionarMensagem('error', 'Não consegui salvar sua resposta agora. Tente de novo.');
                 setState('error');
             });
     }

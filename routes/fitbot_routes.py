@@ -8,6 +8,7 @@ from flask_login import current_user, login_required
 from extensions import limiter
 from services.billing_service import BillingService
 from services.fitbot_service import FitBotService
+from services.privacidade_service import PrivacidadeService
 from services.tela_controlada_service import TelaControladaService
 
 fitbot_bp = Blueprint("fitbot", __name__)
@@ -58,6 +59,25 @@ def chat():
     service sempre revalida a permissão (vínculo professor/aluno ativo,
     ou admin) contra a sessão autenticada antes de usar esse valor.
     """
+    # Gate de consentimento LGPD: o FitBot manda mensagens/fotos/dados de
+    # treino para processamento por IA de terceiros (Groq/Gemini) -- essa
+    # é a única operação do app que exige consentimento específico do
+    # titular (Art. 7º, I da LGPD), diferente do resto do sistema, que se
+    # sustenta em execução de contrato. Sem consentimento ainda registrado
+    # (ou já revogado em Meu Perfil), devolve um sinal específico para o
+    # front-end mostrar o aviso -- sem custo de request/instalar nada
+    # novo, e sem nunca chamar o serviço de IA sem consentimento.
+    if not PrivacidadeService.tem_consentimento_fitbot(current_user.id):
+        return jsonify({
+            "ok": False,
+            "consentimento_necessario": True,
+            "resposta": (
+                "O FitBot usa IA externa (Groq/Google Gemini) para responder -- "
+                "suas mensagens e dados de treino são enviados para esse "
+                "processamento. Você concorda em continuar?"
+            ),
+        }), 200
+
     # Gate de assinatura: quem usa o FitBot para si mesmo (aluno OU
     # professor treinando por conta própria) precisa de trial válido ou
     # Plano Fit pessoal ativo -- SE o admin tiver marcado a tela
