@@ -66,6 +66,28 @@ def client(app):
 def db(app):
     return _db
 
+
+@pytest.fixture(autouse=True)
+def _lgpd_aceite_bypass_por_padrao(request, monkeypatch):
+    """A grande maioria dos testes cria usuários direto no banco (não
+    passa por auth.register), então nunca teria um aceite de Termos/
+    Política registrado -- e cairia sempre na tela de reaceite
+    (app.py:_exigir_aceite_lgpd_atual) por um motivo que não tem nada a
+    ver com o que o teste está validando.
+
+    Por padrão, portanto, esse gate fica desligado nos testes. Quem
+    precisa testar o fluxo de aceite de verdade usa
+    @pytest.mark.lgpd_aceite (ver tests/test_privacidade.py), que pula
+    este bypass e deixa a checagem real acontecer.
+    """
+    if request.node.get_closest_marker('lgpd_aceite'):
+        return
+    import services.privacidade_service as priv
+    monkeypatch.setattr(
+        priv.PrivacidadeService, 'precisa_aceitar_algum',
+        staticmethod(lambda usuario_id: False),
+    )
+
 @pytest.fixture
 def auth_client(client):
     """Cliente com usuário logado"""

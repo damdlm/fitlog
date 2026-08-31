@@ -13,49 +13,87 @@
                 </h4>
             </div>
             <div class="card-body">
-                <p class="text-muted small">Última atualização: agosto de 2026.</p>
+                <p class="text-muted small">Versão 2026-08-31 — última atualização: agosto de 2026.</p>
 
-                <h5 class="mt-4" style="color: #F28C33;">1. Quais dados coletamos</h5>
+                <h5 class="mt-4" style="color: #F28C33;">1. Quem é o responsável pelos seus dados (controlador)</h5>
+                <p>
+                    Razão social/CNPJ: <strong>[INFORMAÇÃO A SER PREENCHIDA]</strong><br>
+                    Endereço: <strong>[INFORMAÇÃO A SER PREENCHIDA]</strong><br>
+                    Contato para assuntos de privacidade: pela tela de <a href="{{ url_for('contato.index') if current_user.is_authenticated else url_for('auth.login') }}">Contato</a> do próprio FitLog.
+                </p>
+                <p class="text-muted small">Os campos acima precisam ser preenchidos com os dados formais da pessoa física ou jurídica responsável pelo FitLog antes da publicação definitiva desta política.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">2. Quais dados tratamos</h5>
                 <ul>
-                    <li><strong>Cadastro:</strong> nome, e-mail, telefone e, se você assinar um plano pago, CEP e CPF/CNPJ (exigidos pelo meio de pagamento).</li>
-                    <li><strong>Uso do app:</strong> treinos que você monta, cargas, repetições e histórico de execução.</li>
-                    <li><strong>Vínculo aluno-professor:</strong> se você é aluno e se vincula a um professor, ele passa a ver seus treinos e seu progresso — só enquanto o vínculo estiver ativo.</li>
-                    <li><strong>FitBot:</strong> mensagens, fotos de equipamentos e o contexto do seu treino que você compartilha com o assistente de IA.</li>
+                    <li><strong>Dados cadastrais:</strong> nome, tipo de usuário (aluno/professor), data de criação da conta.</li>
+                    <li><strong>Dados de autenticação:</strong> username, e-mail, senha (armazenada com hash, nunca em texto puro).</li>
+                    <li><strong>Dados de contato:</strong> e-mail e telefone.</li>
+                    <li><strong>Dados de treino:</strong> versões e treinos que você monta, exercícios, séries, cargas e repetições, histórico de execução.</li>
+                    <li><strong>Informações de evolução física:</strong> seu histórico de treino ao longo do tempo (usado para gráficos/estatísticas de progresso dentro do próprio app).</li>
+                    <li><strong>Dados de assinatura/pagamento:</strong> se você assinar um plano pago, CEP e CPF/CNPJ (exigidos pelo meio de pagamento) e identificadores da cobrança (nunca o número completo do cartão).</li>
+                    <li><strong>Dados técnicos e de segurança:</strong> endereço IP e registros de eventos de segurança (ex.: tentativas de login), usados só para proteger sua conta contra acesso indevido.</li>
+                    <li><strong>Informações fornecidas ao FitBot:</strong> as mensagens que você envia ao assistente e, se você optar por enviar, fotos de equipamentos de treino.</li>
+                    <li><strong>Imagens:</strong> só as fotos que você mesmo decide enviar ao FitBot para tirar dúvidas sobre um equipamento.</li>
                 </ul>
 
-                <h5 class="mt-4" style="color: #F28C33;">2. Por que usamos cada dado</h5>
+                <h5 class="mt-4" style="color: #F28C33;">3. Para que usamos cada dado</h5>
                 <table class="table table-sm">
                     <thead>
-                        <tr><th>Uso</th><th>Base legal</th></tr>
+                        <tr><th>Finalidade</th><th>Base legal</th></tr>
                     </thead>
                     <tbody>
-                        <tr><td>Login, montar e acompanhar treinos</td><td>Execução do contrato com você</td></tr>
-                        <tr><td>Professor visualizar dados do aluno vinculado</td><td>Execução do contrato + seu pedido de vínculo</td></tr>
-                        <tr><td>Cobrança de planos pagos</td><td>Execução do contrato</td></tr>
-                        <tr><td>FitBot (IA de terceiros)</td><td>Seu consentimento específico, dado no primeiro uso do chat</td></tr>
+                        <tr><td>Criar e gerenciar sua conta, autenticação</td><td>Execução do contrato com você</td></tr>
+                        <tr><td>Montar e acompanhar seus treinos, estatísticas</td><td>Execução do contrato com você</td></tr>
+                        <tr><td>Relacionamento professor/aluno (vínculo)</td><td>Execução do contrato + seu pedido de vínculo</td></tr>
+                        <tr><td>Cobrança/assinatura de planos pagos</td><td>Execução do contrato</td></tr>
+                        <tr><td>Segurança (prevenção a fraude e acesso indevido)</td><td>Legítimo interesse</td></tr>
+                        <tr><td>Atendimento via tela de Contato</td><td>Execução do contrato / legítimo interesse</td></tr>
+                        <tr><td>FitBot (envio de dados a IA de terceiros)</td><td>Seu consentimento específico, dado no primeiro uso do chat e revogável a qualquer momento</td></tr>
+                        <tr><td>Cumprimento de obrigações legais (ex.: fiscais)</td><td>Obrigação legal/regulatória</td></tr>
                     </tbody>
                 </table>
 
-                <h5 class="mt-4" style="color: #F28C33;">3. Com quem compartilhamos</h5>
+                <h5 class="mt-4" style="color: #F28C33;">4. FitBot e inteligência artificial</h5>
+                <p>O FitBot usa mais de um provedor de IA, dependendo do tipo de mensagem e da disponibilidade do serviço no momento:</p>
                 <ul>
-                    <li><strong>Seu professor</strong>, se você tiver um vínculo ativo — só os dados de treino, nunca dados de outras pessoas.</li>
-                    <li><strong>Groq e Google (Gemini)</strong>, provedores de IA que processam as mensagens enviadas ao FitBot.</li>
+                    <li><strong>Groq</strong> (modelo Llama) — processa mensagens de texto.</li>
+                    <li><strong>Google Gemini</strong> — processa mensagens que incluem uma foto (ex.: foto de um equipamento).</li>
+                    <li><strong>OpenAI</strong> (gpt-4o-mini) — usado como reserva automática, para texto ou imagem, caso o Groq ou o Gemini estejam indisponíveis no momento.</li>
+                </ul>
+                <p>Dependendo de qual desses provedores responder sua mensagem, os dados enviados a ele podem incluir: o texto da sua mensagem, seu nome (para personalizar a resposta), dados do seu treino atual (exercícios, cargas, repetições) e, se você enviar, a foto do equipamento. <strong>Não enviamos ao FitBot ou a esses provedores</strong> sua senha, tokens de acesso, CPF, endereço, telefone ou dados de cartão/pagamento — esses campos nunca fazem parte do contexto montado para a IA.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">5. Com quem compartilhamos</h5>
+                <ul>
+                    <li><strong>Seu professor</strong>, se você tiver um vínculo ativo — só os dados de treino, nunca dados de outros alunos.</li>
+                    <li><strong>Groq, Google (Gemini) e OpenAI</strong>, provedores de IA que processam as mensagens enviadas ao FitBot (ver seção 4).</li>
                     <li><strong>Asaas</strong>, nosso meio de pagamento, se você assinar um plano — nunca guardamos o número completo do seu cartão.</li>
+                    <li><strong>Resend</strong>, serviço usado para enviar e-mails transacionais (ex.: redefinição de senha).</li>
+                    <li><strong>Railway</strong>, provedor de infraestrutura onde o FitLog roda.</li>
                 </ul>
-                <p>Não vendemos dados pessoais a terceiros.</p>
+                <p>Não vendemos dados pessoais a terceiros e não usamos ferramentas de publicidade ou rastreamento de terceiros (analytics de anúncios, pixels de redes sociais, etc.).</p>
 
-                <h5 class="mt-4" style="color: #F28C33;">4. Por quanto tempo guardamos</h5>
-                <p>Enquanto sua conta estiver ativa. Se você excluir sua conta, seus dados de identificação são removidos; registros de treino sem identificação (números de carga/repetição) podem ser mantidos de forma anônima para fins estatísticos.</p>
+                <h5 class="mt-4" style="color: #F28C33;">6. Transferência internacional</h5>
+                <p>Groq, Google (Gemini), OpenAI e Asaas são empresas com operação internacional, e o processamento de dados enviados a elas pode ocorrer em servidores fora do Brasil, conforme a infraestrutura de cada uma. A localização exata dos servidores usados pela Railway (nosso provedor de hospedagem) para esta aplicação é <strong>[INFORMAÇÃO A SER PREENCHIDA/VALIDADA]</strong>. Quando aplicável, essas transferências seguem as hipóteses previstas na LGPD (Art. 33) para transferência internacional de dados.</p>
 
-                <h5 class="mt-4" style="color: #F28C33;">5. Seus direitos</h5>
-                <p>Você pode, a qualquer momento, direto em <strong>Meu Perfil &gt; Privacidade</strong>:</p>
+                <h5 class="mt-4" style="color: #F28C33;">7. Por quanto tempo guardamos</h5>
+                <p>Guardamos cada categoria de dado só pelo tempo necessário à finalidade que a justifica: enquanto sua conta estiver ativa; dados de cobrança pelo prazo exigido por obrigação legal/contratual; ao excluir sua conta, dados de identificação são removidos e registros de treino sem identificação podem ser mantidos de forma anônima para fins estatísticos. Os prazos detalhados por categoria de dado estão documentados internamente em nossa Política de Retenção de Dados.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">8. Seus direitos</h5>
+                <p>Conforme a LGPD, você tem direito a: confirmação de que tratamos seus dados; acesso aos dados; correção de dados incompletos ou desatualizados; anonimização ou eliminação de dados desnecessários; portabilidade; eliminação dos dados tratados com base no seu consentimento; informação sobre com quem compartilhamos seus dados; e revogação do consentimento a qualquer momento. Você exerce a maioria desses direitos direto em <strong>Meu Perfil &gt; Privacidade</strong>:</p>
                 <ul>
-                    <li>Baixar uma cópia de todos os seus dados.</li>
+                    <li>Baixar uma cópia de todos os seus dados (acesso/portabilidade).</li>
                     <li>Revogar o consentimento de uso do FitBot.</li>
-                    <li>Excluir sua conta.</li>
+                    <li>Excluir sua conta (anonimização).</li>
                 </ul>
+                <p>Para correção de dados cadastrais ou qualquer outro pedido relacionado a esses direitos, use a tela de Contato.</p>
 
-                <h5 class="mt-4" style="color: #F28C33;">6. Contato</h5>
+                <h5 class="mt-4" style="color: #F28C33;">9. Segurança</h5>
+                <p>Usamos, entre outras medidas: senhas armazenadas com hash (nunca em texto puro); cookies de sessão protegidos (HttpOnly, Secure, SameSite); proteção contra CSRF em formulários; limite de tentativas (rate limiting) em rotas sensíveis como login e recuperação de senha; controle de acesso que impede um aluno ou professor de ver dados de quem não está vinculado a ele; e registros de eventos de segurança para investigar tentativas de acesso indevido.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">10. Alterações nesta Política</h5>
+                <p>Quando fizermos uma mudança relevante nesta Política, pediremos que você confirme ciência na próxima vez que usar o app — sem exigir um novo cadastro e sem pedir isso a cada login.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">11. Contato</h5>
                 <p>Dúvidas sobre seus dados ou esta política? Fale com a gente pela tela de <a href="{{ url_for('contato.index') if current_user.is_authenticated else url_for('auth.login') }}">Contato</a>.</p>
             </div>
         </div>

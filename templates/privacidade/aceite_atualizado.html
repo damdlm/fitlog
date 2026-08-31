@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-file-earmark-text" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Atualização de documentos{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0" style="color: #F28C33;">
+                    <i class="bi bi-file-earmark-text"></i>
+                    {% if precisa_termos and precisa_politica %}
+                        Nossos Termos de Uso e Política de Privacidade foram atualizados
+                    {% elif precisa_termos %}
+                        Nossos Termos de Uso foram atualizados
+                    {% else %}
+                        Nossa Política de Privacidade foi atualizada
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Antes de continuar, dá uma olhada no que mudou:</p>
+                <ul>
+                    {% if precisa_termos %}
+                    <li><a href="{{ url_for('privacidade.termos') }}" target="_blank">Ver Termos de Uso</a></li>
+                    {% endif %}
+                    {% if precisa_politica %}
+                    <li><a href="{{ url_for('privacidade.politica') }}" target="_blank">Ver Política de Privacidade</a></li>
+                    {% endif %}
+                </ul>
+
+                <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="next" value="{{ next }}"/>
+                    <div class="form-check my-3">
+                        <input type="checkbox" class="form-check-input" id="ciencia" name="ciencia" required>
+                        <label class="form-check-label" for="ciencia">
+                            Estou ciente
+                            {% if precisa_termos and precisa_politica %}dos novos Termos de Uso e da nova Política de Privacidade{% elif precisa_termos %}dos novos Termos de Uso{% else %}da nova Política de Privacidade{% endif %}.
+                        </label>
+                    </div>
+                    <button type="submit" class="btn w-100 py-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
+                        Continuar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

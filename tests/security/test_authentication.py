@@ -16,6 +16,7 @@ def test_primeiro_usuario_registrado_nao_vira_admin(client, db):
         'email': 'primeiro@teste.com',
         'password': 'Senha1234',
         'confirm_password': 'Senha1234',
+        'aceite_termos': 'on',
     }, follow_redirects=True)
 
     assert response.status_code == 200
@@ -34,6 +35,7 @@ def test_primeiro_usuario_registrado_como_aluno_nao_vira_professor(client, db):
         'password': 'Senha1234',
         'confirm_password': 'Senha1234',
         'tipo_usuario': 'aluno',
+        'aceite_termos': 'on',
     }, follow_redirects=True)
 
     assert response.status_code == 200
@@ -52,6 +54,7 @@ def test_multiplos_registros_nenhum_vira_admin(client, db):
             'email': f'usuario{i}@teste.com',
             'password': 'Senha1234',
             'confirm_password': 'Senha1234',
+            'aceite_termos': 'on',
         }, follow_redirects=True)
 
     usuarios_publicos = User.query.filter(User.username.in_(

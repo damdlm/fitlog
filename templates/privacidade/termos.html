@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-file-earmark-text" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Termos de Uso{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9 col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h4 class="mb-0" style="color: #F28C33;">
+                    <i class="bi bi-file-earmark-text"></i> Termos de Uso do FitLog
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Última atualização: agosto de 2026.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">1. Aceitação</h5>
+                <p>Ao criar uma conta no FitLog, você concorda com estes Termos de Uso e com a nossa <a href="{{ url_for('privacidade.politica') }}">Política de Privacidade</a>. Se você não concordar, não deve usar o app.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">2. O que é o FitLog</h5>
+                <p>O FitLog é uma ferramenta para montar, registrar e acompanhar treinos de musculação, com um assistente de IA (FitBot) para tirar dúvidas e apoiar seu treino, e um recurso opcional de vínculo entre aluno e professor.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">3. Sua conta</h5>
+                <ul>
+                    <li>Você é responsável por manter sua senha em sigilo e por tudo o que acontecer usando sua conta.</li>
+                    <li>As informações de cadastro (nome, e-mail, telefone) devem ser verdadeiras.</li>
+                    <li>Você pode excluir sua conta a qualquer momento em Meu Perfil &gt; Privacidade.</li>
+                </ul>
+
+                <h5 class="mt-4" style="color: #F28C33;">4. Vínculo aluno-professor</h5>
+                <p>Se você é aluno e solicita vínculo com um professor, você está autorizando esse professor a ver seus treinos, cargas e histórico enquanto o vínculo estiver ativo. Você pode encerrar esse vínculo a qualquer momento.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">5. FitBot e uso de IA</h5>
+                <p>O FitBot usa provedores externos de inteligência artificial (Groq, Google Gemini e, como reserva automática, OpenAI) para gerar respostas — ver detalhes na Política de Privacidade. Ele é uma ferramenta de apoio ao treino, não substitui a orientação de um profissional de educação física, nutricionista ou médico. Não use as respostas do FitBot como única base para decisões que envolvam sua saúde.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">6. Uso aceitável</h5>
+                <p>Não é permitido usar o FitLog para: tentar acessar dados de outro usuário sem autorização; sobrecarregar ou atacar a infraestrutura do app; ou usar o FitBot para fins não relacionados a treino de forma abusiva.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">7. Assinaturas e cobrança</h5>
+                <p>Alguns recursos exigem uma assinatura paga, processada pelo nosso gateway de pagamento. As condições de preço, período de teste e cancelamento são as apresentadas na tela de assinatura no momento da contratação.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">8. Disponibilidade</h5>
+                <p>Fazemos o possível para manter o FitLog no ar, mas não garantimos disponibilidade ininterrupta. Funcionalidades que dependem de provedores externos (como o FitBot) podem ficar temporariamente indisponíveis por motivos fora do nosso controle.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">9. Alterações nestes Termos</h5>
+                <p>Podemos atualizar estes Termos de tempos em tempos. Quando uma mudança relevante acontecer, pediremos que você confirme ciência na próxima vez que usar o app — sem exigir um novo cadastro.</p>
+
+                <h5 class="mt-4" style="color: #F28C33;">10. Contato</h5>
+                <p>Dúvidas sobre estes Termos? Fale com a gente pela tela de <a href="{{ url_for('contato.index') if current_user.is_authenticated else url_for('auth.login') }}">Contato</a>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

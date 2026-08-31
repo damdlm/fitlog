@@ -157,6 +157,14 @@ def reset_password(token):
         flash('Este link de redefinição é inválido ou expirou. Solicite um novo.', 'danger')
         return redirect(url_for('auth.reset_password_request'))
 
+    if not user.ativo:
+        # Defesa extra: reset_password_request já não emite token novo pra
+        # conta inativa, mas um token emitido pouco antes de uma exclusão/
+        # anonimização de conta (routes/privacidade_routes.py:excluir_conta)
+        # já é invalidado lá -- este check aqui é só um cinto e suspensório.
+        flash('Este link de redefinição não é mais válido.', 'danger')
+        return redirect(url_for('auth.reset_password_request'))
+
     if request.method == 'POST':
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
@@ -224,6 +232,10 @@ def register():
             flash('Todos os campos são obrigatórios', 'danger')
             return redirect(url_for('auth.register'))
 
+        if not request.form.get('aceite_termos'):
+            flash('É preciso ler e aceitar os Termos de Uso e a Política de Privacidade para criar uma conta.', 'danger')
+            return redirect(url_for('auth.register'))
+
         if len(username) < 3:
             flash('Usuário deve ter pelo menos 3 caracteres', 'danger')
             return redirect(url_for('auth.register'))
@@ -281,6 +293,15 @@ def register():
             flash('Conta de professor criada com sucesso!', 'success')
 
         db.session.commit()
+
+        # Registro formal e versionado do aceite -- separado do
+        # tratamento normal de dados (que já se sustenta em execução de
+        # contrato, ver ConsentimentoLGPD em models.py). Feito depois do
+        # commit acima para nunca impedir a criação da conta em si caso
+        # essa gravação falhe por algum motivo (fica só um log de erro).
+        from services.privacidade_service import PrivacidadeService
+        PrivacidadeService.registrar_aceite_cadastro(user.id)
+
         logger.info(f"Novo usuario: {username} ({tipo_usuario})")
         return redirect(url_for('auth.login'))
 

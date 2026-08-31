@@ -15,6 +15,9 @@
             </div>
             <div class="card-body">
                 <p class="mb-2">Veja em detalhes o que coletamos, por quê, e com quem compartilhamos.</p>
+                <a href="{{ url_for('privacidade.termos') }}" class="btn btn-outline-secondary btn-sm">
+                    Ler os Termos de Uso
+                </a>
                 <a href="{{ url_for('privacidade.politica') }}" class="btn btn-outline-secondary btn-sm">
                     Ler a Política de Privacidade
                 </a>
@@ -32,7 +35,7 @@
                     <input type="checkbox" class="form-check-input" role="switch"
                            id="fitbotConsentSwitch" {% if fitbot_consentido %}checked{% endif %}>
                     <label class="form-check-label fw-bold" for="fitbotConsentSwitch">
-                        Permitir que o FitBot envie minhas mensagens e dados de treino para processamento por IA (Groq/Google Gemini)
+                        Permitir que o FitBot envie minhas mensagens e dados de treino para processamento por IA (Groq/Google Gemini/OpenAI)
                     </label>
                 </div>
                 <div class="form-text">Desligar isso não afeta o resto do app — só impede o uso do FitBot até você reativar.</div>

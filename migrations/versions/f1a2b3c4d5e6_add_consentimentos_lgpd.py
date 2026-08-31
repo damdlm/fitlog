@@ -21,6 +21,7 @@ def upgrade():
         sa.Column('usuario_id', sa.Integer(),
                   sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
         sa.Column('tipo', sa.String(length=40), nullable=False),
+        sa.Column('versao', sa.String(length=20), nullable=True),
         sa.Column('concedido', sa.Boolean(), nullable=False, server_default=sa.true()),
         sa.Column('contexto', sa.String(length=200), nullable=True),
         sa.Column('criado_em', sa.DateTime(timezone=True), nullable=True),

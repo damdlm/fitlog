@@ -21,7 +21,8 @@ def test_register_user(client, db):
         'username': 'testuser',
         'email': 'test@test.com',
         'password': 'Senha1234',
-        'confirm_password': 'Senha1234'
+        'confirm_password': 'Senha1234',
+        'aceite_termos': 'on',
     }, follow_redirects=True)
 
     assert response.status_code == 200
@@ -43,7 +44,8 @@ def test_login_user(client, db):
         'username': 'logintest',
         'email': 'login@test.com',
         'password': 'Senha1234',
-        'confirm_password': 'Senha1234'
+        'confirm_password': 'Senha1234',
+        'aceite_termos': 'on',
     })
 
     # Depois faz login

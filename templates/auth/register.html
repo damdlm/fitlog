@@ -140,14 +140,16 @@
                         Como <strong>professor</strong>, você poderá gerenciar treinos de múltiplos alunos e acompanhar seu progresso.
                     </div>
                     
+                    <div class="form-check my-3">
+                        <input type="checkbox" class="form-check-input" id="aceite_termos" name="aceite_termos" required>
+                        <label class="form-check-label small" for="aceite_termos">
+                            Li e aceito os <a href="{{ url_for('privacidade.termos') }}" target="_blank">Termos de Uso</a> e a <a href="{{ url_for('privacidade.politica') }}" target="_blank">Política de Privacidade</a>.
+                        </label>
+                    </div>
+
                     <button type="submit" class="btn w-100 py-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
                         <i class="bi bi-person-plus"></i> Criar conta
                     </button>
-
-                    <p class="text-center small text-muted mt-3 mb-0">
-                        Ao criar sua conta, você concorda com nossa
-                        <a href="{{ url_for('privacidade.politica') }}" target="_blank">Política de Privacidade</a>.
-                    </p>
                 </form>
                 
                 <hr class="my-4">

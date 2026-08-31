@@ -246,6 +246,42 @@ def create_app(config_class=None):
     register_all_routes(app)
 
     # =============================================================
+    # LGPD -- reaceite de Termos/Política quando a versão vigente muda
+    # =============================================================
+    # Só intercepta navegação de página (GET) -- nunca POSTs/JSON (fetch
+    # do FitBot, formulários de ação etc.), pra não quebrar nenhuma
+    # chamada AJAX existente com um redirect inesperado. O próprio
+    # fluxo de aceite (rota privacidade.aceite) e as rotas de auth
+    # (login/logout/registro) ficam de fora, senão ninguém conseguiria
+    # nem chegar na tela de aceite.
+    @app.before_request
+    def _exigir_aceite_lgpd_atual():
+        from flask import request as flask_request, session as flask_session, redirect as flask_redirect, url_for as flask_url_for
+        from flask_login import current_user as flask_current_user
+        from services.privacidade_service import PrivacidadeService
+
+        if flask_request.method != 'GET':
+            return None
+        if not flask_current_user.is_authenticated:
+            return None
+
+        endpoint = flask_request.endpoint or ''
+        if endpoint in ('static', 'health', 'health_db') or endpoint.startswith('privacidade.') or endpoint.startswith('auth.'):
+            return None
+
+        chave_atual = PrivacidadeService.chave_versoes_atuais()
+        if flask_session.get('lgpd_versoes_ok') == chave_atual:
+            return None
+
+        if PrivacidadeService.precisa_aceitar_algum(flask_current_user.id):
+            return flask_redirect(flask_url_for('privacidade.aceite', next=flask_request.path))
+
+        # Já está em dia -- guarda na sessão pra não bater no banco de
+        # novo a cada request, até a próxima mudança de versão.
+        flask_session['lgpd_versoes_ok'] = chave_atual
+        return None
+
+    # =============================================================
     # COMANDOS CLI (cobrança/assinatura)
     # =============================================================
     # Rodar via Railway Cron (ou qualquer scheduler externo) apontando

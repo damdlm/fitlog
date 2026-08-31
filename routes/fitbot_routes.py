@@ -72,7 +72,7 @@ def chat():
             "ok": False,
             "consentimento_necessario": True,
             "resposta": (
-                "O FitBot usa IA externa (Groq/Google Gemini) para responder -- "
+                "O FitBot usa IA externa (Groq/Google Gemini/OpenAI) para responder -- "
                 "suas mensagens e dados de treino são enviados para esse "
                 "processamento. Você concorda em continuar?"
             ),

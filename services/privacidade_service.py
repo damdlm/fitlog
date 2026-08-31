@@ -1,26 +1,32 @@
 """Serviço de privacidade / LGPD.
 
-Reúne as três operações que a Central de Privacidade (Meu Perfil ->
-aba Privacidade) expõe ao usuário, e a gravação de consentimento usada
-pelo FitBot e pelo fluxo de vínculo aluno-professor:
+Reúne:
 
   - registrar_consentimento(...)   -- grava uma manifestação de vontade
   - tem_consentimento_fitbot(user) -- consulta rápida usada no gate do chat
+  - precisa_aceitar_algum(user_id) -- true se falta aceitar Termos e/ou
+                                       Política na versão vigente
+  - registrar_aceite_pendentes(...) -- grava o aceite dos documentos
+                                       que ainda estavam pendentes
   - exportar_dados(user)           -- portabilidade (Art. 18, V da LGPD)
   - anonimizar_conta(user)         -- "exclusão"/esquecimento (Art. 18, VI)
 
 Nenhuma dessas operações mexe no formulário de cadastro nem cria campo
 obrigatório novo -- tudo é self-service, acessado de dentro do perfil já
-existente.
+existente, e o aceite de Termos/Política é um único checkbox no
+cadastro (ver templates/auth/register.html), nunca um formulário
+jurídico separado.
 """
 
 import logging
+import secrets
 from datetime import datetime, timezone
 
 from models import (
     db,
     User,
     ConsentimentoLGPD,
+    PasswordResetToken,
     AlunoProfessor,
     SolicitacaoVinculo,
     VersaoGlobal,
@@ -30,17 +36,43 @@ from models import (
 
 logger = logging.getLogger(__name__)
 
+# ------------------------------------------------------------------
+# Consentimentos pontuais (exigem consentimento como base legal --
+# Art. 7º, I). `versao` fica None nesses.
+# ------------------------------------------------------------------
 TIPO_FITBOT = 'fitbot_ia'
 TIPO_COMPARTILHAMENTO_PROFESSOR = 'compartilhamento_professor'
+
+# ------------------------------------------------------------------
+# Documentos versionados -- aceite formal, não é "consentimento
+# genérico" (ver docstring de ConsentimentoLGPD em models.py).
+#
+# Formato da versão: data de publicação (YYYY-MM-DD). Ao editar
+# materialmente os Termos ou a Política, muda a constante aqui --
+# isso, sozinho, já faz `precisa_aceitar_algum` voltar a apontar
+# pendência pra base inteira de usuários existentes, sem precisar de
+# migration nem de tocar em nenhum registro antigo.
+# ------------------------------------------------------------------
+TIPO_TERMOS_USO = 'terms_of_use'
+TIPO_POLITICA_PRIVACIDADE = 'privacy_policy'
+
+VERSAO_TERMOS_USO = '2026-08-31'
+VERSAO_POLITICA_PRIVACIDADE = '2026-08-31'
+
+DOCUMENTOS_VERSIONADOS = (
+    (TIPO_TERMOS_USO, VERSAO_TERMOS_USO),
+    (TIPO_POLITICA_PRIVACIDADE, VERSAO_POLITICA_PRIVACIDADE),
+)
 
 
 class PrivacidadeService:
 
     # ------------------------------------------------------------
     # Consentimento
+
     # ------------------------------------------------------------
     @staticmethod
-    def registrar_consentimento(usuario_id, tipo, concedido=True, contexto=None):
+    def registrar_consentimento(usuario_id, tipo, concedido=True, contexto=None, versao=None):
         """Grava uma nova manifestação de vontade. Nunca sobrescreve a
         anterior -- cada chamada é uma linha nova, preservando o
         histórico completo para fins de auditoria."""
@@ -48,6 +80,7 @@ class PrivacidadeService:
             registro = ConsentimentoLGPD(
                 usuario_id=usuario_id,
                 tipo=tipo,
+                versao=versao,
                 concedido=bool(concedido),
                 contexto=contexto,
                 criado_em=datetime.now(timezone.utc),
@@ -66,6 +99,57 @@ class PrivacidadeService:
     @staticmethod
     def tem_consentimento_fitbot(usuario_id):
         return ConsentimentoLGPD.tem_consentimento_ativo(usuario_id, TIPO_FITBOT)
+
+    # ------------------------------------------------------------
+    # Aceite versionado de Termos de Uso / Política de Privacidade
+    # ------------------------------------------------------------
+    @staticmethod
+    def documentos_pendentes(usuario_id):
+        """Lista os `tipo` (dentre TIPO_TERMOS_USO/TIPO_POLITICA_PRIVACIDADE)
+        cuja versão vigente o usuário ainda não aceitou. Lista vazia =
+        nada pendente (cadastro novo já aceitou os dois de uma vez; ver
+        routes/auth_routes.py:register)."""
+        return [
+            tipo for tipo, versao in DOCUMENTOS_VERSIONADOS
+            if not ConsentimentoLGPD.tem_versao_aceita(usuario_id, tipo, versao)
+        ]
+
+    @staticmethod
+    def precisa_aceitar_algum(usuario_id):
+        return len(PrivacidadeService.documentos_pendentes(usuario_id)) > 0
+
+    @staticmethod
+    def chave_versoes_atuais():
+        """String que muda sempre que VERSAO_TERMOS_USO/VERSAO_POLITICA_
+        PRIVACIDADE mudar -- usada para cachear na sessão que o usuário
+        já está em dia, sem bater no banco a cada request (ver
+        app.py:_exigir_aceite_lgpd_atual)."""
+        return f"{VERSAO_TERMOS_USO}|{VERSAO_POLITICA_PRIVACIDADE}"
+
+    @staticmethod
+    def registrar_aceite_cadastro(usuario_id):
+        """Chamado uma única vez, no exato momento em que a conta é
+        criada (routes/auth_routes.py:register) -- o aceite do
+        checkbox único vira DOIS registros (Termos + Política), cada um
+        já na versão vigente no momento do cadastro."""
+        for tipo, versao in DOCUMENTOS_VERSIONADOS:
+            PrivacidadeService.registrar_consentimento(
+                usuario_id, tipo, concedido=True, versao=versao, contexto='cadastro',
+            )
+
+    @staticmethod
+    def registrar_aceite_pendentes(usuario_id):
+        """Chamado pela tela de reaceite (routes/privacidade_routes.py:
+        aceite) -- só grava os documentos que ainda estavam pendentes
+        pra esse usuário, nunca reescreve um aceite já existente."""
+        pendentes = PrivacidadeService.documentos_pendentes(usuario_id)
+        versoes_por_tipo = dict(DOCUMENTOS_VERSIONADOS)
+        for tipo in pendentes:
+            PrivacidadeService.registrar_consentimento(
+                usuario_id, tipo, concedido=True,
+                versao=versoes_por_tipo[tipo], contexto='reaceite',
+            )
+        return pendentes
 
     # ------------------------------------------------------------
     # Portabilidade (Art. 18, V)
@@ -163,10 +247,36 @@ class PrivacidadeService:
         de fato reabriria o username/e-mail para reuso imediato e
         destruiria o próprio registro de que a exclusão aconteceu --
         pior para auditoria do que anonimizar mantendo o vínculo.
+
+        Auditoria de identificação indireta (além dos campos óbvios
+        nome/e-mail/telefone) que este método também cobre:
+          - username: pode ter sido escolhido pelo próprio usuário com
+            seu nome real -- é trocado por um marcador, igual ao e-mail.
+            (A tela "Melhores Alunos" e a listagem de alunos do
+            professor já filtram por User.ativo/AlunoProfessor.ativo,
+            então um usuário anonimizado nem chega a aparecer lá --
+            mas o username em si também precisa parar de ser o nome
+            real, caso apareça em algum lugar administrativo.)
+          - vínculo aluno-professor: desativado nos dois sentidos (como
+            aluno OU como professor), senão o outro lado continua
+            enxergando os dados de treino de quem pediu exclusão.
+          - login: hash de senha substituído por um hash de verdade
+            (não um texto fixo -- um texto fixo passado pra
+            check_password_hash quebra com ValueError em vez de
+            simplesmente recusar o login) gerado a partir de uma senha
+            aleatória que ninguém conhece.
+          - sessões ativas: invalidadas via bump de session_version
+            (mesmo mecanismo usado após troca de senha, ver
+            User.set_password / app.py:load_user).
+          - tokens de reset de senha ainda válidos: marcados como
+            usados -- sem isso, um link de "esqueci minha senha"
+            emitido pouco antes da exclusão continuaria funcionando e
+            reabriria a conta anonimizada.
         """
         try:
             marcador = f"usuario-removido-{user.id}"
 
+            user.username = marcador
             user.nome_completo = "Usuário removido"
             user.email = f"{marcador}@removido.fitlog"
             user.telefone = None
@@ -175,9 +285,11 @@ class PrivacidadeService:
             user.endereco_cep = None
             user.endereco_numero = None
             user.ativo = False
-            # Impede login: hash inválido, nunca bate com nenhuma senha real.
-            user.password_hash = "!anonimizado!"
-            user.session_version = (user.session_version or 0) + 1
+            # Senha aleatória e descartada na hora -- ninguém a conhece,
+            # e vira um hash de verdade (não uma string fixa) via
+            # set_password, que também já cuida de invalidar sessões
+            # antigas (bump de session_version).
+            user.set_password(secrets.token_urlsafe(32))
 
             # Encerra qualquer vínculo ativo (como aluno ou como professor)
             # -- ninguém deve continuar tendo acesso aos dados de uma conta
@@ -197,6 +309,15 @@ class PrivacidadeService:
                 ),
                 SolicitacaoVinculo.status == 'pendente',
             ).update({'status': 'cancelado'}, synchronize_session=False)
+
+            # Invalida qualquer token de reset de senha ainda não usado
+            # (o link de e-mail continuaria funcionando até expirar,
+            # senão -- ver reset_password_request, que só bloqueia a
+            # EMISSÃO de token novo para conta inativa, não os já emitidos).
+            PasswordResetToken.query.filter(
+                PasswordResetToken.user_id == user.id,
+                PasswordResetToken.used_at.is_(None),
+            ).update({'used_at': datetime.now(timezone.utc)}, synchronize_session=False)
 
             db.session.commit()
 

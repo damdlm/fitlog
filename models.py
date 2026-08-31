@@ -277,45 +277,48 @@ class ConsentimentoLGPD(db.Model):
     """Registro de manifestações de vontade do titular dos dados
     relacionadas à LGPD.
 
-    Só existem registros aqui para as operações que EXIGEM consentimento
-    específico do titular (base legal do Art. 7º, I) -- o uso normal do
-    app (login, montar treino, professor ver dados do aluno vinculado)
-    se sustenta em execução de contrato (Art. 7º, V) e não precisa de
-    consentimento explícito, só transparência via a política de
-    privacidade (rota /privacidade).
+    Cobre dois tipos de manifestação, que são coisas DIFERENTES e nunca
+    devem ser tratadas como a mesma coisa:
 
-    Hoje só dois `tipo` são gravados:
-      'fitbot_ia'                -- envio de mensagens/fotos/dados de
-                                     treino para processamento por IA
-                                     de terceiros (Groq/Google Gemini),
-                                     ver services/fitbot_service.py.
-                                     Concedido no primeiro uso do chat
-                                     (routes/fitbot_routes.py), revogável
-                                     a qualquer momento em Meu Perfil.
-      'compartilhamento_professor' -- aluno enviando solicitação de
-                                     vínculo a um professor específico
-                                     (contexto = "professor_id=<id>"),
-                                     gravado no mesmo instante em que o
-                                     próprio aluno decide compartilhar
-                                     seus dados de treino com aquele
-                                     professor (routes/aluno/main.py:
-                                     enviar_solicitacao). Não é a única
-                                     base legal dessa operação -- é só
-                                     evidência adicional de consentimento,
-                                     documentando explicitamente que o
-                                     aluno tinha ciência no momento do ato.
+      1) Aceite formal e VERSIONADO de documentos (`versao` preenchida):
+           'terms_of_use'      -- Termos de Uso
+           'privacy_policy'    -- Ciência da Política de Privacidade
+         Registrado uma vez no cadastro (ver routes/auth_routes.py:
+         register) e novamente sempre que a versão vigente do documento
+         mudar e o usuário ainda não tiver aceitado a versão nova (ver
+         PrivacidadeService.precisa_aceitar / routes/privacidade_routes.py:
+         aceite). NÃO é a base legal do tratamento em si (essa é
+         execução de contrato) -- é só o registro formal de ciência e
+         concordância.
+
+      2) Consentimento específico para um tratamento pontual que EXIGE
+         consentimento como base legal (Art. 7º, I) -- `versao` fica
+         None, pois aqui o que importa é só concedido/revogado:
+           'fitbot_ia'                  -- envio de dados ao FitBot
+                                            (Groq/Gemini/OpenAI), concedido
+                                            no primeiro uso do chat,
+                                            revogável em Meu Perfil.
+           'compartilhamento_professor' -- aluno enviando solicitação de
+                                            vínculo (contexto=
+                                            "professor_id=<id>") -- evidência
+                                            adicional, não a única base legal.
+           'exclusao_conta'             -- registro de auditoria de que a
+                                            própria conta pediu para ser
+                                            anonimizada (ver
+                                            PrivacidadeService.anonimizar_conta).
 
     Histórico completo é mantido (nunca faz UPDATE em cima de um
-    registro existente) -- para saber o estado atual de um tipo de
-    consentimento, sempre olhar o mais recente
-    (`tem_consentimento_ativo`), nunca assumir que só existe um registro
-    por usuário/tipo.
+    registro existente) -- para saber o estado atual de um tipo/versão,
+    sempre olhar o mais recente (`tem_consentimento_ativo` /
+    `tem_versao_aceita`), nunca assumir que só existe um registro por
+    usuário/tipo.
     """
     __tablename__ = 'consentimentos_lgpd'
 
     id = db.Column(db.Integer, primary_key=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     tipo = db.Column(db.String(40), nullable=False)
+    versao = db.Column(db.String(20), nullable=True)
     concedido = db.Column(db.Boolean, nullable=False, default=True)
     contexto = db.Column(db.String(200), nullable=True)
     criado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
@@ -329,15 +332,26 @@ class ConsentimentoLGPD(db.Model):
     @staticmethod
     def tem_consentimento_ativo(usuario_id, tipo):
         """True se a manifestação mais recente desse tipo, para esse
-        usuário, foi uma concessão (não uma revogação nem inexistente)."""
+        usuário, foi uma concessão (não uma revogação nem inexistente).
+        Usado para os consentimentos pontuais (tipo 2 acima) -- não usar
+        para documentos versionados, ver `tem_versao_aceita`."""
         ultimo = (ConsentimentoLGPD.query
                   .filter_by(usuario_id=usuario_id, tipo=tipo)
                   .order_by(ConsentimentoLGPD.criado_em.desc())
                   .first())
         return ultimo is not None and ultimo.concedido
 
+    @staticmethod
+    def tem_versao_aceita(usuario_id, tipo, versao):
+        """True se existe algum aceite CONCEDIDO desse tipo especificamente
+        para `versao`. Diferente de `tem_consentimento_ativo`: aceitar a
+        versão 1 não conta como ter aceitado a versão 2."""
+        return ConsentimentoLGPD.query.filter_by(
+            usuario_id=usuario_id, tipo=tipo, versao=versao, concedido=True,
+        ).first() is not None
+
     def __repr__(self):
-        return f'<ConsentimentoLGPD user={self.usuario_id} tipo={self.tipo} concedido={self.concedido}>'
+        return f'<ConsentimentoLGPD user={self.usuario_id} tipo={self.tipo} versao={self.versao} concedido={self.concedido}>'
 
 
 # =====================================================
