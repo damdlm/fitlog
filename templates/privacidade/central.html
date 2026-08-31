@@ -15,12 +15,14 @@
             </div>
             <div class="card-body">
                 <p class="mb-2">Veja em detalhes o que coletamos, por quê, e com quem compartilhamos.</p>
-                <a href="{{ url_for('privacidade.termos') }}" class="btn btn-outline-secondary btn-sm">
-                    Ler os Termos de Uso
-                </a>
-                <a href="{{ url_for('privacidade.politica') }}" class="btn btn-outline-secondary btn-sm">
-                    Ler a Política de Privacidade
-                </a>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('privacidade.termos') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-file-earmark-text"></i> Ler os Termos de Uso
+                    </a>
+                    <a href="{{ url_for('privacidade.politica') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-shield-lock"></i> Ler a Política de Privacidade
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -51,7 +53,7 @@
             </div>
             <div class="card-body">
                 <p class="mb-2">Baixe uma cópia de todos os seus dados pessoais e de treino em formato JSON.</p>
-                <a href="{{ url_for('privacidade.exportar_dados') }}" class="btn btn-outline-secondary btn-sm">
+                <a href="{{ url_for('privacidade.exportar_dados') }}" class="btn btn-sm" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
                     <i class="bi bi-download"></i> Baixar meus dados
                 </a>
             </div>
