@@ -209,6 +209,41 @@
             border: none;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
+
+        /* Flash messages flutuam por cima do conteúdo (estilo toast) em
+           vez de empurrar a tela pra baixo -- container fixo, ancorado
+           no topo/centro da viewport, acima de tudo (navbar sticky
+           z-index 1030, bottom-nav mobile 1035, mega-panel 1040).
+           pointer-events:none no container deixa cliques passarem pelo
+           espaço vazio ao redor; cada .alert reabilita pointer-events
+           pra continuar clicável/fechável (ver JS de auto-dismiss). */
+        .flash-messages-container {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1090;
+            width: 100%;
+            max-width: 420px;
+            padding: 0 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            pointer-events: none;
+        }
+
+        .flash-messages-container .alert {
+            margin-bottom: 0;
+            pointer-events: auto;
+        }
+
+        @media (max-width: 575.98px) {
+            .flash-messages-container {
+                top: 0.75rem;
+                max-width: 100%;
+                padding: 0 0.75rem;
+            }
+        }
         
         .alert-success {
             background: linear-gradient(135deg, #28a745 0%, #5cb85c 100%);
@@ -1394,8 +1429,9 @@
     </div>
     {% endif %}
     
-    <!-- Flash Messages -->
-    <div class="container mt-3">
+    <!-- Flash Messages: flutuam por cima do conteúdo (estilo toast), não
+         empurram a tela -- ver .flash-messages-container no <style>. -->
+    <div class="flash-messages-container" id="flash-messages" aria-live="polite" aria-atomic="true">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
