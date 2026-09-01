@@ -214,6 +214,20 @@ class ProductionConfig(Config):
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
 
+    # CORREÇÃO -- CSRF em HTTPS bloqueando ações legítimas (ex: "Salvar
+    # ordem" ao reordenar exercícios): por padrão o Flask-WTF, além de
+    # validar o token, também exige um cabeçalho Referer em toda
+    # requisição HTTPS (WTF_CSRF_SSL_STRICT=True). Chamadas via
+    # fetch() nem sempre mandam Referer -- depende do navegador,
+    # bloqueadores de rastreamento (Brave, uBlock, modo privado do
+    # Safari) -- e aí o Flask recusa com 400 mesmo o token estando
+    # correto. A proteção de verdade contra CSRF é o token em si
+    # (validate_csrf, que continua ativo); a checagem de referer é uma
+    # camada extra opcional que, na prática, gera falso positivo. Só
+    # roda em produção (HTTPS) -- nunca disparava em dev/teste (HTTP),
+    # por isso não aparecia nos testes locais.
+    WTF_CSRF_SSL_STRICT = False
+
     # CORREÇÃO seção 18 (hardening de segurança -- cookies): o cookie de
     # "remember me" (Flask-Login) não herda as flags do cookie de sessão
     # acima, então precisa das próprias. Sem isso ele ficaria acessível
