@@ -79,9 +79,10 @@
                     {% for ex in exercicios %}
                     {% set musculo_nome = ex.musculo_nome or ex.musculo or 'N/A' %}
                     {% set marcado = (ex.prefixo ~ ex.id|string) in treino.exercicios %}
+                    {% set apelidos = ex.nicknames|join(', ') if ex.nicknames else '' %}
                     <label class="etv-card {% if marcado %}is-selected{% endif %}"
                            for="ex_{{ ex.tipo }}_{{ ex.id }}"
-                           data-nome="{{ ex.nome|lower }}"
+                           data-nome="{{ (ex.nome ~ ' ' ~ apelidos)|lower }}"
                            data-nome-display="{{ ex.nome }}"
                            data-musculo="{{ musculo_nome }}">
                         <input class="etv-checkbox"
@@ -93,7 +94,7 @@
 
                         <div class="etv-card-body">
                             <div class="etv-card-nome" data-bs-toggle="tooltip" data-bs-placement="top"
-                                 title="{{ ex.descricao or ex.nome }}">
+                                 title="{{ ex.descricao or ex.nome }}{% if apelidos %} (também: {{ apelidos }}){% endif %}">
                                 {{ ex.nome }}
                             </div>
                             <span class="badge etv-card-musculo">{{ musculo_nome }}</span>

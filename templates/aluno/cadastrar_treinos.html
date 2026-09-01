@@ -609,9 +609,10 @@
                         <div class="etv-grid" id="etvGrid">
                             {% for ex in exercicios_catalogo %}
                             {% set musculo_nome = ex.musculo_nome or ex.musculo or 'N/A' %}
+                            {% set apelidos = ex.nicknames|join(', ') if ex.nicknames else '' %}
                             <label class="etv-card"
                                    for="ex_{{ ex.tipo }}_{{ ex.id }}"
-                                   data-nome="{{ ex.nome|lower }}"
+                                   data-nome="{{ (ex.nome ~ ' ' ~ apelidos)|lower }}"
                                    data-nome-display="{{ ex.nome }}"
                                    data-musculo="{{ musculo_nome }}"
                                    data-valor="{{ ex.prefixo }}{{ ex.id }}">
@@ -623,7 +624,7 @@
 
                                 <div class="etv-card-body">
                                     <div class="etv-card-nome" data-bs-toggle="tooltip" data-bs-placement="top"
-                                         title="{{ ex.descricao or ex.nome }}">
+                                         title="{{ ex.descricao or ex.nome }}{% if apelidos %} (também: {{ apelidos }}){% endif %}">
                                         {{ ex.nome }}
                                     </div>
                                     <span class="badge etv-card-musculo">{{ musculo_nome }}</span>
