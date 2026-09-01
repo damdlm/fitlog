@@ -106,6 +106,7 @@ def ver_versao(versao_id):
         salvar_treino_url=lambda tv_id: url_for('aluno.versao_salvar_treino', versao_id=versao.id, treino_versao_id=tv_id),
         remover_treino_url=lambda tv_id: url_for('aluno.versao_remover_treino', versao_id=versao.id, treino_versao_id=tv_id),
         novo_exercicio_url=url_for('aluno.novo_exercicio'),
+        reordenar_url=url_for('api.api_reordenar_exercicios'),
     )
 
 

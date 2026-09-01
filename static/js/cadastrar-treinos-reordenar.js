@@ -1,16 +1,28 @@
 /* ==========================================================
-   Cadastrar Treinos (aluno) — reordenar exercícios dentro de
+   Cadastrar Treinos (aluno) / Ver Versão (aluno + professor
+   editando em nome do aluno) — reordenar exercícios dentro de
    cada card de treino via drag-and-drop (SortableJS).
 
-   Reaproveita a API já existente /api/reordenar-exercicios
-   (mesma usada em aluno/ver_versao.html), que recebe
-   {versao_id, treino_codigo, nova_ordem} e persiste o campo
-   `ordem` de VersaoExercicio -- ownership já validada no
-   servidor via VersaoService.get_by_id(versao_id, user_id).
+   Chama window.CT_REORDENAR_URL (embutido pelo template),
+   recebe {versao_id, treino_codigo, nova_ordem} e persiste o
+   campo `ordem` de VersaoExercicio.
+
+   A URL muda conforme quem está editando:
+   - aluno editando o próprio treino -> /api/reordenar-exercicios
+     (routes/api_routes.py), ownership validada via
+     VersaoService.get_by_id(versao_id, user_id=current_user.id)
+   - professor editando o treino de um aluno vinculado ->
+     /professor/aluno/<id>/reordenar-exercicios
+     (routes/professor_routes.py:reordenar_exercicios_aluno),
+     que valida a posse do ALUNO (não do professor logado) antes
+     de reordenar -- usar o endpoint fixo aqui seria o mesmo bug
+     que os outros *_aluno (salvar_treino_url, adicionar_treino_url
+     etc.) já evitam: a versão pertence ao aluno, e buscar pelo
+     ID do professor nunca encontra nada.
 
    Depende de:
    - SortableJS (carregado antes deste arquivo)
-   - window.CT_VERSAO_ID, embutido pelo template
+   - window.CT_VERSAO_ID e window.CT_REORDENAR_URL, embutidos pelo template
    - FitLogUtils (fitlog-utils.js, carregado globalmente em
      base.html), usado só pro toast de sucesso/erro
    ========================================================== */
@@ -63,7 +75,8 @@ document.addEventListener('DOMContentLoaded', function () {
         btnSalvar.innerHTML = '<i class="bi bi-hourglass-split"></i> Salvando...';
 
         try {
-            const data = await FitLogUtils.apiCall('/api/reordenar-exercicios', 'POST', {
+            const url = window.CT_REORDENAR_URL || '/api/reordenar-exercicios';
+            const data = await FitLogUtils.apiCall(url, 'POST', {
                 versao_id: window.CT_VERSAO_ID,
                 treino_codigo: treinoCodigo,
                 nova_ordem: novaOrdem

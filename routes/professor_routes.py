@@ -798,7 +798,43 @@ def ver_versao_aluno(aluno_id, versao_id):
         salvar_treino_url=lambda tv_id: url_for('professor.versao_salvar_treino_aluno', aluno_id=aluno.id, versao_id=versao.id, treino_versao_id=tv_id),
         remover_treino_url=lambda tv_id: url_for('professor.versao_remover_treino_aluno', aluno_id=aluno.id, versao_id=versao.id, treino_versao_id=tv_id),
         novo_exercicio_url=url_for('professor.novo_exercicio_aluno', aluno_id=aluno.id),
+        reordenar_url=url_for('professor.reordenar_exercicios_aluno', aluno_id=aluno.id),
     )
+
+
+@professor_bp.route('/aluno/<int:aluno_id>/reordenar-exercicios', methods=['POST'])
+@login_required
+@professor_acesso_alunos_required
+def reordenar_exercicios_aluno(aluno_id):
+    """Reordena exercícios de um treino do aluno -- espelha
+    /api/reordenar-exercicios (routes/api_routes.py), mas resolvendo a
+    posse pelo ALUNO (aluno.id), não pelo professor logado. É o mesmo
+    bug de fundo que os outros *_aluno abaixo evitam: a versão
+    pertence ao aluno, então usar current_user.id (o professor) na
+    busca nunca encontra a versão e sempre falha com "Erro ao
+    reordenar" -- ver _aluno_ou_negar para a checagem de posse."""
+    aluno, negado = _aluno_ou_negar(aluno_id)
+    if negado:
+        return jsonify({"success": False, "error": "Acesso negado"}), 403
+
+    data = request.get_json(silent=True) or {}
+    versao_id = data.get('versao_id')
+    treino_codigo = data.get('treino_codigo')
+    nova_ordem = data.get('nova_ordem')
+
+    if not versao_id or not treino_codigo or not nova_ordem:
+        return jsonify({"success": False, "error": "Dados incompletos"}), 400
+
+    sucesso = ExercicioService.reordenar_exercicios(
+        versao_id=versao_id,
+        treino_codigo=treino_codigo,
+        nova_ordem_ids=nova_ordem,
+        user_id=aluno.id,
+    )
+
+    if sucesso:
+        return jsonify({"success": True})
+    return jsonify({"success": False, "error": "Erro ao reordenar"}), 500
 
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>/editar', methods=['POST'])

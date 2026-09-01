@@ -701,6 +701,7 @@
     window.CT_TREINO_EXERCICIOS = {{ treino_exercicios_map|tojson }};
     window.CT_TREINO_OBSERVACOES = {{ treino_observacoes_map|tojson }};
     window.CT_VERSAO_ID = {{ versao.id }};
+    window.CT_REORDENAR_URL = {{ url_for('api.api_reordenar_exercicios')|tojson }};
 </script>
 {% endif %}
 
