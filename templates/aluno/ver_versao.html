@@ -8,6 +8,7 @@
 {% endblock %}
 
 {% block content %}
+{% from "macros/exercicio_tooltip.html" import tooltip_nome_exercicio %}
 <style>
     :root {
         --ct-orange: #F28C33;
@@ -592,7 +593,8 @@
 
                                 <div class="etv-card-body">
                                     <div class="etv-card-nome" data-bs-toggle="tooltip" data-bs-placement="top"
-                                         title="{{ ex.descricao or ex.nome }}{% if apelidos %} (também: {{ apelidos }}){% endif %}">
+                                         data-bs-html="true" data-bs-custom-class="etv-tooltip-nomes"
+                                         title="{{ tooltip_nome_exercicio(ex) }}">
                                         {{ ex.nome }}
                                     </div>
                                     <span class="badge etv-card-musculo">{{ musculo_nome }}</span>

@@ -1,0 +1,20 @@
+{#
+  Macro: tooltip_nome_exercicio
+  ------------------------------
+  Monta o HTML (para dentro de um atributo title, com data-bs-html="true")
+  do tooltip do card de seleção de exercício: nome/descrição em destaque e,
+  se houver, a lista de nicknames (ExercicioSistema.nicknames) embaixo.
+
+  Uso:
+    {% from "macros/exercicio_tooltip.html" import tooltip_nome_exercicio %}
+    <div class="etv-card-nome" data-bs-toggle="tooltip" data-bs-placement="top"
+         data-bs-html="true" data-bs-custom-class="etv-tooltip-nomes"
+         title="{{ tooltip_nome_exercicio(ex) }}">
+        {{ ex.nome }}
+    </div>
+#}
+{%- macro tooltip_nome_exercicio(ex) -%}
+{%- set titulo = ex.descricao or ex.nome -%}
+{%- set apelidos = ex.nicknames if ex.nicknames else [] -%}
+<strong>{{ titulo }}</strong>{% if apelidos %}<span class="etv-tooltip-label">Outros nomes:</span><ul class="etv-tooltip-lista">{% for apelido in apelidos %}<li>{{ apelido }}</li>{% endfor %}</ul>{% endif -%}
+{%- endmacro -%}

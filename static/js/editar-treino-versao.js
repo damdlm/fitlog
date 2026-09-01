@@ -152,12 +152,25 @@ document.addEventListener('DOMContentLoaded', function () {
         cb.addEventListener('change', () => onCheckboxChange(cb));
     });
 
+    // O card inteiro é um <label for="..."> (facilita o alvo de toque),
+    // mas o comportamento padrão do label é repassar QUALQUER clique
+    // dentro dele para o checkbox associado -- isso brigava com o
+    // tooltip do nome (clicar no nome pra ver o nome completo/nicknames
+    // também selecionava/desmarcava o exercício). Agora só o clique no
+    // próprio checkbox seleciona; clique em qualquer outro ponto do
+    // card é ignorado (preventDefault cancela o repasse do label).
+    grid?.addEventListener('click', function (e) {
+        if (e.target.closest('.etv-checkbox')) return;
+        if (!e.target.closest('.etv-card')) return;
+        e.preventDefault();
+    });
+
     // -----------------------------------------------------
-    // Tooltips (Bootstrap) — descrição completa do exercício
+    // Tooltips (Bootstrap) — nome completo e nicknames do exercício
     // -----------------------------------------------------
     if (window.bootstrap) {
         grid?.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-            new bootstrap.Tooltip(el, { trigger: 'hover' });
+            new bootstrap.Tooltip(el, { trigger: 'hover', html: true });
         });
     }
 

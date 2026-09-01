@@ -189,7 +189,7 @@
     border: 2px solid #e9ecef;
     border-radius: 12px;
     padding: 8px 12px;
-    cursor: pointer;
+    cursor: default;
     transition: border-color .15s ease, box-shadow .15s ease, transform .1s ease;
 }
 
@@ -238,6 +238,30 @@
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+}
+
+/* Tooltip rico do nome do exercício (nome + "Outros nomes:" + lista de
+   nicknames), aplicado via data-bs-custom-class="etv-tooltip-nomes" */
+.etv-tooltip-nomes .tooltip-inner {
+    text-align: left;
+    max-width: 240px;
+}
+
+.etv-tooltip-nomes .etv-tooltip-label {
+    display: block;
+    margin-top: 6px;
+    font-size: .72rem;
+    opacity: .8;
+}
+
+.etv-tooltip-nomes .etv-tooltip-lista {
+    margin: 2px 0 0;
+    padding-left: 1.1rem;
+    text-align: left;
+}
+
+.etv-tooltip-nomes .etv-tooltip-lista li {
+    font-size: .8rem;
 }
 
 .etv-card-musculo {
