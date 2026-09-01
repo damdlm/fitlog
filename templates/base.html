@@ -1276,6 +1276,11 @@
                         {% endif %}
                         {% if current_user.is_professor() %}
                         <li class="d-lg-none">
+                            <a class="dropdown-item" href="{{ url_for('professor.dashboard') }}">
+                                <i class="bi bi-speedometer2"></i> Painel
+                            </a>
+                        </li>
+                        <li class="d-lg-none">
                             <a class="dropdown-item" href="{{ url_for('professor.listar_alunos') }}">
                                 <i class="bi bi-people"></i> Meus Alunos
                             </a>
