@@ -10,19 +10,30 @@ banco, e ela nunca fica hardcoded em nenhum arquivo.
 
 Idempotente: pode ser executado várias vezes. Registros existentes
 (identificados por id_original) são atualizados; novos são inseridos.
+
+Registros que existiam no banco mas não estão mais presentes no JSON
+(ex: duplicados removidos na curadoria) são APAGADOS de exercicios_sistema.
+Isso é um hard-delete: exercicios_sistema.id é referenciado com
+ondelete='CASCADE' por versao_exercicios.exercicio_base_id e
+registros_treino.exercicio_base_id, então remover um exercício aqui também
+remove, em cascata, qualquer treino montado ou histórico de treino de aluno
+que já use esse exercício. O script imprime, antes de apagar, quantos
+registros dependentes serão afetados em cada tabela, para que isso fique
+visível no log de execução.
 """
 import json
 import sys
 from datetime import datetime
 from pathlib import Path
 
+from sqlalchemy import select, func
 from sqlalchemy.dialects.postgresql import insert
 
 # Permite rodar o script tanto de dentro de scripts/ quanto da raiz do projeto
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app import create_app          # noqa: E402
-from models import db, ExercicioSistema  # noqa: E402
+from models import db, ExercicioSistema, VersaoExercicio, RegistroTreino  # noqa: E402
 
 JSON_PATH = Path(__file__).resolve().parent.parent / "data" / "exercises.json"
 BATCH_SIZE = 500
@@ -50,6 +61,7 @@ def parse_registro(item: dict) -> dict:
         "passos_pt": passos.get("pt"),
         "grupo_muscular": item.get("muscle_group"),
         "musculos_secundarios": item.get("secondary_muscles"),
+        "nicknames": item.get("nicknames") or [],
         "alvo": item.get("target"),
         "imagem": item.get("image"),
         "gif_url": item.get("gif_url"),
@@ -89,6 +101,7 @@ def carregar():
                     "passos_pt": stmt.excluded.passos_pt,
                     "grupo_muscular": stmt.excluded.grupo_muscular,
                     "musculos_secundarios": stmt.excluded.musculos_secundarios,
+                    "nicknames": stmt.excluded.nicknames,
                     "alvo": stmt.excluded.alvo,
                     "imagem": stmt.excluded.imagem,
                     "gif_url": stmt.excluded.gif_url,
@@ -103,7 +116,59 @@ def carregar():
             total_processados += len(lote)
             print(f"  {total_processados}/{len(registros)} processados...")
 
-        print("Carga concluída com sucesso.")
+        print("Carga (insert/update) concluída com sucesso.")
+
+        remover_orfaos(registros)
+
+
+def remover_orfaos(registros: list[dict]):
+    """
+    Apaga de exercicios_sistema os registros cujo id_original não está mais
+    presente no JSON atual (ex: duplicados removidos na curadoria).
+
+    HARD DELETE: por causa do ondelete='CASCADE' nas FKs de
+    versao_exercicios.exercicio_base_id e registros_treino.exercicio_base_id,
+    isso também apaga treinos montados e histórico de treino de qualquer
+    aluno que já tenha usado esses exercícios. Antes de apagar, o script
+    conta e imprime quantas linhas dependentes serão afetadas em cada
+    tabela, para deixar isso visível no log.
+    """
+    ids_do_json = {item["id"] for item in registros}
+
+    orfaos = ExercicioSistema.query.filter(
+        ExercicioSistema.id_original.notin_(ids_do_json)
+    ).all()
+
+    if not orfaos:
+        print("Nenhum exercício órfão (removido do JSON) encontrado no banco.")
+        return
+
+    print(f"\n{len(orfaos)} exercício(s) presentes no banco mas ausentes do JSON novo:")
+    ids_internos = [ex.id for ex in orfaos]
+
+    for ex in orfaos:
+        n_versoes = db.session.scalar(
+            select(func.count()).select_from(VersaoExercicio)
+            .where(VersaoExercicio.exercicio_base_id == ex.id)
+        )
+        n_registros = db.session.scalar(
+            select(func.count()).select_from(RegistroTreino)
+            .where(RegistroTreino.exercicio_base_id == ex.id)
+        )
+        aviso = ""
+        if n_versoes or n_registros:
+            aviso = (
+                f"  ATENÇÃO: será apagado em cascata de "
+                f"{n_versoes} treino(s) montado(s) e {n_registros} registro(s) de histórico"
+            )
+        print(f"  - {ex.id_original} | {ex.nome}{aviso}")
+
+    ExercicioSistema.query.filter(
+        ExercicioSistema.id.in_(ids_internos)
+    ).delete(synchronize_session=False)
+    db.session.commit()
+
+    print(f"\n{len(orfaos)} exercício(s) removido(s) de exercicios_sistema.")
 
 
 if __name__ == "__main__":

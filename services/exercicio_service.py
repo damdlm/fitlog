@@ -36,12 +36,18 @@ class ExercicioService(BaseService):
     
     @staticmethod
     def search_base(termo, musculo=None, limite=50):
-        """Busca exercícios no catálogo base"""
+        """Busca exercícios no catálogo base (por nome ou por apelido/nickname)"""
         try:
             query = ExercicioSistema.query
             
             if termo:
-                query = query.filter(ExercicioSistema.nome.ilike(f'%{termo}%'))
+                termo_like = f'%{termo}%'
+                query = query.filter(
+                    or_(
+                        ExercicioSistema.nome.ilike(termo_like),
+                        db.cast(ExercicioSistema.nicknames, db.Text).ilike(termo_like),
+                    )
+                )
             
             if musculo:
                 query = query.filter(ExercicioSistema.grupo_muscular == musculo)

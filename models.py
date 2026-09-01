@@ -829,6 +829,7 @@ class ExercicioSistema(db.Model):
     passos_pt = db.Column(db.JSON)               # lista de strings (instruction_steps.pt)
     grupo_muscular = db.Column(db.String(100))
     musculos_secundarios = db.Column(db.JSON)     # lista de strings
+    nicknames = db.Column(db.JSON)                # lista de strings (nomes alternativos p/ busca)
     alvo = db.Column(db.String(100))
     imagem = db.Column(db.String(300))
     gif_url = db.Column(db.String(300))

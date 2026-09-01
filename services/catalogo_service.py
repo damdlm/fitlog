@@ -4,6 +4,7 @@ Serviço para gerenciar o catálogo de exercícios - AGORA USA O BANCO DE DADOS
 """
 from .base_service import BaseService, CacheService
 from models import db, ExercicioSistema
+from sqlalchemy import or_
 import logging
 from utils.exercise_utils import remover_acentos
 
@@ -66,13 +67,19 @@ class CatalogoService:
     @classmethod
     def buscar_exercicios(cls, termo=None, musculo=None, limite=500):
         """
-        Busca exercícios no BANCO por termo e/ou músculo
+        Busca exercícios no BANCO por termo (nome ou apelido/nickname) e/ou músculo
         """
         try:
             query = ExercicioSistema.query
             
             if termo:
-                query = query.filter(ExercicioSistema.nome.ilike(f'%{termo}%'))
+                termo_like = f'%{termo}%'
+                query = query.filter(
+                    or_(
+                        ExercicioSistema.nome.ilike(termo_like),
+                        db.cast(ExercicioSistema.nicknames, db.Text).ilike(termo_like),
+                    )
+                )
             
             if musculo:
                 query = query.filter(ExercicioSistema.grupo_muscular == musculo)
