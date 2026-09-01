@@ -1121,6 +1121,13 @@
                     </button>
                     <div class="mega-panel" data-mega-panel="professor">
                         <div class="mega-grid">
+                            <a class="mega-card" href="{{ url_for('professor.dashboard') }}">
+                                <span class="mega-icon"><i class="bi bi-speedometer2"></i></span>
+                                <span>
+                                    <span class="mega-title">Painel</span>
+                                    <span class="mega-desc">O que precisa da sua atenção hoje</span>
+                                </span>
+                            </a>
                             <a class="mega-card" href="{{ url_for('professor.listar_alunos') }}">
                                 <span class="mega-icon"><i class="bi bi-people"></i></span>
                                 <span>

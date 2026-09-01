@@ -7,9 +7,11 @@ from services.versao_service import VersaoService
 from services.estatistica_service import EstatisticaService
 from services.musculo_service import MusculoService
 from services.billing_service import BillingService
+from services.dashboard_service import DashboardService
 from utils.decorators import professor_acesso_alunos_required
 from extensions import limiter
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
 import logging
@@ -17,6 +19,38 @@ import json
 
 professor_bp = Blueprint('professor', __name__, url_prefix='/professor')
 logger = logging.getLogger(__name__)
+
+# =============================================
+# DASHBOARD OPERACIONAL
+# =============================================
+
+@professor_bp.route('/dashboard')
+@login_required
+def dashboard():
+    """Painel operacional do professor: 'o que eu preciso fazer hoje'.
+
+    Todos os números vêm de DashboardService.dados_professor, sempre
+    escopados a current_user.id (nunca a um ID vindo do request) --
+    mesmo padrão de autorização das demais rotas deste arquivo. Não é
+    uma tela premium (não passa por @acesso_premium_required): é a
+    ferramenta de trabalho básica do professor, igual a listar_alunos.
+    """
+    if not current_user.is_professor() and not current_user.is_admin:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('main.index'))
+
+    dados = DashboardService.dados_professor(current_user.id)
+
+    hora_atual = datetime.now(ZoneInfo('America/Sao_Paulo')).hour
+    if hora_atual < 12:
+        saudacao = 'Bom dia'
+    elif hora_atual < 18:
+        saudacao = 'Boa tarde'
+    else:
+        saudacao = 'Boa noite'
+
+    return render_template('professor/dashboard.html', dados=dados, saudacao=saudacao)
+
 
 # =============================================
 # GERENCIAMENTO DE ALUNOS

@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-speedometer2" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Painel do Professor{% endblock %}
+
+{% block content %}
+<style>
+    .dash-hero {
+        background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
+        border-radius: 18px;
+        padding: 28px 32px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+    .dash-hero::before {
+        content: '';
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(242,140,51,0.35) 0%, rgba(242,140,51,0) 70%);
+    }
+    .dash-hero-greeting {
+        font-size: 0.95rem;
+        color: rgba(255,255,255,0.6);
+        margin-bottom: 2px;
+    }
+    .dash-hero-name {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+    .dash-hero-subtitle {
+        color: rgba(255,255,255,0.75);
+        font-size: 0.92rem;
+        margin: 0;
+    }
+
+    .pd-stat {
+        border-radius: 14px;
+        padding: 16px 18px;
+        height: 100%;
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.06);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .pd-stat:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+    .pd-stat-value {
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: var(--secondary-color);
+        line-height: 1.1;
+    }
+    .pd-stat-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: #8a8a8a;
+        margin-top: 4px;
+    }
+    .pd-stat-sub {
+        font-size: 0.8rem;
+        color: #b0b0b0;
+        margin-top: 2px;
+    }
+    .pd-stat-sub.pd-up { color: #2e9e5b; }
+    .pd-stat-sub.pd-down { color: #d9534f; }
+    .pd-stat-alerta .pd-stat-value { color: #d9534f; }
+
+    .pd-card {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.06);
+        border-radius: 14px;
+        padding: 18px 20px;
+        height: 100%;
+    }
+    .pd-card-title {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--secondary-color);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .pd-acao-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: rgba(217, 83, 79, 0.06);
+        margin-bottom: 10px;
+    }
+    .pd-acao-item:last-child { margin-bottom: 0; }
+    .pd-acao-texto {
+        font-size: 0.9rem;
+        color: var(--secondary-color);
+        font-weight: 600;
+    }
+
+    .pd-lista-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    .pd-lista-item:last-child { border-bottom: none; }
+    .pd-lista-nome {
+        font-weight: 600;
+        color: var(--secondary-color);
+        font-size: 0.88rem;
+    }
+    .pd-lista-meta {
+        font-size: 0.78rem;
+        color: #999;
+    }
+
+    .pd-quick-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 12px;
+    }
+
+    @media (max-width: 576px) {
+        .dash-hero { padding: 22px 20px; }
+        .pd-quick-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>
+
+<!-- Saudação -->
+<div class="dash-hero">
+    <div class="dash-hero-greeting">{{ saudacao }}</div>
+    <div class="dash-hero-name">{{ current_user.nome_completo or current_user.username }} 👋</div>
+    <p class="dash-hero-subtitle">Aqui está um resumo do que merece sua atenção hoje.</p>
+</div>
+
+<!-- Indicadores principais -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="pd-stat">
+            <div class="pd-stat-value">{{ dados.total_alunos }}</div>
+            <div class="pd-stat-label">Alunos ativos</div>
+            {% if dados.alunos_novos_mes > 0 %}
+                <div class="pd-stat-sub pd-up">+{{ dados.alunos_novos_mes }} este mês</div>
+            {% else %}
+                <div class="pd-stat-sub">este mês</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="pd-stat">
+            <div class="pd-stat-value">{{ dados.treinaram_hoje }}</div>
+            <div class="pd-stat-label">Treinaram hoje</div>
+            {% if dados.total_alunos > 0 %}
+                <div class="pd-stat-sub">{{ (100 * dados.treinaram_hoje / dados.total_alunos) | round | int }}% dos alunos</div>
+            {% else %}
+                <div class="pd-stat-sub">sem alunos ainda</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="pd-stat">
+            <div class="pd-stat-value">{{ (dados.aderencia.pct | int ~ '%') if dados.aderencia.pct is not none else '—' }}</div>
+            <div class="pd-stat-label">Aderência</div>
+            {% if dados.aderencia.pct is not none and dados.aderencia.pct_anterior is not none %}
+                {% set diff = dados.aderencia.pct - dados.aderencia.pct_anterior %}
+                {% if diff > 0 %}
+                    <div class="pd-stat-sub pd-up"><i class="bi bi-arrow-up-short"></i>{{ diff | int }}% vs. período anterior</div>
+                {% elif diff < 0 %}
+                    <div class="pd-stat-sub pd-down"><i class="bi bi-arrow-down-short"></i>{{ (diff | abs) | int }}% vs. período anterior</div>
+                {% else %}
+                    <div class="pd-stat-sub">estável vs. período anterior</div>
+                {% endif %}
+            {% else %}
+                <div class="pd-stat-sub">últimos 30 dias</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="pd-stat {{ 'pd-stat-alerta' if dados.alunos_atencao.total > 0 else '' }}">
+            <div class="pd-stat-value">{{ dados.alunos_atencao.total }}</div>
+            <div class="pd-stat-label">Precisam atenção</div>
+            <div class="pd-stat-sub">sem treinar há 7+ dias</div>
+        </div>
+    </div>
+</div>
+
+<!-- O que precisa da sua atenção -->
+<div class="pd-card mb-4">
+    <div class="pd-card-title"><i class="bi bi-bell" style="color: #F28C33;"></i> O que precisa da sua atenção</div>
+
+    {% if dados.alunos_atencao.total == 0 and dados.treinos_revisao.total == 0 %}
+        <div class="dash-empty" style="padding: 20px;">
+            <i class="bi bi-emoji-smile"></i>
+            Tudo certo por aqui. Seus alunos estão em dia.
+        </div>
+    {% else %}
+        {% if dados.alunos_atencao.total > 0 %}
+        <div class="pd-acao-item">
+            <span class="pd-acao-texto">
+                <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>
+                {{ dados.alunos_atencao.total }} aluno{{ 's' if dados.alunos_atencao.total != 1 else '' }}
+                {{ 'estão' if dados.alunos_atencao.total != 1 else 'está' }} há mais de 7 dias sem treinar
+            </span>
+            <a href="{{ url_for('professor.listar_alunos') }}" class="btn btn-sm btn-outline-danger">Ver alunos</a>
+        </div>
+        {% endif %}
+        {% if dados.treinos_revisao.total > 0 %}
+        <div class="pd-acao-item">
+            <span class="pd-acao-texto">
+                <i class="bi bi-clipboard2-pulse-fill text-warning me-1"></i>
+                {{ dados.treinos_revisao.total }} treino{{ 's' if dados.treinos_revisao.total != 1 else '' }}
+                {{ 'precisam' if dados.treinos_revisao.total != 1 else 'precisa' }} ser revisado{{ 's' if dados.treinos_revisao.total != 1 else '' }}
+            </span>
+            <a href="{{ url_for('professor.listar_alunos') }}" class="btn btn-sm btn-outline-warning">Revisar</a>
+        </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+<div class="row g-3 mb-4">
+    <!-- Alunos que precisam de atenção -->
+    <div class="col-md-6">
+        <div class="pd-card">
+            <div class="pd-card-title"><i class="bi bi-exclamation-triangle" style="color: #d9534f;"></i> Alunos que precisam de atenção</div>
+            {% if dados.alunos_atencao.itens %}
+                {% for item in dados.alunos_atencao.itens %}
+                <div class="pd-lista-item">
+                    <span class="pd-lista-nome"><i class="bi bi-exclamation-circle-fill text-danger me-1"></i>{{ item.nome }}</span>
+                    <span class="pd-lista-meta">
+                        {% if item.nunca_treinou %}nunca treinou{% else %}{{ item.dias_parado }} dias sem treinar{% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+                {% if dados.alunos_atencao.total > dados.alunos_atencao.itens|length %}
+                <div class="text-center mt-2">
+                    <a href="{{ url_for('professor.listar_alunos') }}" class="small">Ver todos</a>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="dash-empty" style="padding: 20px;">
+                    <i class="bi bi-check2-circle"></i>
+                    Nenhum aluno precisa de atenção hoje.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Treinos aguardando revisão -->
+    <div class="col-md-6">
+        <div class="pd-card">
+            <div class="pd-card-title"><i class="bi bi-clipboard2-pulse" style="color: #F28C33;"></i> Treinos aguardando revisão</div>
+            {% if dados.treinos_revisao.itens %}
+                {% for item in dados.treinos_revisao.itens %}
+                <div class="pd-lista-item">
+                    <span class="pd-lista-nome"><i class="bi bi-arrow-repeat text-warning me-1"></i>{{ item.nome }}</span>
+                    <span class="pd-lista-meta">v{{ item.numero_versao }} · {{ item.dias_sem_revisao }} dias sem atualizar</span>
+                </div>
+                {% endfor %}
+                {% if dados.treinos_revisao.total > dados.treinos_revisao.itens|length %}
+                <div class="text-center mt-2">
+                    <a href="{{ url_for('professor.listar_alunos') }}" class="small">Ver todos</a>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="dash-empty" style="padding: 20px;">
+                    <i class="bi bi-check2-circle"></i>
+                    Nenhum treino aguardando revisão.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <!-- Última atividade dos alunos -->
+    <div class="col-md-7">
+        <div class="pd-card">
+            <div class="pd-card-title"><i class="bi bi-activity" style="color: #F28C33;"></i> Última atividade dos alunos</div>
+            {% if dados.atividade_recente %}
+                {% for a in dados.atividade_recente %}
+                <div class="pd-lista-item">
+                    <span class="pd-lista-nome">{{ a.aluno_nome }}</span>
+                    <span class="pd-lista-meta">Treino {{ a.treino_codigo }} · {{ a.quando.strftime('%d/%m/%Y') }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="dash-empty" style="padding: 20px;">
+                    <i class="bi bi-clipboard-x"></i>
+                    Nenhuma atividade registrada ainda.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Gráfico de treinos nos últimos 30 dias -->
+    <div class="col-md-5">
+        <div class="pd-card">
+            <div class="pd-card-title"><i class="bi bi-bar-chart-line" style="color: #F28C33;"></i> Treinos nos últimos 30 dias</div>
+            <canvas id="graficoTreinos30d" height="160"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Ações rápidas -->
+<div class="pd-card">
+    <div class="pd-card-title"><i class="bi bi-lightning-charge" style="color: #F28C33;"></i> Ações rápidas</div>
+    <div class="pd-quick-grid">
+        <a href="{{ url_for('professor.novo_aluno') }}" class="dash-quick-tile">
+            <i class="bi bi-person-plus"></i> Adicionar aluno
+        </a>
+        <a href="{{ url_for('professor.listar_alunos') }}" class="dash-quick-tile">
+            <i class="bi bi-people"></i> Meus alunos
+        </a>
+        <a href="{{ url_for('professor.solicitacoes') }}" class="dash-quick-tile">
+            <i class="bi bi-bell"></i> Solicitações
+            {% if current_user.solicitacoes_pendentes_count > 0 %}
+                <span class="badge bg-danger rounded-pill">{{ current_user.solicitacoes_pendentes_count }}</span>
+            {% endif %}
+        </a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('graficoTreinos30d');
+    if (!ctx) return;
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ dados.grafico_30_dias.labels | tojson }},
+            datasets: [{
+                data: {{ dados.grafico_30_dias.valores | tojson }},
+                backgroundColor: '#F28C33',
+                borderRadius: 4,
+                maxBarThickness: 14
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { display: false } },
+                x: { grid: { display: false }, ticks: { maxTicksLimit: 6 } }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
