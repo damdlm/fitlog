@@ -33,6 +33,7 @@ from models import (
     ExercicioUsuario,
     RegistroTreino,
 )
+from services.base_service import CacheService
 
 logger = logging.getLogger(__name__)
 
@@ -72,20 +73,31 @@ class PrivacidadeService:
 
     # ------------------------------------------------------------
     @staticmethod
-    def registrar_consentimento(usuario_id, tipo, concedido=True, contexto=None, versao=None):
+    def registrar_consentimento(usuario_id, tipo, concedido=True, contexto=None, versao=None, commit=True):
         """Grava uma nova manifestação de vontade. Nunca sobrescreve a
         anterior -- cada chamada é uma linha nova, preservando o
-        histórico completo para fins de auditoria."""
+        histórico completo para fins de auditoria.
+
+        commit=False só adiciona o registro à sessão (sem confirmar
+        nem tratar erro aqui) -- usado quando o aceite precisa fazer
+        parte de uma transação maior controlada por quem chama (ver
+        registrar_aceite_cadastro / routes/auth_routes.py:register).
+        Nesse modo, uma falha propaga a exceção para o chamador, que é
+        quem decide o rollback."""
+        registro = ConsentimentoLGPD(
+            usuario_id=usuario_id,
+            tipo=tipo,
+            versao=versao,
+            concedido=bool(concedido),
+            contexto=contexto,
+            criado_em=datetime.now(timezone.utc),
+        )
+        db.session.add(registro)
+
+        if not commit:
+            return registro
+
         try:
-            registro = ConsentimentoLGPD(
-                usuario_id=usuario_id,
-                tipo=tipo,
-                versao=versao,
-                concedido=bool(concedido),
-                contexto=contexto,
-                criado_em=datetime.now(timezone.utc),
-            )
-            db.session.add(registro)
             db.session.commit()
             return registro
         except Exception:
@@ -127,14 +139,21 @@ class PrivacidadeService:
         return f"{VERSAO_TERMOS_USO}|{VERSAO_POLITICA_PRIVACIDADE}"
 
     @staticmethod
-    def registrar_aceite_cadastro(usuario_id):
+    def registrar_aceite_cadastro(usuario_id, commit=True):
         """Chamado uma única vez, no exato momento em que a conta é
         criada (routes/auth_routes.py:register) -- o aceite do
         checkbox único vira DOIS registros (Termos + Política), cada um
-        já na versão vigente no momento do cadastro."""
+        já na versão vigente no momento do cadastro.
+
+        commit=False mantém os dois registros só na sessão, sem
+        confirmar -- é o modo usado pelo cadastro, onde User +
+        Assinatura + estes dois aceites precisam ser uma única
+        transação (ver routes/auth_routes.py:register). Uma falha aqui
+        propaga a exceção para o chamador fazer o rollback de tudo."""
         for tipo, versao in DOCUMENTOS_VERSIONADOS:
             PrivacidadeService.registrar_consentimento(
                 usuario_id, tipo, concedido=True, versao=versao, contexto='cadastro',
+                commit=commit,
             )
 
     @staticmethod
@@ -201,6 +220,7 @@ class PrivacidadeService:
         consentimentos = [
             {
                 'tipo': c.tipo,
+                'versao': c.versao,
                 'concedido': c.concedido,
                 'contexto': c.contexto,
                 'data': c.criado_em.isoformat() if c.criado_em else None,
@@ -236,17 +256,40 @@ class PrivacidadeService:
     # ------------------------------------------------------------
     @staticmethod
     def anonimizar_conta(user):
-        """Remove os dados de identificação do usuário e desativa a
-        conta, mantendo intactos os registros de treino (sem nenhum
-        dado pessoal neles: carga/repetições não identificam ninguém
-        sozinhos) para não quebrar histórico consultado por um
-        professor vinculado, nem estatísticas agregadas.
+        """Remove os dados de identificação do usuário, desativa a
+        conta e APAGA o histórico de treino individual (versões,
+        treinos, registros, séries e exercícios próprios) -- decisão
+        de produto (Alternativa A): depois da exclusão, nem o professor
+        vinculado nem mais ninguém deve continuar enxergando o
+        histórico de treino do titular através do FitLog.
 
-        Não é um DELETE físico: SQLAlchemy já teria cascade delete
-        disponível (ver User.versoes/registros), mas apagar a linha
-        de fato reabriria o username/e-mail para reuso imediato e
-        destruiria o próprio registro de que a exclusão aconteceu --
-        pior para auditoria do que anonimizar mantendo o vínculo.
+        Antes, esse histórico era mantido "intacto" (só a identidade do
+        usuário era trocada) sob a justificativa de não quebrar o que
+        um professor já tinha consultado -- mas isso não é anonimização
+        de verdade: os registros continuavam 100% ligados ao mesmo
+        user_id, então bastava reabrir o vínculo (ou ter acesso direto
+        ao banco) para reidentificar tudo. Ou seja, na melhor das
+        hipóteses era pseudonimização, nunca anonimização, e por isso
+        não podia ficar acessível a ninguém além do titular. Como não
+        há nenhuma finalidade legítima documentada para reter esse
+        detalhe granular depois que a conta é excluída (estatísticas
+        agregadas como o ranking já filtram por User.ativo e não
+        dependem dele), a categoria correta é A. EXCLUIR, não B.
+        ANONIMIZAR/DESVINCULAR -- daí o DELETE físico abaixo, em vez de
+        só apagar o vínculo com a conta.
+
+        O que É mantido, e por quê:
+          - ConsentimentoLGPD (incl. o registro desta própria exclusão):
+            continua ligado a usuario_id -- é retenção com finalidade
+            legítima documentada (categoria C: prova de que o titular
+            de fato consentiu/pediu a exclusão, exigida pela própria
+            LGPD para fins de comprovação), não uma sobra esquecida.
+            Sozinho, sem os dados pessoais do User (já removidos), não
+            permite reconstruir a identidade do titular.
+          - A linha do User em si (não é DELETE): evita reabrir o
+            username/e-mail para reuso imediato e preserva o próprio
+            registro de que a exclusão aconteceu -- pior para auditoria
+            apagar a linha do que anonimizar mantendo o vínculo.
 
         Auditoria de identificação indireta (além dos campos óbvios
         nome/e-mail/telefone) que este método também cobre:
@@ -272,6 +315,12 @@ class PrivacidadeService:
             usados -- sem isso, um link de "esqueci minha senha"
             emitido pouco antes da exclusão continuaria funcionando e
             reabriria a conta anonimizada.
+          - histórico de treino (versões, treinos, séries, exercícios
+            próprios): apagado -- ver explicação da Alternativa A no
+            topo deste docstring.
+          - cache do FitBot para este usuário: invalidado logo após o
+            commit, para não esperar o TTL (ver services/
+            fitbot_context_service.py).
         """
         try:
             marcador = f"usuario-removido-{user.id}"
@@ -319,12 +368,33 @@ class PrivacidadeService:
                 PasswordResetToken.used_at.is_(None),
             ).update({'used_at': datetime.now(timezone.utc)}, synchronize_session=False)
 
+            # Apaga o histórico de treino individual -- Alternativa A
+            # (ver docstring do método). Query.delete() é um DELETE em
+            # massa que não passa pelos eventos do ORM (o cascade
+            # Python 'all, delete-orphan' de VersaoGlobal.treinos/
+            # registros não é acionado aqui) -- mas TODAS as FKs no
+            # caminho (TreinoVersao.versao_id, VersaoExercicio.
+            # treino_versao_id, RegistroTreino.treino_versao_id,
+            # HistoricoTreino.registro_id) já são ondelete='CASCADE' no
+            # nível do banco (ver models.py), então apagar as versões
+            # é suficiente para o próprio Postgres/SQLite levar tudo
+            # junto. ExercicioUsuario (exercícios próprios) é apagado
+            # à parte pelo mesmo motivo (ondelete='CASCADE' a partir de
+            # users.id, mas aqui filtrando direto por usuario_id).
+            VersaoGlobal.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+            ExercicioUsuario.query.filter_by(usuario_id=user.id).delete(synchronize_session=False)
+
             db.session.commit()
 
             PrivacidadeService.registrar_consentimento(
                 user.id, 'exclusao_conta', concedido=True,
                 contexto="conta anonimizada a pedido do titular",
             )
+
+            # Não espera o TTL do cache de contexto do FitBot -- ver
+            # services/fitbot_context_service.py (chave
+            # fitbot_context:{user_id}:...).
+            CacheService.invalidate_pattern(f"fitbot_context:{user.id}:")
 
             logger.info("Conta anonimizada a pedido do titular -- usuario ID %s", user.id)
             return True

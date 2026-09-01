@@ -149,7 +149,7 @@ class BillingService:
     # ================================================================
 
     @staticmethod
-    def iniciar_trial(usuario: User) -> Assinatura:
+    def iniciar_trial(usuario: User, commit: bool = True) -> Assinatura:
         """Cria a Assinatura em estado 'trialing' -- vale pra aluno E
         professor (ambos podem treinar por conta própria e usar
         Estatísticas/FitBot). Chamar uma única vez, no fluxo de
@@ -159,7 +159,12 @@ class BillingService:
 
         O trial dá acesso a Estatísticas/FitBot, mas NÃO permite ao
         professor gerenciar mais de 2 alunos -- isso sempre exige
-        assinatura ATIVA e paga do Pró/Premium (ver pode_cadastrar_aluno)."""
+        assinatura ATIVA e paga do Pró/Premium (ver pode_cadastrar_aluno).
+
+        commit=False apenas adiciona a Assinatura à sessão sem
+        confirmar a transação -- usado pelo cadastro (routes/
+        auth_routes.py:register), que precisa que User + Assinatura +
+        aceite LGPD sejam confirmados juntos, num commit único."""
         if usuario.assinatura is not None:
             return usuario.assinatura
 
@@ -169,7 +174,8 @@ class BillingService:
             trial_termina_em=datetime.now(timezone.utc) + timedelta(days=TRIAL_DIAS),
         )
         db.session.add(assinatura)
-        db.session.commit()
+        if commit:
+            db.session.commit()
         logger.info('Trial de %s dias iniciado para usuário %s', TRIAL_DIAS, usuario.id)
         return assinatura
 

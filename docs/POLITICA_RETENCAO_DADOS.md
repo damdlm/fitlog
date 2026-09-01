@@ -9,9 +9,9 @@ depende de decisão jurídica/de negócio.
 | Categoria de dado | Onde vive | Retenção | Destino após o prazo | Justificativa |
 |---|---|---|---|---|
 | Conta (nome, e-mail, telefone, username) | `User` | Enquanto a conta estiver ativa | Exclusão/anonimização a pedido do titular (`PrivacidadeService.anonimizar_conta`) | Execução do contrato — só precisamos do dado enquanto a conta existe |
-| Dados de treino (versões, exercícios, cargas, repetições) | `VersaoGlobal`, `TreinoVersao`, `RegistroTreino`, `HistoricoTreino` | Enquanto a conta estiver ativa | Mantidos de forma anônima após exclusão da conta (não identificam ninguém sozinhos); nunca apagados por cascade automático, para não quebrar o histórico que um professor vinculado já consultou | Execução do contrato + as próprias métricas de progresso do usuário dependem do histórico completo |
+| Dados de treino (versões, exercícios, cargas, repetições) | `VersaoGlobal`, `TreinoVersao`, `RegistroTreino`, `HistoricoTreino`, `ExercicioUsuario` | Enquanto a conta estiver ativa | **Excluído** (DELETE físico) na exclusão/anonimização da conta — não fica retido nem "anonimizado": continuava vinculado ao mesmo `user_id`, então mantê-lo seria pseudonimização, não anonimização, e não há finalidade legítima documentada para retê-lo depois que a conta é excluída. O professor vinculado deixa de conseguir acessar esse histórico (o vínculo já é desativado antes disso, ver linha abaixo) | Sem finalidade legítima de retenção após a exclusão — as únicas métricas agregadas que dependem de contas ativas (ex.: ranking) já filtram por `User.ativo`, não pelo histórico individual |
 | Vínculo aluno-professor (`AlunoProfessor`, `SolicitacaoVinculo`) | tabelas próprias | Enquanto o vínculo estiver ativo | Desativado (`ativo=False` / `status='cancelado'`) na anonimização da conta de qualquer um dos dois lados | Execução do contrato — só existe enquanto os dois lados consentirem no vínculo |
-| Consentimentos e aceites LGPD (`ConsentimentoLGPD`) | tabela própria | Permanente (nunca é apagado, nem na anonimização da conta) | Retenção controlada, sem prazo de expiração | É a própria prova de que houve consentimento/aceite — apagar destruiria a evidência que a LGPD pede para poder comprovar |
+| Consentimentos e aceites LGPD (`ConsentimentoLGPD`) | tabela própria | Permanente (nunca é apagado, nem na anonimização da conta) | Retenção controlada, sem prazo de expiração. Continua vinculado ao `usuario_id` (pseudonimizado, não anônimo) — mas sem os dados pessoais do `User` (já removidos na mesma operação), esse vínculo sozinho não permite reidentificar o titular | É a própria prova de que houve consentimento/aceite — apagar destruiria a evidência que a LGPD pede para poder comprovar |
 | Tokens de redefinição de senha (`PasswordResetToken`) | tabela própria | Curtíssimo prazo (expira em minutos, ver `User.get_reset_token`); invalidado antes disso se a conta for excluída | Eliminação (registro marcado como usado, nunca mais aceito) | Não há motivo para guardar depois de usado/expirado |
 | Dados de cobrança/assinatura (`Assinatura`, `EventoWebhookAsaas`) | tabelas próprias | Conforme obrigação legal aplicável | Retenção controlada / eliminação-anonimização quando a obrigação deixar de existir | Obrigação legal/contratual (fiscal e de defesa em eventual disputa de cobrança) — **prazo exato pendente de validação jurídica/contábil, não estimado aqui** |
 | Conteúdo trocado com o FitBot | Não persistido em banco — só existe na memória da requisição e no provedor de IA externo (Groq/Gemini/OpenAI) durante o processamento | N/A (não armazenamos) | — | Minimização: o FitLog não guarda histórico de conversas do FitBot |
@@ -30,4 +30,14 @@ depende de decisão jurídica/de negócio.
 - Não há, neste momento, nenhum job automático de expiração/purga de
   dados — a política acima é aplicada pontualmente, através dos fluxos
   de autoatendimento já existentes (Central de Privacidade) e da
-  invalidação de vínculos/tokens feita em `anonimizar_conta`.
+  invalidação de vínculos/tokens/histórico de treino/cache feita em
+  `anonimizar_conta`.
+- "Anonimizado" e "pseudonimizado" não são a mesma coisa, e este
+  documento evita usar o primeiro termo quando o segundo é o que
+  realmente acontece: um dado só é tratado como anonimizado aqui
+  quando não sobra nenhum identificador (direto ou indireto) capaz de
+  religá-lo ao titular. Um dado que continua preso a um `user_id` ou
+  a qualquer outra chave que permita reencontrar o titular é
+  pseudonimizado/desvinculado, mesmo que nome/e-mail/telefone tenham
+  sido removidos — e só fica retido quando a linha correspondente
+  nesta tabela documentar uma finalidade legítima para isso.

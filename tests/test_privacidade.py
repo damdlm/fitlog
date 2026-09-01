@@ -10,9 +10,15 @@ projeto cria usuário direto no banco e não deveria ser afetada pelo
 gate de reaceite -- ver docstring do bypass).
 """
 
+from datetime import date, datetime, timezone
+
 import pytest
 
-from models import db, User, ConsentimentoLGPD, PasswordResetToken, AlunoProfessor
+from models import (
+    db, User, ConsentimentoLGPD, PasswordResetToken, AlunoProfessor,
+    Musculo, ExercicioUsuario, VersaoGlobal, TreinoVersao, VersaoExercicio,
+    RegistroTreino, HistoricoTreino,
+)
 from services.privacidade_service import (
     PrivacidadeService,
     TIPO_FITBOT,
@@ -39,6 +45,43 @@ def _criar_usuario_direto(username, tipo_usuario='aluno', nome_completo=None):
     db.session.add(user)
     db.session.commit()
     return user
+
+
+def _criar_treino_completo(user, codigo='A'):
+    """Cria treino + versão + exercício próprio + registro + série para
+    um usuário -- usado pelos testes de exclusão (Alternativa A) para
+    verificar que esse histórico é de fato apagado, não só ocultado."""
+    musculo = Musculo.query.filter_by(nome=f'm_{user.id}').first()
+    if not musculo:
+        musculo = Musculo(nome=f'm_{user.id}', nome_exibicao='Peito')
+        db.session.add(musculo)
+        db.session.commit()
+
+    ex = ExercicioUsuario(usuario_id=user.id, nome=f'Exercicio de {user.username}', musculo_id=musculo.id)
+    db.session.add(ex)
+    db.session.commit()
+
+    versao = VersaoGlobal(numero_versao=1, descricao='V1', divisao='ABC',
+                           data_inicio=date.today(), user_id=user.id)
+    db.session.add(versao)
+    db.session.commit()
+
+    tv = TreinoVersao(versao_id=versao.id, codigo=codigo, nome_treino=f'Treino {codigo}', descricao_treino='')
+    db.session.add(tv)
+    db.session.commit()
+    db.session.add(VersaoExercicio(treino_versao_id=tv.id, exercicio_usuario_id=ex.id, ordem=1))
+    db.session.commit()
+
+    registro = RegistroTreino(
+        treino_versao_id=tv.id, versao_id=versao.id, periodo='manha', semana=1,
+        exercicio_usuario_id=ex.id, data_registro=datetime.now(timezone.utc), user_id=user.id,
+    )
+    db.session.add(registro)
+    db.session.commit()
+    db.session.add(HistoricoTreino(registro_id=registro.id, carga=100, repeticoes=10))
+    db.session.commit()
+
+    return {'treino': tv, 'versao': versao, 'exercicio': ex, 'registro': registro}
 
 
 # ------------------------------------------------------------------
@@ -68,6 +111,50 @@ class TestAceiteTermosNoCadastro:
         assert ConsentimentoLGPD.tem_versao_aceita(user.id, TIPO_TERMOS_USO, VERSAO_TERMOS_USO)
         assert ConsentimentoLGPD.tem_versao_aceita(user.id, TIPO_POLITICA_PRIVACIDADE, VERSAO_POLITICA_PRIVACIDADE)
         assert not PrivacidadeService.precisa_aceitar_algum(user.id)
+
+
+# ------------------------------------------------------------------
+# 1b) Cadastro é transacional: falha no aceite reverte o usuário inteiro
+# ------------------------------------------------------------------
+class TestCadastroTransacional:
+
+    def test_falha_no_aceite_reverte_criacao_do_usuario(self, client, db, monkeypatch):
+        """Simula uma falha ao gravar o aceite -- o usuário (e a
+        Assinatura de trial) não pode sobreviver a essa falha, já que
+        tudo faz parte da mesma transação (ver routes/auth_routes.py:
+        register)."""
+        def _explode(*args, **kwargs):
+            raise RuntimeError("falha simulada ao gravar aceite")
+
+        monkeypatch.setattr(
+            PrivacidadeService, 'registrar_aceite_cadastro', staticmethod(_explode),
+        )
+
+        client.post('/auth/register', data={
+            'username': 'vaifalhar', 'email': 'vaifalhar@t.com',
+            'password': 'Senha1234', 'confirm_password': 'Senha1234',
+            'aceite_termos': 'on',
+        }, follow_redirects=True)
+
+        assert User.query.filter_by(username='vaifalhar').first() is None
+        assert ConsentimentoLGPD.query.filter_by(contexto='cadastro').count() == 0
+
+    def test_cadastro_normal_grava_usuario_e_aceite_juntos(self, client, db):
+        """Contraprova do teste acima: no caminho feliz, User + Assinatura
+        + os dois aceites aparecem juntos, todos do mesmo commit."""
+        from models import Assinatura
+
+        client.post('/auth/register', data={
+            'username': 'vaifuncionar', 'email': 'vaifuncionar@t.com',
+            'password': 'Senha1234', 'confirm_password': 'Senha1234',
+            'aceite_termos': 'on',
+        }, follow_redirects=True)
+
+        user = User.query.filter_by(username='vaifuncionar').first()
+        assert user is not None
+        assert Assinatura.query.filter_by(usuario_id=user.id).first() is not None
+        assert ConsentimentoLGPD.tem_versao_aceita(user.id, TIPO_TERMOS_USO, VERSAO_TERMOS_USO)
+        assert ConsentimentoLGPD.tem_versao_aceita(user.id, TIPO_POLITICA_PRIVACIDADE, VERSAO_POLITICA_PRIVACIDADE)
 
 
 # ------------------------------------------------------------------
@@ -202,6 +289,34 @@ class TestExportacaoDados:
         texto = resp.get_data(as_text=True)
         assert user.password_hash not in texto
 
+    def test_exportacao_inclui_versao_do_consentimento(self, client, db):
+        user = _criar_usuario_direto('comversao')
+        PrivacidadeService.registrar_aceite_cadastro(user.id)
+        _login(client, 'comversao')
+
+        import json
+        resp = client.get('/privacidade/exportar-dados')
+        dados = json.loads(resp.data)
+
+        termos = next(c for c in dados['consentimentos_lgpd'] if c['tipo'] == TIPO_TERMOS_USO)
+        assert termos['versao'] == VERSAO_TERMOS_USO
+
+    def test_exportacao_compativel_com_consentimento_antigo_sem_versao(self, client, db):
+        """Um consentimento pontual (ex: fitbot_ia) nunca teve `versao`
+        preenchida -- a exportação precisa continuar funcionando e
+        devolver null, sem inventar uma versão retroativa."""
+        user = _criar_usuario_direto('semversaoantiga')
+        PrivacidadeService.registrar_aceite_cadastro(user.id)
+        PrivacidadeService.registrar_consentimento(user.id, TIPO_FITBOT, concedido=True)
+        _login(client, 'semversaoantiga')
+
+        import json
+        resp = client.get('/privacidade/exportar-dados')
+        dados = json.loads(resp.data)
+
+        fitbot = next(c for c in dados['consentimentos_lgpd'] if c['tipo'] == TIPO_FITBOT)
+        assert fitbot['versao'] is None
+
 
 # ------------------------------------------------------------------
 # 5) Exclusão / anonimização
@@ -278,6 +393,40 @@ class TestExclusaoConta:
         assert ainda_ativo.ativo is True
         assert ainda_ativo.username == 'naoexclui'
 
+    def test_historico_de_treino_e_apagado_apos_exclusao(self, client, db):
+        """Alternativa A: não fica só 'oculto' -- o histórico individual
+        de treino (versão, treino, exercício próprio, registro e série)
+        deixa de existir no banco."""
+        user = _criar_usuario_direto('comtreinos')
+        dados = _criar_treino_completo(user)
+        versao_id, tv_id, ex_id = dados['versao'].id, dados['treino'].id, dados['exercicio'].id
+        registro_id = dados['registro'].id
+
+        _login(client, 'comtreinos')
+        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Senha1234'})
+
+        db.session.expire_all()
+        assert db.session.get(VersaoGlobal, versao_id) is None
+        assert db.session.get(TreinoVersao, tv_id) is None
+        assert db.session.get(ExercicioUsuario, ex_id) is None
+        assert db.session.get(RegistroTreino, registro_id) is None
+        assert HistoricoTreino.query.filter_by(registro_id=registro_id).first() is None
+
+    def test_cache_do_fitbot_invalidado_apos_exclusao(self, client, db, monkeypatch):
+        from services.privacidade_service import CacheService
+
+        chamadas = []
+        monkeypatch.setattr(
+            CacheService, 'invalidate_pattern',
+            staticmethod(lambda pattern: chamadas.append(pattern)),
+        )
+
+        user = _criar_usuario_direto('comcachefitbot')
+        _login(client, 'comcachefitbot')
+        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Senha1234'})
+
+        assert any(f"fitbot_context:{user.id}:" in c for c in chamadas)
+
 
 # ------------------------------------------------------------------
 # Autorização entre usuários (isolamento, incluindo pós-exclusão)
@@ -291,6 +440,31 @@ class TestIsolamentoEntreUsuarios:
         _login(client, 'profisolado')
         resp = client.get(f'/professor/aluno/{aluno.id}')
         assert resp.status_code in (302, 403, 404)
+
+    def test_professor_nao_acessa_endpoints_do_aluno_apos_exclusao(self, client, db):
+        """Teste 4 do prompt: acesso indireto via endpoint direto, não só
+        pela navegação normal (listagem já filtra o aluno excluído)."""
+        professor = _criar_usuario_direto('profposexclusao', tipo_usuario='professor')
+        aluno = _criar_usuario_direto('alunoposexclusao', tipo_usuario='aluno')
+        vinculo = AlunoProfessor(aluno_id=aluno.id, professor_id=professor.id, ativo=True)
+        db.session.add(vinculo)
+        db.session.commit()
+        aluno_id = aluno.id
+
+        _login(client, 'alunoposexclusao')
+        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Senha1234'})
+
+        client2 = client.application.test_client()
+        _login(client2, 'profposexclusao')
+
+        for rota in (
+            f'/professor/aluno/{aluno_id}',
+            f'/professor/aluno/{aluno_id}/estatisticas',
+            f'/professor/aluno/{aluno_id}/calendario',
+            f'/professor/aluno/{aluno_id}/versoes',
+        ):
+            resp = client2.get(rota, follow_redirects=False)
+            assert resp.status_code in (302, 403, 404), f"{rota} não bloqueou o acesso"
 
     def test_usuario_excluido_nao_reloga_com_username_antigo(self, client, db):
         _criar_usuario_direto('exusuario')

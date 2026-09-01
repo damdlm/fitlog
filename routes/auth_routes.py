@@ -262,45 +262,60 @@ def register():
             flash('E-mail já cadastrado', 'danger')
             return redirect(url_for('auth.register'))
 
-        user = User(
-            username=username,
-            email=email,
-            tipo_usuario=tipo_usuario,
-            nome_completo=nome_completo or None,
-            telefone=telefone or None,
-            ativo=True,
-        )
-        user.set_password(password)
+        # Cadastro é UMA transação só: User + trial + aceite de Termos/
+        # Política. Se qualquer etapa falhar, nada é confirmado -- sem
+        # isso, era possível ficar com um usuário criado (e já com
+        # commit feito) sem o aceite correspondente registrado, caso a
+        # gravação do aceite falhasse por algum motivo depois. Ver
+        # services/privacidade_service.py:registrar_aceite_cadastro e
+        # services/billing_service.py:iniciar_trial (ambos com
+        # commit=False aqui, para participar deste único commit).
+        from services.privacidade_service import PrivacidadeService
+        try:
+            user = User(
+                username=username,
+                email=email,
+                tipo_usuario=tipo_usuario,
+                nome_completo=nome_completo or None,
+                telefone=telefone or None,
+                ativo=True,
+            )
+            user.set_password(password)
 
-        db.session.add(user)
-        db.session.flush()
+            db.session.add(user)
+            db.session.flush()
+
+            # Trial de 30 dias do Plano Fit começa junto com o cadastro
+            # -- vale tanto para aluno quanto para professor (que também
+            # treina por conta própria no mesmo sistema, reaproveitando
+            # as telas de aluno) -- ver services/billing_service.py:
+            # iniciar_trial.
+            BillingService.iniciar_trial(user, commit=False)
+
+            # Registro formal e versionado do aceite -- o checkbox único
+            # do formulário vira dois registros (Termos + Política),
+            # dentro desta mesma transação.
+            PrivacidadeService.registrar_aceite_cadastro(user.id, commit=False)
+
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            # Só informação técnica no log -- nunca senha, token ou
+            # outro dado pessoal desnecessário (username/e-mail aqui já
+            # são os mesmos que o próprio usuário acabou de digitar no
+            # formulário que falhou, não um vazamento de dado de
+            # terceiro).
+            logger.exception(
+                "Erro ao criar conta -- cadastro revertido por completo (tipo_usuario=%s)",
+                tipo_usuario,
+            )
+            flash('Não foi possível criar sua conta agora. Tente novamente.', 'danger')
+            return redirect(url_for('auth.register'))
 
         if user.tipo_usuario == 'aluno':
-            # Trial de 30 dias do Plano Fit começa junto com o cadastro
-            # -- ver services/billing_service.py:iniciar_trial.
-            # Chamado antes do commit final abaixo: o INSERT do User já
-            # foi enviado ao banco pelo flush() logo acima (só falta
-            # confirmar a transação), então o commit feito dentro do
-            # service confirma User + Assinatura juntos.
-            BillingService.iniciar_trial(user)
             flash('Conta criada com sucesso!', 'success')
         else:
-            # Professor também treina por conta própria no mesmo
-            # sistema (telas de aluno reaproveitadas) -- mesmo trial de
-            # 30 dias do Plano Fit pessoal, independente do plano de
-            # gestão de alunos (Pró/Premium), que é cobrado à parte.
-            BillingService.iniciar_trial(user)
             flash('Conta de professor criada com sucesso!', 'success')
-
-        db.session.commit()
-
-        # Registro formal e versionado do aceite -- separado do
-        # tratamento normal de dados (que já se sustenta em execução de
-        # contrato, ver ConsentimentoLGPD em models.py). Feito depois do
-        # commit acima para nunca impedir a criação da conta em si caso
-        # essa gravação falhe por algum motivo (fica só um log de erro).
-        from services.privacidade_service import PrivacidadeService
-        PrivacidadeService.registrar_aceite_cadastro(user.id)
 
         logger.info(f"Novo usuario: {username} ({tipo_usuario})")
         return redirect(url_for('auth.login'))
