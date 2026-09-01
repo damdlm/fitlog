@@ -100,7 +100,7 @@ def login():
         login_user(user, remember=remember)
         session['sv'] = user.session_version
         logger.info(f"Login OK -- usuario ID {user.id} ({user.tipo_usuario})")
-        flash(f'Bem-vindo, {user.nome_completo or user.username}!', 'success')
+        flash(f'Bem-vindo, {user.nome_completo or user.username}!', 'boas-vindas')
 
         return redirect(_safe_next_url(request.args.get('next')))
 
