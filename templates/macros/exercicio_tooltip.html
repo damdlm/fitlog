@@ -1,14 +1,21 @@
 {#
   Macro: tooltip_nome_exercicio
   ------------------------------
-  Monta o HTML (para dentro de um atributo title, com data-bs-html="true")
-  do tooltip do card de seleção de exercício: nome/descrição em destaque e,
-  se houver, a lista de nicknames (ExercicioSistema.nicknames) embaixo.
+  Monta o texto (para dentro de um atributo title) do tooltip do card de
+  seleção de exercício: nome/descrição na primeira linha e, se houver, a
+  lista de nicknames (ExercicioSistema.nicknames) nas linhas seguintes.
+
+  Texto puro (com quebras de linha reais via \n), não HTML -- o atributo
+  title nativo do navegador já quebra linha em \n sozinho, então isso
+  funciona tanto com o tooltip custom do Bootstrap (que também respeita
+  \n via white-space: pre-line, ver .etv-tooltip-nomes no CSS) quanto no
+  tooltip nativo do navegador como fallback, sem risco de mostrar tags
+  HTML cruas caso o JS do tooltip não rode por algum motivo.
 
   Uso:
     {% from "macros/exercicio_tooltip.html" import tooltip_nome_exercicio %}
     <div class="etv-card-nome" data-bs-toggle="tooltip" data-bs-placement="top"
-         data-bs-html="true" data-bs-custom-class="etv-tooltip-nomes"
+         data-bs-custom-class="etv-tooltip-nomes"
          title="{{ tooltip_nome_exercicio(ex) }}">
         {{ ex.nome }}
     </div>
@@ -16,5 +23,12 @@
 {%- macro tooltip_nome_exercicio(ex) -%}
 {%- set titulo = ex.descricao or ex.nome -%}
 {%- set apelidos = ex.nicknames if ex.nicknames else [] -%}
-<strong>{{ titulo }}</strong>{% if apelidos %}<span class="etv-tooltip-label">Outros nomes:</span><ul class="etv-tooltip-lista">{% for apelido in apelidos %}<li>{{ apelido }}</li>{% endfor %}</ul>{% endif -%}
+{%- set linhas = [titulo] -%}
+{%- if apelidos -%}
+    {%- set _ = linhas.append('Outros nomes:') -%}
+    {%- for apelido in apelidos -%}
+        {%- set _ = linhas.append('• ' ~ apelido) -%}
+    {%- endfor -%}
+{%- endif -%}
+{{- linhas|join('\n') -}}
 {%- endmacro -%}

@@ -240,28 +240,14 @@
     max-width: 100%;
 }
 
-/* Tooltip rico do nome do exercício (nome + "Outros nomes:" + lista de
-   nicknames), aplicado via data-bs-custom-class="etv-tooltip-nomes" */
+/* Tooltip do nome do exercício (nome + "Outros nomes:" + nicknames em
+   linhas separadas), aplicado via data-bs-custom-class="etv-tooltip-nomes".
+   Texto puro com \n reais -- white-space: pre-line é o que faz as quebras
+   de linha aparecerem (por padrão o navegador colapsaria em uma linha só). */
 .etv-tooltip-nomes .tooltip-inner {
     text-align: left;
+    white-space: pre-line;
     max-width: 240px;
-}
-
-.etv-tooltip-nomes .etv-tooltip-label {
-    display: block;
-    margin-top: 6px;
-    font-size: .72rem;
-    opacity: .8;
-}
-
-.etv-tooltip-nomes .etv-tooltip-lista {
-    margin: 2px 0 0;
-    padding-left: 1.1rem;
-    text-align: left;
-}
-
-.etv-tooltip-nomes .etv-tooltip-lista li {
-    font-size: .8rem;
 }
 
 .etv-card-musculo {

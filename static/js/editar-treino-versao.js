@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // -----------------------------------------------------
     if (window.bootstrap) {
         grid?.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-            new bootstrap.Tooltip(el, { trigger: 'hover', html: true });
+            new bootstrap.Tooltip(el, { trigger: 'hover' });
         });
     }
 
