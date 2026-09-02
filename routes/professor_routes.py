@@ -410,7 +410,12 @@ def exercicios_aluno(aluno_id):
         flash('Você não tem permissão para acessar este aluno.', 'danger')
         return redirect(url_for('professor.listar_alunos'))
     
-    exercicios = ExercicioService.get_exercicios_completos(user_id=aluno.id)
+    # Só exercícios personalizados do aluno aqui -- get_exercicios_completos
+    # sempre traz TODO o catálogo global junto (1300+ itens), o que não faz
+    # sentido nessa tela de gestão: Editar/Excluir só funcionam pra
+    # exercícios personalizados mesmo (ver editar_exercicio_aluno acima,
+    # que recusa exercícios de catálogo com "não pode ser editado").
+    exercicios = [ex for ex in ExercicioService.get_exercicios_completos(user_id=aluno.id) if ex.is_custom]
     treinos = TreinoService.get_all(user_id=aluno.id)
     
     subq = db.session.query(
