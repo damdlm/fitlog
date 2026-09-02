@@ -1,0 +1,217 @@
+/**
+ * Instalação do PWA — banner (Android/Desktop) e tutorial (iOS).
+ *
+ * Reaproveita as variáveis de marca já definidas em templates/base.html
+ * (--primary-color, --secondary-color), então não redefine cores aqui.
+ */
+
+.pwa-install-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1080; /* acima do bottom-nav mobile e do fitbot-toggle */
+    display: flex;
+    justify-content: center;
+    padding: 0 12px calc(12px + env(safe-area-inset-bottom, 0px));
+    pointer-events: none; /* só a folha em si captura clique, não a faixa toda */
+}
+
+.pwa-install-sheet-content {
+    pointer-events: auto;
+    width: 100%;
+    max-width: 480px;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transform: translateY(120%);
+    opacity: 0;
+    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.32s ease;
+}
+
+.pwa-install-sheet.is-visible .pwa-install-sheet-content {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.pwa-install-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.pwa-install-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.pwa-install-text strong {
+    color: var(--secondary-color, #2D2D2D);
+    font-size: 0.95rem;
+}
+
+.pwa-install-text span {
+    color: #6c757d;
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+
+.pwa-install-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.btn-pwa-install,
+.btn-pwa-dismiss {
+    border: none;
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.btn-pwa-install {
+    background: var(--gradient-primary, var(--primary-color, #F28C33));
+    color: #fff;
+}
+
+.btn-pwa-install:hover {
+    filter: brightness(1.05);
+}
+
+.btn-pwa-install:active {
+    transform: scale(0.97);
+}
+
+.btn-pwa-dismiss {
+    background: transparent;
+    color: #6c757d;
+    padding: 8px 10px;
+}
+
+.btn-pwa-dismiss:hover {
+    color: #343a40;
+}
+
+/* Tutorial iOS: cartão mais alto, com passos numerados */
+.pwa-ios-sheet-content {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    position: relative;
+    gap: 8px;
+    padding: 24px 20px 20px;
+}
+
+.pwa-ios-sheet-content .pwa-install-icon {
+    align-self: center;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 4px;
+}
+
+.pwa-ios-sheet-content strong {
+    color: var(--secondary-color, #2D2D2D);
+    font-size: 1.05rem;
+}
+
+.pwa-ios-sheet-content p {
+    color: #6c757d;
+    font-size: 0.88rem;
+    margin: 0;
+}
+
+.pwa-ios-steps {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: left;
+}
+
+.pwa-ios-steps li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    color: var(--secondary-color, #2D2D2D);
+}
+
+.pwa-ios-steps li i {
+    font-size: 1.1rem;
+    color: var(--primary-color, #F28C33);
+    flex-shrink: 0;
+}
+
+.btn-pwa-entendi {
+    align-self: center;
+    margin-top: 4px;
+    padding: 9px 28px;
+}
+
+.btn-pwa-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: #adb5bd;
+    cursor: pointer;
+}
+
+.btn-pwa-close:hover {
+    color: #6c757d;
+}
+
+/* Desktop: em vez de ocupar a largura toda, vira um toast discreto no
+   canto inferior direito -- não bloqueia o conteúdo da página. */
+@media (min-width: 992px) {
+    .pwa-install-sheet {
+        justify-content: flex-end;
+        padding: 0 20px 20px 0;
+    }
+
+    .pwa-install-sheet-content {
+        max-width: 380px;
+    }
+
+    .pwa-ios-sheet {
+        justify-content: center;
+        padding: 0 20px 20px;
+    }
+}
+
+/* Evita empurrar o botão de instalar pra baixo do texto em telas bem
+   estreitas -- ações ficam abaixo do texto em vez de espremidas ao lado. */
+@media (max-width: 420px) {
+    .pwa-install-sheet-content {
+        flex-wrap: wrap;
+    }
+
+    .pwa-install-actions {
+        flex-direction: row;
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
