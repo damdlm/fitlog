@@ -1352,6 +1352,78 @@
         }
     }
 
+    /* ====== Overlay de "intervalo finalizado" ====== */
+    /* Acima do modo treino em tela cheia (z-index 1900) e de qualquer
+       modal do Bootstrap (1055), pra garantir que fique visível mesmo
+       com o modo treino ou outro modal aberto. */
+    .intervalo-fim-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2200;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(2px);
+    }
+
+    .intervalo-fim-card {
+        width: 100%;
+        max-width: 340px;
+        text-align: center;
+        color: #fff;
+        padding: 36px 28px 28px;
+        border-radius: 20px;
+        background: linear-gradient(160deg, #0d0d0d 0%, #1a1a1a 35%, var(--primary-orange, #F28C33) 100%);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        animation: intervaloFimEntrada .25s ease-out;
+    }
+
+    .intervalo-fim-emoji {
+        font-size: 2.6rem;
+        line-height: 1;
+        margin-bottom: 12px;
+    }
+
+    .intervalo-fim-texto {
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1.35;
+        margin-bottom: 22px;
+    }
+
+    .intervalo-fim-btn-parar {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        font-weight: 600;
+        font-size: .9rem;
+        padding: 10px 20px;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background-color .15s ease;
+    }
+
+    .intervalo-fim-btn-parar:hover,
+    .intervalo-fim-btn-parar:active {
+        background: rgba(255, 255, 255, 0.24);
+    }
+
+    @keyframes intervaloFimEntrada {
+        from {
+            opacity: 0;
+            transform: scale(.92);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
     /* ====== Modo treino em tela cheia ====== */
     .modo-treino-overlay {
         position: fixed;
@@ -2103,6 +2175,20 @@
                 <i class="bi bi-arrow-counterclockwise"></i>
             </button>
         </div>
+    </div>
+</div>
+
+<!-- Overlay de "intervalo finalizado": centralizado na tela, fica visível
+     enquanto o alarme (senna.mp3) toca, com um botão pra parar o som na
+     hora. Alto contraste (degradê preto -> laranja) pra chamar atenção
+     mesmo em ambiente barulhento de academia. -->
+<div class="intervalo-fim-overlay d-none" id="intervaloFimOverlay">
+    <div class="intervalo-fim-card">
+        <div class="intervalo-fim-emoji" aria-hidden="true">💪</div>
+        <div class="intervalo-fim-texto">Intervalo finalizado!<br>Bora pra próxima série</div>
+        <button type="button" class="intervalo-fim-btn-parar" id="intervaloFimBtnParar">
+            <i class="bi bi-volume-mute-fill"></i> Parar som
+        </button>
     </div>
 </div>
 
@@ -3349,11 +3435,17 @@ function tocarBipe() {
     // ativado. Se o arquivo não existir/não carregar, cai pro bipe curto
     // (tocarBipe, já usado no cronômetro do treino) -- assim a pessoa
     // sempre recebe algum aviso sonoro, mesmo que o arquivo falhe.
+    // Retorna o <audio> que ficou tocando (ou null, se o alarme estiver
+    // desligado/falhou), pra quem chamar saber quando ele terminar e
+    // poder pará-lo antes (botão "Parar som" no overlay de fim de
+    // intervalo, ver mostrarFimIntervalo()).
     function tocarAlarmeIntervalo() {
+        var audioTocando = null;
         if (alarmeAtivo) {
             try {
                 var audio = getAudioAlarme();
                 audio.currentTime = 0;
+                audioTocando = audio;
                 var p = audio.play();
                 if (p && typeof p.catch === 'function') {
                     p.catch(function () { tocarBipe(); });
@@ -3365,6 +3457,54 @@ function tocarBipe() {
         if (window.navigator && window.navigator.vibrate) {
             window.navigator.vibrate([180, 90, 180]);
         }
+        return audioTocando;
+    }
+
+    function pararSomAlarme() {
+        if (audioAlarme) {
+            audioAlarme.pause();
+            audioAlarme.currentTime = 0;
+        }
+    }
+
+    // ---- Overlay centralizado de "intervalo finalizado" ----
+    // Fica visível enquanto o alarme toca (ou por alguns segundos, se o
+    // alarme estiver desligado), com um botão pra interromper o som na
+    // hora sem precisar sair da tela.
+    var elOverlayFim = document.getElementById('intervaloFimOverlay');
+    var elOverlayFimBtnParar = document.getElementById('intervaloFimBtnParar');
+    var overlayFimTimeoutId = null;
+
+    function esconderOverlayFim() {
+        if (elOverlayFim) elOverlayFim.classList.add('d-none');
+        if (overlayFimTimeoutId) {
+            clearTimeout(overlayFimTimeoutId);
+            overlayFimTimeoutId = null;
+        }
+    }
+
+    function mostrarFimIntervalo() {
+        if (elOverlayFim) elOverlayFim.classList.remove('d-none');
+        var audioTocando = tocarAlarmeIntervalo();
+        if (audioTocando) {
+            // Some sozinho quando o áudio (senna.mp3, ~9s) terminar.
+            audioTocando.addEventListener('ended', esconderOverlayFim, { once: true });
+            // Segurança: se o evento "ended" não disparar por algum
+            // motivo (ex: play() rejeitado silenciosamente), o overlay
+            // não fica preso na tela pra sempre.
+            overlayFimTimeoutId = setTimeout(esconderOverlayFim, 15000);
+        } else {
+            // Alarme desligado (ou falhou) -- só o aviso visual, some
+            // sozinho depois de alguns segundos.
+            overlayFimTimeoutId = setTimeout(esconderOverlayFim, 3000);
+        }
+    }
+
+    if (elOverlayFimBtnParar) {
+        elOverlayFimBtnParar.addEventListener('click', function () {
+            pararSomAlarme();
+            esconderOverlayFim();
+        });
     }
 
     var duracaoPadraoSegundos = 90; // preset marcado como "is-active" no HTML
@@ -3400,10 +3540,7 @@ function tocarBipe() {
             clearInterval(intervalId);
             elBox.classList.add('is-alerta');
             elBox.classList.remove('is-rodando');
-            tocarAlarmeIntervalo();
-            if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
-                window.FitLogUtils.showToast('Intervalo finalizado! Bora pra próxima série 💪', 'success');
-            }
+            mostrarFimIntervalo();
             elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i>';
             elBtnIniciar.setAttribute('aria-label', 'Iniciar intervalo');
             elBtnIniciar.title = 'Iniciar';
