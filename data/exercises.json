@@ -45957,5 +45957,1437 @@
     "media_id": "bd5b860",
     "created_at": "2026-03-18T12:31:32.906631+00:00",
     "attribution": "© Gym visual — https://gymvisual.com/"
+  },
+  {
+    "id": "5202",
+    "name": "Puxada facial com corda",
+    "nicknames": [
+      "Face pull",
+      "Puxada para o rosto"
+    ],
+    "category": "Ombros",
+    "body_part": "Ombros",
+    "equipment": "Cabo",
+    "instructions": {
+      "pt": "Ajuste a polia na altura dos olhos ou um pouco acima e conecte uma corda dupla ao cabo. Segure uma extremidade da corda em cada mão, com as palmas voltadas uma para a outra, e dê um passo para trás até sentir tensão no cabo. Fique em pé com os pés afastados na largura dos ombros, o core contraído e os braços estendidos à frente. Puxe a corda em direção ao rosto, afastando as mãos e levando os cotovelos para trás e para cima, na altura dos ombros. Aperte as escápulas no final do movimento e faça uma pausa por um momento. Retorne lentamente à posição inicial controlando o peso. Repita o número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Ajuste a polia na altura dos olhos ou um pouco acima e conecte uma corda dupla ao cabo.",
+        "Segure uma extremidade da corda em cada mão, com as palmas voltadas uma para a outra, e dê um passo para trás até sentir tensão no cabo.",
+        "Fique em pé com os pés afastados na largura dos ombros, o core contraído e os braços estendidos à frente.",
+        "Puxe a corda em direção ao rosto, afastando as mãos e levando os cotovelos para trás e para cima, na altura dos ombros.",
+        "Aperte as escápulas no final do movimento e faça uma pausa por um momento.",
+        "Retorne lentamente à posição inicial controlando o peso.",
+        "Repita o número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Deltoides",
+    "secondary_muscles": [
+      "Deltoides",
+      "Trapézio",
+      "Romboides",
+      "Manguito rotador"
+    ],
+    "target": "Deltoides",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:31:12.295922+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5203",
+    "name": "Flexora nórdica",
+    "nicknames": [
+      "Nordic hamstring curl",
+      "Rosca nórdica",
+      "Flexão nórdica de isquiotibiais"
+    ],
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
+    "equipment": "Peso corporal",
+    "instructions": {
+      "pt": "Ajoelhe-se sobre um colchonete com um parceiro ou um suporte fixo segurando firmemente seus tornozelos. Mantenha o tronco, os quadris e os joelhos alinhados, formando uma linha reta da cabeça aos joelhos. Contraia os glúteos e os isquiotibiais e incline lentamente o corpo para frente, controlando a descida com a força das pernas o máximo que conseguir. Quando não conseguir mais controlar o movimento, apoie as mãos no chão para amortecer a queda. Empurre o chão com as mãos e use os isquiotibiais para retornar à posição inicial. Repita o número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Ajoelhe-se sobre um colchonete com um parceiro ou um suporte fixo segurando firmemente seus tornozelos.",
+        "Mantenha o tronco, os quadris e os joelhos alinhados, formando uma linha reta da cabeça aos joelhos.",
+        "Contraia os glúteos e os isquiotibiais e incline lentamente o corpo para frente, controlando a descida com a força das pernas o máximo que conseguir.",
+        "Quando não conseguir mais controlar o movimento, apoie as mãos no chão para amortecer a queda.",
+        "Empurre o chão com as mãos e use os isquiotibiais para retornar à posição inicial.",
+        "Repita o número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Isquiotibiais",
+    "secondary_muscles": [
+      "Isquiotibiais",
+      "Glúteos",
+      "Lombar"
+    ],
+    "target": "Isquiotibiais",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:31:12.295922+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5204",
+    "name": "Prancha de Copenhague",
+    "nicknames": [
+      "Copenhagen plank",
+      "Adução de quadril elevada no banco"
+    ],
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
+    "equipment": "Peso corporal",
+    "instructions": {
+      "pt": "Deite-se de lado ao lado de um banco, apoiando o peito do pé de cima sobre o banco. Apoie o antebraço de baixo no chão, alinhado sob o ombro, para sustentar o tronco, e deixe a perna de baixo estendida e suspensa no ar, sem tocar o chão. Contraindo o core e os adutores da perna de cima, eleve o quadril e a perna de baixo do chão, formando uma linha reta da cabeça aos pés. Segure essa posição pelo tempo desejado, mantendo o quadril elevado e a perna de baixo suspensa e estável. Abaixe lentamente o quadril de volta próximo ao chão, sem tocar. Troque de lado e repita o exercício com a perna oposta."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Deite-se de lado ao lado de um banco, apoiando o peito do pé de cima sobre o banco.",
+        "Apoie o antebraço de baixo no chão, alinhado sob o ombro, para sustentar o tronco, e deixe a perna de baixo estendida e suspensa no ar, sem tocar o chão.",
+        "Contraindo o core e os adutores da perna de cima, eleve o quadril e a perna de baixo do chão, formando uma linha reta da cabeça aos pés.",
+        "Segure essa posição pelo tempo desejado, mantendo o quadril elevado e a perna de baixo suspensa e estável.",
+        "Abaixe lentamente o quadril de volta próximo ao chão, sem tocar.",
+        "Troque de lado e repita o exercício com a perna oposta."
+      ]
+    },
+    "muscle_group": "Oblíquos",
+    "secondary_muscles": [
+      "Oblíquos",
+      "Glúteos"
+    ],
+    "target": "Adutores",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:31:12.295922+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5205",
+    "name": "Concha com faixa elástica",
+    "nicknames": [
+      "Clamshell",
+      "Concha de quadril"
+    ],
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
+    "equipment": "Faixa elástica",
+    "instructions": {
+      "pt": "Deite-se de lado com os quadris e joelhos flexionados a cerca de 45 graus, uma perna sobre a outra. Posicione uma faixa elástica ao redor das coxas, logo acima dos joelhos. Apoie a cabeça no braço de baixo e mantenha os pés unidos e em contato durante todo o movimento. Contraindo os glúteos, abra o joelho de cima em direção ao teto, sem girar o quadril ou o tronco. Faça uma pausa por um momento no topo, sentindo a contração no glúteo médio. Abaixe lentamente o joelho de volta à posição inicial. Repita o número de repetições desejado e depois troque de lado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Deite-se de lado com os quadris e joelhos flexionados a cerca de 45 graus, uma perna sobre a outra.",
+        "Posicione uma faixa elástica ao redor das coxas, logo acima dos joelhos.",
+        "Apoie a cabeça no braço de baixo e mantenha os pés unidos e em contato durante todo o movimento.",
+        "Contraindo os glúteos, abra o joelho de cima em direção ao teto, sem girar o quadril ou o tronco.",
+        "Faça uma pausa por um momento no topo, sentindo a contração no glúteo médio.",
+        "Abaixe lentamente o joelho de volta à posição inicial.",
+        "Repita o número de repetições desejado e depois troque de lado."
+      ]
+    },
+    "muscle_group": "Glúteos",
+    "secondary_muscles": [
+      "Glúteos",
+      "Oblíquos"
+    ],
+    "target": "Abdutores",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:31:12.295922+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5206",
+    "name": "Afundo cruzado",
+    "nicknames": [
+      "Curtsy lunge",
+      "Agachamento reverência"
+    ],
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
+    "equipment": "Peso corporal",
+    "instructions": {
+      "pt": "Fique em pé com os pés afastados na largura dos quadris e as mãos na cintura ou à frente do peito. Dê um passo para trás e para o lado com uma perna, cruzando-a por trás da perna de apoio, como em uma reverência. Flexione ambos os joelhos e abaixe o quadril até que a coxa da perna de apoio fique paralela ao chão. Mantenha o tronco ereto e o joelho da frente alinhado com o tornozelo durante o movimento. Empurre pelo calcanhar da perna da frente para retornar à posição inicial. Repita o número de repetições desejado e depois troque de lado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Fique em pé com os pés afastados na largura dos quadris e as mãos na cintura ou à frente do peito.",
+        "Dê um passo para trás e para o lado com uma perna, cruzando-a por trás da perna de apoio, como em uma reverência.",
+        "Flexione ambos os joelhos e abaixe o quadril até que a coxa da perna de apoio fique paralela ao chão.",
+        "Mantenha o tronco ereto e o joelho da frente alinhado com o tornozelo durante o movimento.",
+        "Empurre pelo calcanhar da perna da frente para retornar à posição inicial.",
+        "Repita o número de repetições desejado e depois troque de lado."
+      ]
+    },
+    "muscle_group": "Quadríceps",
+    "secondary_muscles": [
+      "Quadríceps",
+      "Isquiotibiais",
+      "Glúteos"
+    ],
+    "target": "Glúteos",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:31:12.295922+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5207",
+    "name": "Empurrar trenó",
+    "nicknames": [
+      "Sled push",
+      "Empurrão de trenó",
+      "Prowler push"
+    ],
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
+    "equipment": "Sled",
+    "instructions": {
+      "pt": "Posicione-se atrás do trenó carregado com o peso desejado e segure firmemente as alças ou a barra vertical. Incline o tronco para frente, mantendo os braços estendidos e o core contraído. Dê passos curtos e potentes, empurrando o trenó para frente com força nas pernas. Mantenha os joelhos e quadris em extensão completa a cada passada, sem deixar o tronco cair. Continue empurrando o trenó pela distância ou tempo desejado. Pare, recupere o fôlego e repita o número de séries desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Posicione-se atrás do trenó carregado com o peso desejado e segure firmemente as alças ou a barra vertical.",
+        "Incline o tronco para frente, mantendo os braços estendidos e o core contraído.",
+        "Dê passos curtos e potentes, empurrando o trenó para frente com força nas pernas.",
+        "Mantenha os joelhos e quadris em extensão completa a cada passada, sem deixar o tronco cair.",
+        "Continue empurrando o trenó pela distância ou tempo desejado.",
+        "Pare, recupere o fôlego e repita o número de séries desejado."
+      ]
+    },
+    "muscle_group": "Quadríceps",
+    "secondary_muscles": [
+      "Quadríceps",
+      "Glúteos",
+      "Panturrilhas"
+    ],
+    "target": "Glúteos",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:31:12.295922+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5208",
+    "name": "Puxar trenó com corda",
+    "nicknames": [
+      "Sled pull",
+      "Remada de trenó"
+    ],
+    "category": "Costas",
+    "body_part": "Costas",
+    "equipment": "Sled",
+    "instructions": {
+      "pt": "Fixe uma corda longa ao trenó carregado e sente-se no chão de frente para o trenó, segurando uma extremidade da corda em cada mão. Estenda os braços à frente do corpo e mantenha o tronco ligeiramente inclinado para trás, com o core contraído. Puxe a corda em movimento de remada, alternando os braços, trazendo as mãos em direção ao quadril. Continue puxando a corda mão sobre mão até que o trenó se aproxime completamente. Levante-se, caminhe até o trenó e reposicione a corda para a próxima série. Repita o número de repetições ou a distância desejada."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Fixe uma corda longa ao trenó carregado e sente-se no chão de frente para o trenó, segurando uma extremidade da corda em cada mão.",
+        "Estenda os braços à frente do corpo e mantenha o tronco ligeiramente inclinado para trás, com o core contraído.",
+        "Puxe a corda em movimento de remada, alternando os braços, trazendo as mãos em direção ao quadril.",
+        "Continue puxando a corda mão sobre mão até que o trenó se aproxime completamente.",
+        "Levante-se, caminhe até o trenó e reposicione a corda para a próxima série.",
+        "Repita o número de repetições ou a distância desejada."
+      ]
+    },
+    "muscle_group": "Grande dorsal",
+    "secondary_muscles": [
+      "Grande dorsal",
+      "Bíceps",
+      "Antebraços"
+    ],
+    "target": "Dorsais",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:31:12.295922+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5209",
+    "name": "Pássaro-cão",
+    "nicknames": [
+      "Bird dog",
+      "Quadrupedia com extensão cruzada"
+    ],
+    "category": "Cintura",
+    "body_part": "Cintura",
+    "equipment": "Peso corporal",
+    "instructions": {
+      "pt": "Fique de quatro apoios com as mãos diretamente sob os ombros e os joelhos diretamente sob os quadris. Contraia o core e mantenha a coluna em posição neutra, sem arquear ou arredondar as costas. Estenda simultaneamente o braço direito à frente e a perna esquerda para trás, mantendo ambos paralelos ao chão. Faça uma pausa por um momento, mantendo o equilíbrio e o quadril nivelado. Retorne lentamente à posição de quatro apoios. Repita do lado oposto, estendendo o braço esquerdo e a perna direita, alternando pelo número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Fique de quatro apoios com as mãos diretamente sob os ombros e os joelhos diretamente sob os quadris.",
+        "Contraia o core e mantenha a coluna em posição neutra, sem arquear ou arredondar as costas.",
+        "Estenda simultaneamente o braço direito à frente e a perna esquerda para trás, mantendo ambos paralelos ao chão.",
+        "Faça uma pausa por um momento, mantendo o equilíbrio e o quadril nivelado.",
+        "Retorne lentamente à posição de quatro apoios.",
+        "Repita do lado oposto, estendendo o braço esquerdo e a perna direita, alternando pelo número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Core",
+    "secondary_muscles": [
+      "Core",
+      "Lombar",
+      "Glúteos"
+    ],
+    "target": "Coluna",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:31:12.295922+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5210",
+    "name": "Press militar landmine um braço",
+    "nicknames": [
+      "Landmine press",
+      "Desenvolvimento landmine"
+    ],
+    "category": "Ombros",
+    "body_part": "Ombros",
+    "equipment": "Barra",
+    "instructions": {
+      "pt": "Encaixe uma extremidade da barra em um suporte landmine ou em um canto fixo no chão. Segure a outra extremidade da barra com uma mão, posicionando-a na altura do ombro. Fique em pé ou ajoelhado com o core contraído e o tronco estável. Empurre a barra para cima e ligeiramente para frente, estendendo o braço até quase a extensão total do cotovelo. Faça uma pausa por um momento no topo, depois abaixe lentamente a barra de volta à altura do ombro. Repita o número de repetições desejado e depois troque de braço."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Encaixe uma extremidade da barra em um suporte landmine ou em um canto fixo no chão.",
+        "Segure a outra extremidade da barra com uma mão, posicionando-a na altura do ombro.",
+        "Fique em pé ou ajoelhado com o core contraído e o tronco estável.",
+        "Empurre a barra para cima e ligeiramente para frente, estendendo o braço até quase a extensão total do cotovelo.",
+        "Faça uma pausa por um momento no topo, depois abaixe lentamente a barra de volta à altura do ombro.",
+        "Repita o número de repetições desejado e depois troque de braço."
+      ]
+    },
+    "muscle_group": "Deltoides",
+    "secondary_muscles": [
+      "Deltoides",
+      "Tríceps",
+      "Core"
+    ],
+    "target": "Deltoides",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:31:12.295922+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5211",
+    "name": "Passada lateral na escada de agilidade",
+    "nicknames": [
+      "Lateral ladder shuffle",
+      "Escada de agilidade lateral"
+    ],
+    "category": "Cardio",
+    "body_part": "Cardio",
+    "equipment": "Escada de agilidade",
+    "instructions": {
+      "pt": "Posicione uma escada de agilidade esticada no chão e fique em pé ao lado da primeira casa, com o corpo voltado para a lateral da escada. Flexione levemente os joelhos e mantenha o core contraído, adotando uma postura atlética. Dê um passo lateral para dentro da primeira casa com o pé mais próximo, seguido pelo outro pé. Continue avançando lateralmente, casa por casa, com passos rápidos e leves, sem tocar as réguas da escada. Ao chegar ao final da escada, gire o corpo e repita o movimento voltando na direção oposta. Repita pelo número de séries ou tempo desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Posicione uma escada de agilidade esticada no chão e fique em pé ao lado da primeira casa, com o corpo voltado para a lateral da escada.",
+        "Flexione levemente os joelhos e mantenha o core contraído, adotando uma postura atlética.",
+        "Dê um passo lateral para dentro da primeira casa com o pé mais próximo, seguido pelo outro pé.",
+        "Continue avançando lateralmente, casa por casa, com passos rápidos e leves, sem tocar as réguas da escada.",
+        "Ao chegar ao final da escada, gire o corpo e repita o movimento voltando na direção oposta.",
+        "Repita pelo número de séries ou tempo desejado."
+      ]
+    },
+    "muscle_group": "Quadríceps",
+    "secondary_muscles": [
+      "Quadríceps",
+      "Glúteos",
+      "Panturrilhas"
+    ],
+    "target": "Sistema cardiovascular",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:37:04.202241+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5212",
+    "name": "Corrida em zigue-zague com cones",
+    "nicknames": [
+      "Cone zigzag run",
+      "Corrida em zigue-zague"
+    ],
+    "category": "Cardio",
+    "body_part": "Cardio",
+    "equipment": "Cones",
+    "instructions": {
+      "pt": "Posicione de quatro a seis cones em linha reta, espaçados de 1 a 2 metros um do outro, formando um caminho em zigue-zague. Fique em pé atrás do primeiro cone, em posição atlética, com os joelhos levemente flexionados. Corra diagonalmente em direção ao segundo cone, contornando-o com passos curtos e rápidos. Mude de direção imediatamente e corra diagonalmente até o próximo cone, mantendo o corpo baixo e equilibrado. Continue o percurso em zigue-zague até contornar todos os cones. Recupere o fôlego e repita o número de séries desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Posicione de quatro a seis cones em linha reta, espaçados de 1 a 2 metros um do outro, formando um caminho em zigue-zague.",
+        "Fique em pé atrás do primeiro cone, em posição atlética, com os joelhos levemente flexionados.",
+        "Corra diagonalmente em direção ao segundo cone, contornando-o com passos curtos e rápidos.",
+        "Mude de direção imediatamente e corra diagonalmente até o próximo cone, mantendo o corpo baixo e equilibrado.",
+        "Continue o percurso em zigue-zague até contornar todos os cones.",
+        "Recupere o fôlego e repita o número de séries desejado."
+      ]
+    },
+    "muscle_group": "Quadríceps",
+    "secondary_muscles": [
+      "Quadríceps",
+      "Isquiotibiais",
+      "Panturrilhas"
+    ],
+    "target": "Sistema cardiovascular",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:37:04.202241+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5213",
+    "name": "Salto horizontal",
+    "nicknames": [
+      "Broad jump",
+      "Salto em distância"
+    ],
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
+    "equipment": "Peso corporal",
+    "instructions": {
+      "pt": "Fique em pé com os pés afastados na largura dos ombros. Flexione os joelhos e os quadris, levando os braços para trás, como se fosse agachar. Balance os braços para frente com força e estenda explosivamente os quadris, joelhos e tornozelos, saltando para frente o mais longe possível. Aterrisse suavemente com os dois pés ao mesmo tempo, flexionando os joelhos para absorver o impacto. Estabilize a posição por um momento antes de se preparar para o próximo salto. Repita o número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Fique em pé com os pés afastados na largura dos ombros.",
+        "Flexione os joelhos e os quadris, levando os braços para trás, como se fosse agachar.",
+        "Balance os braços para frente com força e estenda explosivamente os quadris, joelhos e tornozelos, saltando para frente o mais longe possível.",
+        "Aterrisse suavemente com os dois pés ao mesmo tempo, flexionando os joelhos para absorver o impacto.",
+        "Estabilize a posição por um momento antes de se preparar para o próximo salto.",
+        "Repita o número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Quadríceps",
+    "secondary_muscles": [
+      "Quadríceps",
+      "Glúteos",
+      "Panturrilhas"
+    ],
+    "target": "Glúteos",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:37:04.202241+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5214",
+    "name": "Salto em profundidade",
+    "nicknames": [
+      "Depth jump",
+      "Salto de queda"
+    ],
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
+    "equipment": "Peso corporal",
+    "instructions": {
+      "pt": "Fique em pé sobre uma caixa ou plataforma de altura moderada, com os pés afastados na largura dos ombros. Dê um passo à frente e caia da caixa, aterrissando com os dois pés ao mesmo tempo. Ao tocar o chão, flexione rapidamente os joelhos e os quadris para absorver o impacto. Imediatamente após aterrissar, salte verticalmente o mais alto possível, estendendo quadris, joelhos e tornozelos. Aterrisse suavemente e estabilize o corpo. Volte para cima da caixa e repita o número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Fique em pé sobre uma caixa ou plataforma de altura moderada, com os pés afastados na largura dos ombros.",
+        "Dê um passo à frente e caia da caixa, aterrissando com os dois pés ao mesmo tempo.",
+        "Ao tocar o chão, flexione rapidamente os joelhos e os quadris para absorver o impacto.",
+        "Imediatamente após aterrissar, salte verticalmente o mais alto possível, estendendo quadris, joelhos e tornozelos.",
+        "Aterrisse suavemente e estabilize o corpo.",
+        "Volte para cima da caixa e repita o número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Quadríceps",
+    "secondary_muscles": [
+      "Quadríceps",
+      "Glúteos",
+      "Panturrilhas"
+    ],
+    "target": "Glúteos",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:37:04.202241+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5215",
+    "name": "Carregada tipo mala",
+    "nicknames": [
+      "Suitcase carry",
+      "Caminhada com peso lateral"
+    ],
+    "category": "Cintura",
+    "body_part": "Cintura",
+    "equipment": "Halter",
+    "instructions": {
+      "pt": "Segure um halter em uma das mãos ao lado do corpo, como se estivesse carregando uma mala. Fique em pé com a postura ereta, os ombros nivelados e o core contraído. Caminhe para frente com passos curtos e controlados, resistindo à inclinação lateral do tronco em direção ao peso. Mantenha o quadril e os ombros alinhados durante todo o percurso. Percorra a distância desejada e troque o halter para a outra mão. Repita o percurso do lado oposto."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Segure um halter em uma das mãos ao lado do corpo, como se estivesse carregando uma mala.",
+        "Fique em pé com a postura ereta, os ombros nivelados e o core contraído.",
+        "Caminhe para frente com passos curtos e controlados, resistindo à inclinação lateral do tronco em direção ao peso.",
+        "Mantenha o quadril e os ombros alinhados durante todo o percurso.",
+        "Percorra a distância desejada e troque o halter para a outra mão.",
+        "Repita o percurso do lado oposto."
+      ]
+    },
+    "muscle_group": "Oblíquos",
+    "secondary_muscles": [
+      "Oblíquos",
+      "Core",
+      "Antebraços"
+    ],
+    "target": "Abdômen",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:37:04.202241+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5216",
+    "name": "Gato-camelo",
+    "nicknames": [
+      "Cat-cow",
+      "Gato e camelo"
+    ],
+    "category": "Cintura",
+    "body_part": "Cintura",
+    "equipment": "Peso corporal",
+    "instructions": {
+      "pt": "Fique de quatro apoios com as mãos diretamente sob os ombros e os joelhos sob os quadris. Inspire e arqueie a coluna para baixo, levantando o queixo e o quadril em direção ao teto (posição de vaca). Expire e arredonde a coluna para cima, levando o queixo em direção ao peito e contraindo o abdômen (posição de gato). Alterne suavemente entre as duas posições, movendo a coluna de forma controlada e conectada à respiração. Continue o movimento pelo número de repetições ou tempo desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Fique de quatro apoios com as mãos diretamente sob os ombros e os joelhos sob os quadris.",
+        "Inspire e arqueie a coluna para baixo, levantando o queixo e o quadril em direção ao teto (posição de vaca).",
+        "Expire e arredonde a coluna para cima, levando o queixo em direção ao peito e contraindo o abdômen (posição de gato).",
+        "Alterne suavemente entre as duas posições, movendo a coluna de forma controlada e conectada à respiração.",
+        "Continue o movimento pelo número de repetições ou tempo desejado."
+      ]
+    },
+    "muscle_group": "Core",
+    "secondary_muscles": [
+      "Core",
+      "Lombar"
+    ],
+    "target": "Coluna",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:37:04.202241+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5217",
+    "name": "Troca de quadril 90/90",
+    "nicknames": [
+      "90/90 hip switch",
+      "Mobilidade de quadril 90/90"
+    ],
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
+    "equipment": "Peso corporal",
+    "instructions": {
+      "pt": "Sente-se no chão com uma perna dobrada à frente do corpo, formando um ângulo de 90 graus, e a outra perna dobrada atrás do corpo, também a 90 graus. Mantenha a coluna ereta e as mãos apoiadas levemente no chão para equilíbrio. Gire o quadril para o outro lado, trocando a posição das pernas: a perna que estava à frente passa para trás, e vice-versa. Continue o movimento sem apoiar as mãos no chão à medida que ganhar mobilidade e equilíbrio. Alterne os lados de forma controlada e fluida pelo número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Sente-se no chão com uma perna dobrada à frente do corpo, formando um ângulo de 90 graus, e a outra perna dobrada atrás do corpo, também a 90 graus.",
+        "Mantenha a coluna ereta e as mãos apoiadas levemente no chão para equilíbrio.",
+        "Gire o quadril para o outro lado, trocando a posição das pernas: a perna que estava à frente passa para trás, e vice-versa.",
+        "Continue o movimento sem apoiar as mãos no chão à medida que ganhar mobilidade e equilíbrio.",
+        "Alterne os lados de forma controlada e fluida pelo número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Glúteos",
+    "secondary_muscles": [
+      "Glúteos",
+      "Isquiotibiais"
+    ],
+    "target": "Glúteos",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:37:04.202241+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5218",
+    "name": "Afastamento com faixa elástica",
+    "nicknames": [
+      "Band pull-apart",
+      "Puxada aberta com faixa elástica"
+    ],
+    "category": "Ombros",
+    "body_part": "Ombros",
+    "equipment": "Faixa elástica",
+    "instructions": {
+      "pt": "Fique em pé com os pés afastados na largura dos ombros e segure uma faixa elástica com as duas mãos à frente do peito, com os braços estendidos. Mantenha os braços paralelos ao chão e as palmas voltadas para baixo. Contraindo as escápulas, afaste as mãos para os lados, esticando a faixa elástica até que os braços fiquem em linha com o corpo. Faça uma pausa por um momento com o peito aberto e as escápulas contraídas. Retorne lentamente à posição inicial controlando a tensão da faixa. Repita o número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Fique em pé com os pés afastados na largura dos ombros e segure uma faixa elástica com as duas mãos à frente do peito, com os braços estendidos.",
+        "Mantenha os braços paralelos ao chão e as palmas voltadas para baixo.",
+        "Contraindo as escápulas, afaste as mãos para os lados, esticando a faixa elástica até que os braços fiquem em linha com o corpo.",
+        "Faça uma pausa por um momento com o peito aberto e as escápulas contraídas.",
+        "Retorne lentamente à posição inicial controlando a tensão da faixa.",
+        "Repita o número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Deltoides",
+    "secondary_muscles": [
+      "Deltoides",
+      "Trapézio",
+      "Romboides"
+    ],
+    "target": "Deltoides",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:37:04.202241+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5219",
+    "name": "Deslizamento escapular na parede",
+    "nicknames": [
+      "Wall slide",
+      "Deslize de braços na parede"
+    ],
+    "category": "Ombros",
+    "body_part": "Ombros",
+    "equipment": "Peso corporal",
+    "instructions": {
+      "pt": "Fique em pé com as costas, a cabeça e o quadril encostados na parede. Posicione os braços em formato de 'W', com os cotovelos e os punhos encostados na parede. Mantendo o contato dos braços com a parede, deslize-os para cima, estendendo-os acima da cabeça em formato de 'Y'. Contraia as escápulas durante todo o movimento, evitando que a lombar ou os braços se afastem da parede. Deslize os braços lentamente de volta à posição inicial em 'W'. Repita o número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Fique em pé com as costas, a cabeça e o quadril encostados na parede.",
+        "Posicione os braços em formato de 'W', com os cotovelos e os punhos encostados na parede.",
+        "Mantendo o contato dos braços com a parede, deslize-os para cima, estendendo-os acima da cabeça em formato de 'Y'.",
+        "Contraia as escápulas durante todo o movimento, evitando que a lombar ou os braços se afastem da parede.",
+        "Deslize os braços lentamente de volta à posição inicial em 'W'.",
+        "Repita o número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Trapézio",
+    "secondary_muscles": [
+      "Trapézio",
+      "Deltoides",
+      "Romboides"
+    ],
+    "target": "Deltoides",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:37:04.202241+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5220",
+    "name": "Caminhada monstro com faixa elástica",
+    "nicknames": [
+      "Monster walk",
+      "Caminhada lateral com mini band"
+    ],
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
+    "equipment": "Faixa elástica",
+    "instructions": {
+      "pt": "Posicione uma faixa elástica ao redor dos tornozelos ou logo acima dos joelhos. Fique em pé com os pés afastados na largura dos quadris e os joelhos levemente flexionados, em posição de meio agachamento. Mantendo a tensão na faixa, dê um passo diagonal para frente com uma perna, seguido pela outra, avançando em um padrão de caminhada monstro. Mantenha o tronco ereto e o core contraído durante todo o percurso, evitando que os joelhos se colapsem para dentro. Continue avançando pela distância desejada. Repita o percurso na direção oposta ou pelo número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Posicione uma faixa elástica ao redor dos tornozelos ou logo acima dos joelhos.",
+        "Fique em pé com os pés afastados na largura dos quadris e os joelhos levemente flexionados, em posição de meio agachamento.",
+        "Mantendo a tensão na faixa, dê um passo diagonal para frente com uma perna, seguido pela outra, avançando em um padrão de caminhada monstro.",
+        "Mantenha o tronco ereto e o core contraído durante todo o percurso, evitando que os joelhos se colapsem para dentro.",
+        "Continue avançando pela distância desejada.",
+        "Repita o percurso na direção oposta ou pelo número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Glúteos",
+    "secondary_muscles": [
+      "Glúteos",
+      "Quadríceps"
+    ],
+    "target": "Abdutores",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:37:04.202241+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5221",
+    "name": "Caminhada da prancha",
+    "nicknames": [
+      "Plank walkout",
+      "Prancha com caminhada de mãos"
+    ],
+    "category": "Cintura",
+    "body_part": "Cintura",
+    "equipment": "Peso corporal",
+    "instructions": {
+      "pt": "Fique em pé com os pés afastados na largura dos quadris e os braços estendidos ao lado do corpo. Dobre o quadril e leve as mãos ao chão à frente dos pés, mantendo as pernas o mais retas possível. Caminhe com as mãos para frente, um passo de cada vez, até atingir a posição de prancha alta com o corpo alinhado. Faça uma pausa por um momento na posição de prancha, mantendo o core contraído. Caminhe com as mãos de volta em direção aos pés, retornando à posição inicial. Repita o número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Fique em pé com os pés afastados na largura dos quadris e os braços estendidos ao lado do corpo.",
+        "Dobre o quadril e leve as mãos ao chão à frente dos pés, mantendo as pernas o mais retas possível.",
+        "Caminhe com as mãos para frente, um passo de cada vez, até atingir a posição de prancha alta com o corpo alinhado.",
+        "Faça uma pausa por um momento na posição de prancha, mantendo o core contraído.",
+        "Caminhe com as mãos de volta em direção aos pés, retornando à posição inicial.",
+        "Repita o número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Core",
+    "secondary_muscles": [
+      "Core",
+      "Ombros",
+      "Isquiotibiais"
+    ],
+    "target": "Abdômen",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:37:04.202241+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5222",
+    "name": "Extensão de quadril em quatro apoios",
+    "nicknames": [
+      "Donkey kick",
+      "Coice de glúteo em quatro apoios"
+    ],
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
+    "equipment": "Peso corporal",
+    "instructions": {
+      "pt": "Fique de quatro apoios com as mãos diretamente sob os ombros e os joelhos sob os quadris. Mantenha o joelho de uma das pernas flexionado a 90 graus e a planta do pé voltada para o teto. Contraindo o glúteo, empurre o pé em direção ao teto, estendendo o quadril sem mover a coluna. Faça uma pausa por um momento no topo do movimento, sentindo a contração no glúteo. Abaixe lentamente o joelho de volta à posição inicial, sem tocar o chão. Repita o número de repetições desejado e depois troque de lado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Fique de quatro apoios com as mãos diretamente sob os ombros e os joelhos sob os quadris.",
+        "Mantenha o joelho de uma das pernas flexionado a 90 graus e a planta do pé voltada para o teto.",
+        "Contraindo o glúteo, empurre o pé em direção ao teto, estendendo o quadril sem mover a coluna.",
+        "Faça uma pausa por um momento no topo do movimento, sentindo a contração no glúteo.",
+        "Abaixe lentamente o joelho de volta à posição inicial, sem tocar o chão.",
+        "Repita o número de repetições desejado e depois troque de lado."
+      ]
+    },
+    "muscle_group": "Glúteos",
+    "secondary_muscles": [
+      "Glúteos",
+      "Isquiotibiais"
+    ],
+    "target": "Glúteos",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:37:04.202241+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5223",
+    "name": "Agachamento no belt squat",
+    "nicknames": [
+      "Belt squat",
+      "Agachamento com cinto"
+    ],
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
+    "equipment": "Belt squat",
+    "instructions": {
+      "pt": "Ajuste a plataforma do belt squat na altura adequada e prenda o cinto ao redor do quadril, com as correntes ou cabos conectados à carga. Suba na plataforma e fique em pé com os pés afastados na largura dos ombros, segurando as barras de apoio à frente do corpo. Contraia o core e mantenha o tronco ereto, sem apoiar o peso nas mãos. Flexione os joelhos e os quadris, descendo o corpo em um agachamento controlado até que as coxas fiquem paralelas ao chão. Empurre pelos calcanhares para estender os joelhos e os quadris, retornando à posição inicial. Repita o número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Ajuste a plataforma do belt squat na altura adequada e prenda o cinto ao redor do quadril, com as correntes ou cabos conectados à carga.",
+        "Suba na plataforma e fique em pé com os pés afastados na largura dos ombros, segurando as barras de apoio à frente do corpo.",
+        "Contraia o core e mantenha o tronco ereto, sem apoiar o peso nas mãos.",
+        "Flexione os joelhos e os quadris, descendo o corpo em um agachamento controlado até que as coxas fiquem paralelas ao chão.",
+        "Empurre pelos calcanhares para estender os joelhos e os quadris, retornando à posição inicial.",
+        "Repita o número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Quadríceps",
+    "secondary_muscles": [
+      "Quadríceps",
+      "Glúteos",
+      "Isquiotibiais"
+    ],
+    "target": "Glúteos",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:40:50.730993+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5224",
+    "name": "Remada no remoergômetro",
+    "nicknames": [
+      "Rowing machine",
+      "Remo indoor"
+    ],
+    "category": "Costas",
+    "body_part": "Costas",
+    "equipment": "Remoergômetro",
+    "instructions": {
+      "pt": "Sente-se no remoergômetro com os pés presos nos apoios e os joelhos flexionados, segurando a barra com as duas mãos. Comece o movimento estendendo as pernas com força, empurrando o corpo para trás no trilho. Ao final da extensão das pernas, incline levemente o tronco para trás e puxe a barra em direção ao abdômen, levando os cotovelos para trás. Reverta a sequência: estenda os braços, incline o tronco para frente e flexione os joelhos para retornar à posição inicial deslizando no trilho. Mantenha um ritmo constante e fluido entre a puxada das pernas, do tronco e dos braços. Continue pelo tempo ou distância desejada."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Sente-se no remoergômetro com os pés presos nos apoios e os joelhos flexionados, segurando a barra com as duas mãos.",
+        "Comece o movimento estendendo as pernas com força, empurrando o corpo para trás no trilho.",
+        "Ao final da extensão das pernas, incline levemente o tronco para trás e puxe a barra em direção ao abdômen, levando os cotovelos para trás.",
+        "Reverta a sequência: estenda os braços, incline o tronco para frente e flexione os joelhos para retornar à posição inicial deslizando no trilho.",
+        "Mantenha um ritmo constante e fluido entre a puxada das pernas, do tronco e dos braços.",
+        "Continue pelo tempo ou distância desejada."
+      ]
+    },
+    "muscle_group": "Grande dorsal",
+    "secondary_muscles": [
+      "Grande dorsal",
+      "Quadríceps",
+      "Bíceps"
+    ],
+    "target": "Sistema cardiovascular",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:40:50.730993+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5225",
+    "name": "Bicicleta de ar",
+    "nicknames": [
+      "Assault bike",
+      "Airbike",
+      "Fan bike"
+    ],
+    "category": "Cardio",
+    "body_part": "Cardio",
+    "equipment": "Bicicleta de ar",
+    "instructions": {
+      "pt": "Sente-se na bicicleta de ar (assault bike) e ajuste o banco para que os joelhos fiquem levemente flexionados na extensão completa do pedal. Segure firmemente as alças móveis dos guidões, que se movem juntamente com os pedais. Pedale e empurre e puxe os braços simultaneamente, gerando resistência proporcional ao esforço aplicado no volante de ar. Mantenha o tronco estável e o core contraído durante todo o movimento. Ajuste a intensidade aumentando ou diminuindo a velocidade de pedalada e o movimento dos braços. Continue pelo tempo, distância ou número de calorias desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Sente-se na bicicleta de ar (assault bike) e ajuste o banco para que os joelhos fiquem levemente flexionados na extensão completa do pedal.",
+        "Segure firmemente as alças móveis dos guidões, que se movem juntamente com os pedais.",
+        "Pedale e empurre e puxe os braços simultaneamente, gerando resistência proporcional ao esforço aplicado no volante de ar.",
+        "Mantenha o tronco estável e o core contraído durante todo o movimento.",
+        "Ajuste a intensidade aumentando ou diminuindo a velocidade de pedalada e o movimento dos braços.",
+        "Continue pelo tempo, distância ou número de calorias desejado."
+      ]
+    },
+    "muscle_group": "Quadríceps",
+    "secondary_muscles": [
+      "Quadríceps",
+      "Isquiotibiais",
+      "Ombros"
+    ],
+    "target": "Sistema cardiovascular",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:40:50.730993+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5226",
+    "name": "Elevação pélvica no glute drive",
+    "nicknames": [
+      "Glute drive",
+      "Máquina de elevação pélvica"
+    ],
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
+    "equipment": "Máquina de elevação pélvica",
+    "instructions": {
+      "pt": "Ajuste o assento da máquina de elevação pélvica (glute drive) e posicione a parte superior das costas apoiada no encosto acolchoado. Posicione a almofada de carga sobre o quadril, logo acima da pelve, e apoie os pés na plataforma com os joelhos flexionados a 90 graus. Contraia os glúteos e o core antes de iniciar o movimento. Empurre a almofada para cima estendendo o quadril, elevando-o até que o corpo forme uma linha reta dos ombros aos joelhos. Faça uma pausa por um momento no topo, apertando os glúteos com força. Abaixe lentamente o quadril de volta à posição inicial, sem deixar a carga tocar o suporte. Repita o número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Ajuste o assento da máquina de elevação pélvica (glute drive) e posicione a parte superior das costas apoiada no encosto acolchoado.",
+        "Posicione a almofada de carga sobre o quadril, logo acima da pelve, e apoie os pés na plataforma com os joelhos flexionados a 90 graus.",
+        "Contraia os glúteos e o core antes de iniciar o movimento.",
+        "Empurre a almofada para cima estendendo o quadril, elevando-o até que o corpo forme uma linha reta dos ombros aos joelhos.",
+        "Faça uma pausa por um momento no topo, apertando os glúteos com força.",
+        "Abaixe lentamente o quadril de volta à posição inicial, sem deixar a carga tocar o suporte.",
+        "Repita o número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Glúteos",
+    "secondary_muscles": [
+      "Glúteos",
+      "Isquiotibiais"
+    ],
+    "target": "Glúteos",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:40:50.730993+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5227",
+    "name": "Escalada no Jacob's ladder",
+    "nicknames": [
+      "Jacob's ladder",
+      "Escada de Jacob"
+    ],
+    "category": "Cardio",
+    "body_part": "Cardio",
+    "equipment": "Escada de Jacob",
+    "instructions": {
+      "pt": "Prenda o cinto de segurança do Jacob's ladder ao redor do quadril e posicione um pé no primeiro degrau da escada. Segure as alças verticais e comece a subir a escada em um movimento alternado de braços e pernas, como se estivesse escalando. Apoie parte do peso do corpo nos braços para controlar o ritmo, especialmente no início do movimento. Mantenha um ritmo constante de escalada; a esteira se move automaticamente conforme seu próprio ritmo, sem velocidade fixa. Mantenha o core contraído e o tronco levemente inclinado para frente durante toda a subida. Continue pelo tempo ou distância desejada e desça com cuidado ao final."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Prenda o cinto de segurança do Jacob's ladder ao redor do quadril e posicione um pé no primeiro degrau da escada.",
+        "Segure as alças verticais e comece a subir a escada em um movimento alternado de braços e pernas, como se estivesse escalando.",
+        "Apoie parte do peso do corpo nos braços para controlar o ritmo, especialmente no início do movimento.",
+        "Mantenha um ritmo constante de escalada; a esteira se move automaticamente conforme seu próprio ritmo, sem velocidade fixa.",
+        "Mantenha o core contraído e o tronco levemente inclinado para frente durante toda a subida.",
+        "Continue pelo tempo ou distância desejada e desça com cuidado ao final."
+      ]
+    },
+    "muscle_group": "Quadríceps",
+    "secondary_muscles": [
+      "Quadríceps",
+      "Isquiotibiais",
+      "Ombros"
+    ],
+    "target": "Sistema cardiovascular",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:40:50.730993+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5228",
+    "name": "Escalada no escalador vertical",
+    "nicknames": [
+      "VersaClimber",
+      "Escalador vertical"
+    ],
+    "category": "Cardio",
+    "body_part": "Cardio",
+    "equipment": "Escalador vertical",
+    "instructions": {
+      "pt": "Suba no escalador vertical (VersaClimber) e posicione os pés nos pedais, segurando uma alça em cada mão. Fique em pé com o tronco levemente inclinado para frente e o core contraído. Empurre um pedal para baixo enquanto puxa a alça oposta para baixo simultaneamente, em um movimento cruzado de escalada. Alterne o movimento entre os lados de forma contínua, como se estivesse escalando uma parede vertical. Mantenha o ritmo e ajuste a intensidade conforme a velocidade e a força aplicada nos pedais e alças. Continue pelo tempo ou distância desejada."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Suba no escalador vertical (VersaClimber) e posicione os pés nos pedais, segurando uma alça em cada mão.",
+        "Fique em pé com o tronco levemente inclinado para frente e o core contraído.",
+        "Empurre um pedal para baixo enquanto puxa a alça oposta para baixo simultaneamente, em um movimento cruzado de escalada.",
+        "Alterne o movimento entre os lados de forma contínua, como se estivesse escalando uma parede vertical.",
+        "Mantenha o ritmo e ajuste a intensidade conforme a velocidade e a força aplicada nos pedais e alças.",
+        "Continue pelo tempo ou distância desejada."
+      ]
+    },
+    "muscle_group": "Quadríceps",
+    "secondary_muscles": [
+      "Quadríceps",
+      "Ombros",
+      "Core"
+    ],
+    "target": "Sistema cardiovascular",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:40:50.730993+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5229",
+    "name": "Agachamento isométrico na parede",
+    "nicknames": [
+      "Wall sit",
+      "Cadeira na parede"
+    ],
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
+    "equipment": "Peso corporal",
+    "instructions": {
+      "pt": "Encoste as costas em uma parede lisa e dê um passo à frente com os pés afastados na largura dos ombros. Deslize as costas pela parede, flexionando os joelhos até que as coxas fiquem paralelas ao chão, como se estivesse sentado em uma cadeira invisível. Mantenha os joelhos alinhados com os tornozelos, sem ultrapassar a linha da ponta dos pés. Contraia o core e as coxas, mantendo a postura estática nessa posição. Segure essa posição pelo tempo desejado, respirando de forma controlada. Deslize lentamente de volta para cima ao final do tempo."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Encoste as costas em uma parede lisa e dê um passo à frente com os pés afastados na largura dos ombros.",
+        "Deslize as costas pela parede, flexionando os joelhos até que as coxas fiquem paralelas ao chão, como se estivesse sentado em uma cadeira invisível.",
+        "Mantenha os joelhos alinhados com os tornozelos, sem ultrapassar a linha da ponta dos pés.",
+        "Contraia o core e as coxas, mantendo a postura estática nessa posição.",
+        "Segure essa posição pelo tempo desejado, respirando de forma controlada.",
+        "Deslize lentamente de volta para cima ao final do tempo."
+      ]
+    },
+    "muscle_group": "Quadríceps",
+    "secondary_muscles": [
+      "Quadríceps",
+      "Glúteos"
+    ],
+    "target": "Quadríceps",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:44:45.027287+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5230",
+    "name": "Extensão terminal de joelho com faixa elástica",
+    "nicknames": [
+      "TKE",
+      "Terminal knee extension"
+    ],
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
+    "equipment": "Faixa elástica",
+    "instructions": {
+      "pt": "Ancore uma faixa elástica em um ponto fixo na altura do joelho e fique de costas para esse ponto, com a faixa passando por trás do joelho de uma das pernas. Dê um passo à frente para criar tensão na faixa, mantendo o pé totalmente apoiado no chão. Comece com o joelho da perna de trabalho levemente flexionado. Contraia o quadríceps e estenda completamente o joelho contra a resistência da faixa, sem tirar o pé do chão. Aperte o quadríceps com força na extensão completa e faça uma pausa por um momento. Flexione lentamente o joelho de volta à posição inicial, controlando a faixa. Repita o número de repetições desejado e depois troque de perna."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Ancore uma faixa elástica em um ponto fixo na altura do joelho e fique de costas para esse ponto, com a faixa passando por trás do joelho de uma das pernas.",
+        "Dê um passo à frente para criar tensão na faixa, mantendo o pé totalmente apoiado no chão.",
+        "Comece com o joelho da perna de trabalho levemente flexionado.",
+        "Contraia o quadríceps e estenda completamente o joelho contra a resistência da faixa, sem tirar o pé do chão.",
+        "Aperte o quadríceps com força na extensão completa e faça uma pausa por um momento.",
+        "Flexione lentamente o joelho de volta à posição inicial, controlando a faixa.",
+        "Repita o número de repetições desejado e depois troque de perna."
+      ]
+    },
+    "muscle_group": "Quadríceps",
+    "secondary_muscles": [
+      "Quadríceps"
+    ],
+    "target": "Quadríceps",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:44:45.027287+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5231",
+    "name": "Elevação em Y deitado",
+    "nicknames": [
+      "Y-raise",
+      "Elevação Y para deltoide"
+    ],
+    "category": "Ombros",
+    "body_part": "Ombros",
+    "equipment": "Halter",
+    "instructions": {
+      "pt": "Deite-se de bruços em um banco inclinado, com um halter leve em cada mão e os braços estendidos para baixo. Posicione os braços formando um 'Y' em relação ao tronco, com os polegares apontando para cima. Contraindo as escápulas e os deltoides, levante os braços em direção ao teto, mantendo o formato de 'Y'. Faça uma pausa por um momento no topo do movimento. Abaixe lentamente os braços de volta à posição inicial. Repita o número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Deite-se de bruços em um banco inclinado, com um halter leve em cada mão e os braços estendidos para baixo.",
+        "Posicione os braços formando um 'Y' em relação ao tronco, com os polegares apontando para cima.",
+        "Contraindo as escápulas e os deltoides, levante os braços em direção ao teto, mantendo o formato de 'Y'.",
+        "Faça uma pausa por um momento no topo do movimento.",
+        "Abaixe lentamente os braços de volta à posição inicial.",
+        "Repita o número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Trapézio",
+    "secondary_muscles": [
+      "Trapézio",
+      "Deltoides",
+      "Romboides"
+    ],
+    "target": "Deltoides",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:44:45.027287+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5232",
+    "name": "Elevação em T deitado",
+    "nicknames": [
+      "T-raise",
+      "Elevação T para deltoide posterior"
+    ],
+    "category": "Ombros",
+    "body_part": "Ombros",
+    "equipment": "Halter",
+    "instructions": {
+      "pt": "Deite-se de bruços em um banco inclinado, com um halter leve em cada mão e os braços estendidos para baixo. Posicione os braços formando um 'T' em relação ao tronco, com as palmas voltadas para baixo. Contraindo as escápulas, levante os braços para os lados até a altura dos ombros, mantendo o formato de 'T'. Faça uma pausa por um momento no topo, apertando as escápulas. Abaixe lentamente os braços de volta à posição inicial. Repita o número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Deite-se de bruços em um banco inclinado, com um halter leve em cada mão e os braços estendidos para baixo.",
+        "Posicione os braços formando um 'T' em relação ao tronco, com as palmas voltadas para baixo.",
+        "Contraindo as escápulas, levante os braços para os lados até a altura dos ombros, mantendo o formato de 'T'.",
+        "Faça uma pausa por um momento no topo, apertando as escápulas.",
+        "Abaixe lentamente os braços de volta à posição inicial.",
+        "Repita o número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Deltoides",
+    "secondary_muscles": [
+      "Deltoides",
+      "Trapézio",
+      "Romboides"
+    ],
+    "target": "Costas superiores",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:44:45.027287+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5233",
+    "name": "Salto na caixa",
+    "nicknames": [
+      "Box jump",
+      "Salto sobre a caixa"
+    ],
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
+    "equipment": "Peso corporal",
+    "instructions": {
+      "pt": "Fique em pé de frente para uma caixa ou plataforma resistente, com os pés afastados na largura dos ombros. Flexione levemente os joelhos e os quadris, balançando os braços para trás para se preparar. Balance os braços para frente com força e salte explosivamente para cima, estendendo os quadris e os joelhos. Aterrisse sobre a caixa com os dois pés ao mesmo tempo, flexionando os joelhos para absorver o impacto suavemente. Estenda completamente os quadris e os joelhos ao chegar em cima da caixa. Desça da caixa com cuidado, um pé de cada vez, e repita o número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Fique em pé de frente para uma caixa ou plataforma resistente, com os pés afastados na largura dos ombros.",
+        "Flexione levemente os joelhos e os quadris, balançando os braços para trás para se preparar.",
+        "Balance os braços para frente com força e salte explosivamente para cima, estendendo os quadris e os joelhos.",
+        "Aterrisse sobre a caixa com os dois pés ao mesmo tempo, flexionando os joelhos para absorver o impacto suavemente.",
+        "Estenda completamente os quadris e os joelhos ao chegar em cima da caixa.",
+        "Desça da caixa com cuidado, um pé de cada vez, e repita o número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Quadríceps",
+    "secondary_muscles": [
+      "Quadríceps",
+      "Glúteos",
+      "Panturrilhas"
+    ],
+    "target": "Glúteos",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:44:45.027287+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5234",
+    "name": "Salto lateral sobre cone",
+    "nicknames": [
+      "Lateral hurdle jump",
+      "Salto lateral sobre barreira"
+    ],
+    "category": "Cardio",
+    "body_part": "Cardio",
+    "equipment": "Cones",
+    "instructions": {
+      "pt": "Posicione-se ao lado de um cone ou uma pequena barreira, com os pés juntos e os joelhos levemente flexionados. Flexione os quadris e os joelhos, preparando-se para saltar lateralmente sobre o obstáculo. Salte para o lado, passando por cima do cone, e aterrisse suavemente do outro lado com os dois pés ao mesmo tempo. Sem pausar, salte imediatamente de volta na direção oposta, sobre o cone novamente. Mantenha o tronco estável e os joelhos alinhados durante os saltos. Continue alternando os lados pelo número de repetições ou tempo desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Posicione-se ao lado de um cone ou uma pequena barreira, com os pés juntos e os joelhos levemente flexionados.",
+        "Flexione os quadris e os joelhos, preparando-se para saltar lateralmente sobre o obstáculo.",
+        "Salte para o lado, passando por cima do cone, e aterrisse suavemente do outro lado com os dois pés ao mesmo tempo.",
+        "Sem pausar, salte imediatamente de volta na direção oposta, sobre o cone novamente.",
+        "Mantenha o tronco estável e os joelhos alinhados durante os saltos.",
+        "Continue alternando os lados pelo número de repetições ou tempo desejado."
+      ]
+    },
+    "muscle_group": "Quadríceps",
+    "secondary_muscles": [
+      "Quadríceps",
+      "Panturrilhas",
+      "Glúteos"
+    ],
+    "target": "Sistema cardiovascular",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:44:45.027287+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5235",
+    "name": "Arremesso rotacional de tronco com medicine ball",
+    "nicknames": [
+      "Rotational throw",
+      "Arremesso lateral contra a parede"
+    ],
+    "category": "Cintura",
+    "body_part": "Cintura",
+    "equipment": "Medicine ball",
+    "instructions": {
+      "pt": "Fique em pé de lado para uma parede resistente, a uma distância de um braço, segurando uma medicine ball com as duas mãos à altura do quadril. Gire o tronco para longe da parede, levando a bola junto ao movimento de rotação. Gire explosivamente o tronco e os quadris na direção da parede, arremessando a medicine ball com força contra ela. Pegue a bola no retorno, absorvendo o impacto com os braços. Repita o movimento de rotação e arremesso pelo número de repetições desejado. Vire o corpo para o lado oposto e repita a série com a rotação invertida."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Fique em pé de lado para uma parede resistente, a uma distância de um braço, segurando uma medicine ball com as duas mãos à altura do quadril.",
+        "Gire o tronco para longe da parede, levando a bola junto ao movimento de rotação.",
+        "Gire explosivamente o tronco e os quadris na direção da parede, arremessando a medicine ball com força contra ela.",
+        "Pegue a bola no retorno, absorvendo o impacto com os braços.",
+        "Repita o movimento de rotação e arremesso pelo número de repetições desejado.",
+        "Vire o corpo para o lado oposto e repita a série com a rotação invertida."
+      ]
+    },
+    "muscle_group": "Oblíquos",
+    "secondary_muscles": [
+      "Oblíquos",
+      "Ombros",
+      "Core"
+    ],
+    "target": "Abdômen",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:44:45.027287+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5236",
+    "name": "Prancha lateral com rotação",
+    "nicknames": [
+      "Thread the needle plank",
+      "Prancha lateral com passagem de braço"
+    ],
+    "category": "Cintura",
+    "body_part": "Cintura",
+    "equipment": "Peso corporal",
+    "instructions": {
+      "pt": "Deite-se de lado e apoie-se no antebraço, com o cotovelo alinhado sob o ombro, formando uma prancha lateral com o corpo em linha reta. Estenda o braço de cima em direção ao teto, abrindo o tronco. Gire o tronco e passe o braço de cima por baixo do corpo, como se estivesse enfiando uma linha em uma agulha, girando o peito em direção ao chão. Retorne o braço à posição estendida acima do teto, abrindo o tronco novamente. Mantenha o quadril elevado e estável durante toda a rotação. Repita o número de repetições desejado e depois troque de lado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Deite-se de lado e apoie-se no antebraço, com o cotovelo alinhado sob o ombro, formando uma prancha lateral com o corpo em linha reta.",
+        "Estenda o braço de cima em direção ao teto, abrindo o tronco.",
+        "Gire o tronco e passe o braço de cima por baixo do corpo, como se estivesse enfiando uma linha em uma agulha, girando o peito em direção ao chão.",
+        "Retorne o braço à posição estendida acima do teto, abrindo o tronco novamente.",
+        "Mantenha o quadril elevado e estável durante toda a rotação.",
+        "Repita o número de repetições desejado e depois troque de lado."
+      ]
+    },
+    "muscle_group": "Oblíquos",
+    "secondary_muscles": [
+      "Oblíquos",
+      "Ombros",
+      "Core"
+    ],
+    "target": "Abdômen",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T01:44:45.027287+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5237",
+    "name": "Halo com kettlebell",
+    "nicknames": [
+      "Kettlebell halo"
+    ],
+    "category": "Ombros",
+    "body_part": "Ombros",
+    "equipment": "Kettlebell",
+    "instructions": {
+      "pt": "Segure um kettlebell leve pelos chifres (laterais da alça) com as duas mãos, na frente do rosto, com os cotovelos flexionados. Fique em pé com os pés afastados na largura dos ombros e o core contraído. Mova o kettlebell em um círculo ao redor da cabeça, passando-o por trás do pescoço. Continue o movimento circular, trazendo o kettlebell de volta à posição inicial à frente do rosto. Mantenha o tronco estável e evite inclinar a cabeça para acompanhar o peso. Repita o número de repetições desejado e depois inverta a direção do círculo."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Segure um kettlebell leve pelos chifres (laterais da alça) com as duas mãos, na frente do rosto, com os cotovelos flexionados.",
+        "Fique em pé com os pés afastados na largura dos ombros e o core contraído.",
+        "Mova o kettlebell em um círculo ao redor da cabeça, passando-o por trás do pescoço.",
+        "Continue o movimento circular, trazendo o kettlebell de volta à posição inicial à frente do rosto.",
+        "Mantenha o tronco estável e evite inclinar a cabeça para acompanhar o peso.",
+        "Repita o número de repetições desejado e depois inverta a direção do círculo."
+      ]
+    },
+    "muscle_group": "Deltoides",
+    "secondary_muscles": [
+      "Deltoides",
+      "Core",
+      "Trapézio"
+    ],
+    "target": "Deltoides",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T09:54:57.792685+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5238",
+    "name": "Passagem ao redor do corpo com kettlebell",
+    "nicknames": [
+      "Around-the-body pass"
+    ],
+    "category": "Cintura",
+    "body_part": "Cintura",
+    "equipment": "Kettlebell",
+    "instructions": {
+      "pt": "Fique em pé com os pés afastados na largura dos quadris, segurando um kettlebell leve com uma das mãos. Mantenha a postura ereta e o core contraído, com o quadril voltado para frente durante todo o movimento. Passe o kettlebell ao redor da cintura, de uma mão para a outra, passando-o por trás das costas. Continue o movimento circular ao redor do corpo, alternando a passagem entre as mãos. Mantenha um ritmo constante e controlado durante as passagens. Repita o número de repetições desejado e depois inverta a direção."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Fique em pé com os pés afastados na largura dos quadris, segurando um kettlebell leve com uma das mãos.",
+        "Mantenha a postura ereta e o core contraído, com o quadril voltado para frente durante todo o movimento.",
+        "Passe o kettlebell ao redor da cintura, de uma mão para a outra, passando-o por trás das costas.",
+        "Continue o movimento circular ao redor do corpo, alternando a passagem entre as mãos.",
+        "Mantenha um ritmo constante e controlado durante as passagens.",
+        "Repita o número de repetições desejado e depois inverta a direção."
+      ]
+    },
+    "muscle_group": "Core",
+    "secondary_muscles": [
+      "Core",
+      "Antebraços",
+      "Oblíquos"
+    ],
+    "target": "Abdômen",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T09:54:57.792685+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5239",
+    "name": "Figura-8 entre as pernas com kettlebell",
+    "nicknames": [
+      "Figure-8 pass"
+    ],
+    "category": "Cintura",
+    "body_part": "Cintura",
+    "equipment": "Kettlebell",
+    "instructions": {
+      "pt": "Fique em pé com os pés afastados além da largura dos ombros e os joelhos levemente flexionados, segurando um kettlebell com uma das mãos. Incline levemente o tronco para frente e passe o kettlebell entre as pernas, de uma mão para a outra. Contorne a perna com o kettlebell, trazendo-o para frente novamente em um movimento de 'oito'. Passe o kettlebell para a outra mão entre as pernas, repetindo o padrão em forma de oito. Mantenha o core contraído e a coluna neutra durante todo o movimento. Continue o padrão de figura-8 pelo número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Fique em pé com os pés afastados além da largura dos ombros e os joelhos levemente flexionados, segurando um kettlebell com uma das mãos.",
+        "Incline levemente o tronco para frente e passe o kettlebell entre as pernas, de uma mão para a outra.",
+        "Contorne a perna com o kettlebell, trazendo-o para frente novamente em um movimento de 'oito'.",
+        "Passe o kettlebell para a outra mão entre as pernas, repetindo o padrão em forma de oito.",
+        "Mantenha o core contraído e a coluna neutra durante todo o movimento.",
+        "Continue o padrão de figura-8 pelo número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Core",
+    "secondary_muscles": [
+      "Core",
+      "Glúteos",
+      "Antebraços"
+    ],
+    "target": "Abdômen",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T09:54:57.792685+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5240",
+    "name": "Balanço com clava indiana",
+    "nicknames": [
+      "Indian club swing",
+      "Clubbell swing"
+    ],
+    "category": "Ombros",
+    "body_part": "Ombros",
+    "equipment": "Clava indiana",
+    "instructions": {
+      "pt": "Segure uma clava indiana com uma das mãos, posicionando-a atrás do ombro com o cotovelo flexionado. Fique em pé com os pés afastados na largura dos ombros e o core contraído. Balance a clava para baixo e para o lado, deixando-a girar livremente ao redor do ombro e do cotovelo. Guie o movimento circular da clava com controle, evitando movimentos bruscos no punho. Complete o círculo trazendo a clava de volta à posição inicial atrás do ombro. Repita o número de repetições desejado e depois troque de braço."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Segure uma clava indiana com uma das mãos, posicionando-a atrás do ombro com o cotovelo flexionado.",
+        "Fique em pé com os pés afastados na largura dos ombros e o core contraído.",
+        "Balance a clava para baixo e para o lado, deixando-a girar livremente ao redor do ombro e do cotovelo.",
+        "Guie o movimento circular da clava com controle, evitando movimentos bruscos no punho.",
+        "Complete o círculo trazendo a clava de volta à posição inicial atrás do ombro.",
+        "Repita o número de repetições desejado e depois troque de braço."
+      ]
+    },
+    "muscle_group": "Deltoides",
+    "secondary_muscles": [
+      "Deltoides",
+      "Antebraços",
+      "Core"
+    ],
+    "target": "Deltoides",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T09:54:57.792685+00:00",
+    "attribution": null
+  },
+  {
+    "id": "5241",
+    "name": "Bandeira do dragão",
+    "nicknames": [
+      "Dragon flag"
+    ],
+    "category": "Cintura",
+    "body_part": "Cintura",
+    "equipment": "Peso corporal",
+    "instructions": {
+      "pt": "Deite-se de costas em um banco e segure a extremidade atrás da cabeça com as duas mãos para se estabilizar. Contraia o core e eleve as pernas e o quadril do banco, mantendo apenas os ombros e a parte superior das costas em contato com o banco. Estenda o corpo em uma linha reta da cabeça aos pés, sustentando o peso com o core e a parte superior do corpo. Abaixe lentamente o corpo em linha reta, sem deixar o quadril ou as pernas tocarem o banco, controlando o movimento com o abdômen. Pare pouco antes de tocar o banco e eleve novamente o corpo à posição estendida. Repita o número de repetições desejado."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Deite-se de costas em um banco e segure a extremidade atrás da cabeça com as duas mãos para se estabilizar.",
+        "Contraia o core e eleve as pernas e o quadril do banco, mantendo apenas os ombros e a parte superior das costas em contato com o banco.",
+        "Estenda o corpo em uma linha reta da cabeça aos pés, sustentando o peso com o core e a parte superior do corpo.",
+        "Abaixe lentamente o corpo em linha reta, sem deixar o quadril ou as pernas tocarem o banco, controlando o movimento com o abdômen.",
+        "Pare pouco antes de tocar o banco e eleve novamente o corpo à posição estendida.",
+        "Repita o número de repetições desejado."
+      ]
+    },
+    "muscle_group": "Core",
+    "secondary_muscles": [
+      "Core",
+      "Ombros",
+      "Lombar"
+    ],
+    "target": "Abdômen",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": "2026-09-02T09:54:57.792685+00:00",
+    "attribution": null
   }
 ]
