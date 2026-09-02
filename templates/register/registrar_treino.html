@@ -474,7 +474,7 @@
        rodando (classe .is-rodando aplicada na caixa pelo JS). */
     .cronometro-label .cronometro-ampulheta {
         display: inline-block;
-        font-size: 1.35rem;
+        font-size: 1.75rem;
         animation: ampulheta-girar 3.2s linear infinite;
         animation-play-state: paused;
     }
@@ -1282,13 +1282,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 34px;
-        height: 34px;
+        width: 42px;
+        height: 42px;
         border-radius: 50%;
         border: none;
         background: transparent;
         color: #ced4da;
-        font-size: 1.05rem;
+        font-size: 1.35rem;
         padding: 0;
         cursor: pointer;
         transition: color .15s ease, background-color .15s ease;
@@ -2187,7 +2187,7 @@
         <div class="intervalo-fim-emoji" aria-hidden="true">💪</div>
         <div class="intervalo-fim-texto">Intervalo finalizado!<br>Bora pra próxima série</div>
         <button type="button" class="intervalo-fim-btn-parar" id="intervaloFimBtnParar">
-            <i class="bi bi-volume-mute-fill"></i> Parar som
+            <i class="bi bi-lightning-charge-fill"></i> Bora!
         </button>
     </div>
 </div>
@@ -3412,6 +3412,41 @@ function tocarBipe() {
         return audioAlarme;
     }
 
+    // Celular (iOS Safari, Chrome Android) só deixa tocar áudio via JS se
+    // o .play() rodar dentro de um toque real do usuário. O alarme, porém,
+    // só é disparado quando o cronômetro chega a zero -- de dentro de um
+    // setInterval, sem toque nenhum acontecendo naquele instante -- por
+    // isso não tocava no celular (mesmo com o arquivo certo no lugar).
+    // O truque padrão pra contornar isso: tocar e pausar imediatamente o
+    // áudio uma vez dentro de um toque de verdade (aqui, o toque no sino
+    // ou no botão de iniciar o intervalo). Isso "destrava" esse elemento
+    // de áudio pro resto da sessão, permitindo que o .play() de dentro do
+    // setInterval funcione depois.
+    var audioDestravado = false;
+    function destravarAudioAlarme() {
+        if (audioDestravado) return;
+        audioDestravado = true;
+        try {
+            var audio = getAudioAlarme();
+            var p = audio.play();
+            if (p && typeof p.then === 'function') {
+                p.then(function () {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }).catch(function () {
+                    // Se nem esse play() (dentro do toque) for permitido,
+                    // tenta de novo no próximo toque.
+                    audioDestravado = false;
+                });
+            } else {
+                audio.pause();
+                audio.currentTime = 0;
+            }
+        } catch (e) {
+            audioDestravado = false;
+        }
+    }
+
     function atualizarBotaoAlarme() {
         if (!elBtnAlarme) return;
         elBtnAlarme.classList.toggle('is-ativo', alarmeAtivo);
@@ -3428,6 +3463,7 @@ function tocarBipe() {
             alarmeAtivo = !alarmeAtivo;
             localStorage.setItem(ALARME_STORAGE_KEY, alarmeAtivo ? '1' : '0');
             atualizarBotaoAlarme();
+            if (alarmeAtivo) destravarAudioAlarme();
         });
     }
 
@@ -3495,8 +3531,8 @@ function tocarBipe() {
             overlayFimTimeoutId = setTimeout(esconderOverlayFim, 15000);
         } else {
             // Alarme desligado (ou falhou) -- só o aviso visual, some
-            // sozinho depois de alguns segundos.
-            overlayFimTimeoutId = setTimeout(esconderOverlayFim, 3000);
+            // sozinho depois de 5s.
+            overlayFimTimeoutId = setTimeout(esconderOverlayFim, 5000);
         }
     }
 
@@ -3580,6 +3616,7 @@ function tocarBipe() {
     }
 
     elBtnIniciar.addEventListener('click', function () {
+        if (alarmeAtivo) destravarAudioAlarme();
         if (rodando) {
             pausar();
         } else {
