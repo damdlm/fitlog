@@ -215,3 +215,25 @@
         justify-content: flex-end;
     }
 }
+
+/* Mobile: o banner de instalação (Android/Desktop) e o tutorial iOS
+   viram um cartão centralizado na tela -- em vez de bottom-sheet --
+   com a bordinha laranja da marca. */
+@media (max-width: 991.98px) {
+    .pwa-install-sheet {
+        top: 0;
+        align-items: center;
+        padding: 16px;
+    }
+
+    .pwa-install-sheet-content {
+        max-width: 360px;
+        margin: 0 auto;
+        border: 2px solid var(--primary-color, #F28C33);
+        transform: scale(0.92);
+    }
+
+    .pwa-install-sheet.is-visible .pwa-install-sheet-content {
+        transform: scale(1);
+    }
+}
