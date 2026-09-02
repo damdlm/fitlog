@@ -1,11 +1,10 @@
 {% extends "base.html" %}
 
-{% block page_icon %}<i class="bi bi-table" style="color: #F28C33;"></i>{% endblock %}
+{% block page_icon %}<i class="bi bi-table" style="color: #808080;"></i>{% endblock %}
 {% block page_title %}Tabela de Progresso{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* ===== Cabeçalho ===== */
     .prog-header {
         display: flex;
         justify-content: space-between;
@@ -16,129 +15,93 @@
     }
     .prog-header h2 { margin: 0; }
 
-    /* ===== Filtros ===== */
-    .prog-filtros {
-        border-radius: 16px;
-        border: 1px solid rgba(0,0,0,0.06);
-    }
-    .prog-filtros .form-label {
-        font-size: 0.78rem;
-        font-weight: 700;
-        color: #8a8a8a;
-        text-transform: uppercase;
-        letter-spacing: .02em;
-        margin-bottom: 4px;
-    }
-    .prog-filtros select { border-radius: 10px; }
-    .prog-btn-escolher {
-        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
-        color: white; border: none; border-radius: 10px; font-weight: 600;
-    }
-    .prog-btn-escolher:hover { color: white; filter: brightness(1.05); }
-
-    /* ===== Tabela (desktop) ===== */
-    .prog-table-card {
-        border-radius: 16px;
-        border: 1px solid rgba(0,0,0,0.06);
-        overflow: hidden;
-    }
-    #progressTable thead th {
-        border-top: none;
-    }
-    #progressTable tbody tr:hover {
-        background-color: rgba(242, 140, 51, 0.04);
-    }
-    .prog-cell-treino {
-        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
-        color: white; font-weight: 600; border-radius: 999px;
-        padding: 2px 9px; font-size: 0.68rem;
-    }
-
-    @media (max-width: 767.98px) {
-        #progressTable { font-size: 0.8rem; }
-        #progressTable th, #progressTable td { padding: 0.4rem 0.5rem; white-space: nowrap; }
-        #progressTable th:first-child, #progressTable td:first-child {
-            position: sticky; left: 0; z-index: 2; white-space: normal;
-            min-width: 130px; max-width: 150px; box-shadow: 2px 0 4px rgba(0,0,0,0.08);
-        }
-        #progressTable td:first-child { background: #fff; }
-        #progressTable thead th:first-child { z-index: 3; background: #f8f9fa; }
-        .exercicio-cell-badges { display: flex; gap: 4px; margin-top: 2px; flex-wrap: wrap; }
-        .exercicio-cell-badges .badge { font-size: 0.62rem; font-weight: 500; padding: 2px 6px; }
-        .table-responsive { position: relative; }
-        .table-responsive::after {
-            content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 18px;
-            background: linear-gradient(to right, transparent, rgba(0,0,0,0.06));
-            pointer-events: none;
-        }
-    }
-
-    /* ===== Cards de progresso (mobile) ===== */
-    .prog-cards { display: none; }
-    .prog-card {
+    /* ===== Moldura da planilha ===== */
+    .prog-tabela-wrap {
+        overflow-x: auto;
+        border: 2px solid #808080;
+        border-radius: 10px;
         background: #fff;
-        border-radius: 14px;
-        border: 1px solid rgba(0,0,0,0.06);
-        border-left: 4px solid #F28C33;
-        padding: 14px 16px;
-        margin-bottom: 12px;
     }
-    .prog-card-nome {
+
+    #progressTable {
+        border-collapse: collapse;
+        width: 100%;
+        font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif;
+        font-size: 0.86rem;
+    }
+
+    #progressTable th,
+    #progressTable td {
+        border: 1px solid #bfbfbf;
+        padding: 5px 10px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    /* ===== Cabeçalho "Treino" / "Exercício" ===== */
+    #progressTable thead .th-fixo {
+        background: #808080;
+        color: #fff;
         font-weight: 700;
-        font-size: 0.96rem;
-        color: var(--secondary-color);
-        margin-bottom: 6px;
     }
-    .prog-card-badges {
-        display: flex;
-        gap: 6px;
-        margin-bottom: 12px;
+
+    /* ===== Cabeçalho de semana (linha 1: "3ª Semana / Agosto") ===== */
+    #progressTable .th-semana {
+        background: #fff;
     }
-    .prog-card-badges .badge-treino {
-        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
-        color: white; font-weight: 600; border-radius: 999px; padding: 3px 10px; font-size: 0.68rem;
-    }
-    .prog-card-badges .badge-musculo {
-        background: rgba(45, 45, 45, 0.06);
-        color: var(--secondary-color); font-weight: 600; border-radius: 999px; padding: 3px 10px; font-size: 0.68rem;
-    }
-    .prog-semana-linha {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 7px 0;
-        border-bottom: 1px dashed rgba(0,0,0,0.07);
-        font-size: 0.85rem;
-    }
-    .prog-semana-linha:last-child { border-bottom: none; }
-    .prog-semana-label {
-        color: #8a8a8a;
-        font-size: 0.78rem;
-        min-width: 90px;
-    }
-    .prog-semana-valor {
+    #progressTable .th-semana .semana-num {
+        font-style: italic;
         font-weight: 700;
-        color: var(--secondary-color);
-        display: flex;
-        align-items: center;
-        gap: 6px;
+        color: #1F4E79;
     }
-    .prog-semana-valor.prog-sem-dado { color: #ccc; font-weight: 400; }
-    .prog-semana-reps { font-weight: 400; color: #8a8a8a; font-size: 0.8rem; }
-    .prog-tendencia { font-size: 0.85rem; }
-    .prog-tendencia.up { color: #198754; }
-    .prog-tendencia.down { color: #dc3545; }
-    .prog-tendencia.flat { color: #adb5bd; }
-    .prog-card-resumo {
-        margin-top: 10px;
-        padding-top: 10px;
-        border-top: 1px solid rgba(0,0,0,0.06);
-        font-size: 0.78rem;
-        color: #8a8a8a;
-        display: flex;
-        justify-content: space-between;
+    #progressTable .th-semana .semana-mes {
+        font-style: italic;
+        color: #1F4E79;
     }
-    .prog-card-resumo strong { color: var(--secondary-color); }
+
+    /* ===== Cabeçalho de semana (linha 2: "Carga" / "Rep.") — alterna por semana ===== */
+    #progressTable .th-sub {
+        font-weight: 700;
+        color: #1F4E79;
+    }
+    #progressTable .th-sub.semana-par { background: #DCE9F7; }
+    #progressTable .th-sub.semana-impar { background: #FBE0CE; }
+
+    /* ===== Coluna "Treino" (bloco cinza, letra grande) ===== */
+    #progressTable .col-treino {
+        background: #808080;
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.5rem;
+        vertical-align: middle;
+        width: 54px;
+        min-width: 54px;
+    }
+
+    /* ===== Coluna "Exercício" ===== */
+    #progressTable .col-exercicio {
+        background: #fff;
+        text-align: left;
+        font-weight: 600;
+        width: 210px;
+        min-width: 210px;
+    }
+
+    /* ===== Zebra por linha (independente da semana) ===== */
+    #progressTable tbody tr.linha-a .td-dado { background: #DCE9F7; }
+    #progressTable tbody tr.linha-b .td-dado { background: #FBE0CE; }
+    #progressTable tbody tr.linha-a .col-exercicio { color: #1F4E79; }
+    #progressTable tbody tr.linha-b .col-exercicio { color: #B45F06; }
+
+    /* ===== Colunas fixas ao rolar horizontalmente ===== */
+    #progressTable .col-treino,
+    #progressTable .col-exercicio {
+        position: sticky;
+    }
+    #progressTable .col-treino { left: 0; z-index: 2; }
+    #progressTable .col-exercicio { left: 54px; z-index: 2; }
+    #progressTable thead .col-treino,
+    #progressTable thead .col-exercicio { z-index: 3; }
 
     .prog-empty {
         text-align: center;
@@ -147,364 +110,77 @@
     }
     .prog-empty i {
         font-size: 2.6rem;
-        color: #e0a877;
+        color: #bbb;
         margin-bottom: 12px;
         display: block;
     }
 
     @media (max-width: 767.98px) {
-        .prog-table-card { display: none; }
-        .prog-cards { display: block; }
+        #progressTable { font-size: 0.78rem; }
+        #progressTable th, #progressTable td { padding: 4px 7px; }
+        #progressTable .col-exercicio { width: 150px; min-width: 150px; }
+        #progressTable .col-exercicio { left: 44px; }
+        #progressTable .col-treino { width: 44px; min-width: 44px; font-size: 1.15rem; }
+        .prog-tabela-wrap::after {
+            content: "";
+            position: absolute;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="prog-header d-none d-md-flex">
+<div class="prog-header">
     <h2>
-        <i class="bi bi-table me-2" style="color: #F28C33;"></i>Tabela de Progresso
+        <i class="bi bi-table me-2" style="color: #808080;"></i>Tabela de Progresso
     </h2>
 </div>
 
-<div class="card prog-filtros mb-4">
-    <div class="card-body">
-        <form method="get" class="row g-3">
-            <div class="col-6 col-md-3">
-                <label class="form-label">Treino</label>
-                <select name="treino" class="form-select" onchange="this.form.submit()">
-                    <option value="">Todos os Treinos</option>
-                    {% for t in treinos %}
-                    <option value="{{ t.id }}" {% if treino_selecionado == t.id %}selected{% endif %}>
-                        {{ t.codigo }} - {{ t.nome }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-6 col-md-3">
-                <label class="form-label">Músculo</label>
-                <select name="musculo" class="form-select" onchange="this.form.submit()">
-                    <option value="">Todos os Músculos</option>
-                    {% for m in musculos %}
-                    <option value="{{ m }}" {% if musculo_selecionado == m %}selected{% endif %}>
-                        {{ m }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-8 col-md-4">
-                <label class="form-label">Semanas</label>
-                <select name="semanas" class="form-select" onchange="this.form.submit()">
-                    <option value="todas" {% if semanas_selecionadas == 'todas' %}selected{% endif %}>
-                        📅 Últimos 30 dias
-                    </option>
-                    <option value="ultimas3" {% if semanas_selecionadas == 'ultimas3' %}selected{% endif %}>
-                        🔥 Últimas 3 semanas
-                    </option>
-                    <option value="ultimas5" {% if semanas_selecionadas == 'ultimas5' %}selected{% endif %}>
-                        📊 Últimas 5 semanas
-                    </option>
-                    <option value="personalizado" {% if semanas_selecionadas == 'personalizado' %}selected{% endif %}>
-                        ⚙️ Selecionar específicas...
-                    </option>
-                </select>
-            </div>
-            <div class="col-4 col-md-2">
-                <label class="form-label">&nbsp;</label>
-                <div>
-                    <button type="button" class="btn prog-btn-escolher w-100"
-                            data-bs-toggle="modal" data-bs-target="#modalSelecionarSemanas">
-                        <i class="bi bi-calendar-check"></i> <span class="d-none d-sm-inline">Escolher</span>
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Modal para selecionar semanas -->
-<div class="modal fade" id="modalSelecionarSemanas" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
-                <h5 class="modal-title">
-                    <i class="bi bi-calendar-check"></i> Selecionar Semanas
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="get" id="formSemanas">
-                <div class="modal-body">
-                    <input type="hidden" name="treino" value="{{ treino_selecionado }}">
-                    <input type="hidden" name="musculo" value="{{ musculo_selecionado }}">
-                    <input type="hidden" name="ordenar" value="{{ ordenar }}">
-                    <input type="hidden" name="semanas" value="personalizado">
-
-                    <div class="row">
-                        {% for periodo in periodos_disponiveis %}
-                        <div class="col-md-6 mb-4">
-                            <div class="card">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0">
-                                        <i class="bi bi-calendar"></i> {{ periodo.periodo }}
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        {% for semana in periodo.semanas %}
-                                        <div class="col-6 mb-2">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox"
-                                                       name="semana_{{ periodo.periodo }}_{{ semana }}"
-                                                       id="semana_{{ periodo.periodo }}_{{ semana }}"
-                                                       value="{{ semana }}"
-                                                       {% if periodo.periodo|string + '_' + semana|string in semanas_selecionadas_lista %}checked{% endif %}>
-                                                <label class="form-check-label" for="semana_{{ periodo.periodo }}_{{ semana }}">
-                                                    Semana {{ semana }}
-                                                    <span class="badge bg-secondary">
-                                                        {{ periodo.registros_por_semana[semana] }} registros
-                                                    </span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <div class="me-auto">
-                        <button type="button" class="btn btn-outline-secondary" onclick="selecionarTodas()">
-                            Selecionar Todas
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="limparTodas()">
-                            Limpar Todas
-                        </button>
-                    </div>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
-                        Aplicar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Tabela (desktop) -->
-<div class="card prog-table-card">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover table-sm" id="progressTable">
-                <thead class="table-light">
-                    <tr>
-                        <th rowspan="2" class="align-middle text-center">Exercício</th>
-
-                        {% for semana in semanas %}
-                        <th colspan="2" class="text-center" style="background-color: {% if loop.index % 2 == 0 %}#fff3e0{% else %}#ffe4cc{% endif %};">
-                            <div style="font-size: 1.1em; font-weight: bold; color: #F28C33;">{{ semana.periodo }}</div>
-                            <div style="font-size: 0.9em; color: #666;">Semana {{ semana.semana }}</div>
-                        </th>
+{% if grupos_treino %}
+<div class="prog-tabela-wrap">
+    <table id="progressTable">
+        <thead>
+            <tr>
+                <th class="th-fixo col-treino" rowspan="2">Treino</th>
+                <th class="th-fixo col-exercicio" rowspan="2">Exercício</th>
+                {% for semana in semanas %}
+                <th colspan="2" class="th-semana">
+                    <div class="semana-num">{{ semana.semana }}ª Semana</div>
+                    <div class="semana-mes">{{ semana.periodo.split('/')[0] }}</div>
+                </th>
+                {% endfor %}
+            </tr>
+            <tr>
+                {% for semana in semanas %}
+                <th class="th-sub {{ 'semana-par' if loop.index is even else 'semana-impar' }}">Carga</th>
+                <th class="th-sub {{ 'semana-par' if loop.index is even else 'semana-impar' }}">Rep.</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% set linha = namespace(i=0) %}
+            {% for grupo in grupos_treino %}
+                {% for exercicio in grupo.exercicios %}
+                    {% set linha.i = linha.i + 1 %}
+                    <tr class="{{ 'linha-a' if linha.i is odd else 'linha-b' }}">
+                        {% if loop.first %}
+                        <td class="col-treino" rowspan="{{ grupo.exercicios|length }}">{{ grupo.codigo }}</td>
+                        {% endif %}
+                        <td class="col-exercicio">{{ exercicio.nome }}</td>
+                        {% for s in exercicio.semanas %}
+                        <td class="td-dado">{{ s.carga if s.carga is not none else '' }}</td>
+                        <td class="td-dado">{{ s.repeticoes if s.repeticoes is not none else '' }}</td>
                         {% endfor %}
                     </tr>
-                    <tr>
-                        {% for semana in semanas %}
-                        <th class="text-center" style="background-color: {% if loop.index % 2 == 0 %}#fff3e0{% else %}#ffe4cc{% endif %};">Carga</th>
-                        <th class="text-center" style="background-color: {% if loop.index % 2 == 0 %}#fff3e0{% else %}#ffe4cc{% endif %};">Reps</th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for exercicio in exercicios %}
-                    <tr>
-                        <td data-nome="{{ exercicio.nome }}"
-                            data-treino="{{ exercicio.treino_ref.codigo if exercicio.treino_ref else 'N/A' }}"
-                            data-musculo="{{ exercicio.musculo or 'N/A' }}">
-                            <strong>{{ exercicio.nome }}</strong>
-                            <div class="exercicio-cell-badges">
-                                <span class="prog-cell-treino">
-                                    {{ exercicio.treino_ref.codigo if exercicio.treino_ref else 'N/A' }}
-                                </span>
-                                <span class="badge bg-secondary">{{ exercicio.musculo or 'N/A' }}</span>
-                            </div>
-                        </td>
-
-                        {% for semana in semanas %}
-                            {% set chave_exercicio = exercicio.tipo ~ '_' ~ exercicio.id %}
-                            {% set registro = registros_por_exercicio[chave_exercicio].get(semana.key) if chave_exercicio in registros_por_exercicio else None %}
-
-                            {% if registro and registro.series and registro.series|length > 0 %}
-                                {% set primeira_serie = registro.series[0] %}
-                                <td class="text-center table-success">
-                                    {{ primeira_serie.carga }}
-                                    {% if registro.series|length > 1 %}
-                                        <small class="text-muted d-block">{{ registro.series|length }} séries</small>
-                                    {% endif %}
-                                </td>
-                                <td class="text-center table-info">{{ primeira_serie.repeticoes }}x</td>
-                            {% else %}
-                                <td class="text-center">-</td>
-                                <td class="text-center">-</td>
-                            {% endif %}
-                        {% endfor %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
-
-<!-- Cards (mobile) -->
-<div class="prog-cards" id="progCards"></div>
-
-<div class="prog-empty" id="progEmpty" style="display:none;">
+{% else %}
+<div class="prog-empty">
     <i class="bi bi-info-circle"></i>
-    Nenhum exercício encontrado para os filtros selecionados.
+    Nenhum exercício encontrado nas últimas semanas.
 </div>
-
-<div class="row mt-3">
-    <div class="col-12">
-        <div class="btn-group">
-            <button class="btn btn-outline-secondary" onclick="exportarCSV()">
-                <i class="bi bi-download"></i> Exportar CSV
-            </button>
-            <button class="btn btn-outline-secondary" onclick="window.print()">
-                <i class="bi bi-printer"></i> Imprimir
-            </button>
-            <a href="{{ url_for('stats.visualizar_tabela') }}" class="btn btn-outline-danger">
-                <i class="bi bi-eraser"></i> Limpar Filtros
-            </a>
-        </div>
-    </div>
-</div>
-
-<script>
-    function selecionarTodas() {
-        document.querySelectorAll('#formSemanas input[type="checkbox"]').forEach(cb => {
-            cb.checked = true;
-        });
-    }
-
-    function limparTodas() {
-        document.querySelectorAll('#formSemanas input[type="checkbox"]').forEach(cb => {
-            cb.checked = false;
-        });
-    }
-
-    function exportarCSV() {
-        const table = document.getElementById('progressTable');
-        let csv = [];
-
-        const headerCells = table.querySelectorAll('thead tr:first-child th');
-        const header = ['Treino', 'Exercício', 'Músculo'];
-        headerCells.forEach((th, i) => {
-            if (i === 0) return;
-            let text = th.textContent.trim().replace(/\s+/g, ' ').replace(/,/g, ';');
-            if (text) header.push(text);
-        });
-        csv.push(header.join(';'));
-
-        table.querySelectorAll('tbody tr').forEach(tr => {
-            const row = [];
-            tr.querySelectorAll('td').forEach((td, i) => {
-                if (i === 0 && td.dataset.nome) {
-                    row.push('"' + td.dataset.treino.replace(/"/g, '""') + '"');
-                    row.push('"' + td.dataset.nome.replace(/"/g, '""') + '"');
-                    row.push('"' + td.dataset.musculo.replace(/"/g, '""') + '"');
-                    return;
-                }
-                let text = td.textContent.trim().replace(/\s+/g, ' ');
-                row.push('"' + text.replace(/"/g, '""') + '"');
-            });
-            csv.push(row.join(';'));
-        });
-
-        const csvContent = '\uFEFF' + csv.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'progresso_treinos.csv';
-        link.click();
-    }
-
-    // ===== Cards mobile: monta a partir dos dados já serializados pelo backend =====
-    const dadosMobile = {{ dados_mobile|tojson }};
-
-    function montarCardsMobile() {
-        const container = document.getElementById('progCards');
-        const empty = document.getElementById('progEmpty');
-        container.innerHTML = '';
-
-        if (!dadosMobile.length) {
-            empty.style.display = 'block';
-            return;
-        }
-        empty.style.display = 'none';
-
-        dadosMobile.forEach(ex => {
-            const semanasComDado = ex.semanas.filter(s => s.carga !== null);
-
-            const linhasHtml = ex.semanas.map((s, idx) => {
-                const label = `${s.periodo} · S${s.semana}`;
-                if (s.carga === null) {
-                    return `<div class="prog-semana-linha">
-                        <span class="prog-semana-label">${label}</span>
-                        <span class="prog-semana-valor prog-sem-dado">Sem registro</span>
-                    </div>`;
-                }
-
-                // Tendência: compara com o registro anterior que tenha dado
-                let tendenciaHtml = '';
-                const anteriorComDado = [...ex.semanas.slice(0, idx)].reverse().find(s2 => s2.carga !== null);
-                if (anteriorComDado) {
-                    if (s.carga > anteriorComDado.carga) {
-                        tendenciaHtml = '<i class="bi bi-arrow-up-circle-fill prog-tendencia up"></i>';
-                    } else if (s.carga < anteriorComDado.carga) {
-                        tendenciaHtml = '<i class="bi bi-arrow-down-circle-fill prog-tendencia down"></i>';
-                    } else {
-                        tendenciaHtml = '<i class="bi bi-dash-circle-fill prog-tendencia flat"></i>';
-                    }
-                }
-
-                const seriesInfo = s.num_series > 1 ? ` <span class="prog-semana-reps">(${s.num_series} séries)</span>` : '';
-
-                return `<div class="prog-semana-linha">
-                    <span class="prog-semana-label">${label}</span>
-                    <span class="prog-semana-valor">
-                        ${tendenciaHtml}
-                        ${s.carga}kg <span class="prog-semana-reps">× ${s.repeticoes}${seriesInfo}</span>
-                    </span>
-                </div>`;
-            }).join('');
-
-            const primeiraCarga = semanasComDado.length ? semanasComDado[0].carga : null;
-            const ultimaCarga = semanasComDado.length ? semanasComDado[semanasComDado.length - 1].carga : null;
-            let variacaoHtml = '<span>Sem registros no período</span>';
-            if (primeiraCarga !== null && ultimaCarga !== null) {
-                const diff = ultimaCarga - primeiraCarga;
-                const sinal = diff > 0 ? '+' : '';
-                const cor = diff > 0 ? 'color:#198754;' : (diff < 0 ? 'color:#dc3545;' : 'color:#8a8a8a;');
-                variacaoHtml = `<span>Variação no período: <strong style="${cor}">${sinal}${diff.toFixed(1)}kg</strong></span>`;
-            }
-
-            const card = document.createElement('div');
-            card.className = 'prog-card';
-            card.dataset.nome = ex.nome.toLowerCase();
-            card.innerHTML = `
-                <div class="prog-card-nome">${ex.nome}</div>
-                <div class="prog-card-badges">
-                    <span class="badge-treino">${ex.treino_codigo}</span>
-                    <span class="badge-musculo">${ex.musculo}</span>
-                </div>
-                <div class="prog-card-semanas">${linhasHtml}</div>
-                <div class="prog-card-resumo">${variacaoHtml}</div>
-            `;
-            container.appendChild(card);
-        });
-    }
-
-    montarCardsMobile();
-</script>
+{% endif %}
 {% endblock %}

@@ -1,12 +1,14 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template
 from flask_login import login_required
 from datetime import datetime, timedelta, timezone
+from itertools import groupby
 from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
 from services.musculo_service import MusculoService
 from services.registro_service import RegistroService
 from services.estatistica_service import EstatisticaService
 from utils.decorators import acesso_premium_required
+from utils.date_utils import MESES
 import logging
 
 stats_bp = Blueprint('stats', __name__)
@@ -97,97 +99,64 @@ def estatisticas():
 @login_required
 @acesso_premium_required('tabela_progresso')
 def visualizar_tabela():
-    """Tabela de progresso"""
-    treino_selecionado = request.args.get("treino", "")
-    musculo_selecionado = request.args.get("musculo", "")
-    ordenar = request.args.get("ordenar", "exercicio")
-    semanas_filtro = request.args.get("semanas", "todas")
-    
+    """Tabela de progresso: sempre as últimas 3 semanas registradas, sem filtros.
+
+    Tela reformulada para reproduzir o layout de planilha (Treino / Exercício
+    fixos + colunas Carga/Rep. por semana) pedido pelo usuário -- não recebe
+    mais parâmetros de filtro (treino/músculo/ordenar/semanas) da querystring,
+    então `preparar_dados_tabela` é chamado sempre com "ultimas3" e sem
+    request_args (o modo "personalizado" dele nunca é acionado aqui).
+    """
     data_inicio = datetime.now(timezone.utc) - timedelta(days=DIAS_HISTORICO_TABELA_PROGRESSO)
     registros = RegistroService.get_all(load_series=True, data_inicio=data_inicio)
     exercicios = ExercicioService.get_exercicios_dos_treinos()
-    treinos = TreinoService.get_all()
-    musculos_obj = MusculoService.get_all()
-    musculos = [m.nome_exibicao for m in musculos_obj]
 
-    # Filtrar exercícios
-    exercicios_filtrados = []
-    for ex in exercicios:
-        # Filtro por treino (apenas se o exercício tiver treino associado)
-        if treino_selecionado:
-            treino_id = _get_treino_id(ex)
-            if str(treino_id) != str(treino_selecionado):
-                continue
-        
-        # Filtro por músculo
-        if musculo_selecionado:
-            musculo_nome = ex.musculo_nome or ""
-            if musculo_nome != musculo_selecionado:
-                continue
-        
-        exercicios_filtrados.append(ex)
-    
-    # Ordenar
-    if ordenar == "musculo":
-        exercicios_filtrados.sort(key=lambda x: (x.musculo_ref.nome_exibicao if x.musculo_ref else "", x.nome))
-    else:
-        # Ordenar por código do treino (se existir) ou string vazia, depois por nome
-        exercicios_filtrados.sort(key=lambda x: (_get_treino_codigo(x), x.nome))
-    
-    # Organizar dados para a tabela
+    # Ordena por código do treino (para poder agrupar em blocos consecutivos
+    # com rowspan na coluna "Treino") e, dentro do treino, por nome.
+    exercicios.sort(key=lambda x: (_get_treino_codigo(x), x.nome))
+
     dados_tabela = EstatisticaService.preparar_dados_tabela(
-        exercicios_filtrados, registros, semanas_filtro, request.args
+        exercicios, registros, "ultimas3", {}
     )
 
-    # Dados 100% serializáveis (dicts/listas/primitivos) para a visão em
-    # cards do mobile: a tabela pivotada acima exige rolagem lateral, que
-    # funciona mal em telas pequenas -- no mobile trocamos por um card por
-    # exercício, com a evolução semana a semana em lista vertical. Reaproveita
-    # a mesma matriz `registros_por_exercicio`/`semanas` já calculada acima,
-    # sem nenhuma query extra.
-    dados_mobile = []
-    for ex in exercicios_filtrados:
-        chave_exercicio = f"{ex.tipo}_{ex.id}"
-        registros_ex = dados_tabela['registros_por_exercicio'].get(chave_exercicio, {})
+    # `preparar_dados_tabela` ordena semanas usando só o nome do mês (sem
+    # ano), então períodos de anos diferentes com o mesmo mês colidiriam na
+    # ordenação. Reordena aqui por (ano, mês, semana) usando o mapeamento de
+    # meses já existente em date_utils, sem tocar na função compartilhada
+    # (que tem teste unitário próprio).
+    def _chave_semana(s):
+        mes_nome, _, ano = s['periodo'].partition('/')
+        ano_num = int(ano) if ano.isdigit() else 0
+        return (ano_num, MESES.get(mes_nome.strip().lower(), 0), s['semana'])
 
-        semanas_ex = []
-        for semana in dados_tabela['semanas']:
-            registro = registros_ex.get(semana['key'])
-            if registro and registro.get('series'):
-                primeira_serie = registro['series'][0]
-                semanas_ex.append({
-                    'periodo': semana['periodo'],
-                    'semana': semana['semana'],
-                    'carga': primeira_serie['carga'],
-                    'repeticoes': primeira_serie['repeticoes'],
-                    'num_series': len(registro['series']),
-                })
-            else:
-                semanas_ex.append({
-                    'periodo': semana['periodo'],
-                    'semana': semana['semana'],
-                    'carga': None,
-                    'repeticoes': None,
-                    'num_series': 0,
-                })
+    semanas = sorted(dados_tabela['semanas'], key=_chave_semana)
 
-        dados_mobile.append({
-            'nome': ex.nome,
-            'treino_codigo': _get_treino_codigo(ex) or 'N/A',
-            'musculo': ex.musculo_nome or 'N/A',
-            'semanas': semanas_ex,
-        })
+    # Agrupa os exercícios em blocos por treino (para a célula "Treino" com
+    # rowspan) e já resolve, para cada exercício, a carga/repetições da
+    # primeira série em cada uma das semanas exibidas.
+    grupos_treino = []
+    for codigo, exs in groupby(exercicios, key=_get_treino_codigo):
+        exercicios_grupo = []
+        for ex in exs:
+            chave_exercicio = f"{ex.tipo}_{ex.id}"
+            registros_ex = dados_tabela['registros_por_exercicio'].get(chave_exercicio, {})
+
+            semanas_ex = []
+            for semana in semanas:
+                registro = registros_ex.get(semana['key'])
+                if registro and registro.get('series'):
+                    primeira_serie = registro['series'][0]
+                    semanas_ex.append({
+                        'carga': primeira_serie['carga'],
+                        'repeticoes': primeira_serie['repeticoes'],
+                    })
+                else:
+                    semanas_ex.append({'carga': None, 'repeticoes': None})
+
+            exercicios_grupo.append({'nome': ex.nome, 'semanas': semanas_ex})
+
+        grupos_treino.append({'codigo': codigo or '—', 'exercicios': exercicios_grupo})
 
     return render_template("stats/visualizar_tabela.html",
-                         treinos=treinos,
-                         treino_selecionado=treino_selecionado,
-                         musculos=musculos,
-                         musculo_selecionado=musculo_selecionado,
-                         ordenar=ordenar,
-                         exercicios=exercicios_filtrados,
-                         semanas=dados_tabela['semanas'],
-                         registros_por_exercicio=dados_tabela['registros_por_exercicio'],
-                         dados_mobile=dados_mobile,
-                         semanas_selecionadas=semanas_filtro,
-                         semanas_selecionadas_lista=dados_tabela['semanas_selecionadas_lista'],
-                         periodos_disponiveis=dados_tabela['periodos_disponiveis'])
+                         semanas=semanas,
+                         grupos_treino=grupos_treino)
