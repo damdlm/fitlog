@@ -26,7 +26,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/page-transition.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fitbot-chat.css') }}">
+    {% if current_user.is_authenticated %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pwa-install.css') }}">
+    {% endif %}
     
     <!-- CSS Personalizado -->
     <style>
@@ -1650,8 +1652,12 @@
     <script src="{{ url_for('static', filename='js/modules/exercicio-imagens.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modules/fitbot-chat.js') }}"></script>
 
-    <!-- Instalação do PWA (banner Android/Desktop + tutorial iOS) -->
+    <!-- Instalação do PWA (banner Android/Desktop + tutorial iOS) --
+         só carrega/roda com usuário logado (login, cadastro, landing
+         page etc. não devem sugerir instalação). -->
+    {% if current_user.is_authenticated %}
     <script src="{{ url_for('static', filename='js/modules/pwa-install.js') }}"></script>
+    {% endif %}
     
     <!-- Bloco para scripts específicos de cada página -->
     {% block scripts %}{% endblock %}
