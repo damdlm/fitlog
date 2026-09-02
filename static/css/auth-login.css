@@ -1,0 +1,329 @@
+/**
+ * Tela de login — visual modernizado.
+ *
+ * Reaproveita as variáveis de marca globais definidas em templates/base.html
+ * (--primary-color, --secondary-color, --gradient-primary,
+ * --gradient-boas-vindas), então não redefine cores aqui.
+ */
+
+.login-shell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 220px);
+    padding: 24px 0;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    background: #fff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(45, 45, 45, 0.12);
+    animation: loginFadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes loginFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Painel decorativo (só desktop) */
+.login-panel-brand {
+    flex: 0 0 42%;
+    position: relative;
+    background: var(--gradient-boas-vindas);
+    color: #fff;
+    padding: 48px 40px;
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+}
+
+.login-panel-brand::before,
+.login-panel-brand::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.login-panel-brand::before {
+    width: 220px;
+    height: 220px;
+    top: -60px;
+    right: -60px;
+}
+
+.login-panel-brand::after {
+    width: 160px;
+    height: 160px;
+    bottom: -50px;
+    left: -40px;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.login-panel-brand > * {
+    position: relative;
+    z-index: 1;
+}
+
+.login-panel-brand img {
+    height: 40px;
+    width: auto;
+    filter: brightness(0) invert(1);
+    opacity: 0.95;
+}
+
+.login-panel-brand h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 24px 0 10px;
+    line-height: 1.3;
+}
+
+.login-panel-brand p {
+    font-size: 0.92rem;
+    opacity: 0.85;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.login-panel-brand ul {
+    list-style: none;
+    padding: 0;
+    margin: 28px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.login-panel-brand ul li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+.login-panel-brand ul li i {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+/* Painel do formulário */
+.login-panel-form {
+    flex: 1;
+    padding: 44px 40px;
+    min-width: 0;
+}
+
+.login-form-header {
+    margin-bottom: 28px;
+}
+
+.login-form-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--secondary-color, #2D2D2D);
+    margin-bottom: 4px;
+}
+
+.login-form-header p {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Campos */
+.login-field {
+    margin-bottom: 18px;
+}
+
+.login-field label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--secondary-color, #2D2D2D);
+    margin-bottom: 6px;
+    display: block;
+}
+
+.login-input-group {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid #e9ecef;
+    border-radius: 14px;
+    background: #f8f9fa;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    padding: 0 6px 0 14px;
+}
+
+.login-input-group:focus-within {
+    border-color: var(--primary-color, #F28C33);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(242, 140, 51, 0.12);
+}
+
+.login-input-group i.login-input-icon {
+    color: #adb5bd;
+    font-size: 1rem;
+    flex-shrink: 0;
+    transition: color 0.15s ease;
+}
+
+.login-input-group:focus-within i.login-input-icon {
+    color: var(--primary-color, #F28C33);
+}
+
+.login-input-group input {
+    border: none;
+    background: transparent;
+    outline: none;
+    box-shadow: none;
+    padding: 12px 10px;
+    font-size: 0.95rem;
+    width: 100%;
+    color: var(--secondary-color, #2D2D2D);
+}
+
+.login-toggle-senha {
+    border: none;
+    background: transparent;
+    color: #adb5bd;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.login-toggle-senha:hover {
+    color: #6c757d;
+}
+
+.login-options-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 4px 0 22px;
+    font-size: 0.85rem;
+}
+
+.login-options-row .form-check-input:checked {
+    background-color: var(--primary-color, #F28C33);
+    border-color: var(--primary-color, #F28C33);
+}
+
+.login-options-row a {
+    color: var(--primary-color, #F28C33);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-options-row a:hover {
+    text-decoration: underline;
+}
+
+.btn-login-submit {
+    width: 100%;
+    border: none;
+    border-radius: 14px;
+    padding: 13px;
+    font-weight: 700;
+    font-size: 0.98rem;
+    color: #fff;
+    background: var(--gradient-primary, var(--primary-color, #F28C33));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+    box-shadow: 0 8px 20px rgba(242, 140, 51, 0.28);
+}
+
+.btn-login-submit:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.03);
+}
+
+.btn-login-submit:active {
+    transform: translateY(0);
+}
+
+.login-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 26px 0 20px;
+    color: #adb5bd;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.login-divider::before,
+.login-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e9ecef;
+}
+
+.btn-login-register {
+    width: 100%;
+    border: 1.5px solid var(--primary-color, #F28C33);
+    color: var(--primary-color, #F28C33);
+    background: transparent;
+    border-radius: 14px;
+    padding: 11px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.btn-login-register:hover {
+    background: var(--primary-color, #F28C33);
+    color: #fff;
+}
+
+.login-terms {
+    text-align: center;
+    font-size: 0.76rem;
+    color: #adb5bd;
+    margin: 22px 0 0;
+    line-height: 1.5;
+}
+
+.login-terms a {
+    color: #868e96;
+}
+
+@media (min-width: 992px) {
+    .login-panel-brand {
+        display: flex;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .login-card {
+        border-radius: 18px;
+    }
+
+    .login-panel-form {
+        padding: 32px 22px;
+    }
+}

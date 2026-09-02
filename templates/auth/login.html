@@ -3,66 +3,102 @@
 {% block page_icon %}{% endblock %}
 {% block page_title %}{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth-login.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow-sm">
-            <div class="card-header bg-white text-center py-3">
-                <h4 class="mb-0" style="color: #F28C33;">
-                    <i class="bi bi-box-arrow-in-right"></i> Login
-                </h4>
+<div class="login-shell">
+    <div class="login-card">
+        <!-- Painel de marca (só desktop) -->
+        <div class="login-panel-brand">
+            <div>
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FitLog">
+                <h2>Seu treino, sempre com você.</h2>
+                <p>Registre suas cargas, acompanhe sua evolução e converse com o FitBot sempre que precisar de uma dica.</p>
             </div>
-            <div class="card-body p-4">
-                <form method="post">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Usuário</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-person"></i></span>
-                            <input type="text" name="username" class="form-control" 
-                                   placeholder="Digite seu usuário" required autofocus>
-                        </div>
+            <ul>
+                <li><i class="bi bi-graph-up-arrow"></i> Acompanhe sua evolução treino a treino</li>
+                <li><i class="bi bi-calendar-check"></i> Organize sua rotina de treinos</li>
+                <li><i class="bi bi-robot"></i> Tire dúvidas com o FitBot</li>
+            </ul>
+        </div>
+
+        <!-- Formulário -->
+        <div class="login-panel-form">
+            <div class="login-form-header">
+                <h1>Bem-vindo de volta</h1>
+                <p>Entre com sua conta para continuar seus treinos.</p>
+            </div>
+
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                <div class="login-field">
+                    <label for="loginUsername">Usuário</label>
+                    <div class="login-input-group">
+                        <i class="bi bi-person login-input-icon"></i>
+                        <input type="text" id="loginUsername" name="username"
+                               placeholder="Digite seu usuário" required autofocus autocomplete="username">
                     </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Senha</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                            <input type="password" name="password" class="form-control" 
-                                   placeholder="Digite sua senha" required>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3 form-check d-flex justify-content-between align-items-center">
-                        <span>
-                            <input type="checkbox" name="remember" class="form-check-input" id="remember">
-                            <label class="form-check-label" for="remember">Lembrar-me</label>
-                        </span>
-                        <a href="{{ url_for('auth.reset_password_request') }}" class="small">Esqueci minha senha</a>
-                    </div>
-                    
-                    <button type="submit" class="btn w-100 py-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
-                        <i class="bi bi-box-arrow-in-right"></i> Entrar
-                    </button>
-                </form>
-                
-                <hr class="my-4">
-                
-                <div class="text-center">
-                    <p class="mb-2">Não tem uma conta?</p>
-                    <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary">
-                        <i class="bi bi-person-plus"></i> Criar conta
-                    </a>
                 </div>
 
-                <p class="text-center small text-muted mt-3 mb-0">
-                    Ao continuar, você concorda com nossos
-                    <a href="{{ url_for('privacidade.termos') }}">Termos de Uso</a> e nossa
-                    <a href="{{ url_for('privacidade.politica') }}">Política de Privacidade</a>.
-                </p>
-            </div>
+                <div class="login-field">
+                    <label for="loginPassword">Senha</label>
+                    <div class="login-input-group">
+                        <i class="bi bi-lock login-input-icon"></i>
+                        <input type="password" id="loginPassword" name="password"
+                               placeholder="Digite sua senha" required autocomplete="current-password">
+                        <button type="button" class="login-toggle-senha" id="loginTogglePassword" aria-label="Mostrar senha" tabindex="-1">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="login-options-row">
+                    <span class="form-check d-flex align-items-center gap-2 mb-0">
+                        <input type="checkbox" name="remember" class="form-check-input mt-0" id="remember">
+                        <label class="form-check-label" for="remember">Lembrar-me</label>
+                    </span>
+                    <a href="{{ url_for('auth.reset_password_request') }}">Esqueci minha senha</a>
+                </div>
+
+                <button type="submit" class="btn-login-submit">
+                    <i class="bi bi-box-arrow-in-right"></i> Entrar
+                </button>
+            </form>
+
+            <div class="login-divider">ou</div>
+
+            <a href="{{ url_for('auth.register') }}" class="btn-login-register">
+                <i class="bi bi-person-plus"></i> Criar conta
+            </a>
+
+            <p class="login-terms">
+                Ao continuar, você concorda com nossos
+                <a href="{{ url_for('privacidade.termos') }}">Termos de Uso</a> e nossa
+                <a href="{{ url_for('privacidade.politica') }}">Política de Privacidade</a>.
+            </p>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        var toggle = document.getElementById('loginTogglePassword');
+        var campo = document.getElementById('loginPassword');
+        if (!toggle || !campo) return;
+
+        toggle.addEventListener('click', function () {
+            var mostrando = campo.type === 'text';
+            campo.type = mostrando ? 'password' : 'text';
+            toggle.innerHTML = mostrando
+                ? '<i class="bi bi-eye"></i>'
+                : '<i class="bi bi-eye-slash"></i>';
+            toggle.setAttribute('aria-label', mostrando ? 'Mostrar senha' : 'Ocultar senha');
+        });
+    })();
+</script>
 {% endblock %}
