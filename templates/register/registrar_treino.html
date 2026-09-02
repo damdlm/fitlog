@@ -1270,6 +1270,38 @@
         order: 2;
     }
 
+    /* Sino de ativar/desativar o alarme sonoro do intervalo -- mesmo
+       "order" do display (2) pra ficar logo depois dele no grupo que o
+       margin-right:auto acima empurra pro lado direito da barra, junto
+       com os botões de play/zerar. */
+    #cronoIntervaloBox #cronoIntervaloBtnAlarme {
+        order: 2;
+    }
+
+    .btn-alarme-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+        color: #ced4da;
+        font-size: 1.05rem;
+        padding: 0;
+        cursor: pointer;
+        transition: color .15s ease, background-color .15s ease;
+    }
+
+    .btn-alarme-toggle:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-alarme-toggle.is-ativo {
+        color: var(--primary-orange, #F28C33);
+    }
+
     #cronoIntervaloBox .cronometro-presets {
         margin-bottom: 0;
         width: 100%;
@@ -2051,6 +2083,11 @@
             <i class="bi bi-hourglass-split cronometro-ampulheta"></i>
         </span>
         <span class="cronometro-display" id="cronoIntervaloDisplay">01:30</span>
+        <button type="button" class="btn-alarme-toggle is-ativo" id="cronoIntervaloBtnAlarme"
+                aria-pressed="true" title="Alarme sonoro ativado (toque pra desativar)"
+                aria-label="Alarme sonoro ativado (toque pra desativar)">
+            <i class="bi bi-bell-fill"></i>
+        </button>
         <div class="cronometro-presets" id="cronoIntervaloPresets">
             <button type="button" class="btn-preset" data-segundos="30">30s</button>
             <button type="button" class="btn-preset" data-segundos="60">1:00</button>
@@ -3271,7 +3308,64 @@ function tocarBipe() {
     var elBtnIniciar = document.getElementById('cronoIntervaloBtnIniciar');
     var elBtnZerar = document.getElementById('cronoIntervaloBtnZerar');
     var elPresets = document.getElementById('cronoIntervaloPresets');
+    var elBtnAlarme = document.getElementById('cronoIntervaloBtnAlarme');
     if (!elBox || !elDisplay || !elBtnIniciar || !elBtnZerar || !elPresets) return;
+
+    // ---- Alarme sonoro do intervalo (senna.mp3, ~9s) ----
+    // Preferência de ligado/desligado fica salva no aparelho (localStorage),
+    // então continua do jeito que a pessoa deixou da última vez.
+    var ALARME_STORAGE_KEY = 'fitlog_alarme_intervalo_ativo';
+    var alarmeAtivo = localStorage.getItem(ALARME_STORAGE_KEY) !== '0';
+    var audioAlarme = null;
+
+    function getAudioAlarme() {
+        if (!audioAlarme) {
+            audioAlarme = new Audio('/static/audio/senna.mp3');
+            audioAlarme.preload = 'auto';
+        }
+        return audioAlarme;
+    }
+
+    function atualizarBotaoAlarme() {
+        if (!elBtnAlarme) return;
+        elBtnAlarme.classList.toggle('is-ativo', alarmeAtivo);
+        elBtnAlarme.innerHTML = alarmeAtivo ? '<i class="bi bi-bell-fill"></i>' : '<i class="bi bi-bell-slash"></i>';
+        elBtnAlarme.setAttribute('aria-pressed', alarmeAtivo ? 'true' : 'false');
+        var texto = alarmeAtivo ? 'Alarme sonoro ativado (toque pra desativar)' : 'Alarme sonoro desativado (toque pra ativar)';
+        elBtnAlarme.title = texto;
+        elBtnAlarme.setAttribute('aria-label', texto);
+    }
+
+    if (elBtnAlarme) {
+        atualizarBotaoAlarme();
+        elBtnAlarme.addEventListener('click', function () {
+            alarmeAtivo = !alarmeAtivo;
+            localStorage.setItem(ALARME_STORAGE_KEY, alarmeAtivo ? '1' : '0');
+            atualizarBotaoAlarme();
+        });
+    }
+
+    // Toca o alarme (senna.mp3) quando o intervalo zera, só se estiver
+    // ativado. Se o arquivo não existir/não carregar, cai pro bipe curto
+    // (tocarBipe, já usado no cronômetro do treino) -- assim a pessoa
+    // sempre recebe algum aviso sonoro, mesmo que o arquivo falhe.
+    function tocarAlarmeIntervalo() {
+        if (alarmeAtivo) {
+            try {
+                var audio = getAudioAlarme();
+                audio.currentTime = 0;
+                var p = audio.play();
+                if (p && typeof p.catch === 'function') {
+                    p.catch(function () { tocarBipe(); });
+                }
+            } catch (e) {
+                tocarBipe();
+            }
+        }
+        if (window.navigator && window.navigator.vibrate) {
+            window.navigator.vibrate([180, 90, 180]);
+        }
+    }
 
     var duracaoPadraoSegundos = 90; // preset marcado como "is-active" no HTML
     var restanteSegundos = duracaoPadraoSegundos;
@@ -3306,7 +3400,7 @@ function tocarBipe() {
             clearInterval(intervalId);
             elBox.classList.add('is-alerta');
             elBox.classList.remove('is-rodando');
-            tocarBipe();
+            tocarAlarmeIntervalo();
             if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
                 window.FitLogUtils.showToast('Intervalo finalizado! Bora pra próxima série 💪', 'success');
             }
