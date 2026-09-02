@@ -3383,6 +3383,10 @@ function tocarBipe() {
     const dataEl = document.getElementById('fitlogShareData');
     const nomeUsuario = dataEl ? dataEl.dataset.user : '';
 
+    // Promise da imagem já em geração, criada assim que o modal abre (ver
+    // abrir()) -- ver motivo detalhado no comentário dentro de abrir().
+    let imagemPromise = null;
+
     function formatarTempo(segundos) {
         segundos = Math.max(0, Math.round(segundos || 0));
         const h = Math.floor(segundos / 3600);
@@ -3499,6 +3503,21 @@ function tocarBipe() {
         if (!modalEl || !window.bootstrap) return;
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
+
+        // Começa a gerar a imagem (html2canvas) já aqui, em vez de só no
+        // clique de "Compartilhar". iOS Safari só permite navigator.share()
+        // se ele for chamado bem próximo do toque do usuário -- e gerar um
+        // card grande (9+ exercícios, 1080x1920 em escala 2x) pode levar
+        // mais de 1 segundo. Nesse intervalo entre o toque e o share() de
+        // fato rodar, o iOS já considerava o "gesto do usuário" expirado e
+        // recusava com um erro genérico ("Não foi possível compartilhar a
+        // imagem"), mesmo a imagem tendo sido gerada com sucesso. Gerando
+        // com antecedência (o usuário normalmente rola/lê o resumo por
+        // alguns segundos antes de tocar em compartilhar), o botão só
+        // precisa aguardar essa Promise -- que na prática já estará pronta
+        // -- então o navigator.share() roda quase imediatamente após o
+        // toque.
+        imagemPromise = gerarImagemCard();
     }
 
     async function gerarImagemCard() {
@@ -3560,6 +3579,19 @@ function tocarBipe() {
         });
     }
 
+    // Usa a imagem que já começou a ser gerada em abrir() (ver comentário
+    // lá). Se por algum motivo não tiver rodado (abrir() não chamado
+    // primeiro) ou tiver falhado, gera uma na hora como fallback.
+    function obterImagem() {
+        if (!imagemPromise) {
+            imagemPromise = gerarImagemCard();
+        }
+        return imagemPromise.catch(function (err) {
+            imagemPromise = null;
+            throw err;
+        });
+    }
+
     function baixarBlob(blob, nomeArquivo) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -3586,7 +3618,7 @@ function tocarBipe() {
             btnCompartilhar.addEventListener('click', async function () {
                 btnCompartilhar.disabled = true;
                 try {
-                    const blob = await gerarImagemCard();
+                    const blob = await obterImagem();
                     const arquivo = new File([blob], 'fitlog-treino.png', { type: 'image/png' });
 
                     // Web Share API com arquivo: no celular abre o menu nativo
@@ -3616,7 +3648,7 @@ function tocarBipe() {
             btnBaixar.addEventListener('click', async function () {
                 btnBaixar.disabled = true;
                 try {
-                    const blob = await gerarImagemCard();
+                    const blob = await obterImagem();
                     baixarBlob(blob, 'fitlog-treino.png');
                 } catch (err) {
                     mostrarToast('Não foi possível gerar a imagem.', 'danger');
@@ -3630,7 +3662,7 @@ function tocarBipe() {
             btnWhatsapp.addEventListener('click', async function () {
                 btnWhatsapp.disabled = true;
                 try {
-                    const blob = await gerarImagemCard();
+                    const blob = await obterImagem();
                     const arquivo = new File([blob], 'fitlog-treino.png', { type: 'image/png' });
 
                     if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
