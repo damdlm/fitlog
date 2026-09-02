@@ -191,6 +191,9 @@ def create_app(config_class=None):
     compress.init_app(app)
 
     login_manager.login_view = 'auth.login'
+    # Sem mensagem de flash ao redirecionar pra tela de login (o
+    # Flask-Login só usa flash() se login_message não for None).
+    login_manager.login_message = None
 
     @login_manager.user_loader
     def load_user(user_id):
