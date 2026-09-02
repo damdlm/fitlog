@@ -89,6 +89,18 @@ class Config:
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
 
+    # CORREÇÃO -- "Não foi possível salvar o treino" ao finalizar um treino
+    # longo: o token CSRF é gerado quando a página /registrar-treino é
+    # carregada (GET) e, por padrão, o Flask-WTF invalida esse token depois
+    # de WTF_CSRF_TIME_LIMIT segundos (default: 3600 = 1h). Um treino de
+    # academia facilmente passa de 1h entre abrir a tela e clicar em
+    # "Finalizar" -- o POST então chega com um token já expirado, o
+    # Flask-WTF recusa com 400, e o front-end (que só sabe que a resposta
+    # não foi "ok") mostra a mensagem genérica de erro, mesmo os dados
+    # estando corretos. None = token não expira por tempo (continua
+    # invalidado se a sessão/SECRET_KEY mudar, que é a proteção real).
+    WTF_CSRF_TIME_LIMIT = None
+
     # Sem isso, o Flask manda "Cache-Control: no-cache" em tudo que está
     # em /static/ (CSS, JS, ícones) — o navegador então revalida com o
     # servidor a cada requisição, mesmo o arquivo não tendo mudado. Como
