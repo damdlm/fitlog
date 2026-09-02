@@ -84,6 +84,16 @@ OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 
 REQUEST_TIMEOUT_SECONDS = 20
 
+# Sessão HTTP reutilizada por processo/worker (item 1.3 do prompt de
+# escalabilidade) -- evita reabrir uma conexão TCP/TLS nova a cada
+# mensagem do FitBot. requests.Session() já cuida do connection pooling
+# internamente (via urllib3); não há necessidade de nenhum pooling
+# manual. Cada worker do Gunicorn tem seu próprio processo e, portanto,
+# sua própria _SESSION -- não há estado de usuário aqui dentro, só
+# conexões reaproveitadas, então é seguro compartilhar entre requisições
+# do mesmo worker.
+_SESSION = requests.Session()
+
 # Erros transitórios (rede/infra do provedor) valem 1 nova tentativa —
 # 429 fica de fora de propósito (rate limit: repetir na hora só piora;
 # já tem mensagem própria pro usuário) e erros 4xx "normais" também
@@ -116,7 +126,7 @@ def _post_llm_com_retry(url, **kwargs):
     ultima_excecao = None
     for tentativa in range(MAX_RETRIES_LLM + 1):
         try:
-            resp = requests.post(url, **kwargs)
+            resp = _SESSION.post(url, **kwargs)
         except requests.exceptions.RequestException as e:
             ultima_excecao = e
             resp = None

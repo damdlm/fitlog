@@ -319,6 +319,81 @@ class TestExportacaoDados:
 
 
 # ------------------------------------------------------------------
+# 4b) Aluno criado pelo professor -- sem aceite falso, aceite exigido
+# no primeiro acesso (Parte 2 do prompt de escalabilidade/LGPD)
+# ------------------------------------------------------------------
+class TestAlunoCriadoPeloProfessor:
+
+    def _criar_professor_logado(self, client, username='profcadastrador'):
+        professor = _criar_usuario_direto(username, tipo_usuario='professor')
+        # o próprio professor não deve ficar preso no gate de aceite ao
+        # tentar cadastrar o aluno -- registra o aceite dele normalmente.
+        PrivacidadeService.registrar_aceite_cadastro(professor.id)
+        db.session.commit()
+        _login(client, username)
+        return professor
+
+    @pytest.mark.lgpd_aceite
+    def test_professor_cria_aluno_sem_registrar_aceite_falso(self, client, db):
+        self._criar_professor_logado(client)
+
+        client.post('/professor/aluno/novo', data={
+            'username': 'alunodoprof', 'email': 'alunodoprof@t.com',
+            'password': 'Senha1234', 'nome_completo': 'Aluno Do Professor',
+        }, follow_redirects=True)
+
+        aluno = User.query.filter_by(username='alunodoprof').first()
+        assert aluno is not None
+        # nenhum aceite (Termos/Política) foi registrado em nome do
+        # aluno -- só o próprio aluno pode aceitar, no primeiro acesso.
+        assert ConsentimentoLGPD.query.filter_by(usuario_id=aluno.id).count() == 0
+        assert PrivacidadeService.precisa_aceitar_algum(aluno.id) is True
+
+    @pytest.mark.lgpd_aceite
+    def test_primeiro_login_do_aluno_e_redirecionado_para_aceite(self, client, db):
+        self._criar_professor_logado(client)
+        client.post('/professor/aluno/novo', data={
+            'username': 'alunoprimeiroacesso', 'email': 'alunoprimeiro@t.com',
+            'password': 'Senha1234', 'nome_completo': 'Aluno Primeiro Acesso',
+        }, follow_redirects=True)
+
+        # troca a sessão do professor pela do aluno no MESMO client --
+        # auth.login redireciona direto pra index se já houver alguém
+        # autenticado (ver routes/auth_routes.py:login), então o
+        # logout explícito é obrigatório antes de logar como o aluno.
+        client.get('/auth/logout')
+        _login(client, 'alunoprimeiroacesso')
+        resp = client.get('/', follow_redirects=False)
+
+        assert resp.status_code in (301, 302)
+        assert '/privacidade/aceite' in resp.headers.get('Location', '')
+
+    @pytest.mark.lgpd_aceite
+    def test_aluno_aceita_e_e_liberado_com_versao_correta(self, client, db):
+        self._criar_professor_logado(client)
+        client.post('/professor/aluno/novo', data={
+            'username': 'alunoaceita', 'email': 'alunoaceita@t.com',
+            'password': 'Senha1234', 'nome_completo': 'Aluno Que Aceita',
+        }, follow_redirects=True)
+        aluno = User.query.filter_by(username='alunoaceita').first()
+
+        client.get('/auth/logout')
+        _login(client, 'alunoaceita')
+        client.get('/')  # dispara o redirect para a tela de aceite
+
+        resp = client.post('/privacidade/aceite', data={'ciencia': 'on'}, follow_redirects=True)
+
+        assert resp.status_code == 200
+        assert ConsentimentoLGPD.tem_versao_aceita(aluno.id, TIPO_TERMOS_USO, VERSAO_TERMOS_USO)
+        assert ConsentimentoLGPD.tem_versao_aceita(aluno.id, TIPO_POLITICA_PRIVACIDADE, VERSAO_POLITICA_PRIVACIDADE)
+        assert PrivacidadeService.precisa_aceitar_algum(aluno.id) is False
+
+        # depois de aceitar, a navegação normal não é mais interrompida
+        resp_normal = client.get('/', follow_redirects=False)
+        assert resp_normal.status_code == 200
+
+
+# ------------------------------------------------------------------
 # 5) Exclusão / anonimização
 # ------------------------------------------------------------------
 class TestExclusaoConta:
@@ -426,6 +501,42 @@ class TestExclusaoConta:
         client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Senha1234'})
 
         assert any(f"fitbot_context:{user.id}:" in c for c in chamadas)
+
+    def test_falha_ao_registrar_exclusao_reverte_tudo(self, client, db, monkeypatch):
+        """Parte 3 do prompt de escalabilidade/LGPD: exclusão e registro
+        da exclusão são UMA transação -- se o registro falhar (ex.:
+        erro de banco no meio do caminho), nada pode ficar
+        parcialmente aplicado. Antes desta correção, a anonimização
+        (dados pessoais + histórico de treino) já tinha sido commitada
+        SEPARADAMENTE antes de tentar registrar o consentimento de
+        exclusão -- então essa falha simulada não revertia nada. Agora
+        precisa reverter TUDO: dados, histórico e o próprio registro."""
+        user = _criar_usuario_direto('vaifalharexclusao', nome_completo='Nome Original')
+        user_id = user.id
+        dados = _criar_treino_completo(user)
+        versao_id = dados['versao'].id
+
+        def _explode(*args, **kwargs):
+            raise RuntimeError("falha simulada ao registrar exclusão")
+
+        monkeypatch.setattr(
+            PrivacidadeService, 'registrar_consentimento', staticmethod(_explode),
+        )
+
+        _login(client, 'vaifalharexclusao')
+        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Senha1234'})
+
+        db.session.expire_all()
+        ainda_intacto = db.session.get(User, user_id)
+        assert ainda_intacto.ativo is True
+        assert ainda_intacto.username == 'vaifalharexclusao'
+        assert ainda_intacto.nome_completo == 'Nome Original'
+        # histórico de treino preservado -- nenhuma remoção parcial
+        assert db.session.get(VersaoGlobal, versao_id) is not None
+        # nenhum registro de exclusão foi criado
+        assert ConsentimentoLGPD.query.filter_by(
+            usuario_id=user_id, tipo='exclusao_conta',
+        ).count() == 0
 
 
 # ------------------------------------------------------------------

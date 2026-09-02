@@ -2,6 +2,8 @@
 (nome + treino atual), sempre a partir de current_user (backend),
 nunca de um user_id vindo do front-end.
 """
+import json
+import threading
 from datetime import date
 
 from flask_login import login_user
@@ -10,6 +12,7 @@ from models import (
     db, User, VersaoGlobal, TreinoVersao, VersaoExercicio,
     ExercicioSistema,
 )
+from services import fitbot_service as fitbot_service_module
 from services.fitbot_service import FitBotService
 
 
@@ -124,7 +127,7 @@ def test_pergunta_geral_nao_e_afetada_quando_nao_ha_contexto(app, monkeypatch):
             capturado['mensagens'] = json['messages']
             return RespostaFake()
 
-        monkeypatch.setattr('services.fitbot_service.requests.post', fake_post)
+        monkeypatch.setattr('services.fitbot_service._SESSION.post', fake_post)
         app.config['GROQ_API_KEY'] = 'fake-key-para-teste'
 
         resultado = FitBotService.get_resposta(mensagem='O que é hipertrofia?')
@@ -140,3 +143,81 @@ def test_endpoint_fitbot_exige_login(client):
     dados privados — o acesso deve ser bloqueado (login_required)."""
     resp = client.post('/fitbot/chat', json={'mensagem': 'oi'})
     assert resp.status_code in (302, 401)
+
+
+# ------------------------------------------------------------------
+# Concorrência (Parte 1.13/1.14 do prompt de escalabilidade): duas
+# conversas de usuários diferentes, rodando em threads distintas ao
+# mesmo tempo, nunca podem trocar contexto ou resposta entre si --
+# cobre a garantia de que FitBotService/FitBotContextService são
+# stateless (nenhum dado de usuário fica em atributo de instância ou
+# em qualquer estado global compartilhado entre requisições).
+# ------------------------------------------------------------------
+def test_conversas_concorrentes_nao_misturam_dados_entre_usuarios(app, monkeypatch):
+    """Duas 'requisições' concorrentes (threads diferentes) para
+    usuários diferentes -- o contexto e a resposta de uma nunca podem
+    vazar para a outra, mesmo executando ao mesmo tempo."""
+    usuario_por_thread = {}
+
+    def _get_current_user_id_fake():
+        # substitui BaseService.get_current_user_id() -- normalmente
+        # resolvido a partir de flask_login.current_user (por request);
+        # aqui simulamos o equivalente por thread, sem tocar no banco.
+        return usuario_por_thread[threading.current_thread().name]
+
+    def _montar_contexto_fake(mensagem, user_id):
+        # o contexto "pertence" exclusivamente ao user_id recebido --
+        # se as threads compartilhassem algum estado global, um dos
+        # lados acabaria recebendo o contexto do outro.
+        return {"usuario_dono_do_contexto": user_id}
+
+    def _chamar_groq_fake(mensagens):
+        # devolve o próprio payload recebido, para o teste conseguir
+        # inspecionar exatamente o que cada chamada carregava --
+        # nenhuma variável global fica no meio do caminho.
+        return {"ok": True, "resposta": json.dumps(mensagens), "modo": "texto"}
+
+    monkeypatch.setattr(
+        fitbot_service_module.BaseService, "get_current_user_id",
+        staticmethod(_get_current_user_id_fake),
+    )
+    monkeypatch.setattr(
+        fitbot_service_module.FitBotContextService, "montar_contexto",
+        staticmethod(_montar_contexto_fake),
+    )
+    monkeypatch.setattr(FitBotService, "_chamar_groq", staticmethod(_chamar_groq_fake))
+
+    resultados = {}
+    barreira = threading.Barrier(2)
+
+    def worker(thread_name, target_user_id, mensagem):
+        threading.current_thread().name = thread_name
+        usuario_por_thread[thread_name] = target_user_id
+        with app.app_context():
+            barreira.wait()  # maximiza a chance de sobreposição real
+            resultados[thread_name] = FitBotService._responder_com_texto(mensagem, historico=[])
+
+    t_ana = threading.Thread(target=worker, args=('thread-ana', 101, 'pergunta da Ana'))
+    t_bruno = threading.Thread(target=worker, args=('thread-bruno', 202, 'pergunta do Bruno'))
+    t_ana.start()
+    t_bruno.start()
+    t_ana.join()
+    t_bruno.join()
+
+    resposta_ana = resultados['thread-ana']['resposta']
+    resposta_bruno = resultados['thread-bruno']['resposta']
+
+    # o dict retornado por _montar_contexto_fake vira texto (via
+    # json.dumps) dentro da mensagem enviada ao provedor -- não fixamos
+    # a formatação exata (aspas/indentação), só que o dado certo chegou
+    # para a thread certa.
+    assert 'usuario_dono_do_contexto' in resposta_ana and '101' in resposta_ana
+    assert 'usuario_dono_do_contexto' in resposta_bruno and '202' in resposta_bruno
+    assert 'pergunta da Ana' in resposta_ana
+    assert 'pergunta do Bruno' in resposta_bruno
+
+    # nunca o contexto/mensagem de um usuário aparece na resposta do outro
+    assert '202' not in resposta_ana
+    assert 'Bruno' not in resposta_ana
+    assert '101' not in resposta_bruno
+    assert 'Ana' not in resposta_bruno

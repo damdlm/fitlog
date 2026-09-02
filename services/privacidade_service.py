@@ -384,12 +384,27 @@ class PrivacidadeService:
             VersaoGlobal.query.filter_by(user_id=user.id).delete(synchronize_session=False)
             ExercicioUsuario.query.filter_by(usuario_id=user.id).delete(synchronize_session=False)
 
-            db.session.commit()
-
+            # CORREÇÃO (Parte 3 do prompt de hardening/LGPD): antes daqui
+            # havia um db.session.commit() seguido de uma chamada a
+            # registrar_consentimento() com commit=True (padrão), ou
+            # seja, DOIS commits separados. Isso permitia uma janela real
+            # de inconsistência -- se o processo caísse (ou o commit do
+            # registro de exclusão falhasse) exatamente entre os dois,
+            # a conta ficava anonimizada/com o histórico apagado SEM
+            # nenhum registro de que a exclusão aconteceu, quebrando a
+            # obrigação de comprovação exigida pela própria LGPD.
+            # Agora os dois fazem parte da mesma transação: só existe UM
+            # commit, no fim; qualquer exceção antes dele (inclusive uma
+            # falha ao registrar o consentimento) cai no except abaixo e
+            # reverte TUDO -- dados preservados e nenhum registro de
+            # exclusão criado, nunca um estado parcial.
             PrivacidadeService.registrar_consentimento(
                 user.id, 'exclusao_conta', concedido=True,
                 contexto="conta anonimizada a pedido do titular",
+                commit=False,
             )
+
+            db.session.commit()
 
             # Não espera o TTL do cache de contexto do FitBot -- ver
             # services/fitbot_context_service.py (chave

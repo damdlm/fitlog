@@ -328,6 +328,19 @@ def register():
 def logout():
     logger.info(f"Logout -- usuario {current_user.username}")
     logout_user()
+    # CORREÇÃO (achado durante os testes da Parte 2 do prompt de
+    # escalabilidade/LGPD): logout_user() só remove as chaves internas
+    # do Flask-Login (_user_id etc) -- NUNCA limpa o resto da sessão.
+    # A flag 'lgpd_versoes_ok' (ver app.py:_exigir_aceite_lgpd_atual)
+    # ficava sobrevivendo no cookie de sessão depois do logout. Em um
+    # navegador/dispositivo compartilhado, isso permitia que a PRÓXIMA
+    # pessoa a logar ali (ex.: um aluno recém-criado pelo professor,
+    # no mesmo navegador que o professor acabou de usar) pulasse o
+    # gate obrigatório de aceite de Termos/Política, "herdando" o
+    # status de quem usou o dispositivo antes -- mesmo nunca tendo
+    # aceitado nada. Removendo a flag aqui, cada login volta a
+    # verificar o aceite do zero para o usuário que está entrando.
+    session.pop('lgpd_versoes_ok', None)
     flash('Você saiu do sistema', 'info')
     return redirect(url_for('auth.login'))
 

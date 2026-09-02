@@ -27,7 +27,7 @@ def _mock_groq(app, monkeypatch):
         capturado['mensagens'] = json['messages']
         return RespostaFake()
 
-    monkeypatch.setattr('services.fitbot_service.requests.post', fake_post)
+    monkeypatch.setattr('services.fitbot_service._SESSION.post', fake_post)
     app.config['GROQ_API_KEY'] = 'fake-key-para-teste'
     return capturado
 
