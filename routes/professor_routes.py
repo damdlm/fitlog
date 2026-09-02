@@ -738,7 +738,46 @@ def versoes_aluno(aluno_id):
         ver_versao_url=lambda vid: url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=vid),
         pagina_inicial_url=url_for('professor.visualizar_aluno', aluno_id=aluno.id),
         pagina_inicial_label='Voltar ao aluno',
+        criar_versao_url=url_for('professor.nova_versao_aluno', aluno_id=aluno.id),
     )
+
+
+@professor_bp.route('/aluno/<int:aluno_id>/versao/nova', methods=['GET', 'POST'])
+@login_required
+@professor_acesso_alunos_required
+@limiter.limit("10 per hour", key_func=_chave_por_professor)
+def nova_versao_aluno(aluno_id):
+    """Cria a primeira versão (ou a próxima, após finalizar a anterior)
+    de um aluno -- faltava essa rota: as demais (editar/adicionar
+    treino/clonar/...) exigem uma versao_id já existente, então um
+    aluno sem nenhuma versão ficava sem forma de o professor cadastrar
+    uma. Mesma regra de negócio de aluno.cadastrar_treinos_criar_versao
+    (VersaoService.create_livre): descrição obrigatória, data de início
+    é sempre a data do servidor, e só é permitido se o aluno não tiver
+    nenhuma versão ativa no momento."""
+    aluno, negado = _aluno_ou_negar(aluno_id)
+    if negado:
+        return negado
+
+    versao_ativa = VersaoService.get_ativa(user_id=aluno.id)
+    if versao_ativa:
+        flash(f'{aluno.nome_completo or aluno.username} já tem uma versão ativa (v{versao_ativa.numero_versao}). '
+              'Finalize-a antes de criar outra.', 'info')
+        return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_ativa.id))
+
+    if request.method == 'POST':
+        descricao = request.form.get('descricao', '')
+        try:
+            nova_versao = VersaoService.create_livre(descricao, user_id=aluno.id)
+            flash('Versão criada!', 'success')
+            return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=nova_versao.id))
+        except ValueError as e:
+            flash(str(e), 'danger')
+        except Exception:
+            logger.exception(f"Erro inesperado ao criar versão para aluno {aluno_id}")
+            flash('Não foi possível concluir a operação.', 'danger')
+
+    return render_template('professor/nova_versao_aluno.html', aluno=aluno)
 
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>')

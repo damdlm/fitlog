@@ -31,7 +31,24 @@ def api_progresso():
     """
     treino = request.args.get("treino")
 
-    dados = EstatisticaService.get_progresso_ultimos_30_dias(treino if treino != 'todos' else None)
+    versao_id = None
+    filtrar_por_versao_corrente = not treino or treino == 'todos'
+    if filtrar_por_versao_corrente:
+        # Sem filtro de treino específico: restringe à versão corrente do
+        # usuário, senão o gráfico soma o histórico de versões já
+        # encerradas junto com a atual (ver EstatisticaService.
+        # get_progresso_ultimos_30_dias).
+        versao_ativa = VersaoService.get_ativa()
+        versao_id = versao_ativa.id if versao_ativa else None
+        if versao_id is None:
+            # Sem versão ativa no momento -- não há "corrente" pra
+            # mostrar (evita voltar a somar o histórico de versões já
+            # encerradas, que é justamente o bug sendo corrigido aqui).
+            return jsonify({"semanas": [], "volumes": [], "cargas_medias": []})
+
+    dados = EstatisticaService.get_progresso_ultimos_30_dias(
+        treino if treino != 'todos' else None, versao_id=versao_id
+    )
 
     if not dados:
         # Sem nenhum registro nos últimos 30 dias: mantém a resposta vazia

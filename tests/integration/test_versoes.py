@@ -120,10 +120,13 @@ class TestVerVersao:
 
 
 class TestEditarVersaoFinalizada:
-    """A principal diferença desta tela pra "Cadastrar Treinos": aqui
-    editar uma versão finalizada é permitido."""
+    """Desde o commit e2c3637 ("Não permitir alterar versão finalizada",
+    30/08), uma versão finalizada vira histórico somente-leitura: nenhuma
+    mutação (editar descrição, adicionar/editar/remover treino) é
+    permitida, mesmo pela tela "Ver Versão" -- só restam Clonar/Excluir
+    (ver TestClonarVersao abaixo)."""
 
-    def test_edita_descricao_de_versao_finalizada(self, aluno_client, app, aluno):
+    def test_nao_edita_descricao_de_versao_finalizada(self, aluno_client, app, aluno):
         with app.app_context():
             versao_id = _criar_versao_finalizada(aluno, descricao='Original')
 
@@ -131,11 +134,11 @@ class TestEditarVersaoFinalizada:
             f'/aluno/versao/{versao_id}/editar', data={'descricao': 'Corrigida'},
             follow_redirects=True
         )
-        assert 'Versão atualizada' in resp.get_data(as_text=True)
+        assert 'já foi finalizada' in resp.get_data(as_text=True)
         with app.app_context():
-            assert db.session.get(VersaoGlobal, versao_id).descricao == 'Corrigida'
+            assert db.session.get(VersaoGlobal, versao_id).descricao == 'Original'
 
-    def test_adiciona_treino_em_versao_finalizada(self, aluno_client, app, aluno):
+    def test_nao_adiciona_treino_em_versao_finalizada(self, aluno_client, app, aluno):
         with app.app_context():
             versao_id = _criar_versao_finalizada(aluno, com_treino=False)
 
@@ -144,13 +147,11 @@ class TestEditarVersaoFinalizada:
             data={'nome_treino': 'Treino B', 'descricao_treino': ''},
             follow_redirects=True
         )
-        assert 'Treino adicionado' in resp.get_data(as_text=True)
+        assert 'já foi finalizada' in resp.get_data(as_text=True)
         with app.app_context():
-            tv = TreinoVersao.query.filter_by(versao_id=versao_id).first()
-            assert tv is not None
-            assert tv.codigo == 'A'  # primeira letra, mesmo em versão finalizada
+            assert TreinoVersao.query.filter_by(versao_id=versao_id).first() is None
 
-    def test_edita_exercicios_de_treino_em_versao_finalizada(self, aluno_client, app, aluno):
+    def test_nao_edita_exercicios_de_treino_em_versao_finalizada(self, aluno_client, app, aluno):
         with app.app_context():
             versao_id = _criar_versao_finalizada(aluno)
             tv_id = TreinoVersao.query.filter_by(versao_id=versao_id).first().id
@@ -168,11 +169,11 @@ class TestEditarVersaoFinalizada:
             },
             follow_redirects=True
         )
-        assert 'Treino salvo' in resp.get_data(as_text=True)
+        assert 'já foi finalizada' in resp.get_data(as_text=True)
         with app.app_context():
             tv = db.session.get(TreinoVersao, tv_id)
-            assert tv.nome_treino == 'Treino A renomeado'
-            assert {ve.exercicio_usuario_id for ve in tv.exercicios} == {novo_ex_id}
+            assert tv.nome_treino == 'Treino A'
+            assert novo_ex_id not in {ve.exercicio_usuario_id for ve in tv.exercicios}
 
     def test_idor_nao_permite_editar_treino_de_outro_usuario(self, aluno_client, app, outro_aluno):
         with app.app_context():
@@ -186,7 +187,13 @@ class TestEditarVersaoFinalizada:
         with app.app_context():
             assert db.session.get(TreinoVersao, tv_id).nome_treino == 'Treino A'
 
-    def test_nao_remove_treino_com_registros_mesmo_finalizada(self, aluno_client, app, aluno):
+    def test_nao_remove_treino_de_versao_finalizada(self, aluno_client, app, aluno):
+        """Antes do commit e2c3637, remover um treino com RegistroTreino
+        já era bloqueado mesmo em versão finalizada (trava específica do
+        histórico). Hoje esse caso nem chega a essa trava: a versão
+        finalizada já bloqueia qualquer mutação antes disso -- a
+        mensagem que o usuário vê mudou, mas o resultado (treino
+        preservado) continua o mesmo."""
         from models import RegistroTreino, ExercicioSistema
         from datetime import datetime, timezone
 
@@ -206,7 +213,7 @@ class TestEditarVersaoFinalizada:
         resp = aluno_client.post(
             f'/aluno/versao/{versao_id}/treino/{tv_id}/remover', follow_redirects=True
         )
-        assert 'não pode ser removido' in resp.get_data(as_text=True)
+        assert 'já foi finalizada' in resp.get_data(as_text=True)
         with app.app_context():
             assert db.session.get(TreinoVersao, tv_id) is not None
 

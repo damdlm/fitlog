@@ -5,15 +5,6 @@
 
 {% block content %}
 <style>
-    :root {
-        --nv-orange: #F28C33;
-        --nv-orange-light: #FFB366;
-        --nv-ink: #1F2937;
-        --nv-muted: #6B7280;
-        --nv-line: #EEF0F3;
-        --nv-bg-soft: #F9FAFB;
-    }
-
     .nv-header {
         display: flex;
         justify-content: space-between;
@@ -25,123 +16,30 @@
     .nv-header h1 {
         font-size: 1.5rem;
         font-weight: 700;
-        color: var(--nv-ink);
+        color: var(--secondary-color);
         margin: 0;
     }
-
-    .nv-atual {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        flex-wrap: wrap;
-        background: var(--nv-bg-soft);
-        border: 1px solid var(--nv-line);
-        border-radius: 14px;
-        padding: 14px 18px;
-        margin-bottom: 24px;
-        font-size: 0.88rem;
-        color: var(--nv-muted);
-    }
-    .nv-atual i { color: var(--nv-orange); font-size: 1.1rem; }
-    .nv-atual strong { color: var(--nv-ink); }
-
     .nv-card {
         background: white;
-        border: 1px solid var(--nv-line);
+        border: 1px solid rgba(0,0,0,0.06);
         border-radius: 16px;
-        overflow: hidden;
+        padding: 28px 24px;
+        text-align: center;
     }
-    .nv-card-body { padding: 24px; }
-
-    .nv-field { margin-bottom: 24px; }
-    .nv-field label {
-        font-weight: 600;
-        font-size: 0.88rem;
-        color: var(--nv-ink);
-        margin-bottom: 8px;
-        display: block;
-    }
-    .nv-field small.nv-hint { color: var(--nv-muted); display: block; margin-top: 6px; }
-    .nv-field input[type="text"],
-    .nv-field input[type="date"] {
-        border-radius: 10px;
-        border: 1px solid var(--nv-line);
-        padding: 0.65rem 0.9rem;
-        width: 100%;
-        font-size: 0.95rem;
-    }
-    .nv-field input:focus {
-        outline: none;
-        border-color: var(--nv-orange);
-        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12);
-    }
-
-    /* Seletor visual de divisão */
-    .nv-divisao-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 12px;
-    }
-    .nv-divisao-option { position: relative; }
-    .nv-divisao-option input {
-        position: absolute;
-        opacity: 0;
-        inset: 0;
-        margin: 0;
-        cursor: pointer;
-    }
-    .nv-divisao-card {
-        border: 2px solid var(--nv-line);
-        border-radius: 14px;
-        padding: 16px;
-        cursor: pointer;
-        transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
-        height: 100%;
-    }
-    .nv-divisao-option input:checked + .nv-divisao-card {
-        border-color: var(--nv-orange);
-        background: rgba(242, 140, 51, 0.06);
-    }
-    .nv-divisao-option:hover .nv-divisao-card { transform: translateY(-1px); }
-    .nv-divisao-letras {
-        display: flex;
-        gap: 6px;
-        margin-bottom: 10px;
-    }
-    .nv-letra-pill {
-        width: 26px;
-        height: 26px;
+    .nv-icon {
+        width: 56px; height: 56px;
         border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: white;
-        background: linear-gradient(135deg, var(--nv-orange) 0%, var(--nv-orange-light) 100%);
+        background: rgba(242,140,51,0.1);
+        color: #F28C33;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem;
+        margin: 0 auto 14px;
     }
-    .nv-divisao-nome { font-weight: 700; color: var(--nv-ink); font-size: 0.95rem; }
-    .nv-divisao-desc { font-size: 0.8rem; color: var(--nv-muted); margin-top: 2px; }
-
-    .nv-info-box {
-        display: flex;
-        gap: 12px;
-        background: var(--nv-bg-soft);
-        border: 1px solid var(--nv-line);
-        border-radius: 12px;
-        padding: 14px 16px;
-        font-size: 0.88rem;
-        color: var(--nv-muted);
-        margin-bottom: 24px;
-    }
-    .nv-info-box i { color: var(--nv-orange); font-size: 1.1rem; flex-shrink: 0; }
-    .nv-info-box strong { color: var(--nv-ink); }
-
-    .nv-actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
+    .nv-card h2 { font-size: 1.15rem; font-weight: 700; color: var(--secondary-color); margin-bottom: 6px; }
+    .nv-card p { color: #8a8a8a; font-size: 0.9rem; margin-bottom: 22px; }
+    .nv-form { max-width: 420px; margin: 0 auto; text-align: left; }
+    .nv-form .form-control { border-radius: 10px; padding: 0.7rem 1rem; }
+    .nv-form .form-control:focus { border-color: #F28C33; box-shadow: 0 0 0 3px rgba(242,140,51,0.12); }
 </style>
 
 <div class="nv-header">
@@ -154,103 +52,20 @@
     </a>
 </div>
 
-{% if versao_atual %}
-<div class="nv-atual">
-    <i class="bi bi-info-circle"></i>
-    <span>
-        Versão atual: <strong>{{ versao_atual.descricao }}</strong> ({{ versao_atual.divisao }}).
-        A versão atual do aluno será encerrada automaticamente na data de início da nova versão, a menos que você informe uma data de fim diferente.
-    </span>
-</div>
-{% endif %}
-
 <div class="nv-card">
-    <div class="nv-card-body">
-        <form method="post" id="formNovaVersao">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-            <div class="nv-field">
-                <label for="descricao">Descrição</label>
-                <input type="text" id="descricao" name="descricao" placeholder="Ex: Versão Inicial 2026" required>
-                <small class="nv-hint">Um nome pra você identificar essa fase do treino depois.</small>
-            </div>
-
-            <div class="nv-field">
-                <label>Divisão (Split)</label>
-                <div class="nv-divisao-grid">
-                    <div class="nv-divisao-option">
-                        <input type="radio" name="divisao" id="divisaoABC" value="ABC" checked>
-                        <div class="nv-divisao-card">
-                            <div class="nv-divisao-letras">
-                                <span class="nv-letra-pill">A</span>
-                                <span class="nv-letra-pill">B</span>
-                                <span class="nv-letra-pill">C</span>
-                            </div>
-                            <div class="nv-divisao-nome">ABC</div>
-                            <div class="nv-divisao-desc">3 treinos</div>
-                        </div>
-                    </div>
-                    <div class="nv-divisao-option">
-                        <input type="radio" name="divisao" id="divisaoABCD" value="ABCD">
-                        <div class="nv-divisao-card">
-                            <div class="nv-divisao-letras">
-                                <span class="nv-letra-pill">A</span>
-                                <span class="nv-letra-pill">B</span>
-                                <span class="nv-letra-pill">C</span>
-                                <span class="nv-letra-pill">D</span>
-                            </div>
-                            <div class="nv-divisao-nome">ABCD</div>
-                            <div class="nv-divisao-desc">4 treinos</div>
-                        </div>
-                    </div>
-                    <div class="nv-divisao-option">
-                        <input type="radio" name="divisao" id="divisaoABCDE" value="ABCDE">
-                        <div class="nv-divisao-card">
-                            <div class="nv-divisao-letras">
-                                <span class="nv-letra-pill">A</span>
-                                <span class="nv-letra-pill">B</span>
-                                <span class="nv-letra-pill">C</span>
-                                <span class="nv-letra-pill">D</span>
-                                <span class="nv-letra-pill">E</span>
-                            </div>
-                            <div class="nv-divisao-nome">ABCDE</div>
-                            <div class="nv-divisao-desc">5 treinos</div>
-                        </div>
-                    </div>
-                </div>
-                <small class="nv-hint">Você adiciona os treinos de cada letra depois de criar a versão — não precisa cadastrá-los agora.</small>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="nv-field">
-                        <label for="data_inicio">Data de início</label>
-                        <input type="date" id="data_inicio" name="data_inicio" value="{{ data_atual_iso() }}" required>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="nv-field">
-                        <label for="data_fim">Data de fim <span class="text-muted fw-normal">(opcional)</span></label>
-                        <input type="date" id="data_fim" name="data_fim">
-                        <small class="nv-hint">Deixe em branco se essa for a versão atual (em andamento).</small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="nv-info-box">
-                <i class="bi bi-lightbulb"></i>
-                <span><strong>Dica:</strong> mudar de divisão (ex: ABC → ABCD) no meio do plano é normal — é só criar uma nova versão quando quiser evoluir o treino.</span>
-            </div>
-
-            <div class="nv-actions">
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="bi bi-save"></i> Criar versão
-                </button>
-                <a href="{{ url_for('professor.versoes_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary btn-lg">
-                    Cancelar
-                </a>
-            </div>
-        </form>
-    </div>
+    <div class="nv-icon"><i class="bi bi-flag"></i></div>
+    <h2>Comece uma nova versão</h2>
+    <p>Dê um nome pra essa fase do treino de {{ aluno.nome_completo or aluno.username }}. A data de início é hoje, e vocês adicionam os treinos depois.</p>
+    <form method="post" class="nv-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-3">
+            <label for="descricao" class="form-label fw-bold">Descrição da versão</label>
+            <input type="text" id="descricao" name="descricao" class="form-control form-control-lg"
+                   placeholder="Ex: Foco em hipertrofia - Setembro" maxlength="200" required autofocus>
+        </div>
+        <button type="submit" class="btn btn-lg w-100" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
+            <i class="bi bi-check-circle"></i> Criar versão
+        </button>
+    </form>
 </div>
 {% endblock %}

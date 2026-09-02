@@ -199,10 +199,16 @@
             <div class="card-body">
                 <div class="va-stat-icon"><i class="bi bi-bookmark-check"></i></div>
                 <div>
-                    <div class="va-stat-value">
-                        {% if versao_ativa %}v{{ versao_ativa.numero_versao }}{% else %}-{% endif %}
-                    </div>
+                    {% if versao_ativa %}
+                    <div class="va-stat-value">v{{ versao_ativa.numero_versao }}</div>
                     <div class="va-stat-label">Versão Ativa</div>
+                    {% else %}
+                    <a href="{{ url_for('professor.nova_versao_aluno', aluno_id=aluno.id) }}"
+                       class="va-stat-value" style="color: white; text-decoration: underline; font-size: 1rem; display: inline-block;">
+                        <i class="bi bi-plus-circle"></i> Criar versão
+                    </a>
+                    <div class="va-stat-label">Sem versão ativa</div>
+                    {% endif %}
                 </div>
             </div>
         </div>

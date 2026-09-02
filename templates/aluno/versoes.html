@@ -94,9 +94,16 @@
 
 <div class="v-header">
     <h1><i class="bi bi-layers me-1" style="color:#F28C33;"></i> {{ titulo or 'Minhas Versões' }}</h1>
+    {% set tem_versao_ativa = versoes|selectattr('data_fim', 'none')|list|length > 0 %}
+    {% if criar_versao_url and versoes and not tem_versao_ativa %}
+    <a href="{{ criar_versao_url }}" class="btn btn-sm" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+        <i class="bi bi-plus-circle"></i> Nova versão
+    </a>
+    {% else %}
     <a href="{{ voltar_url }}" class="btn btn-sm" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
         <i class="bi bi-clipboard2-plus"></i> {{ voltar_label or 'Cadastrar Treinos' }}
     </a>
+    {% endif %}
 </div>
 
 {% if not versoes %}
@@ -104,8 +111,8 @@
     <div class="v-empty-icon"><i class="bi bi-layers"></i></div>
     <h2>Nenhuma versão ainda</h2>
     <p>{{ vazio_texto or 'Vá em "Cadastrar Treinos" para criar a primeira versão de treino.' }}</p>
-    <a href="{{ voltar_url }}" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
-        <i class="bi bi-check-circle"></i> Começar agora
+    <a href="{{ criar_versao_url or voltar_url }}" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
+        <i class="bi bi-check-circle"></i> {{ 'Criar versão' if criar_versao_url else 'Começar agora' }}
     </a>
 </div>
 {% else %}
