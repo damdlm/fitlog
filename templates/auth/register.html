@@ -3,164 +3,131 @@
 {% block page_icon %}{% endblock %}
 {% block page_title %}{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth-login.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth-register.css') }}">
+{% endblock %}
+
 {% block content %}
-<style>
-.btn-outline-primary.active-tipo {
-    background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
-    color: white;
-    border-color: #F28C33;
-}
-
-.btn-outline-primary.active-tipo i {
-    color: white !important;
-}
-
-.btn-outline-primary {
-    transition: all 0.3s ease;
-}
-
-.btn-outline-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(242, 140, 51, 0.3);
-}
-
-@keyframes fitlogFadeIn {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fitlogShake {
-    10%, 90% { transform: translateX(-1px); }
-    20%, 80% { transform: translateX(2px); }
-    30%, 50%, 70% { transform: translateX(-4px); }
-    40%, 60% { transform: translateX(4px); }
-}
-.fitlog-shake { animation: fitlogShake 0.4s; }
-</style>
-
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow-sm">
-            <div class="card-header bg-white text-center py-3">
-                <h4 class="mb-0" style="color: #F28C33;">
-                    <i class="bi bi-person-plus"></i> Criar Conta
-                </h4>
+<div class="login-shell">
+    <div class="login-card register-card">
+        <div class="login-panel-form register-panel-form">
+            <div class="login-form-header">
+                <h1><i class="bi bi-person-plus"></i> Criar conta</h1>
+                <p>Leva menos de um minuto pra começar a treinar com o FitLog.</p>
             </div>
-            <div class="card-body p-4">
-                <form method="post">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Tipo de Usuário</label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="tipo_usuario" id="tipo_aluno" value="aluno" checked>
-                            <label class="btn btn-outline-primary d-flex align-items-center justify-content-center" for="tipo_aluno">
-                                <i class="bi bi-person me-2 aluno-icon"></i>
-                                <span>Aluno</span>
-                                <i class="bi bi-graph-up-arrow ms-2 text-muted aluno-icon-feature" style="font-size: 0.8rem;"></i>
-                            </label>
-                            
-                            <input type="radio" class="btn-check" name="tipo_usuario" id="tipo_professor" value="professor">
-                            <label class="btn btn-outline-primary d-flex align-items-center justify-content-center" for="tipo_professor">
-                                <i class="bi bi-person-badge me-2 professor-icon"></i>
-                                <span>Professor</span>
-                                <i class="bi bi-people ms-2 text-muted professor-icon-feature" style="font-size: 0.8rem;"></i>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Nome Completo</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-person"></i></span>
-                            <input type="text" name="nome_completo" class="form-control" 
-                                   placeholder="Digite seu nome completo">
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Usuário</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-at"></i></span>
-                            <input type="text" name="username" class="form-control" 
-                                   placeholder="Escolha um nome de usuário" required autofocus
-                                   minlength="3" maxlength="80">
-                        </div>
-                        <small class="text-muted">Mínimo 3 caracteres</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">E-mail</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                            <input type="email" name="email" id="emailInput" class="form-control" 
-                                   placeholder="Digite seu e-mail" required>
-                        </div>
-                        <div id="emailFeedback" class="alert alert-danger d-flex align-items-center gap-2 mt-2 mb-0 py-2 px-3 d-none"
-                             style="font-size: 0.9rem; border-radius: 10px; animation: fitlogFadeIn 0.2s ease-out;">
-                            <i class="bi bi-exclamation-circle-fill"></i>
-                            <span>Este e-mail já está cadastrado. Use outro e-mail ou faça login.</span>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Telefone (opcional)</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-telephone"></i></span>
-                            <input type="text" name="telefone" class="form-control" 
-                                   placeholder="(11) 99999-9999">
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Senha</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                            <input type="password" name="password" class="form-control" 
-                                   placeholder="Digite sua senha" required minlength="6">
-                        </div>
-                        <small class="text-muted">Mínimo 6 caracteres</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Confirmar Senha</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                            <input type="password" name="confirm_password" class="form-control" 
-                                   placeholder="Digite a senha novamente" required>
-                        </div>
-                    </div>
-                    
-                    <div class="alert alert-info" id="infoAluno" style="display: block;">
-                        <i class="bi bi-info-circle"></i>
-                        Como <strong>aluno</strong>, você poderá registrar seus treinos e acompanhar sua evolução.
-                    </div>
-                    
-                    <div class="alert alert-info" id="infoProfessor" style="display: none;">
-                        <i class="bi bi-info-circle"></i>
-                        Como <strong>professor</strong>, você poderá gerenciar treinos de múltiplos alunos e acompanhar seu progresso.
-                    </div>
-                    
-                    <div class="form-check my-3">
-                        <input type="checkbox" class="form-check-input" id="aceite_termos" name="aceite_termos" required>
-                        <label class="form-check-label small" for="aceite_termos">
-                            Li e aceito os <a href="{{ url_for('privacidade.termos') }}" target="_blank">Termos de Uso</a> e a <a href="{{ url_for('privacidade.politica') }}" target="_blank">Política de Privacidade</a>.
+
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                <div class="login-field">
+                    <label>Tipo de Usuário</label>
+                    <div class="tipo-usuario-group" role="group">
+                        <input type="radio" class="btn-check" name="tipo_usuario" id="tipo_aluno" value="aluno" checked>
+                        <label class="btn btn-outline-primary d-flex align-items-center justify-content-center" for="tipo_aluno">
+                            <i class="bi bi-person me-2 aluno-icon"></i>
+                            <span>Aluno</span>
+                            <i class="bi bi-graph-up-arrow ms-2 text-muted aluno-icon-feature" style="font-size: 0.8rem;"></i>
+                        </label>
+
+                        <input type="radio" class="btn-check" name="tipo_usuario" id="tipo_professor" value="professor">
+                        <label class="btn btn-outline-primary d-flex align-items-center justify-content-center" for="tipo_professor">
+                            <i class="bi bi-person-badge me-2 professor-icon"></i>
+                            <span>Professor</span>
+                            <i class="bi bi-people ms-2 text-muted professor-icon-feature" style="font-size: 0.8rem;"></i>
                         </label>
                     </div>
-
-                    <button type="submit" class="btn w-100 py-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
-                        <i class="bi bi-person-plus"></i> Criar conta
-                    </button>
-                </form>
-                
-                <hr class="my-4">
-                
-                <div class="text-center">
-                    <p class="mb-2">Já tem uma conta?</p>
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">
-                        <i class="bi bi-box-arrow-in-right"></i> Fazer login
-                    </a>
                 </div>
-            </div>
+
+                <div class="login-field">
+                    <label for="regNomeCompleto">Nome Completo</label>
+                    <div class="login-input-group">
+                        <i class="bi bi-person login-input-icon"></i>
+                        <input type="text" id="regNomeCompleto" name="nome_completo"
+                               placeholder="Digite seu nome completo">
+                    </div>
+                </div>
+
+                <div class="login-field">
+                    <label for="regUsername">Usuário</label>
+                    <div class="login-input-group">
+                        <i class="bi bi-at login-input-icon"></i>
+                        <input type="text" id="regUsername" name="username"
+                               placeholder="Escolha um nome de usuário" required autofocus
+                               minlength="3" maxlength="80">
+                    </div>
+                    <span class="login-field-hint">Mínimo 3 caracteres</span>
+                </div>
+
+                <div class="login-field">
+                    <label for="emailInput">E-mail</label>
+                    <div class="login-input-group">
+                        <i class="bi bi-envelope login-input-icon"></i>
+                        <input type="email" name="email" id="emailInput"
+                               placeholder="Digite seu e-mail" required>
+                    </div>
+                    <div id="emailFeedback" class="register-email-alert d-flex align-items-center gap-2 mt-2 mb-0 py-2 px-3 d-none"
+                         style="animation: fitlogFadeIn 0.2s ease-out;">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <span>Este e-mail já está cadastrado. Use outro e-mail ou faça login.</span>
+                    </div>
+                </div>
+
+                <div class="login-field">
+                    <label for="regTelefone">Telefone (opcional)</label>
+                    <div class="login-input-group">
+                        <i class="bi bi-telephone login-input-icon"></i>
+                        <input type="text" id="regTelefone" name="telefone"
+                               placeholder="(11) 99999-9999">
+                    </div>
+                </div>
+
+                <div class="login-field">
+                    <label for="regPassword">Senha</label>
+                    <div class="login-input-group">
+                        <i class="bi bi-lock login-input-icon"></i>
+                        <input type="password" id="regPassword" name="password"
+                               placeholder="Digite sua senha" required minlength="6">
+                    </div>
+                    <span class="login-field-hint">Mínimo 6 caracteres</span>
+                </div>
+
+                <div class="login-field">
+                    <label for="regConfirmPassword">Confirmar Senha</label>
+                    <div class="login-input-group">
+                        <i class="bi bi-lock-fill login-input-icon"></i>
+                        <input type="password" id="regConfirmPassword" name="confirm_password"
+                               placeholder="Digite a senha novamente" required>
+                    </div>
+                </div>
+
+                <div class="register-info-box mb-3" id="infoAluno" style="display: block;">
+                    <i class="bi bi-info-circle"></i>
+                    Como <strong>aluno</strong>, você poderá registrar seus treinos e acompanhar sua evolução.
+                </div>
+
+                <div class="register-info-box mb-3" id="infoProfessor" style="display: none;">
+                    <i class="bi bi-info-circle"></i>
+                    Como <strong>professor</strong>, você poderá gerenciar treinos de múltiplos alunos e acompanhar seu progresso.
+                </div>
+
+                <div class="register-terms-check">
+                    <input type="checkbox" class="form-check-input" id="aceite_termos" name="aceite_termos" required>
+                    <label for="aceite_termos">
+                        Li e aceito os <a href="{{ url_for('privacidade.termos') }}" target="_blank">Termos de Uso</a> e a <a href="{{ url_for('privacidade.politica') }}" target="_blank">Política de Privacidade</a>.
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-login-submit">
+                    <i class="bi bi-person-plus"></i> Criar conta
+                </button>
+            </form>
+
+            <div class="login-divider">ou</div>
+
+            <a href="{{ url_for('auth.login') }}" class="btn-login-register">
+                <i class="bi bi-box-arrow-in-right"></i> Fazer login
+            </a>
         </div>
     </div>
 </div>
@@ -177,11 +144,9 @@
                 infoAluno.style.display = 'block';
                 infoProfessor.style.display = 'none';
                 
-                // Destacar visualmente a opção selecionada
                 document.querySelector('label[for="tipo_aluno"]').classList.add('active-tipo');
                 document.querySelector('label[for="tipo_professor"]').classList.remove('active-tipo');
                 
-                // Mudar ícones
                 document.querySelectorAll('.aluno-icon-feature').forEach(el => {
                     el.style.color = '#F28C33';
                 });
@@ -206,13 +171,12 @@
         
         radioAluno.addEventListener('change', atualizarInfo);
         radioProfessor.addEventListener('change', atualizarInfo);
-        
-        // Inicializar
         atualizarInfo();
 
         // --- Validação de e-mail já cadastrado ---
         const emailInput = document.getElementById('emailInput');
         const emailFeedback = document.getElementById('emailFeedback');
+        const emailGroup = emailInput.closest('.login-input-group');
         const form = emailInput.closest('form');
         const submitBtnCadastro = form.querySelector('button[type="submit"]');
         const submitBtnCadastroHtmlOriginal = submitBtnCadastro.innerHTML;
@@ -220,11 +184,13 @@
         function mostrarFeedbackEmail() {
             emailFeedback.classList.remove('d-none');
             emailInput.classList.add('is-invalid');
+            if (emailGroup) emailGroup.classList.add('is-invalid-group');
         }
 
         function esconderFeedbackEmail() {
             emailFeedback.classList.add('d-none');
             emailInput.classList.remove('is-invalid');
+            if (emailGroup) emailGroup.classList.remove('is-invalid-group');
         }
 
         async function emailJaExiste(email) {
@@ -233,11 +199,6 @@
             return dados.exists;
         }
 
-        // Checagem "de passagem" ao sair do campo -- dá feedback rápido,
-        // mas NÃO é a validação que decide se o formulário pode ser
-        // enviado (ver submit abaixo), pra evitar corrida entre o blur
-        // ainda em andamento e um envio rápido (Enter ou clique rápido
-        // no botão antes do blur terminar).
         emailInput.addEventListener('blur', async function() {
             const email = emailInput.value.trim();
             esconderFeedbackEmail();
@@ -269,8 +230,6 @@
                 }
                 form.submit();
             } catch (erro) {
-                // Falha ao checar (ex: sem internet): não trava o usuário
-                // -- deixa o backend, que valida de novo, tratar o envio.
                 console.error('Erro ao verificar e-mail:', erro);
                 form.submit();
             } finally {

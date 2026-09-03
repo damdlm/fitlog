@@ -1,0 +1,143 @@
+/**
+ * Tela de cadastro — reaproveita os componentes visuais criados para o
+ * login (.login-shell, .login-card, .login-panel-brand, .login-panel-form,
+ * .login-field, .login-input-group, .btn-login-submit, .login-divider,
+ * .btn-login-register, .login-terms -- definidos em static/css/auth-login.css,
+ * incluído junto com este arquivo).
+ *
+ * Aqui só ficam os complementos específicos do cadastro: card maior (mais
+ * campos), seletor de tipo de usuário, caixas de info aluno/professor e o
+ * estado de erro do campo de e-mail.
+ */
+
+.register-card {
+    max-width: 640px;
+}
+
+.register-panel-form {
+    padding: 40px 40px 36px;
+}
+
+/* Seletor "Aluno / Professor" */
+.tipo-usuario-group {
+    display: flex;
+    gap: 10px;
+}
+
+.tipo-usuario-group .btn-outline-primary {
+    flex: 1;
+    border-radius: 14px;
+    border: 1.5px solid #e9ecef;
+    color: var(--secondary-color, #2D2D2D);
+    transition: all 0.2s ease;
+    padding: 12px 10px;
+}
+
+.tipo-usuario-group .btn-outline-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(242, 140, 51, 0.18);
+    border-color: var(--primary-color, #F28C33);
+}
+
+.tipo-usuario-group .btn-outline-primary.active-tipo {
+    background: var(--gradient-primary, var(--primary-color, #F28C33));
+    color: #fff;
+    border-color: transparent;
+}
+
+.tipo-usuario-group .btn-outline-primary.active-tipo i {
+    color: #fff !important;
+}
+
+/* Caixas informativas (aluno/professor) */
+.register-info-box {
+    border: none;
+    border-radius: 14px;
+    background: #fff4e8;
+    color: var(--secondary-color, #2D2D2D);
+    font-size: 0.85rem;
+    padding: 12px 14px;
+}
+
+.register-info-box i {
+    color: var(--primary-color, #F28C33);
+}
+
+/* Dica de texto abaixo de um campo (ex.: "Mínimo 3 caracteres") */
+.login-field-hint {
+    display: block;
+    font-size: 0.78rem;
+    color: #adb5bd;
+    margin-top: 5px;
+}
+
+/* Estado de erro do campo de e-mail (aplicado via JS no wrapper, não só
+   no input -- pra funcionar independente de suporte a :has() */
+.login-input-group.is-invalid-group {
+    border-color: #dc3545;
+    background: #fff5f5;
+}
+
+.login-input-group.is-invalid-group i.login-input-icon {
+    color: #dc3545;
+}
+
+.register-email-alert {
+    border: none;
+    border-radius: 10px;
+    background: #fdecea;
+    color: #dc3545;
+    font-size: 0.85rem;
+}
+
+/* Aceite de termos */
+.register-terms-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin: 18px 0 20px;
+}
+
+.register-terms-check .form-check-input {
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
+.register-terms-check .form-check-input:checked {
+    background-color: var(--primary-color, #F28C33);
+    border-color: var(--primary-color, #F28C33);
+}
+
+.register-terms-check a {
+    color: var(--primary-color, #F28C33);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.register-terms-check a:hover {
+    text-decoration: underline;
+}
+
+@keyframes fitlogFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fitlogShake {
+    10%, 90% { transform: translateX(-1px); }
+    20%, 80% { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-4px); }
+    40%, 60% { transform: translateX(4px); }
+}
+
+.fitlog-shake {
+    animation: fitlogShake 0.4s;
+}
+
+@media (max-width: 575.98px) {
+    .register-panel-form {
+        padding: 30px 22px 26px;
+    }
+}
