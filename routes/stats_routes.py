@@ -153,6 +153,19 @@ def visualizar_tabela():
 
     semanas = sorted(dados_tabela['semanas'], key=_chave_semana)
 
+    # `RegistroTreino.semana` é preenchido em routes/register_routes.py com
+    # `data_para_semana()`, que devolve a semana ISO *do ano* (1-53) -- por
+    # isso a tabela mostrava números como "32ª Semana" em vez de "3ª Semana".
+    # Aqui, em vez de mudar esse campo já gravado no banco (afetaria outras
+    # telas e todo o histórico já salvo), recalcula-se só para exibição: como
+    # `semanas` já está em ordem cronológica, dá pra numerar de novo a partir
+    # de 1 sempre que o período (mês) mudar -- 1ª, 2ª, 3ª semana daquele mês,
+    # na ordem em que houve treino registrado.
+    contador_por_periodo = {}
+    for s in semanas:
+        contador_por_periodo[s['periodo']] = contador_por_periodo.get(s['periodo'], 0) + 1
+        s['semana_do_mes'] = contador_por_periodo[s['periodo']]
+
     # Agrupa os exercícios em blocos por treino -- cada bloco vira um grupo
     # de linhas com a mesma cor (zebra por bloco) e, entre um bloco e o
     # próximo, o template insere uma linha espaçadora. Já resolve, para

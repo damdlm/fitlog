@@ -129,9 +129,10 @@
         text-align: left;
     }
 
-    /* Linha espaçadora em branco entre um treino e o próximo */
+    /* Linha espaçadora cinza entre um treino e o próximo (mesmo cinza da
+       moldura/cabeçalho -- antes estava branca, destoando do resto). */
     #progressTable tr.linha-espacadora td {
-        background: #fff;
+        background: #808080;
         padding: 0;
         height: 8px;
         border: none;
@@ -151,13 +152,23 @@
         left: 0;
     }
 
-    /* Nome do exercício: truncado (o texto já vem cortado em até 20
-       caracteres do servidor); o ellipsis aqui é só uma rede de segurança
-       caso a largura calculada em JS fique menor que isso em telas muito
-       estreitas. Clicável -- mostra o nome completo num tooltip. */
+    /* Nome do exercício: sem limite de caracteres fixo -- o nome inteiro
+       fica no HTML e o corte visual (com "…") é feito só pelo CSS, de
+       acordo com a largura real da coluna (calculada em JS conforme o
+       tamanho da tela, ver bloco de scripts). O JS mede depois de aplicar
+       essa largura se o texto ficou cortado (`scrollWidth > clientWidth`)
+       e só aí ativa o clique para abrir o tooltip com o nome completo. */
     #progressTable td.exercicio-cell {
-        text-overflow: ellipsis;
+        cursor: default;
+    }
+    #progressTable td.exercicio-cell[data-truncado="1"] {
         cursor: pointer;
+    }
+    #progressTable .exercicio-texto {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     /* Colunas de dado (Carga/Rep.) e a coluna Exercício -- largura
@@ -246,7 +257,7 @@
                 <th class="col-exercicio" rowspan="2">Exercício</th>
                 {% for semana in semanas %}
                 <th colspan="2" class="th-semana semana-inicio">
-                    {{ semana.semana }}ª Semana
+                    {{ semana.semana_do_mes }}ª Semana
                     <span class="semana-mes">{{ semana.periodo.split('/')[0] }}</span>
                 </th>
                 {% endfor %}
@@ -265,13 +276,11 @@
                 {% set cor_bloco = 'bloco-azul' if bloco.i is odd else 'bloco-pessego' %}
                 {% for exercicio in grupo.exercicios %}
                     <tr class="{{ cor_bloco }}">
-                        {% set nome_completo = exercicio.nome %}
-                        {% set truncado = nome_completo|length > 20 %}
                         <td class="col-exercicio exercicio-cell"
-                            data-full="{{ nome_completo }}"
-                            data-truncado="{{ '1' if truncado else '0' }}"
-                            title="{{ nome_completo }}">
-                            {{ nome_completo[:20] }}{{ '…' if truncado else '' }}
+                            data-full="{{ exercicio.nome }}"
+                            data-truncado="0"
+                            title="{{ exercicio.nome }}">
+                            <span class="exercicio-texto">{{ exercicio.nome }}</span>
                         </td>
                         {% for s in exercicio.semanas %}
                         <td class="td-dado semana-inicio">{{ s.carga if s.carga is not none else '' }}</td>
@@ -345,8 +354,32 @@
         // arrastar para a esquerda para ver semanas mais antigas.
         wrap.scrollLeft = wrap.scrollWidth;
 
-        // ---- 3) Tooltip com o nome completo ao tocar/clicar no exercício
-        // (nomes com mais de 20 caracteres vêm cortados com "…" do servidor)
+        // ---- 3) Mede quais nomes de exercício realmente ficaram cortados
+        // com a largura de coluna calculada acima (não é mais um limite
+        // fixo de caracteres -- muda de aparelho para aparelho). Só ativa
+        // o clique/tooltip nas células onde o texto de fato não coube.
+        var celulasExercicio = table.querySelectorAll('.exercicio-cell');
+        function atualizarTruncamento() {
+            celulasExercicio.forEach(function (celula) {
+                var span = celula.querySelector('.exercicio-texto');
+                if (!span) return;
+                var cortado = span.scrollWidth > span.clientWidth + 1;
+                celula.setAttribute('data-truncado', cortado ? '1' : '0');
+            });
+        }
+        // setTimeout(0) garante que a largura das colunas (definida acima
+        // via CSS custom properties) já foi aplicada pelo navegador antes
+        // de medir scrollWidth/clientWidth dos nomes.
+        setTimeout(atualizarTruncamento, 0);
+        window.addEventListener('resize', function () {
+            setTimeout(atualizarTruncamento, 0);
+        });
+        window.addEventListener('orientationchange', function () {
+            setTimeout(atualizarTruncamento, 0);
+        });
+
+        // ---- 4) Tooltip com o nome completo ao tocar/clicar no exercício
+        // (só nos nomes que a medição acima marcou como cortados)
         var tooltip = document.createElement('div');
         tooltip.className = 'prog-tooltip';
         document.body.appendChild(tooltip);
