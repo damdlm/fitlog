@@ -3,15 +3,21 @@
 <head>
     <!-- Detecção síncrona de "app instalado" -- roda antes de qualquer
          CSS/JS pesado, só pra decidir se o splash inicial (ver início do
-         <body>) deve aparecer. Se essa checagem falhar por qualquer
-         motivo (navegador muito antigo), a classe simplesmente não é
+         <body>) deve aparecer. Como o FitLog navega com recarregamento de
+         página completo (não é uma SPA), "está em standalone" seria
+         verdade em toda navegação -- por isso o splash só aparece uma vez
+         por sessão do navegador (sessionStorage), não a cada troca de
+         tela. Se a checagem falhar por qualquer motivo (navegador muito
+         antigo, sessionStorage bloqueado), a classe simplesmente não é
          adicionada e o splash nunca aparece -- fallback seguro. -->
     <script>
         (function () {
             try {
                 var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
                     || window.navigator.standalone === true;
-                if (standalone) {
+                var jaMostrouNestaSessao = window.sessionStorage
+                    && window.sessionStorage.getItem('fitlog_pwa_splash_shown') === '1';
+                if (standalone && !jaMostrouNestaSessao) {
                     document.documentElement.classList.add('pwa-standalone-launch');
                 }
             } catch (e) { /* segue sem splash */ }
@@ -1186,6 +1192,9 @@
             function remover() {
                 if (removido) return;
                 removido = true;
+                try {
+                    if (window.sessionStorage) window.sessionStorage.setItem('fitlog_pwa_splash_shown', '1');
+                } catch (e) { /* sem sessionStorage -- splash pode reaparecer, sem problema */ }
                 splash.classList.add('pwa-splash-hide');
                 window.setTimeout(function () {
                     if (splash.parentNode) splash.parentNode.removeChild(splash);

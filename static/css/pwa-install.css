@@ -18,7 +18,10 @@
 }
 
 .pwa-install-sheet-content {
-    pointer-events: auto;
+    pointer-events: none; /* só captura clique quando .is-visible (ver abaixo) --
+        senão, mesmo invisível (opacity 0) ele continua ocupando espaço
+        centralizado na tela e "rouba" cliques de tudo que estiver por
+        baixo, como o menu do usuário. */
     width: 100%;
     max-width: 480px;
     background: #fff;
@@ -34,6 +37,7 @@
 }
 
 .pwa-install-sheet.is-visible .pwa-install-sheet-content {
+    pointer-events: auto;
     transform: translateY(0);
     opacity: 1;
 }
