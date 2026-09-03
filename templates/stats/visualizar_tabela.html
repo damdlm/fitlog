@@ -34,6 +34,16 @@
     }
     .prog-header h2 { margin: 0; }
 
+    /* ===== Filtro por versão ===== */
+    .prog-filtro select {
+        font-family: inherit;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 6px 10px;
+        background: #fff;
+        color: #333;
+    }
+
     /* ===== Moldura cinza da planilha ===== */
     .prog-tabela-wrap {
         overflow-x: auto;
@@ -44,11 +54,20 @@
     }
 
     #progressTable {
-        border-collapse: collapse;
+        /* separate (não collapse) + spacing:0 -- visualmente idêntico aqui
+           (cada borda "grossa" cinza é desenhada só de um lado: border-right
+           no fim de "Exercício", border-left no início de cada semana --
+           nunca dos dois lados ao mesmo tempo, então não duplica linha),
+           mas com "collapse" o `position: sticky` na coluna "Exercício"
+           quebra em vários motores WebKit mais antigos (a coluna passa a
+           rolar junto com o resto em vez de ficar fixa). */
+        border-collapse: separate;
+        border-spacing: 0;
         width: 100%;
         font-family: 'Patrick Hand', 'Comic Sans MS', cursive, sans-serif;
         font-size: 1rem;
         background: #fff;
+        table-layout: fixed;
     }
 
     #progressTable th,
@@ -57,6 +76,8 @@
         padding: 4px 10px;
         text-align: center;
         white-space: nowrap;
+        box-sizing: border-box;
+        overflow: hidden;
     }
 
     /* Divisórias grossas cinza entre "Exercício" e cada bloco de semana,
@@ -71,7 +92,7 @@
         border-left: 3px solid #808080;
     }
 
-    /* ===== Cabeçalho ("Exercício" / "Carga" / "Rep.") ===== */
+    /* ===== Cabeçalho ("Exercício" / "Nª Semana-Mês" / "Carga" / "Rep.") ===== */
     #progressTable thead th {
         background: #808080;
         color: #fff;
@@ -80,6 +101,16 @@
     }
     #progressTable thead th.col-exercicio {
         text-align: left;
+    }
+    #progressTable thead th.th-semana {
+        font-style: italic;
+        font-weight: 400;
+        line-height: 1.15;
+        padding: 4px 10px 2px;
+    }
+    #progressTable thead th.th-semana .semana-mes {
+        display: block;
+        font-size: 0.9em;
     }
 
     /* ===== Zebra por BLOCO de treino (não por linha) ===== */
@@ -108,14 +139,60 @@
 
     /* ===== Coluna "Exercício" fixa ao rolar horizontalmente ===== */
     #progressTable .col-exercicio {
+        position: -webkit-sticky; /* Safari (inclusive iOS) exige o prefixo -- sem ele a coluna não gruda e rola junto com o resto */
         position: sticky;
         left: 0;
         z-index: 2;
-        width: 180px;
-        min-width: 180px;
     }
     #progressTable thead .col-exercicio { z-index: 3; }
-    #progressTable tr.linha-espacadora .col-exercicio { position: sticky; left: 0; }
+    #progressTable tr.linha-espacadora .col-exercicio {
+        position: -webkit-sticky;
+        position: sticky;
+        left: 0;
+    }
+
+    /* Nome do exercício: truncado (o texto já vem cortado em até 20
+       caracteres do servidor); o ellipsis aqui é só uma rede de segurança
+       caso a largura calculada em JS fique menor que isso em telas muito
+       estreitas. Clicável -- mostra o nome completo num tooltip. */
+    #progressTable td.exercicio-cell {
+        text-overflow: ellipsis;
+        cursor: pointer;
+    }
+
+    /* Colunas de dado (Carga/Rep.) e a coluna Exercício -- largura
+       calculada dinamicamente em JS como percentual da tela (ver o
+       bloco de scripts mais abaixo), para que as últimas 3 semanas
+       sempre caibam sem precisar rolar. Os valores abaixo são só o
+       estado inicial (antes do JS calcular), evitando colunas sem
+       largura nenhuma no primeiro frame. */
+    #progressTable col.col-exercicio-def { width: var(--prog-w-exercicio, 180px); }
+    #progressTable col.col-dado-def { width: var(--prog-w-dado, 60px); }
+
+    /* ===== Tooltip com o nome completo do exercício ===== */
+    .prog-tooltip {
+        position: absolute;
+        z-index: 1000;
+        max-width: 260px;
+        background: #333;
+        color: #fff;
+        font-family: 'Patrick Hand', 'Comic Sans MS', cursive, sans-serif;
+        font-size: 0.95rem;
+        line-height: 1.3;
+        padding: 6px 10px;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        white-space: normal;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-4px);
+        transition: opacity .12s ease, transform .12s ease;
+    }
+    .prog-tooltip.visivel {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
 
     .prog-empty {
         text-align: center;
@@ -131,8 +208,7 @@
 
     @media (max-width: 767.98px) {
         #progressTable { font-size: 0.76rem; }
-        #progressTable th, #progressTable td { padding: 4px 7px; }
-        #progressTable .col-exercicio { width: 148px; min-width: 148px; }
+        #progressTable th, #progressTable td { padding: 4px 6px; }
     }
 </style>
 {% endblock %}
@@ -142,14 +218,40 @@
     <h2>
         <i class="bi bi-table me-2" style="color: #808080;"></i>Tabela de Progresso
     </h2>
+    {% if versoes %}
+    <form method="get" class="prog-filtro">
+        <select name="versao_id" onchange="this.form.submit()">
+            <option value="">Todas as versões</option>
+            {% for v in versoes %}
+            <option value="{{ v.id }}" {{ 'selected' if versao_selecionada == v.id|string }}>
+                Versão {{ v.numero_versao }} — {{ v.descricao }}{{ ' (ativa)' if not v.data_fim }}
+            </option>
+            {% endfor %}
+        </select>
+    </form>
+    {% endif %}
 </div>
 
 {% if grupos_treino %}
 <div class="prog-tabela-wrap" id="progWrap">
     <table id="progressTable">
+        <colgroup>
+            <col class="col-exercicio-def">
+            {% for semana in semanas %}
+            <col class="col-dado-def"><col class="col-dado-def">
+            {% endfor %}
+        </colgroup>
         <thead>
             <tr>
-                <th class="col-exercicio">Exercício</th>
+                <th class="col-exercicio" rowspan="2">Exercício</th>
+                {% for semana in semanas %}
+                <th colspan="2" class="th-semana semana-inicio">
+                    {{ semana.semana }}ª Semana
+                    <span class="semana-mes">{{ semana.periodo.split('/')[0] }}</span>
+                </th>
+                {% endfor %}
+            </tr>
+            <tr>
                 {% for semana in semanas %}
                 <th class="semana-inicio">Carga</th>
                 <th>Rep.</th>
@@ -163,7 +265,14 @@
                 {% set cor_bloco = 'bloco-azul' if bloco.i is odd else 'bloco-pessego' %}
                 {% for exercicio in grupo.exercicios %}
                     <tr class="{{ cor_bloco }}">
-                        <td class="col-exercicio">{{ exercicio.nome }}</td>
+                        {% set nome_completo = exercicio.nome %}
+                        {% set truncado = nome_completo|length > 20 %}
+                        <td class="col-exercicio exercicio-cell"
+                            data-full="{{ nome_completo }}"
+                            data-truncado="{{ '1' if truncado else '0' }}"
+                            title="{{ nome_completo }}">
+                            {{ nome_completo[:20] }}{{ '…' if truncado else '' }}
+                        </td>
                         {% for s in exercicio.semanas %}
                         <td class="td-dado semana-inicio">{{ s.carga if s.carga is not none else '' }}</td>
                         <td class="td-dado">{{ s.repeticoes if s.repeticoes is not none else '' }}</td>
@@ -192,14 +301,97 @@
 
 {% block scripts %}
 <script>
-    // Abre a tela já mostrando as últimas semanas (colunas mais recentes,
-    // à direita) -- rolando o mais possível para a direita -- mas permite
-    // arrastar/rolar para a esquerda para ver semanas mais antigas.
     document.addEventListener('DOMContentLoaded', function () {
         var wrap = document.getElementById('progWrap');
-        if (wrap) {
-            wrap.scrollLeft = wrap.scrollWidth;
+        var table = document.getElementById('progressTable');
+        if (!wrap || !table) return;
+
+        var N_SEMANAS_VISIVEIS = 3; // 6 colunas de dado (Carga+Rep. x3)
+        var PCT_EXERCICIO = 0.38;   // ~38% da largura da tela p/ "Exercício"
+        var MIN_EXERCICIO = 90;
+        var MAX_EXERCICIO = 220;
+        var MIN_DADO = 40;
+
+        // ---- 1) Largura das colunas como percentual da tela ----
+        // Recalcula a cada resize/rotação de tela: a coluna "Exercício"
+        // fica com uma fatia fixa da largura visível e o restante é
+        // dividido entre as colunas de dado, de forma que 3 semanas
+        // (6 colunas) + "Exercício" preencham exatamente a tela --
+        // sem precisar rolar para ver Carga/Rep. das últimas semanas.
+        function ajustarLargura() {
+            var larguraDisponivel = wrap.clientWidth;
+            if (!larguraDisponivel) return;
+
+            var larguraExercicio = Math.min(
+                MAX_EXERCICIO,
+                Math.max(MIN_EXERCICIO, larguraDisponivel * PCT_EXERCICIO)
+            );
+            var larguraRestante = larguraDisponivel - larguraExercicio;
+            var larguraDado = Math.max(
+                MIN_DADO,
+                larguraRestante / (N_SEMANAS_VISIVEIS * 2)
+            );
+
+            wrap.style.setProperty('--prog-w-exercicio', larguraExercicio + 'px');
+            wrap.style.setProperty('--prog-w-dado', larguraDado + 'px');
         }
+
+        ajustarLargura();
+        window.addEventListener('resize', ajustarLargura);
+        window.addEventListener('orientationchange', ajustarLargura);
+
+        // ---- 2) Abre já mostrando as últimas semanas (mais recentes à
+        // direita) -- rola o mais possível para a direita, mas permite
+        // arrastar para a esquerda para ver semanas mais antigas.
+        wrap.scrollLeft = wrap.scrollWidth;
+
+        // ---- 3) Tooltip com o nome completo ao tocar/clicar no exercício
+        // (nomes com mais de 20 caracteres vêm cortados com "…" do servidor)
+        var tooltip = document.createElement('div');
+        tooltip.className = 'prog-tooltip';
+        document.body.appendChild(tooltip);
+
+        function esconderTooltip() {
+            tooltip.classList.remove('visivel');
+        }
+
+        table.addEventListener('click', function (ev) {
+            var celula = ev.target.closest('.exercicio-cell');
+            if (!celula || celula.getAttribute('data-truncado') !== '1') {
+                esconderTooltip();
+                return;
+            }
+
+            var completo = celula.getAttribute('data-full') || '';
+            var jaAberto = tooltip.classList.contains('visivel') && tooltip.dataset.alvo === completo;
+            if (jaAberto) { esconderTooltip(); return; }
+
+            tooltip.textContent = completo;
+            tooltip.dataset.alvo = completo;
+
+            var rect = celula.getBoundingClientRect();
+            var MARGEM = 8;
+            var LARGURA_TOOLTIP = 260; // mesmo valor do max-width no CSS
+            var larguraJanela = document.documentElement.clientWidth || window.innerWidth || 320;
+            // maxLeft nunca fica abaixo de MARGEM, mesmo se larguraJanela vier
+            // menor que o tooltip (evita jogar o tooltip para fora da tela
+            // com left negativo em telas muito estreitas ou motores que
+            // relatem clientWidth de forma inconsistente)
+            var maxLeft = Math.max(MARGEM, larguraJanela - LARGURA_TOOLTIP - MARGEM);
+            var left = Math.min(Math.max(MARGEM, rect.left), maxLeft) + window.scrollX;
+
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+            tooltip.classList.add('visivel');
+        });
+
+        document.addEventListener('click', function (ev) {
+            if (!ev.target.closest('.exercicio-cell') && !ev.target.closest('.prog-tooltip')) {
+                esconderTooltip();
+            }
+        });
+        wrap.addEventListener('scroll', esconderTooltip);
+        window.addEventListener('resize', esconderTooltip);
     });
 </script>
 {% endblock %}

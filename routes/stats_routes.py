@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 from flask_login import login_required
 from datetime import datetime, timedelta, timezone
 from itertools import groupby
@@ -7,6 +7,7 @@ from services.exercicio_service import ExercicioService
 from services.musculo_service import MusculoService
 from services.registro_service import RegistroService
 from services.estatistica_service import EstatisticaService
+from services.versao_service import VersaoService
 from utils.decorators import acesso_premium_required
 from utils.date_utils import MESES
 import logging
@@ -47,6 +48,18 @@ def _get_treino_codigo(exercicio):
     """
     treino_ref = getattr(exercicio, 'treino_ref', None)
     return treino_ref.codigo if treino_ref else ""
+
+
+def _get_versao_id(exercicio):
+    """Retorna o id da versão (VersaoGlobal) do treino atual do exercício.
+
+    Usa o mesmo `treino_ref` já anexado em lote por
+    ExercicioService.get_exercicios_dos_treinos() -- sem query extra por
+    exercício. Um exercício sem treino associado (não deveria acontecer
+    aqui, já que a função só traz exercícios de algum treino) retorna None.
+    """
+    treino_ref = getattr(exercicio, 'treino_ref', None)
+    return treino_ref.versao_id if treino_ref else None
 
 
 @stats_bp.route("/estatisticas")
@@ -92,24 +105,32 @@ def estatisticas():
 @login_required
 @acesso_premium_required('tabela_progresso')
 def visualizar_tabela():
-    """Tabela de progresso, sem filtros, no layout de planilha pedido.
+    """Tabela de progresso no layout de planilha, com filtro por versão.
 
-    Não recebe mais parâmetros de filtro (treino/músculo/ordenar/semanas)
-    da querystring. Busca todas as semanas dentro da janela de
-    DIAS_HISTORICO_TABELA_PROGRESSO (`preparar_dados_tabela` é chamado com
-    "todas") para permitir rolar a tabela e ver semanas mais antigas; o
-    template usa JS só para posicionar a rolagem inicial nas 3 últimas
+    Único filtro disponível é por versão do plano de treino do usuário
+    (`versao_id` na querystring) -- os demais (treino/músculo/ordenar/
+    semanas) continuam removidos. Busca todas as semanas dentro da janela
+    de DIAS_HISTORICO_TABELA_PROGRESSO (`preparar_dados_tabela` é chamado
+    com "todas") para permitir rolar a tabela e ver semanas mais antigas;
+    o template usa JS só para posicionar a rolagem inicial nas 3 últimas
     semanas (mais recentes = colunas mais à direita).
 
-    Não existe mais coluna "Treino" (bloco A/B/C/D/E) -- os exercícios
+    Não existe coluna "Treino" (bloco A/B/C/D/E) -- os exercícios
     continuam agrupados por treino apenas para alternar a cor de fundo do
     bloco (zebra por bloco inteiro, não por linha) e para inserir uma
     linha espaçadora em branco entre um treino e outro, replicando o
-    layout de referência.
+    layout de referência. O cabeçalho volta a mostrar "Nª Semana / Mês"
+    acima de cada par Carga/Rep.
     """
+    versao_id = request.args.get('versao_id', '').strip()
+    versoes = VersaoService.get_all()
+
     data_inicio = datetime.now(timezone.utc) - timedelta(days=DIAS_HISTORICO_TABELA_PROGRESSO)
     registros = RegistroService.get_all(load_series=True, data_inicio=data_inicio)
     exercicios = ExercicioService.get_exercicios_dos_treinos()
+
+    if versao_id:
+        exercicios = [ex for ex in exercicios if str(_get_versao_id(ex)) == versao_id]
 
     # Ordena por código do treino (para poder agrupar em blocos consecutivos)
     # e, dentro do treino, por nome.
@@ -162,4 +183,6 @@ def visualizar_tabela():
     return render_template("stats/visualizar_tabela.html",
                          semanas=semanas,
                          grupos_treino=grupos_treino,
-                         semanas_visiveis_padrao=3)
+                         semanas_visiveis_padrao=3,
+                         versoes=versoes,
+                         versao_selecionada=versao_id)
