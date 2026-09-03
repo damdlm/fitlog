@@ -192,8 +192,9 @@
    ================================================================ */
 
 .pwa-ios-sheet {
-    align-items: flex-end; /* bottom sheet por padrão (mobile) */
-    padding: 0 !important;
+    align-items: center;
+    top: 0;
+    padding: max(16px, env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 .pwa-ios-sheet-content {
@@ -204,25 +205,25 @@
     position: relative;
     gap: 0;
     width: 100%;
-    max-width: 480px;
+    max-width: 400px;
     margin: 0 auto;
-    border-radius: 28px 28px 0 0;
-    padding: 14px 24px calc(24px + env(safe-area-inset-bottom, 0px));
-    box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.28);
-    transform: translateY(100%);
+    border-radius: 24px;
+    border: 2px solid var(--primary-color, #F28C33);
+    padding: 24px 22px calc(22px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
+    transform: scale(0.92);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
 }
 
 .pwa-ios-sheet.is-visible .pwa-ios-sheet-content {
     pointer-events: auto;
-    transform: translateY(0);
+    transform: scale(1);
+    opacity: 1;
 }
 
 .pwa-ios-sheet-handle {
-    width: 40px;
-    height: 4px;
-    border-radius: 999px;
-    background: #e9ecef;
-    margin: 4px auto 14px;
+    display: none;
 }
 
 .pwa-ios-hero {
@@ -303,9 +304,9 @@
     box-shadow: none;
 }
 
-/* Destaque só no primeiro passo -- é o que costuma ser mais difícil de
-   achar. Um anel suave "respirando" ao redor do chip, sem exagero. */
-.pwa-step-highlight .pwa-step-icon-chip {
+/* Destaque nos três ícones dos passos -- o mesmo "respirar" laranja em
+   todos, não só no primeiro (Compartilhar). */
+.pwa-step-icon-chip {
     animation: pwaChipGlow 2s ease-out infinite;
 }
 
@@ -366,27 +367,11 @@
     background: #f1f3f5;
 }
 
-/* Desktop: modal centralizado, cantos totalmente arredondados (não é
-   mais um "sheet" grudado na borda inferior da tela). */
+/* Desktop: mesmo cartão centralizado, só um pouco mais largo. */
 @media (min-width: 992px) {
-    .pwa-ios-sheet {
-        top: 0;
-        align-items: center;
-        padding: 20px !important;
-    }
-
     .pwa-ios-sheet-content {
         max-width: 420px;
-        border-radius: 24px;
-        padding: 20px 28px 28px;
-        transform: translateY(24px) scale(0.97);
-        opacity: 0;
-        transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
-    }
-
-    .pwa-ios-sheet.is-visible .pwa-ios-sheet-content {
-        transform: translateY(0) scale(1);
-        opacity: 1;
+        padding: 24px 28px;
     }
 }
 
@@ -438,7 +423,7 @@
         animation: none !important;
     }
 
-    .pwa-step-highlight .pwa-step-icon-chip {
+    .pwa-step-icon-chip {
         animation: none;
     }
 }
