@@ -15,19 +15,12 @@ stats_bp = Blueprint('stats', __name__)
 logger = logging.getLogger(__name__)
 
 # Tabela de Progresso: antes trazia TODO o histórico de registros/séries
-# do usuário (podendo passar de milhares de linhas com o tempo), mesmo
-# que o filtro de "semanas" aplicado depois mostrasse só uma fração
-# disso. Restringir para os últimos 30 dias na própria query reduz o
-# volume de dados trafegado do banco e processado em Python nesta rota
-# -- mesma janela já usada em EstatisticaService.get_progresso_ultimos_30_dias
-# (gráfico "Evolução do Volume" da tela de estatísticas), então o app já
-# tinha esse mesmo horizonte de tempo em outro lugar.
-#
-# Trade-off consciente: quem quiser comparar cargas de mais de 30 dias
-# atrás nesta tabela específica não vai mais conseguir -- o filtro
-# "Todas as semanas" do dropdown passa a significar "todas dentro dos
-# últimos 30 dias", não mais o histórico completo.
-DIAS_HISTORICO_TABELA_PROGRESSO = 30
+# do usuário (podendo passar de milhares de linhas com o tempo). A tela
+# abre já mostrando as últimas 3 semanas, mas permite rolar para o lado
+# e ver semanas mais antigas -- por isso a janela buscada é maior que
+# 3 semanas (90 dias cobrem ~12-13 semanas de histórico navegável),
+# evitando trazer o histórico completo do banco a cada carregamento.
+DIAS_HISTORICO_TABELA_PROGRESSO = 90
 
 
 def _get_treino_id(exercicio):
@@ -99,31 +92,39 @@ def estatisticas():
 @login_required
 @acesso_premium_required('tabela_progresso')
 def visualizar_tabela():
-    """Tabela de progresso: sempre as últimas 3 semanas registradas, sem filtros.
+    """Tabela de progresso, sem filtros, no layout de planilha pedido.
 
-    Tela reformulada para reproduzir o layout de planilha (Treino / Exercício
-    fixos + colunas Carga/Rep. por semana) pedido pelo usuário -- não recebe
-    mais parâmetros de filtro (treino/músculo/ordenar/semanas) da querystring,
-    então `preparar_dados_tabela` é chamado sempre com "ultimas3" e sem
-    request_args (o modo "personalizado" dele nunca é acionado aqui).
+    Não recebe mais parâmetros de filtro (treino/músculo/ordenar/semanas)
+    da querystring. Busca todas as semanas dentro da janela de
+    DIAS_HISTORICO_TABELA_PROGRESSO (`preparar_dados_tabela` é chamado com
+    "todas") para permitir rolar a tabela e ver semanas mais antigas; o
+    template usa JS só para posicionar a rolagem inicial nas 3 últimas
+    semanas (mais recentes = colunas mais à direita).
+
+    Não existe mais coluna "Treino" (bloco A/B/C/D/E) -- os exercícios
+    continuam agrupados por treino apenas para alternar a cor de fundo do
+    bloco (zebra por bloco inteiro, não por linha) e para inserir uma
+    linha espaçadora em branco entre um treino e outro, replicando o
+    layout de referência.
     """
     data_inicio = datetime.now(timezone.utc) - timedelta(days=DIAS_HISTORICO_TABELA_PROGRESSO)
     registros = RegistroService.get_all(load_series=True, data_inicio=data_inicio)
     exercicios = ExercicioService.get_exercicios_dos_treinos()
 
-    # Ordena por código do treino (para poder agrupar em blocos consecutivos
-    # com rowspan na coluna "Treino") e, dentro do treino, por nome.
+    # Ordena por código do treino (para poder agrupar em blocos consecutivos)
+    # e, dentro do treino, por nome.
     exercicios.sort(key=lambda x: (_get_treino_codigo(x), x.nome))
 
     dados_tabela = EstatisticaService.preparar_dados_tabela(
-        exercicios, registros, "ultimas3", {}
+        exercicios, registros, "todas", {}
     )
 
     # `preparar_dados_tabela` ordena semanas usando só o nome do mês (sem
     # ano), então períodos de anos diferentes com o mesmo mês colidiriam na
     # ordenação. Reordena aqui por (ano, mês, semana) usando o mapeamento de
     # meses já existente em date_utils, sem tocar na função compartilhada
-    # (que tem teste unitário próprio).
+    # (que tem teste unitário próprio). Semanas mais antigas ficam à
+    # esquerda e as mais recentes à direita, como na planilha de referência.
     def _chave_semana(s):
         mes_nome, _, ano = s['periodo'].partition('/')
         ano_num = int(ano) if ano.isdigit() else 0
@@ -131,9 +132,10 @@ def visualizar_tabela():
 
     semanas = sorted(dados_tabela['semanas'], key=_chave_semana)
 
-    # Agrupa os exercícios em blocos por treino (para a célula "Treino" com
-    # rowspan) e já resolve, para cada exercício, a carga/repetições da
-    # primeira série em cada uma das semanas exibidas.
+    # Agrupa os exercícios em blocos por treino -- cada bloco vira um grupo
+    # de linhas com a mesma cor (zebra por bloco) e, entre um bloco e o
+    # próximo, o template insere uma linha espaçadora. Já resolve, para
+    # cada exercício, a carga/repetições da primeira série em cada semana.
     grupos_treino = []
     for codigo, exs in groupby(exercicios, key=_get_treino_codigo):
         exercicios_grupo = []
@@ -155,8 +157,9 @@ def visualizar_tabela():
 
             exercicios_grupo.append({'nome': ex.nome, 'semanas': semanas_ex})
 
-        grupos_treino.append({'codigo': codigo or '—', 'exercicios': exercicios_grupo})
+        grupos_treino.append({'exercicios': exercicios_grupo})
 
     return render_template("stats/visualizar_tabela.html",
                          semanas=semanas,
-                         grupos_treino=grupos_treino)
+                         grupos_treino=grupos_treino,
+                         semanas_visiveis_padrao=3)

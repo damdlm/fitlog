@@ -5,6 +5,25 @@
 
 {% block extra_css %}
 <style>
+    @font-face {
+        font-family: 'Patrick Hand';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url("{{ url_for('static', filename='vendor/patrick-hand/patrick-hand-latin-400-normal.woff2') }}") format('woff2'),
+             url("{{ url_for('static', filename='vendor/patrick-hand/patrick-hand-latin-400-normal.woff') }}") format('woff');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+        font-family: 'Patrick Hand';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url("{{ url_for('static', filename='vendor/patrick-hand/patrick-hand-latin-ext-400-normal.woff2') }}") format('woff2'),
+             url("{{ url_for('static', filename='vendor/patrick-hand/patrick-hand-latin-ext-400-normal.woff') }}") format('woff');
+        unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+
     .prog-header {
         display: flex;
         justify-content: space-between;
@@ -15,93 +34,88 @@
     }
     .prog-header h2 { margin: 0; }
 
-    /* ===== Moldura da planilha ===== */
+    /* ===== Moldura cinza da planilha ===== */
     .prog-tabela-wrap {
         overflow-x: auto;
-        border: 2px solid #808080;
-        border-radius: 10px;
-        background: #fff;
+        border: 3px solid #808080;
+        border-radius: 6px;
+        background: #808080;
+        padding: 3px;
     }
 
     #progressTable {
         border-collapse: collapse;
         width: 100%;
-        font-family: Calibri, 'Segoe UI', Tahoma, Arial, sans-serif;
-        font-size: 0.86rem;
+        font-family: 'Patrick Hand', 'Comic Sans MS', cursive, sans-serif;
+        font-size: 1rem;
+        background: #fff;
     }
 
     #progressTable th,
     #progressTable td {
-        border: 1px solid #bfbfbf;
-        padding: 5px 10px;
+        border: none;
+        padding: 4px 10px;
         text-align: center;
         white-space: nowrap;
     }
 
-    /* ===== Cabeçalho "Treino" / "Exercício" ===== */
-    #progressTable thead .th-fixo {
+    /* Divisórias grossas cinza entre "Exercício" e cada bloco de semana,
+       e entre um bloco de semana e o próximo -- iguais à moldura da
+       planilha de referência (uma linha cinza a cada 2 colunas). */
+    #progressTable th.col-exercicio,
+    #progressTable td.col-exercicio {
+        border-right: 3px solid #808080;
+    }
+    #progressTable th.semana-inicio,
+    #progressTable td.semana-inicio {
+        border-left: 3px solid #808080;
+    }
+
+    /* ===== Cabeçalho ("Exercício" / "Carga" / "Rep.") ===== */
+    #progressTable thead th {
         background: #808080;
         color: #fff;
         font-weight: 700;
+        padding: 5px 10px;
     }
-
-    /* ===== Cabeçalho de semana (linha 1: "3ª Semana / Agosto") ===== */
-    #progressTable .th-semana {
-        background: #fff;
-    }
-    #progressTable .th-semana .semana-num {
-        font-style: italic;
-        font-weight: 700;
-        color: #1F4E79;
-    }
-    #progressTable .th-semana .semana-mes {
-        font-style: italic;
-        color: #1F4E79;
-    }
-
-    /* ===== Cabeçalho de semana (linha 2: "Carga" / "Rep.") — alterna por semana ===== */
-    #progressTable .th-sub {
-        font-weight: 700;
-        color: #1F4E79;
-    }
-    #progressTable .th-sub.semana-par { background: #DCE9F7; }
-    #progressTable .th-sub.semana-impar { background: #FBE0CE; }
-
-    /* ===== Coluna "Treino" (bloco cinza, letra grande) ===== */
-    #progressTable .col-treino {
-        background: #808080;
-        color: #fff;
-        font-weight: 700;
-        font-size: 1.5rem;
-        vertical-align: middle;
-        width: 54px;
-        min-width: 54px;
-    }
-
-    /* ===== Coluna "Exercício" ===== */
-    #progressTable .col-exercicio {
-        background: #fff;
+    #progressTable thead th.col-exercicio {
         text-align: left;
-        font-weight: 600;
-        width: 210px;
-        min-width: 210px;
     }
 
-    /* ===== Zebra por linha (independente da semana) ===== */
-    #progressTable tbody tr.linha-a .td-dado { background: #DCE9F7; }
-    #progressTable tbody tr.linha-b .td-dado { background: #FBE0CE; }
-    #progressTable tbody tr.linha-a .col-exercicio { color: #1F4E79; }
-    #progressTable tbody tr.linha-b .col-exercicio { color: #B45F06; }
+    /* ===== Zebra por BLOCO de treino (não por linha) ===== */
+    #progressTable tbody tr.bloco-azul td.td-dado,
+    #progressTable tbody tr.bloco-azul td.col-exercicio {
+        background: linear-gradient(to bottom, #E0EDF7 0%, #ADCBE4 100%);
+    }
+    #progressTable tbody tr.bloco-pessego td.td-dado,
+    #progressTable tbody tr.bloco-pessego td.col-exercicio {
+        background: linear-gradient(to bottom, #FDEDE3 0%, #F2D3BF 100%);
+    }
+    #progressTable tbody td {
+        color: #262626;
+    }
+    #progressTable tbody td.col-exercicio {
+        text-align: left;
+    }
 
-    /* ===== Colunas fixas ao rolar horizontalmente ===== */
-    #progressTable .col-treino,
+    /* Linha espaçadora em branco entre um treino e o próximo */
+    #progressTable tr.linha-espacadora td {
+        background: #fff;
+        padding: 0;
+        height: 8px;
+        border: none;
+    }
+
+    /* ===== Coluna "Exercício" fixa ao rolar horizontalmente ===== */
     #progressTable .col-exercicio {
         position: sticky;
+        left: 0;
+        z-index: 2;
+        width: 180px;
+        min-width: 180px;
     }
-    #progressTable .col-treino { left: 0; z-index: 2; }
-    #progressTable .col-exercicio { left: 54px; z-index: 2; }
-    #progressTable thead .col-treino,
     #progressTable thead .col-exercicio { z-index: 3; }
+    #progressTable tr.linha-espacadora .col-exercicio { position: sticky; left: 0; }
 
     .prog-empty {
         text-align: center;
@@ -116,15 +130,9 @@
     }
 
     @media (max-width: 767.98px) {
-        #progressTable { font-size: 0.78rem; }
+        #progressTable { font-size: 0.76rem; }
         #progressTable th, #progressTable td { padding: 4px 7px; }
-        #progressTable .col-exercicio { width: 150px; min-width: 150px; }
-        #progressTable .col-exercicio { left: 44px; }
-        #progressTable .col-treino { width: 44px; min-width: 44px; font-size: 1.15rem; }
-        .prog-tabela-wrap::after {
-            content: "";
-            position: absolute;
-        }
+        #progressTable .col-exercicio { width: 148px; min-width: 148px; }
     }
 </style>
 {% endblock %}
@@ -137,42 +145,39 @@
 </div>
 
 {% if grupos_treino %}
-<div class="prog-tabela-wrap">
+<div class="prog-tabela-wrap" id="progWrap">
     <table id="progressTable">
         <thead>
             <tr>
-                <th class="th-fixo col-treino" rowspan="2">Treino</th>
-                <th class="th-fixo col-exercicio" rowspan="2">Exercício</th>
+                <th class="col-exercicio">Exercício</th>
                 {% for semana in semanas %}
-                <th colspan="2" class="th-semana">
-                    <div class="semana-num">{{ semana.semana }}ª Semana</div>
-                    <div class="semana-mes">{{ semana.periodo.split('/')[0] }}</div>
-                </th>
-                {% endfor %}
-            </tr>
-            <tr>
-                {% for semana in semanas %}
-                <th class="th-sub {{ 'semana-par' if loop.index is even else 'semana-impar' }}">Carga</th>
-                <th class="th-sub {{ 'semana-par' if loop.index is even else 'semana-impar' }}">Rep.</th>
+                <th class="semana-inicio">Carga</th>
+                <th>Rep.</th>
                 {% endfor %}
             </tr>
         </thead>
         <tbody>
-            {% set linha = namespace(i=0) %}
+            {% set bloco = namespace(i=0) %}
             {% for grupo in grupos_treino %}
+                {% set bloco.i = bloco.i + 1 %}
+                {% set cor_bloco = 'bloco-azul' if bloco.i is odd else 'bloco-pessego' %}
                 {% for exercicio in grupo.exercicios %}
-                    {% set linha.i = linha.i + 1 %}
-                    <tr class="{{ 'linha-a' if linha.i is odd else 'linha-b' }}">
-                        {% if loop.first %}
-                        <td class="col-treino" rowspan="{{ grupo.exercicios|length }}">{{ grupo.codigo }}</td>
-                        {% endif %}
+                    <tr class="{{ cor_bloco }}">
                         <td class="col-exercicio">{{ exercicio.nome }}</td>
                         {% for s in exercicio.semanas %}
-                        <td class="td-dado">{{ s.carga if s.carga is not none else '' }}</td>
+                        <td class="td-dado semana-inicio">{{ s.carga if s.carga is not none else '' }}</td>
                         <td class="td-dado">{{ s.repeticoes if s.repeticoes is not none else '' }}</td>
                         {% endfor %}
                     </tr>
                 {% endfor %}
+                {% if not loop.last %}
+                <tr class="linha-espacadora">
+                    <td class="col-exercicio"></td>
+                    {% for semana in semanas %}
+                    <td></td><td></td>
+                    {% endfor %}
+                </tr>
+                {% endif %}
             {% endfor %}
         </tbody>
     </table>
@@ -183,4 +188,18 @@
     Nenhum exercício encontrado nas últimas semanas.
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Abre a tela já mostrando as últimas semanas (colunas mais recentes,
+    // à direita) -- rolando o mais possível para a direita -- mas permite
+    // arrastar/rolar para a esquerda para ver semanas mais antigas.
+    document.addEventListener('DOMContentLoaded', function () {
+        var wrap = document.getElementById('progWrap');
+        if (wrap) {
+            wrap.scrollLeft = wrap.scrollWidth;
+        }
+    });
+</script>
 {% endblock %}

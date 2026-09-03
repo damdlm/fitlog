@@ -351,6 +351,18 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
 <script>
+    // Fallback pro cdnjs (já liberado no CSP) se o jsdelivr falhar por
+    // qualquer motivo nesse dispositivo/rede (bloqueador, DNS, etc).
+    // document.write aqui é intencional: como essa tag NÃO é async/defer,
+    // o navegador já está bloqueado esperando esse <script> terminar antes
+    // de seguir pro resto da página -- document.write insere e executa o
+    // fallback na hora, de forma síncrona, então o código de baixo que usa
+    // "new Chart(...)" continua podendo contar com Chart já definido.
+    if (typeof Chart === 'undefined') {
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"><\/script>');
+    }
+</script>
+<script>
     // ---------- Dicas em slide lateral (aleatório) ----------
     const dicas = [
         "Registre seu treino logo após finalizar",

@@ -5,7 +5,8 @@
 
 {% block extra_css %}
 <!-- FullCalendar CSS -->
-<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet'
+      onerror="this.onerror=null;this.href='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.css';" />
 <style>
     :root {
         --fl-accent: #F28C33;
@@ -946,7 +947,15 @@
 {% block scripts %}
 <!-- FullCalendar JS -->
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/pt-br.js'></script>
+<script>
+    // Mesmo raciocínio do fallback do Chart.js (ver templates/index.html):
+    // document.write síncrono, porque essa tag não é async/defer.
+    if (typeof FullCalendar === 'undefined') {
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.js"><\/script>');
+    }
+</script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/pt-br.js'
+        onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/locales/pt-br.js';document.head.appendChild(s);"></script>
 
 <script>
     let calendar;
