@@ -38,11 +38,25 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+    const url = new URL(event.request.url);
+
+    // Requisições de terceiros (CDNs externos: cdn.jsdelivr.net,
+    // cdnjs.cloudflare.com etc.) -- NÃO interceptar. Passar tudo por
+    // event.respondWith(fetch(...)) mesmo pra recursos cross-origin faz
+    // esse fetch "reproxeado" perder a resiliência normal do navegador
+    // (retry/conexão reaproveitada); qualquer soluço vira falha definitiva
+    // do <script>/<link>, sem chance de recuperação -- foi o que quebrava
+    // Chart.js/FullCalendar depois que o service worker passou a existir.
+    // Deixando esses requests passarem batido (sem chamar respondWith),
+    // o navegador trata a requisição normalmente, como se o SW nem
+    // existisse pra ela.
+    if (url.origin !== self.location.origin) {
+        return;
+    }
+
     // Só intercepta os assets estáticos conhecidos (cache-first).
     // Tudo o resto (páginas, formulários, APIs) vai direto pra rede,
     // sem cache, pra nunca servir conteúdo desatualizado.
-    const url = new URL(event.request.url);
-
     if (SHELL_ASSETS.includes(url.pathname)) {
         event.respondWith(
             caches.match(event.request).then((cached) => cached || fetch(event.request))
