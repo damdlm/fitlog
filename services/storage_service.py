@@ -119,6 +119,54 @@ class StorageService:
             return None
 
     @classmethod
+    def get_object_stream(cls, chave: str, range_header: str | None = None):
+        """Busca o objeto do bucket e devolve pro backend fazer proxy
+        direto pro navegador (Pattern 3 da própria doc da Railway:
+        "Serving assets through a backend proxy" -- Railway Buckets são
+        sempre privados, não existe modo público, então redirect pra URL
+        assinada OU proxy são as únicas opções).
+
+        Diferente do redirect (que expira e por isso nunca pode ser
+        cacheado pelo navegador), essa resposta é servida com
+        Cache-Control bem longo -- como os arquivos são endereçados por
+        hash (nunca mudam de conteúdo), o navegador para de pedir esse
+        arquivo de novo depois da primeira vez.
+
+        `range_header` é o header "Range" da requisição original do
+        navegador (ex: "bytes=0-1023"), repassado pro S3 -- sem isso,
+        o <video> do modal de exercício não consegue dar seek/scrub
+        (a maioria dos navegadores exige suporte a Range pra isso).
+
+        Retorna um dict com body (stream), content_type, content_length,
+        content_range e is_partial -- ou None se o objeto não existir ou
+        o bucket não estiver configurado.
+        """
+        client = cls._get_client()
+        if client is None:
+            return None
+        try:
+            params = {"Bucket": cls._bucket_name, "Key": chave}
+            if range_header:
+                params["Range"] = range_header
+            resp = client.get_object(**params)
+            return {
+                "body": resp["Body"],
+                "content_type": resp.get("ContentType"),
+                "content_length": resp.get("ContentLength"),
+                "content_range": resp.get("ContentRange"),
+                "is_partial": "ContentRange" in resp,
+            }
+        except Exception as e:
+            codigo = getattr(e, "response", {}).get("Error", {}).get("Code", "")
+            if codigo in ("NoSuchKey", "404"):
+                # Esperado durante uma migração em andamento (chave ainda
+                # não subiu pro bucket) -- cai pro volume local sem logar
+                # como erro.
+                return None
+            logger.exception("StorageService: falha ao buscar objeto %s", chave)
+            return None
+
+    @classmethod
     def object_exists(cls, chave: str) -> bool:
         client = cls._get_client()
         if client is None:

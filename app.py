@@ -439,20 +439,56 @@ def create_app(config_class=None):
 
     @app.route("/exercicios-media/<path:caminho>")
     def exercicios_media(caminho):
-        from flask import send_from_directory, redirect
+        from flask import send_from_directory, request, Response, stream_with_context
+        import mimetypes
         from services.storage_service import StorageService
 
         if StorageService.is_configured():
-            url = StorageService.generate_presigned_url(caminho)
-            if url:
-                # 302 em vez de 301: a URL pré-assinada expira e muda a
-                # cada geração (tem assinatura com validade), então não
-                # é seguro deixar o navegador cachear o redirecionamento
-                # em si -- só o conteúdo final (isso já é resolvido pelo
-                # max_age da própria URL assinada / cache-control do bucket).
-                return redirect(url, code=302)
-            # Presigned falhou (ex: chave não existe no bucket ainda,
-            # migração em andamento) -- cai pro volume local abaixo.
+            # Proxy em vez de redirect: Railway Buckets são sempre
+            # privados (não existe URL pública nem "bucket público" pra
+            # ligar), então um redirect pra URL assinada -- que expira --
+            # nunca pode ser cacheado pelo navegador. Isso fazia toda
+            # visualização (inclusive reexibições do mesmo exercício)
+            # pagar um salto de rede extra: navegador -> app -> bucket.
+            # Buscando o objeto aqui e servindo ele direto, com
+            # Cache-Control bem longo (os arquivos são endereçados por
+            # hash, então o mesmo caminho nunca muda de conteúdo), o
+            # navegador simplesmente para de pedir de novo depois da
+            # primeira vez.
+            obj = StorageService.get_object_stream(
+                caminho, range_header=request.headers.get("Range")
+            )
+            if obj:
+                content_type = obj["content_type"] or mimetypes.guess_type(caminho)[0] or "application/octet-stream"
+                headers = {
+                    "Cache-Control": "public, max-age=31536000, immutable",
+                    "Accept-Ranges": "bytes",
+                }
+                if obj["content_length"] is not None:
+                    headers["Content-Length"] = str(obj["content_length"])
+                if obj["content_range"]:
+                    headers["Content-Range"] = obj["content_range"]
+
+                def gerar():
+                    stream = obj["body"]
+                    try:
+                        while True:
+                            trecho = stream.read(64 * 1024)
+                            if not trecho:
+                                break
+                            yield trecho
+                    finally:
+                        stream.close()
+
+                status = 206 if obj["is_partial"] else 200
+                return Response(
+                    stream_with_context(gerar()),
+                    status=status,
+                    mimetype=content_type,
+                    headers=headers,
+                )
+            # Objeto não encontrado no bucket (ex: migração em andamento)
+            # -- cai pro volume local abaixo.
 
         # Arquivos são endereçados por hash (ex: "0001-2gPfomN.gif" —
         # media_id no nome), então o mesmo caminho nunca muda de conteúdo:
