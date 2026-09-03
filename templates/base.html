@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <!-- Detecção síncrona de "app instalado" -- roda antes de qualquer
+         CSS/JS pesado, só pra decidir se o splash inicial (ver início do
+         <body>) deve aparecer. Se essa checagem falhar por qualquer
+         motivo (navegador muito antigo), a classe simplesmente não é
+         adicionada e o splash nunca aparece -- fallback seguro. -->
+    <script>
+        (function () {
+            try {
+                var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+                    || window.navigator.standalone === true;
+                if (standalone) {
+                    document.documentElement.classList.add('pwa-standalone-launch');
+                }
+            } catch (e) { /* segue sem splash */ }
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -87,6 +103,59 @@
             padding-bottom: 0.35rem;
         }
 
+        /* Instalado como app (iOS/Android/Desktop): o navbar sticky
+           precisa empurrar seu próprio conteúdo pra baixo do notch/
+           Dynamic Island/status bar -- só nesse modo, nunca numa aba
+           normal do navegador. */
+        @media (display-mode: standalone) {
+            .navbar {
+                padding-top: calc(0.35rem + env(safe-area-inset-top, 0px));
+            }
+        }
+
+        /* Splash inicial do PWA instalado -- some assim que a página
+           terminar de carregar (ver script no fim do <body>). Some
+           imediatamente se JS falhar/travar, e nunca aparece em modo
+           navegador normal (só quando <html> ganha a classe abaixo,
+           setada de forma síncrona no <head>). */
+        #pwaSplash {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: var(--secondary-color, #171717);
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.25s ease;
+        }
+
+        html.pwa-standalone-launch #pwaSplash {
+            display: flex;
+        }
+
+        #pwaSplash.pwa-splash-hide {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #pwaSplash img {
+            width: 84px;
+            height: 84px;
+            border-radius: 20px;
+            animation: pwaSplashPulse 1.1s ease-in-out infinite;
+        }
+
+        @keyframes pwaSplashPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.94); opacity: 0.85; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #pwaSplash img {
+                animation: none;
+            }
+        }
+
         /* --- Navbar em vidro (glassmorphism), só a partir do breakpoint
            lg do Bootstrap (>= 992px). Abaixo disso o navbar continua
            exatamente como estava (bg-white shadow-sm do HTML). O !important
@@ -147,6 +216,7 @@
                 right: 0;
                 background: #fff;
                 max-height: calc(100vh - 70px);
+                max-height: calc(100dvh - 70px);
                 overflow-y: auto;
                 padding: 0.75rem 1rem 1rem;
                 box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
@@ -1098,6 +1168,36 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="{{ 'has-bottom-nav' if current_user.is_authenticated else '' }}">
+    <!-- Splash leve do PWA instalado. Só aparece se <html> tiver a classe
+         pwa-standalone-launch (setada de forma síncrona no <head>, antes
+         de qualquer CSS/JS pesado) -- ou seja, nunca numa aba comum do
+         navegador. Remove-se sozinho assim que a página carregar de
+         verdade, com um teto de segurança (ver script logo abaixo) pra
+         nunca ficar preso na tela se algo falhar. -->
+    <div id="pwaSplash" aria-hidden="true">
+        <img src="{{ url_for('static', filename='icons/icon-192.png') }}" alt="">
+    </div>
+    <script>
+        (function () {
+            var splash = document.getElementById('pwaSplash');
+            if (!splash) return;
+
+            var removido = false;
+            function remover() {
+                if (removido) return;
+                removido = true;
+                splash.classList.add('pwa-splash-hide');
+                window.setTimeout(function () {
+                    if (splash.parentNode) splash.parentNode.removeChild(splash);
+                }, 300);
+            }
+
+            window.addEventListener('load', remover);
+            // Teto de segurança: nunca deixa o splash preso na tela por
+            // mais de 1.5s, mesmo se o evento load demorar ou falhar.
+            window.setTimeout(remover, 1500);
+        })();
+    </script>
     <!-- Loading Spinner Global -->
     <div id="global-loader">
         <div class="loader-spinner"></div>
