@@ -1,9 +1,15 @@
 /**
- * Instalação do PWA — banner (Android/Desktop) e tutorial (iOS).
+ * Instalação do PWA — banner leve (Android/Desktop/iOS) e o tutorial
+ * premium de instalação no iOS (bottom sheet + backdrop).
  *
  * Reaproveita as variáveis de marca já definidas em templates/base.html
  * (--primary-color, --secondary-color), então não redefine cores aqui.
  */
+
+/* ================================================================
+   Banner leve (CTA inicial) -- Android/Desktop mostra o prompt nativo
+   ao clicar; iOS abre o tutorial premium (.pwa-ios-sheet, mais abaixo).
+   ================================================================ */
 
 .pwa-install-sheet {
     position: fixed;
@@ -112,38 +118,145 @@
     color: #343a40;
 }
 
-/* Tutorial iOS: cartão mais alto, com passos numerados */
+/* Banner no mobile: cartão centralizado na tela com a bordinha laranja
+   da marca (não é o tutorial completo -- esse é o .pwa-ios-sheet). */
+@media (max-width: 991.98px) {
+    #pwaInstallBanner {
+        top: 0;
+        align-items: center;
+        padding: max(16px, env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+
+    #pwaInstallBanner .pwa-install-sheet-content {
+        max-width: 360px;
+        margin: 0 auto;
+        border: 2px solid var(--primary-color, #F28C33);
+        transform: scale(0.92);
+    }
+
+    #pwaInstallBanner.is-visible .pwa-install-sheet-content {
+        transform: scale(1);
+    }
+}
+
+@media (min-width: 992px) {
+    #pwaInstallBanner {
+        justify-content: flex-end;
+        padding: 0 20px 20px 0;
+    }
+
+    #pwaInstallBanner .pwa-install-sheet-content {
+        max-width: 380px;
+    }
+}
+
+/* Evita empurrar o botão de instalar pra baixo do texto em telas bem
+   estreitas -- ações ficam abaixo do texto em vez de espremidas ao lado. */
+@media (max-width: 420px) {
+    #pwaInstallBanner .pwa-install-sheet-content {
+        flex-wrap: wrap;
+    }
+
+    #pwaInstallBanner .pwa-install-actions {
+        flex-direction: row;
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+/* ================================================================
+   Backdrop -- fundo escurecido atrás do tutorial iOS. Toque fora fecha.
+   ================================================================ */
+
+.pwa-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1078; /* logo abaixo do .pwa-ios-sheet (1080) */
+    background: rgba(23, 23, 23, 0.55);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.pwa-backdrop.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ================================================================
+   Tutorial premium de instalação no iOS -- bottom sheet de verdade no
+   mobile (desliza de baixo, cantos superiores arredondados, puxador),
+   modal centralizado no desktop.
+   ================================================================ */
+
+.pwa-ios-sheet {
+    align-items: flex-end; /* bottom sheet por padrão (mobile) */
+    padding: 0 !important;
+}
+
 .pwa-ios-sheet-content {
+    pointer-events: none;
     flex-direction: column;
     align-items: stretch;
     text-align: center;
     position: relative;
-    gap: 8px;
-    padding: 24px 20px 20px;
+    gap: 0;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    border-radius: 28px 28px 0 0;
+    padding: 14px 24px calc(24px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.28);
+    transform: translateY(100%);
+}
+
+.pwa-ios-sheet.is-visible .pwa-ios-sheet-content {
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.pwa-ios-sheet-handle {
+    width: 40px;
+    height: 4px;
+    border-radius: 999px;
+    background: #e9ecef;
+    margin: 4px auto 14px;
+}
+
+.pwa-ios-hero {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 14px;
 }
 
 .pwa-ios-sheet-content .pwa-install-icon {
-    align-self: center;
-    width: 52px;
-    height: 52px;
-    margin-bottom: 4px;
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgba(242, 140, 51, 0.28);
 }
 
 .pwa-ios-sheet-content strong {
+    display: block;
     color: var(--secondary-color, #2D2D2D);
-    font-size: 1.05rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 6px;
 }
 
-.pwa-ios-sheet-content p {
+.pwa-ios-sheet-content > p {
     color: #6c757d;
     font-size: 0.88rem;
-    margin: 0;
+    line-height: 1.4;
+    margin: 0 0 20px;
 }
 
 .pwa-ios-steps {
     list-style: none;
     padding: 0;
-    margin: 8px 0 4px;
+    margin: 0 0 22px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -153,72 +266,81 @@
 .pwa-ios-steps li {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 14px;
     background: #f8f9fa;
-    border-radius: 12px;
-    padding: 10px 12px;
-    font-size: 0.85rem;
-    color: var(--secondary-color, #2D2D2D);
+    border-radius: 16px;
+    padding: 12px 14px;
 }
 
-.pwa-step-num {
+.pwa-step-icon-chip {
     flex-shrink: 0;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: var(--gradient-primary, var(--primary-color, #F28C33));
-    color: #fff;
-    font-size: 0.75rem;
-    font-weight: 700;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 1.15rem;
+    background: var(--gradient-primary, var(--primary-color, #F28C33));
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(242, 140, 51, 0.3);
+}
+
+.pwa-step-icon-chip-alt {
+    background: #fff;
+    color: var(--primary-color, #F28C33);
+    border: 1.5px solid #eee1d3;
+    box-shadow: none;
+}
+
+/* Destaque só no primeiro passo -- é o que costuma ser mais difícil de
+   achar. Um anel suave "respirando" ao redor do chip, sem exagero. */
+.pwa-step-highlight .pwa-step-icon-chip {
+    animation: pwaChipGlow 2s ease-out infinite;
+}
+
+@keyframes pwaChipGlow {
+    0% { box-shadow: 0 0 0 0 rgba(242, 140, 51, 0.45); }
+    70% { box-shadow: 0 0 0 10px rgba(242, 140, 51, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(242, 140, 51, 0); }
 }
 
 .pwa-step-text {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
 }
 
-.pwa-step-text i {
-    font-size: 1rem;
-    color: var(--primary-color, #F28C33);
+.pwa-step-text strong {
+    font-size: 0.9rem;
+    color: var(--secondary-color, #2D2D2D);
+    font-weight: 600;
 }
 
-/* Ícone de "Compartilhar" com um pulso discreto -- chama atenção pro
-   botão do Safari sem parecer uma simulação exagerada da interface. */
-.pwa-share-icon {
-    font-size: 1rem;
-    color: var(--primary-color, #F28C33);
-    animation: pwaSharePulse 1.6s ease-in-out infinite;
-}
-
-@keyframes pwaSharePulse {
-    0%, 100% { transform: translateY(0) scale(1); opacity: 1; }
-    50% { transform: translateY(-2px) scale(1.15); opacity: 0.75; }
-}
-
-.pwa-ios-final-step {
-    font-size: 0.82rem;
+.pwa-step-text small {
+    font-size: 0.76rem;
     color: #adb5bd;
-    margin: 2px 0 0 !important;
 }
 
 .btn-pwa-entendi {
-    align-self: center;
-    margin-top: 4px;
-    padding: 9px 28px;
+    width: 100%;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.95rem;
 }
 
 .btn-pwa-close {
     position: absolute;
-    top: 10px;
-    right: 12px;
-    background: transparent;
+    top: 14px;
+    right: 14px;
+    background: #f8f9fa;
     border: none;
-    font-size: 1.4rem;
+    border-radius: 50%;
+    font-size: 1.25rem;
     line-height: 1;
     color: #adb5bd;
     cursor: pointer;
@@ -231,10 +353,37 @@
 
 .btn-pwa-close:hover {
     color: #6c757d;
+    background: #f1f3f5;
 }
 
-/* Toast de confirmação ("FitLog instalado com sucesso!") -- flutua no
-   topo, unobtrusivo, some sozinho. */
+/* Desktop: modal centralizado, cantos totalmente arredondados (não é
+   mais um "sheet" grudado na borda inferior da tela). */
+@media (min-width: 992px) {
+    .pwa-ios-sheet {
+        top: 0;
+        align-items: center;
+        padding: 20px !important;
+    }
+
+    .pwa-ios-sheet-content {
+        max-width: 420px;
+        border-radius: 24px;
+        padding: 20px 28px 28px;
+        transform: translateY(24px) scale(0.97);
+        opacity: 0;
+        transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+    }
+
+    .pwa-ios-sheet.is-visible .pwa-ios-sheet-content {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* ================================================================
+   Toast de confirmação ("FitLog instalado com sucesso!")
+   ================================================================ */
+
 .pwa-toast {
     position: fixed;
     left: 50%;
@@ -265,71 +414,21 @@
     opacity: 1;
 }
 
-/* Desktop: em vez de ocupar a largura toda, vira um toast discreto no
-   canto inferior direito -- não bloqueia o conteúdo da página. */
-@media (min-width: 992px) {
-    .pwa-install-sheet {
-        justify-content: flex-end;
-        padding: 0 20px 20px 0;
-    }
+/* ================================================================
+   Reduced motion -- mantém só fade, sem deslocamento/escala/glow.
+   ================================================================ */
 
-    .pwa-install-sheet-content {
-        max-width: 380px;
-    }
-
-    .pwa-ios-sheet {
-        justify-content: center;
-        padding: 0 20px 20px;
-    }
-}
-
-/* Evita empurrar o botão de instalar pra baixo do texto em telas bem
-   estreitas -- ações ficam abaixo do texto em vez de espremidas ao lado. */
-@media (max-width: 420px) {
-    .pwa-install-sheet-content {
-        flex-wrap: wrap;
-    }
-
-    .pwa-install-actions {
-        flex-direction: row;
-        width: 100%;
-        justify-content: flex-end;
-    }
-}
-
-/* Mobile: o banner de instalação (Android/Desktop) e o tutorial iOS
-   viram um cartão centralizado na tela -- em vez de bottom-sheet --
-   com a bordinha laranja da marca. */
-@media (max-width: 991.98px) {
-    .pwa-install-sheet {
-        top: 0;
-        align-items: center;
-        padding: max(16px, env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
-    }
-
-    .pwa-install-sheet-content {
-        max-width: 360px;
-        margin: 0 auto;
-        border: 2px solid var(--primary-color, #F28C33);
-        transform: scale(0.92);
-    }
-
-    .pwa-install-sheet.is-visible .pwa-install-sheet-content {
-        transform: scale(1);
-    }
-}
-
-/* Reduced motion: mantém só a transição de opacidade, sem
-   deslocamento/escala/pulso -- respeita a preferência do sistema. */
 @media (prefers-reduced-motion: reduce) {
     .pwa-install-sheet-content,
-    .pwa-toast {
+    .pwa-ios-sheet-content,
+    .pwa-toast,
+    .pwa-backdrop {
         transition: opacity 0.15s ease;
         transform: none !important;
         animation: none !important;
     }
 
-    .pwa-share-icon {
+    .pwa-step-highlight .pwa-step-icon-chip {
         animation: none;
     }
 }

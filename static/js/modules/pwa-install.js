@@ -46,6 +46,7 @@ const InstallManager = (function () {
     let platform = null;         // resultado de detectPlatform()
     let bannerEl = null;         // banner/CTA (Android/Desktop OU iOS)
     let iosSheetEl = null;       // bottom sheet com o tutorial iOS
+    let backdropEl = null;       // fundo escurecido atrás do tutorial iOS
     let toastEl = null;          // toast de confirmação ("instalado com sucesso")
     let menuItemEl = null;       // <li> "Instalar aplicativo" no dropdown
     let autoShowTimer = null;
@@ -267,32 +268,49 @@ const InstallManager = (function () {
         el.setAttribute('aria-label', 'Como instalar o FitLog no iPhone ou iPad');
         el.innerHTML = `
             <div class="pwa-install-sheet-content pwa-ios-sheet-content">
+                <div class="pwa-ios-sheet-handle" aria-hidden="true"></div>
                 <button type="button" class="btn-pwa-close" aria-label="Fechar">&times;</button>
-                <img src="/static/icons/icon-192.png" alt="" class="pwa-install-icon">
-                <strong>📱 Instale o FitLog</strong>
-                <p>Tenha o FitLog sempre à mão, direto da tela inicial.</p>
+
+                <div class="pwa-ios-hero">
+                    <img src="/static/icons/icon-192.png" alt="" class="pwa-install-icon">
+                </div>
+
+                <strong>Instale o FitLog</strong>
+                <p>Tenha o FitLog sempre à mão, direto da tela inicial do seu iPhone.</p>
+
                 <ol class="pwa-ios-steps">
-                    <li>
-                        <span class="pwa-step-num">1</span>
+                    <li class="pwa-step-highlight">
+                        <span class="pwa-step-icon-chip">
+                            <i class="bi bi-box-arrow-up" aria-hidden="true"></i>
+                        </span>
                         <span class="pwa-step-text">
-                            Toque em <strong>Compartilhar</strong>
-                            <i class="bi bi-box-arrow-up pwa-share-icon" aria-hidden="true"></i>
+                            <strong>Toque em Compartilhar</strong>
+                            <small>Na barra do Safari</small>
                         </span>
                     </li>
                     <li>
-                        <span class="pwa-step-num">2</span>
-                        <span class="pwa-step-text">Toque em <strong>Mais</strong>, se necessário</span>
+                        <span class="pwa-step-icon-chip pwa-step-icon-chip-alt">
+                            <i class="bi bi-three-dots" aria-hidden="true"></i>
+                        </span>
+                        <span class="pwa-step-text">
+                            <strong>Toque em Mais</strong>
+                            <small>Se a opção não aparecer de primeira</small>
+                        </span>
                     </li>
                     <li>
-                        <span class="pwa-step-num">3</span>
-                        <span class="pwa-step-text">
-                            Selecione <strong>"Adicionar à Tela de Início"</strong>
+                        <span class="pwa-step-icon-chip pwa-step-icon-chip-alt">
                             <i class="bi bi-plus-square" aria-hidden="true"></i>
+                        </span>
+                        <span class="pwa-step-text">
+                            <strong>Adicionar à Tela de Início</strong>
+                            <small>E depois toque em Adicionar</small>
                         </span>
                     </li>
                 </ol>
-                <p class="pwa-ios-final-step">Depois é só tocar em <strong>Adicionar</strong>.</p>
-                <button type="button" class="btn-pwa-install btn-pwa-entendi">Entendi</button>
+
+                <button type="button" class="btn-pwa-install btn-pwa-entendi">
+                    <i class="bi bi-check2" aria-hidden="true"></i> Entendi
+                </button>
             </div>
         `;
         document.body.appendChild(el);
@@ -301,6 +319,19 @@ const InstallManager = (function () {
         el.querySelector('.btn-pwa-entendi').addEventListener('click', handleDismiss);
 
         iosSheetEl = el;
+        return el;
+    }
+
+    function garantirBackdrop() {
+        if (backdropEl) return backdropEl;
+
+        const el = document.createElement('div');
+        el.id = 'pwaBackdrop';
+        el.className = 'pwa-backdrop';
+        el.addEventListener('click', handleDismiss);
+        document.body.appendChild(el);
+
+        backdropEl = el;
         return el;
     }
 
@@ -331,6 +362,8 @@ const InstallManager = (function () {
         hideInstallButton();
         elementoComFocoAntes = document.activeElement;
 
+        garantirBackdrop().classList.add('is-visible');
+
         const sheet = garantirTutorialIOS();
         sheet.classList.add('is-visible');
 
@@ -343,6 +376,7 @@ const InstallManager = (function () {
     }
 
     function hideIOSInstructions() {
+        if (backdropEl) backdropEl.classList.remove('is-visible');
         if (!iosSheetEl) return;
         iosSheetEl.classList.remove('is-visible');
         document.removeEventListener('keydown', handleEscapeIOSInstructions);
