@@ -162,6 +162,21 @@ const InstallManager = (function () {
     }
 
     /**
+     * No iOS todo navegador usa o motor do Safari por baixo, mas a barra
+     * de ferramentas (e onde fica o botão Compartilhar) muda de nome
+     * conforme o app. Retorna o nome certo pra usar no tutorial, ou null
+     * se não reconhecer (aí o texto cai num genérico "seu navegador").
+     */
+    function getIOSBrowserLabel() {
+        const ua = getUserAgent();
+        if (/CriOS/.test(ua)) return 'Chrome';
+        if (/FxiOS/.test(ua)) return 'Firefox';
+        if (/EdgiOS/.test(ua)) return 'Edge';
+        if (isSafariBrowser()) return 'Safari';
+        return null;
+    }
+
+    /**
      * true se a página já estiver rodando numa janela "standalone" --
      * Android/Desktop via display-mode, iOS via navigator.standalone
      * (API específica da Apple, não padronizada).
@@ -260,6 +275,9 @@ const InstallManager = (function () {
     function garantirTutorialIOS() {
         if (iosSheetEl) return iosSheetEl;
 
+        const nomeNavegador = getIOSBrowserLabel();
+        const legendaCompartilhar = nomeNavegador ? `Na barra do ${nomeNavegador}` : 'No seu navegador';
+
         const el = document.createElement('div');
         el.id = 'pwaIosSheet';
         el.className = 'pwa-install-sheet pwa-ios-sheet';
@@ -285,16 +303,16 @@ const InstallManager = (function () {
                         </span>
                         <span class="pwa-step-text">
                             <strong>Toque em Compartilhar</strong>
-                            <small>Na barra do Safari</small>
+                            <small>${legendaCompartilhar}</small>
                         </span>
                     </li>
                     <li>
-                        <span class="pwa-step-icon-chip pwa-step-icon-chip-alt">
-                            <i class="bi bi-three-dots" aria-hidden="true"></i>
+                        <span class="pwa-step-icon-chip pwa-step-icon-chip-circle">
+                            <i class="bi bi-chevron-down" aria-hidden="true"></i>
                         </span>
                         <span class="pwa-step-text">
-                            <strong>Toque em Mais</strong>
-                            <small>Se a opção não aparecer de primeira</small>
+                            <strong>Toque em Ver Mais</strong>
+                            <small>Se "Adicionar à Tela de Início" não aparecer direto</small>
                         </span>
                     </li>
                     <li>
@@ -546,6 +564,9 @@ const InstallManager = (function () {
         isAndroid: isAndroid,
         isMobile: isMobile,
         isDesktop: isDesktop,
+        isSafari: isSafariBrowser,
+        isChromium: isChromiumBrowser,
+        getIOSBrowserLabel: getIOSBrowserLabel,
         isStandalone: isStandalone,
         isPWAInstalled: isPWAInstalled,
         isAppInstalled: isAppInstalled, // alias, compatibilidade

@@ -293,6 +293,16 @@
     box-shadow: none;
 }
 
+/* Chip circular -- reproduz o botão "Ver Mais" real do share sheet do
+   iOS (círculo neutro com uma seta pra baixo), não é quadrado como os
+   outros ícones desse tutorial. */
+.pwa-step-icon-chip-circle {
+    border-radius: 50%;
+    background: #eef0f2;
+    color: #495057;
+    box-shadow: none;
+}
+
 /* Destaque só no primeiro passo -- é o que costuma ser mais difícil de
    achar. Um anel suave "respirando" ao redor do chip, sem exagero. */
 .pwa-step-highlight .pwa-step-icon-chip {
