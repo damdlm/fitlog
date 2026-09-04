@@ -298,6 +298,17 @@
         color: #F28C33;
     }
 
+    .grupo-treino-acoes {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .grupo-treino-acoes .btn {
+        flex: 1;
+        font-size: .8rem;
+    }
+
     .grupo-treino-volume {
         background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
         color: #fff;
@@ -1296,6 +1307,44 @@
         return div.innerHTML;
     }
 
+    // Professor vendo o calendário de um aluno -> EVENTOS_API_BASE vem
+    // com "aluno_id=..." (ver comentário acima). Nesse caso, editar
+    // levaria o PROFESSOR pra tela de registro dele mesmo (não do
+    // aluno), e excluir já é bloqueado no backend (só o dono pode) --
+    // então nem mostra os botões, pra não confundir.
+    const PODE_EDITAR_EXCLUIR = !EVENTOS_API_BASE.includes('aluno_id=');
+
+    function excluirRegistroDia(registroId, nomeTreino) {
+        window.FitLogConfirm({
+            title: `Excluir ${nomeTreino}?`,
+            text: 'Todos os exercícios e séries registrados nesse treino, nesse dia, serão apagados. Essa ação não pode ser desfeita.',
+            variant: 'danger',
+            icon: 'bi-trash',
+            confirmLabel: 'Excluir',
+            onConfirm: function () {
+                fetch(`/calendar/api/evento/${registroId}/excluir`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.ok) {
+                            // Recarrega a página -- mais simples e seguro do
+                            // que tentar remontar o cache de eventos já
+                            // carregado (calendar.addEventSource acumula
+                            // fontes, não substitui).
+                            window.location.reload();
+                        } else if (typeof FitLogUtils !== 'undefined') {
+                            FitLogUtils.showToast(data.erro || 'Não foi possível excluir.', 'danger');
+                        }
+                    })
+                    .catch(() => {
+                        if (typeof FitLogUtils !== 'undefined') {
+                            FitLogUtils.showToast('Não foi possível excluir. Tente novamente.', 'danger');
+                        }
+                    });
+            }
+        });
+    }
+    window.excluirRegistroDia = excluirRegistroDia;
+
     function mostrarDetalhesEvento(event) {
         const modal = new bootstrap.Modal(document.getElementById('eventoModal'));
         const tituloEl = document.querySelector('#eventoModal .modal-title');
@@ -1314,7 +1363,13 @@
             const porTreino = {};
             event.extendedProps.treinos.forEach(t => {
                 if (!porTreino[t.treino_codigo]) {
-                    porTreino[t.treino_codigo] = { nome: t.treino_nome, volume: 0, exercicios: [] };
+                    porTreino[t.treino_codigo] = {
+                        nome: t.treino_nome,
+                        volume: 0,
+                        exercicios: [],
+                        treinoId: t.treino_id,
+                        primeiroRegistroId: t.id
+                    };
                 }
                 porTreino[t.treino_codigo].volume += t.volume;
                 porTreino[t.treino_codigo].exercicios.push(t);
@@ -1347,7 +1402,23 @@
                         </div>
                     `;
                 });
-                
+
+                if (PODE_EDITAR_EXCLUIR) {
+                    const nomeSeguroJs = nomeSeguro.replace(/'/g, "\\'");
+                    html += `
+                        <div class="grupo-treino-acoes">
+                            <a href="/registrar-treino?data=${event.startStr}&treino=${grupo.treinoId}"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil-square"></i> Editar
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    onclick="excluirRegistroDia(${grupo.primeiroRegistroId}, 'Treino ${codigoSeguro}${grupo.nome && grupo.nome !== 'Treino' ? ` · ${nomeSeguroJs}` : ''}')">
+                                <i class="bi bi-trash"></i> Excluir
+                            </button>
+                        </div>
+                    `;
+                }
+
                 html += `</div>`;
             });
             

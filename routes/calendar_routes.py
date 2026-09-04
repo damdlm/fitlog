@@ -233,6 +233,40 @@ def api_evento_detalhe(registro_id):
     })
 
 
+@calendar_bp.route("/api/evento/<int:registro_id>/excluir", methods=["POST"])
+@login_required
+@acesso_premium_required('calendario')
+def api_evento_excluir(registro_id):
+    """Exclui a sessão inteira (todos os exercícios registrados) do
+    treino daquele dia -- a partir de UM registro qualquer daquele dia,
+    resolve treino_versao_id/versao_id/data e apaga tudo que pertence à
+    mesma sessão (mesma lógica de RegistroService.salvar_registros, que
+    trata treino_versao_id+versao_id+periodo+semana como "uma sessão").
+
+    Só o dono do registro pode excluir (não professor/admin -- exclusão
+    é mais sensível que visualização, e o dono pode preferir pedir pro
+    aluno mesmo ajustar em vez do professor apagar o histórico dele)."""
+    from models import db, RegistroTreino
+
+    registro = db.session.get(RegistroTreino, registro_id)
+    if not registro:
+        return jsonify({"ok": False, "erro": "Registro não encontrado."}), 404
+
+    if registro.user_id != current_user.id:
+        return jsonify({"ok": False, "erro": "Registro não encontrado."}), 404
+
+    sucesso = RegistroService.excluir_por_treino_data(
+        treino_id=registro.treino_versao_id,
+        versao_id=registro.versao_id,
+        data=registro.data_registro,
+        user_id=registro.user_id,
+    )
+    if not sucesso:
+        return jsonify({"ok": False, "erro": "Não foi possível excluir. Tente novamente."}), 500
+
+    return jsonify({"ok": True})
+
+
 def _estimar_data(periodo, semana):
     """Estima uma data a partir do período e semana"""
     try:
