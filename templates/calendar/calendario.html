@@ -309,35 +309,95 @@
         font-size: .8rem;
     }
 
-    .editar-registro-linha {
-        padding: 12px 0;
-        border-bottom: 1px solid var(--border-subtle);
+    /* Visual do card de exercício replicado da tela de registrar treino
+       (templates/register/registrar_treino.html: .exercise-row,
+       .inputs-row-labels, .inputs-row, .carga-input/.reps-input) --
+       usa var(--primary-orange), já disponível globalmente via
+       base.html, e as variáveis de superfície/borda já definidas neste
+       arquivo (--surface, --border-subtle) no lugar de --surface/
+       --border-soft (que só existem na página de registro). */
+    .editar-registro-card {
+        background: var(--surface);
+        padding: 16px 18px;
+        margin-bottom: 12px;
+        border-radius: 12px;
+        border: 1px solid var(--border-subtle);
+        border-left: 4px solid var(--primary-orange);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     }
 
-    .editar-registro-linha:last-child {
-        border-bottom: none;
+    .editar-registro-card:last-child {
+        margin-bottom: 0;
     }
 
     .editar-registro-nome {
-        font-weight: 700;
+        font-weight: 600;
         color: var(--text-primary);
-        margin-bottom: 8px;
+        overflow-wrap: break-word;
+        margin-bottom: 10px;
         font-size: .92rem;
     }
 
-    .editar-registro-campos {
+    /* Mesma proporção de colunas da tela de registro (5fr/3fr/5fr):
+       Repetições um pouco mais estreita que Carga e Séries. */
+    .editar-registro-labels,
+    .editar-registro-inputs {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: 5fr 3fr 5fr;
         gap: 8px;
     }
 
-    .editar-registro-label {
-        font-size: .68rem;
+    .editar-registro-labels {
+        margin-bottom: 3px;
+    }
+
+    .editar-registro-labels span {
+        font-size: .65rem;
+        line-height: 1;
+        color: #adb5bd;
         text-transform: uppercase;
         letter-spacing: .03em;
-        color: var(--text-secondary, #6c757d);
-        margin-bottom: 2px;
+        font-weight: 600;
+        text-align: center;
         display: block;
+    }
+
+    .editar-registro-inputs .carga-input,
+    .editar-registro-inputs .reps-input {
+        width: 100%;
+        min-width: 0;
+        text-align: center;
+        font-weight: 700;
+        font-size: .9rem !important;
+        padding: 3px !important;
+        height: 34px !important;
+        border: 2px solid var(--border-subtle) !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+        background: var(--surface);
+        color: var(--text-primary);
+        transition: border-color .2s, box-shadow .2s;
+    }
+
+    .editar-registro-inputs .carga-input:focus,
+    .editar-registro-inputs .reps-input:focus {
+        outline: none;
+        border-color: var(--primary-orange) !important;
+        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12) !important;
+    }
+
+    .editar-registro-inputs .form-select {
+        height: 34px !important;
+        font-size: .85rem !important;
+        border: 2px solid var(--border-subtle) !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+        background-color: var(--surface);
+        color: var(--text-primary);
+    }
+
+    .editar-registro-inputs .form-select:focus {
+        border-color: var(--primary-orange) !important;
     }
 
     .grupo-treino-volume {
@@ -1453,29 +1513,25 @@
                 }
 
                 corpo.innerHTML = dados.exercicios.map(ex => `
-                    <div class="editar-registro-linha">
+                    <div class="editar-registro-card">
                         <div class="editar-registro-nome">${escapeHtml(ex.nome)}</div>
-                        <div class="editar-registro-campos">
-                            <div>
-                                <label class="editar-registro-label">Carga (kg)</label>
-                                <input type="number" class="form-control" name="carga_${ex.chave}"
-                                       step="0.5" min="0" inputmode="decimal"
-                                       value="${ex.carga !== null ? ex.carga : ''}">
-                            </div>
-                            <div>
-                                <label class="editar-registro-label">Repetições</label>
-                                <input type="number" class="form-control" name="reps_${ex.chave}"
-                                       min="0" max="100" inputmode="numeric"
-                                       value="${ex.repeticoes !== null ? ex.repeticoes : ''}">
-                            </div>
-                            <div>
-                                <label class="editar-registro-label">Séries</label>
-                                <select class="form-select" name="num_series_${ex.chave}">
-                                    ${Array.from({length: 10}, (_, i) => i + 1).map(n => `
-                                        <option value="${n}" ${n === ex.num_series ? 'selected' : ''}>${n}</option>
-                                    `).join('')}
-                                </select>
-                            </div>
+                        <div class="editar-registro-labels">
+                            <span>Carga (kg)</span>
+                            <span>Reps</span>
+                            <span>Séries</span>
+                        </div>
+                        <div class="editar-registro-inputs">
+                            <input type="number" class="carga-input" name="carga_${ex.chave}"
+                                   step="0.5" min="0" inputmode="decimal"
+                                   value="${ex.carga !== null ? ex.carga : ''}">
+                            <input type="number" class="reps-input" name="reps_${ex.chave}"
+                                   min="0" max="100" inputmode="numeric"
+                                   value="${ex.repeticoes !== null ? ex.repeticoes : ''}">
+                            <select class="form-select" name="num_series_${ex.chave}">
+                                ${Array.from({length: 10}, (_, i) => i + 1).map(n => `
+                                    <option value="${n}" ${n === ex.num_series ? 'selected' : ''}>${n}</option>
+                                `).join('')}
+                            </select>
                         </div>
                     </div>
                 `).join('');
