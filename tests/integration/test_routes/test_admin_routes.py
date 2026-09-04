@@ -263,3 +263,237 @@ class TestTelasControladas:
 
         with app.app_context():
             assert all(not t.bloqueia_sem_plano for t in TelaControlada.query.all())
+
+
+class TestGerenciar:
+    """/admin/gerenciar -- acessível a qualquer usuário logado, cada
+    um vendo só os próprios dados (treinos, exercícios, últimas
+    cargas). Cobre os ramos que dependem de ter versão ativa e
+    registros de treino, que os testes de editar/excluir não tocam."""
+
+    def test_carrega_vazio_sem_nenhum_dado(self, client, app):
+        with app.app_context():
+            _criar_usuario('ger_vazio')
+        _login(client, 'ger_vazio')
+
+        resp = client.get('/admin/gerenciar')
+        assert resp.status_code == 200
+
+    def test_carrega_com_versao_ativa_treino_e_ultima_carga(self, client, app):
+        from datetime import date, datetime, timezone
+        from models import VersaoGlobal, TreinoVersao, VersaoExercicio, RegistroTreino, HistoricoTreino
+
+        with app.app_context():
+            u = _criar_usuario('ger_com_dados')
+            ex = ExercicioCustomizado(usuario_id=u.id, nome='Supino Ger')
+            db.session.add(ex)
+            db.session.commit()
+
+            versao = VersaoGlobal(numero_versao=1, descricao='V1', divisao='ABC',
+                                   data_inicio=date.today(), user_id=u.id)
+            db.session.add(versao)
+            db.session.commit()
+            tv = TreinoVersao(versao_id=versao.id, codigo='A', nome_treino='Treino A')
+            db.session.add(tv)
+            db.session.commit()
+            db.session.add(VersaoExercicio(treino_versao_id=tv.id, exercicio_usuario_id=ex.id, ordem=0))
+            db.session.commit()
+
+            registro = RegistroTreino(
+                treino_versao_id=tv.id, versao_id=versao.id, periodo='2026-09',
+                semana=1, data_registro=datetime.now(timezone.utc),
+                user_id=u.id, exercicio_usuario_id=ex.id,
+            )
+            db.session.add(registro)
+            db.session.commit()
+            db.session.add(HistoricoTreino(registro_id=registro.id, carga=42.5, repeticoes=10, ordem=1))
+            db.session.commit()
+
+        _login(client, 'ger_com_dados')
+        resp = client.get('/admin/gerenciar')
+        assert resp.status_code == 200
+        assert b'Supino Ger' in resp.data
+
+
+class TestSalvarExercicio:
+
+    def test_cria_com_sucesso(self, client, app):
+        with app.app_context():
+            _criar_usuario('salvar_ex_1')
+        _login(client, 'salvar_ex_1')
+
+        resp = client.post('/admin/salvar/exercicio', data={
+            'nome': 'Rosca Concentrada', 'musculo': 'Bíceps', 'descricao': 'teste',
+        }, follow_redirects=True)
+
+        assert resp.status_code == 200
+        with app.app_context():
+            assert ExercicioCustomizado.query.filter_by(nome='Rosca Concentrada').first() is not None
+
+    def test_sem_nome_nao_cria_e_avisa(self, client, app):
+        with app.app_context():
+            _criar_usuario('salvar_ex_2')
+        _login(client, 'salvar_ex_2')
+
+        resp = client.post('/admin/salvar/exercicio', data={'musculo': 'Peito'}, follow_redirects=True)
+
+        assert resp.status_code == 200
+        with app.app_context():
+            assert ExercicioCustomizado.query.count() == 0
+
+    def test_musculo_nao_informado_e_auto_detectado(self, client, app):
+        from models import ExercicioSistema
+        with app.app_context():
+            _criar_usuario('salvar_ex_3')
+            db.session.add(ExercicioSistema(id_original='sys-salvar', nome='Supino Reto Auto', grupo_muscular='Peito'))
+            db.session.commit()
+        _login(client, 'salvar_ex_3')
+
+        client.post('/admin/salvar/exercicio', data={'nome': 'Supino Reto Auto'}, follow_redirects=True)
+
+        with app.app_context():
+            criado = ExercicioCustomizado.query.filter_by(nome='Supino Reto Auto').first()
+            assert criado is not None
+            assert criado.musculo_ref.nome_exibicao == 'Peito'
+
+
+class TestEditarExercicioUsuario:
+    """ACHADO ao escrever este teste: como ExercicioCustomizado é
+    literalmente um alias de ExercicioUsuario (`ExercicioCustomizado =
+    ExercicioUsuario`, ver models.py), a query de
+    ExercicioCustomizado.query.filter_by(id=...) na linha 199 SEMPRE
+    encontra o registro primeiro -- é a mesma tabela. O bloco
+    `if exercicio_usuario:` (linhas 220-236) que deveria ser um
+    segundo caminho nunca executa de verdade. Não é um bug funcional
+    (o primeiro bloco já faz exatamente a mesma coisa certa), só
+    código morto inofensivo -- documentando aqui em vez de fingir que
+    o segundo bloco é exercitado."""
+
+    def test_edita_exercicio_usuario_com_sucesso(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('editar_exu_1')
+            ex = ExercicioUsuario(usuario_id=u.id, nome='Original')
+            db.session.add(ex)
+            db.session.commit()
+            ex_id = ex.id
+        _login(client, 'editar_exu_1')
+
+        resp = client.post('/admin/editar/exercicio', data={
+            'id': str(ex_id), 'nome': 'Editado', 'musculo': 'Costas', 'descricao': 'x',
+        }, headers=HEADERS_AJAX)
+
+        assert resp.status_code == 200
+        assert resp.get_json()['success'] is True
+        with app.app_context():
+            assert db.session.get(ExercicioUsuario, ex_id).nome == 'Editado'
+
+
+class TestExcluirExercicio:
+
+    def test_exclui_exercicio_customizado_com_sucesso(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('excluir_ex_1')
+            ex = ExercicioCustomizado(usuario_id=u.id, nome='Pode excluir')
+            db.session.add(ex)
+            db.session.commit()
+            ex_id = ex.id
+        _login(client, 'excluir_ex_1')
+
+        resp = client.post(f'/admin/excluir/exercicio/{ex_id}', follow_redirects=True)
+
+        assert resp.status_code == 200
+        with app.app_context():
+            assert db.session.get(ExercicioCustomizado, ex_id) is None
+
+    def test_exclui_exercicio_usuario_com_sucesso(self, client, app):
+        """Cobre o segundo `try` -- quando não é ExercicioCustomizado,
+        cai pra delete_exercicio_usuario."""
+        with app.app_context():
+            u = _criar_usuario('excluir_ex_2')
+            ex = ExercicioUsuario(usuario_id=u.id, nome='Pode excluir tambem')
+            db.session.add(ex)
+            db.session.commit()
+            ex_id = ex.id
+        _login(client, 'excluir_ex_2')
+
+        resp = client.post(f'/admin/excluir/exercicio/{ex_id}', follow_redirects=True)
+
+        assert resp.status_code == 200
+        with app.app_context():
+            assert db.session.get(ExercicioUsuario, ex_id) is None
+
+    def test_exercicio_inexistente_avisa_sem_quebrar(self, client, app):
+        with app.app_context():
+            _criar_usuario('excluir_ex_3')
+        _login(client, 'excluir_ex_3')
+
+        resp = client.post('/admin/excluir/exercicio/999999', follow_redirects=True)
+        assert resp.status_code == 200
+
+
+class TestContas:
+
+    def _criar_admin(self, app, username='admin_contas'):
+        u = _criar_usuario(username, tipo_usuario='admin')
+        with app.app_context():
+            from models import User
+            User.query.filter_by(id=u.id).update({'is_admin': True})
+            db.session.commit()
+        return u
+
+    def test_requer_admin(self, client, app):
+        with app.app_context():
+            _criar_usuario('aluno_sem_permissao_contas')
+        _login(client, 'aluno_sem_permissao_contas')
+
+        resp = client.get('/admin/contas')
+        assert resp.status_code in (302, 403)
+
+    def test_lista_carrega_para_admin(self, client, app):
+        self._criar_admin(app)
+        _login(client, 'admin_contas')
+
+        resp = client.get('/admin/contas')
+        assert resp.status_code == 200
+
+    def test_filtros_por_query_string_nao_quebram(self, client, app):
+        self._criar_admin(app, 'admin_contas2')
+        _login(client, 'admin_contas2')
+
+        resp = client.get('/admin/contas?tipo=aluno&situacao=inadimplente&busca=x&plano=fit')
+        assert resp.status_code == 200
+
+
+class TestMonitoramento:
+
+    def _criar_admin(self, app, username='admin_monitor'):
+        u = _criar_usuario(username, tipo_usuario='admin')
+        with app.app_context():
+            from models import User
+            User.query.filter_by(id=u.id).update({'is_admin': True})
+            db.session.commit()
+        return u
+
+    def test_requer_admin(self, client, app):
+        with app.app_context():
+            _criar_usuario('aluno_sem_permissao_monitor')
+        _login(client, 'aluno_sem_permissao_monitor')
+
+        resp = client.get('/admin/monitoramento')
+        assert resp.status_code in (302, 403)
+
+    def test_pagina_carrega_para_admin(self, client, app):
+        self._criar_admin(app)
+        _login(client, 'admin_monitor')
+
+        resp = client.get('/admin/monitoramento')
+        assert resp.status_code == 200
+
+    def test_api_retorna_json_com_as_quatro_fontes(self, client, app):
+        self._criar_admin(app, 'admin_monitor2')
+        _login(client, 'admin_monitor2')
+
+        resp = client.get('/admin/api/monitoramento')
+        assert resp.status_code == 200
+        dados = resp.get_json()
+        assert set(dados.keys()) == {'coletado_em', 'processo', 'banco', 'cache', 'negocio'}
