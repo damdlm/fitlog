@@ -984,6 +984,7 @@
     // professor_routes.py); por isso os parâmetros ano/mes abaixo são
     // sempre concatenados, nunca hardcoded com "?".
     const EVENTOS_API_BASE = '{{ eventos_api_url or url_for("calendar.api_eventos") }}';
+    const REGISTRAR_TREINO_URL = '{{ url_for("register.registrar_treino") }}';
 
     function urlEventosDoMes(ano, mes) {
         const separador = EVENTOS_API_BASE.includes('?') ? '&' : '?';
@@ -1407,7 +1408,7 @@
                     const nomeSeguroJs = nomeSeguro.replace(/'/g, "\\'");
                     html += `
                         <div class="grupo-treino-acoes">
-                            <a href="/registrar-treino?data=${event.startStr}&treino=${grupo.treinoId}"
+                            <a href="${REGISTRAR_TREINO_URL}?data=${event.startStr}&treino=${grupo.treinoId}"
                                class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-pencil-square"></i> Editar
                             </a>
