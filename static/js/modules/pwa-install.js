@@ -49,6 +49,7 @@ const InstallManager = (function () {
     let backdropEl = null;       // fundo escurecido atrás do tutorial iOS
     let toastEl = null;          // toast de confirmação ("instalado com sucesso")
     let menuItemEl = null;       // <li> "Instalar aplicativo" no dropdown
+    let headerBtnEl = null;      // botão de instalar no cabeçalho, ao lado do FitBot
     let autoShowTimer = null;
     let toastTimer = null;
     let elementoComFocoAntes = null; // pra devolver o foco ao fechar o modal iOS
@@ -236,37 +237,64 @@ const InstallManager = (function () {
     function garantirBanner() {
         if (bannerEl) return bannerEl;
 
-        // Copy específica: no iOS o clique abre o tutorial (não existe
-        // prompt nativo), então o texto já prepara essa expectativa.
-        const titulo = platform.isIOS ? 'Instale o FitLog' : 'Instalar FitLog';
-        const texto = platform.isIOS
-            ? 'Tenha acesso rápido aos seus treinos direto pela tela inicial.'
-            : 'Acesse seus treinos direto da tela inicial, mais rápido e sem precisar do navegador.';
-        const emoji = platform.isIOS ? '📲 ' : '';
-
         const el = document.createElement('div');
         el.id = 'pwaInstallBanner';
         el.className = 'pwa-install-sheet';
         el.setAttribute('role', 'dialog');
         el.setAttribute('aria-modal', 'true');
         el.setAttribute('aria-label', 'Instalar aplicativo FitLog');
-        el.innerHTML = `
-            <div class="pwa-install-sheet-content">
-                <img src="/static/icons/icon-192.png" alt="" class="pwa-install-icon">
-                <div class="pwa-install-text">
-                    <strong>${emoji}${titulo}</strong>
-                    <span>${texto}</span>
+
+        if (platform.isIOS) {
+            // iOS: banner compacto -- o clique só abre o tutorial completo
+            // (não existe prompt nativo aqui, então não faz sentido um
+            // cartão grande antes do próprio tutorial).
+            el.innerHTML = `
+                <div class="pwa-install-sheet-content">
+                    <img src="/static/icons/icon-192.png" alt="" class="pwa-install-icon">
+                    <div class="pwa-install-text">
+                        <strong>📲 Instale o FitLog</strong>
+                        <span>Tenha acesso rápido aos seus treinos direto pela tela inicial.</span>
+                    </div>
+                    <div class="pwa-install-actions">
+                        <button type="button" class="btn-pwa-dismiss" aria-label="Agora não">Agora não</button>
+                        <button type="button" class="btn-pwa-install">Instalar</button>
+                    </div>
                 </div>
-                <div class="pwa-install-actions">
-                    <button type="button" class="btn-pwa-dismiss" aria-label="Agora não">Agora não</button>
-                    <button type="button" class="btn-pwa-install">Instalar</button>
+            `;
+        } else {
+            // Android/Desktop: esse cartão é a única tela que o FitLog
+            // controla antes do navegador assumir com o prompt nativo --
+            // por isso ganha o mesmo nível de acabamento do tutorial iOS.
+            el.classList.add('pwa-android-sheet');
+            el.innerHTML = `
+                <div class="pwa-install-sheet-content pwa-android-sheet-content">
+                    <button type="button" class="btn-pwa-close" aria-label="Agora não">&times;</button>
+                    <div class="pwa-ios-hero">
+                        <img src="/static/icons/icon-192.png" alt="" class="pwa-install-icon">
+                    </div>
+                    <strong>Instale o FitLog</strong>
+                    <p>Tenha seus treinos sempre à mão, direto da tela inicial -- mais rápido e sem precisar abrir o navegador.</p>
+                    <ul class="pwa-android-features">
+                        <li><i class="bi bi-graph-up-arrow" aria-hidden="true"></i> Acompanhe sua evolução treino a treino</li>
+                        <li><i class="bi bi-calendar-check" aria-hidden="true"></i> Acesso rápido à sua rotina de treinos</li>
+                        <li><i class="bi bi-robot" aria-hidden="true"></i> Tire dúvidas com o FitBot na hora</li>
+                    </ul>
+                    <button type="button" class="btn-pwa-install btn-pwa-entendi">
+                        <i class="bi bi-download" aria-hidden="true"></i> Instalar aplicativo
+                    </button>
+                    <button type="button" class="btn-pwa-dismiss-link">Agora não</button>
                 </div>
-            </div>
-        `;
+            `;
+        }
         document.body.appendChild(el);
 
         el.querySelector('.btn-pwa-install').addEventListener('click', handleInstall);
-        el.querySelector('.btn-pwa-dismiss').addEventListener('click', handleDismiss);
+
+        const botaoDispensar = el.querySelector('.btn-pwa-dismiss, .btn-pwa-dismiss-link');
+        if (botaoDispensar) botaoDispensar.addEventListener('click', handleDismiss);
+
+        const botaoFecharAndroid = el.querySelector('.pwa-android-sheet-content .btn-pwa-close');
+        if (botaoFecharAndroid) botaoFecharAndroid.addEventListener('click', handleDismiss);
 
         bannerEl = el;
         return el;
@@ -370,10 +398,14 @@ const InstallManager = (function () {
 
     function showInstallButton() {
         garantirBanner().classList.add('is-visible');
+        if (!platform.isIOS) garantirBackdrop().classList.add('is-visible');
     }
 
     function hideInstallButton() {
         if (bannerEl) bannerEl.classList.remove('is-visible');
+        if (!platform.isIOS && backdropEl && !(iosSheetEl && iosSheetEl.classList.contains('is-visible'))) {
+            backdropEl.classList.remove('is-visible');
+        }
     }
 
     function showIOSInstructions() {
@@ -424,22 +456,31 @@ const InstallManager = (function () {
     // ---------------------------------------------------------------
 
     function atualizarVisibilidadeMenu() {
-        if (!menuItemEl) return;
         const disponivel = !isPWAInstalled() && (!!deferredPrompt || platform.isIOS);
-        menuItemEl.style.display = disponivel ? '' : 'none';
+        if (menuItemEl) menuItemEl.style.display = disponivel ? '' : 'none';
+        if (headerBtnEl) headerBtnEl.style.display = disponivel ? '' : 'none';
     }
 
     function ligarMenuItem() {
         menuItemEl = document.getElementById('pwaMenuInstallItem');
-        if (!menuItemEl) return;
+        if (menuItemEl) {
+            const link = menuItemEl.querySelector('a, button');
+            if (link) {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    handleInstall();
+                });
+            }
+        }
 
-        const link = menuItemEl.querySelector('a, button');
-        if (link) {
-            link.addEventListener('click', function (e) {
+        headerBtnEl = document.getElementById('pwaHeaderInstallBtn');
+        if (headerBtnEl) {
+            headerBtnEl.addEventListener('click', function (e) {
                 e.preventDefault();
                 handleInstall();
             });
         }
+
         atualizarVisibilidadeMenu();
     }
 

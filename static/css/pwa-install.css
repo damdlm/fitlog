@@ -232,14 +232,16 @@
     margin-bottom: 14px;
 }
 
-.pwa-ios-sheet-content .pwa-install-icon {
+.pwa-ios-sheet-content .pwa-install-icon,
+.pwa-android-sheet-content .pwa-install-icon {
     width: 60px;
     height: 60px;
     border-radius: 16px;
     box-shadow: 0 6px 18px rgba(242, 140, 51, 0.28);
 }
 
-.pwa-ios-sheet-content strong {
+.pwa-ios-sheet-content strong,
+.pwa-android-sheet-content strong {
     display: block;
     color: var(--secondary-color, #2D2D2D);
     font-size: 1.2rem;
@@ -247,7 +249,8 @@
     margin-bottom: 6px;
 }
 
-.pwa-ios-sheet-content > p {
+.pwa-ios-sheet-content > p,
+.pwa-android-sheet-content > p {
     color: #6c757d;
     font-size: 0.88rem;
     line-height: 1.4;
@@ -410,12 +413,126 @@
 }
 
 /* ================================================================
+   Botão de instalar no cabeçalho -- ao lado do FitBot, mesmo tamanho/
+   formato, com o brilho (glow) igual ao dos ícones do tutorial de
+   instalação, pra chamar atenção sem ser um pop-up.
+   ================================================================ */
+
+.pwa-header-install-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    color: var(--primary-color, #F28C33);
+    border: 1.5px solid var(--primary-color, #F28C33);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform .2s ease, filter .2s ease;
+    animation: pwaChipGlow 2s ease-out infinite;
+}
+
+.pwa-header-install-btn:hover,
+.pwa-header-install-btn:focus-visible {
+    filter: brightness(0.97);
+    transform: translateY(-1px);
+}
+
+/* ================================================================
+   Cartão premium de instalação -- Android/Desktop. É a única tela que
+   o FitLog controla antes do navegador assumir com o prompt nativo,
+   por isso ganha o mesmo acabamento do tutorial iOS: cartão
+   centralizado, borda laranja, hero, recursos e CTA em destaque.
+   ================================================================ */
+
+.pwa-android-sheet {
+    align-items: center;
+    top: 0;
+    padding: max(16px, env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.pwa-android-sheet-content {
+    pointer-events: none;
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    position: relative;
+    gap: 0;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    border-radius: 24px;
+    border: 2px solid var(--primary-color, #F28C33);
+    padding: 24px 22px calc(22px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
+    transform: scale(0.92);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+}
+
+.pwa-android-sheet.is-visible .pwa-android-sheet-content {
+    pointer-events: auto;
+    transform: scale(1);
+    opacity: 1;
+}
+
+.pwa-android-features {
+    list-style: none;
+    padding: 0;
+    margin: 4px 0 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: left;
+}
+
+.pwa-android-features li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: var(--secondary-color, #2D2D2D);
+}
+
+.pwa-android-features li i {
+    color: var(--primary-color, #F28C33);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.btn-pwa-dismiss-link {
+    background: transparent;
+    border: none;
+    color: #adb5bd;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 10px;
+    margin-top: 4px;
+    cursor: pointer;
+}
+
+.btn-pwa-dismiss-link:hover {
+    color: #6c757d;
+    text-decoration: underline;
+}
+
+@media (min-width: 992px) {
+    .pwa-android-sheet-content {
+        max-width: 420px;
+        padding: 24px 28px;
+    }
+}
+
+/* ================================================================
    Reduced motion -- mantém só fade, sem deslocamento/escala/glow.
    ================================================================ */
 
 @media (prefers-reduced-motion: reduce) {
     .pwa-install-sheet-content,
     .pwa-ios-sheet-content,
+    .pwa-android-sheet-content,
     .pwa-toast,
     .pwa-backdrop {
         transition: opacity 0.15s ease;
@@ -423,7 +540,8 @@
         animation: none !important;
     }
 
-    .pwa-step-icon-chip {
+    .pwa-step-icon-chip,
+    .pwa-header-install-btn {
         animation: none;
     }
 }
