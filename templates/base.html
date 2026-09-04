@@ -228,6 +228,15 @@
                 margin-bottom: 0;
             }
 
+            /* Com o ícone do PWA visível, o grupo de ícones à direita fica
+               ~48px mais largo (botão + gap) que o normal -- desloca o
+               centro do título pra esquerda na mesma proporção, senão ele
+               fica visualmente puxado pro lado dos ícones em vez de
+               centralizado de verdade entre a logo e o grupo de ícones. */
+            body.pwa-header-icon-active .navbar-brand-title {
+                left: calc(50% - 24px);
+            }
+
             /* O menu mobile abre como um painel flutuante (overlay) por cima
                do conteúdo, em vez de "empurrar" a página — assim o cabeçalho
                nunca muda de tamanho, esteja o menu aberto ou fechado. */
