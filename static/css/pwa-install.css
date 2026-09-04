@@ -119,33 +119,37 @@
 }
 
 /* Banner no mobile: cartão centralizado na tela com a bordinha laranja
-   da marca (não é o tutorial completo -- esse é o .pwa-ios-sheet). */
+   da marca (não é o tutorial completo -- esse é o .pwa-ios-sheet).
+   Escopado por CLASSE (.pwa-ios-banner), não por #pwaInstallBanner --
+   esse id é compartilhado com o cartão do Android/Desktop
+   (.pwa-android-sheet), e um seletor por id sempre venceria um por
+   classe na especificidade, vazando essas regras pro cartão errado. */
 @media (max-width: 991.98px) {
-    #pwaInstallBanner {
+    .pwa-ios-banner {
         top: 0;
         align-items: center;
         padding: max(16px, env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
     }
 
-    #pwaInstallBanner .pwa-install-sheet-content {
+    .pwa-ios-banner .pwa-install-sheet-content {
         max-width: 360px;
         margin: 0 auto;
         border: 2px solid var(--primary-color, #F28C33);
         transform: scale(0.92);
     }
 
-    #pwaInstallBanner.is-visible .pwa-install-sheet-content {
+    .pwa-ios-banner.is-visible .pwa-install-sheet-content {
         transform: scale(1);
     }
 }
 
 @media (min-width: 992px) {
-    #pwaInstallBanner {
+    .pwa-ios-banner {
         justify-content: flex-end;
         padding: 0 20px 20px 0;
     }
 
-    #pwaInstallBanner .pwa-install-sheet-content {
+    .pwa-ios-banner .pwa-install-sheet-content {
         max-width: 380px;
     }
 }
@@ -153,11 +157,11 @@
 /* Evita empurrar o botão de instalar pra baixo do texto em telas bem
    estreitas -- ações ficam abaixo do texto em vez de espremidas ao lado. */
 @media (max-width: 420px) {
-    #pwaInstallBanner .pwa-install-sheet-content {
+    .pwa-ios-banner .pwa-install-sheet-content {
         flex-wrap: wrap;
     }
 
-    #pwaInstallBanner .pwa-install-actions {
+    .pwa-ios-banner .pwa-install-actions {
         flex-direction: row;
         width: 100%;
         justify-content: flex-end;
@@ -222,10 +226,6 @@
     opacity: 1;
 }
 
-.pwa-ios-sheet-handle {
-    display: none;
-}
-
 .pwa-ios-hero {
     display: flex;
     justify-content: center;
@@ -288,6 +288,9 @@
     background: var(--gradient-primary, var(--primary-color, #F28C33));
     color: #fff;
     box-shadow: 0 4px 10px rgba(242, 140, 51, 0.3);
+    /* Destaque "respirando" -- mesma animação nos 3 ícones dos passos,
+       não só no primeiro (Compartilhar). */
+    animation: pwaChipGlow 2s ease-out infinite;
 }
 
 .pwa-step-icon-chip-alt {
@@ -308,11 +311,8 @@
 }
 
 /* Destaque nos três ícones dos passos -- o mesmo "respirar" laranja em
-   todos, não só no primeiro (Compartilhar). */
-.pwa-step-icon-chip {
-    animation: pwaChipGlow 2s ease-out infinite;
-}
-
+   todos, não só no primeiro (Compartilhar). Ver .pwa-step-icon-chip
+   acima, onde a propriedade animation é aplicada de fato. */
 @keyframes pwaChipGlow {
     0% { box-shadow: 0 0 0 0 rgba(242, 140, 51, 0.45); }
     70% { box-shadow: 0 0 0 10px rgba(242, 140, 51, 0); }

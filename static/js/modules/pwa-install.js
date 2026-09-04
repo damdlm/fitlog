@@ -236,14 +236,6 @@ const InstallManager = (function () {
         };
     }
 
-    function prefereMovimentoReduzido() {
-        try {
-            return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        } catch (e) {
-            return false;
-        }
-    }
-
     // ---------------------------------------------------------------
     // Construção da UI (banner + tutorial iOS + toast de sucesso)
     // Os elementos são criados uma única vez e reaproveitados.
@@ -263,6 +255,7 @@ const InstallManager = (function () {
             // iOS: banner compacto -- o clique só abre o tutorial completo
             // (não existe prompt nativo aqui, então não faz sentido um
             // cartão grande antes do próprio tutorial).
+            el.classList.add('pwa-ios-banner');
             el.innerHTML = `
                 <div class="pwa-install-sheet-content">
                     <img src="/static/icons/icon-192.png" alt="" class="pwa-install-icon">
@@ -333,7 +326,6 @@ const InstallManager = (function () {
             // vai funcionar.
             el.innerHTML = `
                 <div class="pwa-install-sheet-content pwa-ios-sheet-content">
-                    <div class="pwa-ios-sheet-handle" aria-hidden="true"></div>
                     <button type="button" class="btn-pwa-close" aria-label="Fechar">&times;</button>
 
                     <div class="pwa-ios-hero">
@@ -361,7 +353,6 @@ const InstallManager = (function () {
 
         el.innerHTML = `
             <div class="pwa-install-sheet-content pwa-ios-sheet-content">
-                <div class="pwa-ios-sheet-handle" aria-hidden="true"></div>
                 <button type="button" class="btn-pwa-close" aria-label="Fechar">&times;</button>
 
                 <div class="pwa-ios-hero">
@@ -446,13 +437,21 @@ const InstallManager = (function () {
     function showInstallButton() {
         garantirBanner().classList.add('is-visible');
 
+        // Guarda o foco original assim que QUALQUER banner aparece (iOS
+        // ou Android/Desktop) -- é o ponto certo pra restaurar depois,
+        // mesmo que o fluxo iOS ainda passe por um segundo passo (o
+        // tutorial completo). Só captura se ainda não tiver nada
+        // guardado, pra não sobrescrever com um elemento nosso que está
+        // prestes a sumir (ver showIOSInstructions).
+        if (!elementoComFocoAntes) elementoComFocoAntes = document.activeElement;
+
         // O cartão do Android/Desktop é uma "tela" completa (com backdrop
         // e role="dialog"), então merece o mesmo cuidado de foco/Esc do
-        // tutorial iOS. O banner compacto do iOS não -- ele só existe pra
-        // abrir o tutorial de verdade.
+        // tutorial iOS. O banner compacto do iOS não trava foco nem some
+        // com Esc -- ele só existe pra abrir o tutorial de verdade, que
+        // faz sua própria captura logo abaixo.
         if (!platform.isIOS) {
             garantirBackdrop().classList.add('is-visible');
-            elementoComFocoAntes = document.activeElement;
             document.addEventListener('keydown', handleEscapeOverlay);
 
             const botaoFechar = bannerEl.querySelector('.btn-pwa-close');
@@ -474,7 +473,15 @@ const InstallManager = (function () {
 
     function showIOSInstructions() {
         hideInstallButton();
-        elementoComFocoAntes = document.activeElement;
+        // Só captura o foco aqui se ainda não foi capturado -- se a
+        // pessoa chegou até aqui clicando no banner compacto do iOS, o
+        // botão "Instalar" do banner está prestes a sumir da tela, então
+        // não faz sentido guardar ELE como "pra onde devolver o foco"
+        // depois. Nesse caso o foco original já foi salvo antes, quando
+        // o banner apareceu (ver início de showInstallButton/init). Só
+        // quando o tutorial é aberto direto (menu ou botão do cabeçalho,
+        // sem passar pelo banner) é que capturamos aqui.
+        if (!elementoComFocoAntes) elementoComFocoAntes = document.activeElement;
 
         garantirBackdrop().classList.add('is-visible');
 
