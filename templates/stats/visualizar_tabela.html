@@ -26,13 +26,9 @@
 
     .prog-header {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-bottom: 18px;
+        justify-content: flex-end;
+        margin-bottom: 14px;
     }
-    .prog-header h2 { margin: 0; }
 
     /* ===== Filtro por versão ===== */
     .prog-filtro select {
@@ -51,6 +47,30 @@
         border-radius: 6px;
         background: #808080;
         padding: 3px;
+        /* width:100% explícito (com box-sizing:border-box) em vez de
+           confiar no auto-width padrão de um bloco -- em pelo menos um
+           motor testado, um <div> com overflow-x:auto envolvendo uma
+           tabela larga encolhia para o conteúdo em vez de preencher o
+           container, fazendo o cálculo de largura em JS (que lê
+           wrap.clientWidth) partir de um valor errado e cortar semanas. */
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* No mobile, o <main class="container"> do app tem padding:15px dos
+       dois lados (static/css/style.css) -- 30px que "sobram" sem uso e
+       competem exatamente com o espaço que a tabela precisa para caber
+       3 semanas inteiras na tela. Aqui a moldura da tabela "sangra" até
+       a borda do aparelho (margin negativo cancelando esse padding), só
+       nesta página, sem mexer no container global do app. */
+    @media (max-width: 767.98px) {
+        .prog-tabela-wrap {
+            margin-left: -15px;
+            margin-right: -15px;
+            border-left: none;
+            border-right: none;
+            border-radius: 0;
+        }
     }
 
     #progressTable {
@@ -63,7 +83,13 @@
            rolar junto com o resto em vez de ficar fixa). */
         border-collapse: separate;
         border-spacing: 0;
-        width: 100%;
+        /* SEM width:100% de propósito: com table-layout:fixed, "width:100%"
+           faz o navegador reproporcionalizar as colunas do <colgroup> para
+           encher o container, ignorando os valores em px calculados pelo JS
+           -- foi isso que cortava a 3ª semana (a soma exata das colunas
+           deixava de ser respeitada). Sem width aqui, a tabela usa a soma
+           exata das larguras do colgroup, então "rolar até o fim" mostra
+           exatamente as últimas 3 semanas, nem mais nem menos. */
         font-family: 'Patrick Hand', 'Comic Sans MS', cursive, sans-serif;
         font-size: 1rem;
         background: #fff;
@@ -134,7 +160,7 @@
     #progressTable tr.linha-espacadora td {
         background: #808080;
         padding: 0;
-        height: 4px;
+        height: 8px;
         border: none;
     }
 
@@ -225,11 +251,8 @@
 {% endblock %}
 
 {% block content %}
+{% if versoes %}
 <div class="prog-header">
-    <h2>
-        <i class="bi bi-table me-2" style="color: #808080;"></i>Tabela de Progresso
-    </h2>
-    {% if versoes %}
     <form method="get" class="prog-filtro">
         <select name="versao_id" onchange="this.form.submit()">
             <option value="">Todas as versões</option>
@@ -240,8 +263,8 @@
             {% endfor %}
         </select>
     </form>
-    {% endif %}
 </div>
+{% endif %}
 
 {% if grupos_treino %}
 <div class="prog-tabela-wrap" id="progWrap">
@@ -319,45 +342,15 @@
         var PCT_EXERCICIO = 0.38;   // ~38% da largura da tela p/ "Exercício"
         var MIN_EXERCICIO = 90;
         var MAX_EXERCICIO = 220;
-        var MIN_DADO = 40;
+        var MIN_DADO = 34;
+        var ABS_MIN_EXERCICIO = 64; // só usado se precisar encolher p/ garantir as 3 semanas
+        var primeiraVez = true;
 
-        // ---- 1) Largura das colunas como percentual da tela ----
-        // Recalcula a cada resize/rotação de tela: a coluna "Exercício"
-        // fica com uma fatia fixa da largura visível e o restante é
-        // dividido entre as colunas de dado, de forma que 3 semanas
-        // (6 colunas) + "Exercício" preencham exatamente a tela --
-        // sem precisar rolar para ver Carga/Rep. das últimas semanas.
-        function ajustarLargura() {
-            var larguraDisponivel = wrap.clientWidth;
-            if (!larguraDisponivel) return;
-
-            var larguraExercicio = Math.min(
-                MAX_EXERCICIO,
-                Math.max(MIN_EXERCICIO, larguraDisponivel * PCT_EXERCICIO)
-            );
-            var larguraRestante = larguraDisponivel - larguraExercicio;
-            var larguraDado = Math.max(
-                MIN_DADO,
-                larguraRestante / (N_SEMANAS_VISIVEIS * 2)
-            );
-
-            wrap.style.setProperty('--prog-w-exercicio', larguraExercicio + 'px');
-            wrap.style.setProperty('--prog-w-dado', larguraDado + 'px');
-        }
-
-        ajustarLargura();
-        window.addEventListener('resize', ajustarLargura);
-        window.addEventListener('orientationchange', ajustarLargura);
-
-        // ---- 2) Abre já mostrando as últimas semanas (mais recentes à
-        // direita) -- rola o mais possível para a direita, mas permite
-        // arrastar para a esquerda para ver semanas mais antigas.
-        wrap.scrollLeft = wrap.scrollWidth;
-
-        // ---- 3) Mede quais nomes de exercício realmente ficaram cortados
-        // com a largura de coluna calculada acima (não é mais um limite
-        // fixo de caracteres -- muda de aparelho para aparelho). Só ativa
-        // o clique/tooltip nas células onde o texto de fato não coube.
+        // ---- Mede quais nomes de exercício realmente ficaram cortados
+        // com a largura de coluna aplicada (não é mais um limite fixo de
+        // caracteres -- muda de aparelho para aparelho). Só ativa o
+        // clique/tooltip nas células onde o texto de fato não coube.
+        // Definida antes de ajustarLargura() porque é chamada por ela.
         var celulasExercicio = table.querySelectorAll('.exercicio-cell');
         function atualizarTruncamento() {
             celulasExercicio.forEach(function (celula) {
@@ -367,16 +360,79 @@
                 celula.setAttribute('data-truncado', cortado ? '1' : '0');
             });
         }
-        // setTimeout(0) garante que a largura das colunas (definida acima
-        // via CSS custom properties) já foi aplicada pelo navegador antes
-        // de medir scrollWidth/clientWidth dos nomes.
-        setTimeout(atualizarTruncamento, 0);
-        window.addEventListener('resize', function () {
-            setTimeout(atualizarTruncamento, 0);
-        });
-        window.addEventListener('orientationchange', function () {
-            setTimeout(atualizarTruncamento, 0);
-        });
+
+        // ---- Largura das colunas como percentual da tela ----
+        // Recalcula a cada resize/rotação de tela: a coluna "Exercício"
+        // fica com uma fatia da largura visível e o restante é dividido
+        // entre as colunas de dado, de forma que 3 semanas (6 colunas) +
+        // "Exercício" preencham exatamente a tela -- sem precisar rolar
+        // para ver Carga/Rep. das últimas semanas.
+        function ajustarLargura(tentativas) {
+            tentativas = tentativas || 0;
+
+            // wrap tem padding próprio (moldura cinza) -- o espaço que
+            // sobra pra tabela em si é clientWidth MENOS esse padding;
+            // ignorar isso fazia o total calculado passar do disponível
+            // em alguns pixels, cortando a última coluna.
+            var estilo = window.getComputedStyle(wrap);
+            var paddingH = (parseFloat(estilo.paddingLeft) || 0) + (parseFloat(estilo.paddingRight) || 0);
+            var larguraDisponivel = wrap.clientWidth - paddingH;
+
+            if ((!larguraDisponivel || larguraDisponivel <= 0) && tentativas < 15) {
+                // O layout pode ainda não ter sido concluído neste exato
+                // instante (ex.: fonte @font-face ainda carregando na
+                // primeira pintura) -- tenta de novo no próximo frame em
+                // vez de desistir e deixar os valores padrão do CSS (que
+                // não se adaptam à tela) valendo permanentemente.
+                requestAnimationFrame(function () { ajustarLargura(tentativas + 1); });
+                return;
+            }
+            if (!larguraDisponivel || larguraDisponivel <= 0) return;
+
+            var totalColunasDado = N_SEMANAS_VISIVEIS * 2;
+            var larguraExercicio = Math.min(
+                MAX_EXERCICIO,
+                Math.max(MIN_EXERCICIO, larguraDisponivel * PCT_EXERCICIO)
+            );
+            var larguraDado = (larguraDisponivel - larguraExercicio) / totalColunasDado;
+
+            if (larguraDado < MIN_DADO) {
+                // Não dá pra manter os 34px mínimos de Carga/Rep. com a
+                // fatia cheia do Exercício -- encolhe o Exercício primeiro
+                // (até um piso menor) pra garantir que as 3 semanas
+                // continuem cabendo inteiras, em vez de estourar a largura
+                // disponível (o que cortava a 3ª semana antes).
+                larguraDado = MIN_DADO;
+                larguraExercicio = Math.max(
+                    ABS_MIN_EXERCICIO,
+                    larguraDisponivel - totalColunasDado * larguraDado
+                );
+            }
+
+            wrap.style.setProperty('--prog-w-exercicio', larguraExercicio + 'px');
+            wrap.style.setProperty('--prog-w-dado', larguraDado + 'px');
+
+            // Só depois que a largura REAL (não o valor padrão do CSS) foi
+            // aplicada é que faz sentido rolar até o fim e medir quais
+            // nomes ficaram cortados -- fazer isso antes mediria/rolaria
+            // com base nos valores padrão, não nos calculados agora.
+            if (primeiraVez) {
+                primeiraVez = false;
+                // Abre já mostrando as últimas semanas (mais recentes à
+                // direita) -- rola o mais possível para a direita, mas
+                // permite arrastar para a esquerda para ver semanas mais
+                // antigas.
+                wrap.scrollLeft = wrap.scrollWidth;
+            }
+            atualizarTruncamento();
+        }
+
+        ajustarLargura();
+        window.addEventListener('resize', function () { ajustarLargura(); });
+        window.addEventListener('orientationchange', function () { ajustarLargura(); });
+        // 'load' (depois de fontes/imagens carregarem) como rede de
+        // segurança extra -- reaplica com as medidas finais da página.
+        window.addEventListener('load', function () { ajustarLargura(); });
 
         // ---- 4) Tooltip com o nome completo ao tocar/clicar no exercício
         // (só nos nomes que a medição acima marcou como cortados)
