@@ -632,8 +632,17 @@ class ExercicioService(BaseService):
                 logger.warning(f"Exercício usuário {exercicio_usuario_id} não encontrado")
                 return False
             
-            # Verificar se está sendo usado em versões
-            em_uso = VersaoExercicio.query.filter_by(exercicio_id=exercicio.id).first()
+            # Verificar se está sendo usado em versões -- BUG REAL
+            # encontrado ao escrever os testes: esta query usava
+            # VersaoExercicio.exercicio_id, uma coluna que não existe
+            # (o model tem exercicio_usuario_id/exercicio_base_id
+            # separados, ver models.py). Isso levantava
+            # InvalidRequestError, caía no except abaixo e a função
+            # SEMPRE retornava False -- ou seja, nenhum usuário jamais
+            # conseguia excluir um exercício próprio (rota real:
+            # routes/aluno/exercicio.py), mesmo quando ele não estava
+            # em uso em nenhum treino.
+            em_uso = VersaoExercicio.query.filter_by(exercicio_usuario_id=exercicio.id).first()
             if em_uso:
                 logger.warning(f"Exercício usuário {exercicio_usuario_id} está em uso em versões")
                 return False
@@ -667,8 +676,10 @@ class ExercicioService(BaseService):
                 logger.warning(f"Exercício customizado {exercicio_custom_id} não encontrado")
                 return False
             
-            # Verificar se está sendo usado em versões
-            em_uso = VersaoExercicio.query.filter_by(exercicio_id=exercicio.id).first()
+            # Mesmo bug/correção do delete_exercicio_usuario acima --
+            # ExercicioCustomizado É ExercicioUsuario (alias, ver
+            # models.py), então a FK certa também é exercicio_usuario_id.
+            em_uso = VersaoExercicio.query.filter_by(exercicio_usuario_id=exercicio.id).first()
             if em_uso:
                 logger.warning(f"Exercício customizado {exercicio_custom_id} está em uso em versões")
                 return False

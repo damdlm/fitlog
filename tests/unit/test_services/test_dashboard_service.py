@@ -26,7 +26,7 @@ def _associar(aluno_id, professor_id, ativo=True, data_associacao=None):
 
 def _criar_versao(user_id, numero_versao=1, data_inicio=None, data_fim=None):
     v = VersaoGlobal(numero_versao=numero_versao, descricao=f'V{numero_versao}', divisao='ABC',
-                      data_inicio=data_inicio or date.today(), data_fim=data_fim, user_id=user_id)
+                      data_inicio=data_inicio or _hoje_br(), data_fim=data_fim, user_id=user_id)
     db.session.add(v)
     db.session.commit()
     return v
@@ -280,7 +280,7 @@ class TestTreinosRevisao:
             prof = _criar_usuario('ds_tr_1', tipo_usuario='professor')
             aluno = _criar_usuario('ds_tr_1_aluno')
             _associar(aluno.id, prof.id)
-            _criar_versao(aluno.id, data_inicio=date.today())
+            _criar_versao(aluno.id, data_inicio=_hoje_br())
 
             dados = DashboardService.dados_professor(prof.id)
             assert dados['treinos_revisao']['total'] == 0
@@ -290,7 +290,7 @@ class TestTreinosRevisao:
             prof = _criar_usuario('ds_tr_2', tipo_usuario='professor')
             aluno = _criar_usuario('ds_tr_2_aluno')
             _associar(aluno.id, prof.id)
-            _criar_versao(aluno.id, data_inicio=date.today() - timedelta(days=60))
+            _criar_versao(aluno.id, data_inicio=_hoje_br() - timedelta(days=60))
 
             dados = DashboardService.dados_professor(prof.id)
             assert dados['treinos_revisao']['total'] == 1
@@ -300,8 +300,8 @@ class TestTreinosRevisao:
             prof = _criar_usuario('ds_tr_3', tipo_usuario='professor')
             aluno = _criar_usuario('ds_tr_3_aluno')
             _associar(aluno.id, prof.id)
-            _criar_versao(aluno.id, data_inicio=date.today() - timedelta(days=90),
-                          data_fim=date.today() - timedelta(days=61))
+            _criar_versao(aluno.id, data_inicio=_hoje_br() - timedelta(days=90),
+                          data_fim=_hoje_br() - timedelta(days=61))
 
             dados = DashboardService.dados_professor(prof.id)
             assert dados['treinos_revisao']['total'] == 0
