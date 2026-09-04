@@ -459,6 +459,7 @@ const InstallManager = (function () {
         const disponivel = !isPWAInstalled() && (!!deferredPrompt || platform.isIOS);
         if (menuItemEl) menuItemEl.style.display = disponivel ? '' : 'none';
         if (headerBtnEl) headerBtnEl.style.display = disponivel ? '' : 'none';
+        if (document.body) document.body.classList.toggle('pwa-header-icon-active', disponivel);
     }
 
     function ligarMenuItem() {

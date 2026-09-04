@@ -198,6 +198,17 @@
             margin-bottom: 4px;
         }
 
+        /* Quando o botão de instalar o PWA está visível, o grupo de ícones
+           à direita fica mais largo (PWA + FitBot + avatar) -- reduz a
+           largura do título centralizado e permite quebrar em 2 linhas
+           pra não ficar por baixo dos ícones. */
+        body.pwa-header-icon-active .navbar-brand-title {
+            max-width: 132px;
+            white-space: normal;
+            line-height: 1.15;
+            text-align: center;
+        }
+
         /* No mobile, a logo permanece à esquerda e o título fica 
            centralizado em relação à largura da tela, independente da logo. */
         @media (max-width: 991.98px) {
@@ -1408,12 +1419,12 @@
                     <i class="bi bi-plus-circle"></i> Registrar treino
                 </a>
                 {% endif %}
+                <button type="button" id="pwaHeaderInstallBtn" class="pwa-header-install-btn" style="display: none;" title="Instalar aplicativo" aria-label="Instalar aplicativo FitLog">
+                    <i class="bi bi-download" aria-hidden="true"></i>
+                </button>
                 <button type="button" class="fitbot-toggle-btn" data-bs-toggle="modal" data-bs-target="#fitbotModal" title="Falar com o FitBot" aria-label="Abrir chat com o FitBot">
             <!--    <i class="bi bi-robot" aria-hidden="true"></i> -->
                     <img src="{{ url_for('static', filename='images/fitbot_assist.png') }}" alt="FitBot" class="fitbot-toggle-icon">
-                </button>
-                <button type="button" id="pwaHeaderInstallBtn" class="pwa-header-install-btn" style="display: none;" title="Instalar aplicativo" aria-label="Instalar aplicativo FitLog">
-                    <i class="bi bi-download" aria-hidden="true"></i>
                 </button>
                 <div class="nav-item dropdown">
                     <button class="btn btn-avatar dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ current_user.username }}">
