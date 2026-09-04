@@ -26,7 +26,7 @@
 
     .prog-header {
         display: flex;
-        justify-content: flex-end;
+        justify-content: center;
         margin-bottom: 14px;
     }
 
@@ -38,9 +38,14 @@
         padding: 6px 10px;
         background: #fff;
         color: #333;
+        text-align: center;
+        text-align-last: center;
+        min-width: 220px;
     }
 
-    /* ===== Moldura cinza da planilha ===== */
+    /* ===== Moldura cinza da planilha (com a bordinha branca da folha ao
+       redor, como no design original -- sem "sangrar" até a borda do
+       aparelho) ===== */
     .prog-tabela-wrap {
         overflow-x: auto;
         border: 3px solid #808080;
@@ -55,22 +60,6 @@
            wrap.clientWidth) partir de um valor errado e cortar semanas. */
         width: 100%;
         box-sizing: border-box;
-    }
-
-    /* No mobile, o <main class="container"> do app tem padding:15px dos
-       dois lados (static/css/style.css) -- 30px que "sobram" sem uso e
-       competem exatamente com o espaço que a tabela precisa para caber
-       3 semanas inteiras na tela. Aqui a moldura da tabela "sangra" até
-       a borda do aparelho (margin negativo cancelando esse padding), só
-       nesta página, sem mexer no container global do app. */
-    @media (max-width: 767.98px) {
-        .prog-tabela-wrap {
-            margin-left: -15px;
-            margin-right: -15px;
-            border-left: none;
-            border-right: none;
-            border-radius: 0;
-        }
     }
 
     #progressTable {
@@ -268,7 +257,7 @@
 
 {% if grupos_treino %}
 <div class="prog-tabela-wrap" id="progWrap">
-    <table id="progressTable">
+    <table id="progressTable" data-total-semanas="{{ semanas|length }}">
         <colgroup>
             <col class="col-exercicio-def">
             {% for semana in semanas %}
@@ -346,6 +335,15 @@
         var ABS_MIN_EXERCICIO = 64; // só usado se precisar encolher p/ garantir as 3 semanas
         var primeiraVez = true;
 
+        // Se o usuário tem MENOS que 3 semanas de treino registradas (ex.:
+        // acabou de começar), não faz sentido reservar largura para 3 --
+        // isso deixava um vazio em branco à direita, sobrando espaço que
+        // nenhuma coluna usava. Usa o menor entre 3 e o total real.
+        var totalSemanasReais = parseInt(table.getAttribute('data-total-semanas'), 10);
+        var semanasParaCalculo = (totalSemanasReais > 0)
+            ? Math.min(N_SEMANAS_VISIVEIS, totalSemanasReais)
+            : N_SEMANAS_VISIVEIS;
+
         // ---- Mede quais nomes de exercício realmente ficaram cortados
         // com a largura de coluna aplicada (não é mais um limite fixo de
         // caracteres -- muda de aparelho para aparelho). Só ativa o
@@ -389,7 +387,7 @@
             }
             if (!larguraDisponivel || larguraDisponivel <= 0) return;
 
-            var totalColunasDado = N_SEMANAS_VISIVEIS * 2;
+            var totalColunasDado = semanasParaCalculo * 2;
             var larguraExercicio = Math.min(
                 MAX_EXERCICIO,
                 Math.max(MIN_EXERCICIO, larguraDisponivel * PCT_EXERCICIO)
