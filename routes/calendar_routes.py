@@ -267,6 +267,74 @@ def api_evento_excluir(registro_id):
     return jsonify({"ok": True})
 
 
+@calendar_bp.route("/api/evento/dados-edicao")
+@login_required
+@acesso_premium_required('calendario')
+def api_evento_dados_edicao():
+    """Dados para o modal de edição de um treino já registrado: lista de
+    exercícios do treino (mesmos da tela de registro) + valores já salvos
+    (carga/repetições/séries) pra pré-preencher o formulário.
+
+    Não inclui tempo_treino de propósito -- o modal não tem cronômetro,
+    e omitir o campo faz RegistroService._resolver_tempo_treino manter o
+    tempo original da sessão em vez de zerar."""
+    from services.versao_service import VersaoService
+    from utils.date_utils import validar_data
+
+    data_str = request.args.get("data")
+    treino_id = request.args.get("treino")
+    if not data_str or not treino_id:
+        return jsonify({"erro": "Dados incompletos."}), 400
+
+    data_valida, data_obj = validar_data(data_str)
+    if not data_valida:
+        return jsonify({"erro": data_obj}), 400
+
+    versao_ativa = VersaoService.get_ativa_por_data(data_obj)
+    if not versao_ativa:
+        return jsonify({"erro": f"Não há versão ativa para {data_obj.strftime('%d/%m/%Y')}."}), 404
+
+    treinos_disponiveis = VersaoService.get_treinos_para_registro(versao_ativa.id)
+    treino_codigo = None
+    treino_nome = None
+    for t in treinos_disponiveis:
+        if str(t['id']) == str(treino_id):
+            treino_codigo = t['codigo']
+            treino_nome = t.get('nome')
+            break
+    if not treino_codigo:
+        return jsonify({"erro": "Treino não encontrado na versão ativa para esta data."}), 404
+
+    exercicios = VersaoService.get_exercicios(versao_ativa.id, treino_codigo)
+
+    registros = RegistroService.get_by_data(treino_id, versao_ativa.id, data_obj)
+    registros_map = {}
+    for r in registros:
+        if r.exercicio_usuario_id is not None:
+            registros_map[f"u_{r.exercicio_usuario_id}"] = r
+        elif r.exercicio_base_id is not None:
+            registros_map[f"b_{r.exercicio_base_id}"] = r
+
+    exercicios_json = []
+    for ex in exercicios:
+        chave = f"{ex.prefixo}{ex.id}"
+        registro = registros_map.get(chave)
+        series = list(registro.series) if registro else []
+        exercicios_json.append({
+            'chave': chave,
+            'nome': ex.nome,
+            'carga': float(series[0].carga) if series else None,
+            'repeticoes': series[0].repeticoes if series else None,
+            'num_series': len(series) if series else 3,
+        })
+
+    return jsonify({
+        'treino_codigo': treino_codigo,
+        'treino_nome': treino_nome,
+        'exercicios': exercicios_json,
+    })
+
+
 def _estimar_data(periodo, semana):
     """Estima uma data a partir do período e semana"""
     try:

@@ -309,6 +309,37 @@
         font-size: .8rem;
     }
 
+    .editar-registro-linha {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .editar-registro-linha:last-child {
+        border-bottom: none;
+    }
+
+    .editar-registro-nome {
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+        font-size: .92rem;
+    }
+
+    .editar-registro-campos {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+    }
+
+    .editar-registro-label {
+        font-size: .68rem;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        color: var(--text-secondary, #6c757d);
+        margin-bottom: 2px;
+        display: block;
+    }
+
     .grupo-treino-volume {
         background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
         color: #fff;
@@ -952,6 +983,47 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de edição: mesma ideia da tela de registrar treino (nome do
+     exercício + carga/repetições/séries), mas sem os cronômetros -- só
+     Salvar/Cancelar. Salva de verdade via o form POSTando pra rota que
+     a tela de registro já usa (register.salvar_registro), então
+     reaproveita 100% da lógica de salvar/sobrescrever que já existia --
+     nada duplicado aqui, só a apresentação. -->
+<div class="modal fade" id="modalEditarRegistro" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="formEditarRegistro" method="POST" action="{{ url_for('register.salvar_registro') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="data" id="editarRegistroData">
+                <input type="hidden" name="treino" id="editarRegistroTreino">
+                <div class="modal-header">
+                    <div class="sheet-handle"></div>
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square me-2"></i>
+                        <span id="editarRegistroTitulo">Editar treino</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="editarRegistroCorpo">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="editarRegistroBtnSalvar">
+                        <i class="bi bi-check-lg me-1"></i>Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 </div><!-- /.calendar-page -->
 {% endblock %}
 
@@ -984,7 +1056,6 @@
     // professor_routes.py); por isso os parâmetros ano/mes abaixo são
     // sempre concatenados, nunca hardcoded com "?".
     const EVENTOS_API_BASE = '{{ eventos_api_url or url_for("calendar.api_eventos") }}';
-    const REGISTRAR_TREINO_URL = '{{ url_for("register.registrar_treino") }}';
 
     function urlEventosDoMes(ano, mes) {
         const separador = EVENTOS_API_BASE.includes('?') ? '&' : '?';
@@ -1346,6 +1417,76 @@
     }
     window.excluirRegistroDia = excluirRegistroDia;
 
+    function abrirModalEditarRegistro(data, treinoId, nomeTreino) {
+        const modalEl = document.getElementById('modalEditarRegistro');
+        const modal = new bootstrap.Modal(modalEl);
+        const corpo = document.getElementById('editarRegistroCorpo');
+        const btnSalvar = document.getElementById('editarRegistroBtnSalvar');
+
+        document.getElementById('editarRegistroTitulo').textContent = `Editar ${nomeTreino}`;
+        document.getElementById('editarRegistroData').value = data;
+        document.getElementById('editarRegistroTreino').value = treinoId;
+        btnSalvar.disabled = true;
+        corpo.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+            </div>
+        `;
+
+        // Fecha o modal de detalhes (se estiver aberto) e abre o de edição.
+        const modalDetalhes = bootstrap.Modal.getInstance(document.getElementById('eventoModal'));
+        if (modalDetalhes) modalDetalhes.hide();
+        modal.show();
+
+        fetch(`/calendar/api/evento/dados-edicao?data=${encodeURIComponent(data)}&treino=${encodeURIComponent(treinoId)}`)
+            .then(response => response.json())
+            .then(dados => {
+                if (dados.erro) {
+                    corpo.innerHTML = `<div class="text-center p-4 text-danger">${escapeHtml(dados.erro)}</div>`;
+                    return;
+                }
+                if (!dados.exercicios || dados.exercicios.length === 0) {
+                    corpo.innerHTML = `<div class="text-center p-4">Nenhum exercício encontrado nesse treino.</div>`;
+                    return;
+                }
+
+                corpo.innerHTML = dados.exercicios.map(ex => `
+                    <div class="editar-registro-linha">
+                        <div class="editar-registro-nome">${escapeHtml(ex.nome)}</div>
+                        <div class="editar-registro-campos">
+                            <div>
+                                <label class="editar-registro-label">Carga (kg)</label>
+                                <input type="number" class="form-control" name="carga_${ex.chave}"
+                                       step="0.5" min="0" inputmode="decimal"
+                                       value="${ex.carga !== null ? ex.carga : ''}">
+                            </div>
+                            <div>
+                                <label class="editar-registro-label">Repetições</label>
+                                <input type="number" class="form-control" name="reps_${ex.chave}"
+                                       min="0" max="100" inputmode="numeric"
+                                       value="${ex.repeticoes !== null ? ex.repeticoes : ''}">
+                            </div>
+                            <div>
+                                <label class="editar-registro-label">Séries</label>
+                                <select class="form-select" name="num_series_${ex.chave}">
+                                    ${Array.from({length: 10}, (_, i) => i + 1).map(n => `
+                                        <option value="${n}" ${n === ex.num_series ? 'selected' : ''}>${n}</option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                btnSalvar.disabled = false;
+            })
+            .catch(() => {
+                corpo.innerHTML = `<div class="text-center p-4 text-danger">Não foi possível carregar os dados. Tente novamente.</div>`;
+            });
+    }
+    window.abrirModalEditarRegistro = abrirModalEditarRegistro;
+
     function mostrarDetalhesEvento(event) {
         const modal = new bootstrap.Modal(document.getElementById('eventoModal'));
         const tituloEl = document.querySelector('#eventoModal .modal-title');
@@ -1408,10 +1549,10 @@
                     const nomeSeguroJs = nomeSeguro.replace(/'/g, "\\'");
                     html += `
                         <div class="grupo-treino-acoes">
-                            <a href="${REGISTRAR_TREINO_URL}?data=${event.startStr}&treino=${grupo.treinoId}"
-                               class="btn btn-sm btn-outline-primary">
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    onclick="abrirModalEditarRegistro('${event.startStr}', ${grupo.treinoId}, '${nomeSeguroJs}')">
                                 <i class="bi bi-pencil-square"></i> Editar
-                            </a>
+                            </button>
                             <button type="button" class="btn btn-sm btn-outline-danger"
                                     onclick="excluirRegistroDia(${grupo.primeiroRegistroId}, 'Treino ${codigoSeguro}${grupo.nome && grupo.nome !== 'Treino' ? ` · ${nomeSeguroJs}` : ''}')">
                                 <i class="bi bi-trash"></i> Excluir
