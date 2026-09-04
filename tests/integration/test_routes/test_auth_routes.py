@@ -10,7 +10,7 @@ def test_register_page(client):
     """Testa se página de registro carrega"""
     response = client.get('/auth/register')
     assert response.status_code == 200
-    assert b'Criar Conta' in response.data
+    assert b'Criar conta' in response.data
 
 def test_register_user(client, db):
     """Testa registro de usuário"""
