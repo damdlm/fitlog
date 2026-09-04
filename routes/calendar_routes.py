@@ -320,12 +320,16 @@ def api_evento_dados_edicao():
         chave = f"{ex.prefixo}{ex.id}"
         registro = registros_map.get(chave)
         series = list(registro.series) if registro else []
+        # Exercício sem nenhum registro ainda (ou apontado com carga/reps
+        # zerados) entra com 0 explícito -- pedido pra manter todos os
+        # exercícios do treino visíveis no modal, na mesma ordem, mesmo
+        # os que a pessoa ainda não apontou nada.
         exercicios_json.append({
             'chave': chave,
             'nome': ex.nome,
-            'carga': float(series[0].carga) if series else None,
-            'repeticoes': series[0].repeticoes if series else None,
-            'num_series': len(series) if series else 3,
+            'carga': float(series[0].carga) if series and series[0].carga is not None else 0,
+            'repeticoes': series[0].repeticoes if series and series[0].repeticoes is not None else 0,
+            'num_series': len(series) if series else 0,
         })
 
     return jsonify({

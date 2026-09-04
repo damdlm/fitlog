@@ -1523,12 +1523,12 @@
                         <div class="editar-registro-inputs">
                             <input type="number" class="carga-input" name="carga_${ex.chave}"
                                    step="0.5" min="0" inputmode="decimal"
-                                   value="${ex.carga !== null ? ex.carga : ''}">
+                                   value="${ex.carga}">
                             <input type="number" class="reps-input" name="reps_${ex.chave}"
                                    min="0" max="100" inputmode="numeric"
-                                   value="${ex.repeticoes !== null ? ex.repeticoes : ''}">
+                                   value="${ex.repeticoes}">
                             <select class="form-select" name="num_series_${ex.chave}">
-                                ${Array.from({length: 10}, (_, i) => i + 1).map(n => `
+                                ${Array.from({length: 11}, (_, i) => i).map(n => `
                                     <option value="${n}" ${n === ex.num_series ? 'selected' : ''}>${n}</option>
                                 `).join('')}
                             </select>
