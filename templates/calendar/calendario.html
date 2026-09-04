@@ -301,12 +301,49 @@
     .grupo-treino-acoes {
         display: flex;
         gap: 8px;
-        margin-top: 10px;
+        margin-top: 12px;
     }
 
-    .grupo-treino-acoes .btn {
+    /* Editar é a ação primária (mais provável de ser usada) -- preenchida,
+       na cor da marca. Excluir é destrutiva e menos comum: fica mais
+       discreta de propósito, pra não competir visualmente com Editar nem
+       convidar toque acidental (mesmo padrão usado no botão "Bora!" do
+       overlay de intervalo -- ver registrar_treino.html). */
+    .btn-editar-registro,
+    .btn-excluir-registro {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border: none;
+        border-radius: 999px;
+        font-size: .82rem;
+        font-weight: 600;
+        padding: 9px 14px;
+        cursor: pointer;
+        transition: background-color .15s ease, color .15s ease, opacity .15s ease;
+    }
+
+    .btn-editar-registro {
+        flex: 1.4;
+        background: var(--primary-orange);
+        color: #fff;
+    }
+
+    .btn-editar-registro:hover,
+    .btn-editar-registro:active {
+        background: #e07d28;
+    }
+
+    .btn-excluir-registro {
         flex: 1;
-        font-size: .8rem;
+        background: transparent;
+        color: #dc3545;
+    }
+
+    .btn-excluir-registro:hover,
+    .btn-excluir-registro:active {
+        background: rgba(220, 53, 69, 0.1);
     }
 
     /* Visual do card de exercício replicado da tela de registrar treino
@@ -1686,13 +1723,13 @@
                     const nomeSeguroJs = nomeSeguro.replace(/'/g, "\\'");
                     html += `
                         <div class="grupo-treino-acoes">
-                            <button type="button" class="btn btn-sm btn-outline-primary"
+                            <button type="button" class="btn-editar-registro"
                                     onclick="abrirModalEditarRegistro('${event.startStr}', ${grupo.treinoId}, '${nomeSeguroJs}')">
                                 <i class="bi bi-pencil-square"></i> Editar
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger"
+                            <button type="button" class="btn-excluir-registro"
                                     onclick="excluirRegistroDia(${grupo.primeiroRegistroId}, 'Treino ${codigoSeguro}${grupo.nome && grupo.nome !== 'Treino' ? ` · ${nomeSeguroJs}` : ''}')">
-                                <i class="bi bi-trash"></i> Excluir
+                                <i class="bi bi-trash3"></i> Excluir
                             </button>
                         </div>
                     `;
