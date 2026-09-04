@@ -129,7 +129,12 @@
             position: fixed;
             inset: 0;
             z-index: 99999;
-            background: var(--secondary-color, #171717);
+            /* Mesma cor do "background_color" do manifest.json -- é a cor
+               que o próprio SO já pinta como tela em branco nativa antes
+               de qualquer JS/CSS rodar. Usar uma cor diferente aqui criava
+               um "flash" perceptível: claro (nativo) -> escuro (nosso
+               splash) -> claro (app) logo em seguida. */
+            background: #f8f9fa;
             align-items: center;
             justify-content: center;
             transition: opacity 0.25s ease;
@@ -1214,8 +1219,11 @@
 
             window.addEventListener('load', remover);
             // Teto de segurança: nunca deixa o splash preso na tela por
-            // mais de 1.5s, mesmo se o evento load demorar ou falhar.
-            window.setTimeout(remover, 1500);
+            // mais de 2.5s, mesmo se o evento load demorar ou falhar.
+            // Troca consciente: em conexão muito lenta, é possível que a
+            // página ainda não esteja 100% pronta quando esse teto age --
+            // preferimos isso a arriscar o splash ficar preso pra sempre.
+            window.setTimeout(remover, 2500);
         })();
     </script>
     <!-- Loading Spinner Global -->

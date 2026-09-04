@@ -178,6 +178,21 @@ const InstallManager = (function () {
     }
 
     /**
+     * Navegadores embutidos dentro de apps (Instagram, Facebook, TikTok,
+     * LinkedIn, WhatsApp em alguns casos) usam uma WebView customizada,
+     * não o Safari de verdade -- mesmo que o user-agent contenha
+     * "Safari" (quase todos incluem, por compatibilidade). Em muitos
+     * desses o botão Compartilhar nem existe, ou "Adicionar à Tela de
+     * Início" simplesmente não funciona. Mostrar o tutorial normal
+     * nesse caso confunde mais do que ajuda -- melhor orientar a pessoa
+     * a abrir no Safari primeiro.
+     */
+    function isInAppBrowser() {
+        const ua = getUserAgent();
+        return /FBAN|FBAV|Instagram|Line\/|MicroMessenger|TikTok|Twitter|LinkedInApp/i.test(ua);
+    }
+
+    /**
      * true se a página já estiver rodando numa janela "standalone" --
      * Android/Desktop via display-mode, iOS via navigator.standalone
      * (API específica da Apple, não padronizada).
@@ -303,15 +318,47 @@ const InstallManager = (function () {
     function garantirTutorialIOS() {
         if (iosSheetEl) return iosSheetEl;
 
-        const nomeNavegador = getIOSBrowserLabel();
-        const legendaCompartilhar = nomeNavegador ? `Na barra do ${nomeNavegador}` : 'No seu navegador';
-
         const el = document.createElement('div');
         el.id = 'pwaIosSheet';
         el.className = 'pwa-install-sheet pwa-ios-sheet';
         el.setAttribute('role', 'dialog');
         el.setAttribute('aria-modal', 'true');
         el.setAttribute('aria-label', 'Como instalar o FitLog no iPhone ou iPad');
+
+        if (isInAppBrowser()) {
+            // Navegador embutido de app (Instagram, Facebook, TikTok...):
+            // o passo a passo do Safari não se aplica, e em muitos casos
+            // "Adicionar à Tela de Início" nem funciona por ali. Melhor
+            // orientar a abrir no Safari em vez de um tutorial que não
+            // vai funcionar.
+            el.innerHTML = `
+                <div class="pwa-install-sheet-content pwa-ios-sheet-content">
+                    <div class="pwa-ios-sheet-handle" aria-hidden="true"></div>
+                    <button type="button" class="btn-pwa-close" aria-label="Fechar">&times;</button>
+
+                    <div class="pwa-ios-hero">
+                        <img src="/static/icons/icon-192.png" alt="" class="pwa-install-icon">
+                    </div>
+
+                    <strong>Abra no Safari para instalar</strong>
+                    <p>Esse navegador dentro do app não permite instalar o FitLog. Toque em <strong>"⋯"</strong> ou <strong>"Abrir no navegador"</strong> no canto da tela e depois repita a instalação pelo Safari.</p>
+
+                    <button type="button" class="btn-pwa-install btn-pwa-entendi">
+                        <i class="bi bi-check2" aria-hidden="true"></i> Entendi
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(el);
+            el.querySelector('.btn-pwa-close').addEventListener('click', handleDismiss);
+            el.querySelector('.btn-pwa-entendi').addEventListener('click', handleDismiss);
+
+            iosSheetEl = el;
+            return el;
+        }
+
+        const nomeNavegador = getIOSBrowserLabel();
+        const legendaCompartilhar = nomeNavegador ? `Na barra do ${nomeNavegador}` : 'No seu navegador';
+
         el.innerHTML = `
             <div class="pwa-install-sheet-content pwa-ios-sheet-content">
                 <div class="pwa-ios-sheet-handle" aria-hidden="true"></div>
@@ -325,7 +372,7 @@ const InstallManager = (function () {
                 <p>Tenha o FitLog sempre à mão, direto da tela inicial do seu iPhone.</p>
 
                 <ol class="pwa-ios-steps">
-                    <li class="pwa-step-highlight">
+                    <li>
                         <span class="pwa-step-icon-chip">
                             <i class="bi bi-box-arrow-up" aria-hidden="true"></i>
                         </span>
@@ -398,13 +445,30 @@ const InstallManager = (function () {
 
     function showInstallButton() {
         garantirBanner().classList.add('is-visible');
-        if (!platform.isIOS) garantirBackdrop().classList.add('is-visible');
+
+        // O cartão do Android/Desktop é uma "tela" completa (com backdrop
+        // e role="dialog"), então merece o mesmo cuidado de foco/Esc do
+        // tutorial iOS. O banner compacto do iOS não -- ele só existe pra
+        // abrir o tutorial de verdade.
+        if (!platform.isIOS) {
+            garantirBackdrop().classList.add('is-visible');
+            elementoComFocoAntes = document.activeElement;
+            document.addEventListener('keydown', handleEscapeOverlay);
+
+            const botaoFechar = bannerEl.querySelector('.btn-pwa-close');
+            if (botaoFechar) botaoFechar.focus();
+        }
     }
 
     function hideInstallButton() {
         if (bannerEl) bannerEl.classList.remove('is-visible');
         if (!platform.isIOS && backdropEl && !(iosSheetEl && iosSheetEl.classList.contains('is-visible'))) {
             backdropEl.classList.remove('is-visible');
+            document.removeEventListener('keydown', handleEscapeOverlay);
+            if (elementoComFocoAntes && typeof elementoComFocoAntes.focus === 'function') {
+                elementoComFocoAntes.focus();
+            }
+            elementoComFocoAntes = null;
         }
     }
 
@@ -417,7 +481,7 @@ const InstallManager = (function () {
         const sheet = garantirTutorialIOS();
         sheet.classList.add('is-visible');
 
-        document.addEventListener('keydown', handleEscapeIOSInstructions);
+        document.addEventListener('keydown', handleEscapeOverlay);
 
         // Foco no botão de fechar -- acessibilidade básica de modal
         // (teclado no desktop Safari/Chrome também funciona assim).
@@ -429,7 +493,7 @@ const InstallManager = (function () {
         if (backdropEl) backdropEl.classList.remove('is-visible');
         if (!iosSheetEl) return;
         iosSheetEl.classList.remove('is-visible');
-        document.removeEventListener('keydown', handleEscapeIOSInstructions);
+        document.removeEventListener('keydown', handleEscapeOverlay);
 
         if (elementoComFocoAntes && typeof elementoComFocoAntes.focus === 'function') {
             elementoComFocoAntes.focus();
@@ -437,7 +501,9 @@ const InstallManager = (function () {
         elementoComFocoAntes = null;
     }
 
-    function handleEscapeIOSInstructions(evento) {
+    /** Fecha qualquer uma das telas de instalação (iOS ou Android/Desktop)
+     * que estiver aberta no momento -- Esc funciona igual nas duas. */
+    function handleEscapeOverlay(evento) {
         if (evento.key === 'Escape') handleDismiss();
     }
 
@@ -551,6 +617,17 @@ const InstallManager = (function () {
         agendarExibicaoAutomatica();
     }
 
+    /**
+     * IMPORTANTE -- limitação conhecida do iOS, não é um bug daqui: o
+     * evento `appinstalled` só existe em navegadores Chromium (Android/
+     * Desktop). O Safari NUNCA dispara esse evento quando alguém conclui
+     * "Adicionar à Tela de Início" -- então o toast de sucesso abaixo só
+     * aparece pra quem instala pelo Android ou Desktop. No iOS, o
+     * `localStorage` só é marcado como `installed:true` na PRÓXIMA vez
+     * que a pessoa abrir o app pelo ícone da tela inicial (ver `init()`),
+     * não no momento em que ela toca "Adicionar". Não existe API pública
+     * da Apple pra saber isso na hora -- é intencional da plataforma.
+     */
     function handleAppInstalled() {
         writeState({ installed: true, dismissedAt: null });
         deferredPrompt = null;

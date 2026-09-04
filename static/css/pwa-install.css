@@ -349,8 +349,8 @@
 
 .btn-pwa-close {
     position: absolute;
-    top: 14px;
-    right: 14px;
+    top: 8px;
+    right: 8px;
     background: #f8f9fa;
     border: none;
     border-radius: 50%;
@@ -358,8 +358,8 @@
     line-height: 1;
     color: #adb5bd;
     cursor: pointer;
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;

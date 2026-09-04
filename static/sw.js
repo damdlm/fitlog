@@ -38,6 +38,16 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+    // Nunca intercepta métodos de escrita (POST/PUT/PATCH/DELETE) --
+    // login, salvar treino, qualquer coisa protegida por CSRF passa
+    // direto pro navegador, sem o Service Worker no meio. Isso é
+    // puramente defensivo: mesmo que o passthrough abaixo tecnicamente
+    // desse o mesmo resultado, uma ação sensível nunca deveria depender
+    // de o SW "deixar passar" corretamente.
+    if (event.request.method !== 'GET') {
+        return;
+    }
+
     const url = new URL(event.request.url);
 
     // Requisições de terceiros (CDNs externos: cdn.jsdelivr.net,
