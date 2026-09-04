@@ -82,6 +82,21 @@ def api_eventos():
         # era chamado a cada iteração).
         treinos_por_id = {t.id: t for t in TreinoService.get_all(user_id=target_user_id)}
 
+        # Ordem "oficial" de cada exercício dentro do seu treino (a mesma
+        # que a tela de registro usa, ver VersaoService.get_exercicios).
+        # Sem isso, os exercícios apareciam na ordem em que o REGISTRO foi
+        # inserido no banco -- que fica desatualizada se alguém reordena o
+        # treino depois de já ter sessões registradas com a ordem antiga.
+        from models import VersaoExercicio
+        ordem_exercicio = {}
+        if treinos_por_id:
+            for ve in VersaoExercicio.query.filter(
+                VersaoExercicio.treino_versao_id.in_(treinos_por_id.keys())
+            ).all():
+                chave = (ve.treino_versao_id, 'u', ve.exercicio_usuario_id) if ve.exercicio_usuario_id \
+                    else (ve.treino_versao_id, 'b', ve.exercicio_base_id)
+                ordem_exercicio[chave] = ve.ordem
+
         eventos = []
         volumes_por_dia = {}
         
@@ -139,11 +154,22 @@ def api_eventos():
                 'exercicio_nome': exercicio_nome,
                 'series': series_detalhe,
                 'volume': volume_total,
-                'exercicios': len(list(r.series)) if r.series else 0
+                'exercicios': len(list(r.series)) if r.series else 0,
+                'ordem': ordem_exercicio.get(
+                    (r.treino_versao_id, 'u', r.exercicio_usuario_id) if r.exercicio_usuario_id
+                    else (r.treino_versao_id, 'b', r.exercicio_base_id),
+                    9999  # exercício removido do treino depois de registrado -- vai pro fim
+                )
             })
         
         # Criar eventos para o calendário
         for data_str, dados in volumes_por_dia.items():
+            # Mesma ordem da tela de registro (ver ordem_exercicio acima) --
+            # sem isso, a lista seguia a ordem de inserção do registro no
+            # banco, que não necessariamente bate com a ordem atual do
+            # treino se ele foi reordenado depois.
+            dados['treinos'].sort(key=lambda t: t['ordem'])
+
             # Título resumido
             titulo = f"{dados['exercicios']} ex • {dados['volume_total']:.0f}kg"
             

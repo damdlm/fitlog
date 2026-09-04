@@ -320,22 +320,52 @@
         background: var(--surface);
         padding: 16px 18px;
         margin-bottom: 12px;
-        border-radius: 12px;
+        border-radius: 14px;
         border: 1px solid var(--border-subtle);
         border-left: 4px solid var(--primary-orange);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+        transition: opacity .15s ease;
     }
 
     .editar-registro-card:last-child {
         margin-bottom: 0;
     }
 
+    /* Exercício sem nada apontado ainda (carga, reps e séries em 0) --
+       visual mais apagado, borda tracejada, pra distinguir de um
+       exercício que já tem valores reais registrados. */
+    .editar-registro-card--vazio {
+        border-left-style: dashed;
+        border-left-color: #ced4da;
+        opacity: .75;
+    }
+
+    .editar-registro-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
     .editar-registro-nome {
         font-weight: 600;
         color: var(--text-primary);
         overflow-wrap: break-word;
-        margin-bottom: 10px;
-        font-size: .92rem;
+        font-size: .95rem;
+    }
+
+    .editar-registro-badge-vazio {
+        flex-shrink: 0;
+        font-size: .65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        color: #adb5bd;
+        background: rgba(173, 181, 189, 0.15);
+        padding: 3px 8px;
+        border-radius: 999px;
+        white-space: nowrap;
     }
 
     /* Mesma proporção de colunas da tela de registro (5fr/3fr/5fr):
@@ -345,19 +375,20 @@
         display: grid;
         grid-template-columns: 5fr 3fr 5fr;
         gap: 8px;
+        align-items: center;
     }
 
     .editar-registro-labels {
-        margin-bottom: 3px;
+        margin-bottom: 4px;
     }
 
     .editar-registro-labels span {
-        font-size: .65rem;
+        font-size: .68rem;
         line-height: 1;
         color: #adb5bd;
         text-transform: uppercase;
-        letter-spacing: .03em;
-        font-weight: 600;
+        letter-spacing: .04em;
+        font-weight: 700;
         text-align: center;
         display: block;
     }
@@ -368,11 +399,11 @@
         min-width: 0;
         text-align: center;
         font-weight: 700;
-        font-size: .9rem !important;
+        font-size: 1.05rem !important;
         padding: 3px !important;
-        height: 34px !important;
+        height: 40px !important;
         border: 2px solid var(--border-subtle) !important;
-        border-radius: 8px !important;
+        border-radius: 10px !important;
         box-shadow: none !important;
         background: var(--surface);
         color: var(--text-primary);
@@ -386,18 +417,52 @@
         box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12) !important;
     }
 
-    .editar-registro-inputs .form-select {
-        height: 34px !important;
-        font-size: .85rem !important;
-        border: 2px solid var(--border-subtle) !important;
-        border-radius: 8px !important;
-        box-shadow: none !important;
-        background-color: var(--surface);
-        color: var(--text-primary);
+    /* Stepper de séries (-/número/+) no lugar do <select> nativo -- o
+       texto de um <select> renderiza menor/mais discreto que um input
+       normal em vários navegadores mobile; com botões dedicados o
+       número fica do mesmo tamanho/peso visual de carga e repetições,
+       e ainda fica mais fácil de tocar (alvo maior que abrir um dropdown). */
+    .editar-registro-stepper {
+        display: flex;
+        align-items: stretch;
+        height: 40px;
+        border: 2px solid var(--border-subtle);
+        border-radius: 10px;
+        overflow: hidden;
     }
 
-    .editar-registro-inputs .form-select:focus {
-        border-color: var(--primary-orange) !important;
+    .editar-registro-stepper .stepper-btn {
+        flex: 0 0 30px;
+        border: none;
+        background: transparent;
+        color: var(--primary-orange);
+        font-size: 1.1rem;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+
+    .editar-registro-stepper .stepper-btn:active {
+        background: rgba(242, 140, 51, 0.12);
+    }
+
+    .editar-registro-stepper .stepper-valor {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        border-left: 1px solid var(--border-subtle);
+        border-right: 1px solid var(--border-subtle);
+        text-align: center;
+        font-weight: 700;
+        font-size: 1.05rem;
+        background: var(--surface);
+        color: var(--text-primary);
+        padding: 0;
+    }
+
+    .editar-registro-stepper .stepper-valor:focus {
+        outline: none;
     }
 
     .grupo-treino-volume {
@@ -1512,9 +1577,14 @@
                     return;
                 }
 
-                corpo.innerHTML = dados.exercicios.map(ex => `
-                    <div class="editar-registro-card">
-                        <div class="editar-registro-nome">${escapeHtml(ex.nome)}</div>
+                corpo.innerHTML = dados.exercicios.map(ex => {
+                    const vazio = ex.carga === 0 && ex.repeticoes === 0 && ex.num_series === 0;
+                    return `
+                    <div class="editar-registro-card ${vazio ? 'editar-registro-card--vazio' : ''}">
+                        <div class="editar-registro-top">
+                            <div class="editar-registro-nome">${escapeHtml(ex.nome)}</div>
+                            ${vazio ? '<span class="editar-registro-badge-vazio">Não apontado</span>' : ''}
+                        </div>
                         <div class="editar-registro-labels">
                             <span>Carga (kg)</span>
                             <span>Reps</span>
@@ -1527,14 +1597,18 @@
                             <input type="number" class="reps-input" name="reps_${ex.chave}"
                                    min="0" max="100" inputmode="numeric"
                                    value="${ex.repeticoes}">
-                            <select class="form-select" name="num_series_${ex.chave}">
-                                ${Array.from({length: 11}, (_, i) => i).map(n => `
-                                    <option value="${n}" ${n === ex.num_series ? 'selected' : ''}>${n}</option>
-                                `).join('')}
-                            </select>
+                            <div class="editar-registro-stepper">
+                                <button type="button" class="stepper-btn" tabindex="-1"
+                                        onclick="alterarSeriesStepper(this, -1)">−</button>
+                                <input type="number" class="stepper-valor" name="num_series_${ex.chave}"
+                                       value="${ex.num_series}" min="0" max="10" readonly>
+                                <button type="button" class="stepper-btn" tabindex="-1"
+                                        onclick="alterarSeriesStepper(this, 1)">+</button>
+                            </div>
                         </div>
                     </div>
-                `).join('');
+                `;
+                }).join('');
                 btnSalvar.disabled = false;
             })
             .catch(() => {
@@ -1542,6 +1616,13 @@
             });
     }
     window.abrirModalEditarRegistro = abrirModalEditarRegistro;
+
+    function alterarSeriesStepper(botao, delta) {
+        const input = botao.parentElement.querySelector('.stepper-valor');
+        const novoValor = Math.max(0, Math.min(10, parseInt(input.value || '0', 10) + delta));
+        input.value = novoValor;
+    }
+    window.alterarSeriesStepper = alterarSeriesStepper;
 
     function mostrarDetalhesEvento(event) {
         const modal = new bootstrap.Modal(document.getElementById('eventoModal'));
