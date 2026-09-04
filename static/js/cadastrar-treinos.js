@@ -59,30 +59,34 @@ document.addEventListener('DOMContentLoaded', function () {
         const selecionados = new Set(mapa[treinoVersaoId] || []);
         const observacoes = mapaObs[treinoVersaoId] || {};
 
+        // Marca/desmarca e sincroniza o visual (classe .is-selected, campo
+        // de observação) direto, SEM disparar 'change' em cada checkbox.
+        // A grade tem ~1300 itens (catálogo inteiro + personalizados);
+        // disparar 'change' em todos fazia o listener de
+        // editar-treino-versao.js recalcular o contador de selecionados
+        // varrendo a grade inteira A CADA disparo -- ~1300 x ~1300 =
+        // trabalho quadrático, travando a tela por um instante. Fazendo a
+        // sincronização aqui direto (sem passar pelo sistema de eventos) e
+        // recalculando o contador só 1 vez no final (evento 'etv:contador'
+        // abaixo), o custo cai de quadrático pra linear.
         checkboxesDoGrid().forEach(function (cb) {
             const deveEstarMarcado = selecionados.has(cb.value);
-            if (cb.checked !== deveEstarMarcado) {
-                cb.checked = deveEstarMarcado;
-            }
-            // Dispara 'change' sempre (mesmo sem alterar .checked) pra
-            // garantir que o card e o contador fiquem consistentes com
-            // o estado atual, já que os listeners de editar-treino-versao.js
-            // só reagem a eventos, não ao valor sendo setado via JS.
-            cb.dispatchEvent(new Event('change', { bubbles: true }));
+            cb.checked = deveEstarMarcado;
 
-            // Campo de observação -- só faz sentido preencher quando o
-            // exercício está marcado; o próprio listener de 'change' acima
-            // (editar-treino-versao.js) já cuida de habilitar/desabilitar
-            // o input conforme o checkbox, aqui só define o valor salvo.
             const card = cb.closest('.etv-card');
+            if (card) card.classList.toggle('is-selected', deveEstarMarcado);
+
             const obsInput = card?.querySelector('.etv-obs-input');
             if (obsInput) {
+                obsInput.disabled = !deveEstarMarcado;
                 obsInput.value = deveEstarMarcado ? (observacoes[cb.value] || '') : '';
             }
         });
 
-        // Traz os exercícios já marcados pra esse treino pro início
-        // da lista (editar-treino-versao.js escuta esse evento).
+        // Recalcula o contador (1 vez só) e traz os exercícios já
+        // marcados pra esse treino pro início da lista (ambos ouvidos em
+        // editar-treino-versao.js).
+        grid?.dispatchEvent(new CustomEvent('etv:contador'));
         grid?.dispatchEvent(new CustomEvent('etv:reordenar'));
     });
 });

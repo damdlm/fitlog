@@ -143,6 +143,15 @@ document.addEventListener('DOMContentLoaded', function () {
         contadoresSelecionados.forEach(el => { el.textContent = String(total); });
     }
 
+    // cadastrar-treinos.js precisa recalcular o contador depois de marcar
+    // os checkboxes do treino selecionado no modal compartilhado -- mas
+    // SEM disparar 'change' em cada um dos ~1300 checkboxes da grade (isso
+    // travava a tela: cada dispatch de 'change' chamava atualizarContador,
+    // que varre a grade inteira de novo -- ou seja, ~1300 disparos x ~1300
+    // itens escaneados cada = trabalho quadrático). Com esse evento, dá
+    // pra recalcular uma vez só, depois de marcar tudo.
+    grid?.addEventListener('etv:contador', atualizarContador);
+
     function onCheckboxChange(checkbox) {
         sincronizarCard(checkbox);
         atualizarContador();
