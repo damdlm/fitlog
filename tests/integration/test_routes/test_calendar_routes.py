@@ -232,3 +232,241 @@ def test_eventos_com_exercicio_do_catalogo_sistema(client, app):
 
     assert len(eventos) == 1
     assert eventos[0]['extendedProps']['treinos'][0]['exercicio_nome'] == 'Agachamento'
+
+
+class TestCalendarioPagina:
+
+    def test_pagina_carrega(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('cal_pagina_1')
+            user_id = u.id
+        _login(client, User.query.get(user_id))
+
+        resp = client.get('/calendar/calendario')
+        assert resp.status_code == 200
+
+    def test_requer_login(self, client):
+        resp = client.get('/calendar/calendario', follow_redirects=False)
+        assert resp.status_code in (302, 401)
+
+
+class TestApiEventoDetalhe:
+
+    def test_dono_ve_o_detalhe(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('cal_detalhe_1')
+            ex = _criar_exercicio(u)
+            treino, versao = _criar_treino(u)
+            registro = _criar_registro(u, treino, versao, ex, datetime.now(timezone.utc), carga=60, repeticoes=8)
+            user_id, registro_id = u.id, registro.id
+        _login(client, User.query.get(user_id))
+
+        resp = client.get(f'/calendar/api/evento/{registro_id}')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['treino']['codigo'] == 'A'
+        assert data['exercicios'][0]['nome'] == 'Supino'
+        assert data['exercicios'][0]['volume'] == 480.0
+        assert data['total_volume'] == 480.0
+
+    def test_registro_inexistente_retorna_404(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('cal_detalhe_2')
+            user_id = u.id
+        _login(client, User.query.get(user_id))
+
+        resp = client.get('/calendar/api/evento/999999')
+        assert resp.status_code == 404
+
+    def test_outro_usuario_sem_vinculo_nao_ve_o_registro(self, client, app):
+        """IDOR: um usuário não pode ver o detalhe de um registro de
+        outra pessoa só por saber o ID."""
+        with app.app_context():
+            dono = _criar_usuario('cal_detalhe_dono')
+            outro = _criar_usuario('cal_detalhe_outro')
+            ex = _criar_exercicio(dono)
+            treino, versao = _criar_treino(dono)
+            registro = _criar_registro(dono, treino, versao, ex, datetime.now(timezone.utc))
+            outro_id, registro_id = outro.id, registro.id
+        _login(client, User.query.get(outro_id))
+
+        resp = client.get(f'/calendar/api/evento/{registro_id}')
+        assert resp.status_code == 404
+
+    def test_professor_vinculado_ve_o_registro_do_aluno(self, client, app):
+        with app.app_context():
+            prof = _criar_usuario('cal_detalhe_prof', tipo='professor')
+            aluno = _criar_usuario('cal_detalhe_aluno')
+            db.session.add(AlunoProfessor(aluno_id=aluno.id, professor_id=prof.id, ativo=True))
+            db.session.commit()
+            ex = _criar_exercicio(aluno)
+            treino, versao = _criar_treino(aluno)
+            registro = _criar_registro(aluno, treino, versao, ex, datetime.now(timezone.utc))
+            prof_id, registro_id = prof.id, registro.id
+        _login(client, User.query.get(prof_id))
+
+        resp = client.get(f'/calendar/api/evento/{registro_id}')
+        assert resp.status_code == 200
+
+
+class TestApiEventoExcluir:
+
+    def test_dono_exclui_com_sucesso(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('cal_excluir_1')
+            ex = _criar_exercicio(u)
+            treino, versao = _criar_treino(u)
+            hoje_meia_noite = datetime.combine(datetime.now(timezone.utc).date(), datetime.min.time())
+            registro = _criar_registro(u, treino, versao, ex, hoje_meia_noite)
+            user_id, registro_id = u.id, registro.id
+        _login(client, User.query.get(user_id))
+
+        resp = client.post(f'/calendar/api/evento/{registro_id}/excluir')
+
+        assert resp.status_code == 200
+        assert resp.get_json() == {'ok': True}
+        with app.app_context():
+            assert db.session.get(RegistroTreino, registro_id) is None
+
+    def test_registro_inexistente_retorna_404(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('cal_excluir_2')
+            user_id = u.id
+        _login(client, User.query.get(user_id))
+
+        resp = client.post('/calendar/api/evento/999999/excluir')
+        assert resp.status_code == 404
+
+    def test_outro_usuario_nao_pode_excluir(self, client, app):
+        """Nem professor: exclusão só o próprio dono."""
+        with app.app_context():
+            prof = _criar_usuario('cal_excluir_prof', tipo='professor')
+            aluno = _criar_usuario('cal_excluir_aluno')
+            db.session.add(AlunoProfessor(aluno_id=aluno.id, professor_id=prof.id, ativo=True))
+            db.session.commit()
+            ex = _criar_exercicio(aluno)
+            treino, versao = _criar_treino(aluno)
+            hoje_meia_noite = datetime.combine(datetime.now(timezone.utc).date(), datetime.min.time())
+            registro = _criar_registro(aluno, treino, versao, ex, hoje_meia_noite)
+            prof_id, registro_id = prof.id, registro.id
+        _login(client, User.query.get(prof_id))
+
+        resp = client.post(f'/calendar/api/evento/{registro_id}/excluir')
+
+        assert resp.status_code == 404
+        with app.app_context():
+            assert db.session.get(RegistroTreino, registro_id) is not None
+
+
+class TestApiEventoDadosEdicao:
+
+    def _criar_versao_exercicio(self, treino, ex):
+        from models import VersaoExercicio
+        db.session.add(VersaoExercicio(treino_versao_id=treino.id, exercicio_usuario_id=ex.id, ordem=0))
+        db.session.commit()
+
+    def test_dados_incompletos_retorna_400(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('cal_edicao_1')
+            user_id = u.id
+        _login(client, User.query.get(user_id))
+
+        resp = client.get('/calendar/api/evento/dados-edicao')
+        assert resp.status_code == 400
+
+    def test_data_invalida_retorna_400(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('cal_edicao_2')
+            user_id = u.id
+        _login(client, User.query.get(user_id))
+
+        resp = client.get('/calendar/api/evento/dados-edicao?data=31/12/2026&treino=1')
+        assert resp.status_code == 400
+
+    def test_sem_versao_ativa_na_data_retorna_404(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('cal_edicao_3')
+            user_id = u.id
+        _login(client, User.query.get(user_id))
+
+        resp = client.get('/calendar/api/evento/dados-edicao?data=2020-01-01&treino=1')
+        assert resp.status_code == 404
+
+    def test_treino_nao_encontrado_na_versao_retorna_404(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('cal_edicao_4')
+            treino, versao = _criar_treino(u)
+            user_id = u.id
+        _login(client, User.query.get(user_id))
+
+        hoje = datetime.now(timezone.utc).date().isoformat()
+        resp = client.get(f'/calendar/api/evento/dados-edicao?data={hoje}&treino=999999')
+        assert resp.status_code == 404
+
+    def test_sucesso_retorna_exercicios_com_valores_ja_salvos(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('cal_edicao_5')
+            ex = _criar_exercicio(u)
+            treino, versao = _criar_treino(u)
+            self._criar_versao_exercicio(treino, ex)
+            hoje_meia_noite = datetime.combine(datetime.now(timezone.utc).date(), datetime.min.time())
+            _criar_registro(u, treino, versao, ex, hoje_meia_noite, carga=75, repeticoes=6)
+            user_id, treino_id = u.id, treino.id
+        _login(client, User.query.get(user_id))
+
+        data_str = datetime.now(timezone.utc).date().isoformat()
+        resp = client.get(f'/calendar/api/evento/dados-edicao?data={data_str}&treino={treino_id}')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['treino_codigo'] == 'A'
+        assert len(data['exercicios']) == 1
+        assert data['exercicios'][0]['nome'] == 'Supino'
+        assert data['exercicios'][0]['carga'] == 75.0
+        assert data['exercicios'][0]['repeticoes'] == 6
+
+    def test_exercicio_sem_registro_ainda_entra_zerado(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('cal_edicao_6')
+            ex = _criar_exercicio(u)
+            treino, versao = _criar_treino(u)
+            self._criar_versao_exercicio(treino, ex)
+            user_id, treino_id = u.id, treino.id
+        _login(client, User.query.get(user_id))
+
+        data_str = datetime.now(timezone.utc).date().isoformat()
+        resp = client.get(f'/calendar/api/evento/dados-edicao?data={data_str}&treino={treino_id}')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['exercicios'][0]['carga'] == 0
+        assert data['exercicios'][0]['repeticoes'] == 0
+        assert data['exercicios'][0]['num_series'] == 0
+
+
+class TestEstimarData:
+    """Função pura usada como fallback quando o registro não tem
+    data_registro salva -- estima a partir de período+semana."""
+
+    def test_estima_primeiro_dia_da_semana_1(self):
+        from routes.calendar_routes import _estimar_data
+        from datetime import date
+        assert _estimar_data('Março/2024', 1) == date(2024, 3, 1)
+
+    def test_estima_semana_3_soma_14_dias(self):
+        from routes.calendar_routes import _estimar_data
+        from datetime import date
+        assert _estimar_data('Março/2024', 3) == date(2024, 3, 15)
+
+    def test_periodo_sem_barra_retorna_none(self):
+        from routes.calendar_routes import _estimar_data
+        assert _estimar_data('Março 2024', 1) is None
+
+    def test_mes_invalido_retorna_none(self):
+        from routes.calendar_routes import _estimar_data
+        assert _estimar_data('MesInventado/2024', 1) is None
+
+    def test_ano_nao_numerico_retorna_none(self):
+        from routes.calendar_routes import _estimar_data
+        assert _estimar_data('Março/abcd', 1) is None
