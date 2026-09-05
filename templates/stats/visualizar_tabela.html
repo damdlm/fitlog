@@ -339,12 +339,13 @@
         if (!wrap || !table) return;
 
         var N_SEMANAS_VISIVEIS = 3; // 6 colunas de dado (Carga+Rep. x3)
-        var PCT_EXERCICIO = 0.38;   // ~38% da largura da tela p/ "Exercício"
+        var PCT_EXERCICIO = 0.48;   // ~48% da tela p/ "Exercício" (era 0.38 -- aumentado para deixar Carga/Rep. mais estreitas)
         var MIN_EXERCICIO = 90;
         var MAX_EXERCICIO = 220;
-        var MIN_DADO = 34;
+        var MIN_DADO = 30;          // era 34 -- Carga/Rep. um pouco mais estreitas
         var ABS_MIN_EXERCICIO = 64; // só usado se precisar encolher p/ garantir as 3 semanas
-        var primeiraVez = true;
+        var usuarioRolou = false;      // true assim que o usuário arrastar a tabela manualmente
+        var ajustandoScrollAgora = false; // marca quando SOMOS nós movendo o scroll (não o usuário)
 
         // Se o usuário tem MENOS que 3 semanas de treino registradas (ex.:
         // acabou de começar), não faz sentido reservar largura para 3 --
@@ -354,6 +355,15 @@
         var semanasParaCalculo = (totalSemanasReais > 0)
             ? Math.min(N_SEMANAS_VISIVEIS, totalSemanasReais)
             : N_SEMANAS_VISIVEIS;
+
+        // Detecta rolagem feita pelo próprio usuário (arrastando a tabela)
+        // para PARAR de forçar a posição nas últimas semanas depois disso --
+        // sem essa distinção, o realinhamento abaixo (que roda de novo a
+        // cada resize/load) ia brigar com o dedo do usuário.
+        wrap.addEventListener('scroll', function () {
+            if (ajustandoScrollAgora) { ajustandoScrollAgora = false; return; }
+            usuarioRolou = true;
+        });
 
         // ---- Mede quais nomes de exercício realmente ficaram cortados
         // com a largura de coluna aplicada (não é mais um limite fixo de
@@ -369,6 +379,31 @@
                 celula.setAttribute('data-truncado', cortado ? '1' : '0');
             });
         }
+
+        // Posiciona a rolagem para mostrar exatamente as últimas
+        // N_SEMANAS_VISIVEIS semanas (mais recentes), calculando a posição
+        // exata (índice da semana × largura de cada par Carga/Rep.) em vez
+        // de "rolar até o fim" (`scrollWidth`) -- isso podia sobrar 1-2px
+        // de arredondamento e deixar uma semana mais antiga aparecendo
+        // pela metade (só "Rep.", sem o "Carga" correspondente), parecendo
+        // um buraco/vazamento. Chamada de novo toda vez que a largura é
+        // recalculada (não só na primeira), porque se a 1ª medição
+        // acontecer antes da fonte/layout terminar de carregar, o valor
+        // de largura usado ali pode não bater com o que fica valendo
+        // depois -- sem recalcular, a rolagem ficava "presa" numa posição
+        // baseada numa medida antiga, sobrando pedaço de coluna igual
+        // antes. Só para de reposicionar se o usuário já arrastou.
+        function reposicionarUltimasSemanas(larguraDado) {
+            if (usuarioRolou) return;
+            var totalSemanasNaTabela = totalSemanasReais > 0 ? totalSemanasReais : semanasParaCalculo;
+            var indiceInicioVisivel = Math.max(0, totalSemanasNaTabela - N_SEMANAS_VISIVEIS);
+            var alvo = indiceInicioVisivel * 2 * larguraDado;
+            if (Math.abs(wrap.scrollLeft - alvo) > 0.5) {
+                ajustandoScrollAgora = true;
+                wrap.scrollLeft = alvo;
+            }
+        }
+
 
         // ---- Largura das colunas como percentual da tela ----
         // Recalcula a cada resize/rotação de tela: a coluna "Exercício"
@@ -429,30 +464,11 @@
             wrap.style.setProperty('--prog-w-exercicio', larguraExercicio + 'px');
             wrap.style.setProperty('--prog-w-dado', larguraDado + 'px');
 
-            // Só depois que a largura REAL (não o valor padrão do CSS) foi
-            // aplicada é que faz sentido rolar e medir quais nomes ficaram
-            // cortados -- fazer isso antes mediria/rolaria com base nos
-            // valores padrão, não nos calculados agora.
-            if (primeiraVez) {
-                primeiraVez = false;
-                // Abre já mostrando as últimas semanas (mais recentes à
-                // direita), mas permite arrastar para a esquerda para ver
-                // semanas mais antigas.
-                //
-                // Antes usava `wrap.scrollLeft = wrap.scrollWidth` (rolar
-                // até o fim), mas isso pode sobrar 1-2px por causa de
-                // arredondamento entre o total calculado em JS e o que o
-                // navegador realmente desenha -- na prática, uma fatia de
-                // uma 4ª semana (mais antiga) ficava visível pela metade
-                // (só a coluna "Rep.", sem o "Carga" correspondente),
-                // parecendo um "buraco"/vazamento de dado. Calculando a
-                // posição exata (índice da semana × largura de cada par
-                // Carga/Rep.) o corte cai sempre certinho no início de uma
-                // semana completa, nunca no meio de uma.
-                var totalSemanasNaTabela = totalSemanasReais > 0 ? totalSemanasReais : semanasParaCalculo;
-                var indiceInicioVisivel = Math.max(0, totalSemanasNaTabela - N_SEMANAS_VISIVEIS);
-                wrap.scrollLeft = indiceInicioVisivel * 2 * larguraDado;
-            }
+            // Reposiciona nas últimas semanas com a largura REAL recém
+            // calculada (não o valor padrão do CSS) -- ver comentário em
+            // reposicionarUltimasSemanas() sobre por que isso roda de novo
+            // a cada chamada, não só na primeira.
+            reposicionarUltimasSemanas(larguraDado);
             atualizarTruncamento();
         }
 
