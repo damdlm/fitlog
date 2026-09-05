@@ -430,16 +430,28 @@
             wrap.style.setProperty('--prog-w-dado', larguraDado + 'px');
 
             // Só depois que a largura REAL (não o valor padrão do CSS) foi
-            // aplicada é que faz sentido rolar até o fim e medir quais
-            // nomes ficaram cortados -- fazer isso antes mediria/rolaria
-            // com base nos valores padrão, não nos calculados agora.
+            // aplicada é que faz sentido rolar e medir quais nomes ficaram
+            // cortados -- fazer isso antes mediria/rolaria com base nos
+            // valores padrão, não nos calculados agora.
             if (primeiraVez) {
                 primeiraVez = false;
                 // Abre já mostrando as últimas semanas (mais recentes à
-                // direita) -- rola o mais possível para a direita, mas
-                // permite arrastar para a esquerda para ver semanas mais
-                // antigas.
-                wrap.scrollLeft = wrap.scrollWidth;
+                // direita), mas permite arrastar para a esquerda para ver
+                // semanas mais antigas.
+                //
+                // Antes usava `wrap.scrollLeft = wrap.scrollWidth` (rolar
+                // até o fim), mas isso pode sobrar 1-2px por causa de
+                // arredondamento entre o total calculado em JS e o que o
+                // navegador realmente desenha -- na prática, uma fatia de
+                // uma 4ª semana (mais antiga) ficava visível pela metade
+                // (só a coluna "Rep.", sem o "Carga" correspondente),
+                // parecendo um "buraco"/vazamento de dado. Calculando a
+                // posição exata (índice da semana × largura de cada par
+                // Carga/Rep.) o corte cai sempre certinho no início de uma
+                // semana completa, nunca no meio de uma.
+                var totalSemanasNaTabela = totalSemanasReais > 0 ? totalSemanasReais : semanasParaCalculo;
+                var indiceInicioVisivel = Math.max(0, totalSemanasNaTabela - N_SEMANAS_VISIVEIS);
+                wrap.scrollLeft = indiceInicioVisivel * 2 * larguraDado;
             }
             atualizarTruncamento();
         }
