@@ -90,6 +90,23 @@ class TestEditarAluno:
             aluno = db.session.get(User, professor_com_aluno['aluno_id'])
             assert aluno.nome_completo == 'Editado Pelo Admin'
 
+    def test_admin_nao_pode_trocar_email_para_um_ja_usado(self, client, professor_com_aluno):
+        with client.application.app_context():
+            admin = _criar_usuario('admin_teste_email', 'admin', is_admin=True)
+            email_original = db.session.get(User, professor_com_aluno['aluno_id']).email
+        _login(client, 'admin_teste_email')
+
+        resp = client.post(
+            f"/professor/aluno/editar/{professor_com_aluno['aluno_id']}",
+            # e-mail do OUTRO aluno já existente, criado pela fixture
+            data={'nome_completo': 'X', 'email': 'aluno2@teste.com', 'telefone': ''},
+            follow_redirects=True,
+        )
+        assert resp.status_code == 200
+        with client.application.app_context():
+            aluno = db.session.get(User, professor_com_aluno['aluno_id'])
+            assert aluno.email == email_original
+
 
 class TestDesativarReativarAluno:
     def test_professor_nao_pode_desativar_proprio_aluno(self, client, professor_com_aluno):
@@ -116,6 +133,30 @@ class TestDesativarReativarAluno:
             admin = _criar_usuario('admin_teste2', 'admin', is_admin=True)
         _login(client, 'admin_teste2')
         client.post(f"/professor/aluno/desativar/{professor_com_aluno['aluno_id']}")
+        with client.application.app_context():
+            aluno = db.session.get(User, professor_com_aluno['aluno_id'])
+            assert aluno.ativo is False
+
+    def test_admin_pode_reativar_aluno(self, client, professor_com_aluno):
+        with client.application.app_context():
+            admin = _criar_usuario('admin_teste3', 'admin', is_admin=True)
+            aluno = db.session.get(User, professor_com_aluno['aluno_id'])
+            aluno.ativo = False
+            db.session.commit()
+        _login(client, 'admin_teste3')
+        resp = client.post(f"/professor/aluno/reativar/{professor_com_aluno['aluno_id']}", follow_redirects=True)
+        assert resp.status_code == 200
+        with client.application.app_context():
+            aluno = db.session.get(User, professor_com_aluno['aluno_id'])
+            assert aluno.ativo is True
+
+    def test_professor_nao_pode_reativar_proprio_aluno(self, client, professor_com_aluno):
+        with client.application.app_context():
+            aluno = db.session.get(User, professor_com_aluno['aluno_id'])
+            aluno.ativo = False
+            db.session.commit()
+        _login(client, 'prof1')
+        client.post(f"/professor/aluno/reativar/{professor_com_aluno['aluno_id']}")
         with client.application.app_context():
             aluno = db.session.get(User, professor_com_aluno['aluno_id'])
             assert aluno.ativo is False

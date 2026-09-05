@@ -238,3 +238,331 @@ class TestCalendarioAluno:
         _login(client, username)
         resp = client.get(f'/professor/aluno/{aluno_id}/calendario', follow_redirects=True)
         assert resp.status_code == 200
+
+
+# ------------------------------------------------------------------
+# Gestão de versão/treino do aluno pelo professor (tela "Ver Versão")
+# ------------------------------------------------------------------
+class TestVersoesAluno:
+
+    def test_lista_versoes(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_versoes1')
+            _criar_versao(aluno_id, numero=1)
+
+        _login(client, username)
+        resp = client.get(f'/professor/aluno/{aluno_id}/versoes')
+        assert resp.status_code == 200
+
+    def test_outro_professor_sem_acesso(self, client, app):
+        with app.app_context():
+            _, aluno_id, _ = _setup_prof_aluno(app, 'pr_versoes2')
+            outro = _criar_usuario('pr_versoes2_outro', tipo_usuario='professor')
+            username = outro.username
+
+        _login(client, username)
+        resp = client.get(f'/professor/aluno/{aluno_id}/versoes', follow_redirects=True)
+        assert resp.status_code == 200
+        # nunca deveria conseguir ver a listagem do aluno de outro professor
+        assert b'Voc\xc3\xaa n\xc3\xa3o tem permiss\xc3\xa3o' in resp.data or resp.request.path != f'/professor/aluno/{aluno_id}/versoes'
+
+
+class TestNovaVersaoAluno:
+
+    def test_get_carrega_formulario(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_novav1')
+
+        _login(client, username)
+        resp = client.get(f'/professor/aluno/{aluno_id}/versao/nova')
+        assert resp.status_code == 200
+
+    def test_post_cria_versao_com_sucesso(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_novav2')
+
+        _login(client, username)
+        resp = client.post(f'/professor/aluno/{aluno_id}/versao/nova',
+                            data={'descricao': 'Hipertrofia'}, follow_redirects=True)
+
+        assert resp.status_code == 200
+        with app.app_context():
+            versao = VersaoGlobal.query.filter_by(user_id=aluno_id).first()
+            assert versao is not None
+            assert versao.descricao == 'Hipertrofia'
+
+    def test_ja_tem_versao_ativa_redireciona_sem_criar_outra(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_novav3')
+            _criar_versao(aluno_id, numero=1, data_inicio=date.today())
+
+        _login(client, username)
+        resp = client.post(f'/professor/aluno/{aluno_id}/versao/nova',
+                            data={'descricao': 'Outra'}, follow_redirects=True)
+
+        assert resp.status_code == 200
+        with app.app_context():
+            assert VersaoGlobal.query.filter_by(user_id=aluno_id).count() == 1
+
+
+class TestVerVersaoAluno:
+
+    def test_carrega_com_treinos(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_verv1')
+            v = _criar_versao(aluno_id, numero=1, data_inicio=date.today())
+            _criar_treino_versao(v.id, codigo='A', nome='Treino A')
+            versao_id = v.id
+
+        _login(client, username)
+        resp = client.get(f'/professor/aluno/{aluno_id}/versao/{versao_id}')
+        assert resp.status_code == 200
+        assert b'Treino A' in resp.data
+
+    def test_versao_inexistente_redireciona(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_verv2')
+
+        _login(client, username)
+        resp = client.get(f'/professor/aluno/{aluno_id}/versao/999999', follow_redirects=True)
+        assert resp.status_code == 200
+
+
+class TestReordenarExerciciosAluno:
+
+    def test_sucesso(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_reord1')
+            ex = _criar_exercicio(aluno_id, 'Rosca')
+            v = _criar_versao(aluno_id, numero=1, data_inicio=date.today())
+            tv = _criar_treino_versao(v.id, codigo='A')
+            db.session.add(VersaoExercicio(treino_versao_id=tv.id, exercicio_usuario_id=ex.id, ordem=0))
+            db.session.commit()
+            versao_id = v.id
+            ex_id = ex.id
+
+        _login(client, username)
+        resp = client.post(f'/professor/aluno/{aluno_id}/reordenar-exercicios', json={
+            'versao_id': versao_id, 'treino_codigo': 'A', 'nova_ordem': [f'u_{ex_id}'],
+        })
+
+        assert resp.status_code == 200
+        assert resp.get_json()['success'] is True
+
+    def test_dados_incompletos(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_reord2')
+
+        _login(client, username)
+        resp = client.post(f'/professor/aluno/{aluno_id}/reordenar-exercicios', json={})
+        assert resp.status_code == 400
+
+    def test_outro_professor_sem_acesso_retorna_403(self, client, app):
+        with app.app_context():
+            _, aluno_id, _ = _setup_prof_aluno(app, 'pr_reord3')
+            outro = _criar_usuario('pr_reord3_outro', tipo_usuario='professor')
+            username = outro.username
+
+        _login(client, username)
+        resp = client.post(f'/professor/aluno/{aluno_id}/reordenar-exercicios', json={
+            'versao_id': 1, 'treino_codigo': 'A', 'nova_ordem': ['u_1'],
+        })
+        assert resp.status_code == 403
+
+
+class TestVersaoEditarDescricaoAluno:
+
+    def test_sucesso(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_editdesc1')
+            v = _criar_versao(aluno_id, numero=1, data_inicio=date.today())
+            versao_id = v.id
+
+        _login(client, username)
+        resp = client.post(f'/professor/aluno/{aluno_id}/versao/{versao_id}/editar',
+                            data={'descricao': 'Nova descrição'}, follow_redirects=True)
+
+        assert resp.status_code == 200
+        with app.app_context():
+            assert db.session.get(VersaoGlobal, versao_id).descricao == 'Nova descrição'
+
+    def test_versao_ja_finalizada_nao_edita(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_editdesc2')
+            v = _criar_versao(aluno_id, numero=1, data_inicio=date(2024, 1, 1), data_fim=date(2024, 2, 1))
+            versao_id = v.id
+            descricao_original = v.descricao
+
+        _login(client, username)
+        client.post(f'/professor/aluno/{aluno_id}/versao/{versao_id}/editar',
+                     data={'descricao': 'Tentativa'}, follow_redirects=True)
+
+        with app.app_context():
+            assert db.session.get(VersaoGlobal, versao_id).descricao == descricao_original
+
+
+class TestVersaoAdicionarTreinoAluno:
+
+    def test_sucesso(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_addtreino1')
+            v = _criar_versao(aluno_id, numero=1, data_inicio=date.today())
+            versao_id = v.id
+
+        _login(client, username)
+        resp = client.post(f'/professor/aluno/{aluno_id}/versao/{versao_id}/treino',
+                            data={'nome_treino': 'Treino B', 'descricao_treino': 'Costas'},
+                            follow_redirects=True)
+
+        assert resp.status_code == 200
+        with app.app_context():
+            assert TreinoVersao.query.filter_by(versao_id=versao_id, nome_treino='Treino B').first() is not None
+
+
+class TestVersaoSalvarTreinoAluno:
+
+    def test_sucesso_salva_nome_e_exercicios(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_salvtreino1')
+            ex = _criar_exercicio(aluno_id, 'Supino Inclinado')
+            v = _criar_versao(aluno_id, numero=1, data_inicio=date.today())
+            tv = _criar_treino_versao(v.id, codigo='A', nome='Treino A')
+            versao_id, treino_id, ex_id = v.id, tv.id, ex.id
+
+        _login(client, username)
+        resp = client.post(
+            f'/professor/aluno/{aluno_id}/versao/{versao_id}/treino/{treino_id}',
+            data={
+                'nome_treino': 'Treino A Editado', 'descricao_treino': 'Peito',
+                'exercicios[]': [f'u_{ex_id}'],
+            },
+            follow_redirects=True,
+        )
+
+        assert resp.status_code == 200
+        with app.app_context():
+            tv_atualizado = db.session.get(TreinoVersao, treino_id)
+            assert tv_atualizado.nome_treino == 'Treino A Editado'
+            assert VersaoExercicio.query.filter_by(treino_versao_id=treino_id, exercicio_usuario_id=ex_id).first() is not None
+
+
+class TestVersaoRemoverTreinoAluno:
+
+    def test_sucesso(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_remtreino1')
+            v = _criar_versao(aluno_id, numero=1, data_inicio=date.today())
+            tv = _criar_treino_versao(v.id, codigo='A')
+            versao_id, treino_id = v.id, tv.id
+
+        _login(client, username)
+        resp = client.post(
+            f'/professor/aluno/{aluno_id}/versao/{versao_id}/treino/{treino_id}/remover',
+            follow_redirects=True,
+        )
+
+        assert resp.status_code == 200
+        with app.app_context():
+            assert db.session.get(TreinoVersao, treino_id) is None
+
+    def test_bloqueado_quando_tem_registro(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_remtreino2')
+            ex = _criar_exercicio(aluno_id)
+            v = _criar_versao(aluno_id, numero=1, data_inicio=date.today())
+            tv = _criar_treino_versao(v.id, codigo='A')
+            db.session.add(RegistroTreino(
+                treino_versao_id=tv.id, versao_id=v.id, periodo='2026-09', semana=1,
+                data_registro=datetime.now(timezone.utc), user_id=aluno_id, exercicio_usuario_id=ex.id,
+            ))
+            db.session.commit()
+            versao_id, treino_id = v.id, tv.id
+
+        _login(client, username)
+        client.post(
+            f'/professor/aluno/{aluno_id}/versao/{versao_id}/treino/{treino_id}/remover',
+            follow_redirects=True,
+        )
+
+        with app.app_context():
+            # tem histórico -- não pode ter sido removido
+            assert db.session.get(TreinoVersao, treino_id) is not None
+
+
+class TestVersaoFinalizarAluno:
+
+    def test_sucesso(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_finalizar1')
+            ex = _criar_exercicio(aluno_id)
+            v = _criar_versao(aluno_id, numero=1, data_inicio=date.today())
+            tv = _criar_treino_versao(v.id, codigo='A')
+            db.session.add(VersaoExercicio(treino_versao_id=tv.id, exercicio_usuario_id=ex.id, ordem=0))
+            db.session.commit()
+            versao_id = v.id
+
+        _login(client, username)
+        resp = client.post(f'/professor/aluno/{aluno_id}/versao/{versao_id}/finalizar', follow_redirects=True)
+
+        assert resp.status_code == 200
+        with app.app_context():
+            assert db.session.get(VersaoGlobal, versao_id).data_fim is not None
+
+    def test_sem_treino_nao_finaliza(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_finalizar2')
+            v = _criar_versao(aluno_id, numero=1, data_inicio=date.today())
+            versao_id = v.id
+
+        _login(client, username)
+        client.post(f'/professor/aluno/{aluno_id}/versao/{versao_id}/finalizar', follow_redirects=True)
+
+        with app.app_context():
+            assert db.session.get(VersaoGlobal, versao_id).data_fim is None
+
+
+class TestVersaoClonarAluno:
+
+    def test_sucesso_cria_nova_versao_ativa(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_clonar1')
+            v = _criar_versao(aluno_id, numero=1, data_inicio=date(2024, 1, 1), data_fim=date(2024, 2, 1))
+            _criar_treino_versao(v.id, codigo='A', nome='Treino A')
+            versao_id = v.id
+
+        _login(client, username)
+        resp = client.post(f'/professor/aluno/{aluno_id}/versao/{versao_id}/clonar', follow_redirects=True)
+
+        assert resp.status_code == 200
+        with app.app_context():
+            nova = VersaoGlobal.query.filter_by(user_id=aluno_id, numero_versao=2).first()
+            assert nova is not None
+            assert nova.data_fim is None
+
+
+class TestVersaoExcluirAluno:
+
+    def test_sucesso_versao_finalizada_sem_registro(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_excluir1')
+            v = _criar_versao(aluno_id, numero=1, data_inicio=date(2024, 1, 1), data_fim=date(2024, 2, 1))
+            versao_id = v.id
+
+        _login(client, username)
+        resp = client.post(f'/professor/aluno/{aluno_id}/versao/{versao_id}/excluir', follow_redirects=True)
+
+        assert resp.status_code == 200
+        with app.app_context():
+            assert db.session.get(VersaoGlobal, versao_id) is None
+
+    def test_nao_exclui_versao_ainda_ativa(self, client, app):
+        with app.app_context():
+            prof_id, aluno_id, username = _setup_prof_aluno(app, 'pr_excluir2')
+            v = _criar_versao(aluno_id, numero=1, data_inicio=date.today())  # ativa
+            versao_id = v.id
+
+        _login(client, username)
+        client.post(f'/professor/aluno/{aluno_id}/versao/{versao_id}/excluir', follow_redirects=True)
+
+        with app.app_context():
+            assert db.session.get(VersaoGlobal, versao_id) is not None
