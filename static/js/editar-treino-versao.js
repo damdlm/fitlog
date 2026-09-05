@@ -177,10 +177,23 @@ document.addEventListener('DOMContentLoaded', function () {
     // -----------------------------------------------------
     // Tooltips (Bootstrap) — nome completo e nicknames do exercício
     // -----------------------------------------------------
+    // Criar uma instância de Tooltip pra cada um dos ~1300 exercícios da
+    // grade, de uma vez só no carregamento, consumia memória demais e
+    // derrubava o processo do Safari no iOS nessa tela (catálogo completo
+    // carregado) -- "Um problema ocorreu repetidamente em .../cadastrar-
+    // treinos". Em vez disso, a instância só é criada na hora que o
+    // elemento é realmente tocado/passa o mouse pela primeira vez
+    // (delegação de evento) -- os itens que a pessoa nunca interage não
+    // custam nada.
+    function inicializarTooltipSobDemanda(e) {
+        const el = e.target.closest('[data-bs-toggle="tooltip"]');
+        if (!el || el._tooltipPronto) return;
+        el._tooltipPronto = true;
+        new bootstrap.Tooltip(el, { trigger: 'hover' });
+    }
     if (window.bootstrap) {
-        grid?.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-            new bootstrap.Tooltip(el, { trigger: 'hover' });
-        });
+        grid?.addEventListener('mouseover', inicializarTooltipSobDemanda);
+        grid?.addEventListener('touchstart', inicializarTooltipSobDemanda, { passive: true });
     }
 
     // -----------------------------------------------------
