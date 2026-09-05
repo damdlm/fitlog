@@ -9,7 +9,7 @@ from services.registro_service import RegistroService
 from services.estatistica_service import EstatisticaService
 from services.versao_service import VersaoService
 from utils.decorators import acesso_premium_required
-from utils.date_utils import MESES
+from utils.date_utils import data_para_periodo, data_para_semana
 import logging
 
 stats_bp = Blueprint('stats', __name__)
@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
 # do usuário (podendo passar de milhares de linhas com o tempo). A tela
 # abre já mostrando as últimas 3 semanas, mas permite rolar para o lado
 # e ver semanas mais antigas -- por isso a janela buscada é maior que
-# 3 semanas (90 dias cobrem ~12-13 semanas de histórico navegável),
-# evitando trazer o histórico completo do banco a cada carregamento.
-DIAS_HISTORICO_TABELA_PROGRESSO = 90
+# 3 semanas (12 semanas de histórico navegável).
+NUM_SEMANAS_HISTORICO = 12
+DIAS_HISTORICO_TABELA_PROGRESSO = NUM_SEMANAS_HISTORICO * 7 + 7  # folga de 1 semana
 
 
 def _get_treino_id(exercicio):
@@ -60,6 +60,39 @@ def _get_versao_id(exercicio):
     """
     treino_ref = getattr(exercicio, 'treino_ref', None)
     return treino_ref.versao_id if treino_ref else None
+
+
+def _gerar_semanas_calendario(hoje, quantidade):
+    """Gera as últimas `quantidade` semanas por CALENDÁRIO (mais antiga ->
+    mais recente), e não a partir de quais semanas têm registro salvo.
+
+    Antes, a lista de colunas da tabela vinha só das semanas que tinham
+    pelo menos um registro -- se o usuário só tivesse treinado numa
+    semana recente, só uma coluna aparecia (em vez de mostrar as 3
+    últimas semanas com as mais antigas em branco). Isso também causava
+    um bug visual: a largura das colunas era calculada supondo 3 semanas,
+    então com menos colunas reais sobrava/vazava layout.
+
+    A chave de cada semana usa `data_para_periodo`/`data_para_semana`,
+    as MESMAS funções usadas em routes/register_routes.py ao salvar um
+    registro -- então bate exatamente com a chave gravada no banco
+    (`f"{periodo}_{semana}"`, ver EstatisticaService.preparar_dados_tabela).
+    `semana_do_mes` (1ª, 2ª, 3ª... para exibição) é calculada direto do
+    dia do mês, não depende de existir registro naquela semana.
+    """
+    semanas = []
+    for i in range(quantidade - 1, -1, -1):
+        data_semana = (hoje - timedelta(weeks=i)).date()
+        periodo = data_para_periodo(data_semana)
+        semana_iso = data_para_semana(data_semana)
+        semana_do_mes = ((data_semana.day - 1) // 7) + 1
+        semanas.append({
+            'periodo': periodo,
+            'semana': semana_iso,
+            'semana_do_mes': semana_do_mes,
+            'key': f"{periodo}_{semana_iso}",
+        })
+    return semanas
 
 
 @stats_bp.route("/estatisticas")
@@ -109,9 +142,10 @@ def visualizar_tabela():
 
     Único filtro disponível é por versão do plano de treino do usuário
     (`versao_id` na querystring) -- os demais (treino/músculo/ordenar/
-    semanas) continuam removidos. Busca todas as semanas dentro da janela
-    de DIAS_HISTORICO_TABELA_PROGRESSO (`preparar_dados_tabela` é chamado
-    com "todas") para permitir rolar a tabela e ver semanas mais antigas;
+    semanas) continuam removidos. As colunas de semana são geradas por
+    CALENDÁRIO (as últimas NUM_SEMANAS_HISTORICO semanas a partir de
+    hoje, sempre as mesmas independente de haver registro ou não -- ver
+    `_gerar_semanas_calendario`), preenchidas com os dados que existirem;
     o template usa JS só para posicionar a rolagem inicial nas 3 últimas
     semanas (mais recentes = colunas mais à direita).
 
@@ -119,8 +153,8 @@ def visualizar_tabela():
     continuam agrupados por treino apenas para alternar a cor de fundo do
     bloco (zebra por bloco inteiro, não por linha) e para inserir uma
     linha espaçadora em branco entre um treino e outro, replicando o
-    layout de referência. O cabeçalho volta a mostrar "Nª Semana / Mês"
-    acima de cada par Carga/Rep.
+    layout de referência. O cabeçalho mostra "Nª Semana / Mês" acima de
+    cada par Carga/Rep.
     """
     versao_id = request.args.get('versao_id', '').strip()
     versoes = VersaoService.get_all()
@@ -140,36 +174,17 @@ def visualizar_tabela():
         exercicios, registros, "todas", {}
     )
 
-    # `preparar_dados_tabela` ordena semanas usando só o nome do mês (sem
-    # ano), então períodos de anos diferentes com o mesmo mês colidiriam na
-    # ordenação. Reordena aqui por (ano, mês, semana) usando o mapeamento de
-    # meses já existente em date_utils, sem tocar na função compartilhada
-    # (que tem teste unitário próprio). Semanas mais antigas ficam à
-    # esquerda e as mais recentes à direita, como na planilha de referência.
-    def _chave_semana(s):
-        mes_nome, _, ano = s['periodo'].partition('/')
-        ano_num = int(ano) if ano.isdigit() else 0
-        return (ano_num, MESES.get(mes_nome.strip().lower(), 0), s['semana'])
-
-    semanas = sorted(dados_tabela['semanas'], key=_chave_semana)
-
-    # `RegistroTreino.semana` é preenchido em routes/register_routes.py com
-    # `data_para_semana()`, que devolve a semana ISO *do ano* (1-53) -- por
-    # isso a tabela mostrava números como "32ª Semana" em vez de "3ª Semana".
-    # Aqui, em vez de mudar esse campo já gravado no banco (afetaria outras
-    # telas e todo o histórico já salvo), recalcula-se só para exibição: como
-    # `semanas` já está em ordem cronológica, dá pra numerar de novo a partir
-    # de 1 sempre que o período (mês) mudar -- 1ª, 2ª, 3ª semana daquele mês,
-    # na ordem em que houve treino registrado.
-    contador_por_periodo = {}
-    for s in semanas:
-        contador_por_periodo[s['periodo']] = contador_por_periodo.get(s['periodo'], 0) + 1
-        s['semana_do_mes'] = contador_por_periodo[s['periodo']]
+    # Colunas de semana fixas por calendário -- não dependem de existir
+    # registro (ver docstring de _gerar_semanas_calendario). É essa lista
+    # que decide quantas/quais colunas a tabela mostra, não mais
+    # `dados_tabela['semanas']` (que só tinha semanas com registro).
+    semanas = _gerar_semanas_calendario(datetime.now(timezone.utc), NUM_SEMANAS_HISTORICO)
 
     # Agrupa os exercícios em blocos por treino -- cada bloco vira um grupo
     # de linhas com a mesma cor (zebra por bloco) e, entre um bloco e o
     # próximo, o template insere uma linha espaçadora. Já resolve, para
-    # cada exercício, a carga/repetições da primeira série em cada semana.
+    # cada exercício, a carga/repetições da primeira série em cada semana
+    # (em branco quando não há registro naquela semana).
     grupos_treino = []
     for codigo, exs in groupby(exercicios, key=_get_treino_codigo):
         exercicios_grupo = []

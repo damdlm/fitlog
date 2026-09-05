@@ -159,6 +159,17 @@
         position: sticky;
         left: 0;
         z-index: 2;
+        /* Largura também aplicada direto na célula (não só no <col> do
+           colgroup abaixo): em alguns motores, a largura de um <col> num
+           table-layout:fixed e a largura que uma célula sticky realmente
+           pinta na tela podem arredondar de formas levemente diferentes,
+           abrindo uma fresta de 1-2px por onde o conteúdo de baixo
+           (números das colunas de semana, ao rolar) vaza -- o "buraco"
+           reportado. Repetir a largura aqui, exata e igual à do <col>,
+           fecha essa fresta. */
+        width: var(--prog-w-exercicio, 180px);
+        min-width: var(--prog-w-exercicio, 180px);
+        max-width: var(--prog-w-exercicio, 180px);
     }
     #progressTable thead .col-exercicio { z-index: 3; }
     #progressTable tr.linha-espacadora .col-exercicio {
@@ -406,6 +417,14 @@
                     larguraDisponivel - totalColunasDado * larguraDado
                 );
             }
+
+            // Arredonda para px inteiro: valores fracionados (ex.
+            // "142.357894px") podem ser arredondados de formas levemente
+            // diferentes pelo motor do navegador entre o <col> do
+            // colgroup e a célula sticky em si, abrindo uma fresta de
+            // sub-pixel por onde o conteúdo por baixo vaza ao rolar.
+            larguraExercicio = Math.round(larguraExercicio);
+            larguraDado = Math.round(larguraDado);
 
             wrap.style.setProperty('--prog-w-exercicio', larguraExercicio + 'px');
             wrap.style.setProperty('--prog-w-dado', larguraDado + 'px');
