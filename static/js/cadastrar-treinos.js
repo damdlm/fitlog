@@ -30,6 +30,20 @@ document.addEventListener('DOMContentLoaded', function () {
         return grid ? Array.from(grid.querySelectorAll('.etv-checkbox')) : [];
     }
 
+    // Feedback leve de "carregando" no próprio botão clicado -- o loop
+    // abaixo que marca os ~1300 checkboxes do treino escolhido é rápido
+    // (linear, não trava de verdade), mas ainda assim é um trabalho
+    // síncrono que roda bem no instante do toque; o spinner só evita a
+    // sensação de "não registrou o clique" nesse intervalo curto. Não
+    // tem relação com o crash de memória do Safari em iOS (esse já foi
+    // corrigido à parte, na criação preguiçosa dos tooltips).
+    document.querySelectorAll('.ct-btn-editar-exercicios').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            btn.dataset.htmlOriginal = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Editar';
+        });
+    });
+
     modalExercicios.addEventListener('show.bs.modal', function (event) {
         const trigger = event.relatedTarget;
         if (!trigger) return;
@@ -88,5 +102,12 @@ document.addEventListener('DOMContentLoaded', function () {
         // editar-treino-versao.js).
         grid?.dispatchEvent(new CustomEvent('etv:contador'));
         grid?.dispatchEvent(new CustomEvent('etv:reordenar'));
+
+        // Restaura o botão que abriu o modal ao estado normal -- o
+        // spinner (ver listener de 'click' acima) já cumpriu seu papel.
+        if (trigger.dataset.htmlOriginal) {
+            trigger.innerHTML = trigger.dataset.htmlOriginal;
+            delete trigger.dataset.htmlOriginal;
+        }
     });
 });
