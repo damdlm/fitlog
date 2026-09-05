@@ -13,6 +13,7 @@ continuam aplicadas pelo service independente disso.
 """
 
 import logging
+from collections import Counter
 
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
@@ -68,6 +69,14 @@ def ver_versao(versao_id):
     treinos_versao = sorted(versao.treinos, key=lambda tv: tv.ordem or 0)
     exercicios_catalogo = ExercicioService.get_exercicios_completos(user_id=current_user.id)
     musculos_catalogo = MusculoService.get_all_nomes()
+    # Contagem por músculo pros chips de filtro, calculada uma vez só em
+    # O(n) -- antes o template fazia isso com um loop de músculos DENTRO
+    # de um loop de exercícios (~36 mil iterações Jinja a cada
+    # carregamento, com 27 músculos x 1351 exercícios no catálogo).
+    contagem_musculos = Counter(
+        ex.musculo_nome or getattr(ex, 'musculo', None) or 'N/A'
+        for ex in exercicios_catalogo
+    )
 
     treino_exercicios_map = {}
     treino_observacoes_map = {}
@@ -93,6 +102,7 @@ def ver_versao(versao_id):
         treinos_versao=treinos_versao,
         exercicios_catalogo=exercicios_catalogo,
         musculos_catalogo=musculos_catalogo,
+        contagem_musculos=contagem_musculos,
         treino_exercicios_map=treino_exercicios_map,
         treino_observacoes_map=treino_observacoes_map,
         max_treinos=VersaoService.MAX_TREINOS_POR_VERSAO,

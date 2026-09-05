@@ -562,12 +562,8 @@
                                     Todos <span class="etv-chip-count">{{ exercicios_catalogo|length }}</span>
                                 </button>
                                 {% for m in musculos_catalogo %}
-                                {% set ns = namespace(count=0) %}
-                                {% for ex in exercicios_catalogo %}
-                                    {% if (ex.musculo_nome or ex.musculo or 'N/A') == m %}{% set ns.count = ns.count + 1 %}{% endif %}
-                                {% endfor %}
                                 <button type="button" class="etv-chip" data-musculo="{{ m }}" aria-pressed="false">
-                                    {{ m }} <span class="etv-chip-count">{{ ns.count }}</span>
+                                    {{ m }} <span class="etv-chip-count">{{ contagem_musculos.get(m, 0) }}</span>
                                 </button>
                                 {% endfor %}
                             </div>

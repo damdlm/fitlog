@@ -16,6 +16,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy import func
 import logging
 import json
+from collections import Counter
 
 professor_bp = Blueprint('professor', __name__, url_prefix='/professor')
 logger = logging.getLogger(__name__)
@@ -802,6 +803,10 @@ def ver_versao_aluno(aluno_id, versao_id):
     treinos_versao = sorted(versao.treinos, key=lambda tv: tv.ordem or 0)
     exercicios_catalogo = ExercicioService.get_exercicios_completos(user_id=aluno.id)
     musculos_catalogo = MusculoService.get_all_nomes()
+    contagem_musculos = Counter(
+        ex.musculo_nome or getattr(ex, 'musculo', None) or 'N/A'
+        for ex in exercicios_catalogo
+    )
 
     treino_exercicios_map = {}
     treino_observacoes_map = {}
@@ -828,6 +833,7 @@ def ver_versao_aluno(aluno_id, versao_id):
         treinos_versao=treinos_versao,
         exercicios_catalogo=exercicios_catalogo,
         musculos_catalogo=musculos_catalogo,
+        contagem_musculos=contagem_musculos,
         treino_exercicios_map=treino_exercicios_map,
         treino_observacoes_map=treino_observacoes_map,
         max_treinos=VersaoService.MAX_TREINOS_POR_VERSAO,
