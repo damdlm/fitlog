@@ -1,0 +1,18 @@
+{% extends "errors/base_erro.html" %}
+
+{% block titulo %}Ops, algo deu errado · FitLog{% endblock %}
+{% block codigo %}500{% endblock %}
+{% block titulo_erro %}Algo deu errado do nosso lado{% endblock %}
+{% block mensagem %}
+Não foi você -- tivemos um problema interno ao processar essa página.
+Já registramos o erro. Tenta de novo em alguns instantes.
+{% endblock %}
+
+{% block acoes %}
+<a href="javascript:location.reload()" class="erro-btn erro-btn-primario">
+    Tentar de novo
+</a>
+<a href="/" class="erro-btn erro-btn-secundario">
+    Voltar pro início
+</a>
+{% endblock %}

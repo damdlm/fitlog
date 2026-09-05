@@ -3,7 +3,7 @@ import secrets
 import logging
 from logging.handlers import RotatingFileHandler
 
-from flask import Flask
+from flask import Flask, render_template
 
 from config import get_config
 from models import db, User
@@ -360,6 +360,29 @@ def create_app(config_class=None):
             # completo na resposta HTTP -- só no log interno.
             app.logger.exception("Health check do banco falhou (/health/db)")
             return {"status": "error", "database": "unavailable"}, 503
+
+    # =============================================================
+    # PÁGINAS DE ERRO CUSTOMIZADAS
+    # =============================================================
+    # Só cobrem erros que o Flask CONSEGUE responder (404, 500 com a
+    # aplicação rodando). Não cobrem -- e não têm como cobrir -- a
+    # aplicação inteira estar fora do ar (processo caído/travado): nesse
+    # caso é o proxy de borda da Railway que responde, sem nunca chegar
+    # a rodar este código. Ver templates/errors/base_erro.html para o
+    # motivo de essas páginas não estenderem base.html.
+    @app.errorhandler(404)
+    def erro_404(e):
+        return render_template("errors/404.html"), 404
+
+    @app.errorhandler(500)
+    def erro_500(e):
+        # Uma exceção não tratada deixa a sessão do SQLAlchemy num estado
+        # inconsistente (transação pendente) -- sem o rollback, a PRÓXIMA
+        # requisição nesse mesmo worker/thread poderia falhar também,
+        # mesmo sendo uma operação não relacionada ao erro original.
+        db.session.rollback()
+        app.logger.exception("Erro 500 não tratado")
+        return render_template("errors/500.html"), 500
 
     # =============================================================
     # HEADERS DE SEGURANÇA

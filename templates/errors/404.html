@@ -1,0 +1,15 @@
+{% extends "errors/base_erro.html" %}
+
+{% block titulo %}Página não encontrada · FitLog{% endblock %}
+{% block codigo %}404{% endblock %}
+{% block titulo_erro %}Essa página não existe{% endblock %}
+{% block mensagem %}
+O link pode estar quebrado ou a página pode ter sido movida. Confira o
+endereço ou volte pro início.
+{% endblock %}
+
+{% block acoes %}
+<a href="{{ url_for('main.index') }}" class="erro-btn erro-btn-primario">
+    Voltar pro início
+</a>
+{% endblock %}
