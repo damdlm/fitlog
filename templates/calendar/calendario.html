@@ -1185,6 +1185,10 @@
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-danger" id="editarRegistroBtnExcluir"
+                            onclick="excluirRegistroDoModalEdicao()">
+                        <i class="bi bi-trash3 me-1"></i>Excluir
+                    </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary" id="editarRegistroBtnSalvar">
                         <i class="bi bi-check-lg me-1"></i>Salvar
@@ -1556,6 +1560,10 @@
     // então nem mostra os botões, pra não confundir.
     const PODE_EDITAR_EXCLUIR = !EVENTOS_API_BASE.includes('aluno_id=');
 
+    // Guarda o registro do treino aberto no modal de edição -- usado pelo
+    // botão Excluir dentro desse mesmo modal (ver excluirRegistroDoModalEdicao).
+    let registroEmEdicao = { id: null, nomeTreino: null };
+
     function excluirRegistroDia(registroId, nomeTreino) {
         window.FitLogConfirm({
             title: `Excluir ${nomeTreino}?`,
@@ -1587,7 +1595,17 @@
     }
     window.excluirRegistroDia = excluirRegistroDia;
 
-    function abrirModalEditarRegistro(data, treinoId, nomeTreino) {
+    // Excluir a partir do modal de edição -- reusa excluirRegistroDia com o
+    // registro/nome guardados quando o modal foi aberto (ver abrirModalEditarRegistro).
+    function excluirRegistroDoModalEdicao() {
+        if (!registroEmEdicao.id) return;
+        excluirRegistroDia(registroEmEdicao.id, registroEmEdicao.nomeTreino);
+    }
+    window.excluirRegistroDoModalEdicao = excluirRegistroDoModalEdicao;
+
+    function abrirModalEditarRegistro(data, treinoId, nomeTreino, registroId) {
+        registroEmEdicao = { id: registroId, nomeTreino: nomeTreino };
+
         const modalEl = document.getElementById('modalEditarRegistro');
         const modal = new bootstrap.Modal(modalEl);
         const corpo = document.getElementById('editarRegistroCorpo');
@@ -1733,12 +1751,8 @@
                     html += `
                         <div class="grupo-treino-acoes">
                             <button type="button" class="btn-editar-registro"
-                                    onclick="abrirModalEditarRegistro('${event.startStr}', ${grupo.treinoId}, '${nomeSeguroJs}')">
+                                    onclick="abrirModalEditarRegistro('${event.startStr}', ${grupo.treinoId}, '${nomeSeguroJs}', ${grupo.primeiroRegistroId})">
                                 <i class="bi bi-pencil-square"></i> Editar
-                            </button>
-                            <button type="button" class="btn-excluir-registro"
-                                    onclick="excluirRegistroDia(${grupo.primeiroRegistroId}, 'Treino ${codigoSeguro}${grupo.nome && grupo.nome !== 'Treino' ? ` · ${nomeSeguroJs}` : ''}')">
-                                <i class="bi bi-trash3"></i> Excluir
                             </button>
                         </div>
                     `;

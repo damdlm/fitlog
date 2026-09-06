@@ -147,6 +147,24 @@ class RegistroService(BaseService):
                 data = datetime.strptime(data, '%Y-%m-%d').date()
             data_meia_noite = datetime(data.year, data.month, data.day)
 
+            # Mesmo cuidado de salvar_registros logo abaixo: se o chamador
+            # for na sequência criar um registro novo na mesma transação
+            # (ex: mover a sessão pra outra data em salvar_registro), o
+            # SQLite pode reaproveitar o rowid recém-liberado e colidir com
+            # a identity map da sessão se os objetos apagados aqui ainda
+            # estiverem "vivos" nela -- ver comentário completo em
+            # salvar_registros.
+            registros_a_apagar = RegistroTreino.query.filter(
+                RegistroTreino.user_id == user_id,
+                RegistroTreino.treino_versao_id == treino_id,
+                RegistroTreino.versao_id == versao_id,
+                RegistroTreino.data_registro == data_meia_noite
+            ).options(selectinload(RegistroTreino.series)).all()
+            for registro in registros_a_apagar:
+                for serie in registro.series:
+                    db.session.expunge(serie)
+                db.session.expunge(registro)
+
             RegistroTreino.query.filter(
                 RegistroTreino.user_id == user_id,
                 RegistroTreino.treino_versao_id == treino_id,
