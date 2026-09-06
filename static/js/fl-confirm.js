@@ -39,6 +39,7 @@
     function getModalParts() {
         return {
             el: document.getElementById('flConfirmModal'),
+            content: document.getElementById('flConfirmContent'),
             iconWrap: document.getElementById('flConfirmIconWrap'),
             icon: document.getElementById('flConfirmIcon'),
             title: document.getElementById('flConfirmTitle'),
@@ -67,6 +68,9 @@
         parts.text.style.display = options.text ? '' : 'none';
         parts.btnSim.textContent = options.confirmLabel || 'Confirmar';
         parts.btnSim.className = 'btn fl-confirm-btn-primary variant-' + variant + ' w-100';
+        if (parts.content) {
+            parts.content.className = 'modal-content fl-confirm-content variant-' + variant;
+        }
 
         var modal = bootstrap.Modal.getOrCreateInstance(parts.el);
 

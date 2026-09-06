@@ -926,9 +926,16 @@
            data-confirm-variant ("danger", "warning" ou "info"), lido pelo
            static/js/fl-confirm.js. */
         .fl-confirm-content {
-            border: none;
+            border: 2px solid transparent;
             border-radius: var(--radius-lg, 16px);
         }
+        /* Bordinha na cor da variante -- pedido pro alerta de excluir (danger)
+           ficar com o quadro da mensagem destacado em vermelho, não só o
+           ícone/botão. Deixado pronto pra warning/info também, já que o
+           mesmo modal é reaproveitado pra qualquer confirmação. */
+        .fl-confirm-content.variant-danger { border-color: #dc3545; }
+        .fl-confirm-content.variant-warning { border-color: #F59E0B; }
+        .fl-confirm-content.variant-info { border-color: #0EA5E9; }
         .fl-confirm-icon {
             width: 56px;
             height: 56px;
@@ -1756,7 +1763,7 @@
          visual do aviso "Cancelar treino?" da tela de registro de treino. -->
     <div class="modal fade" id="flConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content fl-confirm-content">
+            <div class="modal-content fl-confirm-content" id="flConfirmContent">
                 <div class="modal-body text-center p-4">
                     <div class="fl-confirm-icon" id="flConfirmIconWrap">
                         <i class="bi" id="flConfirmIcon"></i>
