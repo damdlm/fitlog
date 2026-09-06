@@ -60,6 +60,23 @@
            wrap.clientWidth) partir de um valor errado e cortar semanas. */
         width: 100%;
         box-sizing: border-box;
+        /* CAUSA REAL do "empaca no meio da tabela": o Bootstrap define
+           `:root { scroll-behavior: smooth }` (media query
+           prefers-reduced-motion), e essa regra tem MAIS especificidade
+           que o `html { scroll-behavior: auto }` que já existe em
+           style.css (:root é uma pseudo-classe, mais específica que o
+           seletor de elemento `html`) -- então o "auto" pretendido pelo
+           projeto perde silenciosamente em todo o site. Com o scroll
+           "smooth" ativo, cada `wrap.scrollLeft = X` que o JS faz abaixo
+           anima suavemente em vez de saltar direto; se o JS reajustar a
+           posição de novo (ex.: no evento "load", depois do "DOMContent
+           Loaded") enquanto a animação anterior ainda está rolando, essa
+           segunda chamada interrompe a primeira NO MEIO DO CAMINHO --
+           é exatamente esse o "buraco"/tabela parada no meio relatado.
+           Forçando "auto" (instantâneo) só nesta caixa de rolagem, sem
+           depender da especificidade do CSS global, elimina o problema
+           de raiz. */
+        scroll-behavior: auto !important;
     }
 
     #progressTable {
