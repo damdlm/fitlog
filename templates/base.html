@@ -925,6 +925,20 @@
            largura total. As cores do ícone/botão principal mudam conforme
            data-confirm-variant ("danger", "warning" ou "info"), lido pelo
            static/js/fl-confirm.js. */
+        /* Esse modal costuma abrir POR CIMA de outro já aberto (ex:
+           confirmar exclusão de dentro do modal de edição de treino) --
+           o Bootstrap não empilha modal nativamente, os dois usam o mesmo
+           z-index fixo (backdrop 1050, modal 1055), então o conteúdo do
+           modal de baixo aparece por cima do backdrop do de cima, sem
+           escurecer, ficando com essa aparência "torta"/quebrada. Eleva o
+           backdrop mais recente (o dele) e o próprio modal acima de
+           qualquer modal comum já aberto no fundo. */
+        .modal-backdrop + .modal-backdrop {
+            z-index: 1060;
+        }
+        #flConfirmModal {
+            z-index: 1065;
+        }
         .fl-confirm-content {
             border: 2px solid transparent;
             border-radius: var(--radius-lg, 16px);
