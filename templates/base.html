@@ -932,7 +932,7 @@
         /* Quadro mais estreito que o modal padrão (500px) -- fica mais
            parecido com um alerta pontual do que com um modal de conteúdo. */
         #flConfirmModal .modal-dialog {
-            max-width: 460px;
+            max-width: 360px;
         }
         /* Bordinha na cor da variante -- pedido pro alerta de excluir (danger)
            ficar com o quadro da mensagem destacado em vermelho, não só o
@@ -981,6 +981,26 @@
             filter: brightness(0.92);
         }
         .fl-confirm-btn-primary:active {
+            transform: scale(0.97);
+        }
+        /* Cancelar do mesmo tamanho/formato (pill) do botão principal --
+           só troca a cor pra ficar neutro, sem competir com o Confirmar. */
+        .fl-confirm-btn-cancel {
+            font-weight: 600;
+            border-radius: 999px;
+            padding: 11px 20px;
+            border: 2px solid #dee2e6;
+            color: #6c757d;
+            background: transparent;
+            transition: filter .15s ease, transform .15s ease;
+        }
+        .fl-confirm-btn-cancel:hover,
+        .fl-confirm-btn-cancel:focus {
+            color: #495057;
+            border-color: #ced4da;
+            background: #f8f9fa;
+        }
+        .fl-confirm-btn-cancel:active {
             transform: scale(0.97);
         }
 
@@ -1779,7 +1799,7 @@
                         <button type="button" id="flConfirmBtnSim" class="btn fl-confirm-btn-primary variant-danger w-100">
                             Confirmar
                         </button>
-                        <button type="button" class="btn btn-outline-secondary w-100" data-bs-dismiss="modal">
+                        <button type="button" class="btn fl-confirm-btn-cancel w-100" data-bs-dismiss="modal">
                             Cancelar
                         </button>
                     </div>

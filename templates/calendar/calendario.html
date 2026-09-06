@@ -346,6 +346,12 @@
         background: rgba(220, 53, 69, 0.1);
     }
 
+    /* Excluir/Cancelar/Salvar do modal de edição centralizados, em vez do
+       alinhamento padrão do Bootstrap (flex-end, colado na direita). */
+    #modalEditarRegistro .modal-footer {
+        justify-content: center;
+    }
+
     /* Visual do card de exercício replicado da tela de registrar treino
        (templates/register/registrar_treino.html: .exercise-row,
        .inputs-row-labels, .inputs-row, .carga-input/.reps-input) --
