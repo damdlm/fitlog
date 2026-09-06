@@ -1157,7 +1157,11 @@
         <div class="modal-content">
             <form id="formEditarRegistro" method="POST" action="{{ url_for('register.salvar_registro') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <input type="hidden" name="data" id="editarRegistroData">
+                <!-- data_original guarda a data com que o modal foi aberto (não
+                     muda se o usuário editar o campo de data abaixo) -- o backend
+                     usa ela pra saber que a sessão antiga precisa ser removida
+                     quando a data é alterada (ver register_routes.salvar_registro) -->
+                <input type="hidden" name="data_original" id="editarRegistroDataOriginal">
                 <input type="hidden" name="treino" id="editarRegistroTreino">
                 <div class="modal-header">
                     <div class="sheet-handle"></div>
@@ -1168,6 +1172,10 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <div class="mb-3 editar-registro-data-row">
+                        <label for="editarRegistroData" class="form-label">Data do treino</label>
+                        <input type="date" class="form-control" name="data" id="editarRegistroData" required>
+                    </div>
                     <div id="editarRegistroCorpo">
                         <div class="text-center py-4">
                             <div class="spinner-border text-primary" role="status">
@@ -1587,6 +1595,7 @@
 
         document.getElementById('editarRegistroTitulo').textContent = `Editar ${nomeTreino}`;
         document.getElementById('editarRegistroData').value = data;
+        document.getElementById('editarRegistroDataOriginal').value = data;
         document.getElementById('editarRegistroTreino').value = treinoId;
         btnSalvar.disabled = true;
         corpo.innerHTML = `

@@ -116,6 +116,72 @@ class TestSalvarRegistro:
             qtd = RegistroTreino.query.filter_by(exercicio_usuario_id=ex.id).count()
             assert qtd == 1
 
+    def test_editar_com_data_original_move_sessao_sem_duplicar(self, client, app):
+        """Edição pelo calendário: mudar a data (data_original != data) deve
+        mover a sessão -- remover os registros da data antiga e criar na
+        nova, sem deixar duplicata órfã na data original."""
+        with app.app_context():
+            u = _criar_usuario('reg_post_mover')
+            versao, treino_id, ex = _montar_versao_com_treino_e_exercicio(u.id)
+            chave = f'u_{ex.id}'
+
+        _login(client, 'reg_post_mover')
+        client.post('/registrar/registrar-treino', data={
+            'treino': str(treino_id),
+            'data': '2026-01-05',
+            f'carga_{chave}': '50',
+            f'reps_{chave}': '10',
+            f'num_series_{chave}': '3',
+        })
+
+        resp = client.post('/registrar/registrar-treino', data={
+            'treino': str(treino_id),
+            'data': '2026-01-12',
+            'data_original': '2026-01-05',
+            f'carga_{chave}': '55',
+            f'reps_{chave}': '8',
+            f'num_series_{chave}': '3',
+        })
+        assert resp.status_code == 302
+
+        with app.app_context():
+            registros = RegistroTreino.query.filter_by(exercicio_usuario_id=ex.id).all()
+            assert len(registros) == 1
+            assert registros[0].data_registro.date() == date(2026, 1, 12)
+            assert registros[0].series[0].carga == 55
+
+    def test_editar_sem_mudar_data_nao_afeta_outras_sessoes(self, client, app):
+        """data_original igual a data (edição comum, sem mudar o dia) não
+        deve disparar a exclusão por data original -- comportamento igual
+        ao de antes desta feature."""
+        with app.app_context():
+            u = _criar_usuario('reg_post_mesma_data')
+            versao, treino_id, ex = _montar_versao_com_treino_e_exercicio(u.id)
+            chave = f'u_{ex.id}'
+
+        _login(client, 'reg_post_mesma_data')
+        client.post('/registrar/registrar-treino', data={
+            'treino': str(treino_id),
+            'data': '2026-01-05',
+            f'carga_{chave}': '50',
+            f'reps_{chave}': '10',
+            f'num_series_{chave}': '3',
+        })
+        resp = client.post('/registrar/registrar-treino', data={
+            'treino': str(treino_id),
+            'data': '2026-01-05',
+            'data_original': '2026-01-05',
+            f'carga_{chave}': '60',
+            f'reps_{chave}': '12',
+            f'num_series_{chave}': '3',
+        })
+        assert resp.status_code == 302
+
+        with app.app_context():
+            registros = RegistroTreino.query.filter_by(exercicio_usuario_id=ex.id).all()
+            assert len(registros) == 1
+            assert registros[0].series[0].carga == 60
+
     def test_sem_treino_ou_data_nao_salva(self, client, app):
         with app.app_context():
             _criar_usuario('reg_post_2')

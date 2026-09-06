@@ -125,6 +125,11 @@ def salvar_registro():
     """
     treino_id = request.form.get("treino")
     data_registro = request.form.get("data")
+    # Presente só quando o formulário vem do modal de edição do calendário
+    # (ver templates/calendar/calendario.html) -- é a data com que a sessão
+    # já estava salva antes da edição, usada abaixo para descartar a sessão
+    # antiga caso o usuário tenha mudado a data.
+    data_original = request.form.get("data_original")
 
     # Tempo total do treino (cronômetro do topo), em segundos
     tempo_treino_raw = request.form.get("tempo_treino")
@@ -208,6 +213,23 @@ def salvar_registro():
                 continue
     
     if dados_exercicios:
+        # Se a data foi alterada (edição pelo calendário), a sessão é
+        # identificada no banco por período/semana -- valores derivados da
+        # data, não pela data em si (ver RegistroService.salvar_registros).
+        # Sem isto, mudar a data criaria uma sessão nova na data nova e
+        # deixaria a sessão antiga órfã, duplicada, na data de origem.
+        # Como treino_id (TreinoVersao) pertence a uma única versão fixa, e
+        # o treino já foi validado acima contra a versão ativa da data NOVA,
+        # sabemos que versao_ativa.id também é a versão da sessão antiga.
+        if data_original and data_original != data_registro:
+            data_original_valida, data_original_obj = validar_data(data_original)
+            if data_original_valida:
+                RegistroService.excluir_por_treino_data(
+                    treino_id=treino_id,
+                    versao_id=versao_ativa.id,
+                    data=data_original_obj,
+                )
+
         if RegistroService.salvar_registros(
             treino_id=treino_id,
             versao_id=versao_ativa.id,
