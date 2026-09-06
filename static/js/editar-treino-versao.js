@@ -40,23 +40,23 @@ document.addEventListener('DOMContentLoaded', function () {
     // -----------------------------------------------------
     // Reordenação (selecionados primeiro)
     // -----------------------------------------------------
-    // Move os cards já marcados para o início da lista, mantendo a
-    // ordem original dentro de cada grupo (selecionados / não
-    // selecionados). appendChild em um nó que já existe no DOM só
-    // move ele -- não duplica -- então isso não perde listeners nem
-    // o estado do checkbox.
     function reordenarSelecionados() {
         if (!grid) return;
-        const selecionados = [];
-        const outros = [];
-
-        itens().forEach(item => {
+        // Só move os SELECIONADOS (tipicamente uma dúzia, no máximo) pro
+        // início -- os não-selecionados (podem ser ~1300, o catálogo
+        // inteiro) nunca são tocados, já estão na posição certa entre
+        // si. Antes, a função reinseria TODOS os itens da grade, um por
+        // um (inclusive os que não precisavam mudar de lugar): rodando
+        // tanto no carregamento da página quanto toda vez que o modal
+        // "Editar" abre, isso pesava bastante -- prepend() com múltiplos
+        // nós faz o navegador mover só o que precisa, numa operação só.
+        const selecionados = itens().filter(item => {
             const cb = item.querySelector('.etv-checkbox');
-            (cb && cb.checked ? selecionados : outros).push(item);
+            return cb && cb.checked;
         });
-
-        selecionados.forEach(item => grid.appendChild(item));
-        outros.forEach(item => grid.appendChild(item));
+        if (selecionados.length) {
+            grid.prepend(...selecionados);
+        }
     }
 
     // cadastrar-treinos.js reaproveita este grid num modal compartilhado
