@@ -929,6 +929,11 @@
             border: 2px solid transparent;
             border-radius: var(--radius-lg, 16px);
         }
+        /* Quadro mais estreito que o modal padrão (500px) -- fica mais
+           parecido com um alerta pontual do que com um modal de conteúdo. */
+        #flConfirmModal .modal-dialog {
+            max-width: 460px;
+        }
         /* Bordinha na cor da variante -- pedido pro alerta de excluir (danger)
            ficar com o quadro da mensagem destacado em vermelho, não só o
            ícone/botão. Deixado pronto pra warning/info também, já que o
