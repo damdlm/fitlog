@@ -70,7 +70,15 @@ document.addEventListener('DOMContentLoaded', function () {
     // loader), exposta por page-transition.js/base.html como
     // window.FitLogPageTransition -- reaproveitamos ela aqui em vez de
     // criar um overlay próprio.
+    //
+    // Importante: na navegação normal de página, essa película fica
+    // visível por um tempo mínimo garantido (NAV_DELAY_MS) antes de
+    // qualquer coisa acontecer -- sem isso, ela só ficava visível ~0,3s
+    // (a duração da própria animação de abrir/fechar do Bootstrap), tempo
+    // curto demais pra sequer completar seu próprio fade de 0,4s. Por
+    // isso ela mal aparecia. Aplicamos o mesmo delay mínimo aqui.
     const transicao = window.FitLogPageTransition;
+    const ATRASO_MINIMO_MS = transicao?.NAV_DELAY_MS ?? 400;
 
     document.querySelectorAll('.ct-btn-editar-exercicios').forEach(function (btn) {
         btn.addEventListener('click', function (event) {
@@ -82,11 +90,6 @@ document.addEventListener('DOMContentLoaded', function () {
             btn.dataset.htmlOriginal = btn.innerHTML;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Editar';
 
-            // Mostra a transição já no clique (não só quando precisa
-            // esperar o fechamento anterior) -- ela cobre tanto essa
-            // espera quanto a própria animação de abertura do modal,
-            // suavizando a troca em vez de deixar a tela "pular" direto
-            // pro conteúdo.
             transicao?.show();
 
             const abrir = () => {
@@ -104,10 +107,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (modalFechando) {
                 // Ainda terminando de fechar (Cancelar/troca rápida de
                 // treino) -- espera terminar antes de reabrir com os
-                // dados deste botão, em vez de tentar na hora e falhar.
+                // dados deste botão. A própria espera do fechamento
+                // anterior (~0,3s) já dá tempo da película aparecer.
                 modalExercicios.addEventListener('hidden.bs.modal', abrir, { once: true });
             } else {
-                abrir();
+                // Caso comum: dá tempo da película realmente aparecer
+                // antes do modal se sobrepor a ela.
+                window.setTimeout(abrir, ATRASO_MINIMO_MS);
             }
         });
     });
@@ -116,11 +122,19 @@ document.addEventListener('DOMContentLoaded', function () {
     // animação de abertura).
     modalExercicios.addEventListener('shown.bs.modal', function () { transicao?.hide(); });
 
-    // Mesma transição ao fechar (Cancelar ou o X do canto) -- cobre a
-    // animação de fechamento, que é escondida de novo pela rede de
-    // segurança de 'hidden.bs.modal' logo abaixo.
+    // Mesma transição ao fechar (Cancelar ou o X do canto) -- assume
+    // controle manual do fechamento (preventDefault/stopPropagation) pra
+    // poder dar o mesmo tempo mínimo de tela escurecida antes do modal
+    // sumir de fato.
     modalExercicios.querySelectorAll('[data-bs-dismiss="modal"]').forEach(function (btn) {
-        btn.addEventListener('click', function () { transicao?.show(); });
+        btn.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            transicao?.show();
+            window.setTimeout(function () {
+                bootstrap.Modal.getInstance(modalExercicios)?.hide();
+            }, ATRASO_MINIMO_MS);
+        });
     });
 
     function restaurarBotoesEditar() {
