@@ -939,6 +939,16 @@
         #flConfirmModal {
             z-index: 1065;
         }
+        /* Corrige o cálculo de centralização vertical no Safari do iPhone:
+           a barra de endereço aparece/some e muda a área realmente visível,
+           mas um modal fixed com altura 100% padrão se baseia na altura
+           "cheia" da página (sem contar a barra), então ele centraliza
+           certo matematicamente só que dentro de uma área maior do que a
+           tela visível naquele momento -- ficando com o quadro deslocado
+           do centro real. 100dvh acompanha a área visível de verdade. */
+        #flConfirmModal {
+            height: 100dvh;
+        }
         .fl-confirm-content {
             border: 2px solid transparent;
             border-radius: var(--radius-lg, 16px);
