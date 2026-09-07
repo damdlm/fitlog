@@ -66,24 +66,11 @@ document.addEventListener('DOMContentLoaded', function () {
         modalFechando = true;
     });
 
-    // Overlay de transição (ver .ct-transicao-overlay no CSS) -- criado
-    // uma vez só e reaproveitado. Some assim que o modal reabre.
-    let overlayTransicao = null;
-    function overlay() {
-        if (!overlayTransicao) {
-            overlayTransicao = document.createElement('div');
-            overlayTransicao.className = 'ct-transicao-overlay';
-            overlayTransicao.innerHTML = '<div class="spinner-border" role="status"><span class="visually-hidden">Carregando...</span></div>';
-            document.body.appendChild(overlayTransicao);
-        }
-        return overlayTransicao;
-    }
-    function mostrarOverlayTransicao() {
-        overlay().classList.add('is-visivel');
-    }
-    function esconderOverlayTransicao() {
-        overlayTransicao?.classList.remove('is-visivel');
-    }
+    // Página de transição já usada no resto do app (película escura +
+    // loader), exposta por page-transition.js/base.html como
+    // window.FitLogPageTransition -- reaproveitamos ela aqui em vez de
+    // criar um overlay próprio.
+    const transicao = window.FitLogPageTransition;
 
     document.querySelectorAll('.ct-btn-editar-exercicios').forEach(function (btn) {
         btn.addEventListener('click', function (event) {
@@ -100,16 +87,16 @@ document.addEventListener('DOMContentLoaded', function () {
             // espera quanto a própria animação de abertura do modal,
             // suavizando a troca em vez de deixar a tela "pular" direto
             // pro conteúdo.
-            mostrarOverlayTransicao();
+            transicao?.show();
 
             const abrir = () => {
                 const modalInstance = bootstrap.Modal.getOrCreateInstance(modalExercicios);
                 if (modalInstance._isShown) {
                     // Já está aberto (ex: clique duplo no mesmo botão) --
-                    // não há nada pra transicionar, e sem isso o overlay
-                    // ficaria preso na tela, já que nem 'shown.bs.modal'
+                    // não há nada pra transicionar, e sem isso a película
+                    // ficaria presa na tela, já que nem 'shown.bs.modal'
                     // nem 'hidden.bs.modal' disparariam de novo.
-                    esconderOverlayTransicao();
+                    transicao?.hide();
                     return;
                 }
                 modalInstance.show(btn);
@@ -127,13 +114,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Esconde a transição assim que o modal termina de aparecer (fim da
     // animação de abertura).
-    modalExercicios.addEventListener('shown.bs.modal', esconderOverlayTransicao);
+    modalExercicios.addEventListener('shown.bs.modal', function () { transicao?.hide(); });
 
     // Mesma transição ao fechar (Cancelar ou o X do canto) -- cobre a
     // animação de fechamento, que é escondida de novo pela rede de
     // segurança de 'hidden.bs.modal' logo abaixo.
     modalExercicios.querySelectorAll('[data-bs-dismiss="modal"]').forEach(function (btn) {
-        btn.addEventListener('click', mostrarOverlayTransicao);
+        btn.addEventListener('click', function () { transicao?.show(); });
     });
 
     function restaurarBotoesEditar() {
@@ -152,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // no estado de "carregando".
     modalExercicios.addEventListener('hidden.bs.modal', function () {
         modalFechando = false;
-        esconderOverlayTransicao();
+        transicao?.hide();
         restaurarBotoesEditar();
     });
 
