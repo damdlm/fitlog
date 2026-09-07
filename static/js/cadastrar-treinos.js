@@ -37,12 +37,46 @@ document.addEventListener('DOMContentLoaded', function () {
     // sensação de "não registrou o clique" nesse intervalo curto. Não
     // tem relação com o crash de memória do Safari em iOS (esse já foi
     // corrigido à parte, na criação preguiçosa dos tooltips).
+    //
+    // Trava do "botão travado no spinner": se o usuário der um toque
+    // duplo (ou dois cliques bem próximos) no mesmo botão, o 2º clique
+    // acontece com o modal já aberto -- o Bootstrap então interpreta
+    // como "toggle" e FECHA o modal em vez de abrir de novo, o que
+    // dispara 'hide.bs.modal' em vez de 'show.bs.modal'. Como só
+    // restaurávamos o botão dentro do handler de 'show.bs.modal', ele
+    // nunca rodava nesse caso e o spinner ficava girando pra sempre.
+    // Duas correções: (1) ignora cliques enquanto o botão já está
+    // carregando, pra nem chegar a re-disparar o toggle; (2) uma rede
+    // de segurança abaixo que sempre restaura todos os botões quando o
+    // modal fecha, seja qual for o motivo.
     document.querySelectorAll('.ct-btn-editar-exercicios').forEach(function (btn) {
-        btn.addEventListener('click', function () {
+        btn.addEventListener('click', function (event) {
+            if (btn.classList.contains('ct-is-loading')) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+            btn.classList.add('ct-is-loading');
             btn.dataset.htmlOriginal = btn.innerHTML;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Editar';
         });
     });
+
+    function restaurarBotoesEditar() {
+        document.querySelectorAll('.ct-btn-editar-exercicios.ct-is-loading').forEach(function (btn) {
+            if (btn.dataset.htmlOriginal) {
+                btn.innerHTML = btn.dataset.htmlOriginal;
+                delete btn.dataset.htmlOriginal;
+            }
+            btn.classList.remove('ct-is-loading');
+        });
+    }
+
+    // Rede de segurança: não importa se o modal abriu de verdade, se foi
+    // fechado por um toggle acidental, ou se algo no meio do caminho deu
+    // erro -- assim que ele terminar de fechar, nenhum botão fica preso
+    // no estado de "carregando".
+    modalExercicios.addEventListener('hidden.bs.modal', restaurarBotoesEditar);
 
     modalExercicios.addEventListener('show.bs.modal', function (event) {
         const trigger = event.relatedTarget;
@@ -105,9 +139,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Restaura o botão que abriu o modal ao estado normal -- o
         // spinner (ver listener de 'click' acima) já cumpriu seu papel.
-        if (trigger.dataset.htmlOriginal) {
-            trigger.innerHTML = trigger.dataset.htmlOriginal;
-            delete trigger.dataset.htmlOriginal;
+        // (a rede de segurança em 'hidden.bs.modal' cobre os casos em
+        // que este evento não dispara.)
+        if (trigger.classList.contains('ct-btn-editar-exercicios')) {
+            if (trigger.dataset.htmlOriginal) {
+                trigger.innerHTML = trigger.dataset.htmlOriginal;
+                delete trigger.dataset.htmlOriginal;
+            }
+            trigger.classList.remove('ct-is-loading');
         }
     });
 });
