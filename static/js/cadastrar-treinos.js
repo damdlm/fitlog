@@ -95,21 +95,45 @@ document.addEventListener('DOMContentLoaded', function () {
             btn.dataset.htmlOriginal = btn.innerHTML;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Editar';
 
+            // Mostra a transição já no clique (não só quando precisa
+            // esperar o fechamento anterior) -- ela cobre tanto essa
+            // espera quanto a própria animação de abertura do modal,
+            // suavizando a troca em vez de deixar a tela "pular" direto
+            // pro conteúdo.
+            mostrarOverlayTransicao();
+
             const abrir = () => {
-                esconderOverlayTransicao();
-                bootstrap.Modal.getOrCreateInstance(modalExercicios).show(btn);
+                const modalInstance = bootstrap.Modal.getOrCreateInstance(modalExercicios);
+                if (modalInstance._isShown) {
+                    // Já está aberto (ex: clique duplo no mesmo botão) --
+                    // não há nada pra transicionar, e sem isso o overlay
+                    // ficaria preso na tela, já que nem 'shown.bs.modal'
+                    // nem 'hidden.bs.modal' disparariam de novo.
+                    esconderOverlayTransicao();
+                    return;
+                }
+                modalInstance.show(btn);
             };
             if (modalFechando) {
                 // Ainda terminando de fechar (Cancelar/troca rápida de
-                // treino) -- escurece a tela pra deixar claro que algo
-                // está acontecendo, espera terminar, e só então reabre
-                // com os dados deste botão.
-                mostrarOverlayTransicao();
+                // treino) -- espera terminar antes de reabrir com os
+                // dados deste botão, em vez de tentar na hora e falhar.
                 modalExercicios.addEventListener('hidden.bs.modal', abrir, { once: true });
             } else {
                 abrir();
             }
         });
+    });
+
+    // Esconde a transição assim que o modal termina de aparecer (fim da
+    // animação de abertura).
+    modalExercicios.addEventListener('shown.bs.modal', esconderOverlayTransicao);
+
+    // Mesma transição ao fechar (Cancelar ou o X do canto) -- cobre a
+    // animação de fechamento, que é escondida de novo pela rede de
+    // segurança de 'hidden.bs.modal' logo abaixo.
+    modalExercicios.querySelectorAll('[data-bs-dismiss="modal"]').forEach(function (btn) {
+        btn.addEventListener('click', mostrarOverlayTransicao);
     });
 
     function restaurarBotoesEditar() {
