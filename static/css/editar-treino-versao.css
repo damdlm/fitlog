@@ -393,3 +393,32 @@
         animation: none !important;
     }
 }
+/* Overlay de transição -- mostrado enquanto o modal de exercícios
+   ainda está terminando de fechar (Cancelar/troca rápida de treino)
+   e o clique em Editar está esperando pra reabrir (ver
+   cadastrar-treinos.js). Cobre a tela inteira pra deixar claro que
+   algo está acontecendo, em vez de a tela parecer travada nesse
+   intervalo curto. */
+.ct-transicao-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000; /* acima do backdrop (1050) e do modal (1055) do Bootstrap */
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s ease;
+}
+
+.ct-transicao-overlay.is-visivel {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.ct-transicao-overlay .spinner-border {
+    width: 2.5rem;
+    height: 2.5rem;
+    color: #fff;
+}

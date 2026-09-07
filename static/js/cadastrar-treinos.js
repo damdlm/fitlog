@@ -38,27 +38,77 @@ document.addEventListener('DOMContentLoaded', function () {
     // tem relação com o crash de memória do Safari em iOS (esse já foi
     // corrigido à parte, na criação preguiçosa dos tooltips).
     //
-    // Trava do "botão travado no spinner": se o usuário der um toque
-    // duplo (ou dois cliques bem próximos) no mesmo botão, o 2º clique
-    // acontece com o modal já aberto -- o Bootstrap então interpreta
-    // como "toggle" e FECHA o modal em vez de abrir de novo, o que
-    // dispara 'hide.bs.modal' em vez de 'show.bs.modal'. Como só
-    // restaurávamos o botão dentro do handler de 'show.bs.modal', ele
-    // nunca rodava nesse caso e o spinner ficava girando pra sempre.
-    // Duas correções: (1) ignora cliques enquanto o botão já está
-    // carregando, pra nem chegar a re-disparar o toggle; (2) uma rede
-    // de segurança abaixo que sempre restaura todos os botões quando o
-    // modal fecha, seja qual for o motivo.
+    // Todos os cartões de treino compartilham o MESMO modal
+    // (#modalExercicios), então existem duas corridas de tempo que
+    // deixavam o botão preso no spinner pra sempre ("trava"), e em
+    // alguns casos deixavam até o fundo escurecido do modal preso na
+    // tela (parecendo um "erro" travando a página):
+    //
+    // 1) Clique duplo no mesmo botão: o Bootstrap, ao ser acionado de
+    //    novo com o modal já aberto (via data-bs-toggle nativo), trata
+    //    isso como TOGGLE e fecha o modal em vez de reabrir -- disparando
+    //    'hide.bs.modal' e nunca 'show.bs.modal' (evento em que
+    //    restaurávamos o botão).
+    // 2) Cancelar e clicar em Editar de novo rápido: o clique cai
+    //    ENQUANTO o modal ainda está no meio da animação de fechamento
+    //    (~300ms) do Cancelar anterior. Bootstrap ignora silenciosamente
+    //    um show() chamado nesse meio-tempo -- nem abre, nem dispara
+    //    nenhum evento.
+    //
+    // Solução: parar de depender do data-bs-toggle automático do
+    // Bootstrap pra esses botões (stopPropagation impede o listener
+    // nativo dele de agir) e controlar a abertura manualmente aqui --
+    // se o modal ainda estiver fechando, esperamos ele terminar
+    // ('hidden.bs.modal') antes de reabrir com os dados do treino
+    // clicado, em vez de tentar (e falhar) na hora.
+    let modalFechando = false;
+    modalExercicios.addEventListener('hide.bs.modal', function () {
+        modalFechando = true;
+    });
+
+    // Overlay de transição (ver .ct-transicao-overlay no CSS) -- criado
+    // uma vez só e reaproveitado. Some assim que o modal reabre.
+    let overlayTransicao = null;
+    function overlay() {
+        if (!overlayTransicao) {
+            overlayTransicao = document.createElement('div');
+            overlayTransicao.className = 'ct-transicao-overlay';
+            overlayTransicao.innerHTML = '<div class="spinner-border" role="status"><span class="visually-hidden">Carregando...</span></div>';
+            document.body.appendChild(overlayTransicao);
+        }
+        return overlayTransicao;
+    }
+    function mostrarOverlayTransicao() {
+        overlay().classList.add('is-visivel');
+    }
+    function esconderOverlayTransicao() {
+        overlayTransicao?.classList.remove('is-visivel');
+    }
+
     document.querySelectorAll('.ct-btn-editar-exercicios').forEach(function (btn) {
         btn.addEventListener('click', function (event) {
-            if (btn.classList.contains('ct-is-loading')) {
-                event.preventDefault();
-                event.stopPropagation();
-                return;
-            }
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (btn.classList.contains('ct-is-loading')) return;
             btn.classList.add('ct-is-loading');
             btn.dataset.htmlOriginal = btn.innerHTML;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Editar';
+
+            const abrir = () => {
+                esconderOverlayTransicao();
+                bootstrap.Modal.getOrCreateInstance(modalExercicios).show(btn);
+            };
+            if (modalFechando) {
+                // Ainda terminando de fechar (Cancelar/troca rápida de
+                // treino) -- escurece a tela pra deixar claro que algo
+                // está acontecendo, espera terminar, e só então reabre
+                // com os dados deste botão.
+                mostrarOverlayTransicao();
+                modalExercicios.addEventListener('hidden.bs.modal', abrir, { once: true });
+            } else {
+                abrir();
+            }
         });
     });
 
@@ -76,7 +126,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // fechado por um toggle acidental, ou se algo no meio do caminho deu
     // erro -- assim que ele terminar de fechar, nenhum botão fica preso
     // no estado de "carregando".
-    modalExercicios.addEventListener('hidden.bs.modal', restaurarBotoesEditar);
+    modalExercicios.addEventListener('hidden.bs.modal', function () {
+        modalFechando = false;
+        esconderOverlayTransicao();
+        restaurarBotoesEditar();
+    });
+
 
     modalExercicios.addEventListener('show.bs.modal', function (event) {
         const trigger = event.relatedTarget;
