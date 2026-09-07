@@ -954,9 +954,16 @@
             border-radius: var(--radius-lg, 16px);
         }
         /* Quadro mais estreito que o modal padrão (500px) -- fica mais
-           parecido com um alerta pontual do que com um modal de conteúdo. */
+           parecido com um alerta pontual do que com um modal de conteúdo.
+           margin-left/right:auto é obrigatório aqui: abaixo de 576px de
+           largura (ou seja, em qualquer celular) o Bootstrap usa margem
+           FIXA (0.5rem) em vez de automática pra centralizar -- sem isso,
+           ao limitar o max-width o quadro ficava colado à esquerda em vez
+           de centralizado na horizontal. */
         #flConfirmModal .modal-dialog {
             max-width: 360px;
+            margin-left: auto;
+            margin-right: auto;
         }
         /* Bordinha na cor da variante -- pedido pro alerta de excluir (danger)
            ficar com o quadro da mensagem destacado em vermelho, não só o
