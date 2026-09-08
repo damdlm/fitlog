@@ -362,7 +362,7 @@
         var MIN_DADO = 30;          // era 34 -- Carga/Rep. um pouco mais estreitas
         var ABS_MIN_EXERCICIO = 64; // só usado se precisar encolher p/ garantir as 3 semanas
         var usuarioRolou = false;      // true assim que o usuário arrastar a tabela manualmente
-        var ajustandoScrollAgora = false; // marca quando SOMOS nós movendo o scroll (não o usuário)
+        var ultimoAlvoProgramatico = null; // último valor de scrollLeft que NÓS definimos
 
         // Se o usuário tem MENOS que 3 semanas de treino registradas (ex.:
         // acabou de começar), não faz sentido reservar largura para 3 --
@@ -376,9 +376,16 @@
         // Detecta rolagem feita pelo próprio usuário (arrastando a tabela)
         // para PARAR de forçar a posição nas últimas semanas depois disso --
         // sem essa distinção, o realinhamento abaixo (que roda de novo a
-        // cada resize/load) ia brigar com o dedo do usuário.
+        // cada resize/load) ia brigar com o dedo do usuário. Compara com o
+        // ÚLTIMO ALVO que nós mesmos definimos (em vez de um "flag de uso
+        // único") porque uma única atribuição de scrollLeft pode disparar
+        // mais de um evento 'scroll' em alguns navegadores/situações -- um
+        // flag consumido no primeiro evento marcaria os seguintes,
+        // incorretamente, como se fossem o usuário.
         wrap.addEventListener('scroll', function () {
-            if (ajustandoScrollAgora) { ajustandoScrollAgora = false; return; }
+            if (ultimoAlvoProgramatico !== null && Math.abs(wrap.scrollLeft - ultimoAlvoProgramatico) < 2) {
+                return; // ainda é resultado do nosso próprio ajuste
+            }
             usuarioRolou = true;
         });
 
@@ -416,7 +423,7 @@
             var indiceInicioVisivel = Math.max(0, totalSemanasNaTabela - N_SEMANAS_VISIVEIS);
             var alvo = indiceInicioVisivel * 2 * larguraDado;
             if (Math.abs(wrap.scrollLeft - alvo) > 0.5) {
-                ajustandoScrollAgora = true;
+                ultimoAlvoProgramatico = alvo;
                 wrap.scrollLeft = alvo;
             }
         }
@@ -480,6 +487,22 @@
 
             wrap.style.setProperty('--prog-w-exercicio', larguraExercicio + 'px');
             wrap.style.setProperty('--prog-w-dado', larguraDado + 'px');
+
+            // CRÍTICO: dar à própria <table> uma largura EXPLÍCITA (em
+            // px), calculada como a soma exata das colunas. Sem isso, com
+            // table-layout:fixed mas a tabela em width:auto, o navegador
+            // NÃO respeita estritamente as larguras do <colgroup> -- ele
+            // deixa o conteúdo do cabeçalho ("1ª Semana Agosto", que não
+            // cabe no espaço calculado) forçar as colunas a ficarem mais
+            // largas do que o pedido. Isso fazia a posição de rolagem
+            // (calculada em cima da largura "pedida") não bater com a
+            // largura REAL renderizada -- a causa de fundo de "não mostra
+            // as últimas 3 semanas"/"para no meio da tabela". Com a
+            // largura total fixada aqui, o table-layout:fixed passa a
+            // obedecer o <colgroup> à risca, sem exceção.
+            var totalSemanasNaTabela2 = totalSemanasReais > 0 ? totalSemanasReais : semanasParaCalculo;
+            var larguraTotalTabela = larguraExercicio + (totalSemanasNaTabela2 * 2 * larguraDado);
+            table.style.width = larguraTotalTabela + 'px';
 
             // Reposiciona nas últimas semanas com a largura REAL recém
             // calculada (não o valor padrão do CSS) -- ver comentário em
