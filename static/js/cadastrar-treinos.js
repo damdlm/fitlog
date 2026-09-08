@@ -214,6 +214,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const selecionados = new Set(mapa[treinoVersaoId] || []);
         const observacoes = mapaObs[treinoVersaoId] || {};
 
+        // A grade grande (~1300 itens) só mantém uma parte no DOM por
+        // padrão (ver editar-treino-versao.js) -- garante que os
+        // exercícios já salvos NESTE treino existam de verdade antes do
+        // loop abaixo tentar marcá-los.
+        grid?.dispatchEvent(new CustomEvent('etv:garantir', { detail: { ids: Array.from(selecionados) } }));
+
         // Marca/desmarca e sincroniza o visual (classe .is-selected, campo
         // de observação) direto, SEM disparar 'change' em cada checkbox.
         // A grade tem ~1300 itens (catálogo inteiro + personalizados);

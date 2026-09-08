@@ -38,6 +38,108 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // -----------------------------------------------------
+    // Redução de memória pra listas grandes (catálogo completo,
+    // ~1300 itens -- mesmo caso marcado com .etv-grid-static no
+    // template/CSS pra desligar a animação de entrada)
+    // -----------------------------------------------------
+    // As correções anteriores (tooltip preguiçoso, content-visibility,
+    // debounce na busca) resolveram custo de RENDERIZAÇÃO, mas os ~1300
+    // cards continuavam sempre PRESENTES no DOM -- e isso sozinho já é
+    // uma pegada de memória alta. No Safari normal isso tem folga, mas
+    // um PWA instalado (modo standalone) roda num WKWebView com teto de
+    // memória bem mais apertado; abrir/fechar esse modal repetidas
+    // vezes ia empurrando o uso pra cima até estourar esse teto --
+    // mesmo sem nenhum vazamento de verdade, só pelo tamanho base já
+    // ser grande demais pro ambiente do PWA.
+    //
+    // Solução: só cerca de 80 cards ficam no DOM de cara (o resto é
+    // removido e guardado como texto/HTML puro num Map -- string é
+    // muito mais barata que nó de DOM real). Eles voltam pro DOM só
+    // quando precisam aparecer de verdade: (a) a busca ou um filtro de
+    // músculo é usado de verdade (não a limpeza automática que acontece
+    // toda vez que o modal abre), (b) a pessoa rola até o fim da lista
+    // inicial, ou (c) um exercício específico já está marcado no treino
+    // que está sendo aberto (senão o check dele nunca apareceria).
+    // Uma vez de volta no DOM, o card fica lá pro resto da sessão --
+    // não tem re-remoção, então não existe risco de perder seleção ou
+    // observação já digitada, e o envio do formulário continua 100%
+    // nativo (só existe checkbox marcado pra quem já foi renderizado
+    // -- e pra ficar marcado, teve que ser renderizado primeiro).
+    const ETV_LOTE_INICIAL = 80;
+    const etvOcultosPorId = new Map();
+    let etvMaterializado = !grid?.classList.contains('etv-grid-static');
+
+    if (!etvMaterializado) {
+        itens().slice(ETV_LOTE_INICIAL).forEach(function (card) {
+            const id = card.dataset.valor;
+            if (!id) return;
+            etvOcultosPorId.set(id, card.outerHTML);
+            grid.removeChild(card);
+        });
+    }
+
+    function etvPrepararCardNovo(card) {
+        const cb = card.querySelector('.etv-checkbox');
+        if (cb) cb.addEventListener('change', () => onCheckboxChange(cb));
+    }
+
+    // Traz TODOS os cards restantes de volta, no fim da lista (preserva
+    // a ordem original do catálogo). Usado quando a lista precisa ser
+    // vasculhada por inteiro: busca de verdade ou rolagem até o fim.
+    function etvMaterializarTodos() {
+        if (etvMaterializado) return;
+        const frag = document.createDocumentFragment();
+        const tmp = document.createElement('div');
+        etvOcultosPorId.forEach(function (html) {
+            tmp.innerHTML = html;
+            const card = tmp.firstElementChild;
+            etvPrepararCardNovo(card);
+            frag.appendChild(card);
+        });
+        grid.appendChild(frag);
+        etvOcultosPorId.clear();
+        etvMaterializado = true;
+    }
+
+    // Traz só IDs específicos de volta, no INÍCIO da lista -- usado pra
+    // garantir que os exercícios já marcados num treino apareçam (e
+    // fiquem marcados) mesmo que ainda não tivessem sido renderizados.
+    function etvMaterializarPorIds(ids) {
+        if (etvMaterializado || !ids || !ids.length) return;
+        const frag = document.createDocumentFragment();
+        const tmp = document.createElement('div');
+        let alguma = false;
+        ids.forEach(function (id) {
+            const html = etvOcultosPorId.get(id);
+            if (!html) return;
+            tmp.innerHTML = html;
+            const card = tmp.firstElementChild;
+            etvPrepararCardNovo(card);
+            frag.appendChild(card);
+            etvOcultosPorId.delete(id);
+            alguma = true;
+        });
+        if (alguma) grid.prepend(frag);
+    }
+
+    // cadastrar-treinos.js dispara isso antes de marcar os checkboxes do
+    // treino selecionado no modal compartilhado -- garante que os
+    // exercícios já salvos nesse treino existam no DOM antes da
+    // sincronização de "marcado/desmarcado" rodar.
+    grid?.addEventListener('etv:garantir', function (e) {
+        etvMaterializarPorIds(e.detail?.ids);
+    });
+
+    // Rolar até perto do fim da lista inicial carrega o resto -- só
+    // enquanto ainda faltar algo por materializar.
+    const etvScrollContainer = document.querySelector('.etv-scroll');
+    etvScrollContainer?.addEventListener('scroll', function () {
+        if (etvMaterializado) return;
+        const restante = etvScrollContainer.scrollHeight - etvScrollContainer.scrollTop - etvScrollContainer.clientHeight;
+        if (restante < 600) etvMaterializarTodos();
+    }, { passive: true });
+
+    // -----------------------------------------------------
     // Reordenação (selecionados primeiro)
     // -----------------------------------------------------
     function reordenarSelecionados() {
@@ -71,6 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // -----------------------------------------------------
     function filtrar() {
         const termo = normalizarTexto((busca?.value || '').toLowerCase().trim());
+        if (termo) etvMaterializarTodos();
         let visiveis = 0;
 
         itens().forEach(item => {
@@ -124,6 +227,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const chip = e.target.closest('.etv-chip');
         if (!chip) return;
         musculoAtivo = chip.dataset.musculo || '';
+        if (musculoAtivo) etvMaterializarTodos();
         chipsMusculo.querySelectorAll('.etv-chip').forEach(c => {
             c.classList.remove('is-active');
             c.setAttribute('aria-pressed', 'false');
