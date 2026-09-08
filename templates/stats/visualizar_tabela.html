@@ -60,13 +60,19 @@
        para fora de vista, aparecerem ali, porque a coluna "Exercício"
        (sticky) só começa a cobrir DEPOIS do padding, nunca dentro dele.
        Testado e confirmado em Chromium real, pixel a pixel, com
-       elementFromPoint(). Sem padding, a borda cinza (só border, 3px)
-       já dá o efeito de moldura, sem essa faixa de risco. */
+       elementFromPoint(). Sem padding nas LATERAIS, a borda cinza (só
+       border, 3px) já dá o efeito de moldura, sem essa faixa de risco.
+       Só embaixo (padding-bottom) é seguro reservar espaço -- é onde a
+       barra de rolagem horizontal nativa do navegador aparece; sem essa
+       folga ela ficava colada/sobreposta à última linha da tabela. Não
+       tem o mesmo risco de vazamento porque não há rolagem VERTICAL
+       nesta caixa (só horizontal), então nada desliza por essa faixa de
+       baixo como acontecia nas laterais. */
     .prog-tabela-wrap {
         overflow-x: auto;
         border: 3px solid #808080;
         background: #808080;
-        padding: 0;
+        padding: 0 0 12px 0;
         /* width:100% explícito (com box-sizing:border-box) em vez de
            confiar no auto-width padrão de um bloco -- em pelo menos um
            motor testado, um <div> com overflow-x:auto envolvendo uma
