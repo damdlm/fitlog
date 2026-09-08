@@ -251,7 +251,8 @@ def salvar_registro():
                     f'{current_user.nome_completo or current_user.username} finalizou o treino '
                     f'"{treino_nome or treino_codigo}" em {data_obj.strftime("%d/%m/%Y")}.'
                 ),
-                url=url_for('professor.calendario_aluno', aluno_id=current_user.id),
+                url=url_for('professor.calendario_aluno', aluno_id=current_user.id, data=data_obj.isoformat()),
+                chave_agrupamento=f'registro:{treino_id}:{data_obj.isoformat()}',
             )
             return redirect(url_for("main.index"))
         else:

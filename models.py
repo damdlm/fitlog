@@ -806,6 +806,19 @@ class Notificacao(db.Model):
     # versão excluída) não têm mais uma página de destino válida.
     url = db.Column(db.String(255), nullable=True)
 
+    # Chave usada para AGRUPAR eventos em rajada (ex: aluno editando o
+    # mesmo treino várias vezes em poucos minutos) -- convenção:
+    # "treino:<treino_versao_id>" ou "versao:<versao_id>" ou
+    # "registro:<treino_id>:<data_iso>" (ver NotificacaoService.
+    # criar_ou_agrupar). Nula em tipos que nunca agrupam.
+    chave_agrupamento = db.Column(db.String(80), nullable=True)
+
+    # Quantas vezes o mesmo evento (mesma chave_agrupamento, ainda não
+    # lido, dentro da janela de agrupamento) aconteceu em sequência --
+    # 1 é o normal; >1 vira um "3x" na tela em vez de 3 linhas
+    # separadas. Ver NotificacaoService.JANELA_AGRUPAMENTO_MINUTOS.
+    ocorrencias = db.Column(db.Integer, default=1, nullable=False)
+
     lida = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
@@ -817,6 +830,7 @@ class Notificacao(db.Model):
 
     __table_args__ = (
         db.Index('idx_notificacao_destinatario', 'destinatario_id', 'lida', 'created_at'),
+        db.Index('idx_notificacao_agrupamento', 'destinatario_id', 'chave_agrupamento', 'lida'),
     )
 
     def __repr__(self):

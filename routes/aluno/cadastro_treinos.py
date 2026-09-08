@@ -30,6 +30,7 @@ from services.versao_service import VersaoService
 from services.exercicio_service import ExercicioService
 from services.musculo_service import MusculoService
 from services.notificacao_service import NotificacaoService
+from models import TreinoVersao
 
 logger = logging.getLogger(__name__)
 
@@ -141,6 +142,7 @@ def cadastrar_treinos_editar_versao(versao_id):
             titulo='Aluno editou uma versão de treino',
             mensagem=f'{current_user.nome_completo or current_user.username} atualizou a descrição de uma versão de treino.',
             url=url_for('professor.ver_versao_aluno', aluno_id=current_user.id, versao_id=versao_id),
+            chave_agrupamento=f'versao_editar:{versao_id}',
         )
     except ValueError as e:
         flash(str(e), 'danger')
@@ -171,6 +173,7 @@ def cadastrar_treinos_adicionar_treino(versao_id):
             titulo='Aluno adicionou um treino',
             mensagem=f'{current_user.nome_completo or current_user.username} adicionou o treino "{nome_treino.strip()}".',
             url=url_for('professor.ver_versao_aluno', aluno_id=current_user.id, versao_id=versao_id),
+            chave_agrupamento=f'versao_add_treino:{versao_id}',
         )
     except ValueError as e:
         flash(str(e), 'danger')
@@ -197,18 +200,45 @@ def cadastrar_treinos_salvar_treino(versao_id, treino_versao_id):
         chave: request.form.get(f'observacao_{chave}', '').strip()[:60]
         for chave in exercicios_raw if chave and chave.strip()
     }
+
+    # Nomes ANTES de salvar -- usados só pra montar um diff legível na
+    # notificação pro professor (ver NotificacaoService.montar_diff_exercicios).
+    nomes_antes = []
+    try:
+        treino_atual = TreinoVersao.query.get(treino_versao_id)
+        if treino_atual:
+            nomes_antes = [
+                (ve.exercicio.nome if ve.exercicio else '?') for ve in treino_atual.exercicios
+            ]
+    except Exception:
+        logger.exception("Falha ao capturar exercícios antes de salvar (diff de notificação)")
+
     try:
         VersaoService.salvar_treino_livre(
             versao_id, treino_versao_id, nome_treino, descricao_treino,
             exercicios_raw, user_id=current_user.id, observacoes=observacoes
         )
         flash('Treino salvo com sucesso!', 'success')
+
+        diff = None
+        try:
+            catalogo = ExercicioService.get_exercicios_completos(user_id=current_user.id)
+            nomes_catalogo = {f'{ex.prefixo}{ex.id}': ex.nome for ex in catalogo}
+            nomes_depois = [nomes_catalogo.get(ch, ch) for ch in exercicios_raw]
+            diff = NotificacaoService.montar_diff_exercicios(nomes_antes, nomes_depois)
+        except Exception:
+            logger.exception("Falha ao montar diff de exercícios para notificação")
+
+        mensagem = f'{current_user.nome_completo or current_user.username} atualizou o treino "{nome_treino.strip()}"'
+        mensagem += f' -- {diff}.' if diff else '.'
+
         NotificacaoService.notificar_professor(
             current_user,
             tipo='treino_editado',
             titulo='Aluno editou um treino',
-            mensagem=f'{current_user.nome_completo or current_user.username} atualizou os exercícios do treino "{nome_treino.strip()}".',
-            url=url_for('professor.ver_versao_aluno', aluno_id=current_user.id, versao_id=versao_id),
+            mensagem=mensagem,
+            url=url_for('professor.ver_versao_aluno', aluno_id=current_user.id, versao_id=versao_id) + f'#treino-{treino_versao_id}',
+            chave_agrupamento=f'treino_editar:{treino_versao_id}',
         )
     except ValueError as e:
         flash(str(e), 'danger')
@@ -235,6 +265,7 @@ def cadastrar_treinos_remover_treino(versao_id, treino_versao_id):
             titulo='Aluno excluiu um treino',
             mensagem=f'{current_user.nome_completo or current_user.username} removeu um treino de uma versão.',
             url=url_for('professor.ver_versao_aluno', aluno_id=current_user.id, versao_id=versao_id),
+            chave_agrupamento=f'treino_remover:{treino_versao_id}',
         )
     except ValueError as e:
         flash(str(e), 'danger')
@@ -261,6 +292,7 @@ def cadastrar_treinos_finalizar(versao_id):
             titulo='Aluno finalizou uma versão',
             mensagem=f'{current_user.nome_completo or current_user.username} finalizou a versão {versao.numero_versao}.',
             url=url_for('professor.ver_versao_aluno', aluno_id=current_user.id, versao_id=versao_id),
+            chave_agrupamento=f'versao_finalizar:{versao_id}',
         )
     except ValueError as e:
         flash(str(e), 'danger')

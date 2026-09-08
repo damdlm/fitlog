@@ -67,7 +67,10 @@
                 '<span class="notif-dropdown-body">' +
                     '<span class="notif-dropdown-title">' + escapeHtml(n.titulo) + '</span>' +
                     '<span class="notif-dropdown-msg">' + escapeHtml(n.mensagem) + '</span>' +
-                    '<span class="notif-dropdown-time">' + escapeHtml(n.created_at) + '</span>' +
+                    '<span class="notif-dropdown-time">' +
+                        escapeHtml(n.created_at) +
+                        (n.ocorrencias > 1 ? ' · <span class="notif-dropdown-count">' + n.ocorrencias + 'x</span>' : '') +
+                    '</span>' +
                 '</span>' +
                 (n.lida ? '' : '<span class="notif-dropdown-dot"></span>');
 

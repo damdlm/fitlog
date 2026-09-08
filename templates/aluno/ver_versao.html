@@ -4,7 +4,7 @@
 {% block page_title %}Versão {{ versao.numero_versao }}{{ titulo_sufixo or '' }}{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ static_v('css/editar-treino-versao.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/editar-treino-versao.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -110,6 +110,11 @@
         border-radius: 14px;
         padding: 18px 20px;
         margin-bottom: 14px;
+        transition: box-shadow .3s ease, border-color .3s ease;
+    }
+    .ct-treino-card.ct-destaque-notificacao {
+        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.35);
+        border-color: var(--ct-orange);
     }
     .ct-treino-top {
         display: flex;
@@ -375,7 +380,7 @@
     {% for tv in treinos_versao %}
     {% set codigo = tv.codigo %}
     {% set qtd_ex = tv.exercicios|length %}
-    <div class="ct-treino-card ct-accent-{{ loop.index0 % 10 }}">
+    <div class="ct-treino-card ct-accent-{{ loop.index0 % 10 }}" id="treino-{{ tv.id }}">
         <div class="ct-treino-top">
             <div>
                 <div class="ct-treino-heading">
@@ -520,12 +525,12 @@
 </div>
 
 <!-- ===== Modal: Editar treino + exercícios (compartilhado entre os treinos) ===== -->
-<div class="modal fade" id="modalExercicios" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+<div class="modal fade" id="modalExercicios" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
                 <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Editar treino <span id="ctModalCodigo"></span></h5>
-                <button type="button" class="btn-close btn-close-white" data-etv-cancelar></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="post" id="formEditarTreino">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -571,7 +576,7 @@
                     </div>
 
                     <div class="etv-scroll">
-                        <div class="etv-grid{{ ' etv-grid-static' if exercicios_catalogo|length > 100 else '' }}" id="etvGrid">
+                        <div class="etv-grid" id="etvGrid">
                             {% for ex in exercicios_catalogo %}
                             {% set musculo_nome = ex.musculo_nome or ex.musculo or 'N/A' %}
                             {% set apelidos = ex.nicknames|join(', ') if ex.nicknames else '' %}
@@ -649,7 +654,7 @@
                         <span><span data-etv-contador-selecionados>0</span> exercício(s) selecionado(s)</span>
                     </div>
                     <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-secondary" data-etv-cancelar>Cancelar</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn etv-btn-save">
                             <i class="bi bi-save"></i> Salvar treino
                         </button>
@@ -670,6 +675,24 @@
     window.CT_TREINO_OBSERVACOES = {{ treino_observacoes_map|tojson }};
     window.CT_VERSAO_ID = {{ versao.id }};
     window.CT_REORDENAR_URL = {{ (reordenar_url or url_for('api.api_reordenar_exercicios'))|tojson }};
+
+    // Deep link vindo de uma notificação de edição/exclusão de treino
+    // (ver #treino-<id> montado em routes/aluno/versao.py e
+    // routes/professor_routes.py): rola até o card certo e dá um
+    // destaque temporário, pra não precisar caçar visualmente qual
+    // treino mudou numa versão com vários.
+    document.addEventListener('DOMContentLoaded', function () {
+        if (!window.location.hash || !window.location.hash.startsWith('#treino-')) return;
+        const alvo = document.querySelector(window.location.hash);
+        if (!alvo) return; // treino pode ter sido excluído depois da notificação
+        setTimeout(function () {
+            alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            alvo.classList.add('ct-destaque-notificacao');
+            setTimeout(function () {
+                alvo.classList.remove('ct-destaque-notificacao');
+            }, 2600);
+        }, 150);
+    });
 </script>
 
 <div class="text-center mt-4">
@@ -681,7 +704,7 @@
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js"></script>
-<script src="{{ static_v('js/editar-treino-versao.js') }}"></script>
-<script src="{{ static_v('js/cadastrar-treinos.js') }}"></script>
-<script src="{{ static_v('js/cadastrar-treinos-reordenar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/editar-treino-versao.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cadastrar-treinos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cadastrar-treinos-reordenar.js') }}"></script>
 {% endblock %}

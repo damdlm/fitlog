@@ -1,4 +1,4 @@
-/* ============================================================ 
+/* ============================================================
    Sino de notificações no navbar (dropdown + badge)
    ============================================================ */
 
@@ -12,7 +12,7 @@
     justify-content: center;
     background: #F5F6F8;
     color: #4B5563;
-    border: 2px solid #F28C33;
+    border: none;
     font-size: 1.15rem;
     transition: background .15s ease, color .15s ease;
 }
@@ -148,6 +148,11 @@
     font-size: 0.7rem;
     color: #9CA3AF;
     margin-top: 2px;
+}
+
+.notif-dropdown-count {
+    color: #F28C33;
+    font-weight: 700;
 }
 
 .notif-dropdown-dot {

@@ -322,6 +322,26 @@ def create_app(config_class=None):
             print(f"professor_id={m['professor'].id} {atual} -> {novo}")
 
     # =============================================================
+    # COMANDOS CLI (notificações)
+    # =============================================================
+    # Opcional: a limpeza também roda sozinha, "de carona" no tráfego
+    # normal (ver NotificacaoService.CHANCE_LIMPEZA_AUTOMATICA), então
+    # não é obrigatório configurar isso no Railway Cron -- só ajuda a
+    # manter a tabela pequena de forma mais previsível pra quem preferir
+    # um agendamento de verdade em vez de depender de tráfego.
+    @app.cli.command("notificacoes-limpar")
+    def notificacoes_limpar():
+        """Apaga notificações já lidas com mais de 90 dias (ver
+        NotificacaoService.RETENCAO_LIDAS_DIAS). Notificações não lidas
+        nunca são apagadas, não importa a idade. Rodar semanalmente."""
+        from services.notificacao_service import NotificacaoService
+        total = NotificacaoService.limpar_antigas()
+        if total is None:
+            print("Falha ao limpar notificações antigas (ver logs).")
+        else:
+            print(f"{total} notificação(ões) lida(s) antiga(s) removida(s).")
+
+    # =============================================================
     # CONTEXT
     # =============================================================
     from utils.format_utils import (

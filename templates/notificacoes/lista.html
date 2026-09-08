@@ -122,6 +122,48 @@
     .n-time {
         color: #9CA3AF;
         font-size: 0.78rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .n-badge-count {
+        display: inline-block;
+        background: rgba(242,140,51,0.15);
+        color: var(--n-orange);
+        font-weight: 700;
+        font-size: 0.7rem;
+        padding: 1px 7px;
+        border-radius: 999px;
+    }
+
+    .n-tabs {
+        display: flex;
+        gap: 6px;
+        max-width: 720px;
+        margin: 0 auto 12px;
+        border-bottom: 1px solid var(--n-line);
+    }
+    .n-tab {
+        padding: 8px 14px;
+        font-size: 0.86rem;
+        font-weight: 600;
+        color: var(--n-muted);
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+    }
+    .n-tab:hover { color: var(--n-ink); text-decoration: none; }
+    .n-tab.n-tab-active {
+        color: var(--n-orange);
+        border-bottom-color: var(--n-orange);
+    }
+
+    .n-filtro-aluno {
+        max-width: 720px;
+        margin: 0 auto 16px;
+    }
+    .n-filtro-aluno select {
+        max-width: 260px;
     }
 </style>
 
@@ -134,11 +176,37 @@
     {% endif %}
 </div>
 
+<div class="n-tabs">
+    <a href="{{ url_for('notificacao.listar', aluno_id=remetente_ativo or none) }}"
+       class="n-tab {{ 'n-tab-active' if categoria_ativa == 'todas' else '' }}">Todas</a>
+    <a href="{{ url_for('notificacao.listar', categoria='treinos', aluno_id=remetente_ativo or none) }}"
+       class="n-tab {{ 'n-tab-active' if categoria_ativa == 'treinos' else '' }}">Treinos</a>
+    <a href="{{ url_for('notificacao.listar', categoria='versoes', aluno_id=remetente_ativo or none) }}"
+       class="n-tab {{ 'n-tab-active' if categoria_ativa == 'versoes' else '' }}">Versões</a>
+</div>
+
+{% if remetentes %}
+<div class="n-filtro-aluno">
+    <select id="nFiltroAluno" class="form-select form-select-sm">
+        <option value="">Todos os alunos</option>
+        {% for aluno_id, nome in remetentes %}
+        <option value="{{ aluno_id }}" {{ 'selected' if remetente_ativo == aluno_id else '' }}>{{ nome }}</option>
+        {% endfor %}
+    </select>
+</div>
+{% endif %}
+
 {% if not notificacoes %}
 <div class="n-empty-card">
     <div class="n-empty-icon"><i class="bi bi-bell-slash"></i></div>
-    <h2>Nenhuma notificação ainda</h2>
-    <p>Você será avisado por aqui quando houver novidades nos seus treinos.</p>
+    <h2>Nenhuma notificação por aqui</h2>
+    <p>
+        {% if categoria_ativa != 'todas' or remetente_ativo %}
+            Nada com esse filtro por enquanto. Tente outra aba ou limpe o filtro de aluno.
+        {% else %}
+            Você será avisado por aqui quando houver novidades nos seus treinos.
+        {% endif %}
+    </p>
 </div>
 {% else %}
 <div class="n-list">
@@ -166,7 +234,12 @@
                 {{ n.titulo }}
             </div>
             <div class="n-msg">{{ n.mensagem }}</div>
-            <div class="n-time">{{ data_formatada(n.created_at) }}</div>
+            <div class="n-time">
+                {{ data_formatada(n.created_at) }}
+                {% if n.ocorrencias and n.ocorrencias > 1 %}
+                <span class="n-badge-count">{{ n.ocorrencias }}x</span>
+                {% endif %}
+            </div>
         </div>
     </a>
     {% endfor %}
@@ -192,6 +265,20 @@ document.addEventListener('DOMContentLoaded', function () {
             fetch('/api/notificacoes/marcar-todas-lidas', { method: 'POST' })
                 .then(function () { window.location.reload(); })
                 .catch(function () {});
+        });
+    }
+
+    // Filtro "por aluno" -- navega preservando a aba (categoria) atual.
+    const filtroAluno = document.getElementById('nFiltroAluno');
+    if (filtroAluno) {
+        filtroAluno.addEventListener('change', function () {
+            const params = new URLSearchParams(window.location.search);
+            if (filtroAluno.value) {
+                params.set('aluno_id', filtroAluno.value);
+            } else {
+                params.delete('aluno_id');
+            }
+            window.location.search = params.toString();
         });
     }
 });

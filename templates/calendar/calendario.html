@@ -1226,6 +1226,11 @@
     let viewStart = null;
     let viewEnd = null;
 
+    // Deep link vindo de uma notificação (ex: "professor recebeu aviso
+    // de que o aluno finalizou o treino do dia X" -> clicou -> chega
+    // aqui com ?data=YYYY-MM-DD). Ver tentarAbrirEventoDaUrl() abaixo.
+    let dataParaAbrirAutomaticamente = new URLSearchParams(window.location.search).get('data');
+
     // Meses (chave "YYYY-MM") cujos eventos já foram buscados no backend,
     // pra nunca refazer a mesma requisição ao navegar de volta a um mês
     // já visitado.
@@ -1343,7 +1348,8 @@
                 // pertencem ao mês anterior) -- carregando por eles,
                 // nenhum desses dias fica sem os treinos que já tem.
                 carregarMesesDoIntervalo(info.view.activeStart, info.view.activeEnd)
-                    .then(atualizarResumoMes);
+                    .then(atualizarResumoMes)
+                    .then(tentarAbrirEventoDaUrl);
             },
             windowResize: function() {
                 // Reajusta a altura das linhas do calendário ao girar a tela no celular
@@ -1366,6 +1372,13 @@
         calendar.render();
         habilitarSwipeCalendario(calendarEl);
         habilitarArrastarSheet();
+
+        // Deep link de notificação (?data=YYYY-MM-DD) -- navega direto pro
+        // mês daquele dia; o datesSet acima cuida de carregar os eventos e
+        // chamar tentarAbrirEventoDaUrl() quando terminar.
+        if (dataParaAbrirAutomaticamente) {
+            calendar.gotoDate(dataParaAbrirAutomaticamente);
+        }
 
         // Ao abrir a tela, carrega só os últimos dois meses (mês atual e
         // o anterior) -- cobre o caso mais comum (usuário olhando o
@@ -1693,6 +1706,21 @@
         input.value = novoValor;
     }
     window.alterarSeriesStepper = alterarSeriesStepper;
+
+    // Abre automaticamente o detalhe do evento do dia vindo por deep link
+    // (ver dataParaAbrirAutomaticamente, no topo do arquivo). Chamado
+    // depois de cada carregamento de mês -- só faz algo enquanto
+    // dataParaAbrirAutomaticamente não for zerado, e desiste
+    // silenciosamente se não achar o evento (ex: aluno editou/apagou o
+    // registro depois de mandar a notificação).
+    function tentarAbrirEventoDaUrl() {
+        if (!dataParaAbrirAutomaticamente) return;
+        const evento = calendar.getEvents().find(e => e.startStr === dataParaAbrirAutomaticamente);
+        dataParaAbrirAutomaticamente = null; // só tenta uma vez, ache ou não
+        if (evento) {
+            mostrarDetalhesEvento(evento);
+        }
+    }
 
     function mostrarDetalhesEvento(event) {
         const modal = new bootstrap.Modal(document.getElementById('eventoModal'));

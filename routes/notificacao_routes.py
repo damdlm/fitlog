@@ -6,7 +6,7 @@ daqui via polling (ver static/js/modules/notificacoes.js).
 
 import logging
 
-from flask import Blueprint, render_template, jsonify
+from flask import Blueprint, render_template, jsonify, request
 from flask_login import login_required, current_user
 
 from extensions import limiter
@@ -27,15 +27,37 @@ def _data_formatada(dt):
     return dt.astimezone(FUSO_BRASIL).strftime('%d/%m/%Y às %H:%M')
 
 
+def _categoria_valida():
+    categoria = request.args.get('categoria')
+    return categoria if categoria in ('treinos', 'versoes') else None
+
+
 @notificacao_bp.route('/notificacoes')
 @login_required
 def listar():
-    """Página com o histórico completo de notificações do usuário."""
-    notificacoes = NotificacaoService.listar(current_user.id, limit=100)
+    """Página com o histórico completo de notificações do usuário, com
+    abas por categoria (treinos/versões) e, para professores, um filtro
+    por aluno (ver NotificacaoService.remetentes_disponiveis)."""
+    categoria = _categoria_valida()
+    remetente_id = request.args.get('aluno_id', type=int)
+
+    notificacoes = NotificacaoService.listar(
+        current_user.id, categoria=categoria, remetente_id=remetente_id, limit=100
+    )
+    # Só monta a lista de remetentes se fizer sentido mostrar o filtro --
+    # aluno normal só tem um professor, então o filtro nunca ajudaria.
+    remetentes = (
+        NotificacaoService.remetentes_disponiveis(current_user.id)
+        if current_user.is_professor() else []
+    )
+
     return render_template(
         'notificacoes/lista.html',
         notificacoes=notificacoes,
         data_formatada=_data_formatada,
+        categoria_ativa=categoria or 'todas',
+        remetente_ativo=remetente_id,
+        remetentes=remetentes,
     )
 
 
@@ -56,6 +78,7 @@ def api_listar():
                 "mensagem": n.mensagem,
                 "url": n.url,
                 "lida": n.lida,
+                "ocorrencias": n.ocorrencias or 1,
                 "created_at": _data_formatada(n.created_at),
             }
             for n in notificacoes
