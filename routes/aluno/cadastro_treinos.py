@@ -29,6 +29,7 @@ from extensions import limiter
 from services.versao_service import VersaoService
 from services.exercicio_service import ExercicioService
 from services.musculo_service import MusculoService
+from services.notificacao_service import NotificacaoService
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +135,13 @@ def cadastrar_treinos_editar_versao(versao_id):
     try:
         VersaoService.editar_descricao_livre(versao_id, descricao, user_id=current_user.id)
         flash('Versão atualizada!', 'success')
+        NotificacaoService.notificar_professor(
+            current_user,
+            tipo='versao_editada',
+            titulo='Aluno editou uma versão de treino',
+            mensagem=f'{current_user.nome_completo or current_user.username} atualizou a descrição de uma versão de treino.',
+            url=url_for('professor.ver_versao_aluno', aluno_id=current_user.id, versao_id=versao_id),
+        )
     except ValueError as e:
         flash(str(e), 'danger')
     except Exception:
@@ -157,6 +165,13 @@ def cadastrar_treinos_adicionar_treino(versao_id):
             versao_id, nome_treino, descricao_treino, user_id=current_user.id
         )
         flash('Treino adicionado! Agora selecione os exercícios.', 'success')
+        NotificacaoService.notificar_professor(
+            current_user,
+            tipo='treino_adicionado',
+            titulo='Aluno adicionou um treino',
+            mensagem=f'{current_user.nome_completo or current_user.username} adicionou o treino "{nome_treino.strip()}".',
+            url=url_for('professor.ver_versao_aluno', aluno_id=current_user.id, versao_id=versao_id),
+        )
     except ValueError as e:
         flash(str(e), 'danger')
     except Exception:
@@ -188,6 +203,13 @@ def cadastrar_treinos_salvar_treino(versao_id, treino_versao_id):
             exercicios_raw, user_id=current_user.id, observacoes=observacoes
         )
         flash('Treino salvo com sucesso!', 'success')
+        NotificacaoService.notificar_professor(
+            current_user,
+            tipo='treino_editado',
+            titulo='Aluno editou um treino',
+            mensagem=f'{current_user.nome_completo or current_user.username} atualizou os exercícios do treino "{nome_treino.strip()}".',
+            url=url_for('professor.ver_versao_aluno', aluno_id=current_user.id, versao_id=versao_id),
+        )
     except ValueError as e:
         flash(str(e), 'danger')
     except Exception:
@@ -207,6 +229,13 @@ def cadastrar_treinos_remover_treino(versao_id, treino_versao_id):
     try:
         VersaoService.remover_treino_livre(versao_id, treino_versao_id, user_id=current_user.id)
         flash('Treino removido da versão.', 'success')
+        NotificacaoService.notificar_professor(
+            current_user,
+            tipo='treino_excluido',
+            titulo='Aluno excluiu um treino',
+            mensagem=f'{current_user.nome_completo or current_user.username} removeu um treino de uma versão.',
+            url=url_for('professor.ver_versao_aluno', aluno_id=current_user.id, versao_id=versao_id),
+        )
     except ValueError as e:
         flash(str(e), 'danger')
     except Exception:
@@ -226,6 +255,13 @@ def cadastrar_treinos_finalizar(versao_id):
     try:
         versao = VersaoService.finalizar_livre(versao_id, user_id=current_user.id)
         flash(f'Versão {versao.numero_versao} finalizada! Crie uma nova versão quando quiser.', 'success')
+        NotificacaoService.notificar_professor(
+            current_user,
+            tipo='versao_finalizada',
+            titulo='Aluno finalizou uma versão',
+            mensagem=f'{current_user.nome_completo or current_user.username} finalizou a versão {versao.numero_versao}.',
+            url=url_for('professor.ver_versao_aluno', aluno_id=current_user.id, versao_id=versao_id),
+        )
     except ValueError as e:
         flash(str(e), 'danger')
     except Exception:

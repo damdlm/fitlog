@@ -8,6 +8,7 @@ from services.estatistica_service import EstatisticaService
 from services.musculo_service import MusculoService
 from services.billing_service import BillingService
 from services.dashboard_service import DashboardService
+from services.notificacao_service import NotificacaoService
 from utils.decorators import professor_acesso_alunos_required
 from extensions import limiter
 from datetime import datetime, timezone
@@ -903,6 +904,13 @@ def versao_editar_descricao_aluno(aluno_id, versao_id):
             versao_id, descricao, user_id=aluno.id, permitir_finalizada=False
         )
         flash('Versão atualizada!', 'success')
+        NotificacaoService.notificar_aluno(
+            aluno.id, current_user,
+            tipo='versao_editada',
+            titulo='Seu professor atualizou uma versão',
+            mensagem=f'{current_user.nome_completo or current_user.username} atualizou a descrição de uma versão de treino.',
+            url=url_for('aluno.ver_versao', versao_id=versao_id),
+        )
     except ValueError as e:
         flash(str(e), 'danger')
     except Exception:
@@ -929,6 +937,13 @@ def versao_adicionar_treino_aluno(aluno_id, versao_id):
             user_id=aluno.id, permitir_finalizada=False
         )
         flash('Treino adicionado! Agora selecione os exercícios.', 'success')
+        NotificacaoService.notificar_aluno(
+            aluno.id, current_user,
+            tipo='treino_adicionado',
+            titulo='Seu professor adicionou um treino',
+            mensagem=f'{current_user.nome_completo or current_user.username} adicionou o treino "{nome_treino.strip()}".',
+            url=url_for('aluno.ver_versao', versao_id=versao_id),
+        )
     except ValueError as e:
         flash(str(e), 'danger')
     except Exception:
@@ -961,6 +976,13 @@ def versao_salvar_treino_aluno(aluno_id, versao_id, treino_versao_id):
             permitir_finalizada=False
         )
         flash('Treino salvo com sucesso!', 'success')
+        NotificacaoService.notificar_aluno(
+            aluno.id, current_user,
+            tipo='treino_editado',
+            titulo='Seu professor editou um treino',
+            mensagem=f'{current_user.nome_completo or current_user.username} atualizou os exercícios do treino "{nome_treino.strip()}".',
+            url=url_for('aluno.ver_versao', versao_id=versao_id),
+        )
     except ValueError as e:
         flash(str(e), 'danger')
     except Exception:
@@ -985,6 +1007,13 @@ def versao_remover_treino_aluno(aluno_id, versao_id, treino_versao_id):
             versao_id, treino_versao_id, user_id=aluno.id, permitir_finalizada=False
         )
         flash('Treino removido da versão.', 'success')
+        NotificacaoService.notificar_aluno(
+            aluno.id, current_user,
+            tipo='treino_excluido',
+            titulo='Seu professor excluiu um treino',
+            mensagem=f'{current_user.nome_completo or current_user.username} removeu um treino de uma versão.',
+            url=url_for('aluno.ver_versao', versao_id=versao_id),
+        )
     except ValueError as e:
         flash(str(e), 'danger')
     except Exception:
@@ -1006,6 +1035,13 @@ def versao_finalizar_aluno(aluno_id, versao_id):
     try:
         versao = VersaoService.finalizar_livre(versao_id, user_id=aluno.id)
         flash(f'Versão {versao.numero_versao} finalizada!', 'success')
+        NotificacaoService.notificar_aluno(
+            aluno.id, current_user,
+            tipo='versao_finalizada',
+            titulo='Seu professor finalizou uma versão',
+            mensagem=f'{current_user.nome_completo or current_user.username} finalizou a versão {versao.numero_versao}.',
+            url=url_for('aluno.ver_versao', versao_id=versao_id),
+        )
     except ValueError as e:
         flash(str(e), 'danger')
     except Exception:
@@ -1047,8 +1083,21 @@ def versao_excluir_aluno(aluno_id, versao_id):
         return negado
 
     try:
+        versao_obj = VersaoGlobal.query.filter_by(id=versao_id, user_id=aluno.id).first()
+        numero_versao = versao_obj.numero_versao if versao_obj else None
         VersaoService.excluir_versao(versao_id, user_id=aluno.id)
         flash('Versão excluída com sucesso!', 'success')
+        NotificacaoService.notificar_aluno(
+            aluno.id, current_user,
+            tipo='versao_excluida',
+            titulo='Seu professor excluiu uma versão',
+            mensagem=(
+                f'{current_user.nome_completo or current_user.username} excluiu a versão {numero_versao}.'
+                if numero_versao else
+                f'{current_user.nome_completo or current_user.username} excluiu uma versão de treino.'
+            ),
+            url=url_for('aluno.versoes'),
+        )
         return redirect(url_for('professor.versoes_aluno', aluno_id=aluno.id))
     except ValueError as e:
         flash(str(e), 'danger')

@@ -1,9 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required
+from flask_login import login_required, current_user
 from datetime import datetime, timezone
 from services.versao_service import VersaoService
 from services.exercicio_service import ExercicioService
 from services.registro_service import RegistroService
+from services.notificacao_service import NotificacaoService
 from utils.date_utils import data_para_periodo, data_para_semana, formatar_data_br, validar_data
 from utils.format_utils import data_atual_iso, _agora_brasil
 import logging
@@ -168,10 +169,12 @@ def salvar_registro():
     treinos_disponiveis = VersaoService.get_treinos_para_registro(versao_ativa.id)
     treino_valido = False
     treino_codigo = None
+    treino_nome = None
     for t in treinos_disponiveis:
         if str(t['id']) == str(treino_id):
             treino_valido = True
             treino_codigo = t['codigo']
+            treino_nome = t['nome']
             break
     
     if not treino_valido:
@@ -240,6 +243,16 @@ def salvar_registro():
         ):
             logger.info(f"Treino {treino_id} salvo para {data_registro} (versão {versao_ativa.numero_versao})")
             flash(f"✅ Treino salvo para {data_obj.strftime('%d/%m/%Y')}!", "success")
+            NotificacaoService.notificar_professor(
+                current_user,
+                tipo='treino_finalizado',
+                titulo='Aluno finalizou um treino',
+                mensagem=(
+                    f'{current_user.nome_completo or current_user.username} finalizou o treino '
+                    f'"{treino_nome or treino_codigo}" em {data_obj.strftime("%d/%m/%Y")}.'
+                ),
+                url=url_for('professor.calendario_aluno', aluno_id=current_user.id),
+            )
             return redirect(url_for("main.index"))
         else:
             flash("❌ Erro ao salvar registros!", "danger")

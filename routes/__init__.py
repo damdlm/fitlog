@@ -14,6 +14,7 @@ from .fitbot_routes import fitbot_bp
 from .contato_routes import contato_bp
 from .billing_routes import billing_bp
 from .privacidade_routes import privacidade_bp
+from .notificacao_routes import notificacao_bp
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ def register_all_routes(app):
         (contato_bp, '/contato'),
         (billing_bp, '/billing'),
         (privacidade_bp, '/privacidade'),
+        (notificacao_bp, ''),
     ]
     
     for blueprint, url_prefix in blueprints:

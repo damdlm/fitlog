@@ -247,6 +247,14 @@ class User(UserMixin, db.Model):
                 status='pendente'
             ).count()
         return 0
+
+    @property
+    def notificacoes_nao_lidas_count(self):
+        """Contagem de notificações não lidas -- usada no sininho do
+        navbar (badge). Consultada a cada request autenticada, então
+        depende só do índice (destinatario_id, lida, created_at); ver
+        Notificacao.__table_args__."""
+        return Notificacao.query.filter_by(destinatario_id=self.id, lida=False).count()
     
     def __repr__(self):
         return f'<User {self.username} ({self.tipo_usuario})>'
@@ -753,6 +761,66 @@ class HistoricoTreino(db.Model):
         db.Index('idx_historico_registro', 'registro_id'),
         db.Index('idx_historico_carga', 'carga'),
     )
+
+
+# =====================================================
+# NOTIFICAÇÕES
+# =====================================================
+
+class Notificacao(db.Model):
+    """Notificação in-app entre aluno e professor vinculados.
+
+    Cobre dois sentidos:
+    - Aluno -> Professor: aluno finaliza um treino (registro) ou altera
+      algo em seus próprios treinos/versões (editar, excluir, substituir
+      exercícios, finalizar versão etc).
+    - Professor -> Aluno: professor edita/exclui/finaliza algo no treino
+      do aluno.
+
+    Sem infraestrutura de push (ver static/sw.js): puramente in-app,
+    lida via polling da tela/menu de notificações.
+    """
+    __tablename__ = 'notificacoes'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Quem recebe a notificação (o "dono" dela na tela).
+    destinatario_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+
+    # Quem causou o evento (aluno ou professor) -- SET NULL em vez de
+    # CASCADE: se o autor for excluído, a notificação em si (histórico
+    # do destinatário) não precisa desaparecer junto.
+    remetente_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+
+    # Categoria do evento -- usada só para escolher ícone/estilo na tela,
+    # nunca para lógica de permissão. Ex: 'treino_finalizado',
+    # 'treino_editado', 'treino_excluido', 'treino_adicionado',
+    # 'versao_finalizada', 'versao_excluida'.
+    tipo = db.Column(db.String(40), nullable=False)
+
+    titulo = db.Column(db.String(150), nullable=False)
+    mensagem = db.Column(db.String(300), nullable=False)
+
+    # Link relativo (ex: /aluno/versao/12) para onde o clique na
+    # notificação deve levar. Opcional -- algumas notificações (ex:
+    # versão excluída) não têm mais uma página de destino válida.
+    url = db.Column(db.String(255), nullable=True)
+
+    lida = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    destinatario = db.relationship(
+        'User', foreign_keys=[destinatario_id],
+        backref=db.backref('notificacoes', lazy='dynamic', cascade='all, delete-orphan')
+    )
+    remetente = db.relationship('User', foreign_keys=[remetente_id])
+
+    __table_args__ = (
+        db.Index('idx_notificacao_destinatario', 'destinatario_id', 'lida', 'created_at'),
+    )
+
+    def __repr__(self):
+        return f'<Notificacao {self.id} tipo={self.tipo} destinatario={self.destinatario_id} lida={self.lida}>'
 
 
 # =====================================================

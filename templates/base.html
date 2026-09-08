@@ -50,6 +50,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fitbot-chat.css') }}">
     {% if current_user.is_authenticated %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pwa-install.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notificacoes.css') }}">
     {% endif %}
     
     <!-- CSS Personalizado -->
@@ -1506,6 +1507,29 @@
             <!--    <i class="bi bi-robot" aria-hidden="true"></i> -->
                     <img src="{{ url_for('static', filename='images/fitbot_assist.png') }}" alt="FitBot" class="fitbot-toggle-icon">
                 </button>
+
+                <!-- Sino de notificações -->
+                <div class="nav-item dropdown" id="notificacoesDropdownWrapper">
+                    <button class="btn btn-avatar dropdown-toggle notif-bell-btn" type="button" id="notificacoesDropdownToggle" data-bs-toggle="dropdown" aria-expanded="false" title="Notificações">
+                        <i class="bi bi-bell" aria-hidden="true"></i>
+                        <span class="badge rounded-pill bg-danger notif-bell-badge" id="notifBellBadge" style="display: none;">0</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end notif-dropdown-menu" aria-labelledby="notificacoesDropdownToggle">
+                        <li class="notif-dropdown-header">
+                            <span>Notificações</span>
+                            <button type="button" class="notif-marcar-todas-link" id="notifMarcarTodasLink">Marcar todas como lidas</button>
+                        </li>
+                        <li>
+                            <div id="notifDropdownList" class="notif-dropdown-list">
+                                <div class="notif-dropdown-empty" id="notifDropdownEmpty">Nenhuma notificação por aqui ainda.</div>
+                            </div>
+                        </li>
+                        <li class="notif-dropdown-footer">
+                            <a href="{{ url_for('notificacao.listar') }}">Ver todas as notificações</a>
+                        </li>
+                    </ul>
+                </div>
+
                 <div class="nav-item dropdown">
                     <button class="btn btn-avatar dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ current_user.username }}">
                         <span class="avatar-circle">{{ current_user.username[0]|upper }}</span>
@@ -1860,6 +1884,7 @@
          page etc. não devem sugerir instalação). -->
     {% if current_user.is_authenticated %}
     <script src="{{ url_for('static', filename='js/modules/pwa-install.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modules/notificacoes.js') }}"></script>
     {% endif %}
     
     <!-- Bloco para scripts específicos de cada página -->

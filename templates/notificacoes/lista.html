@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-bell" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Notificações{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --n-orange: #F28C33;
+        --n-ink: #1F2937;
+        --n-muted: #6B7280;
+        --n-line: #EEF0F3;
+    }
+
+    .n-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .n-header h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--n-ink);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .n-empty-card {
+        background: white;
+        border: 1px solid var(--n-line);
+        border-radius: 16px;
+        padding: 32px 24px;
+        text-align: center;
+        max-width: 520px;
+        margin: 40px auto;
+    }
+    .n-empty-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, rgba(242,140,51,0.12) 0%, rgba(255,179,102,0.12) 100%);
+        color: var(--n-orange);
+        font-size: 1.7rem;
+        margin-bottom: 16px;
+    }
+    .n-empty-card h2 { font-size: 1.2rem; font-weight: 700; color: var(--n-ink); margin-bottom: 6px; }
+    .n-empty-card p { color: var(--n-muted); font-size: 0.92rem; margin: 0; }
+
+    .n-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 720px;
+        margin: 0 auto;
+    }
+
+    .n-item {
+        background: white;
+        border: 1px solid var(--n-line);
+        border-radius: 14px;
+        padding: 14px 16px;
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        text-decoration: none;
+        color: inherit;
+        transition: box-shadow .15s ease, border-color .15s ease;
+    }
+    .n-item:hover {
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        border-color: #e2e5ea;
+        color: inherit;
+    }
+    .n-item.n-unread {
+        background: #FFF8F1;
+        border-color: rgba(242,140,51,0.35);
+    }
+
+    .n-icon {
+        flex: 0 0 auto;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(242,140,51,0.12);
+        color: var(--n-orange);
+        font-size: 1.1rem;
+    }
+
+    .n-body { flex: 1 1 auto; min-width: 0; }
+    .n-title {
+        font-weight: 700;
+        color: var(--n-ink);
+        font-size: 0.95rem;
+        margin-bottom: 2px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .n-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--n-orange);
+        flex: 0 0 auto;
+    }
+    .n-msg {
+        color: var(--n-muted);
+        font-size: 0.88rem;
+        margin-bottom: 4px;
+    }
+    .n-time {
+        color: #9CA3AF;
+        font-size: 0.78rem;
+    }
+</style>
+
+<div class="n-header">
+    <h1><i class="bi bi-bell"></i> Notificações</h1>
+    {% if notificacoes %}
+    <button type="button" id="nMarcarTodasBtn" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-check2-all"></i> Marcar todas como lidas
+    </button>
+    {% endif %}
+</div>
+
+{% if not notificacoes %}
+<div class="n-empty-card">
+    <div class="n-empty-icon"><i class="bi bi-bell-slash"></i></div>
+    <h2>Nenhuma notificação ainda</h2>
+    <p>Você será avisado por aqui quando houver novidades nos seus treinos.</p>
+</div>
+{% else %}
+<div class="n-list">
+    {% for n in notificacoes %}
+    <a href="{{ n.url or '#' }}"
+       class="n-item {{ 'n-unread' if not n.lida else '' }}"
+       data-notificacao-id="{{ n.id }}"
+       {% if not n.lida %}data-marcar-ao-clicar="1"{% endif %}>
+        <div class="n-icon">
+            {% if n.tipo == 'treino_finalizado' %}
+                <i class="bi bi-check-circle"></i>
+            {% elif n.tipo in ['treino_excluido', 'versao_excluida'] %}
+                <i class="bi bi-trash"></i>
+            {% elif n.tipo == 'treino_adicionado' %}
+                <i class="bi bi-plus-circle"></i>
+            {% elif n.tipo == 'versao_finalizada' %}
+                <i class="bi bi-flag"></i>
+            {% else %}
+                <i class="bi bi-pencil-square"></i>
+            {% endif %}
+        </div>
+        <div class="n-body">
+            <div class="n-title">
+                {% if not n.lida %}<span class="n-dot"></span>{% endif %}
+                {{ n.titulo }}
+            </div>
+            <div class="n-msg">{{ n.mensagem }}</div>
+            <div class="n-time">{{ data_formatada(n.created_at) }}</div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Marca como lida ao clicar num item ainda não lido (antes de
+    // navegar -- não precisa esperar resposta pra seguir o link).
+    document.querySelectorAll('.n-item[data-marcar-ao-clicar]').forEach(function (item) {
+        item.addEventListener('click', function () {
+            const id = item.getAttribute('data-notificacao-id');
+            fetch(`/api/notificacoes/${id}/marcar-lida`, { method: 'POST' }).catch(function () {});
+        });
+    });
+
+    const btnTodas = document.getElementById('nMarcarTodasBtn');
+    if (btnTodas) {
+        btnTodas.addEventListener('click', function () {
+            fetch('/api/notificacoes/marcar-todas-lidas', { method: 'POST' })
+                .then(function () { window.location.reload(); })
+                .catch(function () {});
+        });
+    }
+});
+</script>
+{% endblock %}
