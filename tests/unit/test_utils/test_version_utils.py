@@ -1,18 +1,13 @@
 """Testes unitários para utils/version_utils.py
 
-NOTA IMPORTANTE: a maior parte das funções deste módulo (get_versoes_globais,
-get_versao_ativa, get_treinos_da_versao, get_exercicios_do_treino,
-get_todos_exercicios_da_versao, adicionar_treino_na_versao,
-verificar_versao_ativa, editar_treino_na_versao, remover_treino_da_versao,
-adicionar_exercicio_ao_treino, remover_exercicio_do_treino,
-reordenar_exercicios_do_treino, get_ultimas_series) importa de
-``utils.db_utils``, um módulo que não existe neste repositório -- e
-``migrar_versoes_para_novo_formato`` importa de ``utils.file_utils``, que
-também não existe. Chamar qualquer uma dessas funções sempre lança
-ImportError. A única função realmente usada pela aplicação (chamada em
-routes/admin_routes.py) é ``verificar_exercicio_em_versoes``, que não
-depende desses módulos ausentes e funciona normalmente. Este arquivo testa
-o que de fato funciona e documenta o ImportError nas demais.
+NOTA: o módulo utils/version_utils.py hoje só define quatro funções
+(verificar_exercicio_em_versoes, get_versoes_treino_antigo,
+get_versao_ativa_antiga, get_exercicios_por_versao_antiga). Funções que
+já foram citadas aqui (get_versoes_globais, get_versao_ativa,
+verificar_versao_ativa, adicionar_treino_na_versao,
+migrar_versoes_para_novo_formato, entre outras) não existem mais nesse
+módulo, então importá-las quebra a coleta de todo o arquivo de testes.
+Este arquivo testa só o que de fato existe hoje.
 """
 from datetime import date
 
@@ -24,11 +19,6 @@ from utils.version_utils import (
     get_versoes_treino_antigo,
     get_versao_ativa_antiga,
     get_exercicios_por_versao_antiga,
-    get_versoes_globais,
-    get_versao_ativa,
-    verificar_versao_ativa,
-    adicionar_treino_na_versao,
-    migrar_versoes_para_novo_formato,
 )
 
 
@@ -118,35 +108,3 @@ class TestFuncoesDeCompatibilidade:
     def test_get_exercicios_por_versao_antiga_retorna_vazio(self, app):
         with app.app_context():
             assert get_exercicios_por_versao_antiga(1) == []
-
-
-class TestFuncoesQuebradasPorDependenciaAusente:
-    """
-    Documentam que estas funções lançam ImportError hoje, por dependerem
-    de utils.db_utils / utils.file_utils, módulos ausentes do repositório.
-    """
-
-    def test_get_versoes_globais_lanca_importerror(self, app):
-        with app.app_context():
-            with pytest.raises(ImportError):
-                get_versoes_globais()
-
-    def test_get_versao_ativa_lanca_importerror(self, app):
-        with app.app_context():
-            with pytest.raises(ImportError):
-                get_versao_ativa('Janeiro/2024')
-
-    def test_verificar_versao_ativa_lanca_importerror(self, app):
-        with app.app_context():
-            with pytest.raises(ImportError):
-                verificar_versao_ativa()
-
-    def test_adicionar_treino_na_versao_lanca_importerror(self, app):
-        with app.app_context():
-            with pytest.raises(ImportError):
-                adicionar_treino_na_versao(1, 'A', 'Treino A', 'desc', [])
-
-    def test_migrar_versoes_lanca_importerror(self, app):
-        with app.app_context():
-            with pytest.raises(ImportError):
-                migrar_versoes_para_novo_formato()
