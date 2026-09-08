@@ -4,7 +4,7 @@ def test_login_page(client):
     """Testa se página de login carrega"""
     response = client.get('/auth/login')
     assert response.status_code == 200
-    assert b'Login' in response.data
+    assert b'Entrar' in response.data
 
 def test_register_page(client):
     """Testa se página de registro carrega"""
