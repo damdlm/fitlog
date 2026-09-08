@@ -101,7 +101,18 @@ document.addEventListener('DOMContentLoaded', function () {
         filtrar();
     }
 
-    busca?.addEventListener('input', filtrar);
+    // Filtrar varre a grade inteira (~1300 itens no catálogo completo)
+    // -- sem debounce, digitar rápido dispara essa varredura a cada
+    // tecla, empilhando trabalho e deixando a digitação com lag
+    // perceptível no celular. 150ms é curto o bastante pra não atrasar
+    // a sensação de resposta, mas já absorve a rajada de teclas de uma
+    // digitação normal.
+    let filtrarTimeoutId = null;
+    function filtrarComDebounce() {
+        window.clearTimeout(filtrarTimeoutId);
+        filtrarTimeoutId = window.setTimeout(filtrar, 150);
+    }
+    busca?.addEventListener('input', filtrarComDebounce);
     busca?.addEventListener('keydown', function (e) {
         // O campo de busca vive dentro do <form> principal (não dá pra tirar
         // sem reestruturar o HTML), então Enter aqui submeteria o treino

@@ -76,7 +76,7 @@
                     </div>
                 </div>
 
-                <div class="etv-grid" id="etvGrid">
+                <div class="etv-grid{{ ' etv-grid-static' if exercicios_catalogo|length > 100 else '' }}" id="etvGrid">
                     {% for ex in exercicios %}
                     {% set musculo_nome = ex.musculo_nome or ex.musculo or 'N/A' %}
                     {% set marcado = (ex.prefixo ~ ex.id|string) in treino.exercicios %}

@@ -191,6 +191,16 @@
     padding: 8px 12px;
     cursor: default;
     transition: border-color .15s ease, box-shadow .15s ease, transform .1s ease;
+    /* Com o catálogo inteiro (~1300 itens) sempre no DOM, pedir pro
+       navegador pular layout/estilo/pintura dos cards fora da tela
+       poupa a maior parte do trabalho de abrir o modal e de rolar a
+       lista -- só os itens realmente visíveis custam algo.
+       contain-intrinsic-size evita que a barra de rolagem "pule"
+       antes do navegador saber a altura real de cada card. Sem
+       suporte (Safari < 18), simplesmente ignorado -- nenhum efeito
+       colateral. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 64px;
 }
 
 .etv-card:hover {
@@ -375,9 +385,15 @@
     opacity: .75;
 }
 
-/* Animação de entrada dos cards (respeita prefers-reduced-motion) */
+/* Animação de entrada dos cards (respeita prefers-reduced-motion).
+   Só faz sentido pra listas pequenas -- com o catálogo inteiro
+   (~1300 itens) rodar essa animação em todos de uma vez ao abrir o
+   modal é o maior custo de performance da tela (todos entram em
+   composição/pintura ao mesmo tempo), e o efeito nem é perceptível
+   individualmente com tantos cards aparecendo juntos. O template
+   marca a grade com .etv-grid-static quando o catálogo é grande. */
 @media (prefers-reduced-motion: no-preference) {
-    .etv-card {
+    .etv-grid:not(.etv-grid-static) .etv-card {
         animation: etv-card-in .25s ease both;
     }
 }
