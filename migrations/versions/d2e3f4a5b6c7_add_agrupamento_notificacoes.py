@@ -1,6 +1,6 @@
 """Adiciona agrupamento (chave + contador) na tabela notificacoes
 
-Revision ID: d2e3f4a5b6c7
+Revision ID: e3f4a5b6c7d8
 Revises: c1d2e3f4a5b6
 Create Date: 2026-09-08 00:00:00.000000
 """
@@ -8,7 +8,7 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = 'd2e3f4a5b6c7'
+revision = 'e3f4a5b6c7d8'
 down_revision = 'c1d2e3f4a5b6'
 branch_labels = None
 depends_on = None
