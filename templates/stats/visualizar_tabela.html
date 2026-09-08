@@ -127,6 +127,17 @@
         overflow: hidden;
     }
 
+    /* Colunas de semana (Carga/Rep. e o cabeçalho "Nª Semana/Mês") ficam
+       bem mais estreitas que "Exercício" -- o padding de 10px de cada
+       lado (herdado da regra genérica acima) sozinho já passava da
+       largura mínima da coluna (30px), cortando até a palavra "Carga".
+       Aqui reduz só nessas, sem mexer no espaçamento de "Exercício". */
+    #progressTable th:not(.col-exercicio),
+    #progressTable td.td-dado {
+        padding-left: 1px;
+        padding-right: 1px;
+    }
+
     /* Divisórias grossas cinza entre "Exercício" e cada bloco de semana,
        e entre um bloco de semana e o próximo -- iguais à moldura da
        planilha de referência (uma linha cinza a cada 2 colunas). */
@@ -153,7 +164,7 @@
         font-style: italic;
         font-weight: 400;
         line-height: 1.15;
-        padding: 4px 10px 2px;
+        padding: 4px 2px 2px;
     }
     #progressTable thead th.th-semana .semana-mes {
         display: block;
@@ -374,7 +385,7 @@
         var PCT_EXERCICIO = 0.48;   // ~48% da tela p/ "Exercício" (era 0.38 -- aumentado para deixar Carga/Rep. mais estreitas)
         var MIN_EXERCICIO = 90;
         var MAX_EXERCICIO = 220;
-        var MIN_DADO = 30;          // era 34 -- Carga/Rep. um pouco mais estreitas
+        var MIN_DADO = 34;          // pequena folga a mais p/ "Carga" caber com padding mínimo
         var ABS_MIN_EXERCICIO = 64; // só usado se precisar encolher p/ garantir as 3 semanas
         var usuarioRolou = false;      // true assim que o usuário arrastar a tabela manualmente
         var ultimoAlvoProgramatico = null; // último valor de scrollLeft que NÓS definimos
