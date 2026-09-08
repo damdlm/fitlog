@@ -66,6 +66,25 @@ document.addEventListener('DOMContentLoaded', function () {
         modalFechando = true;
     });
 
+    // Rastreia se algo foi de fato alterado nesse treino desde que o
+    // modal abriu, pra só pedir confirmação no Cancelar quando existir
+    // algo real a perder. 'input'/'change' delegados no form pegam
+    // nome, descrição, marcar/desmarcar exercício e campo de observação
+    // de uma vez -- exceto a busca (#etvBusca), que é só filtro de
+    // visualização, não uma alteração no treino. A sincronização
+    // automática do 'show.bs.modal' (marcar os exercícios já salvos)
+    // usa atribuição direta de .checked/.value, que não dispara esses
+    // eventos -- então abrir o modal nunca marca como "sujo" sozinho.
+    let modalSujo = false;
+    form?.addEventListener('input', function (event) {
+        if (event.target === busca) return;
+        modalSujo = true;
+    });
+    form?.addEventListener('change', function (event) {
+        if (event.target === busca) return;
+        modalSujo = true;
+    });
+
     // Página de transição já usada no resto do app (película escura +
     // loader), exposta por page-transition.js/base.html como
     // window.FitLogPageTransition -- reaproveitamos ela aqui em vez de
@@ -126,7 +145,16 @@ document.addEventListener('DOMContentLoaded', function () {
     // controle manual do fechamento (preventDefault/stopPropagation) pra
     // poder dar o mesmo tempo mínimo de tela escurecida antes do modal
     // sumir de fato.
-    modalExercicios.querySelectorAll('[data-bs-dismiss="modal"]').forEach(function (btn) {
+    // Antes esses botões usavam data-bs-dismiss="modal" -- só que o
+    // Bootstrap regista o próprio listener de fechamento no DOCUMENTO
+    // INTEIRO na fase de CAPTURA (antes até do clique "descer" até o
+    // botão), então ele sempre fechava o modal primeiro, não importa o
+    // que a gente fizesse aqui (preventDefault/stopPropagation chegam
+    // tarde demais pra evitar isso). Por isso os botões usam
+    // data-etv-cancelar em vez de data-bs-dismiss -- assim o Bootstrap
+    // nem tenta mexer neles, e o fechamento (com ou sem confirmação) é
+    // 100% controlado por este código.
+    modalExercicios.querySelectorAll('[data-etv-cancelar]').forEach(function (btn) {
         btn.addEventListener('click', function (event) {
             event.preventDefault();
             event.stopPropagation();
@@ -155,12 +183,28 @@ document.addEventListener('DOMContentLoaded', function () {
             // hide.bs.modal 400ms depois), qualquer "Editar" nessa
             // janela cai no ramo que espera 'hidden.bs.modal' de
             // verdade antes de reabrir, fechando a corrida.
-            modalFechando = true;
+            const fecharDeVerdade = function () {
+                modalFechando = true;
 
-            transicao?.show();
-            window.setTimeout(function () {
-                bootstrap.Modal.getInstance(modalExercicios)?.hide();
-            }, ATRASO_MINIMO_MS);
+                transicao?.show();
+                window.setTimeout(function () {
+                    bootstrap.Modal.getInstance(modalExercicios)?.hide();
+                }, ATRASO_MINIMO_MS);
+            };
+
+            if (!modalSujo || typeof window.FitLogConfirm !== 'function') {
+                fecharDeVerdade();
+                return;
+            }
+
+            window.FitLogConfirm({
+                variant: 'warning',
+                icon: 'bi-exclamation-triangle-fill',
+                title: 'Descartar alterações?',
+                text: 'Você fez alterações nesse treino que ainda não foram salvas.',
+                confirmLabel: 'Descartar',
+                onConfirm: fecharDeVerdade
+            });
         });
     });
 
@@ -188,6 +232,8 @@ document.addEventListener('DOMContentLoaded', function () {
     modalExercicios.addEventListener('show.bs.modal', function (event) {
         const trigger = event.relatedTarget;
         if (!trigger) return;
+
+        modalSujo = false;
 
         const treinoVersaoId = trigger.getAttribute('data-treino-versao-id') || '';
         const codigo = trigger.getAttribute('data-treino-codigo') || '';
