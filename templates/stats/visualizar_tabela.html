@@ -45,13 +45,28 @@
 
     /* ===== Moldura cinza da planilha (com a bordinha branca da folha ao
        redor, como no design original -- sem "sangrar" até a borda do
-       aparelho) ===== */
+       aparelho) =====
+       SEM border-radius de propósito: cantos arredondados numa caixa com
+       overflow (que recorta o conteúdo nesse formato curvo) enquanto a
+       coluna "Exercício" fica com position:sticky, é uma combinação
+       conhecida por vazar 1-2px do que está por baixo bem no pixel do
+       arredondamento -- exatamente o "vazamento no canto" relatado. Uma
+       moldura reta elimina essa categoria de bug de vez, sem gambiarra
+       tentando alinhar um raio igual na célula sticky.
+       SEM padding também, e pelo mesmo motivo raiz: um scrollport com
+       overflow-x:auto recorta o conteúdo rolado na borda do PADDING, não
+       na borda do conteúdo -- então, mesmo sem cantos arredondados, a
+       faixa de padding (3px) ainda deixava colunas antigas, já roladas
+       para fora de vista, aparecerem ali, porque a coluna "Exercício"
+       (sticky) só começa a cobrir DEPOIS do padding, nunca dentro dele.
+       Testado e confirmado em Chromium real, pixel a pixel, com
+       elementFromPoint(). Sem padding, a borda cinza (só border, 3px)
+       já dá o efeito de moldura, sem essa faixa de risco. */
     .prog-tabela-wrap {
         overflow-x: auto;
         border: 3px solid #808080;
-        border-radius: 6px;
         background: #808080;
-        padding: 3px;
+        padding: 0;
         /* width:100% explícito (com box-sizing:border-box) em vez de
            confiar no auto-width padrão de um bloco -- em pelo menos um
            motor testado, um <div> com overflow-x:auto envolvendo uma
