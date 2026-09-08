@@ -130,6 +130,33 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.addEventListener('click', function (event) {
             event.preventDefault();
             event.stopPropagation();
+
+            // CORRIDA REAL (causava o crash "Um problema ocorreu
+            // repetidamente" ao clicar Editar -> Cancelar -> Editar
+            // rápido): modalFechando só virava true dentro do listener
+            // de 'hide.bs.modal' acima, mas esse evento só dispara
+            // quando bootstrap.Modal.hide() é chamado de fato -- e isso
+            // só acontece DEPOIS do setTimeout de ATRASO_MINIMO_MS
+            // (400ms) abaixo, não no instante do clique em Cancelar.
+            // Ou seja, existia uma janela de até 400ms em que
+            // modalFechando ainda estava false mesmo com o Cancelar já
+            // clicado. Um clique em "Editar" nessa janela caía no ramo
+            // "else" do listener de clique acima (agenda abrir() direto,
+            // sem esperar), e o `_isShown` do Bootstrap já virava false
+            // no instante em que hide() começa (antes da animação de
+            // fechar terminar) -- então o guard "já está aberto?"
+            // também não pegava. Resultado: show() era chamado enquanto
+            // o hide() anterior ainda estava no meio da animação,
+            // deixando o Bootstrap empilhar um backdrop/estado novo por
+            // cima do antigo sem limpar o de antes. Repetindo o ciclo
+            // editar/cancelar/editar, isso acumulava backdrops e
+            // listeners de sobra até estourar a memória do Safari.
+            // Marcando modalFechando=true JÁ AQUI (no clique, não no
+            // hide.bs.modal 400ms depois), qualquer "Editar" nessa
+            // janela cai no ramo que espera 'hidden.bs.modal' de
+            // verdade antes de reabrir, fechando a corrida.
+            modalFechando = true;
+
             transicao?.show();
             window.setTimeout(function () {
                 bootstrap.Modal.getInstance(modalExercicios)?.hide();
