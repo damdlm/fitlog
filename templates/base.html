@@ -202,21 +202,19 @@
         .navbar-brand-title {
             font-size: 1rem;
             margin-bottom: 4px;
-        }
-
-        /* Quando o botão de instalar o PWA está visível, o grupo de ícones
-           à direita fica mais largo (PWA + FitBot + avatar) -- reduz a
-           largura do título centralizado e permite quebrar em 2 linhas
-           pra não ficar por baixo dos ícones. */
-        body.pwa-header-icon-active .navbar-brand-title {
-            max-width: 132px;
-            white-space: normal;
             line-height: 1.15;
             text-align: center;
         }
 
-        /* No mobile, a logo permanece à esquerda e o título fica 
-           centralizado em relação à largura da tela, independente da logo. */
+        /* No mobile, a logo permanece à esquerda e o título fica
+           centralizado no espaço livre entre ela e o grupo de ícones à
+           direita (FitBot, sino, avatar, PWA quando visível). A posição
+           (left) e a largura máxima são calculadas em JS -- ver
+           static/js/modules/header-title-center.js -- porque dependem de
+           QUAIS ícones estão visíveis no momento, o que muda com mais
+           frequência do que vale a pena caçar em CSS puro (foi exatamente
+           isso que quebrou quando o sino de notificações foi adicionado).
+           left: 50% aqui é só o valor inicial antes do JS rodar. */
         @media (max-width: 991.98px) {
             .navbar .container {
                 position: relative;
@@ -227,15 +225,6 @@
                 left: 50%;
                 transform: translateX(-50%);
                 margin-bottom: 0;
-            }
-
-            /* Com o ícone do PWA visível, o grupo de ícones à direita fica
-               ~48px mais largo (botão + gap) que o normal -- desloca o
-               centro do título pra esquerda na mesma proporção, senão ele
-               fica visualmente puxado pro lado dos ícones em vez de
-               centralizado de verdade entre a logo e o grupo de ícones. */
-            body.pwa-header-icon-active .navbar-brand-title {
-                left: calc(50% - 24px);
             }
 
             /* O menu mobile abre como um painel flutuante (overlay) por cima
