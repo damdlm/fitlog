@@ -543,6 +543,48 @@ class EventoWebhookAsaas(db.Model):
         return f'<EventoWebhookAsaas {self.tipo_evento} {self.event_id}>'
 
 
+class PagamentoRecebido(db.Model):
+    """Registro histórico de cada pagamento confirmado pelo Asaas --
+    UMA linha por cobrança paga (diferente de Assinatura, que só guarda
+    o status ATUAL). Existe para alimentar a tela financeira do admin
+    (services/financeiro_service.py) com totais por período, plano,
+    forma de pagamento e tipo de usuário, sem precisar re-consultar o
+    Asaas a cada filtro.
+
+    Gravado em BillingService._aplicar_evento, no mesmo momento em que
+    um evento de confirmação de pagamento (PAYMENT_CONFIRMED/
+    PAYMENT_RECEIVED) é aplicado à Assinatura. gateway_payment_id é
+    único para não duplicar linha quando o Asaas manda os dois eventos
+    para a mesma cobrança (CONFIRMED e depois RECEIVED).
+
+    plano_codigo e tipo_usuario ficam congelados (snapshot) no momento
+    do pagamento -- se o usuário depois trocar de plano ou o admin
+    renomear/desativar o Plano, o histórico não deve mudar
+    retroativamente."""
+    __tablename__ = 'pagamentos_recebidos'
+
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True)
+    plano_id = db.Column(db.Integer, db.ForeignKey('planos.id'), nullable=True)
+
+    gateway_payment_id = db.Column(db.String(60), unique=True, nullable=False, index=True)
+    plano_codigo = db.Column(db.String(30), nullable=True)
+    tipo_usuario = db.Column(db.String(20), nullable=True)  # 'aluno' ou 'professor', no momento do pagamento
+    forma_pagamento = db.Column(db.String(10), nullable=False)  # 'cartao' ou 'pix'
+
+    valor_bruto_centavos = db.Column(db.Integer, nullable=False)
+    taxa_asaas_centavos = db.Column(db.Integer, nullable=True)  # None quando o Asaas não informou netValue no webhook
+    valor_liquido_centavos = db.Column(db.Integer, nullable=True)
+
+    confirmado_em = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    usuario = db.relationship('User', foreign_keys=[usuario_id])
+    plano = db.relationship('Plano', foreign_keys=[plano_id])
+
+    def __repr__(self):
+        return f'<PagamentoRecebido {self.gateway_payment_id} R${self.valor_bruto_centavos/100:.2f}>'
+
+
 # =====================================================
 # MODELOS DE DADOS
 # =====================================================

@@ -29,7 +29,7 @@ from datetime import datetime, timedelta, timezone
 import requests
 from flask import current_app
 
-from models import db, AlunoProfessor, Assinatura, EventoWebhookAsaas, Plano, User
+from models import db, AlunoProfessor, Assinatura, EventoWebhookAsaas, PagamentoRecebido, Plano, User
 
 logger = logging.getLogger(__name__)
 
@@ -978,7 +978,7 @@ class BillingService:
 
         if assinatura:
             status_antes = assinatura.status
-            BillingService._aplicar_evento(assinatura, tipo_evento)
+            BillingService._aplicar_evento(assinatura, tipo_evento, payment)
             logger.info(
                 'Assinatura %s (usuario=%s): status %s -> %s (evento %s)',
                 assinatura.id, assinatura.usuario_id, status_antes, assinatura.status, tipo_evento,
@@ -999,7 +999,7 @@ class BillingService:
         return True
 
     @staticmethod
-    def _aplicar_evento(assinatura: Assinatura, tipo_evento: str):
+    def _aplicar_evento(assinatura: Assinatura, tipo_evento: str, payment: dict = None):
         agora = datetime.now(timezone.utc)
         if tipo_evento in EVENTOS_CONFIRMACAO_PAGAMENTO:
             assinatura.status = 'active'
@@ -1012,6 +1012,8 @@ class BillingService:
             # garante a renovação dele é o próprio Asaas.
             if assinatura.forma_pagamento == 'pix':
                 assinatura.periodo_atual_fim = _proximo_vencimento_mensal(agora)
+            if payment:
+                BillingService._registrar_pagamento_recebido(assinatura, payment)
         elif tipo_evento in EVENTOS_ATRASO:
             BillingService._iniciar_atraso(assinatura, agora)
         elif tipo_evento in EVENTOS_CANCELAMENTO:
@@ -1024,6 +1026,56 @@ class BillingService:
             # que chegou (200 OK) mas não ativou a assinatura: o tipo
             # de evento provavelmente caiu aqui sem deixar rastro nenhum.
             logger.info('Evento Asaas %s sem tratamento específico (assinatura %s inalterada)', tipo_evento, assinatura.id)
+
+    @staticmethod
+    def _registrar_pagamento_recebido(assinatura: Assinatura, payment: dict):
+        """Grava uma linha em pagamentos_recebidos a partir do payload
+        de payment do webhook de confirmação -- alimenta a tela
+        financeira do admin (ver services/financeiro_service.py e
+        routes/financeiro_routes.py). Idempotente via
+        gateway_payment_id (índice único na tabela): se o Asaas mandar
+        PAYMENT_CONFIRMED e depois PAYMENT_RECEIVED pra mesma cobrança
+        (comum em Pix, que dispara os dois), só o primeiro grava.
+
+        netValue (valor líquido após a taxa do Asaas) só vem preenchido
+        em parte dos payloads -- quando ausente, taxa/líquido ficam
+        None em vez de um valor inventado; a tela financeira soma só
+        o que tiver taxa conhecida e sinaliza o restante (ver
+        FinanceiroService.resumo_periodo)."""
+        payment_id = payment.get('id')
+        valor = payment.get('value')
+        if not payment_id or valor is None:
+            logger.warning(
+                'Webhook Asaas de confirmação sem id/value em payment, pagamento não registrado no histórico financeiro. payment=%s',
+                payment,
+            )
+            return
+        if PagamentoRecebido.query.filter_by(gateway_payment_id=payment_id).first():
+            return
+
+        valor_bruto_centavos = round(valor * 100)
+        net_value = payment.get('netValue')
+        valor_liquido_centavos = round(net_value * 100) if net_value is not None else None
+        taxa_asaas_centavos = (
+            valor_bruto_centavos - valor_liquido_centavos
+            if valor_liquido_centavos is not None else None
+        )
+
+        billing_type = (payment.get('billingType') or '').upper()
+        forma_pagamento = 'cartao' if billing_type == 'CREDIT_CARD' else 'pix'
+
+        plano = assinatura.plano
+        db.session.add(PagamentoRecebido(
+            usuario_id=assinatura.usuario_id,
+            plano_id=plano.id if plano else None,
+            gateway_payment_id=payment_id,
+            plano_codigo=plano.codigo if plano else None,
+            tipo_usuario=assinatura.usuario.tipo_usuario if assinatura.usuario else None,
+            forma_pagamento=forma_pagamento,
+            valor_bruto_centavos=valor_bruto_centavos,
+            taxa_asaas_centavos=taxa_asaas_centavos,
+            valor_liquido_centavos=valor_liquido_centavos,
+        ))
 
     @staticmethod
     def _iniciar_atraso(assinatura: Assinatura, agora: datetime):

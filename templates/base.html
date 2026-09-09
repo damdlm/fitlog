@@ -1332,6 +1332,13 @@
                                     <span class="mega-desc">Alunos e professores por plano e inadimplência</span>
                                 </span>
                             </a>
+                            <a class="mega-card" href="{{ url_for('financeiro.painel') }}">
+                                <span class="mega-icon"><i class="bi bi-cash-stack"></i></span>
+                                <span>
+                                    <span class="mega-title">Financeiro</span>
+                                    <span class="mega-desc">Recebimentos, saldo no Asaas e taxas (confidencial)</span>
+                                </span>
+                            </a>
                             <a class="mega-card" href="{{ url_for('admin.monitoramento') }}">
                                 <span class="mega-icon"><i class="bi bi-activity"></i></span>
                                 <span>
@@ -1652,6 +1659,7 @@
                 <span class="mais-section-label">Administração</span>
                 <a class="mais-link" href="{{ url_for('admin.gerenciar') }}"><i class="bi bi-database"></i> Catálogo Global</a>
                 <a class="mais-link" href="{{ url_for('admin.contas') }}"><i class="bi bi-cash-coin"></i> Contas e Cobrança</a>
+                <a class="mais-link" href="{{ url_for('financeiro.painel') }}"><i class="bi bi-cash-stack"></i> Financeiro</a>
                 <a class="mais-link" href="{{ url_for('admin.monitoramento') }}"><i class="bi bi-activity"></i> Monitoramento</a>
                 <a class="mais-link" href="{{ url_for('admin.telas_controladas') }}"><i class="bi bi-toggles"></i> Telas Controladas</a>
             </div>
