@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalCodigo = document.getElementById('ctModalCodigo');
     const modalTitulo = document.getElementById('ctModalTitulo');
     const modalIcone = document.getElementById('ctModalIcone');
-    const hintCodigoAuto = document.getElementById('ctHintCodigoAuto');
     const btnSalvarTexto = document.getElementById('ctBtnSalvarTexto');
     const busca = document.getElementById('etvBusca');
     const grid = document.getElementById('etvGrid');
@@ -259,7 +258,6 @@ document.addEventListener('DOMContentLoaded', function () {
         // o botão "Adicionar treino" não tem os data-treino-* preenchidos.
         if (modalTitulo) modalTitulo.textContent = modoAdicionar ? 'Adicionar treino' : 'Editar treino';
         if (modalIcone) modalIcone.className = modoAdicionar ? 'bi bi-plus-circle me-2' : 'bi bi-pencil-square me-2';
-        if (hintCodigoAuto) hintCodigoAuto.classList.toggle('d-none', !modoAdicionar);
         if (btnSalvarTexto) btnSalvarTexto.textContent = modoAdicionar ? 'Adicionar treino' : 'Salvar treino';
 
         // Reseta filtros (busca + chip de músculo) pra sempre abrir com
