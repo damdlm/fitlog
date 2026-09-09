@@ -23,6 +23,12 @@ class VersaoService(BaseService):
     # qualquer uso real (a maior divisão fixa que existia era ABCDE = 5).
     MAX_TREINOS_POR_VERSAO = 10
 
+    # Mesma trava anti-abuso usada tanto ao criar quanto ao editar um treino
+    # (nenhuma regra de negócio pediu esse número -- é só um teto sensato
+    # bem acima de qualquer uso real, pra um POST malicioso não conseguir
+    # associar milhares de linhas de uma vez).
+    MAX_EXERCICIOS_POR_TREINO = 40
+
     # Códigos (letras) atribuídos automaticamente aos treinos da versão
     # "livre", na ordem em que são criados -- nunca aceitos do cliente,
     # para não colidir com o unique_treino_por_usuario (user_id, codigo).
@@ -655,7 +661,8 @@ class VersaoService(BaseService):
             raise ValueError("Não foi possível salvar a descrição.")
 
     @staticmethod
-    def adicionar_treino_livre(versao_id, nome_treino, descricao_treino, user_id=None, permitir_finalizada=False):
+    def adicionar_treino_livre(versao_id, nome_treino, descricao_treino, user_id=None,
+                                permitir_finalizada=False, exercicios_raw=None, observacoes=None):
         """
         Adiciona um novo treino à versão "livre", sem pedir letra/código
         do usuário: o código (A, B, C...) é escolhido automaticamente pelo
@@ -663,6 +670,13 @@ class VersaoService(BaseService):
         vive diretamente em TreinoVersao (por versão) -- o mesmo código
         pode aparecer em versões diferentes do mesmo usuário sem qualquer
         relação entre eles.
+
+        exercicios_raw/observacoes: opcionais -- mesmo formato aceito por
+        salvar_treino_livre. Quando informados, os exercícios já são
+        associados na mesma transação da criação (usado pelo modal
+        "Adicionar treino", que reaproveita o modal de edição e permite
+        selecionar exercícios no mesmo passo). Quando omitidos, o treino
+        nasce sem exercícios, como antes.
         """
         user_id = user_id or BaseService.get_current_user_id()
         if not user_id:
@@ -696,6 +710,18 @@ class VersaoService(BaseService):
         if not proximo_codigo:
             raise ValueError("Não há mais códigos disponíveis para novos treinos.")
 
+        # Validado ANTES de abrir a transação de escrita (mesma ordem usada
+        # em salvar_treino_livre): se vier exercício inválido/em excesso,
+        # falha limpo sem ter criado o treino pela metade.
+        usuarios_ids_validos, bases_ids_validos = ([], [])
+        if exercicios_raw:
+            usuarios_ids_validos, bases_ids_validos = VersaoService.processar_exercicios_formulario(
+                exercicios_raw, user_id
+            )
+            total_exercicios = len(usuarios_ids_validos) + len(bases_ids_validos)
+            if total_exercicios > VersaoService.MAX_EXERCICIOS_POR_TREINO:
+                raise ValueError(f"Máximo de {VersaoService.MAX_EXERCICIOS_POR_TREINO} exercícios por treino.")
+
         try:
             treino_versao = TreinoVersao(
                 versao_id=versao_id,
@@ -705,10 +731,15 @@ class VersaoService(BaseService):
                 ordem=treinos_atuais
             )
             db.session.add(treino_versao)
+            if usuarios_ids_validos or bases_ids_validos:
+                db.session.flush()  # garante treino_versao.id antes de associar exercícios
+                VersaoService.adicionar_exercicios_a_treino_versao(
+                    treino_versao.id, usuarios_ids_validos, bases_ids_validos, observacoes=observacoes
+                )
             db.session.commit()
             logger.info(
                 f"Treino {proximo_codigo} adicionado (cadastro livre) à versão {versao_id} "
-                f"do usuário {user_id}"
+                f"do usuário {user_id} com {len(usuarios_ids_validos) + len(bases_ids_validos)} exercício(s)"
             )
             return treino_versao
         except ValueError:
@@ -767,14 +798,9 @@ class VersaoService(BaseService):
             exercicios_raw or [], user_id
         )
 
-        # Trava anti-abuso: número de exercícios por treino também tem um
-        # teto (nenhuma regra do usuário pedia isso, mas sem limite um
-        # POST malicioso poderia tentar associar milhares de linhas de
-        # uma vez só).
-        MAX_EXERCICIOS_POR_TREINO = 40
         total_exercicios = len(usuarios_ids_validos) + len(bases_ids_validos)
-        if total_exercicios > MAX_EXERCICIOS_POR_TREINO:
-            raise ValueError(f"Máximo de {MAX_EXERCICIOS_POR_TREINO} exercícios por treino.")
+        if total_exercicios > VersaoService.MAX_EXERCICIOS_POR_TREINO:
+            raise ValueError(f"Máximo de {VersaoService.MAX_EXERCICIOS_POR_TREINO} exercícios por treino.")
 
         try:
             treino_versao.nome_treino = nome_treino

@@ -22,6 +22,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const inputNome = document.getElementById('ctInputNome');
     const inputDescricao = document.getElementById('ctInputDescricao');
     const modalCodigo = document.getElementById('ctModalCodigo');
+    const modalTitulo = document.getElementById('ctModalTitulo');
+    const modalIcone = document.getElementById('ctModalIcone');
+    const hintCodigoAuto = document.getElementById('ctHintCodigoAuto');
+    const btnSalvarTexto = document.getElementById('ctBtnSalvarTexto');
     const busca = document.getElementById('etvBusca');
     const grid = document.getElementById('etvGrid');
     const chipTodos = document.querySelector('#etvChipsMusculo .etv-chip[data-musculo=""]');
@@ -107,7 +111,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (btn.classList.contains('ct-is-loading')) return;
             btn.classList.add('ct-is-loading');
             btn.dataset.htmlOriginal = btn.innerHTML;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Editar';
+            const rotuloCarregando = btn.getAttribute('data-modo') === 'adicionar' ? 'Adicionar' : 'Editar';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> ' + rotuloCarregando;
 
             transicao?.show();
 
@@ -235,6 +240,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         modalSujo = false;
 
+        const modoAdicionar = trigger.getAttribute('data-modo') === 'adicionar';
         const treinoVersaoId = trigger.getAttribute('data-treino-versao-id') || '';
         const codigo = trigger.getAttribute('data-treino-codigo') || '';
         const nome = trigger.getAttribute('data-treino-nome') || '';
@@ -244,7 +250,17 @@ document.addEventListener('DOMContentLoaded', function () {
         if (form && action) form.action = action;
         if (inputNome) inputNome.value = nome;
         if (inputDescricao) inputDescricao.value = descricao;
-        if (modalCodigo) modalCodigo.textContent = codigo;
+        if (modalCodigo) modalCodigo.textContent = modoAdicionar ? '' : codigo;
+
+        // Mesmo modal servindo os dois fluxos (ver cadastrar_treinos.html):
+        // só o texto/ícone do cabeçalho, o aviso da letra automática e o
+        // rótulo do botão de salvar mudam -- nome/descrição/exercícios já
+        // ficam vazios/desmarcados naturalmente no modo adicionar, porque
+        // o botão "Adicionar treino" não tem os data-treino-* preenchidos.
+        if (modalTitulo) modalTitulo.textContent = modoAdicionar ? 'Adicionar treino' : 'Editar treino';
+        if (modalIcone) modalIcone.className = modoAdicionar ? 'bi bi-plus-circle me-2' : 'bi bi-pencil-square me-2';
+        if (hintCodigoAuto) hintCodigoAuto.classList.toggle('d-none', !modoAdicionar);
+        if (btnSalvarTexto) btnSalvarTexto.textContent = modoAdicionar ? 'Adicionar treino' : 'Salvar treino';
 
         // Reseta filtros (busca + chip de músculo) pra sempre abrir com
         // a lista completa visível, independente do que ficou setado

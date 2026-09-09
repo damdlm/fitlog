@@ -430,6 +430,7 @@
             <div class="ct-treino-actions">
                 <button type="button" class="btn btn-sm btn-outline-warning ct-btn-editar-exercicios"
                         data-bs-toggle="modal" data-bs-target="#modalExercicios"
+                        data-modo="editar"
                         data-treino-versao-id="{{ tv.id }}"
                         data-treino-codigo="{{ codigo }}"
                         data-treino-nome="{{ tv.nome_treino }}"
@@ -481,7 +482,10 @@
 {% endif %}
 
 {% if total_treinos < max_treinos %}
-<button type="button" class="ct-add-treino-btn" data-bs-toggle="modal" data-bs-target="#modalNovoTreino">
+<button type="button" class="ct-add-treino-btn ct-btn-editar-exercicios"
+        data-bs-toggle="modal" data-bs-target="#modalExercicios"
+        data-modo="adicionar"
+        data-action="{{ url_for('aluno.cadastrar_treinos_adicionar_treino', versao_id=versao.id) }}">
     <i class="bi bi-plus-circle"></i> Adicionar treino ({{ total_treinos }}/{{ max_treinos }})
 </button>
 {% endif %}
@@ -514,49 +518,12 @@
     </div>
 </div>
 
-<!-- ===== Modal: Novo Treino ===== -->
-<div class="modal fade" id="modalNovoTreino" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
-                <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Adicionar Treino</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="post" action="{{ url_for('aluno.cadastrar_treinos_adicionar_treino', versao_id=versao.id) }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Nome do treino</label>
-                        <input type="text" name="nome_treino" class="form-control form-control-lg"
-                               placeholder="Ex: Treino A - Peito e Tríceps" maxlength="100" required autofocus>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Descrição <span class="text-muted fw-normal">(opcional)</span></label>
-                        <input type="text" name="descricao_treino" class="form-control" maxlength="200"
-                               placeholder="Ex: Foco em peito e tríceps">
-                    </div>
-                    <div class="alert alert-info mb-0 py-2 small">
-                        <i class="bi bi-info-circle me-1"></i>
-                        A letra do treino (A, B, C...) é definida automaticamente.
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn" style="background: #F28C33; color: white; border: none;">
-                        <i class="bi bi-save"></i> Adicionar treino
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- ===== Modal: Editar treino + exercícios (compartilhado entre os treinos) ===== -->
+<!-- ===== Modal: Adicionar/Editar treino + exercícios (compartilhado) ===== -->
 <div class="modal fade" id="modalExercicios" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
-                <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Editar treino <span id="ctModalCodigo"></span></h5>
+                <h5 class="modal-title"><i class="bi bi-pencil-square me-2" id="ctModalIcone"></i><span id="ctModalTitulo">Editar treino</span> <span id="ctModalCodigo"></span></h5>
                 <button type="button" class="btn-close btn-close-white" data-etv-cancelar></button>
             </div>
             <form method="post" id="formEditarTreino">
@@ -571,6 +538,11 @@
                             <label class="etv-field-label">Descrição</label>
                             <input type="text" name="descricao_treino" id="ctInputDescricao" class="form-control" maxlength="200">
                         </div>
+                    </div>
+
+                    <div class="alert alert-info mb-0 mt-3 py-2 small d-none" id="ctHintCodigoAuto">
+                        <i class="bi bi-info-circle me-1"></i>
+                        A letra do treino (A, B, C...) é definida automaticamente.
                     </div>
 
                     <hr class="ct-modal-divider">
@@ -681,7 +653,7 @@
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-secondary" data-etv-cancelar>Cancelar</button>
                         <button type="submit" class="btn etv-btn-save">
-                            <i class="bi bi-save"></i> Salvar treino
+                            <i class="bi bi-save"></i> <span id="ctBtnSalvarTexto">Salvar treino</span>
                         </button>
                     </div>
                 </div>

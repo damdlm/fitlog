@@ -162,12 +162,24 @@ def versao_adicionar_treino(versao_id):
 
     nome_treino = request.form.get('nome_treino', '')
     descricao_treino = request.form.get('descricao_treino', '')
+    # exercicios[]/observacao_<chave>: opcionais -- mesmo esquema de
+    # versao_salvar_treino, já que ver_versao.html agora reaproveita o
+    # mesmo modal (modalExercicios) tanto pra adicionar quanto editar.
+    exercicios_raw = request.form.getlist('exercicios[]')
+    observacoes = {
+        chave: request.form.get(f'observacao_{chave}', '').strip()[:60]
+        for chave in exercicios_raw if chave and chave.strip()
+    }
     try:
         VersaoService.adicionar_treino_livre(
             versao_id, nome_treino, descricao_treino,
-            user_id=current_user.id, permitir_finalizada=False
+            user_id=current_user.id, permitir_finalizada=False,
+            exercicios_raw=exercicios_raw, observacoes=observacoes
         )
-        flash('Treino adicionado! Agora selecione os exercícios.', 'success')
+        if exercicios_raw:
+            flash('Treino adicionado com sucesso!', 'success')
+        else:
+            flash('Treino adicionado! Agora selecione os exercícios.', 'success')
         NotificacaoService.notificar_professor(
             current_user,
             tipo='treino_adicionado',

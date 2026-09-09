@@ -179,6 +179,105 @@ class TestAdicionarTreinoLivre:
         with app.app_context():
             assert TreinoVersao.query.filter_by(versao_id=versao_id).count() == 0
 
+    # ---- Adicionar treino já com exercícios (modal "Adicionar treino"
+    # reaproveita o modal de edição -- ver cadastrar_treinos.html/js) ----
+
+    def test_adicionar_treino_ja_com_exercicios_selecionados(self, aluno_client, app, aluno):
+        with app.app_context():
+            ex1 = ExercicioUsuario(usuario_id=aluno, nome='Supino')
+            ex2 = ExercicioUsuario(usuario_id=aluno, nome='Crucifixo')
+            db.session.add_all([ex1, ex2])
+            db.session.commit()
+            ex1_id, ex2_id = ex1.id, ex2.id
+
+        self._criar_versao(aluno_client)
+        with app.app_context():
+            versao_id = VersaoGlobal.query.filter_by(user_id=aluno).first().id
+
+        aluno_client.post(f'/aluno/cadastrar-treinos/{versao_id}/treino', data={
+            'nome_treino': 'Peito e Tríceps',
+            'descricao_treino': '',
+            'exercicios[]': [f'u_{ex1_id}', f'u_{ex2_id}'],
+            f'observacao_u_{ex1_id}': 'pegada aberta',
+        })
+
+        with app.app_context():
+            tv = TreinoVersao.query.filter_by(versao_id=versao_id).first()
+            assert tv is not None
+            assert tv.codigo == 'A'
+            ids_salvos = {ve.exercicio_usuario_id for ve in tv.exercicios}
+            assert ids_salvos == {ex1_id, ex2_id}
+            obs = {ve.exercicio_usuario_id: ve.observacao for ve in tv.exercicios}
+            assert obs[ex1_id] == 'pegada aberta'
+
+    def test_adicionar_treino_sem_exercicios_continua_funcionando(self, aluno_client, app, aluno):
+        """Fluxo antigo (criar só nome/descrição, sem marcar nada no
+        catálogo) continua válido -- exercicios_raw vazio não deve
+        quebrar nem exigir seleção."""
+        self._criar_versao(aluno_client)
+        with app.app_context():
+            versao_id = VersaoGlobal.query.filter_by(user_id=aluno).first().id
+
+        resp = aluno_client.post(f'/aluno/cadastrar-treinos/{versao_id}/treino', data={
+            'nome_treino': 'Treino sem exercícios ainda', 'descricao_treino': ''
+        })
+        assert resp.status_code in (302, 200)
+        with app.app_context():
+            tv = TreinoVersao.query.filter_by(versao_id=versao_id).first()
+            assert tv is not None
+            assert tv.exercicios == []
+
+    def test_idor_ao_adicionar_treino_so_salva_exercicios_do_proprio_usuario(
+        self, aluno_client, app, aluno, outro_aluno
+    ):
+        """Mesma trava de posse do fluxo de edição (ver
+        TestSalvarExerciciosEIdor), agora também no momento da criação."""
+        with app.app_context():
+            ex_proprio = ExercicioUsuario(usuario_id=aluno, nome='Supino')
+            ex_de_outro = ExercicioUsuario(usuario_id=outro_aluno, nome='Exercício alheio')
+            db.session.add_all([ex_proprio, ex_de_outro])
+            db.session.commit()
+            ex_proprio_id, ex_de_outro_id = ex_proprio.id, ex_de_outro.id
+
+        self._criar_versao(aluno_client)
+        with app.app_context():
+            versao_id = VersaoGlobal.query.filter_by(user_id=aluno).first().id
+
+        aluno_client.post(f'/aluno/cadastrar-treinos/{versao_id}/treino', data={
+            'nome_treino': 'Treino A',
+            'descricao_treino': '',
+            'exercicios[]': [f'u_{ex_proprio_id}', f'u_{ex_de_outro_id}'],
+        })
+
+        with app.app_context():
+            tv = TreinoVersao.query.filter_by(versao_id=versao_id).first()
+            ids_salvos = {ve.exercicio_usuario_id for ve in tv.exercicios}
+            assert ids_salvos == {ex_proprio_id}
+
+    def test_respeita_limite_de_exercicios_ao_adicionar_treino(self, aluno_client, app, aluno):
+        from services.versao_service import VersaoService
+        with app.app_context():
+            excesso = VersaoService.MAX_EXERCICIOS_POR_TREINO + 1
+            exs = [ExercicioUsuario(usuario_id=aluno, nome=f'Ex {i}') for i in range(excesso)]
+            db.session.add_all(exs)
+            db.session.commit()
+            valores = [f'u_{ex.id}' for ex in exs]
+
+        self._criar_versao(aluno_client)
+        with app.app_context():
+            versao_id = VersaoGlobal.query.filter_by(user_id=aluno).first().id
+
+        aluno_client.post(f'/aluno/cadastrar-treinos/{versao_id}/treino', data={
+            'nome_treino': 'Treino com excesso',
+            'descricao_treino': '',
+            'exercicios[]': valores,
+        })
+
+        with app.app_context():
+            # Passou do limite -- o treino inteiro não deve ter sido criado
+            # (mesma semântica de validar tudo antes de escrever).
+            assert TreinoVersao.query.filter_by(versao_id=versao_id).count() == 0
+
 
 class TestSalvarExerciciosEIdor:
     def _preparar_versao_com_treino(self, client, app, user_id):
