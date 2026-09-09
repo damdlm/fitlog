@@ -395,6 +395,19 @@ def create_app(config_class=None):
             return {"status": "error", "database": "unavailable"}, 503
 
     # =============================================================
+    # TEMPORÁRIO -- teste de integração do Sentry.
+    # Remover essa rota depois de confirmar no painel do Sentry.
+    # Protegida por token pra ninguém de fora conseguir disparar.
+    # =============================================================
+    @app.route("/debug-sentry")
+    def trigger_sentry_test_error():
+        from flask import request
+        token_esperado = (app.config.get("SECRET_KEY") or "")[:10]
+        if request.args.get("token") != token_esperado:
+            return {"error": "not found"}, 404
+        1 / 0  # noqa -- erro proposital para verificar o Sentry
+
+    # =============================================================
     # PÁGINAS DE ERRO CUSTOMIZADAS
     # =============================================================
     # Só cobrem erros que o Flask CONSEGUE responder (404, 500 com a
