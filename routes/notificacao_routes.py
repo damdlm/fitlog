@@ -63,7 +63,7 @@ def listar():
 
 @notificacao_bp.route('/api/notificacoes')
 @login_required
-@limiter.limit("120 per hour", key_func=_chave_por_usuario)
+@limiter.limit("200 per hour", key_func=_chave_por_usuario)
 def api_listar():
     """Usado pelo sininho: contagem de não lidas + as mais recentes,
     consultado por polling (ver notificacoes.js)."""

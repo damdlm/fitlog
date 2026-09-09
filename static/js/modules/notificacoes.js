@@ -1,7 +1,7 @@
 /**
  * Sino de notificações -- polling simples (sem push, ver static/sw.js).
  *
- * Busca /api/notificacoes a cada 30s + na carga da página, atualiza o
+ * Busca /api/notificacoes a cada 45s + na carga da página, atualiza o
  * badge de contagem e o conteúdo do dropdown do navbar. CSRF é
  * adicionado automaticamente pelo interceptor global (ver
  * static/js/modules/csrf.js) -- não precisa fazer nada extra aqui.
@@ -9,7 +9,7 @@
 (function () {
     'use strict';
 
-    const POLL_INTERVAL_MS = 30000;
+    const POLL_INTERVAL_MS = 45000;
 
     const badge = document.getElementById('notifBellBadge');
     const list = document.getElementById('notifDropdownList');
