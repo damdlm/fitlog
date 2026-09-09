@@ -276,6 +276,84 @@
     #modalExercicios label.etv-field-label {
         margin-bottom: 8px;
     }
+
+    /* Busca modernizada -- pill arredondado com ícone e "x" embutidos,
+       no lugar do input-group quadrado padrão do Bootstrap. */
+    #modalExercicios .etv-search-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    #modalExercicios .etv-search-icon {
+        position: absolute;
+        left: 14px;
+        color: #adb5bd;
+        font-size: .9rem;
+        pointer-events: none;
+    }
+    #modalExercicios .etv-search-input {
+        width: 100%;
+        height: 42px;
+        border: 1px solid #e9ecef;
+        border-radius: 999px;
+        padding: 0 38px;
+        font-size: .88rem;
+        background: #f8f9fa;
+        transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+    #modalExercicios .etv-search-input:focus {
+        outline: none;
+        border-color: var(--primary-orange);
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(242, 140, 51, .12);
+    }
+    #modalExercicios .etv-search-clear {
+        position: absolute;
+        right: 8px;
+        border: none;
+        background: none;
+        color: #ced4da;
+        font-size: 1.1rem;
+        padding: 4px;
+        line-height: 1;
+        display: none;
+    }
+    #modalExercicios .etv-search-clear:hover { color: #6c757d; }
+    #modalExercicios .etv-search-wrap.has-text .etv-search-clear { display: inline-flex; }
+
+    /* Cards mais compactos: campo de observação vem oculto por padrão
+       (só a setinha "Observação" aparece) -- cabe mais exercício na
+       tela sem precisar rolar tanto. Abre marcando .etv-obs-open no
+       card (ver onclick inline no botão + populamento em
+       cadastrar-treinos.js, que também abre sozinho quando o
+       exercício já tem uma observação salva). */
+    #modalExercicios .etv-grid { gap: 6px; }
+    #modalExercicios .etv-card { padding: 7px 12px; }
+    #modalExercicios .etv-card-row2 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+    #modalExercicios .etv-obs-toggle {
+        flex: 0 0 auto;
+        border: none;
+        background: none;
+        color: #adb5bd;
+        font-size: .68rem;
+        font-weight: 600;
+        padding: 2px 4px;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        cursor: pointer;
+    }
+    #modalExercicios .etv-obs-toggle:hover { color: var(--primary-orange); }
+    #modalExercicios .etv-obs-toggle i { transition: transform .15s ease; font-size: .8rem; }
+    #modalExercicios .etv-card.etv-obs-open .etv-obs-toggle { color: var(--primary-orange); }
+    #modalExercicios .etv-card.etv-obs-open .etv-obs-toggle i { transform: rotate(180deg); }
+    #modalExercicios .etv-obs-input { display: none; }
+    #modalExercicios .etv-card.etv-obs-open .etv-obs-input { display: block; }
 </style>
 
 <div class="ct-header">
@@ -514,12 +592,12 @@
 
                     <div class="etv-toolbar">
                         <div class="etv-toolbar-row">
-                            <div class="etv-search input-group">
-                                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                                <input type="text" id="etvBusca" class="form-control"
-                                       placeholder="Digite para filtrar exercícios..." autocomplete="off">
-                                <button class="btn btn-outline-secondary" type="button" id="etvLimparFiltro">
-                                    <i class="bi bi-x"></i> Limpar
+                            <div class="etv-search-wrap" id="etvSearchWrap">
+                                <i class="bi bi-search etv-search-icon"></i>
+                                <input type="text" id="etvBusca" class="etv-search-input"
+                                       placeholder="Buscar exercício..." autocomplete="off">
+                                <button type="button" id="etvLimparFiltro" class="etv-search-clear" title="Limpar busca">
+                                    <i class="bi bi-x-circle-fill"></i>
                                 </button>
                             </div>
                         </div>
@@ -548,7 +626,13 @@
                                          title="{{ tooltip_nome_exercicio(ex) }}">
                                         {{ ex.nome }}
                                     </div>
-                                    <span class="badge etv-card-musculo">{{ musculo_nome }}</span>
+                                    <div class="etv-card-row2">
+                                        <span class="badge etv-card-musculo">{{ musculo_nome }}</span>
+                                        <button type="button" class="etv-obs-toggle" title="Adicionar observação"
+                                                onclick="event.preventDefault(); event.stopPropagation(); this.closest('.etv-card').classList.toggle('etv-obs-open');">
+                                            Observação <i class="bi bi-chevron-down"></i>
+                                        </button>
+                                    </div>
                                     <input type="text"
                                            class="etv-obs-input"
                                            name="observacao_{{ ex.prefixo }}{{ ex.id }}"

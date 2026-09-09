@@ -26,12 +26,26 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalIcone = document.getElementById('ctModalIcone');
     const btnSalvarTexto = document.getElementById('ctBtnSalvarTexto');
     const busca = document.getElementById('etvBusca');
+    const buscaWrap = document.getElementById('etvSearchWrap');
     const grid = document.getElementById('etvGrid');
     const chipTodos = document.querySelector('#etvChipsMusculo .etv-chip[data-musculo=""]');
 
     function checkboxesDoGrid() {
         return grid ? Array.from(grid.querySelectorAll('.etv-checkbox')) : [];
     }
+
+    // "X" de limpar a busca só aparece quando tem texto digitado -- o
+    // próprio botão (#etvLimparFiltro) e o filtro em si continuam sendo
+    // tratados por editar-treino-versao.js, isso aqui é só o visual do
+    // campo em si (classe .has-text no wrapper).
+    busca?.addEventListener('input', function () {
+        buscaWrap?.classList.toggle('has-text', busca.value.length > 0);
+    });
+    // limparFiltro() (editar-treino-versao.js) zera busca.value direto,
+    // sem disparar 'input' -- sincroniza o visual aqui também.
+    document.getElementById('etvLimparFiltro')?.addEventListener('click', function () {
+        buscaWrap?.classList.remove('has-text');
+    });
 
     // Feedback leve de "carregando" no próprio botão clicado -- o loop
     // abaixo que marca os ~1300 checkboxes do treino escolhido é rápido
@@ -302,6 +316,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 obsInput.disabled = !deveEstarMarcado;
                 obsInput.value = deveEstarMarcado ? (observacoes[cb.value] || '') : '';
             }
+
+            // Campo de observação vem fechado por padrão (mais compacto) --
+            // só abre sozinho se este exercício já tinha uma observação
+            // salva, pra ela não ficar escondida sem indicação nenhuma.
+            if (card) card.classList.toggle('etv-obs-open', deveEstarMarcado && !!(observacoes[cb.value] || '').trim());
         });
 
         // Recalcula o contador (1 vez só) e traz os exercícios já
