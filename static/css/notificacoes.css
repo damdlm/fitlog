@@ -12,9 +12,19 @@
     justify-content: center;
     background: #F5F6F8;
     color: #4B5563;
-    border: 2px solid #F28C33;
     font-size: 1.15rem;
     transition: background .15s ease, color .15s ease;
+}
+
+/* Especificidade combinada (.btn-avatar + .notif-bell-btn) de propósito:
+   o botão também tem a classe .btn-avatar, que define "border: none" no
+   <style> inline de templates/base.html. Como esse <style> carrega DEPOIS
+   deste arquivo no <head>, uma regra com a mesma especificidade
+   (.notif-bell-btn sozinha) perde a queda de braço da cascata pra ele,
+   não importa o valor que a gente colocar aqui -- já aconteceu 2x. Selector
+   duplo = especificidade maior, então isso vence independente da ordem. */
+.notif-bell-btn.btn-avatar {
+    border: 2px solid #F28C33;
 }
 
 .notif-bell-btn:hover,
