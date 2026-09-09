@@ -676,6 +676,39 @@
     }
 
     /* Estado vazio (nenhum treino/data escolhido ainda) */
+    /* Card de "nenhuma versão ativa" -- mesmo visual compacto usado em
+       versoes.html (.v-empty-card), só com nome de classe próprio pra
+       não colidir com o .empty-state maior/animado logo abaixo (esse
+       cobre "sem exercício no treino selecionado", caso diferente). */
+    .rt-versao-empty {
+        background: white;
+        border: 1px solid var(--border-soft);
+        border-radius: 16px;
+        padding: 32px 24px;
+        text-align: center;
+        max-width: 520px;
+        margin: 0 auto;
+    }
+    .rt-versao-empty-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, rgba(242,140,51,0.12) 0%, rgba(255,179,102,0.12) 100%);
+        color: var(--primary-orange);
+        font-size: 1.7rem;
+        margin-bottom: 16px;
+    }
+    .rt-versao-empty h2 { font-size: 1.2rem; font-weight: 700; color: var(--dark-bg); margin-bottom: 6px; }
+    .rt-versao-empty p { color: #8a8580; font-size: 0.92rem; margin-bottom: 22px; }
+    .rt-versao-empty-btn {
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        color: white;
+        border: none;
+    }
+
     .empty-state {
         text-align: center;
         padding: 56px 24px;
@@ -2264,10 +2297,13 @@
 </div>
 
 {% if erro_versao %}
-<div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
-    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-    <strong>Atenção!</strong> {{ erro_versao }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+<div class="rt-versao-empty mb-4">
+    <div class="rt-versao-empty-icon"><i class="bi bi-layers"></i></div>
+    <h2>Nenhuma versão ativa</h2>
+    <p>{{ erro_versao }}. Cadastre uma versão de treino ou escolha outra data.</p>
+    <a href="{{ url_for('aluno.cadastrar_treinos') }}" class="btn rt-versao-empty-btn">
+        <i class="bi bi-check-circle"></i> Ir para Cadastrar Treinos
+    </a>
 </div>
 {% endif %}
 
