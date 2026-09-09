@@ -3,6 +3,9 @@ import secrets
 import logging
 from logging.handlers import RotatingFileHandler
 
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+
 from flask import Flask, render_template
 
 from config import get_config
@@ -140,6 +143,16 @@ def create_app(config_class=None):
 
     if config_class is None:
         config_class = get_config()
+
+    sentry_dsn = os.environ.get('SENTRY_DSN')
+    if sentry_dsn:
+        sentry_sdk.init(
+            dsn=sentry_dsn,
+            integrations=[FlaskIntegration()],
+            environment=os.environ.get('FLASK_ENV', 'production'),
+            traces_sample_rate=0.1,
+            send_default_pii=False,
+        )
 
     app = Flask(__name__)
     app.config.from_object(config_class)

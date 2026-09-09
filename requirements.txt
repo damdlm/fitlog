@@ -37,6 +37,11 @@ Flask-Compress==1.15
 psutil==6.1.1
 
 # =========================
+# MONITORAMENTO DE ERROS
+# =========================
+sentry-sdk[flask]==2.17.0
+
+# =========================
 # STORAGE (bucket S3-compatível p/ mídia de exercícios --
 # necessário pra escalar horizontalmente, volumes do Railway não
 # funcionam com múltiplas réplicas)
