@@ -293,49 +293,42 @@
 
     .ct-finalizar-hint { font-size: 0.82rem; color: var(--ct-muted); max-width: 480px; }
 
-    /* Filtro (busca + chips de músculo) do modal "Editar treino" fica
-       fora do quadro de exercícios do catálogo nesta tela -- diferente
-       do padrão usado em editar_treino_versao.html (mesmo CSS base,
-       .etv-toolbar fica dentro/sticky de .etv-scroll lá). Sobrescreve
-       só aqui via seletor com #modalExercicios, sem tocar em
-       editar-treino-versao.css (compartilhado com outras 5 telas). */
+    /* Filtro (busca) do modal "Editar treino" fica fora do quadro de
+       exercícios do catálogo nesta tela -- diferente do padrão usado em
+       editar_treino_versao.html (mesmo CSS base, .etv-toolbar fica
+       dentro/sticky de .etv-scroll lá). Sobrescreve só aqui via seletor
+       com #modalExercicios, sem tocar em editar-treino-versao.css
+       (compartilhado com outras 5 telas). Filtro por músculo (chips)
+       foi removido só nesta tela -- o usuário achou desnecessário; a
+       busca por texto continua cobrindo o mesmo caso de uso. */
     #modalExercicios .etv-toolbar {
         position: static;
         background: transparent;
         padding: 0;
-        margin: 0 0 12px;
+        margin: 0 0 10px;
         border-bottom: none;
     }
-    /* Compactação geral do modal: nome/descrição do treino em cima,
-       separados por uma linha fina do bloco de exercícios do catálogo
-       embaixo -- deixa mais claro que são duas etapas diferentes
-       (editar dados do treino vs. escolher exercícios), sem precisar
-       de mais texto/título pra isso. */
+    /* Compactação do topo do modal: nome/descrição do treino bem
+       coladinhos ao cabeçalho, separados por uma linha fina do bloco
+       de exercícios do catálogo embaixo. */
     #modalExercicios .modal-body {
-        padding-top: 18px;
+        padding-top: 14px;
         padding-bottom: 14px;
     }
     #modalExercicios .ct-modal-dados-treino {
-        margin-bottom: 10px;
+        margin-bottom: 6px;
     }
     #modalExercicios .ct-modal-dados-treino .etv-field-label {
-        margin-bottom: 4px;
+        margin-bottom: 3px;
         font-size: 0.68rem;
     }
     #modalExercicios .ct-modal-divider {
         border: none;
         border-top: 1px solid #ececec;
-        margin: 2px 0 14px;
+        margin: 2px 0 10px;
     }
     #modalExercicios label.etv-field-label {
         margin-bottom: 8px;
-    }
-    #modalExercicios .etv-toolbar-row {
-        margin-bottom: 8px;
-    }
-    #modalExercicios .etv-chip {
-        padding: 4px 12px;
-        font-size: 0.74rem;
     }
 </style>
 
@@ -529,7 +522,7 @@
             <form method="post" id="formEditarTreino">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
-                    <div class="row g-3 ct-modal-dados-treino">
+                    <div class="row g-2 ct-modal-dados-treino">
                         <div class="col-md-6">
                             <label class="etv-field-label">Nome do treino</label>
                             <input type="text" name="nome_treino" id="ctInputNome" class="form-control" maxlength="100" required>
@@ -553,18 +546,6 @@
                                 <button class="btn btn-outline-secondary" type="button" id="etvLimparFiltro">
                                     <i class="bi bi-x"></i> Limpar
                                 </button>
-                            </div>
-                        </div>
-                        <div class="etv-toolbar-row">
-                            <div class="etv-chip-row" id="etvChipsMusculo">
-                                <button type="button" class="etv-chip is-active" data-musculo="" aria-pressed="true">
-                                    Todos <span class="etv-chip-count">{{ exercicios_catalogo|length }}</span>
-                                </button>
-                                {% for m in musculos_catalogo %}
-                                <button type="button" class="etv-chip" data-musculo="{{ m }}" aria-pressed="false">
-                                    {{ m }} <span class="etv-chip-count">{{ contagem_musculos.get(m, 0) }}</span>
-                                </button>
-                                {% endfor %}
                             </div>
                         </div>
                     </div>
