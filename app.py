@@ -195,6 +195,22 @@ def create_app(config_class=None):
 
     app.jinja_env.globals['static_v'] = static_v
 
+    # SEO: URL absoluta e canônica da página atual (ou de um caminho
+    # explícito). Usa APP_BASE_URL (config.py) como origem confiável em
+    # vez do header Host recebido -- mesmo motivo de segurança já
+    # documentado ali (Host Header Injection): um Host forjado não pode
+    # forçar um <link rel="canonical"> ou og:url apontando para outro
+    # domínio. Sem APP_BASE_URL configurada (dev local), cai para
+    # request.host_url -- comportamento antigo, sem quebrar nada.
+    # Uso no template: {{ canonical_url() }} ou {{ canonical_url('/x') }}.
+    def canonical_url(caminho=None):
+        from flask import request as flask_request
+        base = app.config.get('APP_BASE_URL')
+        base = base.rstrip('/') if base else flask_request.host_url.rstrip('/')
+        return f"{base}{caminho if caminho is not None else flask_request.path}"
+
+    app.jinja_env.globals['canonical_url'] = canonical_url
+
     # extensões
     db.init_app(app)
     login_manager.init_app(app)
@@ -373,6 +389,7 @@ def create_app(config_class=None):
             formatar_data=formatar_data,
             formatar_data_para_input=formatar_data_para_input,
             now=datetime.now,
+            google_site_verification=app.config.get('GOOGLE_SITE_VERIFICATION'),
         )
 
     # =============================================================
@@ -393,6 +410,84 @@ def create_app(config_class=None):
             # completo na resposta HTTP -- só no log interno.
             app.logger.exception("Health check do banco falhou (/health/db)")
             return {"status": "error", "database": "unavailable"}, 503
+
+    # =============================================================
+    # SEO: robots.txt / sitemap.xml
+    # =============================================================
+    # Rotas dinâmicas (não arquivo estático) de propósito: as URLs
+    # públicas do FitLog são poucas e conhecidas no código, então gerar
+    # via rota evita manter uma segunda lista desincronizada da real.
+    # robots.txt NÃO é mecanismo de segurança -- as rotas privadas
+    # abaixo já são protegidas por @login_required; isso só evita que
+    # crawlers gastem tempo (e apareçam nos logs) nelas.
+    @app.route("/robots.txt")
+    def robots_txt():
+        from flask import Response
+        linhas = [
+            "User-agent: *",
+            "Allow: /",
+            "",
+            "Disallow: /admin",
+            "Disallow: /professor",
+            "Disallow: /aluno",
+            "Disallow: /calendar",
+            "Disallow: /registrar",
+            "Disallow: /estatisticas",
+            "Disallow: /api",
+            "Disallow: /fitbot",
+            "Disallow: /contato",
+            "Disallow: /billing",
+            "Disallow: /notificacoes",
+            "Disallow: /auth/reset-password",
+            "Disallow: /auth/profile",
+            "",
+            f"Sitemap: {canonical_url('/sitemap.xml')}",
+        ]
+        return Response("\n".join(linhas) + "\n", mimetype="text/plain")
+
+    @app.route("/sitemap.xml")
+    def sitemap_xml():
+        from flask import Response
+        # Só URLs públicas e realmente indexáveis -- ver
+        # templates/auth/login.html e register.html, que levam noindex
+        # (thin content de formulário) e por isso ficam de fora daqui,
+        # embora sejam acessíveis sem login. Sem <lastmod>: não há uma
+        # fonte confiável de data de modificação para essas páginas, e
+        # inventar uma data só pra "parecer atualizado" é pior que
+        # omitir o campo.
+        urls_publicas = [
+            canonical_url('/'),
+            canonical_url('/privacidade/'),
+            canonical_url('/privacidade/termos'),
+        ]
+        itens = "".join(f"<url><loc>{u}</loc></url>" for u in urls_publicas)
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            f'{itens}'
+            '</urlset>'
+        )
+        return Response(xml, mimetype="application/xml")
+
+    @app.route("/llms.txt")
+    def llms_txt():
+        from flask import Response, request
+        # Ver https://llmstxt.org/ -- arquivo simples de descoberta para
+        # agentes de IA, análogo ao robots.txt mas para LLMs. Só
+        # descreve o que o FitLog é e aponta pras páginas públicas
+        # reais; nenhum dado inventado.
+        base = app.config.get('APP_BASE_URL') or request.host_url.rstrip('/')
+        base = base.rstrip('/')
+        conteudo = (
+            "# FitLog\n\n"
+            "> Aplicativo para registrar treinos, acompanhar evolução e "
+            "organizar a rotina de exercícios de alunos e professores.\n\n"
+            "## Páginas públicas\n\n"
+            f"- [Início]({base}/): apresentação do FitLog\n"
+            f"- [Política de Privacidade]({base}/privacidade/)\n"
+            f"- [Termos de Uso]({base}/privacidade/termos)\n"
+        )
+        return Response(conteudo, mimetype="text/plain")
 
     # =============================================================
     # PÁGINAS DE ERRO CUSTOMIZADAS

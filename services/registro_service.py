@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import or_  # ✅ ADICIONADO
 from datetime import datetime, timezone
 from .base_service import BaseService
+from .analytics_service import AnalyticsService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -318,6 +319,19 @@ class RegistroService(BaseService):
                         db.session.add(serie)
             
             db.session.commit()
+
+            # Analytics ('workout_completed', adaptado -- ver
+            # services/analytics_service.py sobre o FitLog não ter um
+            # conceito fechado de "treino concluído"): dispara só
+            # depois do commit confirmado, sem nome de exercício, carga,
+            # repetições ou qualquer ID -- só a contagem agregada.
+            AnalyticsService.track(
+                'workout_completed',
+                exercise_count=sum(
+                    1 for d in dados_exercicios.values() if d.get('carga') and d.get('repeticoes')
+                ),
+            )
+
             return True
         except Exception as e:
             BaseService.handle_error(e, "Erro ao salvar registros")

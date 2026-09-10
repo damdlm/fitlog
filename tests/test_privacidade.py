@@ -584,5 +584,10 @@ class TestIsolamentoEntreUsuarios:
 
         client2 = client.application.test_client()
         resp = client2.post('/auth/login', data={'username': 'exusuario', 'password': 'Senha1234'}, follow_redirects=True)
-        # username antigo não existe mais (foi anonimizado) -- login falha
-        assert client2.get('/', follow_redirects=False).status_code == 302
+        # username antigo não existe mais (foi anonimizado) -- login falha.
+        # '/' agora é a landing page pública (não exige mais login), então
+        # o teste de "continua deslogado" não é mais o redirect 302 -- é
+        # receber a landing (200) em vez do dashboard autenticado.
+        resp_raiz = client2.get('/', follow_redirects=False)
+        assert resp_raiz.status_code == 200
+        assert b'landing-hero' in resp_raiz.data

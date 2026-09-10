@@ -26,7 +26,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>FitLog - Sistema de Treinos</title>
+
+    <title>{% block title %}FitLog — Seu treino, sempre com você{% endblock %}</title>
+    <meta name="description"
+          content="{% block meta_description %}Registre seus treinos, acompanhe sua evolução e mantenha sua rotina de exercícios organizada em um só lugar com o FitLog.{% endblock %}">
+    {% block canonical %}<link rel="canonical" href="{{ canonical_url() }}">{% endblock %}
+    {% block robots_meta %}{% endblock %}
+    {% if google_site_verification %}
+    <meta name="google-site-verification" content="{{ google_site_verification }}">
+    {% endif %}
+
+    <!-- Open Graph / redes sociais -->
+    <meta property="og:site_name" content="FitLog">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}FitLog — Seu treino, sempre com você{% endblock %}">
+    <meta property="og:description"
+          content="{% block og_description %}Registre seus treinos, acompanhe sua evolução e mantenha sua rotina de exercícios organizada em um só lugar com o FitLog.{% endblock %}">
+    <meta property="og:url" content="{% block og_url %}{{ canonical_url() }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ canonical_url('/static/images/og-fitlog.jpg') }}{% endblock %}">
+    <meta property="og:locale" content="pt_BR">
+
+    <!-- Twitter Card (reaproveita os mesmos campos de Open Graph) -->
+    <meta name="twitter:card" content="summary_large_image">
 
     <!-- PWA: instalar como app no celular -->
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
