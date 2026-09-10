@@ -36,12 +36,9 @@
                onchange="atualizarNotaPagamento('{{ prefixo }}')">
         <label for="{{ prefixo }}-pg-pix"><i class="bi bi-qr-code me-1"></i>Pix</label>
     </div>
-    <div class="ma-nota-pagamento">
-        <i class="bi bi-info-circle-fill"></i>
-        <p class="mb-0" id="{{ prefixo }}-nota-pagamento">
-            Cartão de crédito é cobrado automaticamente todo mês. Seu cartão nunca passa pelo FitLog.
-        </p>
-    </div>
+    <p class="text-muted mb-0" style="font-size: 0.8rem;" id="{{ prefixo }}-nota-pagamento">
+        Cartão de crédito é cobrado automaticamente todo mês. Seu cartão nunca passa pelo FitLog.
+    </p>
 </div>
 {% endmacro %}
 
@@ -79,14 +76,13 @@
         <span class="ma-status-pill ma-status-bloqueado"><i class="bi bi-lock"></i> Acesso aos alunos bloqueado</span>
         <p class="mt-3 mb-0">
             O pagamento do {{ plano_gestao_necessario.nome if plano_gestao_necessario else 'seu plano' }} está
-            atrasado há mais de 15 dias. Suas telas de alunos, Estatísticas e FitBot ficam bloqueadas até
+            atrasado há mais de 15 dias. Suas telas de alunos, e demais telas de monitoramento ficam bloqueadas até
             regularizar -- os vínculos com seus alunos continuam intactos.
         </p>
     {% elif acesso_premium and assinatura and assinatura.status == 'trialing' %}
         <span class="ma-status-pill ma-status-atencao"><i class="bi bi-hourglass-split"></i> Período de teste</span>
         <p class="mt-3 mb-0">
-            Você está no teste grátis de 30 dias, com acesso completo às telas de
-            <strong>Estatísticas</strong> e <strong>FitBot</strong>.
+            Você está no teste grátis de 30 dias, com acesso completo às telas do FitLog.
             {% if assinatura.trial_termina_em %}
                 Termina em <strong>{{ assinatura.trial_termina_em.strftime('%d/%m/%Y') }}</strong>.
             {% endif %}
@@ -104,7 +100,7 @@
         <span class="ma-status-pill ma-status-atencao"><i class="bi bi-exclamation-triangle"></i> Pagamento atrasado</span>
         <p class="mt-3 mb-0">
             Identificamos um atraso no pagamento. Você ainda tem acesso enquanto tentamos cobrar novamente --
-            regularize para não perder o acesso aos seus alunos e às telas de Estatísticas/FitBot.
+            regularize para não perder o acesso aos seus alunos e aos demais recursos do FitLog.
         </p>
     {% elif acesso_premium and assinatura and assinatura.status == 'active' %}
         <span class="ma-status-pill ma-status-ok"><i class="bi bi-check-circle"></i> Assinatura ativa</span>
@@ -112,8 +108,8 @@
     {% else %}
         <span class="ma-status-pill ma-status-bloqueado"><i class="bi bi-lock"></i> Acesso bloqueado</span>
         <p class="mt-3 mb-0">
-            Seu período de teste terminou (ou o pagamento não foi confirmado). As telas de
-            <strong>Estatísticas</strong> e <strong>FitBot</strong> ficam disponíveis de novo assim que a
+            Seu período de teste terminou (ou o pagamento não foi confirmado). As telas do
+            FitLog ficam disponíveis de novo assim que a
             assinatura for confirmada.
         </p>
     {% endif %}
@@ -166,8 +162,8 @@
         <div class="ma-price">R$ {{ '%.2f'|format(plano_oferecido.preco_centavos / 100) }}<small> /mês</small></div>
         <p class="text-muted mb-3">
             {{ plano_oferecido.nome }}
-            {% if plano_gestao_necessario %} — libera Estatísticas, FitBot e gestão dos seus alunos
-            {% else %} — libera Estatísticas e FitBot{% endif %}
+            {% if plano_gestao_necessario %} — libera as telas do FitLog e gestão dos seus alunos
+            {% else %} — libera as telas do FitLog{% endif %}
         </p>
         {% endif %}
 
@@ -211,8 +207,7 @@
     {% if acesso_premium and assinatura and assinatura.status == 'trialing' %}
         <span class="ma-status-pill ma-status-atencao"><i class="bi bi-hourglass-split"></i> Período de teste</span>
         <p class="mt-3 mb-0">
-            Você está no teste grátis de 30 dias, com acesso completo às telas de
-            <strong>Estatísticas</strong> e <strong>FitBot</strong>.
+            Você está no teste grátis de 30 dias, com acesso completo às telas do FitLog.
             {% if assinatura.trial_termina_em %}
                 Termina em <strong>{{ assinatura.trial_termina_em.strftime('%d/%m/%Y') }}</strong>.
             {% endif %}
@@ -230,7 +225,7 @@
         <span class="ma-status-pill ma-status-bloqueado"><i class="bi bi-lock"></i> Acesso bloqueado</span>
         <p class="mt-3 mb-0">
             Seu período de teste terminou (ou o pagamento não foi confirmado).
-            As telas de <strong>Estatísticas</strong> e <strong>FitBot</strong> ficam disponíveis
+            As telas do FitLog ficam disponíveis
             de novo assim que a assinatura for confirmada.
         </p>
     {% endif %}
@@ -241,7 +236,7 @@
 {% if plano_oferecido %}
 <div class="ma-card text-center">
     <div class="ma-price">R$ {{ '%.2f'|format(plano_oferecido.preco_centavos / 100) }}<small> /mês</small></div>
-    <p class="text-muted mb-3">{{ plano_oferecido.nome }} — Estatísticas e FitBot liberados</p>
+    <p class="text-muted mb-3">{{ plano_oferecido.nome }} — Telas do FitLog liberadas</p>
     <form method="POST" action="{{ url_for('billing.assinar') }}" id="form-assinar-aluno" target="_blank">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="plano_codigo" value="{{ plano_oferecido.codigo }}">
