@@ -8,6 +8,11 @@
 {% block og_title %}FitLog — Registre seus treinos e acompanhe sua evolução{% endblock %}
 {% block og_description %}Organize sua rotina de treinos, registre cada série e acompanhe sua evolução com o FitLog. Para alunos e professores.{% endblock %}
 
+{# Sem botões de Login/Registrar no cabeçalho: a landing já tem suas
+   próprias chamadas para ação (hero e CTA final) -- manter os dois
+   ali em cima era redundante. #}
+{% block header_guest_actions %}{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
 {% endblock %}

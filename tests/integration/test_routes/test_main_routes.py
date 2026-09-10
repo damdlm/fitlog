@@ -48,6 +48,16 @@ class TestRaizPublicaEDashboard:
 
         assert b'/contato/' not in resp.data
 
+    def test_landing_esconde_login_registrar_do_cabecalho(self, client):
+        # A landing já tem CTAs próprias (hero + seção final) -- os
+        # botões de Login/Registrar do cabeçalho padrão (base.html)
+        # ficavam redundantes aqui, então landing.html esconde esse
+        # bloco (ver templates/landing.html: header_guest_actions).
+        resp = client.get('/')
+
+        assert b'btn-outline-secondary btn-sm' not in resp.data
+        assert b'Come\xc3\xa7ar agora' in resp.data  # CTA do hero continua
+
 
 class TestSeoBasico:
     """SEO base (Fase 3/7): title/description/canonical/Open Graph no
