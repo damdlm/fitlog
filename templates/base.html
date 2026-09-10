@@ -26,28 +26,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <title>{% block title %}FitLog — Seu treino, sempre com você{% endblock %}</title>
-    <meta name="description"
-          content="{% block meta_description %}Registre seus treinos, acompanhe sua evolução e mantenha sua rotina de exercícios organizada em um só lugar com o FitLog.{% endblock %}">
-    {% block canonical %}<link rel="canonical" href="{{ canonical_url() }}">{% endblock %}
-    {% block robots_meta %}{% endblock %}
-    {% if google_site_verification %}
-    <meta name="google-site-verification" content="{{ google_site_verification }}">
-    {% endif %}
-
-    <!-- Open Graph / redes sociais -->
-    <meta property="og:site_name" content="FitLog">
-    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
-    <meta property="og:title" content="{% block og_title %}FitLog — Seu treino, sempre com você{% endblock %}">
-    <meta property="og:description"
-          content="{% block og_description %}Registre seus treinos, acompanhe sua evolução e mantenha sua rotina de exercícios organizada em um só lugar com o FitLog.{% endblock %}">
-    <meta property="og:url" content="{% block og_url %}{{ canonical_url() }}{% endblock %}">
-    <meta property="og:image" content="{% block og_image %}{{ canonical_url('/static/images/og-fitlog.jpg') }}{% endblock %}">
-    <meta property="og:locale" content="pt_BR">
-
-    <!-- Twitter Card (reaproveita os mesmos campos de Open Graph) -->
-    <meta name="twitter:card" content="summary_large_image">
+    <title>FitLog - Sistema de Treinos</title>
 
     <!-- PWA: instalar como app no celular -->
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
@@ -1379,7 +1358,7 @@
                 </li>
                 {% endif %}
 
-                {% if current_user.is_professor() %}
+                {% if current_user.is_professor() and not current_user.is_admin %}
                 <li class="nav-item mega-item">
                     <button type="button" class="nav-link mega-trigger {{ 'active' if request.blueprint == 'professor' else '' }}" data-mega="professor">
                         <i class="bi bi-person-badge"></i> Professor <i class="bi bi-chevron-down mega-caret"></i>
@@ -1427,7 +1406,7 @@
                 </li>
                 {% endif %}
 
-                {% if current_user.pode_gerenciar_treino_proprio() %}
+                {% if current_user.pode_gerenciar_treino_proprio() and not current_user.is_admin %}
                 <li class="nav-item mega-item">
                     <button type="button" class="nav-link mega-trigger {{ 'active' if request.blueprint in ['aluno', 'calendar', 'stats'] else '' }}" data-mega="treino">
                         <i class="bi bi-heart-pulse"></i> {{ 'Meu Treino' if current_user.is_professor() else 'Treino' }} <i class="bi bi-chevron-down mega-caret"></i>
@@ -1512,7 +1491,7 @@
 
             <!-- Ação rápida + avatar (desktop e mobile) -->
             <div class="d-flex align-items-center gap-2 order-lg-2">
-                {% if current_user.pode_gerenciar_treino_proprio() %}                
+                {% if current_user.pode_gerenciar_treino_proprio() and not current_user.is_admin %}                
                 <a href="{{ url_for('register.registrar_treino') }}" class="btn btn-primary btn-sm d-none d-lg-inline-flex align-items-center gap-1 fw-semibold">
                     <i class="bi bi-plus-circle"></i> Registrar treino
                 </a>
@@ -1550,7 +1529,7 @@
                 <div class="nav-item dropdown">
                     <button class="btn btn-avatar dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ current_user.username }}">
                         <span class="avatar-circle">{{ current_user.username[0]|upper }}</span>
-                        {% if current_user.is_professor() and current_user.solicitacoes_pendentes_count > 0 %}
+                        {% if current_user.is_professor() and not current_user.is_admin and current_user.solicitacoes_pendentes_count > 0 %}
                             <span class="badge rounded-pill bg-danger bottom-nav-badge d-lg-none">{{ current_user.solicitacoes_pendentes_count }}</span>
                         {% endif %}
                     </button>
@@ -1561,14 +1540,14 @@
                                 <i class="bi bi-person"></i> Meu Perfil
                             </a>
                         </li>
-                        {% if current_user.is_professor() or current_user.is_aluno() %}
+                        {% if (current_user.is_professor() or current_user.is_aluno()) and not current_user.is_admin %}
                         <li>
                             <a class="dropdown-item" href="{{ url_for('billing.minha_assinatura') }}">
                                 <i class="bi bi-credit-card"></i> Minha Assinatura
                             </a>
                         </li>
                         {% endif %}
-                        {% if current_user.is_professor() %}
+                        {% if current_user.is_professor() and not current_user.is_admin %}
                         <li class="d-lg-none">
                             <a class="dropdown-item" href="{{ url_for('professor.dashboard') }}">
                                 <i class="bi bi-speedometer2"></i> Painel
@@ -1593,7 +1572,7 @@
                             </a>
                         </li>
                         {% endif %}
-                        {% if current_user.is_aluno() %}
+                        {% if current_user.is_aluno() and not current_user.is_admin %}
                         <li>
                             <a class="dropdown-item" href="{{ url_for('aluno.meu_professor') }}">
                                 <i class="bi bi-person-badge"></i> Meu Professor
@@ -1644,6 +1623,26 @@
     <!-- ========================================= -->
     <!-- BARRA INFERIOR (mobile, < lg)              -->
     <!-- ========================================= -->
+    {% if current_user.is_admin %}
+    <nav class="bottom-nav d-lg-none" aria-label="Navegação principal">
+        <a href="{{ url_for('admin.contas') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'admin.contas' else '' }}" data-fl-click-feedback>
+            <i class="bi bi-cash-coin"></i>
+            <span>Contas</span>
+        </a>
+        <a href="{{ url_for('financeiro.painel') }}" class="bottom-nav-item {{ 'active' if request.blueprint == 'financeiro' else '' }}" data-fl-click-feedback>
+            <i class="bi bi-cash-stack"></i>
+            <span>Financeiro</span>
+        </a>
+        <a href="{{ url_for('admin.monitoramento') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'admin.monitoramento' else '' }}" data-fl-click-feedback>
+            <i class="bi bi-activity"></i>
+            <span>Monitor</span>
+        </a>
+        <button type="button" class="bottom-nav-item" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMais" aria-controls="offcanvasMais">
+            <i class="bi bi-gear"></i>
+            <span>Ajustes</span>
+        </button>
+    </nav>
+    {% else %}
     <nav class="bottom-nav d-lg-none" aria-label="Navegação principal">
         <a href="{{ url_for('aluno.dashboard') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'aluno.dashboard' else '' }}" data-fl-click-feedback>
             <i class="bi bi-house{{ '-fill' if request.endpoint == 'aluno.dashboard' else '' }}"></i>
@@ -1667,6 +1666,7 @@
             <span>Ajustes</span>
         </button>
     </nav>
+    {% endif %}
 
     <!-- Painel "Mais" (offcanvas inferior, mobile) -->
     <div class="offcanvas offcanvas-bottom mais-sheet" tabindex="-1" id="offcanvasMais" aria-labelledby="offcanvasMaisLabel">
@@ -1686,12 +1686,14 @@
             </div>
             {% endif %}
 
+            {% if not current_user.is_admin %}
             <div class="mais-section">
             <!-- <span class="mais-section-label">Treino</span> -->
                 <a class="mais-link" href="{{ url_for('aluno.cadastrar_treinos') }}"><i class="bi bi-clipboard2-plus"></i> Cadastrar Treinos</a>
                 <a class="mais-link" href="{{ url_for('aluno.exercicios') }}"><i class="bi bi-list-check"></i> Meus Exercícios</a>
                 <a class="mais-link" href="{{ url_for('aluno.ranking') }}"><i class="bi bi-trophy-fill"></i> Melhores Alunos</a>
             </div>
+            {% endif %}
         </div>
     </div>
     {% endif %}
