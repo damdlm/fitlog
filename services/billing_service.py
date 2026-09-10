@@ -30,7 +30,6 @@ import requests
 from flask import current_app
 
 from models import db, AlunoProfessor, Assinatura, EventoWebhookAsaas, PagamentoRecebido, Plano, User
-from services.analytics_service import AnalyticsService
 
 logger = logging.getLogger(__name__)
 
@@ -584,7 +583,13 @@ class BillingService:
 
         agora = datetime.now(timezone.utc)
         periodo_vigente = assinatura.periodo_atual_fim and assinatura.periodo_atual_fim > agora
-        if (assinatura.status == 'active' and assinatura.forma_pagamento == 'pix'
+        # Bloqueia pro MESMO plano ainda vigente independente da forma de
+        # pagamento atual -- se já está ativo via cartão (cobrança
+        # recorrente automática) e a pessoa clica em "pagar com Pix" pro
+        # mesmo plano, não faz sentido nenhum gerar uma segunda cobrança
+        # avulsa: ela já está em dia. Antes só cobria o caso pix->pix,
+        # deixando passar cartão->pix sem aviso.
+        if (assinatura.status == 'active'
                 and assinatura.plano_id == plano.id and periodo_vigente):
             raise AssinaturaJaAtivaError(plano)
 
@@ -984,16 +989,7 @@ class BillingService:
                 'Assinatura %s (usuario=%s): status %s -> %s (evento %s)',
                 assinatura.id, assinatura.usuario_id, status_antes, assinatura.status, tipo_evento,
             )
-            # Analytics ('subscription_started'): só na transição REAL pra
-            # 'active' (conversão de verdade), nunca em cada renovação
-            # mensal que já estava ativa -- e só depois que o commit logo
-            # abaixo confirmar tudo, pra não contar um evento que acabou
-            # não sendo persistido. Sem CPF/nome/e-mail/ID de usuário --
-            # só valor, moeda e o código do plano (dado de produto, não
-            # dado pessoal).
-            deve_registrar_conversao = status_antes != 'active' and assinatura.status == 'active'
         else:
-            deve_registrar_conversao = False
             # Antes só logava quando subscription_id OU external_reference
             # vinham preenchidos -- se os dois viessem vazios (payload
             # de formato diferente do esperado), passava batido em
@@ -1006,16 +1002,6 @@ class BillingService:
 
         db.session.add(EventoWebhookAsaas(event_id=event_id, tipo_evento=tipo_evento))
         db.session.commit()
-
-        if deve_registrar_conversao:
-            plano = assinatura.plano
-            AnalyticsService.track(
-                'subscription_started',
-                value=(plano.preco_centavos / 100) if plano else None,
-                currency='BRL',
-                plano=plano.codigo if plano else None,
-            )
-
         return True
 
     @staticmethod

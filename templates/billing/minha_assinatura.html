@@ -136,7 +136,7 @@
 
 {% if plano_oferecido %}
 <div class="ma-card text-center">
-    <form method="POST" action="{{ url_for('billing.assinar') }}" id="form-assinar-professor">
+    <form method="POST" action="{{ url_for('billing.assinar') }}" id="form-assinar-professor" target="_blank">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% if planos_disponiveis and planos_disponiveis|length > 1 %}
         <div class="mb-3 text-start">
@@ -246,7 +246,7 @@
 <div class="ma-card text-center">
     <div class="ma-price">R$ {{ '%.2f'|format(plano_oferecido.preco_centavos / 100) }}<small> /mês</small></div>
     <p class="text-muted mb-3">{{ plano_oferecido.nome }} — Estatísticas e FitBot liberados</p>
-    <form method="POST" action="{{ url_for('billing.assinar') }}" id="form-assinar-aluno">
+    <form method="POST" action="{{ url_for('billing.assinar') }}" id="form-assinar-aluno" target="_blank">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="plano_codigo" value="{{ plano_oferecido.codigo }}">
 
@@ -285,8 +285,8 @@ function atualizarNotaPagamento(prefixo) {
     const nota = document.getElementById(prefixo + '-nota-pagamento');
     if (nota) {
         nota.textContent = formaPagamento === 'pix'
-            ? 'Pix não tem débito automático: o pagamento confirmado ativa o plano por ~1 mês, e você paga de novo aqui pra renovar.'
-            : 'Cartão de crédito é cobrado automaticamente todo mês. Seu cartão nunca passa pelo FitLog.';
+            ? 'Pix não tem débito automático: o pagamento confirmado ativa o plano por ~1 mês, e você paga de novo aqui pra renovar. Vamos abrir o pagamento numa aba nova -- pode fechá-la depois de pagar.'
+            : 'Cartão de crédito é cobrado automaticamente todo mês. Seu cartão nunca passa pelo FitLog. Vamos abrir o pagamento numa aba nova -- pode fechá-la depois de confirmar.';
     }
 }
 
