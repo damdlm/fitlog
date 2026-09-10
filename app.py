@@ -435,7 +435,8 @@ def create_app(config_class=None):
             "Disallow: /estatisticas",
             "Disallow: /api",
             "Disallow: /fitbot",
-            "Disallow: /contato",
+            "Disallow: /contato/",
+            "Allow: /contato/publico",
             "Disallow: /billing",
             "Disallow: /notificacoes",
             "Disallow: /auth/reset-password",
@@ -459,6 +460,7 @@ def create_app(config_class=None):
             canonical_url('/'),
             canonical_url('/privacidade/'),
             canonical_url('/privacidade/termos'),
+            canonical_url('/contato/publico'),
         ]
         itens = "".join(f"<url><loc>{u}</loc></url>" for u in urls_publicas)
         xml = (

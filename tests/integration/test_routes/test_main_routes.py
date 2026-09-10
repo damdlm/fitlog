@@ -40,13 +40,16 @@ class TestRaizPublicaEDashboard:
         assert resp.status_code == 200
         assert b'landing-hero' not in resp.data
 
-    def test_landing_nao_expoe_link_para_rota_privada_de_contato(self, client):
-        # routes/contato_routes.py ainda exige @login_required -- enquanto
-        # isso não mudar, a landing não deve linkar pra lá (rota pública
-        # linkando para endpoint autenticado só gera redirect pro login).
+    def test_landing_linka_contato_publico_mas_nao_o_chat_privado(self, client):
+        # routes/contato_routes.py: '/contato/' (o chat) continua
+        # @login_required, mas '/contato/publico' foi criado
+        # especificamente pra ser linkado aqui, pra quem ainda não tem
+        # conta (ver routes/contato_routes.py: publico()).
         resp = client.get('/')
 
-        assert b'/contato/' not in resp.data
+        assert b'/contato/publico' in resp.data
+        assert b'/contato/transcrever' not in resp.data
+        assert b'/contato/enviar"' not in resp.data
 
     def test_landing_esconde_login_registrar_do_cabecalho(self, client):
         # A landing já tem CTAs próprias (hero + seção final) -- os

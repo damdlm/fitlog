@@ -25,10 +25,19 @@ class TestRobotsTxt:
         assert 'Allow: /' in texto
         areas_privadas = (
             '/admin', '/professor', '/aluno', '/api', '/billing',
-            '/contato', '/fitbot', '/auth/reset-password',
+            '/contato/', '/fitbot', '/auth/reset-password',
         )
         for area_privada in areas_privadas:
             assert f'Disallow: {area_privada}' in texto
+
+    def test_libera_o_contato_publico_apesar_do_contato_privado_bloqueado(self, client):
+        # routes/contato_routes.py: '/contato/' (chat) e afins continuam
+        # @login_required e bloqueados, mas '/contato/publico' é público
+        # de propósito (link fica na landing) -- precisa do Allow mais
+        # específico pra não ficar preso no Disallow: /contato/ genérico.
+        texto = client.get('/robots.txt').data.decode('utf-8')
+
+        assert 'Allow: /contato/publico' in texto
 
 
 class TestSitemapXml:
@@ -47,10 +56,15 @@ class TestSitemapXml:
         assert '<loc>' in texto
         rotas_privadas = (
             '/dashboard', '/admin', '/professor', '/aluno', '/api',
-            '/billing', '/contato', '/auth/login', '/auth/register',
+            '/billing', '/auth/login', '/auth/register',
         )
         for rota_privada in rotas_privadas:
             assert rota_privada not in texto
+        # /contato/publico é público (diferente de /contato/, o chat
+        # autenticado) -- precisa estar no sitemap; só o privado deve
+        # ficar de fora.
+        assert '/contato/publico' in texto
+        assert '/contato/enviar' not in texto
 
 
 class TestLlmsTxt:

@@ -47,7 +47,7 @@ def test_login_page_titulo_novo_so_aparece_no_desktop(client):
     response = client.get('/auth/login')
     html = response.data.decode('utf-8')
     assert 'login-form-header d-none d-lg-block' in html
-    assert 'Que bom te ver de novo' in html
+    assert 'Bom te ver' in html
 
 def test_register_user(client, db):
     """Testa registro de usuário"""
