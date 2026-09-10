@@ -426,9 +426,6 @@
         <i class="bi bi-clipboard2-plus me-2" style="color: #F28C33;"></i>
         Cadastrar Treinos
     </h1>
-    <a href="{{ url_for('aluno.versoes') }}" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-layers"></i> Ver Versões
-    </a>
 </div>
 
 {% if not versao %}
@@ -744,7 +741,10 @@
 </script>
 {% endif %}
 
-<div class="text-center mt-4">
+<div class="text-center mt-4 d-flex justify-content-center gap-2 flex-wrap">
+    <a href="{{ url_for('aluno.versoes') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-layers"></i> Ver Versões
+    </a>
     <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-house"></i> Voltar ao início
     </a>
