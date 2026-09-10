@@ -4,25 +4,62 @@
    base.html (--primary-orange, --light-orange, --dark-bg). */
 
 .ma-card {
+    position: relative;
     background: #fff;
     border: 1px solid #eee;
-    border-radius: 16px;
-    padding: 24px;
+    border-radius: 18px;
+    padding: 26px 24px 24px;
     margin-bottom: 20px;
+    overflow: hidden;
 }
+
+/* Barra de destaque no topo do card, colorida de acordo com o status
+   -- reage sozinha ao pill de status que já existe dentro do card, via
+   :has(), sem precisar duplicar markup em cada um dos ~8 estados
+   possíveis de assinatura (professor/aluno x ativa/trial/atrasada/etc). */
+.ma-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: #ddd;
+}
+.ma-card:has(.ma-status-ok)::before { background: linear-gradient(90deg, #1a8a4a, #34c47a); }
+.ma-card:has(.ma-status-atencao)::before { background: linear-gradient(90deg, #b96b00, #F28C33); }
+.ma-card:has(.ma-status-bloqueado)::before { background: linear-gradient(90deg, #c0392b, #e0685a); }
 
 .ma-status-pill {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
+    gap: 8px;
+    padding: 5px 14px 5px 5px;
     border-radius: 999px;
     font-weight: 700;
     font-size: 0.85rem;
+    letter-spacing: 0.01em;
+}
+.ma-status-pill i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.65);
+    font-size: 0.95rem;
 }
 .ma-status-ok { background: #e6f7ee; color: #1a8a4a; }
 .ma-status-atencao { background: #fff4e0; color: #b96b00; }
 .ma-status-bloqueado { background: #fde8e8; color: #c0392b; }
+
+/* Texto logo abaixo do pill de status, dentro do .ma-card -- mesma
+   estrutura de sempre (<p class="mt-3">), só com mais peso visual. */
+.ma-card > p.mt-3 {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #3a3a3a;
+    max-width: 46ch;
+}
 
 .ma-price { font-size: 2rem; font-weight: 800; color: #222; }
 .ma-price small { font-size: 1rem; font-weight: 600; color: #888; }
@@ -112,13 +149,48 @@
     padding: 2px 8px; border-radius: 999px; margin-left: 6px;
 }
 
-/* Cartão salvo em uso */
-.ma-cartao-salvo {
-    display: flex; align-items: center; gap: 10px;
-    border: 1px solid #eee; border-radius: 12px; padding: 12px 16px;
-    margin-bottom: 16px; font-size: 0.9rem;
+/* Nota explicativa sobre a forma de pagamento escolhida (cartão x
+   Pix) -- o texto em si (o <p> com id dinâmico) continua sendo
+   trocado via JS em atualizarNotaPagamento(); só o ícone fica fora
+   dele, senão o textContent do JS apagaria o ícone junto. */
+.ma-nota-pagamento {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #fff8f0;
+    border: 1px solid #ffe4c2;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 0;
 }
-.ma-cartao-salvo i { font-size: 1.3rem; color: #F28C33; }
+.ma-nota-pagamento i {
+    color: #F28C33;
+    font-size: 1rem;
+    margin-top: 1px;
+    flex-shrink: 0;
+}
+.ma-nota-pagamento p {
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: #7a5a35;
+}
+
+/* Cartão salvo em uso (ou Pix ativo) -- vira uma linha estilo recibo,
+   com o ícone destacado num chip colorido em vez de solto no texto. */
+.ma-cartao-salvo {
+    display: flex; align-items: center; gap: 14px;
+    background: #fafafa; border-radius: 14px; padding: 14px 16px;
+    margin-top: 16px; font-size: 0.9rem;
+}
+.ma-cartao-salvo i {
+    flex-shrink: 0;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 11px;
+    background: rgba(242, 140, 51, 0.12);
+    font-size: 1.2rem; color: #F28C33;
+}
+.ma-cartao-salvo strong { color: #222; }
 
 /* Revelação progressiva dos dados de cobrança -- só aparece depois que
    o usuário confirma a intenção de assinar (ver JS no template). */
