@@ -12,6 +12,17 @@ def test_register_page(client):
     assert response.status_code == 200
     assert b'Criar conta' in response.data
 
+def test_register_page_sem_login_registrar_no_cabecalho(client):
+    """Cabeçalho da página de registro não deve repetir os botões de
+    Login/Registrar (a própria página já é o formulário de registro) --
+    e o título 'Criar conta' deve aparecer junto da logo no cabeçalho
+    mobile (ver templates/auth/register.html: page_title)."""
+    response = client.get('/auth/register')
+    html = response.data.decode('utf-8')
+    assert 'btn-outline-secondary btn-sm' not in html
+    assert '<span class="navbar-brand-title' in html
+    assert 'Criar conta' in html.split('<span class="navbar-brand-title')[1][:200]
+
 def test_register_user(client, db):
     """Testa registro de usuário"""
     # '123456' não atende ao validador de senha da aplicação (mínimo 8

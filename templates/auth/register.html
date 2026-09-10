@@ -3,8 +3,10 @@
 {% block title %}Criar conta — FitLog{% endblock %}
 {% block robots_meta %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
-{% block page_icon %}{% endblock %}
-{% block page_title %}{% endblock %}
+{% block page_icon %}<i class="bi bi-person-plus" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Criar conta{% endblock %}
+
+{% block header_guest_actions %}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/auth-login.css') }}">
