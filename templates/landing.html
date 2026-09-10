@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-house" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}FitLog{% endblock %}
+
+{% block title %}FitLog — Registre seus treinos e acompanhe sua evolução{% endblock %}
+{% block meta_description %}Organize sua rotina de treinos, registre cada série e acompanhe sua evolução com o FitLog. Para alunos e professores.{% endblock %}
+{% block og_title %}FitLog — Registre seus treinos e acompanhe sua evolução{% endblock %}
+{% block og_description %}Organize sua rotina de treinos, registre cada série e acompanhe sua evolução com o FitLog. Para alunos e professores.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="landing-hero">
+    <div class="landing-hero-text">
+        <h1>Seu treino. Sua evolução. Seu progresso.</h1>
+        <p class="landing-subheadline">
+            Registre seus treinos, acompanhe sua evolução e mantenha sua rotina
+            de exercícios organizada em um só lugar.
+        </p>
+        <div class="landing-cta">
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-person-plus"></i> Começar agora
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-lg">
+                Já tenho uma conta
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="landing-section">
+    <h2>Feito para alunos e professores</h2>
+    <div class="landing-cards">
+        <div class="landing-card">
+            <i class="bi bi-clipboard2-pulse"></i>
+            <h3>Para alunos</h3>
+            <p>
+                Registre cada série e carga do seu treino, acompanhe seu
+                histórico e veja sua evolução ao longo do tempo em
+                estatísticas e no calendário de treinos.
+            </p>
+        </div>
+        <div class="landing-card">
+            <i class="bi bi-person-badge"></i>
+            <h3>Para professores</h3>
+            <p>
+                Monte treinos para seus alunos e acompanhe a evolução de
+                cada um em um painel dedicado.
+            </p>
+        </div>
+        <div class="landing-card">
+            <i class="bi bi-chat-dots"></i>
+            <h3>FitBot</h3>
+            <p>
+                Converse com o FitBot para tirar dúvidas sobre o seu treino
+                sempre que precisar.
+            </p>
+        </div>
+        <div class="landing-card">
+            <i class="bi bi-phone"></i>
+            <h3>Direto do celular</h3>
+            <p>
+                Instale o FitLog como aplicativo no seu celular e leve seu
+                treino para a academia sem depender do navegador aberto.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="landing-section landing-privacy">
+    <h2><i class="bi bi-shield-lock"></i> Privacidade em primeiro lugar</h2>
+    <p>
+        Seus dados de treino são seus. Trabalhamos com senhas protegidas por
+        hash, conexão segura e controles de acesso que impedem qualquer
+        pessoa não vinculada a você de ver seus dados.
+        Saiba mais na nossa
+        <a href="{{ url_for('privacidade.politica') }}">Política de Privacidade</a>.
+    </p>
+</section>
+
+<section class="landing-cta-final">
+    <h2>Pronto para organizar sua rotina de treinos?</h2>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
+        <i class="bi bi-person-plus"></i> Criar minha conta
+    </a>
+</section>
+
+<nav class="landing-footer-links" aria-label="Links institucionais">
+    <a href="{{ url_for('privacidade.politica') }}">Política de Privacidade</a>
+    <span aria-hidden="true">·</span>
+    <a href="{{ url_for('privacidade.termos') }}">Termos de Uso</a>
+</nav>
+{% endblock %}

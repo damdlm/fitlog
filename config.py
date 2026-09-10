@@ -208,6 +208,17 @@ class Config:
     ASAAS_WEBHOOK_TOKEN = os.getenv('ASAAS_WEBHOOK_TOKEN')
     ASAAS_ENV = os.getenv('ASAAS_ENV', 'sandbox')  # 'sandbox' ou 'production'
 
+    # Analytics de produto -- privacy-first, 100% server-side (ver
+    # services/analytics_service.py). Desligado por padrão em qualquer
+    # ambiente; precisa ser ligado explicitamente.
+    ANALYTICS_ENABLED = os.getenv('ANALYTICS_ENABLED', 'false').strip().lower() == 'true'
+
+    # SEO: usado para preencher <meta name="google-site-verification">
+    # nas páginas públicas, quando a propriedade do Google Search
+    # Console for verificada por meta tag em vez de arquivo. Opcional --
+    # sem valor, a tag simplesmente não é renderizada.
+    GOOGLE_SITE_VERIFICATION = os.getenv('GOOGLE_SITE_VERIFICATION')
+
 
 class DevelopmentConfig(Config):
     DEBUG = True

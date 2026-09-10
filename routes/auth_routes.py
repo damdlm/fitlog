@@ -9,6 +9,7 @@ from utils.validators import validar_email, validar_senha
 from utils.email_utils import enviar_email
 from services.base_service import CacheService
 from services.billing_service import BillingService
+from services.analytics_service import AnalyticsService
 
 auth_bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
@@ -318,6 +319,12 @@ def register():
             flash('Conta de professor criada com sucesso!', 'success')
 
         logger.info(f"Novo usuario: {username} ({tipo_usuario})")
+
+        # Analytics: só dispara aqui, depois do commit confirmado --
+        # nunca ao abrir /register, nunca em erro de validação, nunca
+        # duas vezes pelo mesmo cadastro (ver services/analytics_service.py).
+        AnalyticsService.track('sign_up', method='email')
+
         return redirect(url_for('auth.login'))
 
     return render_template('auth/register.html')

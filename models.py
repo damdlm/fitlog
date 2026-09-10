@@ -585,6 +585,30 @@ class PagamentoRecebido(db.Model):
         return f'<PagamentoRecebido {self.gateway_payment_id} R${self.valor_bruto_centavos/100:.2f}>'
 
 
+class EventoAnalytics(db.Model):
+    """Analytics de produto -- privacy-first, 100% server-side (ver
+    services/analytics_service.py). Nenhum script de terceiro, nenhum
+    cookie de rastreamento: cada evento é gravado direto aqui, no
+    próprio banco do FitLog, o que mantém a política de privacidade
+    (que promete não usar ferramentas de rastreamento de terceiros)
+    verdadeira sem precisar reescrevê-la.
+
+    De propósito, guarda só o nome do evento e parâmetros agregados,
+    não-identificáveis (ex: exercise_count, value, currency) --
+    NUNCA e-mail, nome, CPF, telefone, ID de usuário/aluno/professor
+    ou conteúdo de treino. Ver AnalyticsService.EVENTOS_PERMITIDOS
+    para a lista fechada de eventos aceitos."""
+    __tablename__ = 'eventos_analytics'
+
+    id = db.Column(db.Integer, primary_key=True)
+    nome_evento = db.Column(db.String(60), nullable=False, index=True)
+    parametros = db.Column(db.JSON, nullable=True)
+    criado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+
+    def __repr__(self):
+        return f'<EventoAnalytics {self.nome_evento} {self.criado_em}>'
+
+
 # =====================================================
 # MODELOS DE DADOS
 # =====================================================
