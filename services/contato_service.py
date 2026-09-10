@@ -149,3 +149,67 @@ class ContatoService:
             logger.info("Contato: mensagem registrada em log (e-mail não enviado de verdade -- sem API key).")
 
         return {"ok": True, "erro": None}
+
+    @staticmethod
+    def enviar_mensagem_publica(nome, email, mensagem, honeypot=""):
+        """Envia mensagem de contato de quem AINDA NÃO é usuário
+        cadastrado (dúvida pré-venda, vinda da landing page pública).
+
+        Sem @login_required, então não existe um User autenticado --
+        pedimos nome e e-mail no próprio formulário e validamos os
+        dois. `honeypot` é um campo extra invisível no formulário (via
+        CSS) que só um robô preenche; se vier preenchido, finge sucesso
+        sem enviar e-mail nenhum, pra não dar pista pro spammer de que
+        foi bloqueado.
+        """
+        from utils.validators import validar_email
+
+        if honeypot:
+            logger.info("Contato público: honeypot preenchido, descartando silenciosamente (provável bot).")
+            return {"ok": True, "erro": None}
+
+        nome = (nome or "").strip()
+        email = (email or "").strip()
+        mensagem = (mensagem or "").strip()
+
+        if not nome or len(nome) > 120:
+            return {"ok": False, "erro": "Informe seu nome."}
+        if not email or not validar_email(email):
+            return {"ok": False, "erro": "Informe um e-mail válido para retornarmos o contato."}
+        if not mensagem:
+            return {"ok": False, "erro": "Escreva sua mensagem antes de enviar."}
+        if len(mensagem) > 4000:
+            return {"ok": False, "erro": "Mensagem muito longa. Tente resumir um pouco."}
+
+        destinatarios = ContatoService._emails_administradores()
+        if not destinatarios:
+            logger.error("Contato público: nenhum e-mail de administrador configurado -- mensagem não enviada.")
+            return {"ok": False, "erro": "Não foi possível enviar sua mensagem agora. Tente novamente mais tarde."}
+
+        nome_html = escape(nome)
+        email_html = escape(email)
+        mensagem_html = escape(mensagem)
+
+        assunto = f"FitLog — Contato pré-venda de {nome}"
+        corpo_texto = (
+            f"Nova mensagem recebida pelo formulário público de contato (landing page).\n\n"
+            f"De: {nome} ({email}) -- ainda não é cadastrado no FitLog.\n\n"
+            f"Mensagem:\n{mensagem}\n"
+        )
+        corpo_html = (
+            f"<p>Nova mensagem recebida pelo <strong>formulário público de contato</strong> (landing page).</p>"
+            f"<p><strong>De:</strong> {nome_html} "
+            f"(<a href='mailto:{email_html}'>{email_html}</a>) -- ainda não é cadastrado no FitLog.</p>"
+            f"<p><strong>Mensagem:</strong></p>"
+            f"<p style='white-space:pre-wrap;background:#f9f9f9;padding:12px;border-radius:8px;'>{mensagem_html}</p>"
+        )
+
+        enviado_para_alguem = False
+        for destinatario in destinatarios:
+            if enviar_email(destinatario, assunto, corpo_texto, corpo_html):
+                enviado_para_alguem = True
+
+        if not enviado_para_alguem:
+            logger.info("Contato público: mensagem registrada em log (e-mail não enviado de verdade -- sem API key).")
+
+        return {"ok": True, "erro": None}

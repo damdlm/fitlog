@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-chat-heart" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Fale conosco{% endblock %}
+{% block title %}Fale conosco — FitLog{% endblock %}
+{% block meta_description %}Tem alguma dúvida antes de assinar o FitLog? Manda sua pergunta pra gente.{% endblock %}
+
+{% block content %}
+<style>
+    .cp-wrap { max-width: 560px; margin: 0 auto; padding: 24px 16px; }
+
+    .cp-intro {
+        border: none;
+        border-radius: 18px;
+        box-shadow: var(--card-shadow, 0 4px 16px rgba(0,0,0,0.06));
+        background: var(--primary-gradient, linear-gradient(135deg, #F28C33, #F2A65A));
+        color: white;
+        padding: 26px 24px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    .cp-intro h1 { font-size: 1.3rem; margin: 0 0 6px; }
+    .cp-intro p { margin: 0; opacity: 0.95; font-size: 0.95rem; }
+
+    .cp-card {
+        border: none;
+        border-radius: 18px;
+        box-shadow: var(--card-shadow, 0 4px 16px rgba(0,0,0,0.06));
+        padding: 24px;
+        background: #fff;
+    }
+
+    /* Honeypot -- invisível pra gente, só bot de spam preenche formulário
+       escondido via CSS (nunca via type="hidden", que alguns bots já
+       ignoram por padrão). */
+    .cp-honeypot {
+        position: absolute;
+        left: -9999px;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+    }
+
+    .cp-sucesso { display: none; text-align: center; padding: 20px 0; }
+    .cp-sucesso.is-active { display: block; }
+    .cp-sucesso i { font-size: 3rem; color: #16A34A; margin-bottom: 12px; display: inline-block; }
+</style>
+
+<div class="cp-wrap">
+    <div class="cp-intro">
+        <h1>Ficou com alguma dúvida?</h1>
+        <p>Manda sua pergunta antes de assinar -- a gente responde por e-mail.</p>
+    </div>
+
+    <div class="cp-card">
+        <div id="cp-form-area">
+            <form id="form-contato-publico" novalidate>
+                <div class="mb-3">
+                    <label class="form-label" for="cp-nome">Seu nome</label>
+                    <input type="text" class="form-control" id="cp-nome" maxlength="120" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="cp-email">Seu e-mail</label>
+                    <input type="email" class="form-control" id="cp-email" maxlength="180" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="cp-mensagem">Sua mensagem</label>
+                    <textarea class="form-control" id="cp-mensagem" rows="5" maxlength="4000" required></textarea>
+                </div>
+
+                <!-- Campo-isca: fica fora da tela, só bot preenche -->
+                <div class="cp-honeypot" aria-hidden="true">
+                    <label for="cp-empresa-website">Não preencha este campo</label>
+                    <input type="text" id="cp-empresa-website" tabindex="-1" autocomplete="off">
+                </div>
+
+                <div id="cp-erro" class="alert alert-danger d-none" role="alert"></div>
+
+                <button type="submit" class="btn btn-primary w-100" id="cp-btn-enviar">
+                    Enviar mensagem
+                </button>
+            </form>
+        </div>
+
+        <div class="cp-sucesso" id="cp-sucesso">
+            <i class="bi bi-check-circle-fill"></i>
+            <h2 class="h5">Mensagem enviada!</h2>
+            <p class="text-muted mb-0">Vamos responder pelo e-mail que você informou.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('form-contato-publico').addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+
+    const botao = document.getElementById('cp-btn-enviar');
+    const erroBox = document.getElementById('cp-erro');
+    erroBox.classList.add('d-none');
+    botao.disabled = true;
+    botao.textContent = 'Enviando...';
+
+    try {
+        const response = await fetch('{{ url_for("contato.publico_enviar") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nome: document.getElementById('cp-nome').value,
+                email: document.getElementById('cp-email').value,
+                mensagem: document.getElementById('cp-mensagem').value,
+                empresa_website: document.getElementById('cp-empresa-website').value,
+            }),
+        });
+        const dados = await response.json();
+
+        if (dados.ok) {
+            document.getElementById('cp-form-area').style.display = 'none';
+            document.getElementById('cp-sucesso').classList.add('is-active');
+        } else {
+            erroBox.textContent = dados.erro || 'Não foi possível enviar. Tente novamente.';
+            erroBox.classList.remove('d-none');
+            botao.disabled = false;
+            botao.textContent = 'Enviar mensagem';
+        }
+    } catch (e) {
+        erroBox.textContent = 'Falha de conexão. Verifique sua internet e tente de novo.';
+        erroBox.classList.remove('d-none');
+        botao.disabled = false;
+        botao.textContent = 'Enviar mensagem';
+    }
+});
+</script>
+{% endblock %}

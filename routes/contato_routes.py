@@ -59,3 +59,28 @@ def enviar():
     resultado = ContatoService.enviar_mensagem(current_user, mensagem)
     status = 200 if resultado.get("ok") else 400
     return jsonify(resultado), status
+
+
+@contato_bp.route("/publico", methods=["GET"])
+def publico():
+    """Tela de contato pra quem ainda NÃO é cadastrado -- link fica na
+    landing page pública, pra dúvida antes de assinar. Sem
+    @login_required de propósito."""
+    return render_template("contato_publico.html")
+
+
+@contato_bp.route("/publico/enviar", methods=["POST"])
+@limiter.limit("5 per hour")
+def publico_enviar():
+    """Envia a mensagem do formulário público. Rate limit por IP (sem
+    key_func = padrão do Flask-Limiter, mesmo usado em auth_routes pra
+    rotas sem usuário logado, ex: esqueci minha senha)."""
+    dados = request.get_json(silent=True) or {}
+    resultado = ContatoService.enviar_mensagem_publica(
+        nome=dados.get("nome"),
+        email=dados.get("email"),
+        mensagem=dados.get("mensagem"),
+        honeypot=dados.get("empresa_website"),  # campo-isca, ver template
+    )
+    status = 200 if resultado.get("ok") else 400
+    return jsonify(resultado), status
