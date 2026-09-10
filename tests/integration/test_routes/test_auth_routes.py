@@ -23,6 +23,23 @@ def test_register_page_sem_login_registrar_no_cabecalho(client):
     assert '<span class="navbar-brand-title' in html
     assert 'Criar conta' in html.split('<span class="navbar-brand-title')[1][:200]
 
+def test_register_page_nao_repete_titulo_no_conteudo(client):
+    """'Criar conta' já aparece no cabeçalho (ver teste acima) -- o
+    cabeçalho duplicado dentro do card do formulário (h1 + subtítulo)
+    foi removido pra não repetir a informação nem deixar espaço vazio."""
+    response = client.get('/auth/register')
+    html = response.data.decode('utf-8')
+    assert 'login-form-header' not in html
+    assert 'Leva menos de um minuto' not in html
+
+def test_login_page_mantem_seu_proprio_cabecalho_de_formulario(client):
+    """login.html compartilha a classe .login-form-header com
+    register.html -- confirma que remover o bloco de register.html não
+    afetou login.html."""
+    response = client.get('/auth/login')
+
+    assert b'login-form-header' in response.data
+
 def test_register_user(client, db):
     """Testa registro de usuário"""
     # '123456' não atende ao validador de senha da aplicação (mínimo 8
