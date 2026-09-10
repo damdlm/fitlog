@@ -274,11 +274,16 @@ function atualizarNotaPagamento(prefixo) {
     if (!form) return;
     const formaPagamento = form.querySelector('input[name="forma_pagamento"]:checked').value;
     const nota = document.getElementById(prefixo + '-nota-pagamento');
-    if (nota) {
-        nota.textContent = formaPagamento === 'pix'
-            ? 'Pix não tem débito automático: o pagamento confirmado ativa o plano por ~1 mês, e você paga de novo aqui pra renovar. Vamos abrir o pagamento numa aba nova -- pode fechá-la depois de pagar.'
-            : 'Cartão de crédito é cobrado automaticamente todo mês. Seu cartão nunca passa pelo FitLog. Vamos abrir o pagamento numa aba nova -- pode fechá-la depois de confirmar.';
-    }
+    if (nota) { 
+        nota.innerHTML = formaPagamento === 'pix' 
+            ? 'O Pix não possui cobrança automática.<br><br>' 
+            + 'Após a confirmação do pagamento, seu plano ficará ativo por 30 dias.<br><br>'
+            + 'Ao final desse período, você poderá realizar um novo pagamento para renovar seu plano.<br><br>'
+            + 'O pagamento será aberto em uma nova aba. Depois de concluir, você pode fechá-la e voltar ao FitLog.'
+            : 'No cartão de crédito, a cobrança é automática e será realizada mensalmente.<br><br>'
+            + 'Os dados do seu cartão não passam pelo FitLog e são processados com segurança pelo nosso parceiro de pagamento.<br><br>'
+            + 'O pagamento será aberto em uma nova aba. Depois de confirmar, você pode fechá-la e voltar ao FitLog.';
+    } 
 }
 
 function revelarOuEnviar(prefixo) {
