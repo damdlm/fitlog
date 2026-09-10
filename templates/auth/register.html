@@ -17,6 +17,15 @@
 <div class="login-shell">
     <div class="login-card register-card">
         <div class="login-panel-form register-panel-form">
+            {# Só desktop: no mobile o título já aparece no cabeçalho
+               (ver page_title acima) -- sem essa condição, o desktop
+               fica sem título nenhum, já que o cabeçalho com o título
+               só existe em telas pequenas (d-lg-none). #}
+            <div class="login-form-header d-none d-lg-block">
+                <h1><i class="bi bi-person-plus"></i> Criar conta</h1>
+                <p>Leva menos de um minuto pra começar a treinar com o FitLog.</p>
+            </div>
+
             <form method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 

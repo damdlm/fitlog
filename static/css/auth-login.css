@@ -15,6 +15,19 @@
     padding: 24px 0;
 }
 
+@media (max-width: 991.98px) {
+    /* Os 220px de folga do desktop (calibrados pra centralizar o card
+       verticalmente ali) sobram demais no mobile, onde o cabeçalho é
+       bem mais baixo -- isso deixava um espaço vazio grande entre o
+       cabeçalho e o card. No mobile o card flui a partir do topo em
+       vez de ficar centralizado no meio da tela. */
+    .login-shell {
+        min-height: auto;
+        align-items: flex-start;
+        padding: 16px 0 24px;
+    }
+}
+
 .login-card {
     width: 100%;
     max-width: 900px;

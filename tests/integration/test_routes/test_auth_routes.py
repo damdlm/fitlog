@@ -23,14 +23,15 @@ def test_register_page_sem_login_registrar_no_cabecalho(client):
     assert '<span class="navbar-brand-title' in html
     assert 'Criar conta' in html.split('<span class="navbar-brand-title')[1][:200]
 
-def test_register_page_nao_repete_titulo_no_conteudo(client):
-    """'Criar conta' já aparece no cabeçalho (ver teste acima) -- o
-    cabeçalho duplicado dentro do card do formulário (h1 + subtítulo)
-    foi removido pra não repetir a informação nem deixar espaço vazio."""
+def test_register_page_titulo_do_form_so_aparece_no_desktop(client):
+    """O <h1>Criar conta</h1> dentro do card continua existindo no HTML
+    (para não deixar o desktop sem título -- ver page_title, que só
+    aparece em telas pequenas), mas fica escondido no mobile via CSS
+    (d-none d-lg-block), já que lá o título já está no cabeçalho."""
     response = client.get('/auth/register')
     html = response.data.decode('utf-8')
-    assert 'login-form-header' not in html
-    assert 'Leva menos de um minuto' not in html
+    assert 'login-form-header d-none d-lg-block' in html
+    assert 'Leva menos de um minuto' in html
 
 def test_login_page_mantem_seu_proprio_cabecalho_de_formulario(client):
     """login.html compartilha a classe .login-form-header com
@@ -39,6 +40,14 @@ def test_login_page_mantem_seu_proprio_cabecalho_de_formulario(client):
     response = client.get('/auth/login')
 
     assert b'login-form-header' in response.data
+
+def test_login_page_titulo_novo_so_aparece_no_desktop(client):
+    """Mesmo tratamento do registro: o título/subtítulo do card só
+    aparece no desktop (mobile usa o page_title do cabeçalho)."""
+    response = client.get('/auth/login')
+    html = response.data.decode('utf-8')
+    assert 'login-form-header d-none d-lg-block' in html
+    assert 'Que bom te ver de novo' in html
 
 def test_register_user(client, db):
     """Testa registro de usuário"""

@@ -3,8 +3,8 @@
 {% block title %}Entrar — FitLog{% endblock %}
 {% block robots_meta %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
-{% block page_icon %}{% endblock %}
-{% block page_title %}{% endblock %}
+{% block page_icon %}<i class="bi bi-box-arrow-in-right" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Entrar{% endblock %}
 
 {% block header_guest_actions %}{% endblock %}
 
@@ -31,9 +31,11 @@
 
         <!-- Formulário -->
         <div class="login-panel-form">
-            <div class="login-form-header">
-                <h1>Bem-vindo de volta</h1>
-                <p>Entre com sua conta para continuar seus treinos.</p>
+            {# Só desktop: no mobile o título já aparece no cabeçalho
+               (page_title acima). #}
+            <div class="login-form-header d-none d-lg-block">
+                <h1>Bom te ver!</h1>
+                <p>Entre para continuar seus treinos.</p>
             </div>
 
             <form method="post">
