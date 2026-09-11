@@ -35,10 +35,12 @@
        <main class="container my-4"> (definido em base.html) e com o
        padding-top do .login-panel-form, empurrando o formulário pra
        baixo sem necessidade -- em telas baixas isso chega a exigir
-       rolar pra ver o botão "Entrar". Zera essa folga só nesse caso. */
+       rolar pra ver o botão "Entrar". Reduz essa folga pra só 12px
+       (0.75rem), a mesma margem lateral do .container do Bootstrap
+       (--bs-gutter-x/2), em vez de zerar completamente. */
     .login-shell {
         padding-top: 0;
-        margin-top: -24px;
+        margin-top: -12px;
     }
 }
 
@@ -358,6 +360,6 @@
 
 @media (max-width: 991.98px) and (max-height: 700px) {
     .login-panel-form {
-        padding-top: 20px;
+        padding-top: 12px;
     }
 }

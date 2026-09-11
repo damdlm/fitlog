@@ -147,8 +147,10 @@
        do .login-shell somado ao margin-top do <main> do layout base) --
        aqui a regra precisa mirar .register-panel-form porque ela é
        carregada depois e sobrescreve o padding-top que auth-login.css
-       já reduz pra .login-panel-form nesse mesmo cenário. */
+       já reduz pra .login-panel-form nesse mesmo cenário. Mesmos 12px
+       (0.75rem) usados lá, pra bater com a margem lateral do
+       .container do Bootstrap em vez de zerar. */
     .register-panel-form {
-        padding-top: 20px;
+        padding-top: 12px;
     }
 }
