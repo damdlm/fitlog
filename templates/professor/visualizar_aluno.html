@@ -168,6 +168,11 @@
                         <i class="bi bi-layers"></i> Ver Versões
                     </a>
                 </div>
+                {% if not versao_ativa %}
+                <a href="{{ url_for('professor.nova_versao_aluno', aluno_id=aluno.id) }}" class="btn va-btn-modern va-btn-ghost">
+                    <i class="bi bi-plus-circle"></i> Nova versão
+                </a>
+                {% endif %}
                 {% if pode_gerenciar %}
                 <div class="btn-group">
                     <a href="{{ url_for('professor.editar_aluno', aluno_id=aluno.id) }}"
