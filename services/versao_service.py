@@ -976,6 +976,162 @@ class VersaoService(BaseService):
             raise ValueError("Não foi possível clonar a versão.")
 
     @staticmethod
+    def clonar_versao_de_professor(versao_id, professor_id, aluno_id):
+        """Cria uma nova versão ATIVA para o aluno, copiando a estrutura
+        (treinos + exercícios, com observações) de uma versão que
+        pertence ao PRÓPRIO PROFESSOR -- diferente de clonar_versao,
+        que só clona entre versões do mesmo usuário.
+
+        Regras:
+        - a versão de origem precisa pertencer a professor_id;
+        - o aluno não pode ter nenhuma versão ativa no momento
+          (mesma regra de create_livre/clonar_versao);
+        - exercícios do catálogo (exercicio_base_id) são reaproveitados
+          direto, por serem compartilhados;
+        - exercícios personalizados do professor (exercicio_usuario_id)
+          são remapeados para a CÓPIA que o aluno já tem desse mesmo
+          exercício (criada automaticamente quando o professor cadastra
+          um exercício -- ver ExercicioService._propagar_exercicio_para_alunos).
+          Se por algum motivo o aluno ainda não tiver essa cópia (ex:
+          exercício criado antes do vínculo profesor/aluno existir), ela
+          é criada agora, na hora do clone, seguindo a mesma lógica.
+
+        Não copia nenhum histórico de registro: a versão clonada começa
+        zerada, só com a estrutura de treinos.
+        """
+        if not professor_id or not aluno_id:
+            raise ValueError("Professor e aluno são obrigatórios.")
+
+        origem = VersaoGlobal.query.filter_by(id=versao_id, user_id=professor_id).first()
+        if not origem:
+            raise ValueError("Versão não encontrada.")
+
+        versao_atual_aluno = VersaoService.get_ativa(user_id=aluno_id)
+        if versao_atual_aluno:
+            raise ValueError(
+                f"O aluno já tem uma versão ativa (v{versao_atual_aluno.numero_versao} - "
+                f"{versao_atual_aluno.descricao}). Finalize-a antes de clonar outra."
+            )
+
+        try:
+            data_inicio = datetime.now(timezone.utc).date()
+            ultima_versao = db.session.query(func.max(VersaoGlobal.numero_versao)) \
+                .filter_by(user_id=aluno_id).scalar() or 0
+
+            descricao_clone = origem.descricao[:200]
+
+            nova_versao = VersaoGlobal(
+                numero_versao=ultima_versao + 1,
+                descricao=descricao_clone,
+                divisao='LIVRE',
+                data_inicio=data_inicio,
+                data_fim=None,
+                user_id=aluno_id
+            )
+            db.session.add(nova_versao)
+            db.session.flush()
+
+            treinos_origem = TreinoVersao.query.filter_by(versao_id=origem.id) \
+                .options(joinedload(TreinoVersao.exercicios)) \
+                .order_by(TreinoVersao.ordem).all()
+
+            # Cache local pra não repetir a busca/criação da cópia do
+            # aluno quando o mesmo exercício do professor aparece em
+            # mais de um treino da versão clonada.
+            cache_exercicio_aluno = {}
+
+            for tv in treinos_origem:
+                novo_tv = TreinoVersao(
+                    versao_id=nova_versao.id,
+                    codigo=tv.codigo,
+                    nome_treino=tv.nome_treino,
+                    descricao_treino=tv.descricao_treino,
+                    ordem=tv.ordem,
+                )
+                db.session.add(novo_tv)
+                db.session.flush()
+                for ve in tv.exercicios:
+                    exercicio_usuario_id_aluno = None
+                    if ve.exercicio_usuario_id is not None:
+                        exercicio_usuario_id_aluno = VersaoService._resolver_exercicio_do_aluno(
+                            ve.exercicio_usuario_id, professor_id, aluno_id, cache_exercicio_aluno
+                        )
+                        if exercicio_usuario_id_aluno is None:
+                            # Exercício de origem sumiu ou não pôde ser
+                            # copiado -- pula esse item em vez de deixar
+                            # a versão inteira falhar.
+                            continue
+
+                    db.session.add(VersaoExercicio(
+                        treino_versao_id=novo_tv.id,
+                        exercicio_usuario_id=exercicio_usuario_id_aluno,
+                        exercicio_base_id=ve.exercicio_base_id,
+                        ordem=ve.ordem,
+                        observacao=ve.observacao,
+                    ))
+
+            db.session.commit()
+            logger.info(
+                f"Versão {versao_id} do professor {professor_id} clonada como "
+                f"{nova_versao.id} para o aluno {aluno_id}"
+            )
+            return nova_versao
+        except ValueError:
+            db.session.rollback()
+            raise
+        except Exception:
+            db.session.rollback()
+            logger.exception(
+                f"Erro ao clonar versão {versao_id} do professor {professor_id} para o aluno {aluno_id}"
+            )
+            raise ValueError("Não foi possível clonar a versão para o aluno.")
+
+    @staticmethod
+    def _resolver_exercicio_do_aluno(exercicio_professor_id, professor_id, aluno_id, cache):
+        """Retorna o id do ExercicioUsuario do ALUNO equivalente a
+        exercicio_professor_id (que pertence ao professor). Reaproveita
+        a cópia já existente (copiado_de_exercicio_id) ou cria uma nova,
+        na mesma linha do que ExercicioService._propagar_exercicio_para_alunos
+        já faz quando o professor cadastra um exercício."""
+        from models import ExercicioUsuario
+
+        if exercicio_professor_id in cache:
+            return cache[exercicio_professor_id]
+
+        exercicio_professor = ExercicioUsuario.query.get(exercicio_professor_id)
+        if not exercicio_professor or exercicio_professor.usuario_id != professor_id:
+            cache[exercicio_professor_id] = None
+            return None
+
+        copia = ExercicioUsuario.query.filter_by(
+            usuario_id=aluno_id,
+            copiado_de_professor_id=professor_id,
+            copiado_de_exercicio_id=exercicio_professor_id,
+        ).first()
+
+        if not copia:
+            copia = ExercicioUsuario.query.filter(
+                ExercicioUsuario.usuario_id == aluno_id,
+                func.lower(ExercicioUsuario.nome) == exercicio_professor.nome.lower(),
+            ).first()
+
+        if not copia:
+            copia = ExercicioUsuario(
+                usuario_id=aluno_id,
+                nome=exercicio_professor.nome,
+                descricao=exercicio_professor.descricao,
+                musculo_id=exercicio_professor.musculo_id,
+                observacoes=exercicio_professor.observacoes,
+                copiado_de_professor_id=professor_id,
+                copiado_de_exercicio_id=exercicio_professor_id,
+            )
+            db.session.add(copia)
+            db.session.flush()
+
+        cache[exercicio_professor_id] = copia.id
+        return copia.id
+
+    @staticmethod
     def excluir_versao(versao_id, user_id=None):
         """Exclui uma versão inteira (e seus treinos/exercícios, via
         cascade). Só é permitido para versão já FINALIZADA (a versão

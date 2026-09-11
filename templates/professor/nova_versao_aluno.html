@@ -67,5 +67,12 @@
             <i class="bi bi-check-circle"></i> Criar versão
         </button>
     </form>
+    <div class="d-flex align-items-center gap-2 my-3" style="max-width: 420px; margin: 0 auto;">
+        <hr class="flex-grow-1"><span class="text-muted small">ou</span><hr class="flex-grow-1">
+    </div>
+    <a href="{{ url_for('professor.clonar_minha_versao_aluno', aluno_id=aluno.id) }}"
+       class="btn btn-outline-secondary" style="max-width: 420px; width: 100%; border-radius: 10px;">
+        <i class="bi bi-copy"></i> Clonar uma das minhas versões
+    </a>
 </div>
 {% endblock %}

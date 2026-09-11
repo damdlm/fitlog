@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-copy" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Clonar minha versão para {{ aluno.nome_completo or aluno.username }}{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --cv-orange: #F28C33;
+        --cv-ink: #1F2937;
+        --cv-muted: #6B7280;
+        --cv-line: #EEF0F3;
+        --cv-bg-soft: #F9FAFB;
+    }
+
+    .cv-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+    .cv-header h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--cv-ink);
+        margin: 0;
+        align-items: center;
+        gap: 10px;
+        display: none;
+    }
+    @media (min-width: 992px) {
+        .cv-header h1 { display: flex; }
+    }
+    .cv-subtitulo {
+        color: var(--cv-muted);
+        font-size: 0.92rem;
+        margin-bottom: 20px;
+    }
+
+    .cv-empty-card {
+        background: white;
+        border: 1px solid var(--cv-line);
+        border-radius: 16px;
+        padding: 32px 24px;
+        text-align: center;
+        max-width: 520px;
+        margin: 40px auto;
+    }
+    .cv-empty-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, rgba(242,140,51,0.12) 0%, rgba(255,179,102,0.12) 100%);
+        color: var(--cv-orange);
+        font-size: 1.7rem;
+        margin-bottom: 16px;
+    }
+    .cv-empty-card h2 { font-size: 1.2rem; font-weight: 700; color: var(--cv-ink); margin-bottom: 6px; }
+    .cv-empty-card p { color: var(--cv-muted); font-size: 0.92rem; margin-bottom: 0; }
+
+    .cv-card {
+        background: white;
+        border: 1px solid var(--cv-line);
+        border-radius: 14px;
+        padding: 18px 20px;
+        margin-bottom: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 14px;
+    }
+
+    .cv-card-titulo { font-weight: 700; color: var(--cv-ink); font-size: 1.05rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .cv-card-meta { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.82rem; color: var(--cv-muted); margin-top: 6px; }
+    .cv-card-meta span { display: inline-flex; align-items: center; gap: 5px; }
+
+    .cv-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+    .cv-status-pill.ativa { background: #E9F9EF; color: #16A34A; }
+    .cv-status-pill.ativa .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .cv-status-pill.finalizada { background: var(--cv-bg-soft); color: var(--cv-muted); }
+
+    .cv-btn-clonar {
+        border-radius: 999px;
+        padding: 0.5rem 1.1rem;
+        font-weight: 600;
+        border: none;
+        color: #fff;
+        background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%);
+        box-shadow: 0 4px 10px rgba(242, 140, 51, 0.3);
+        white-space: nowrap;
+    }
+    .cv-btn-clonar:hover { color: #fff; box-shadow: 0 6px 14px rgba(242, 140, 51, 0.4); }
+</style>
+
+<div class="cv-header">
+    <a href="{{ url_for('professor.nova_versao_aluno', aluno_id=aluno.id) }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+    <h1><i class="bi bi-copy me-1" style="color:#F28C33;"></i> Clonar minha versão</h1>
+</div>
+<p class="cv-subtitulo">
+    Escolha uma das suas versões de treino para usar como ponto de partida para
+    <strong>{{ aluno.nome_completo or aluno.username }}</strong>. Os treinos e exercícios são copiados;
+    o histórico de registros não é copiado.
+</p>
+
+{% if not minhas_versoes %}
+<div class="cv-empty-card">
+    <div class="cv-empty-icon"><i class="bi bi-layers"></i></div>
+    <h2>Você ainda não tem versões próprias</h2>
+    <p>Cadastre seus próprios treinos em "Cadastrar Treinos" para depois poder cloná-los para seus alunos.</p>
+</div>
+{% else %}
+    {% for v in minhas_versoes %}
+    {% set total_treinos = v.treinos|length %}
+    <div class="cv-card">
+        <div>
+            <div class="cv-card-titulo">
+                v{{ v.numero_versao }} &middot; {{ v.descricao }}
+                {% if v.data_fim is none %}
+                <span class="cv-status-pill ativa"><span class="dot"></span>Ativa</span>
+                {% else %}
+                <span class="cv-status-pill finalizada"><i class="bi bi-archive"></i> Finalizada</span>
+                {% endif %}
+            </div>
+            <div class="cv-card-meta">
+                <span><i class="bi bi-calendar3"></i> Início em {{ v.data_inicio.strftime('%d/%m/%Y') if v.data_inicio else '?' }}</span>
+                {% if v.data_fim %}
+                <span><i class="bi bi-calendar-check"></i> Encerrada em {{ v.data_fim.strftime('%d/%m/%Y') }}</span>
+                {% endif %}
+                <span><i class="bi bi-trophy"></i> {{ total_treinos }} treino{{ 's' if total_treinos != 1 else '' }}</span>
+            </div>
+        </div>
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="versao_id" value="{{ v.id }}">
+            <button type="submit" class="btn cv-btn-clonar"
+                    data-confirm-title="Clonar esta versão para {{ aluno.nome_completo or aluno.username }}?"
+                    data-confirm-icon="bi-copy"
+                    data-confirm-label="Sim, clonar">
+                <i class="bi bi-copy"></i> Clonar para {{ (aluno.nome_completo or aluno.username).split()[0] }}
+            </button>
+        </form>
+    </div>
+    {% endfor %}
+{% endif %}
+{% endblock %}

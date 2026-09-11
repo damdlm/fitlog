@@ -787,6 +787,49 @@ def nova_versao_aluno(aluno_id):
     return render_template('professor/nova_versao_aluno.html', aluno=aluno)
 
 
+@professor_bp.route('/aluno/<int:aluno_id>/versao/clonar-minha', methods=['GET', 'POST'])
+@login_required
+@professor_acesso_alunos_required
+@limiter.limit("10 per hour", key_func=_chave_por_professor)
+def clonar_minha_versao_aluno(aluno_id):
+    """Permite ao professor escolher uma das SUAS PRÓPRIAS versões de
+    treino (as que ele usa pra treinar por conta própria, ver
+    User.pode_gerenciar_treino_proprio) e clonar a estrutura dela como
+    a nova versão ativa de um aluno. Diferente de versao_clonar_aluno
+    (que reclona uma versão antiga do PRÓPRIO aluno), aqui a origem é
+    sempre uma versão do professor logado."""
+    aluno, negado = _aluno_ou_negar(aluno_id)
+    if negado:
+        return negado
+
+    versao_ativa = VersaoService.get_ativa(user_id=aluno.id)
+    if versao_ativa:
+        flash(f'{aluno.nome_completo or aluno.username} já tem uma versão ativa (v{versao_ativa.numero_versao}). '
+              'Finalize-a antes de clonar outra.', 'info')
+        return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_ativa.id))
+
+    if request.method == 'POST':
+        versao_id = request.form.get('versao_id', type=int)
+        try:
+            nova_versao = VersaoService.clonar_versao_de_professor(
+                versao_id=versao_id, professor_id=current_user.id, aluno_id=aluno.id
+            )
+            flash(f'Sua versão foi clonada para {aluno.nome_completo or aluno.username} como v{nova_versao.numero_versao}!', 'success')
+            return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=nova_versao.id))
+        except ValueError as e:
+            flash(str(e), 'danger')
+        except Exception:
+            logger.exception(f"Erro inesperado ao clonar versão própria do professor {current_user.id} para o aluno {aluno_id}")
+            flash('Não foi possível concluir a operação.', 'danger')
+
+    minhas_versoes = VersaoService.get_all(user_id=current_user.id)
+    return render_template(
+        'professor/clonar_minha_versao.html',
+        aluno=aluno,
+        minhas_versoes=minhas_versoes,
+    )
+
+
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>')
 @login_required
 @professor_acesso_alunos_required
