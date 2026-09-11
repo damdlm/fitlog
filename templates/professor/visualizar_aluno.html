@@ -203,62 +203,6 @@
     </div>
 </div>
 
-<!-- Cards de Estatísticas -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="card va-stat-card" style="background: var(--gradient-primary);">
-            <div class="card-body">
-                <div class="va-stat-icon"><i class="bi bi-trophy"></i></div>
-                <div>
-                    <div class="va-stat-value">{{ treinos|length }}</div>
-                    <div class="va-stat-label">Treinos</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card va-stat-card" style="background: var(--secondary-color);">
-            <div class="card-body">
-                <div class="va-stat-icon"><i class="bi bi-list-check"></i></div>
-                <div>
-                    <div class="va-stat-value">{{ exercicios|length }}</div>
-                    <div class="va-stat-label">Exercícios</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card va-stat-card" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%);">
-            <div class="card-body">
-                <div class="va-stat-icon"><i class="bi bi-clipboard2-check"></i></div>
-                <div>
-                    <div class="va-stat-value">{{ registros }}</div>
-                    <div class="va-stat-label">Registros</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card va-stat-card" style="background: var(--secondary-color);">
-            <div class="card-body">
-                <div class="va-stat-icon"><i class="bi bi-bookmark-check"></i></div>
-                <div>
-                    {% if versao_ativa %}
-                    <div class="va-stat-value">v{{ versao_ativa.numero_versao }}</div>
-                    <div class="va-stat-label">Versão Ativa</div>
-                    {% else %}
-                    <a href="{{ url_for('professor.nova_versao_aluno', aluno_id=aluno.id) }}"
-                       class="va-stat-value" style="color: white; text-decoration: underline; font-size: 1rem; display: inline-block;">
-                        <i class="bi bi-plus-circle"></i> Criar versão
-                    </a>
-                    <div class="va-stat-label">Sem versão ativa</div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Links Rápidos -->
 <div class="row mb-4">
     <div class="col-12">
