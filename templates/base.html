@@ -1554,13 +1554,6 @@
                                 <i class="bi bi-person"></i> Meu Perfil
                             </a>
                         </li>
-                        {% if current_user.is_admin %}
-                        <li class="d-lg-none">
-                            <a class="dropdown-item" href="{{ url_for('admin.telas_controladas') }}">
-                                <i class="bi bi-toggles"></i> Telas Controladas
-                            </a>
-                        </li>
-                        {% endif %}
                         {% if (current_user.is_professor() or current_user.is_aluno()) and not current_user.is_admin %}
                         <li>
                             <a class="dropdown-item" href="{{ url_for('billing.minha_assinatura') }}">
@@ -1657,6 +1650,10 @@
         <a href="{{ url_for('admin.monitoramento') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'admin.monitoramento' else '' }}" data-fl-click-feedback>
             <i class="bi bi-activity"></i>
             <span>Monitor</span>
+        </a>
+        <a href="{{ url_for('admin.telas_controladas') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'admin.telas_controladas' else '' }}" data-fl-click-feedback>
+            <i class="bi bi-toggles"></i>
+            <span>Telas</span>
         </a>
     </nav>
     {% else %}
