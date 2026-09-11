@@ -5,70 +5,12 @@
 
 {% block extra_css %}
 <style>
-    /* ===== Hero / resumo ===== */
-    .exs-hero {
-        background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
-        border-radius: 18px;
-        padding: 24px 28px;
-        color: white;
-        position: relative;
-        overflow: hidden;
-        margin-bottom: 20px;
-    }
-    .exs-hero::before {
-        content: '';
-        position: absolute;
-        top: -60px;
-        right: -60px;
-        width: 220px;
-        height: 220px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(242,140,51,0.35) 0%, rgba(242,140,51,0) 70%);
-    }
-    .exs-hero-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        flex-wrap: wrap;
-        gap: 14px;
-        position: relative;
-    }
-    .exs-hero-title {
-        font-size: 0.95rem;
-        color: rgba(255,255,255,0.6);
-        margin-bottom: 2px;
-    }
-    .exs-hero-destaque {
-        font-size: 1.35rem;
-        font-weight: 700;
-        margin-bottom: 0;
-    }
-    .exs-hero-destaque .highlight {
-        color: #FFB366;
-    }
-    .exs-hero-stats {
-        display: flex;
-        gap: 22px;
-        flex-wrap: wrap;
-        margin-top: 16px;
-        position: relative;
-    }
-    .exs-hero-stat-num {
-        font-size: 1.4rem;
-        font-weight: 700;
-        line-height: 1;
-    }
-    .exs-hero-stat-label {
-        font-size: 0.72rem;
-        color: rgba(255,255,255,0.55);
-        text-transform: uppercase;
-        letter-spacing: .03em;
-        margin-top: 2px;
-    }
-    .exs-hero-actions {
+    /* ===== Ações do topo (sem o quadro escuro de resumo) ===== */
+    .exs-actions-row {
         display: flex;
         gap: 8px;
-        position: relative;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
     }
     .exs-btn-primary {
         background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
@@ -79,14 +21,15 @@
         white-space: nowrap;
     }
     .exs-btn-primary:hover { color: white; filter: brightness(1.05); }
-    .exs-btn-ghost {
-        background: rgba(255,255,255,0.08);
-        color: white;
-        border: 1px solid rgba(255,255,255,0.18);
+    .exs-btn-light {
+        background: #F3F4F6;
+        color: #495057;
+        border: 1px solid #E2E5EA;
+        font-weight: 600;
         border-radius: 10px;
         white-space: nowrap;
     }
-    .exs-btn-ghost:hover { background: rgba(255,255,255,0.15); color: white; }
+    .exs-btn-light:hover { background: #E9EBEF; color: #495057; }
 
     /* ===== Filtros ===== */
     .exs-filtros {
@@ -214,44 +157,20 @@
     @media (max-width: 767.98px) {
         .exs-table-card { display: none; }
         .exs-cards { display: block; }
-        .exs-hero { padding: 20px; }
-        .exs-hero-destaque { font-size: 1.15rem; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<!-- Cabeçalho com destaque -->
-<div class="exs-hero">
-    <div class="exs-hero-top">
-        <div>
-            <div class="exs-hero-title">Meus Exercícios</div>
-            {% if musculo_destaque %}
-            <p class="exs-hero-destaque mb-0">
-                Grupo muscular com mais exercícios:
-                <span class="highlight">{{ musculo_destaque }}</span> 💪
-            </p>
-            {% else %}
-            <p class="exs-hero-destaque mb-0">Cadastre exercícios para começar a acompanhar seu progresso 📋</p>
-            {% endif %}
-        </div>
-        <div class="exs-hero-actions">
-            <a href="{{ url_for('aluno.novo_exercicio') }}" class="btn exs-btn-primary">
-                <i class="bi bi-plus-circle"></i> Novo Exercício
-            </a>
-            <a href="{{ url_for('aluno.dashboard') }}" class="btn exs-btn-ghost">
-                <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Voltar</span>
-            </a>
-        </div>
-    </div>
-
-    <div class="exs-hero-stats">
-        <div>
-            <div class="exs-hero-stat-num">{{ exercicios|length }}</div>
-            <div class="exs-hero-stat-label">Exercícios</div>
-        </div>
-    </div>
+<!-- Ações do topo -->
+<div class="exs-actions-row">
+    <a href="{{ url_for('aluno.novo_exercicio') }}" class="btn exs-btn-primary">
+        <i class="bi bi-plus-circle"></i> Novo Exercício
+    </a>
+    <a href="{{ url_for('aluno.dashboard') }}" class="btn exs-btn-light">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
 </div>
 
 <!-- Filtros -->
