@@ -141,3 +141,14 @@
         padding: 30px 22px 26px;
     }
 }
+
+@media (max-width: 991.98px) and (max-height: 700px) {
+    /* Mesma folga em excesso descrita em auth-login.css (o padding-top
+       do .login-shell somado ao margin-top do <main> do layout base) --
+       aqui a regra precisa mirar .register-panel-form porque ela é
+       carregada depois e sobrescreve o padding-top que auth-login.css
+       já reduz pra .login-panel-form nesse mesmo cenário. */
+    .register-panel-form {
+        padding-top: 20px;
+    }
+}
