@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block page_icon %}<i class="bi bi-copy" style="color: #F28C33;"></i>{% endblock %}
-{% block page_title %}Clonar minha versão para {{ aluno.nome_completo or aluno.username }}{% endblock %}
+{% block page_title %}Clonar versão{% endblock %}
 
 {% block content %}
 <style>
@@ -111,7 +111,7 @@
     <a href="{{ url_for('professor.nova_versao_aluno', aluno_id=aluno.id) }}" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Voltar
     </a>
-    <h1><i class="bi bi-copy me-1" style="color:#F28C33;"></i> Clonar minha versão</h1>
+    <h1><i class="bi bi-copy me-1" style="color:#F28C33;"></i> Clonar versão</h1>
 </div>
 <p class="cv-subtitulo">
     Escolha uma das suas versões de treino para usar como ponto de partida para
