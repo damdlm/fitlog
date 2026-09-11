@@ -381,10 +381,21 @@
        no lugar do input-group quadrado padrão do Bootstrap. Altura
        ~30% menor que a primeira versão (42px -> 29px), acompanhando os
        campos de nome/descrição. */
+    #modalExercicios .etv-toolbar-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
     #modalExercicios .etv-search-wrap {
         position: relative;
         display: flex;
         align-items: center;
+        flex: 1;
+        min-width: 0;
+    }
+    #modalExercicios .etv-btn-novo {
+        flex-shrink: 0;
+        white-space: nowrap;
     }
     #modalExercicios .etv-search-icon {
         position: absolute;
@@ -679,6 +690,10 @@
                                     <i class="bi bi-x-circle-fill"></i>
                                 </button>
                             </div>
+                            <button type="button" class="btn btn-sm ct-btn-treino ct-btn-editar-treino etv-btn-novo"
+                                    data-bs-toggle="modal" data-bs-target="#modalCriarExercicio" title="Cadastrar novo exercício">
+                                <span class="ct-btn-treino-icon"><i class="bi bi-plus-lg"></i></span> Novo
+                            </button>
                         </div>
                     </div>
 
@@ -772,6 +787,43 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal: Criar novo exercício (a partir da busca do catálogo) ===== -->
+<div class="modal fade" id="modalCriarExercicio" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+                <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Novo Exercício</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="novoExercicioErro" class="alert alert-danger py-2 d-none" role="alert"></div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Nome do exercício</label>
+                    <input type="text" id="novoExercicioNome" class="form-control form-control-lg" maxlength="120" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Músculo</label>
+                    <select id="novoExercicioMusculo" class="form-select">
+                        {% for musculo in musculos_catalogo %}
+                        <option value="{{ musculo }}">{{ musculo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-1">
+                    <label class="form-label fw-bold">Descrição <span class="text-muted fw-normal">(opcional)</span></label>
+                    <textarea id="novoExercicioDescricao" class="form-control" rows="2" maxlength="500"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn" id="novoExercicioSalvar" style="background: #F28C33; color: white; border: none;">
+                    <i class="bi bi-save"></i> Salvar
+                </button>
+            </div>
         </div>
     </div>
 </div>

@@ -333,6 +333,129 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // -----------------------------------------------------
+    // Empilhamento de modais -- o Bootstrap não lida sozinho com um
+    // modal aberto por cima de outro já aberto (o segundo backdrop
+    // fica atrás do primeiro modal). Sobe o z-index do modal/backdrop
+    // mais recente sempre que já existe algum aberto.
+    // -----------------------------------------------------
+    document.addEventListener('show.bs.modal', function (e) {
+        const abertos = document.querySelectorAll('.modal.show').length;
+        if (abertos === 0) return;
+        const zBase = 1055 + (abertos * 20);
+        e.target.style.zIndex = String(zBase + 10);
+        setTimeout(function () {
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            const topo = backdrops[backdrops.length - 1];
+            if (topo) topo.style.zIndex = String(zBase + 5);
+        }, 0);
+    });
+
+    // -----------------------------------------------------
+    // Criar novo exercício direto do modal (botão "+ Novo" ao lado da
+    // busca) -- via API, sem sair da tela, e já injeta o card recém-
+    // criado no topo da grade, marcado e pronto pra usar no treino.
+    // -----------------------------------------------------
+    const modalNovoExEl = document.getElementById('modalCriarExercicio');
+    if (modalNovoExEl && window.bootstrap) {
+        const nomeInput = document.getElementById('novoExercicioNome');
+        const musculoSelect = document.getElementById('novoExercicioMusculo');
+        const descricaoInput = document.getElementById('novoExercicioDescricao');
+        const erroBox = document.getElementById('novoExercicioErro');
+        const btnSalvar = document.getElementById('novoExercicioSalvar');
+        const modalNovoEx = new bootstrap.Modal(modalNovoExEl);
+
+        function novoExercicioLimpar() {
+            if (nomeInput) nomeInput.value = '';
+            if (descricaoInput) descricaoInput.value = '';
+            if (musculoSelect) musculoSelect.selectedIndex = 0;
+            erroBox?.classList.add('d-none');
+            if (erroBox) erroBox.textContent = '';
+        }
+        function novoExercicioErro(msg) {
+            if (!erroBox) return;
+            erroBox.textContent = msg;
+            erroBox.classList.remove('d-none');
+        }
+
+        modalNovoExEl.addEventListener('hidden.bs.modal', novoExercicioLimpar);
+        modalNovoExEl.addEventListener('shown.bs.modal', function () { nomeInput?.focus(); });
+
+        function montarCardNovoExercicio(id, nome, musculo) {
+            const valor = 'u_' + id;
+            const card = document.createElement('label');
+            card.className = 'etv-card';
+            card.setAttribute('for', 'ex_usuario_' + id);
+            card.dataset.nome = nome.toLowerCase();
+            card.dataset.nomeDisplay = nome;
+            card.dataset.musculo = musculo;
+            card.dataset.valor = valor;
+            card.innerHTML =
+                '<input class="etv-checkbox" type="checkbox" name="exercicios[]" value="' + valor + '" id="ex_usuario_' + id + '">' +
+                '<div class="etv-card-body">' +
+                    '<div class="etv-card-nome">' + nome + '</div>' +
+                    '<div class="etv-card-row2">' +
+                        '<span class="badge etv-card-musculo">' + musculo + '</span>' +
+                        '<button type="button" class="etv-obs-toggle" title="Adicionar observação" ' +
+                            'onclick="event.preventDefault(); event.stopPropagation(); this.closest(\'.etv-card\').classList.toggle(\'etv-obs-open\');">' +
+                            'Observação <i class="bi bi-chevron-down"></i>' +
+                        '</button>' +
+                    '</div>' +
+                    '<input type="text" class="etv-obs-input" name="observacao_' + valor + '" maxlength="60" ' +
+                        'placeholder="Observação (opcional)" value="" onclick="event.stopPropagation()" disabled>' +
+                '</div>' +
+                '<span class="etv-tipo-badge" title="Exercício personalizado"><i class="bi bi-person-fill"></i></span>';
+            return card;
+        }
+
+        if (btnSalvar) {
+            btnSalvar.addEventListener('click', async function () {
+                const nome = (nomeInput?.value || '').trim();
+                if (!nome) {
+                    novoExercicioErro('Digite o nome do exercício.');
+                    nomeInput?.focus();
+                    return;
+                }
+                const musculo = musculoSelect?.value || 'Outros';
+                const descricao = (descricaoInput?.value || '').trim();
+
+                btnSalvar.disabled = true;
+                const textoOriginal = btnSalvar.innerHTML;
+                btnSalvar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Salvando...';
+
+                try {
+                    const resp = await window.FitLogUtils.apiCall('/api/criar-exercicio', 'POST', {
+                        nome, musculo, descricao
+                    });
+                    if (resp && resp.success) {
+                        const card = montarCardNovoExercicio(resp.id, nome, musculo);
+                        grid?.prepend(card);
+                        etvPrepararCardNovo(card);
+                        const cb = card.querySelector('.etv-checkbox');
+                        if (cb) {
+                            cb.checked = true;
+                            onCheckboxChange(cb);
+                        }
+                        atualizarContador();
+                        filtrar();
+                        if (window.FitLogUtils?.showToast) {
+                            window.FitLogUtils.showToast('Exercício criado e adicionado!', 'success');
+                        }
+                        modalNovoEx.hide();
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        novoExercicioErro((resp && resp.error) || 'Não foi possível criar o exercício.');
+                    }
+                } catch (err) {
+                    novoExercicioErro('Erro de conexão. Tente novamente.');
+                } finally {
+                    btnSalvar.disabled = false;
+                    btnSalvar.innerHTML = textoOriginal;
+                }
+            });
+        }
+    }
+
     // Estado inicial
     atualizarContador();
     filtrar();

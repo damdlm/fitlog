@@ -291,7 +291,8 @@ def api_criar_exercicio():
     novo_exercicio = ExercicioService.criar_exercicio_customizado(
         user_id=current_user.id,
         nome=data["nome"],
-        musculo_nome=data.get("musculo", "Outros")
+        musculo_nome=data.get("musculo", "Outros"),
+        descricao=data.get("descricao", "")
     )
     
     if novo_exercicio:
