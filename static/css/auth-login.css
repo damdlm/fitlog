@@ -108,10 +108,14 @@
 }
 
 .login-panel-brand img {
-    height: 40px;
+    height: 64px;
     width: auto;
-    filter: brightness(0) invert(1);
-    opacity: 0.95;
+    /* Ícone tem duas partes (braço + gráfico) sem espaço vazio entre
+       elas -- convertê-lo pra silhueta sólida branca (como era antes)
+       funde as duas num borrão sem contorno. Mantém as cores originais
+       (cinza + laranja, já com bom contraste entre si) e só clareia um
+       pouco + dá uma sombra leve pra descolar do fundo escuro. */
+    filter: brightness(1.3) drop-shadow(0 1px 4px rgba(0, 0, 0, 0.35));
 }
 
 .login-panel-brand h2 {

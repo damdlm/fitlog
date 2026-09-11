@@ -4,17 +4,13 @@
 {% block page_title %}Contas e Cobrança{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <h2 class="mb-0">
-        <i class="bi bi-cash-coin me-2" style="color: #F28C33;"></i>
-        Contas e Cobrança
-    </h2>
-    {% if total_inadimplentes > 0 %}
+{% if total_inadimplentes > 0 %}
+<div class="d-flex justify-content-end mb-3">
     <span class="badge bg-danger" style="font-size: 0.9rem;">
         <i class="bi bi-exclamation-triangle"></i> {{ total_inadimplentes }} inadimplente(s)
     </span>
-    {% endif %}
 </div>
+{% endif %}
 
 <!-- Filtros -->
 <div class="card mb-4">

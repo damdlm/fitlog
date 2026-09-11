@@ -314,6 +314,29 @@ def create_app(config_class=None):
         return None
 
     # =============================================================
+    # Financeiro do admin -- desbloqueio cai ao sair da área
+    # =============================================================
+    # A reautenticação de /admin/financeiro (ver routes/financeiro_routes.py)
+    # não tem tolerância de tempo: ela vale enquanto o admin continua
+    # dentro da própria área financeira (recarregar a página ou trocar
+    # o filtro de datas via fetch() não deve pedir senha de novo), mas
+    # cai assim que ele visita qualquer página FORA desse blueprint --
+    # "saiu da tela pra voltar tem que digitar a senha de novo". Só
+    # intercepta GET (mesma razão do hook de LGPD acima: não quebrar
+    # POSTs/fetch existentes).
+    @app.before_request
+    def _financeiro_expira_ao_sair():
+        from flask import request as flask_request, session as flask_session
+
+        if flask_request.method != 'GET':
+            return None
+        endpoint = flask_request.endpoint or ''
+        if endpoint == 'static' or endpoint.startswith('financeiro.'):
+            return None
+        flask_session.pop('financeiro_desbloqueado', None)
+        return None
+
+    # =============================================================
     # COMANDOS CLI (cobrança/assinatura)
     # =============================================================
     # Rodar via Railway Cron (ou qualquer scheduler externo) apontando

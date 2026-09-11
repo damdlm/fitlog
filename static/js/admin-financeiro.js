@@ -11,19 +11,24 @@
     var LABELS_FORMA = { cartao: 'Cartão de crédito', pix: 'Pix', desconhecida: 'Não identificada' };
     var LABELS_TIPO = { aluno: 'Aluno', professor: 'Professor', desconhecido: 'Não identificado' };
 
-    function renderTabela(elId, linhas, labelMap) {
+    function renderLista(elId, linhas, labelMap) {
         var el = document.getElementById(elId);
         if (!linhas || linhas.length === 0) {
-            el.innerHTML = '<tr><td class="text-muted">Sem pagamentos no período.</td></tr>';
+            el.innerHTML = '<div class="fin-empty">Sem pagamentos no período.</div>';
             return;
         }
+        var maior = Math.max.apply(null, linhas.map(function (l) { return l.total_centavos; }));
         el.innerHTML = linhas.map(function (linha) {
             var rotulo = (labelMap && labelMap[linha.chave]) || linha.nome || linha.chave;
-            return '<tr>' +
-                '<td>' + rotulo + '</td>' +
-                '<td class="text-muted small text-end">' + linha.qtd + 'x</td>' +
-                '<td class="text-end fw-semibold">' + formatarCentavos(linha.total_centavos) + '</td>' +
-                '</tr>';
+            var pct = maior > 0 ? Math.max(4, Math.round((linha.total_centavos / maior) * 100)) : 0;
+            return '' +
+                '<div class="fin-report-row">' +
+                '  <div class="fin-report-row-top">' +
+                '    <span class="fin-report-row-label">' + rotulo + '<span class="fin-report-row-qtd">' + linha.qtd + 'x</span></span>' +
+                '    <span class="fin-report-row-value">' + formatarCentavos(linha.total_centavos) + '</span>' +
+                '  </div>' +
+                '  <div class="fin-bar-track"><div class="fin-bar-fill" style="width:' + pct + '%"></div></div>' +
+                '</div>';
         }).join('');
     }
 
@@ -69,16 +74,21 @@
                 var saldoEl = document.getElementById('fin-saldo-asaas');
                 saldoEl.textContent = saldo.erro ? 'indisponível' : formatarCentavos(saldo.saldo_centavos);
 
-                renderTabela('fin-tabela-forma', resumo.por_forma_pagamento, LABELS_FORMA);
-                renderTabela('fin-tabela-plano', resumo.por_plano, null);
-                renderTabela('fin-tabela-tipo', resumo.por_tipo_usuario, LABELS_TIPO);
+                renderLista('fin-lista-forma', resumo.por_forma_pagamento, LABELS_FORMA);
+                renderLista('fin-lista-plano', resumo.por_plano, null);
+                renderLista('fin-lista-tipo', resumo.por_tipo_usuario, LABELS_TIPO);
             })
             .catch(function () {
                 mostrarErro('Erro de conexão ao carregar os dados financeiros.');
             });
     }
 
-    function aplicarPreset(preset) {
+    function marcarPresetAtivo(botao) {
+        document.querySelectorAll('.fin-preset').forEach(function (b) { b.classList.remove('active'); });
+        if (botao) botao.classList.add('active');
+    }
+
+    function aplicarPreset(preset, botao) {
         var hoje = new Date();
         var inicio, fim;
         if (preset === 'mes-atual') {
@@ -94,6 +104,7 @@
         }
         document.getElementById('fin-data-inicio').value = paraISO(inicio);
         document.getElementById('fin-data-fim').value = paraISO(fim);
+        marcarPresetAtivo(botao);
         carregar(paraISO(inicio), paraISO(fim));
     }
 
@@ -103,12 +114,13 @@
 
     document.getElementById('fin-filtro-form').addEventListener('submit', function (e) {
         e.preventDefault();
+        marcarPresetAtivo(null);
         carregar(document.getElementById('fin-data-inicio').value, document.getElementById('fin-data-fim').value);
     });
 
     document.querySelectorAll('.fin-preset').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            aplicarPreset(btn.getAttribute('data-preset'));
+            aplicarPreset(btn.getAttribute('data-preset'), btn);
         });
     });
 

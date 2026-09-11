@@ -3,16 +3,20 @@
 Além do @admin_required de sempre, esta área exige uma reautenticação
 por senha própria (ver `_financeiro_desbloqueado`) antes de mostrar
 qualquer número -- é informação confidencial (faturamento, saldo na
-conta Asaas) e uma sessão de admin pode ficar aberta por horas num
-computador compartilhado. O desbloqueio vale por FINANCEIRO_SESSAO_MIN
-minutos, guardado só na sessão assinada do Flask (nunca no banco).
+conta Asaas). Sem tolerância de tempo: o desbloqueio vale só enquanto
+o admin continua DENTRO da área financeira (recarregar a página ou
+trocar o filtro de datas não pede senha de novo) e é derrubado assim
+que ele navega para qualquer página fora daqui -- ver o hook
+`_financeiro_expira_ao_sair` em app.py, que limpa esse mesmo flag de
+sessão a cada request GET fora do blueprint `financeiro`. Sair da tela
+e voltar sempre pede usuário e senha de novo.
 """
 
 import logging
-from datetime import datetime, timezone
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_login import current_user
+from datetime import datetime, timezone
 
 from extensions import limiter
 from services.financeiro_service import FinanceiroService
@@ -21,19 +25,11 @@ from utils.decorators import admin_required
 logger = logging.getLogger(__name__)
 financeiro_bp = Blueprint('financeiro', __name__)
 
-FINANCEIRO_SESSAO_MIN = 20
-SESSION_KEY = 'financeiro_desbloqueado_em'
+SESSION_KEY = 'financeiro_desbloqueado'
 
 
 def _financeiro_desbloqueado() -> bool:
-    desbloqueado_em = session.get(SESSION_KEY)
-    if not desbloqueado_em:
-        return False
-    try:
-        momento = datetime.fromisoformat(desbloqueado_em)
-    except ValueError:
-        return False
-    return (datetime.now(timezone.utc) - momento).total_seconds() <= FINANCEIRO_SESSAO_MIN * 60
+    return session.get(SESSION_KEY) is True
 
 
 @financeiro_bp.route('/login', methods=['GET', 'POST'])
@@ -56,7 +52,7 @@ def login():
             flash('Usuário ou senha incorretos.', 'danger')
             return render_template('admin/financeiro_login.html'), 401
 
-        session[SESSION_KEY] = datetime.now(timezone.utc).isoformat()
+        session[SESSION_KEY] = True
         return redirect(url_for('financeiro.painel'))
 
     return render_template('admin/financeiro_login.html')

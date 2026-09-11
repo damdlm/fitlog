@@ -12,17 +12,21 @@
     <div class="login-card">
         <div class="login-panel-brand">
             <div>
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FitLog">
+                <img src="{{ url_for('static', filename='images/logo-icon.png') }}" alt="FitLog">
                 <h2>Área financeira</h2>
                 <p>Informação confidencial -- confirme sua senha novamente para continuar, mesmo já estando logado como admin.</p>
             </div>
             <ul>
                 <li><i class="bi bi-shield-lock"></i> Reautenticação exigida por segurança</li>
-                <li><i class="bi bi-clock-history"></i> Acesso liberado por 20 minutos</li>
+                <li><i class="bi bi-arrow-repeat"></i> Pedida sempre que você entrar nesta área</li>
             </ul>
         </div>
 
         <div class="login-panel-form">
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm mb-3">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+
             <div class="login-form-header">
                 <h1><i class="bi bi-shield-lock me-2" style="color:#F28C33;"></i>Confirme seu acesso</h1>
                 <p>Esta tela mostra dados financeiros confidenciais do FitLog.</p>
@@ -53,10 +57,6 @@
                     <i class="bi bi-unlock"></i> Acessar financeiro
                 </button>
             </form>
-
-            <div class="mt-3">
-                <a href="{{ url_for('main.index') }}"><i class="bi bi-arrow-left"></i> Voltar</a>
-            </div>
         </div>
     </div>
 </div>
