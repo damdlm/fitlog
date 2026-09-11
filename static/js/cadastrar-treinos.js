@@ -285,7 +285,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const mapa = window.CT_TREINO_EXERCICIOS || {};
         const mapaObs = window.CT_TREINO_OBSERVACOES || {};
-        const selecionados = new Set(mapa[treinoVersaoId] || []);
+        const idsOrdem = mapa[treinoVersaoId] || [];
+        const selecionados = new Set(idsOrdem);
         const observacoes = mapaObs[treinoVersaoId] || {};
 
         // A grade grande (~1300 itens) só mantém uma parte no DOM por
@@ -324,10 +325,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Recalcula o contador (1 vez só) e traz os exercícios já
-        // marcados pra esse treino pro início da lista (ambos ouvidos em
-        // editar-treino-versao.js).
+        // marcados pra esse treino pro início da lista, na ORDEM REAL e
+        // salva do treino (idsOrdem) -- não na ordem em que cada um
+        // aparecia no DOM no momento (isso é o que causava a mesma tela
+        // de edição mostrar ordens diferentes dependendo de qual
+        // exercício já estava ou não materializado). Ambos ouvidos em
+        // editar-treino-versao.js.
         grid?.dispatchEvent(new CustomEvent('etv:contador'));
-        grid?.dispatchEvent(new CustomEvent('etv:reordenar'));
+        grid?.dispatchEvent(new CustomEvent('etv:reordenar', { detail: { ordemIds: idsOrdem } }));
 
         // Restaura o botão que abriu o modal ao estado normal -- o
         // spinner (ver listener de 'click' acima) já cumpriu seu papel.

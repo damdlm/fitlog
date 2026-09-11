@@ -142,7 +142,18 @@ document.addEventListener('DOMContentLoaded', function () {
     // -----------------------------------------------------
     // Reordenação (selecionados primeiro)
     // -----------------------------------------------------
-    function reordenarSelecionados() {
+    // Recebe opcionalmente a ordem REAL e salva do treino (a mesma que
+    // aparece no card da lista de exercícios e no recurso de arrastar-
+    // -para-reordenar) -- sem isso, cairia na ordem em que os itens
+    // aparecem no DOM no momento, que pode ficar inconsistente: nem
+    // todo exercício do catálogo (~1300 itens) fica materializado de
+    // cara (ver etvMaterializarPorIds acima), então um exercício do
+    // treino que precisou ser materializado na hora aparece na posição
+    // certa, mas outro que já estava no DOM (materializado em ordem
+    // alfabética do catálogo) aparece na posição alfabética -- uma
+    // mistura das duas ordens, dependendo de detalhe incidental de
+    // quais exercícios já estavam ou não no lote inicial.
+    function reordenarSelecionados(ordemIds) {
         if (!grid) return;
         // Só move os SELECIONADOS (tipicamente uma dúzia, no máximo) pro
         // início -- os não-selecionados (podem ser ~1300, o catálogo
@@ -152,21 +163,31 @@ document.addEventListener('DOMContentLoaded', function () {
         // tanto no carregamento da página quanto toda vez que o modal
         // "Editar" abre, isso pesava bastante -- prepend() com múltiplos
         // nós faz o navegador mover só o que precisa, numa operação só.
-        const selecionados = itens().filter(item => {
+        let selecionados = itens().filter(item => {
             const cb = item.querySelector('.etv-checkbox');
             return cb && cb.checked;
         });
-        if (selecionados.length) {
-            grid.prepend(...selecionados);
+        if (!selecionados.length) return;
+        if (ordemIds && ordemIds.length) {
+            const posicao = new Map(ordemIds.map((id, i) => [id, i]));
+            selecionados = selecionados.slice().sort(function (a, b) {
+                const pa = posicao.has(a.dataset.valor) ? posicao.get(a.dataset.valor) : Infinity;
+                const pb = posicao.has(b.dataset.valor) ? posicao.get(b.dataset.valor) : Infinity;
+                return pa - pb;
+            });
         }
+        grid.prepend(...selecionados);
     }
 
     // cadastrar-treinos.js reaproveita este grid num modal compartilhado
     // entre vários treinos; quando ele marca os checkboxes de um treino
     // específico ao abrir o modal, dispara este evento pra reordenar de
     // novo (não dá pra chamar reordenarSelecionados() direto, ela é
-    // local a este closure).
-    grid?.addEventListener('etv:reordenar', reordenarSelecionados);
+    // local a este closure). detail.ordemIds, quando informado, é a
+    // ordem real e salva do treino (ver comentário acima).
+    grid?.addEventListener('etv:reordenar', function (e) {
+        reordenarSelecionados(e.detail?.ordemIds);
+    });
 
     // -----------------------------------------------------
     // Filtro (texto + músculo)
