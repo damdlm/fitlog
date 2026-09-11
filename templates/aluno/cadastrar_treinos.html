@@ -90,20 +90,6 @@
         margin-bottom: 24px;
     }
     .ct-hero-desc { font-size: 1.15rem; font-weight: 700; color: var(--ct-ink); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .ct-hero-edit-btn {
-        border: none;
-        background: var(--ct-bg-soft);
-        color: var(--ct-muted);
-        width: 26px;
-        height: 26px;
-        border-radius: 8px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.8rem;
-        transition: background 0.15s ease, color 0.15s ease;
-    }
-    .ct-hero-edit-btn:hover { background: rgba(242, 140, 51, 0.12); color: var(--ct-orange); }
     .ct-hero-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--ct-muted); }
     .ct-hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
     .ct-status-pill {
@@ -509,8 +495,8 @@
     <div>
         <div class="ct-hero-desc">
             {{ versao.descricao }}
-            <button type="button" class="ct-hero-edit-btn" data-bs-toggle="modal" data-bs-target="#modalEditarVersao" title="Editar descrição da versão">
-                <i class="bi bi-pencil"></i>
+            <button type="button" class="btn btn-sm ct-btn-treino ct-btn-editar-treino" data-bs-toggle="modal" data-bs-target="#modalEditarVersao" title="Editar descrição da versão">
+                <span class="ct-btn-treino-icon"><i class="bi bi-pencil-fill"></i></span> Editar
             </button>
             <span class="ct-status-pill"><span class="dot"></span>Em edição</span>
         </div>
