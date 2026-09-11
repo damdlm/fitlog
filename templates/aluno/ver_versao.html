@@ -414,8 +414,8 @@
             <span><i class="bi bi-list-check"></i> {{ total_ex.value }} exercício{{ 's' if total_ex.value != 1 else '' }}</span>
         </div>
     </div>
+    {% if not esta_ativa %}
     <div class="ct-hero-actions">
-        {% if not esta_ativa %}
         <button type="button" class="btn btn-sm btn-outline-primary"
                 data-confirm-url="{{ clonar_url }}"
                 data-confirm-title="Clonar esta versão?"
@@ -434,8 +434,8 @@
                 data-confirm-label="Sim, excluir">
             <i class="bi bi-trash"></i> Excluir
         </button>
-        {% endif %}
     </div>
+    {% endif %}
 </div>
 
 {% if total_treinos >= max_treinos %}
