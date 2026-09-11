@@ -231,21 +231,22 @@
         }
     }
 
+    /* ===== Botão adicionar treino (mesmo padrão da tela Cadastrar Treinos) ===== */
     .ct-add-treino-btn {
         width: 100%;
         border: none;
         background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
-        border-radius: 14px;
-        padding: 16px;
+        border-radius: 12px;
+        padding: 11px;
         color: white;
         font-weight: 700;
-        font-size: 1rem;
+        font-size: .9rem;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
         box-shadow: 0 4px 14px rgba(242, 140, 51, 0.35);
-        margin-bottom: 20px;
+        margin-bottom: 16px;
         transition: transform .15s, box-shadow .15s;
     }
     .ct-add-treino-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(242, 140, 51, 0.45); }
@@ -373,22 +374,20 @@
 
 </style>
 
+{% set total_treinos = treinos_versao|length %}
+{% set esta_ativa = versao.data_fim is none %}
+
 <div class="ct-header">
     <h1>
         <i class="bi bi-layers me-2" style="color: #F28C33;"></i>
         Versão {{ versao.numero_versao }}
     </h1>
-    <a href="{{ voltar_url }}" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> {{ voltar_label or 'Minhas Versões' }}
-    </a>
 </div>
 
-{% set total_treinos = treinos_versao|length %}
 {% set total_ex = namespace(value=0) %}
 {% for tv in treinos_versao %}
     {% set total_ex.value = total_ex.value + tv.exercicios|length %}
 {% endfor %}
-{% set esta_ativa = versao.data_fim is none %}
 
 <div class="ct-hero">
     <div>
