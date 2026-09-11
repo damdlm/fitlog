@@ -637,6 +637,15 @@
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-danger"
+                            data-confirm-url="{{ url_for('aluno.cadastrar_treinos_finalizar', versao_id=versao.id) }}"
+                            data-confirm-title="Finalizar esta versão?"
+                            data-confirm-text="Depois de finalizada, ela sai do modo de edição rápida e passa a fazer parte do seu histórico. Você ainda pode editá-la por aqui depois, se precisar."
+                            data-confirm-variant="danger"
+                            data-confirm-icon="bi-flag"
+                            data-confirm-label="Sim, finalizar">
+                        <i class="bi bi-flag"></i> Finalizar
+                    </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn" style="background: #F28C33; color: white; border: none;">
                         <i class="bi bi-save"></i> Salvar
