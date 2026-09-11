@@ -81,6 +81,39 @@
         flex: 1 1 0;
         white-space: nowrap;
     }
+    .va-btn-modern {
+        border-radius: 999px;
+        padding: 0.55rem 1.1rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        border: none;
+    }
+    .va-btn-modern:hover {
+        transform: translateY(-1px);
+    }
+    .va-btn-ghost {
+        background: #fff;
+        color: #444;
+        border: 1.5px solid #e2e2e2;
+    }
+    .va-btn-ghost:hover {
+        background: #f7f7f7;
+        color: #333;
+        border-color: #d5d5d5;
+    }
+    .va-btn-solid {
+        background: var(--gradient-primary, linear-gradient(135deg, #FFB366 0%, #F28C33 100%));
+        color: #fff;
+        box-shadow: 0 4px 10px rgba(242, 140, 51, 0.3);
+    }
+    .va-btn-solid:hover {
+        color: #fff;
+        box-shadow: 0 6px 14px rgba(242, 140, 51, 0.4);
+    }
     @media (max-width: 767.98px) {
         .va-actions {
             width: 100%;
@@ -128,11 +161,11 @@
 
             <div class="d-flex flex-column flex-md-row gap-2 va-actions">
                 <div class="d-flex gap-2 va-actions-pair">
-                    <a href="{{ url_for('professor.versoes_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-layers"></i> Ver Versões
-                    </a>
-                    <a href="{{ url_for('professor.listar_alunos') }}" class="btn btn-outline-secondary">
+                    <a href="{{ url_for('professor.listar_alunos') }}" class="btn va-btn-modern va-btn-ghost">
                         <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                    <a href="{{ url_for('professor.versoes_aluno', aluno_id=aluno.id) }}" class="btn va-btn-modern va-btn-solid">
+                        <i class="bi bi-layers"></i> Ver Versões
                     </a>
                 </div>
                 {% if pode_gerenciar %}
@@ -233,11 +266,6 @@
             <div class="card-body">
                 <h5 class="card-title mb-3">Acompanhamento</h5>
                 <div class="row g-2">
-                    <div class="col-6 col-md-4 col-lg">
-                        <a href="{{ url_for('professor.exercicios_aluno', aluno_id=aluno.id) }}" class="dash-quick-tile">
-                            <i class="bi bi-list-check"></i> Exercícios
-                        </a>
-                    </div>
                     <div class="col-6 col-md-4 col-lg">
                         <a href="{{ url_for('professor.estatisticas_aluno', aluno_id=aluno.id) }}" class="dash-quick-tile">
                             <i class="bi bi-graph-up"></i> Estatísticas
