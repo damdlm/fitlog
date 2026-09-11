@@ -25,8 +25,16 @@
         }
     }
 
-    /* Nome/Usuário clicável no mobile (abre popover com os detalhes) */
+    /* Nome/Usuário clicável no mobile (abre popover com os detalhes) --
+       nunca quebra linha (o nome já vem truncado em 15 caracteres pelo
+       servidor, então isso é só uma garantia contra colunas estreitas)
+       e fica alinhado à esquerda mesmo dentro de um <button>, que por
+       padrão centraliza texto. */
     .contas-usuario-btn {
+        display: block;
+        width: 100%;
+        text-align: left;
+        white-space: nowrap;
         color: var(--secondary-color, #2D2D2D);
         text-decoration: underline dotted;
         text-decoration-color: rgba(45, 45, 45, 0.35);
@@ -40,26 +48,25 @@
 {% endblock %}
 
 {% block content %}
-{% if total_inadimplentes > 0 %}
-<div class="d-flex justify-content-end mb-3">
-    <span class="badge bg-danger" style="font-size: 0.9rem;">
-        <i class="bi bi-exclamation-triangle"></i> {{ total_inadimplentes }} inadimplente(s)
-    </span>
-</div>
-{% endif %}
-
 <!-- Filtros -->
 <div class="card mb-4" id="contas-filtros">
     <div class="card-body">
         <form method="get" class="row g-2 g-md-3">
-            <div class="col-12 col-md-3">
-                <label class="form-label fw-bold">Buscar</label>
-                <div class="input-group">
-                    <input type="text" name="busca" class="form-control" placeholder="Nome, usuário ou e-mail..." value="{{ filtro_busca }}">
-                    <button type="submit" class="btn btn-primary d-md-none">
-                        <i class="bi bi-search"></i>
-                    </button>
+            <div class="col-12 col-md-4 d-flex align-items-end gap-2">
+                <div class="flex-grow-1">
+                    <label class="form-label fw-bold">Buscar</label>
+                    <div class="input-group">
+                        <input type="text" name="busca" class="form-control" placeholder="Nome, usuário ou e-mail..." value="{{ filtro_busca }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
                 </div>
+                {% if total_inadimplentes > 0 %}
+                <span class="badge bg-danger flex-shrink-0 mb-2" style="font-size: 0.9rem;">
+                    <i class="bi bi-exclamation-triangle"></i> {{ total_inadimplentes }} inadimplente(s)
+                </span>
+                {% endif %}
             </div>
             <div class="col-6 col-md-2">
                 <label class="form-label fw-bold">Tipo</label>
@@ -90,11 +97,6 @@
                     <option value="pendente" {% if filtro_situacao == 'pendente' %}selected{% endif %}>Pendente de pagamento</option>
                     <option value="gratuito" {% if filtro_situacao == 'gratuito' %}selected{% endif %}>Faixa gratuita</option>
                 </select>
-            </div>
-            <div class="col-md-1 d-none d-md-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-search"></i>
-                </button>
             </div>
         </form>
     </div>
@@ -149,10 +151,11 @@
                             <span class="d-lg-none">{{ plano_labels_curtos.get(c.plano_codigo, c.plano_codigo or '—') }}</span>
                         </td>
                         <td>
+                            {% set rotulo_mobile = 'Atrasado' if c.codigo == 'past_due' else c.rotulo %}
                             {% if c.acesso_alunos_bloqueado %}
-                                <span class="badge bg-danger"><i class="bi bi-lock"></i> {{ c.rotulo }}</span>
+                                <span class="badge bg-danger"><i class="bi bi-lock"></i> <span class="d-none d-lg-inline">{{ c.rotulo }}</span><span class="d-lg-none">{{ rotulo_mobile }}</span></span>
                             {% elif c.inadimplente %}
-                                <span class="badge bg-danger">{{ c.rotulo }}</span>
+                                <span class="badge bg-danger"><span class="d-none d-lg-inline">{{ c.rotulo }}</span><span class="d-lg-none">{{ rotulo_mobile }}</span></span>
                             {% elif c.codigo == 'active' %}
                                 <span class="badge bg-success">{{ c.rotulo }}</span>
                             {% elif c.codigo == 'trialing' %}
