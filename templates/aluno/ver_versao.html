@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block page_icon %}<i class="bi bi-layers" style="color: #F28C33;"></i>{% endblock %}
-{% block page_title %}Versão {{ versao.numero_versao }}{{ titulo_sufixo or '' }}{% endblock %}
+{% block page_title %}{{ versao.descricao }}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/editar-treino-versao.css') }}">
@@ -429,7 +429,7 @@
 <div class="ct-header">
     <h1>
         <i class="bi bi-layers me-2" style="color: #F28C33;"></i>
-        Versão {{ versao.numero_versao }}
+        {{ versao.descricao }}
     </h1>
 </div>
 
