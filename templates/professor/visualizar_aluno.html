@@ -74,12 +74,21 @@
         text-transform: uppercase;
         letter-spacing: 0.04em;
     }
+    .va-actions-pair {
+        flex: 1 1 auto;
+    }
+    .va-actions-pair .btn {
+        flex: 1 1 0;
+        white-space: nowrap;
+    }
     @media (max-width: 767.98px) {
         .va-actions {
             width: 100%;
         }
-        .va-actions .btn-group,
-        .va-actions .btn {
+        .va-actions .btn-group {
+            width: 100%;
+        }
+        .va-actions .btn-group .btn {
             width: 100%;
         }
     }
@@ -118,9 +127,14 @@
             </div>
 
             <div class="d-flex flex-column flex-md-row gap-2 va-actions">
-                <a href="{{ url_for('professor.versoes_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-layers"></i> Ver Versões
-                </a>
+                <div class="d-flex gap-2 va-actions-pair">
+                    <a href="{{ url_for('professor.versoes_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-layers"></i> Ver Versões
+                    </a>
+                    <a href="{{ url_for('professor.listar_alunos') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                </div>
                 {% if pode_gerenciar %}
                 <div class="btn-group">
                     <a href="{{ url_for('professor.editar_aluno', aluno_id=aluno.id) }}"
@@ -151,9 +165,6 @@
                     {% endif %}
                 </div>
                 {% endif %}
-                <a href="{{ url_for('professor.listar_alunos') }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Voltar
-                </a>
             </div>
         </div>
     </div>
