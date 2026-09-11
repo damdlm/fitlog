@@ -3,6 +3,42 @@
 {% block page_icon %}<i class="bi bi-cash-coin" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Contas e Cobrança{% endblock %}
 
+{% set plano_labels_curtos = {'aluno_fit': 'Fit', 'professor_pro': 'Pró', 'professor_premium': 'Premium'} %}
+
+{% block extra_css %}
+<style>
+    /* Filtros mais compactos no mobile -- rótulo menor, menos
+       padding, botão de busca embutido no campo em vez de ocupar
+       uma linha inteira sozinho. */
+    @media (max-width: 991.98px) {
+        #contas-filtros .card-body {
+            padding: 14px;
+        }
+        #contas-filtros .form-label {
+            font-size: 0.76rem;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        #contas-filtros .form-select,
+        #contas-filtros .form-control {
+            font-size: 0.88rem;
+        }
+    }
+
+    /* Nome/Usuário clicável no mobile (abre popover com os detalhes) */
+    .contas-usuario-btn {
+        color: var(--secondary-color, #2D2D2D);
+        text-decoration: underline dotted;
+        text-decoration-color: rgba(45, 45, 45, 0.35);
+        text-underline-offset: 3px;
+    }
+    .contas-usuario-btn:hover,
+    .contas-usuario-btn:focus {
+        color: var(--primary-color);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 {% if total_inadimplentes > 0 %}
 <div class="d-flex justify-content-end mb-3">
@@ -13,14 +49,19 @@
 {% endif %}
 
 <!-- Filtros -->
-<div class="card mb-4">
+<div class="card mb-4" id="contas-filtros">
     <div class="card-body">
-        <form method="get" class="row g-3">
-            <div class="col-md-3">
+        <form method="get" class="row g-2 g-md-3">
+            <div class="col-12 col-md-3">
                 <label class="form-label fw-bold">Buscar</label>
-                <input type="text" name="busca" class="form-control" placeholder="Nome, usuário ou e-mail..." value="{{ filtro_busca }}">
+                <div class="input-group">
+                    <input type="text" name="busca" class="form-control" placeholder="Nome, usuário ou e-mail..." value="{{ filtro_busca }}">
+                    <button type="submit" class="btn btn-primary d-md-none">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
             </div>
-            <div class="col-md-2">
+            <div class="col-6 col-md-2">
                 <label class="form-label fw-bold">Tipo</label>
                 <select name="tipo" class="form-select">
                     <option value="" {% if not filtro_tipo %}selected{% endif %}>Todos</option>
@@ -28,7 +69,7 @@
                     <option value="professor" {% if filtro_tipo == 'professor' %}selected{% endif %}>Professor</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <label class="form-label fw-bold">Plano</label>
                 <select name="plano" class="form-select">
                     <option value="" {% if not filtro_plano %}selected{% endif %}>Todos</option>
@@ -37,7 +78,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label class="form-label fw-bold">Situação</label>
                 <select name="situacao" class="form-select">
                     <option value="" {% if not filtro_situacao %}selected{% endif %}>Todas</option>
@@ -50,7 +91,7 @@
                     <option value="gratuito" {% if filtro_situacao == 'gratuito' %}selected{% endif %}>Faixa gratuita</option>
                 </select>
             </div>
-            <div class="col-md-1 d-flex align-items-end">
+            <div class="col-md-1 d-none d-md-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100">
                     <i class="bi bi-search"></i>
                 </button>
@@ -65,7 +106,7 @@
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Nome</th>
+                        <th><span class="d-none d-lg-inline">Nome</span><span class="d-lg-none">Usuário</span></th>
                         <th>Tipo</th>
                         <th>Plano</th>
                         <th>Situação</th>
@@ -75,17 +116,38 @@
                     {% for c in contas %}
                     <tr>
                         <td>
-                            <strong>{{ c.usuario.nome_completo or c.usuario.username }}</strong><br>
-                            <span class="text-muted" style="font-size: 0.85rem;">{{ c.usuario.email }}</span>
+                            <div class="d-none d-lg-block">
+                                <strong>{{ c.usuario.nome_completo or c.usuario.username }}</strong><br>
+                                <span class="text-muted" style="font-size: 0.85rem;">{{ c.usuario.email }}</span>
+                            </div>
+                            <div class="d-lg-none">
+                                <button type="button" class="btn btn-link p-0 fw-semibold contas-usuario-btn" tabindex="0"
+                                        data-bs-toggle="popover" data-bs-trigger="focus" data-bs-html="true" data-bs-placement="bottom"
+                                        data-bs-content="<strong>{{ c.usuario.nome_completo or c.usuario.username }}</strong><br>{{ 'Professor' if c.usuario.is_professor() else 'Aluno' }}<br>{{ c.usuario.email }}<br>{{ c.usuario.telefone or 'Telefone não informado' }}">
+                                    {{ (c.usuario.nome_completo or c.usuario.username)[:15] }}{{ '...' if (c.usuario.nome_completo or c.usuario.username)|length > 15 else '' }}
+                                </button>
+                            </div>
                         </td>
                         <td>
-                            {% if c.usuario.is_professor() %}
-                                <span class="badge bg-info">Professor</span>
-                            {% else %}
-                                <span class="badge bg-secondary">Aluno</span>
-                            {% endif %}
+                            <span class="d-none d-lg-inline">
+                                {% if c.usuario.is_professor() %}
+                                    <span class="badge bg-info">Professor</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Aluno</span>
+                                {% endif %}
+                            </span>
+                            <span class="d-lg-none">
+                                {% if c.usuario.is_professor() %}
+                                    <span class="badge bg-info">P</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">A</span>
+                                {% endif %}
+                            </span>
                         </td>
-                        <td>{{ c.plano_codigo or '—' }}</td>
+                        <td>
+                            <span class="d-none d-lg-inline">{{ c.plano_codigo or '—' }}</span>
+                            <span class="d-lg-none">{{ plano_labels_curtos.get(c.plano_codigo, c.plano_codigo or '—') }}</span>
+                        </td>
                         <td>
                             {% if c.acesso_alunos_bloqueado %}
                                 <span class="badge bg-danger"><i class="bi bi-lock"></i> {{ c.rotulo }}</span>
@@ -110,4 +172,12 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function (el) {
+        new bootstrap.Popover(el, { html: true, trigger: 'focus', placement: 'bottom' });
+    });
+</script>
 {% endblock %}
