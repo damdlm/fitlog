@@ -62,12 +62,13 @@
         flex-wrap: wrap;
         gap: 16px;
         background: white;
-        border: 1px solid var(--ct-line);
+        border: 1.5px solid #E2E5EA;
         border-radius: 16px;
         padding: 20px 24px;
         margin-bottom: 24px;
     }
-    .ct-hero-desc { font-size: 1.15rem; font-weight: 700; color: var(--ct-ink); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .ct-hero-desc-row { font-size: 1.15rem; font-weight: 700; color: var(--ct-ink); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .ct-hero-desc-edit { margin-bottom: 10px; }
     .ct-hero-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--ct-muted); }
     .ct-hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
     .ct-status-pill {
@@ -428,19 +429,19 @@
 
 <div class="ct-hero">
     <div>
-        <div class="ct-hero-desc">
+        <div class="ct-hero-desc-row">
             {{ versao.descricao }}
-            {% if esta_ativa %}
-            <button type="button" class="btn btn-sm ct-btn-treino ct-btn-editar-treino" data-bs-toggle="modal" data-bs-target="#modalEditarVersao" title="Editar descrição da versão">
-                <span class="ct-btn-treino-icon"><i class="bi bi-pencil-fill"></i></span> Editar
-            </button>
-            {% endif %}
             {% if esta_ativa %}
             <span class="ct-status-pill ativa"><span class="dot"></span>Ativa</span>
             {% else %}
             <span class="ct-status-pill finalizada"><i class="bi bi-archive"></i> Finalizada</span>
             {% endif %}
         </div>
+        {% if esta_ativa %}
+        <button type="button" class="btn btn-sm ct-btn-treino ct-btn-editar-treino ct-hero-desc-edit" data-bs-toggle="modal" data-bs-target="#modalEditarVersao" title="Editar descrição da versão">
+            <span class="ct-btn-treino-icon"><i class="bi bi-pencil-fill"></i></span> Editar
+        </button>
+        {% endif %}
         <div class="ct-hero-meta">
             <span><i class="bi bi-calendar3"></i> Início em {{ versao.data_inicio.strftime('%d/%m/%Y') if versao.data_inicio else '?' }}</span>
             {% if versao.data_fim %}
