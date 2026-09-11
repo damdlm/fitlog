@@ -31,12 +31,16 @@
     .ct-accent-9 { --accent: #6366F1; --accent-soft: rgba(99, 102, 241, 0.12); }
 
     .ct-header {
-        display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
         gap: 12px;
         margin-bottom: 20px;
+        /* Sem o título (só aparece em telas >= lg) e sem botão, o
+           cabeçalho ficava vazio no mobile, mas com margin-bottom
+           empurrando o conteúdo -- some ele inteiro lá embaixo do
+           breakpoint pra não sobrar espaço em branco no topo. */
+        display: none;
     }
     .ct-header h1 {
         font-size: 1.5rem;
@@ -46,12 +50,9 @@
         align-items: center;
         gap: 10px;
         flex-wrap: wrap;
-        /* Título já aparece no cabeçalho (navbar) no mobile via page_title;
-           aqui só reaparece em telas >= lg pra não duplicar. */
-        display: none;
     }
     @media (min-width: 992px) {
-        .ct-header h1 { display: flex; }
+        .ct-header { display: flex; }
     }
 
     .ct-hero {
