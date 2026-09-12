@@ -1057,11 +1057,16 @@
             <i class="bi bi-calendar-check me-2" style="color: #F28C33;"></i>
             {% if aluno %}Calendário de {{ aluno.nome_completo or aluno.username }}{% else %}Calendário de Treinos{% endif %}
         </h2>
-        {% if aluno %}
-        <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary ms-auto">
-            <i class="bi bi-arrow-left"></i> Voltar
-        </a>
-        {% endif %}
+        <div class="ms-auto d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary" id="btnCompartilharCalendario">
+                <i class="bi bi-share-fill"></i> <span class="d-none d-sm-inline">Compartilhar</span>
+            </button>
+            {% if aluno %}
+            <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+            {% endif %}
+        </div>
     </div>
 </div>
 
@@ -1815,5 +1820,56 @@
         
         modal.show();
     }
+
+    // ===== Compartilhar calendário =====
+    const NOME_USUARIO_EXIBICAO = {{ ((aluno.nome_completo or aluno.username) if aluno else (current_user.nome_completo or current_user.username))|tojson }};
+
+    function montarSemanasDoMes(inicio, fimExclusivo, datasComTreino) {
+        const semanas = [];
+        let semanaAtual = new Array(7).fill(null);
+        const cursor = new Date(inicio);
+        while (cursor < fimExclusivo) {
+            const col = cursor.getDay(); // 0 = domingo
+            semanaAtual[col] = {
+                numero: cursor.getDate(),
+                treinou: datasComTreino.has(formatarDataLocal(cursor))
+            };
+            if (col === 6) {
+                semanas.push(semanaAtual);
+                semanaAtual = new Array(7).fill(null);
+            }
+            cursor.setDate(cursor.getDate() + 1);
+        }
+        if (semanaAtual.some(d => d !== null)) semanas.push(semanaAtual);
+        return semanas;
+    }
+
+    const btnCompartilharCalendario = document.getElementById('btnCompartilharCalendario');
+    if (btnCompartilharCalendario) {
+        btnCompartilharCalendario.addEventListener('click', function () {
+            if (!viewStart || !viewEnd) return;
+
+            const inicioStr = formatarDataLocal(viewStart);
+            const fimStr = formatarDataLocal(viewEnd);
+            const eventosDoMes = eventos.filter(e => e.start >= inicioStr && e.start < fimStr);
+            const datasComTreino = new Set(eventosDoMes.map(e => e.start));
+
+            let mesAno = viewStart.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+            mesAno = mesAno.charAt(0).toUpperCase() + mesAno.slice(1);
+
+            btnCompartilharCalendario.disabled = true;
+            FitLogShare.compartilharCalendario({
+                nomeUsuario: NOME_USUARIO_EXIBICAO,
+                mesAno: mesAno,
+                diasTreinados: document.getElementById('statDias').textContent,
+                sequencia: document.getElementById('statSequencia').textContent,
+                volumeKg: document.getElementById('statVolume').textContent,
+                semanas: montarSemanasDoMes(viewStart, viewEnd, datasComTreino)
+            }).finally(function () {
+                btnCompartilharCalendario.disabled = false;
+            });
+        });
+    }
 </script>
+<script src="{{ static_v('js/fitlog-share.js') }}"></script>
 {% endblock %}

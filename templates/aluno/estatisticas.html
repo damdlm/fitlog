@@ -214,15 +214,23 @@
 
 <!-- Cabeçalho com destaque -->
 <div class="est-hero">
-    <div class="est-hero-title">Resumo da sua evolução</div>
-    {% if musculo_destaque %}
-    <p class="est-hero-destaque">
-        Seu grupo muscular mais treinado é
-        <span class="highlight">{{ musculo_destaque }}</span> 💪
-    </p>
-    {% else %}
-    <p class="est-hero-destaque">Registre seus treinos para ver suas estatísticas aqui 📊</p>
-    {% endif %}
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <div class="est-hero-title">Resumo da sua evolução</div>
+            {% if musculo_destaque %}
+            <p class="est-hero-destaque">
+                Seu grupo muscular mais treinado é
+                <span class="highlight">{{ musculo_destaque }}</span> 💪
+            </p>
+            {% else %}
+            <p class="est-hero-destaque">Registre seus treinos para ver suas estatísticas aqui 📊</p>
+            {% endif %}
+        </div>
+        <button type="button" class="btn btn-sm" id="btnCompartilharEstatisticas"
+                style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); color: white; white-space: nowrap; position: relative;">
+            <i class="bi bi-share-fill"></i> Compartilhar
+        </button>
+    </div>
 </div>
 
 <div class="row g-3 mb-3">
@@ -500,5 +508,37 @@
             document.getElementById('tempoTreinoConteudo').style.display = 'none';
             document.getElementById('tempoTreinoVazio').style.display = 'block';
         });
+
+    // ===== Compartilhar estatísticas =====
+    const NOME_USUARIO_EXIBICAO = {{ (current_user.nome_completo or current_user.username)|tojson }};
+
+    const btnCompartilharEstatisticas = document.getElementById('btnCompartilharEstatisticas');
+    if (btnCompartilharEstatisticas) {
+        btnCompartilharEstatisticas.addEventListener('click', function () {
+            const musculos = Object.keys(muscleData)
+                .map(nome => ({ nome: nome, volume: muscleData[nome].volume_total || 0 }))
+                .filter(m => m.volume > 0)
+                .sort((a, b) => b.volume - a.volume);
+
+            if (!musculos.length) {
+                if (window.FitLogUtils) FitLogUtils.showToast('Registre alguns treinos antes de compartilhar :)', 'info');
+                return;
+            }
+
+            const volumeTotal = musculos.reduce((s, m) => s + m.volume, 0);
+
+            btnCompartilharEstatisticas.disabled = true;
+            FitLogShare.compartilharEstatisticas({
+                nomeUsuario: NOME_USUARIO_EXIBICAO,
+                musculos: musculos,
+                volumeTotalFormatado: volumeTotal >= 1000
+                    ? (volumeTotal / 1000).toFixed(1).replace('.0', '') + 'k'
+                    : Math.round(volumeTotal).toString()
+            }).finally(function () {
+                btnCompartilharEstatisticas.disabled = false;
+            });
+        });
+    }
 </script>
+<script src="{{ static_v('js/fitlog-share.js') }}"></script>
 {% endblock %}
