@@ -973,6 +973,27 @@
         border-radius: 20px;
     }
 
+    /* Compartilhar -- mesmo "peso" visual do toggle de tema, ao lado */
+    .btn-compartilhar-calendario {
+        width: 46px;
+        align-self: stretch;
+        min-height: 56px;
+        border: none;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        color: white;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(242,140,51,0.3);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .btn-compartilhar-calendario:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(242,140,51,0.4); }
+    .btn-compartilhar-calendario:active { transform: scale(0.96); }
+    .btn-compartilhar-calendario:disabled { opacity: 0.6; }
+
     .theme-toggle-vertical .theme-toggle-icon-sun {
         top: 8px;
         left: 50%;
@@ -1057,16 +1078,11 @@
             <i class="bi bi-calendar-check me-2" style="color: #F28C33;"></i>
             {% if aluno %}Calendário de {{ aluno.nome_completo or aluno.username }}{% else %}Calendário de Treinos{% endif %}
         </h2>
-        <div class="ms-auto d-flex gap-2">
-            <button type="button" class="btn btn-outline-secondary" id="btnCompartilharCalendario">
-                <i class="bi bi-share-fill"></i> <span class="d-none d-sm-inline">Compartilhar</span>
-            </button>
-            {% if aluno %}
-            <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Voltar
-            </a>
-            {% endif %}
-        </div>
+        {% if aluno %}
+        <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary ms-auto">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+        {% endif %}
     </div>
 </div>
 
@@ -1091,6 +1107,11 @@
             <div class="month-summary-label">kg no mês</div>
         </div>
     </div>
+
+    <!-- Compartilhar -->
+    <button type="button" class="btn-compartilhar-calendario" id="btnCompartilharCalendario" title="Compartilhar" aria-label="Compartilhar calendário">
+        <i class="bi bi-share-fill"></i>
+    </button>
 
     <!-- Toggle claro/escuro (vertical) -->
     <button type="button" class="theme-toggle theme-toggle-vertical" id="themeToggle" aria-label="Alternar tema claro/escuro" aria-pressed="false">

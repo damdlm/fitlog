@@ -65,25 +65,46 @@
         ctx.fillRect(0, 0, W, H);
     }
 
-    async function desenharCabecalho(ctx) {
-        const icone = await carregarImagem('/static/icons/icon-512.png');
-        const tamanho = 72;
+    async function desenharCabecalho(ctx, nomeUsuario) {
+        const logo = await carregarImagem('/static/images/logo.png');
         const x = 64, y = 56;
-        if (icone) {
-            ctx.save();
-            arredondar(ctx, x, y, tamanho, tamanho, 18);
-            ctx.clip();
-            ctx.drawImage(icone, x, y, tamanho, tamanho);
-            ctx.restore();
+        const alturaChip = 92;
+
+        if (logo) {
+            // logo.png tem fundo transparente mas o texto "FitLog" é
+            // cinza-escuro -- direto no fundo escuro do poster ficaria
+            // ilegível, por isso a placa branca por trás.
+            const alturaLogo = alturaChip - 30;
+            const larguraLogo = alturaLogo * (logo.width / logo.height);
+            const larguraChip = larguraLogo + 40;
+
+            ctx.fillStyle = '#ffffff';
+            arredondar(ctx, x, y, larguraChip, alturaChip, 18);
+            ctx.fill();
+            ctx.drawImage(logo, x + 20, y + 15, larguraLogo, alturaLogo);
+
+            ctx.textBaseline = 'middle';
+            ctx.font = '700 38px Arial, sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(nomeUsuario, x + larguraChip + 22, y + alturaChip / 2);
+            ctx.textBaseline = 'alphabetic';
+
+            return y + alturaChip;
         }
+
+        // Fallback (logo não carregou): mantém o wordmark desenhado.
         ctx.textBaseline = 'middle';
         ctx.font = '700 40px Arial, sans-serif';
         ctx.fillStyle = '#ffffff';
         const fitW = ctx.measureText('Fit').width;
-        ctx.fillText('Fit', x + tamanho + 18, y + tamanho / 2);
+        ctx.fillText('Fit', x, y + alturaChip / 2);
         ctx.fillStyle = LARANJA;
-        ctx.fillText('Log', x + tamanho + 18 + fitW, y + tamanho / 2);
-        return y + tamanho;
+        ctx.fillText('Log', x + fitW, y + alturaChip / 2);
+        ctx.font = '700 34px Arial, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(nomeUsuario, x + 260, y + alturaChip / 2);
+        ctx.textBaseline = 'alphabetic';
+        return y + alturaChip;
     }
 
     function desenharRodape(ctx) {
@@ -140,13 +161,8 @@
     // CALENDÁRIO
     // ---------------------------------------------------------------
     async function desenharCalendario(ctx, dados, topoInicial) {
-        let y = topoInicial + 56;
+        let y = topoInicial + 74;
 
-        ctx.font = '400 28px Arial, sans-serif';
-        ctx.fillStyle = LARANJA_CLARO;
-        ctx.fillText(dados.nomeUsuario.toUpperCase(), 64, y);
-
-        y += 60;
         ctx.font = '700 66px Arial, sans-serif';
         ctx.fillStyle = '#ffffff';
         ctx.fillText(dados.mesAno, 64, y);
@@ -209,7 +225,7 @@
         const ctx = canvas.getContext('2d');
 
         desenharBackground(ctx);
-        const topo = await desenharCabecalho(ctx);
+        const topo = await desenharCabecalho(ctx, dados.nomeUsuario);
         await desenharCalendario(ctx, dados, topo);
         desenharRodape(ctx);
 
@@ -242,13 +258,8 @@
     }
 
     async function desenharEstatisticas(ctx, dados, topoInicial) {
-        let y = topoInicial + 56;
+        let y = topoInicial + 74;
 
-        ctx.font = '400 28px Arial, sans-serif';
-        ctx.fillStyle = LARANJA_CLARO;
-        ctx.fillText(dados.nomeUsuario.toUpperCase(), 64, y);
-
-        y += 60;
         ctx.font = '700 54px Arial, sans-serif';
         ctx.fillStyle = '#ffffff';
         ctx.fillText('Minhas Estatísticas', 64, y);
@@ -313,7 +324,7 @@
         const ctx = canvas.getContext('2d');
 
         desenharBackground(ctx);
-        const topo = await desenharCabecalho(ctx);
+        const topo = await desenharCabecalho(ctx, dados.nomeUsuario);
         await desenharEstatisticas(ctx, dados, topo);
         desenharRodape(ctx);
 
