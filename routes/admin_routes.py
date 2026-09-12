@@ -330,6 +330,31 @@ def contas():
     )
 
 
+@admin_bp.route("/contas/api/lista")
+@admin_required
+def contas_api():
+    """Mesma filtragem de admin.contas, mas devolve só o pedaço de HTML
+    das linhas da tabela (via partial admin/_contas_linhas.html) + o
+    total de inadimplentes em JSON -- usado pelo filtro ao vivo em
+    static/js/admin-contas.js, que troca o <tbody> a cada tecla digitada
+    (com debounce) ou troca de select, sem recarregar a página."""
+    tipo_usuario = request.args.get("tipo", "").strip() or None
+    busca = request.args.get("busca", "").strip() or None
+    situacao_codigo = request.args.get("situacao", "").strip() or None
+    plano_codigo = request.args.get("plano", "").strip() or None
+
+    contas_lista = BillingService.listar_contas(
+        tipo_usuario=tipo_usuario,
+        busca=busca,
+        situacao_codigo=situacao_codigo,
+        plano_codigo=plano_codigo,
+    )
+    total_inadimplentes = sum(1 for c in contas_lista if c["inadimplente"])
+
+    html = render_template("admin/_contas_linhas.html", contas=contas_lista)
+    return jsonify({"html": html, "total_inadimplentes": total_inadimplentes})
+
+
 # =============================================
 # MONITORAMENTO -- painel de saúde da aplicação (só admin)
 # =============================================
@@ -352,18 +377,6 @@ def api_monitoramento():
     """Mesmo conteúdo da página acima, em JSON -- usado pelo
     auto-refresh no front-end (ver static/js/admin-monitoramento.js)."""
     return jsonify(MonitoringService.get_all_metrics())
-
-
-@admin_bp.route("/api/monitoramento/historico")
-@admin_required
-def api_monitoramento_historico():
-    """Série histórica (snapshots a cada ~10min, últimas 24h) para os
-    gráficos de tendência do painel -- ver
-    services/historico_metricas_service.py. Alimentada pelo comando CLI
-    `flask monitoramento-capturar-snapshot`, rodado pelo Railway Cron."""
-    from services.historico_metricas_service import HistoricoMetricasService
-    horas = request.args.get("horas", default=24, type=int)
-    return jsonify(HistoricoMetricasService.obter_serie(horas=horas))
 
 
 # =============================================

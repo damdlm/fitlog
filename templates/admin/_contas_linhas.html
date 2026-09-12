@@ -1,0 +1,56 @@
+{% set plano_labels_curtos = {'aluno_fit': 'Fit', 'professor_pro': 'Pró', 'professor_premium': 'Premium'} %}
+{% for c in contas %}
+<tr>
+    <td>
+        <div class="d-none d-lg-block">
+            <strong>{{ c.usuario.nome_completo or c.usuario.username }}</strong><br>
+            <span class="text-muted" style="font-size: 0.85rem;">{{ c.usuario.email }}</span>
+        </div>
+        <div class="d-lg-none">
+            <button type="button" class="btn btn-link p-0 fw-semibold contas-usuario-btn" tabindex="0"
+                    data-bs-toggle="popover" data-bs-trigger="focus" data-bs-html="true" data-bs-placement="bottom"
+                    data-bs-content="<strong>{{ c.usuario.nome_completo or c.usuario.username }}</strong><br>{{ 'Professor' if c.usuario.is_professor() else 'Aluno' }}<br>{{ c.usuario.email }}<br>{{ c.usuario.telefone or 'Telefone não informado' }}">
+                {{ (c.usuario.nome_completo or c.usuario.username)[:15] }}{{ '...' if (c.usuario.nome_completo or c.usuario.username)|length > 15 else '' }}
+            </button>
+        </div>
+    </td>
+    <td>
+        <span class="d-none d-lg-inline">
+            {% if c.usuario.is_professor() %}
+                <span class="badge bg-info">Professor</span>
+            {% else %}
+                <span class="badge bg-secondary">Aluno</span>
+            {% endif %}
+        </span>
+        <span class="d-lg-none">
+            {% if c.usuario.is_professor() %}
+                <span class="badge bg-info">P</span>
+            {% else %}
+                <span class="badge bg-secondary">A</span>
+            {% endif %}
+        </span>
+    </td>
+    <td>
+        <span class="d-none d-lg-inline">{{ c.plano_codigo or '—' }}</span>
+        <span class="d-lg-none">{{ plano_labels_curtos.get(c.plano_codigo, c.plano_codigo or '—') }}</span>
+    </td>
+    <td>
+        {% set rotulo_mobile = 'Atrasado' if c.codigo == 'past_due' else c.rotulo %}
+        {% if c.acesso_alunos_bloqueado %}
+            <span class="badge bg-danger"><i class="bi bi-lock"></i> <span class="d-none d-lg-inline">{{ c.rotulo }}</span><span class="d-lg-none">{{ rotulo_mobile }}</span></span>
+        {% elif c.inadimplente %}
+            <span class="badge bg-danger"><span class="d-none d-lg-inline">{{ c.rotulo }}</span><span class="d-lg-none">{{ rotulo_mobile }}</span></span>
+        {% elif c.codigo == 'active' %}
+            <span class="badge bg-success">{{ c.rotulo }}</span>
+        {% elif c.codigo == 'trialing' %}
+            <span class="badge bg-warning text-dark">{{ c.rotulo }}</span>
+        {% else %}
+            <span class="badge bg-light text-dark border">{{ c.rotulo }}</span>
+        {% endif %}
+    </td>
+</tr>
+{% else %}
+<tr>
+    <td colspan="4" class="text-center text-muted py-4">Nenhuma conta encontrada com esses filtros.</td>
+</tr>
+{% endfor %}

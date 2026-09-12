@@ -3,8 +3,6 @@
 {% block page_icon %}<i class="bi bi-cash-coin" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Contas e Cobrança{% endblock %}
 
-{% set plano_labels_curtos = {'aluno_fit': 'Fit', 'professor_pro': 'Pró', 'professor_premium': 'Premium'} %}
-
 {% block extra_css %}
 <style>
     /* Filtros mais compactos no mobile -- rótulo menor, menos
@@ -48,21 +46,19 @@
 {% endblock %}
 
 {% block content %}
-{% if total_inadimplentes > 0 %}
-<div class="d-flex justify-content-end mb-3">
-    <span class="badge bg-danger" style="font-size: 0.9rem;">
-        <i class="bi bi-exclamation-triangle"></i> {{ total_inadimplentes }} inadimplente(s)
+<div class="d-flex justify-content-end mb-3" id="contas-badge-wrap" style="{{ '' if total_inadimplentes > 0 else 'display:none' }}">
+    <span class="badge bg-danger" id="contas-badge-inadimplentes" style="font-size: 0.9rem;">
+        <i class="bi bi-exclamation-triangle"></i> <span id="contas-badge-numero">{{ total_inadimplentes }}</span> inadimplente(s)
     </span>
 </div>
-{% endif %}
 
 <!-- Filtros -->
 <div class="card mb-4" id="contas-filtros">
     <div class="card-body">
-        <form method="get" class="row g-2 g-md-3">
+        <form method="get" class="row g-2 g-md-3" id="contas-filtros-form">
             <div class="col-12 col-md-3">
                 <label class="form-label fw-bold">Buscar</label>
-                <input type="text" name="busca" class="form-control" placeholder="Nome, usuário ou e-mail..." value="{{ filtro_busca }}">
+                <input type="text" name="busca" id="contas-filtro-busca" class="form-control" placeholder="Nome, usuário ou e-mail..." value="{{ filtro_busca }}" autocomplete="off">
             </div>
             <div class="col-6 col-md-2">
                 <label class="form-label fw-bold">Tipo</label>
@@ -115,62 +111,8 @@
                         <th>Situação</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% for c in contas %}
-                    <tr>
-                        <td>
-                            <div class="d-none d-lg-block">
-                                <strong>{{ c.usuario.nome_completo or c.usuario.username }}</strong><br>
-                                <span class="text-muted" style="font-size: 0.85rem;">{{ c.usuario.email }}</span>
-                            </div>
-                            <div class="d-lg-none">
-                                <button type="button" class="btn btn-link p-0 fw-semibold contas-usuario-btn" tabindex="0"
-                                        data-bs-toggle="popover" data-bs-trigger="focus" data-bs-html="true" data-bs-placement="bottom"
-                                        data-bs-content="<strong>{{ c.usuario.nome_completo or c.usuario.username }}</strong><br>{{ 'Professor' if c.usuario.is_professor() else 'Aluno' }}<br>{{ c.usuario.email }}<br>{{ c.usuario.telefone or 'Telefone não informado' }}">
-                                    {{ (c.usuario.nome_completo or c.usuario.username)[:15] }}{{ '...' if (c.usuario.nome_completo or c.usuario.username)|length > 15 else '' }}
-                                </button>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="d-none d-lg-inline">
-                                {% if c.usuario.is_professor() %}
-                                    <span class="badge bg-info">Professor</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">Aluno</span>
-                                {% endif %}
-                            </span>
-                            <span class="d-lg-none">
-                                {% if c.usuario.is_professor() %}
-                                    <span class="badge bg-info">P</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">A</span>
-                                {% endif %}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="d-none d-lg-inline">{{ c.plano_codigo or '—' }}</span>
-                            <span class="d-lg-none">{{ plano_labels_curtos.get(c.plano_codigo, c.plano_codigo or '—') }}</span>
-                        </td>
-                        <td>
-                            {% set rotulo_mobile = 'Atrasado' if c.codigo == 'past_due' else c.rotulo %}
-                            {% if c.acesso_alunos_bloqueado %}
-                                <span class="badge bg-danger"><i class="bi bi-lock"></i> <span class="d-none d-lg-inline">{{ c.rotulo }}</span><span class="d-lg-none">{{ rotulo_mobile }}</span></span>
-                            {% elif c.inadimplente %}
-                                <span class="badge bg-danger"><span class="d-none d-lg-inline">{{ c.rotulo }}</span><span class="d-lg-none">{{ rotulo_mobile }}</span></span>
-                            {% elif c.codigo == 'active' %}
-                                <span class="badge bg-success">{{ c.rotulo }}</span>
-                            {% elif c.codigo == 'trialing' %}
-                                <span class="badge bg-warning text-dark">{{ c.rotulo }}</span>
-                            {% else %}
-                                <span class="badge bg-light text-dark border">{{ c.rotulo }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center text-muted py-4">Nenhuma conta encontrada com esses filtros.</td>
-                    </tr>
-                    {% endfor %}
+                <tbody id="contas-tbody">
+                    {% include 'admin/_contas_linhas.html' %}
                 </tbody>
             </table>
         </div>
@@ -180,8 +122,7 @@
 
 {% block scripts %}
 <script>
-    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function (el) {
-        new bootstrap.Popover(el, { html: true, trigger: 'focus', placement: 'bottom' });
-    });
+    window.CONTAS_API_URL = "{{ url_for('admin.contas_api') }}";
 </script>
+<script src="{{ static_v('js/admin-contas.js') }}"></script>
 {% endblock %}
