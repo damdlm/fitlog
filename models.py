@@ -585,6 +585,61 @@ class PagamentoRecebido(db.Model):
         return f'<PagamentoRecebido {self.gateway_payment_id} R${self.valor_bruto_centavos/100:.2f}>'
 
 
+class FitBotChamada(db.Model):
+    """Registro técnico de cada chamada feita a um provedor de IA pelo
+    FitBot (Groq, Gemini ou a reserva OpenAI) -- ver services/fitbot_service.py.
+
+    Existe só para alimentar o card "FitBot (uso de IA)" do painel de
+    monitoramento do admin (quantas chamadas, taxa de sucesso, latência
+    média e tokens consumidos por provedor) -- NUNCA guarda o conteúdo
+    da mensagem do usuário nem da resposta da IA, só metadados técnicos
+    da chamada em si.
+
+    Gravado em best-effort (nunca deve derrubar o fluxo do FitBot se a
+    escrita falhar) logo após cada chamada HTTP ao provedor, dentro de
+    _chamar_groq / _chamar_gemini / _chamar_openai_reserva."""
+    __tablename__ = 'fitbot_chamadas'
+
+    id = db.Column(db.Integer, primary_key=True)
+    provedor = db.Column(db.String(20), nullable=False, index=True)  # 'groq' | 'gemini' | 'openai_reserva'
+    sucesso = db.Column(db.Boolean, nullable=False)
+    duracao_ms = db.Column(db.Integer, nullable=False)
+    tokens_entrada = db.Column(db.Integer, nullable=True)
+    tokens_saida = db.Column(db.Integer, nullable=True)
+    motivo_falha = db.Column(db.String(120), nullable=True)  # curto -- ex: "HTTP 503", "rate limit (429)"
+    criado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+
+    def __repr__(self):
+        return f'<FitBotChamada {self.provedor} sucesso={self.sucesso} {self.duracao_ms}ms>'
+
+
+class HistoricoMetricas(db.Model):
+    """Snapshot periódico das métricas técnicas do painel de
+    monitoramento (processo, banco, cache, Railway e FitBot) -- ver
+    services/historico_metricas_service.py.
+
+    O painel (services/monitoring_service.py) só mostra o instante
+    atual; esta tabela guarda uma amostra a cada ~10 minutos (via
+    `flask monitoramento-capturar-snapshot`, rodado pelo Railway Cron)
+    para dar histórico/tendência e ajudar a identificar gargalos ao
+    longo do tempo. `dados` fica solto em JSON (em vez de uma coluna
+    por métrica) de propósito -- o conjunto de métricas coletadas muda
+    com frequência e uma coluna por métrica exigiria uma migration a
+    cada ajuste no painel.
+
+    Retenção curta (ver HistoricoMetricasService.limpar_antigas) -- não
+    é uma série histórica de longo prazo, só o suficiente para achar
+    padrões de horário de pico e correlacionar picos entre si."""
+    __tablename__ = 'historico_metricas'
+
+    id = db.Column(db.Integer, primary_key=True)
+    coletado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+    dados = db.Column(db.JSON, nullable=False)
+
+    def __repr__(self):
+        return f'<HistoricoMetricas {self.coletado_em}>'
+
+
 class EventoAnalytics(db.Model):
     """Analytics de produto -- privacy-first, 100% server-side (ver
     services/analytics_service.py). Nenhum script de terceiro, nenhum

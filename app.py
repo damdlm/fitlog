@@ -394,6 +394,27 @@ def create_app(config_class=None):
             print(f"{total} notificação(ões) lida(s) antiga(s) removida(s).")
 
     # =============================================================
+    # COMANDOS CLI (monitoramento)
+    # =============================================================
+    @app.cli.command("monitoramento-capturar-snapshot")
+    def monitoramento_capturar_snapshot():
+        """Captura um snapshot das métricas técnicas (processo, banco,
+        cache, Railway e FitBot) e grava no histórico do painel de
+        monitoramento (/admin/monitoramento) -- permite ver tendência ao
+        longo do tempo em vez de só o instante atual. Rodar a cada
+        ~10 minutos via Railway Cron; a limpeza de snapshots antigos
+        (retenção de 7 dias) roda junto, ao final."""
+        from services.historico_metricas_service import HistoricoMetricasService
+        ok = HistoricoMetricasService.capturar_snapshot()
+        removidos = HistoricoMetricasService.limpar_antigas()
+        if ok:
+            print("Snapshot de métricas capturado.")
+        else:
+            print("Falha ao capturar snapshot de métricas (ver logs).")
+        if removidos is not None:
+            print(f"{removidos} snapshot(s) antigo(s) removido(s).")
+
+    # =============================================================
     # CONTEXT
     # =============================================================
     from utils.format_utils import (

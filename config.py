@@ -177,6 +177,18 @@ class Config:
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
 
+    # Métricas de infraestrutura do Railway no painel de monitoramento
+    # do admin (/admin/monitoramento) -- ver services/railway_metrics_service.py.
+    # Lidas diretamente via os.getenv() no próprio serviço (não como
+    # atributo de Config) porque RAILWAY_PROJECT_ID/RAILWAY_ENVIRONMENT_ID/
+    # RAILWAY_SERVICE_ID já são injetadas automaticamente pelo Railway em
+    # todo deploy -- só falta o admin criar um RAILWAY_API_TOKEN em
+    # railway.com/account/tokens e configurá-lo como env var.
+    # RAILWAY_SERVICOS_EXTRAS (opcional) inclui serviços "vizinhos" no
+    # card (Postgres, Redis, os crons) -- formato "nome:service_id,..."
+    # com os IDs copiados da URL de cada serviço no dashboard do Railway.
+    # Sem RAILWAY_API_TOKEN, o card fica marcado como indisponível.
+
     # Cache (Flask-Caching) — SimpleCache (em memória do processo) é
     # suficiente em dev/testes. ProductionConfig sobrescreve para Redis,
     # já que o Gunicorn roda múltiplos workers com memórias separadas.
