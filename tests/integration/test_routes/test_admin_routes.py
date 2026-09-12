@@ -489,11 +489,45 @@ class TestMonitoramento:
         resp = client.get('/admin/monitoramento')
         assert resp.status_code == 200
 
-    def test_api_retorna_json_com_as_quatro_fontes(self, client, app):
+    def test_api_retorna_json_com_as_seis_fontes(self, client, app):
         self._criar_admin(app, 'admin_monitor2')
         _login(client, 'admin_monitor2')
 
         resp = client.get('/admin/api/monitoramento')
         assert resp.status_code == 200
         dados = resp.get_json()
-        assert set(dados.keys()) == {'coletado_em', 'processo', 'banco', 'cache', 'negocio'}
+        assert set(dados.keys()) == {
+            'coletado_em', 'processo', 'banco', 'cache', 'negocio', 'railway', 'fitbot',
+        }
+
+    def test_historico_requer_admin(self, client, app):
+        with app.app_context():
+            _criar_usuario('aluno_sem_permissao_historico')
+        _login(client, 'aluno_sem_permissao_historico')
+
+        resp = client.get('/admin/api/monitoramento/historico')
+        assert resp.status_code in (302, 403)
+
+    def test_historico_retorna_pontos_vazios_sem_snapshots(self, client, app):
+        self._criar_admin(app, 'admin_monitor3')
+        _login(client, 'admin_monitor3')
+
+        resp = client.get('/admin/api/monitoramento/historico')
+        assert resp.status_code == 200
+        dados = resp.get_json()
+        assert dados['disponivel'] is True
+        assert dados['pontos'] == []
+
+    def test_historico_retorna_snapshots_capturados(self, client, app):
+        self._criar_admin(app, 'admin_monitor4')
+        _login(client, 'admin_monitor4')
+
+        with app.app_context():
+            from services.historico_metricas_service import HistoricoMetricasService
+            assert HistoricoMetricasService.capturar_snapshot() is True
+
+        resp = client.get('/admin/api/monitoramento/historico')
+        assert resp.status_code == 200
+        dados = resp.get_json()
+        assert len(dados['pontos']) == 1
+        assert 'cpu_processo_pct' in dados['pontos'][0]

@@ -354,6 +354,18 @@ def api_monitoramento():
     return jsonify(MonitoringService.get_all_metrics())
 
 
+@admin_bp.route("/api/monitoramento/historico")
+@admin_required
+def api_monitoramento_historico():
+    """Série histórica (snapshots a cada ~10min, últimas 24h) para os
+    gráficos de tendência do painel -- ver
+    services/historico_metricas_service.py. Alimentada pelo comando CLI
+    `flask monitoramento-capturar-snapshot`, rodado pelo Railway Cron."""
+    from services.historico_metricas_service import HistoricoMetricasService
+    horas = request.args.get("horas", default=24, type=int)
+    return jsonify(HistoricoMetricasService.obter_serie(horas=horas))
+
+
 # =============================================
 # TELAS CONTROLADAS -- quais telas exigem plano pago (só admin)
 # =============================================

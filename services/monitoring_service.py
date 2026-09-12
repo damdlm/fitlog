@@ -323,6 +323,27 @@ class MonitoringService:
             return {"disponivel": False, "erro": "falha ao consultar métricas de negócio"}
 
     # =========================================================
+    # RAILWAY (infraestrutura -- CPU/memória por serviço)
+    # =========================================================
+    @staticmethod
+    def get_railway_metrics():
+        """Métricas de CPU/memória direto da API do Railway -- ver
+        services/railway_metrics_service.py. Import local (não no topo
+        do módulo) só para manter este arquivo sem depender de `requests`
+        quando ninguém usa esse bloco (RAILWAY_API_TOKEN não configurada
+        é o caminho mais comum em dev)."""
+        from services.railway_metrics_service import RailwayMetricsService
+        return RailwayMetricsService.get_metrics()
+
+    # =========================================================
+    # FITBOT (uso técnico das IAs -- Groq/Gemini/reserva OpenAI)
+    # =========================================================
+    @staticmethod
+    def get_fitbot_metrics():
+        from services.fitbot_uso_service import FitBotUsoService
+        return FitBotUsoService.get_metricas(horas=24)
+
+    # =========================================================
     # AGREGADO -- usado tanto pela página quanto pelo endpoint JSON
     # de auto-atualização.
     # =========================================================
@@ -332,6 +353,8 @@ class MonitoringService:
         banco = cls.get_database_metrics()
         cache = cls.get_cache_metrics()
         negocio = cls.get_business_metrics()
+        railway = cls.get_railway_metrics()
+        fitbot = cls.get_fitbot_metrics()
 
         # Diagnóstico leve -- só booleanos e mensagens de erro (nunca
         # valores em si), pra dar pra investigar pelo log do Railway
@@ -352,12 +375,15 @@ class MonitoringService:
         log.info(
             "Monitoramento coletado: processo=%s(workers=%s) "
             "banco=%s(%s, pool=%s) cache=%s(%s, chaves=%s) "
-            "negocio=%s(%s, usuarios=%s treinos=%s)",
+            "negocio=%s(%s, usuarios=%s treinos=%s) "
+            "railway=%s(%s) fitbot=%s(%s, chamadas=%s)",
             processo.get("disponivel"), processo.get("num_workers"),
             banco.get("disponivel"), banco.get("erro", ""), banco.get("pool"),
             cache.get("disponivel"), cache.get("erro", ""), cache.get("total_chaves"),
             negocio.get("disponivel"), negocio.get("erro", ""),
             negocio.get("total_usuarios"), negocio.get("total_treinos"),
+            railway.get("disponivel"), railway.get("erro", ""),
+            fitbot.get("disponivel"), fitbot.get("erro", ""), fitbot.get("total_chamadas"),
         )
 
         return {
@@ -366,4 +392,6 @@ class MonitoringService:
             "banco": banco,
             "cache": cache,
             "negocio": negocio,
+            "railway": railway,
+            "fitbot": fitbot,
         }

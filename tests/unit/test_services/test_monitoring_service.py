@@ -219,13 +219,20 @@ class TestGetBusinessMetrics:
 
 class TestGetAllMetrics:
 
-    def test_agrega_as_quatro_fontes(self, app, db):
+    def test_agrega_as_seis_fontes(self, app, db):
         with app.app_context():
             resultado = MonitoringService.get_all_metrics()
 
-        assert set(resultado.keys()) == {'coletado_em', 'processo', 'banco', 'cache', 'negocio'}
+        assert set(resultado.keys()) == {
+            'coletado_em', 'processo', 'banco', 'cache', 'negocio', 'railway', 'fitbot',
+        }
         assert resultado['negocio']['disponivel'] is True
         assert resultado['banco']['disponivel'] is True
+        # Sem RAILWAY_API_TOKEN configurada no ambiente de teste
+        assert resultado['railway']['disponivel'] is False
+        # FitBot fica disponível mesmo sem nenhuma chamada registrada ainda
+        assert resultado['fitbot']['disponivel'] is True
+        assert resultado['fitbot']['total_chamadas'] == 0
         # 'coletado_em' precisa ser um timestamp ISO válido
         datetime.fromisoformat(resultado['coletado_em'])
 

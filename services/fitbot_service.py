@@ -161,6 +161,31 @@ def _emails_administradores():
     return [fallback] if fallback else []
 
 
+def _registrar_uso_fitbot(provedor, tempo_inicio, resultado, tokens_entrada=None, tokens_saida=None):
+    """Registra em FitBotChamada (histórico técnico de uso das IAs, ver
+    services/fitbot_uso_service.py) o resultado de uma chamada a um
+    provedor, e devolve `resultado` sem alterações -- pensado pra
+    envolver cada `return` de _chamar_groq/_chamar_gemini/
+    _chamar_openai_reserva sem mudar o fluxo delas.
+
+    Best-effort: uma falha aqui (import, banco fora do ar) nunca pode
+    derrubar a resposta do FitBot para o usuário."""
+    try:
+        from services.fitbot_uso_service import FitBotUsoService
+        duracao_ms = int((time.time() - tempo_inicio) * 1000)
+        FitBotUsoService.registrar(
+            provedor=provedor,
+            sucesso=resultado.get("ok", False),
+            duracao_ms=duracao_ms,
+            tokens_entrada=tokens_entrada,
+            tokens_saida=tokens_saida,
+            motivo_falha=None if resultado.get("ok") else resultado.get("detalhe"),
+        )
+    except Exception:
+        logger.exception("FitBot: falha ao registrar uso técnico (provedor=%s)", provedor)
+    return resultado
+
+
 def _alertar_falha_provedor(provedor, detalhe, usou_reserva):
     """
     Dispara e-mail pros admins avisando que um provedor de IA
@@ -221,6 +246,7 @@ def _chamar_openai_reserva(system_instruction, mensagens_usuario, imagem_base64=
     if not api_key:
         return False, None
 
+    tempo_inicio = time.time()
     modelo = current_app.config.get("OPENAI_MODEL", "gpt-4o-mini")
 
     mensagens = [{"role": "system", "content": system_instruction}] + mensagens_usuario
@@ -250,10 +276,14 @@ def _chamar_openai_reserva(system_instruction, mensagens_usuario, imagem_base64=
         resp = _post_llm_com_retry(OPENAI_ENDPOINT, json=payload, headers=headers)
     except requests.exceptions.RequestException as e:
         logger.error("FitBot: reserva OpenAI também falhou (rede): %s", e)
+        _registrar_uso_fitbot("openai_reserva", tempo_inicio, {"ok": False, "detalhe": f"falha de rede: {e}"})
         return False, None
 
     if resp.status_code != 200:
         logger.error("FitBot: reserva OpenAI também falhou (%s): %s", resp.status_code, resp.text[:300])
+        _registrar_uso_fitbot("openai_reserva", tempo_inicio, {
+            "ok": False, "detalhe": f"HTTP {resp.status_code}: {resp.text[:300]}",
+        })
         return False, None
 
     try:
@@ -263,8 +293,14 @@ def _chamar_openai_reserva(system_instruction, mensagens_usuario, imagem_base64=
             raise KeyError("resposta vazia")
     except (KeyError, IndexError, ValueError) as e:
         logger.error("FitBot: resposta inesperada da reserva OpenAI: %s", e)
+        _registrar_uso_fitbot("openai_reserva", tempo_inicio, {"ok": False, "detalhe": f"resposta inesperada: {e}"})
         return False, None
 
+    uso = dados.get("usage") or {}
+    _registrar_uso_fitbot(
+        "openai_reserva", tempo_inicio, {"ok": True},
+        tokens_entrada=uso.get("prompt_tokens"), tokens_saida=uso.get("completion_tokens"),
+    )
     return True, texto_resposta
 
 
@@ -526,6 +562,7 @@ class FitBotService:
                 "aciona_reserva": False, "detalhe": "GROQ_API_KEY não configurada",
             }
 
+        tempo_inicio = time.time()
         modelo = current_app.config.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
         payload = {
@@ -543,40 +580,46 @@ class FitBotService:
             resp = _post_llm_com_retry(GROQ_ENDPOINT, json=payload, headers=headers)
         except requests.exceptions.RequestException as e:
             logger.error("FitBot: falha de rede ao chamar Groq: %s", e)
-            return {
+            return _registrar_uso_fitbot("groq", tempo_inicio, {
                 "ok": False, "resposta": MENSAGEM_ERRO_GENERICO,
                 "aciona_reserva": True, "detalhe": f"falha de rede: {e}",
-            }
+            })
 
         if resp.status_code == 429:
             logger.warning("FitBot: rate limit do Groq atingido.")
             # Rate limit não é "provedor quebrado" -- não aciona reserva
             # nem alerta (comportamento intencional, ver comentário
             # original sobre não tentar de novo em cima de 429).
-            return {
+            return _registrar_uso_fitbot("groq", tempo_inicio, {
                 "ok": False, "resposta": MENSAGEM_LIMITE_ATINGIDO,
                 "aciona_reserva": False, "detalhe": "rate limit (429)",
-            }
+            })
 
         if resp.status_code != 200:
             logger.error("FitBot: Groq retornou %s: %s", resp.status_code, resp.text[:300])
-            return {
+            return _registrar_uso_fitbot("groq", tempo_inicio, {
                 "ok": False, "resposta": MENSAGEM_ERRO_GENERICO,
                 "aciona_reserva": True,
                 "detalhe": f"HTTP {resp.status_code}: {resp.text[:300]}",
-            }
+            })
 
         try:
             dados = resp.json()
             texto_resposta = dados["choices"][0]["message"]["content"].strip()
         except (KeyError, IndexError, ValueError) as e:
             logger.error("FitBot: resposta inesperada do Groq: %s", e)
-            return {
+            return _registrar_uso_fitbot("groq", tempo_inicio, {
                 "ok": False, "resposta": MENSAGEM_ERRO_GENERICO,
                 "aciona_reserva": True, "detalhe": f"resposta inesperada: {e}",
-            }
+            })
 
-        return {"ok": True, "resposta": texto_resposta, "modo": "texto"}
+        # A API do Groq é compatível com o formato da OpenAI -- "usage"
+        # vem com prompt_tokens/completion_tokens quando presente.
+        uso = dados.get("usage") or {}
+        return _registrar_uso_fitbot(
+            "groq", tempo_inicio, {"ok": True, "resposta": texto_resposta, "modo": "texto"},
+            tokens_entrada=uso.get("prompt_tokens"), tokens_saida=uso.get("completion_tokens"),
+        )
 
     # ------------------------------------------------------------------
     # Gemini 1.5/2.5 Flash — mensagens com foto, com reserva na OpenAI
@@ -628,6 +671,7 @@ class FitBotService:
                 "aciona_reserva": False, "detalhe": "GEMINI_API_KEY não configurada",
             }
 
+        tempo_inicio = time.time()
         modelo = current_app.config.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
         url = GEMINI_ENDPOINT.format(model=modelo)
 
@@ -661,26 +705,26 @@ class FitBotService:
             resp = _post_llm_com_retry(url, params={"key": api_key}, json=payload)
         except requests.exceptions.RequestException as e:
             logger.error("FitBot: falha de rede ao chamar Gemini: %s", e)
-            return {
+            return _registrar_uso_fitbot("gemini", tempo_inicio, {
                 "ok": False, "resposta": MENSAGEM_ERRO_GENERICO,
                 "aciona_reserva": True, "detalhe": f"falha de rede: {e}",
-            }
+            })
 
         if resp.status_code == 429:
             logger.warning("FitBot: rate limit do Gemini atingido (15 RPM do plano free).")
             # Mesmo raciocínio do Groq: rate limit não aciona reserva/alerta.
-            return {
+            return _registrar_uso_fitbot("gemini", tempo_inicio, {
                 "ok": False, "resposta": MENSAGEM_LIMITE_ATINGIDO,
                 "aciona_reserva": False, "detalhe": "rate limit (429)",
-            }
+            })
 
         if resp.status_code != 200:
             logger.error("FitBot: Gemini retornou %s: %s", resp.status_code, resp.text[:300])
-            return {
+            return _registrar_uso_fitbot("gemini", tempo_inicio, {
                 "ok": False, "resposta": MENSAGEM_ERRO_GENERICO,
                 "aciona_reserva": True,
                 "detalhe": f"HTTP {resp.status_code}: {resp.text[:300]}",
-            }
+            })
 
         try:
             dados = resp.json()
@@ -690,9 +734,13 @@ class FitBotService:
                 raise KeyError("resposta vazia")
         except (KeyError, IndexError, ValueError) as e:
             logger.error("FitBot: resposta inesperada do Gemini: %s", e)
-            return {
+            return _registrar_uso_fitbot("gemini", tempo_inicio, {
                 "ok": False, "resposta": MENSAGEM_ERRO_GENERICO,
                 "aciona_reserva": True, "detalhe": f"resposta inesperada: {e}",
-            }
+            })
 
-        return {"ok": True, "resposta": texto_resposta, "modo": "imagem"}
+        uso = dados.get("usageMetadata") or {}
+        return _registrar_uso_fitbot(
+            "gemini", tempo_inicio, {"ok": True, "resposta": texto_resposta, "modo": "imagem"},
+            tokens_entrada=uso.get("promptTokenCount"), tokens_saida=uso.get("candidatesTokenCount"),
+        )

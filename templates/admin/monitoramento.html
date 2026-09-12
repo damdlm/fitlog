@@ -4,6 +4,10 @@
 {% block page_title %}Monitoramento{% endblock %}
 
 {% block content %}
+<style>
+    .mon-sparkline { width: 100%; height: 60px; }
+    .mon-sparkline polyline { fill: none; stroke: #F28C33; stroke-width: 2; }
+</style>
 <div class="d-flex justify-content-end align-items-center mb-4 flex-wrap gap-2">
     <div class="d-flex align-items-center gap-2">
         <span id="mon-status" class="badge bg-success"><i class="bi bi-broadcast"></i> ao vivo</span>
@@ -141,6 +145,98 @@
     </div>
 </div>
 
+<div class="row g-4 mb-4">
+    <!-- ========================================= -->
+    <!-- RAILWAY (infraestrutura -- CPU/memória)    -->
+    <!-- ========================================= -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title mb-3"><i class="bi bi-hdd-network me-2" style="color: #F28C33;"></i>Railway (infraestrutura)</h5>
+                <div id="mon-railway-indisponivel" class="text-muted small d-none">
+                    <i class="bi bi-exclamation-circle"></i> <span id="mon-railway-erro"></span>
+                </div>
+                <div id="mon-railway-conteudo">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr class="text-muted small">
+                                <th>Serviço</th>
+                                <th class="text-end">CPU (vCPU)</th>
+                                <th class="text-end">Memória</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mon-railway-tbody">
+                            <tr><td colspan="3" class="text-muted">carregando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- FITBOT (uso técnico das IAs)               -->
+    <!-- ========================================= -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title mb-3"><i class="bi bi-robot me-2" style="color: #F28C33;"></i>FitBot (uso de IA) <span class="text-muted small fw-normal">últimas 24h</span></h5>
+                <div id="mon-fitbot-indisponivel" class="text-muted small d-none">
+                    <i class="bi bi-exclamation-circle"></i> <span id="mon-fitbot-erro"></span>
+                </div>
+                <div id="mon-fitbot-conteudo">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr class="text-muted small">
+                                <th>Provedor</th>
+                                <th class="text-end">Chamadas</th>
+                                <th class="text-end">Sucesso</th>
+                                <th class="text-end">Latência média</th>
+                                <th class="text-end">Tokens (ent/saí)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mon-fitbot-tbody">
+                            <tr><td colspan="5" class="text-muted">carregando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================= -->
+<!-- HISTÓRICO (tendência nas últimas 24h)      -->
+<!-- ========================================= -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3"><i class="bi bi-graph-up-arrow me-2" style="color: #F28C33;"></i>Histórico <span class="text-muted small fw-normal">últimas 24h -- ajuda a achar gargalos e horários de pico</span></h5>
+        <div id="mon-historico-indisponivel" class="text-muted small">
+            <i class="bi bi-info-circle"></i> Sem dados suficientes ainda. O histórico é alimentado pelo comando
+            <code>flask monitoramento-capturar-snapshot</code>, que precisa rodar periodicamente
+            (ex: a cada 10 minutos via Railway Cron).
+        </div>
+        <div id="mon-historico-conteudo" class="row g-4 d-none">
+            <div class="col-md-6 col-lg-3">
+                <div class="text-muted small mb-1">CPU (processo)</div>
+                <svg id="mon-spark-cpu" class="mon-sparkline" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="text-muted small mb-1">Memória (sistema)</div>
+                <svg id="mon-spark-mem" class="mon-sparkline" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="text-muted small mb-1">Conexões DB (ativas)</div>
+                <svg id="mon-spark-db" class="mon-sparkline" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="text-muted small mb-1">Cache hit rate (Redis)</div>
+                <svg id="mon-spark-cache" class="mon-sparkline" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ========================================= -->
 <!-- NEGÓCIO (visão rápida de uso)              -->
 <!-- ========================================= -->
@@ -192,6 +288,7 @@
     // tela em branco enquanto o primeiro fetch() não volta.
     window.MON_METRICAS_INICIAIS = {{ metricas | tojson }};
     window.MON_API_URL = "{{ url_for('admin.api_monitoramento') }}";
+    window.MON_HISTORICO_API_URL = "{{ url_for('admin.api_monitoramento_historico') }}";
 </script>
 <script src="{{ static_v('js/admin-monitoramento.js') }}"></script>
 {% endblock %}

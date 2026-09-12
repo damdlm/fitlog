@@ -12,6 +12,9 @@
     "use strict";
 
     const MON_INTERVALO_MS = 10000;
+    // Histórico é 24h de dados -- não precisa (nem faz sentido) atualizar
+    // no mesmo ritmo do resto do painel.
+    const MON_HISTORICO_INTERVALO_MS = 5 * 60 * 1000;
 
     function formatarBytes(mb) {
         if (mb === null || mb === undefined) return "--";
@@ -131,6 +134,116 @@
         document.getElementById("mon-cache-uptime").textContent = formatarDuracao(c.uptime_segundos);
     }
 
+    function renderizarRailway(r) {
+        if (!r || !r.disponivel) {
+            alternarIndisponivel("railway", true, r && r.erro);
+            return;
+        }
+        alternarIndisponivel("railway", false);
+        const tbody = document.getElementById("mon-railway-tbody");
+        if (!tbody) return;
+        const servicos = r.servicos || [];
+        if (servicos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-muted">nenhum serviço configurado</td></tr>';
+            return;
+        }
+        tbody.innerHTML = servicos.map(s => {
+            if (!s.disponivel) {
+                return `<tr><td>${s.nome}</td><td colspan="2" class="text-muted small">${s.erro || "indisponível"}</td></tr>`;
+            }
+            const cpu = s.cpu_vcpu !== null && s.cpu_vcpu !== undefined ? s.cpu_vcpu.toFixed(2) + " vCPU" : "--";
+            const mem = s.memoria_gb !== null && s.memoria_gb !== undefined ? s.memoria_gb.toFixed(2) + " GB" : "--";
+            return `<tr><td>${s.nome}</td><td class="text-end">${cpu}</td><td class="text-end">${mem}</td></tr>`;
+        }).join("");
+    }
+
+    function renderizarFitbot(f) {
+        if (!f || !f.disponivel) {
+            alternarIndisponivel("fitbot", true, f && f.erro);
+            return;
+        }
+        alternarIndisponivel("fitbot", false);
+        const tbody = document.getElementById("mon-fitbot-tbody");
+        if (!tbody) return;
+        const provedores = f.provedores || [];
+        if (provedores.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-muted">nenhuma chamada nas últimas 24h</td></tr>';
+            return;
+        }
+        tbody.innerHTML = provedores.map(p => {
+            const sucesso = p.taxa_sucesso_pct !== null && p.taxa_sucesso_pct !== undefined
+                ? `${formatarPct(p.taxa_sucesso_pct)} <span class="text-muted">(${p.falhas} falha${p.falhas === 1 ? "" : "s"})</span>`
+                : "--";
+            const latencia = p.duracao_media_ms !== null && p.duracao_media_ms !== undefined ? `${p.duracao_media_ms} ms` : "--";
+            const tokens = (p.tokens_entrada || p.tokens_saida) ? `${p.tokens_entrada || 0} / ${p.tokens_saida || 0}` : "n/d";
+            return `<tr>
+                <td>${p.provedor}</td>
+                <td class="text-end">${p.chamadas}</td>
+                <td class="text-end">${sucesso}</td>
+                <td class="text-end">${latencia}</td>
+                <td class="text-end">${tokens}</td>
+            </tr>`;
+        }).join("");
+    }
+
+    /**
+     * Sparkline simples em SVG puro (sem lib de gráfico) -- monta uma
+     * polyline normalizada pro viewBox 0..300 x 0..60. `serie` é um
+     * array de números (null é ignorado). Propositalmente minimalista:
+     * é só pra dar uma ideia de tendência, não um gráfico analítico.
+     */
+    function desenharSparkline(svgId, serie) {
+        const svg = document.getElementById(svgId);
+        if (!svg) return;
+        const valores = serie.filter(v => v !== null && v !== undefined && !isNaN(v));
+        if (valores.length < 2) {
+            svg.innerHTML = "";
+            return;
+        }
+        const min = Math.min(...valores);
+        const max = Math.max(...valores);
+        const amplitude = (max - min) || 1;
+        const passoX = 300 / (serie.length - 1);
+
+        const pontos = serie.map((v, i) => {
+            if (v === null || v === undefined || isNaN(v)) return null;
+            const x = i * passoX;
+            const y = 58 - ((v - min) / amplitude) * 56;
+            return `${x.toFixed(1)},${y.toFixed(1)}`;
+        }).filter(Boolean);
+
+        svg.innerHTML = `<polyline points="${pontos.join(" ")}"></polyline>`;
+    }
+
+    async function atualizarHistorico() {
+        if (!window.MON_HISTORICO_API_URL) return;
+        try {
+            const resp = await fetch(window.MON_HISTORICO_API_URL + "?horas=24", {
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+            });
+            if (!resp.ok) throw new Error("resposta HTTP " + resp.status);
+            const dados = await resp.json();
+            const pontos = (dados && dados.pontos) || [];
+
+            const semDados = document.getElementById("mon-historico-indisponivel");
+            const comDados = document.getElementById("mon-historico-conteudo");
+            if (pontos.length < 2) {
+                if (semDados) semDados.classList.remove("d-none");
+                if (comDados) comDados.classList.add("d-none");
+                return;
+            }
+            if (semDados) semDados.classList.add("d-none");
+            if (comDados) comDados.classList.remove("d-none");
+
+            desenharSparkline("mon-spark-cpu", pontos.map(p => p.cpu_processo_pct));
+            desenharSparkline("mon-spark-mem", pontos.map(p => p.memoria_sistema_usada_pct));
+            desenharSparkline("mon-spark-db", pontos.map(p => p.db_conexoes_ativas));
+            desenharSparkline("mon-spark-cache", pontos.map(p => p.cache_hit_rate_pct));
+        } catch (e) {
+            console.error("[monitoramento] falha ao carregar histórico:", e);
+        }
+    }
+
     function renderizarNegocio(n) {
         if (!n || !n.disponivel) {
             alternarIndisponivel("negocio", true, n && n.erro);
@@ -165,6 +278,8 @@
         renderizarBlocoSeguro(() => renderizarProcesso(metricas.processo), "processo");
         renderizarBlocoSeguro(() => renderizarBanco(metricas.banco), "banco");
         renderizarBlocoSeguro(() => renderizarCache(metricas.cache), "cache");
+        renderizarBlocoSeguro(() => renderizarRailway(metricas.railway), "railway");
+        renderizarBlocoSeguro(() => renderizarFitbot(metricas.fitbot), "fitbot");
         renderizarBlocoSeguro(() => renderizarNegocio(metricas.negocio), "negocio");
 
         const atualizadoEm = document.getElementById("mon-atualizado-em");
@@ -203,5 +318,8 @@
             renderizarTudo(window.MON_METRICAS_INICIAIS);
         }
         setInterval(atualizar, MON_INTERVALO_MS);
+
+        atualizarHistorico();
+        setInterval(atualizarHistorico, MON_HISTORICO_INTERVALO_MS);
     });
 })();
