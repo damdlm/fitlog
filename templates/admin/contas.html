@@ -48,25 +48,21 @@
 {% endblock %}
 
 {% block content %}
+{% if total_inadimplentes > 0 %}
+<div class="d-flex justify-content-end mb-3">
+    <span class="badge bg-danger" style="font-size: 0.9rem;">
+        <i class="bi bi-exclamation-triangle"></i> {{ total_inadimplentes }} inadimplente(s)
+    </span>
+</div>
+{% endif %}
+
 <!-- Filtros -->
 <div class="card mb-4" id="contas-filtros">
     <div class="card-body">
         <form method="get" class="row g-2 g-md-3">
-            <div class="col-12 col-md-4 d-flex align-items-end gap-2">
-                <div class="flex-grow-1">
-                    <label class="form-label fw-bold">Buscar</label>
-                    <div class="input-group">
-                        <input type="text" name="busca" class="form-control" placeholder="Nome, usuário ou e-mail..." value="{{ filtro_busca }}">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-search"></i>
-                        </button>
-                    </div>
-                </div>
-                {% if total_inadimplentes > 0 %}
-                <span class="badge bg-danger flex-shrink-0 mb-2" style="font-size: 0.9rem;">
-                    <i class="bi bi-exclamation-triangle"></i> {{ total_inadimplentes }} inadimplente(s)
-                </span>
-                {% endif %}
+            <div class="col-12 col-md-3">
+                <label class="form-label fw-bold">Buscar</label>
+                <input type="text" name="busca" class="form-control" placeholder="Nome, usuário ou e-mail..." value="{{ filtro_busca }}">
             </div>
             <div class="col-6 col-md-2">
                 <label class="form-label fw-bold">Tipo</label>
@@ -85,18 +81,23 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-12 col-md-3">
-                <label class="form-label fw-bold">Situação</label>
-                <select name="situacao" class="form-select">
-                    <option value="" {% if not filtro_situacao %}selected{% endif %}>Todas</option>
-                    <option value="inadimplente" {% if filtro_situacao == 'inadimplente' %}selected{% endif %}>Inadimplentes</option>
-                    <option value="trialing" {% if filtro_situacao == 'trialing' %}selected{% endif %}>Em teste</option>
-                    <option value="active" {% if filtro_situacao == 'active' %}selected{% endif %}>Ativo</option>
-                    <option value="past_due" {% if filtro_situacao == 'past_due' %}selected{% endif %}>Pagamento atrasado</option>
-                    <option value="blocked" {% if filtro_situacao == 'blocked' %}selected{% endif %}>Bloqueado</option>
-                    <option value="pendente" {% if filtro_situacao == 'pendente' %}selected{% endif %}>Pendente de pagamento</option>
-                    <option value="gratuito" {% if filtro_situacao == 'gratuito' %}selected{% endif %}>Faixa gratuita</option>
-                </select>
+            <div class="col-12 col-md-4 d-flex align-items-end gap-2">
+                <div class="flex-grow-1">
+                    <label class="form-label fw-bold">Situação</label>
+                    <select name="situacao" class="form-select">
+                        <option value="" {% if not filtro_situacao %}selected{% endif %}>Todas</option>
+                        <option value="inadimplente" {% if filtro_situacao == 'inadimplente' %}selected{% endif %}>Inadimplentes</option>
+                        <option value="trialing" {% if filtro_situacao == 'trialing' %}selected{% endif %}>Em teste</option>
+                        <option value="active" {% if filtro_situacao == 'active' %}selected{% endif %}>Ativo</option>
+                        <option value="past_due" {% if filtro_situacao == 'past_due' %}selected{% endif %}>Pagamento atrasado</option>
+                        <option value="blocked" {% if filtro_situacao == 'blocked' %}selected{% endif %}>Bloqueado</option>
+                        <option value="pendente" {% if filtro_situacao == 'pendente' %}selected{% endif %}>Pendente de pagamento</option>
+                        <option value="gratuito" {% if filtro_situacao == 'gratuito' %}selected{% endif %}>Faixa gratuita</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary flex-shrink-0">
+                    <i class="bi bi-search"></i>
+                </button>
             </div>
         </form>
     </div>

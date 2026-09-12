@@ -149,6 +149,67 @@
         margin-bottom: 10px;
         display: block;
     }
+
+    /* ===== Tempo de Treino ===== */
+    .est-tempo-stats {
+        display: flex;
+        gap: 32px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
+    .est-tempo-stat-num {
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: var(--secondary-color);
+        line-height: 1.15;
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+    }
+    .est-tempo-stat-num .unidade {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #8a8a8a;
+    }
+    .est-tempo-stat-label {
+        font-size: 0.8rem;
+        color: #8a8a8a;
+        margin-top: 2px;
+    }
+    .est-tempo-distribuicao {
+        display: flex;
+        border-radius: 999px;
+        overflow: hidden;
+        height: 10px;
+        background: #f0f0f0;
+    }
+    .est-tempo-seg {
+        height: 100%;
+        width: 0%;
+        transition: width 0.6s ease;
+    }
+    .est-tempo-seg-manha { background: #FFB366; }
+    .est-tempo-seg-tarde { background: #F28C33; }
+    .est-tempo-seg-noite { background: #2D2D2D; }
+    .est-tempo-legenda {
+        display: flex;
+        gap: 16px;
+        margin-top: 10px;
+        font-size: 0.78rem;
+        color: #8a8a8a;
+        flex-wrap: wrap;
+    }
+    .est-tempo-legenda span {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .est-tempo-legenda .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
 </style>
 
 <!-- Cabeçalho com destaque -->
@@ -220,6 +281,47 @@
     </div>
     <div class="card-body">
         <canvas id="evolucaoChart" height="280"></canvas>
+        <div class="est-empty" id="evolucaoVazio" style="display: none;">
+            <i class="bi bi-graph-up"></i>
+            Ainda não há registros suficientes pra montar esse gráfico.
+        </div>
+    </div>
+</div>
+
+<!-- Tempo de Treino -->
+<div class="card est-card mt-3">
+    <div class="card-header bg-white border-0 pb-0">
+        <h6 class="fw-bold mb-0">
+            <i class="bi bi-stopwatch me-1" style="color: #F28C33;"></i>Tempo de Treino
+        </h6>
+    </div>
+    <div class="card-body">
+        <div id="tempoTreinoConteudo">
+            <div class="est-tempo-stats">
+                <div>
+                    <div class="est-tempo-stat-num"><span id="tempoDuracaoMedia">—</span><span class="unidade">min</span></div>
+                    <div class="est-tempo-stat-label">Duração média por sessão</div>
+                </div>
+                <div>
+                    <div class="est-tempo-stat-num"><span id="tempoHorarioComum">—</span></div>
+                    <div class="est-tempo-stat-label">Horário mais comum</div>
+                </div>
+            </div>
+            <div class="est-tempo-distribuicao">
+                <div class="est-tempo-seg est-tempo-seg-manha" id="segManha"></div>
+                <div class="est-tempo-seg est-tempo-seg-tarde" id="segTarde"></div>
+                <div class="est-tempo-seg est-tempo-seg-noite" id="segNoite"></div>
+            </div>
+            <div class="est-tempo-legenda">
+                <span><span class="dot" style="background:#FFB366;"></span>Manhã (5h–12h)</span>
+                <span><span class="dot" style="background:#F28C33;"></span>Tarde (12h–18h)</span>
+                <span><span class="dot" style="background:#2D2D2D;"></span>Noite (18h–5h)</span>
+            </div>
+        </div>
+        <div class="est-empty" id="tempoTreinoVazio" style="display: none;">
+            <i class="bi bi-stopwatch"></i>
+            Ainda não há sessões suficientes pra estimar seu tempo de treino.
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -287,7 +389,20 @@
             .then(data => {
                 if (evolucaoChart) evolucaoChart.destroy();
 
-                evolucaoChart = new Chart(document.getElementById('evolucaoChart'), {
+                const canvas = document.getElementById('evolucaoChart');
+                const semDados = !data.semanas || data.semanas.length === 0 || data.volumes.every(v => v === 0);
+                canvas.style.display = semDados ? 'none' : 'block';
+                document.getElementById('evolucaoVazio').style.display = semDados ? 'block' : 'none';
+                if (semDados) return;
+
+                // Preenchimento em gradiente (mais suave que uma cor chapada),
+                // some perto da base do gráfico.
+                const ctx = canvas.getContext('2d');
+                const gradiente = ctx.createLinearGradient(0, 0, 0, 280);
+                gradiente.addColorStop(0, 'rgba(242, 140, 51, 0.32)');
+                gradiente.addColorStop(1, 'rgba(242, 140, 51, 0)');
+
+                evolucaoChart = new Chart(canvas, {
                     type: 'line',
                     data: {
                         labels: data.semanas,
@@ -295,18 +410,50 @@
                             label: 'Volume Total (kg)',
                             data: data.volumes,
                             borderColor: '#F28C33',
-                            backgroundColor: 'rgba(242, 140, 51, 0.1)',
-                            borderWidth: 3,
-                            pointRadius: 5,
-                            tension: 0.3,
+                            backgroundColor: gradiente,
+                            borderWidth: 2.5,
+                            pointRadius: 0,
+                            pointHitRadius: 12,
+                            pointHoverRadius: 5,
+                            pointHoverBackgroundColor: '#F28C33',
+                            pointHoverBorderColor: '#fff',
+                            pointHoverBorderWidth: 2,
+                            tension: 0.35,
                             fill: true
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#1a1a1a',
+                                padding: 10,
+                                cornerRadius: 8,
+                                displayColors: false,
+                                callbacks: {
+                                    label: function (context) {
+                                        return `${context.formattedValue} kg`;
+                                    }
+                                }
+                            }
+                        },
                         scales: {
-                            y: { beginAtZero: true }
+                            x: {
+                                grid: { display: false },
+                                ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8, color: '#8a8a8a', font: { size: 11 } }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(0,0,0,0.05)' },
+                                ticks: {
+                                    color: '#8a8a8a',
+                                    font: { size: 11 },
+                                    callback: value => `${value}kg`
+                                }
+                            }
                         }
                     }
                 });
@@ -323,5 +470,35 @@
     });
 
     carregarEvolucao('todos');
+
+    // ===== Tempo de Treino =====
+    fetch('/api/tempo-treino')
+        .then(r => r.json())
+        .then(data => {
+            const conteudo = document.getElementById('tempoTreinoConteudo');
+            const vazio = document.getElementById('tempoTreinoVazio');
+
+            if (!data.total_sessoes) {
+                conteudo.style.display = 'none';
+                vazio.style.display = 'block';
+                return;
+            }
+
+            document.getElementById('tempoDuracaoMedia').textContent =
+                data.duracao_media_min != null ? data.duracao_media_min : '—';
+            document.getElementById('tempoHorarioComum').textContent = data.horario_mais_comum || '—';
+
+            const dist = data.distribuicao_horario || {};
+            const total = (dist['Manhã'] || 0) + (dist['Tarde'] || 0) + (dist['Noite'] || 0);
+            if (total > 0) {
+                document.getElementById('segManha').style.width = ((dist['Manhã'] || 0) / total * 100) + '%';
+                document.getElementById('segTarde').style.width = ((dist['Tarde'] || 0) / total * 100) + '%';
+                document.getElementById('segNoite').style.width = ((dist['Noite'] || 0) / total * 100) + '%';
+            }
+        })
+        .catch(() => {
+            document.getElementById('tempoTreinoConteudo').style.display = 'none';
+            document.getElementById('tempoTreinoVazio').style.display = 'block';
+        });
 </script>
 {% endblock %}

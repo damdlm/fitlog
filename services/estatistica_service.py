@@ -2,12 +2,26 @@
 
 from collections import Counter
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from models import db, Musculo, ExercicioCustomizado, ExercicioSistema, RegistroTreino, HistoricoTreino
 from sqlalchemy import func, and_
 from .base_service import BaseService, CacheService
 import logging
 
 logger = logging.getLogger(__name__)
+
+_FUSO_BRASIL = ZoneInfo("America/Sao_Paulo")
+
+
+def _hora_local(dt):
+    """Hora do dia (0-23) de um datetime, convertido para o fuso de
+    Brasília -- data_registro é gravado em UTC (ver
+    RegistroService.criar_registro), então usar .hour direto ficaria até
+    3h adiantado em relação ao horário real em que a pessoa treinou."""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(_FUSO_BRASIL).hour
+
 
 # TTL curto para os agregados desta tela (musculo/treino/progresso) —
 # mesma ideia já usada em FitBotContextService._contexto_estatisticas
@@ -251,6 +265,88 @@ class EstatisticaService(BaseService):
         except Exception as e:
             BaseService.handle_error(e, "Erro ao calcular progresso dos últimos 30 dias")
             return []
+
+    @staticmethod
+    def get_tempo_treino_stats(user_id=None, dias=30):
+        """
+        Estima duração das sessões de treino e o horário do dia mais
+        comum pra treinar, a partir dos registros de exercício dos
+        últimos `dias` dias.
+
+        Não existe um timer explícito de início/fim de sessão no app --
+        cada RegistroTreino é só o registro de UM exercício. A melhor
+        aproximação disponível é agrupar por (dia, treino_versao_id) e
+        usar o intervalo entre o primeiro e o último exercício
+        registrado naquele treino naquele dia como "duração da sessão".
+        Sessões com um único exercício registrado são descartadas (o
+        intervalo seria sempre zero) e durações acima de 3h são tratadas
+        como outlier (esqueceu de registrar e completou bem depois) e
+        descartadas do cálculo de duração -- mas ainda contam para o
+        horário mais comum.
+
+        Usado no card "Tempo de Treino" da tela de estatísticas.
+        """
+        try:
+            user_id = user_id or BaseService.get_current_user_id()
+            if not user_id:
+                return None
+
+            cache_key = f"estatistica:{user_id}:tempo_treino:{dias}"
+            cache_hit = CacheService.get(cache_key)
+            if cache_hit is not None:
+                return cache_hit
+
+            limite = datetime.now(timezone.utc) - timedelta(days=dias)
+
+            sessoes = db.session.query(
+                func.date(RegistroTreino.data_registro).label('dia'),
+                RegistroTreino.treino_versao_id,
+                func.min(RegistroTreino.data_registro).label('inicio'),
+                func.max(RegistroTreino.data_registro).label('fim'),
+                func.count(RegistroTreino.id).label('qtd_exercicios')
+            ).filter(
+                RegistroTreino.user_id == user_id,
+                RegistroTreino.data_registro >= limite
+            ).group_by(
+                func.date(RegistroTreino.data_registro),
+                RegistroTreino.treino_versao_id
+            ).all()
+
+            duracoes_min = []
+            horas_inicio = []  # hora local (0-23) em que cada sessão válida começou
+            for s in sessoes:
+                if s.qtd_exercicios < 2:
+                    continue
+                horas_inicio.append(_hora_local(s.inicio))
+                delta_min = (s.fim - s.inicio).total_seconds() / 60
+                if 0 < delta_min <= 180:
+                    duracoes_min.append(delta_min)
+
+            if not horas_inicio:
+                resultado = None
+            else:
+                buckets = {'Manhã': 0, 'Tarde': 0, 'Noite': 0}
+                for hora in horas_inicio:
+                    if 5 <= hora < 12:
+                        buckets['Manhã'] += 1
+                    elif 12 <= hora < 18:
+                        buckets['Tarde'] += 1
+                    else:
+                        buckets['Noite'] += 1
+
+                resultado = {
+                    'duracao_media_min': round(sum(duracoes_min) / len(duracoes_min)) if duracoes_min else None,
+                    'sessoes_com_duracao': len(duracoes_min),
+                    'horario_mais_comum': max(buckets, key=buckets.get),
+                    'distribuicao_horario': buckets,
+                    'total_sessoes': len(horas_inicio),
+                }
+
+            CacheService.set(cache_key, resultado, ttl_seconds=ESTATISTICA_CACHE_TTL_SEGUNDOS)
+            return resultado
+        except Exception as e:
+            BaseService.handle_error(e, "Erro ao calcular tempo de treino")
+            return None
 
     @staticmethod
     def preparar_dados_tabela(exercicios, registros, semanas_filtro, request_args):

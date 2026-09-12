@@ -83,6 +83,26 @@ def api_progresso():
     })
 
 
+@api_bp.route("/tempo-treino")
+@login_required
+@acesso_premium_required('estatisticas')
+def api_tempo_treino():
+    """
+    Duração média estimada das sessões de treino e horário do dia mais
+    comum, últimos 30 dias -- ver EstatisticaService.get_tempo_treino_stats
+    para a lógica (não há timer de sessão explícito no app).
+    """
+    dados = EstatisticaService.get_tempo_treino_stats(dias=30)
+    if not dados:
+        return jsonify({
+            "duracao_media_min": None,
+            "horario_mais_comum": None,
+            "distribuicao_horario": {},
+            "total_sessoes": 0
+        })
+    return jsonify(dados)
+
+
 # ============================================================================
 # BUSCA DE MÚSCULOS E EXERCÍCIOS
 # ============================================================================
