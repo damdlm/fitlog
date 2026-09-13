@@ -23,7 +23,7 @@
     const LARANJA = '#F28C33';
     const LARANJA_CLARO = '#FFB366';
     const W = 1080;
-    const H = 1350;
+    const H = 1920; // 9:16 -- formato de Stories do Instagram
 
     const PALETA_MUSCULOS = [
         '#F28C33', '#FFB366', '#e8e6e1', '#9a9a9a', '#5f6b7a',
@@ -65,34 +65,44 @@
         ctx.fillRect(0, 0, W, H);
     }
 
+    function desenharLogoBranca(ctx, img, x, y, w, h) {
+        // Recolore a logo (que originalmente tem o texto "FitLog" em
+        // cinza-escuro, pensada pra fundo claro) pra branco sólido,
+        // preservando o contorno/alfa da imagem -- fica limpa direto
+        // em cima do fundo escuro do poster, sem precisar de uma placa
+        // clara atrás (mesmo truque que apps como Strava usam pra
+        // versão do logo em telas escuras).
+        const off = document.createElement('canvas');
+        off.width = w;
+        off.height = h;
+        const octx = off.getContext('2d');
+        octx.drawImage(img, 0, 0, w, h);
+        octx.globalCompositeOperation = 'source-atop';
+        octx.fillStyle = '#ffffff';
+        octx.fillRect(0, 0, w, h);
+        ctx.drawImage(off, x, y);
+    }
+
     async function desenharCabecalho(ctx, nomeUsuario) {
         const logo = await carregarImagem('/static/images/logo.png');
-        const x = 64, y = 56;
-        const alturaChip = 92;
+        const x = 64, y = 64;
+        const alturaLogo = 66;
 
         if (logo) {
-            // logo.png tem fundo transparente mas o texto "FitLog" é
-            // cinza-escuro -- direto no fundo escuro do poster ficaria
-            // ilegível, por isso a placa branca por trás.
-            const alturaLogo = alturaChip - 30;
             const larguraLogo = alturaLogo * (logo.width / logo.height);
-            const larguraChip = larguraLogo + 40;
-
-            ctx.fillStyle = '#ffffff';
-            arredondar(ctx, x, y, larguraChip, alturaChip, 18);
-            ctx.fill();
-            ctx.drawImage(logo, x + 20, y + 15, larguraLogo, alturaLogo);
+            desenharLogoBranca(ctx, logo, x, y, larguraLogo, alturaLogo);
 
             ctx.textBaseline = 'middle';
-            ctx.font = '700 38px Arial, sans-serif';
+            ctx.font = '700 36px Arial, sans-serif';
             ctx.fillStyle = '#ffffff';
-            ctx.fillText(nomeUsuario, x + larguraChip + 22, y + alturaChip / 2);
+            ctx.fillText(nomeUsuario, x + larguraLogo + 24, y + alturaLogo / 2);
             ctx.textBaseline = 'alphabetic';
 
-            return y + alturaChip;
+            return y + alturaLogo;
         }
 
         // Fallback (logo não carregou): mantém o wordmark desenhado.
+        const alturaChip = alturaLogo + 26;
         ctx.textBaseline = 'middle';
         ctx.font = '700 40px Arial, sans-serif';
         ctx.fillStyle = '#ffffff';
@@ -131,26 +141,26 @@
         const gap = 20;
         const larguraTotal = W - 128;
         const larguraTile = (larguraTotal - gap * (tiles.length - 1)) / tiles.length;
-        const altura = 150;
+        const altura = 190;
 
         tiles.forEach(function (tile, i) {
             const x = 64 + i * (larguraTile + gap);
             ctx.fillStyle = 'rgba(255,255,255,0.07)';
-            arredondar(ctx, x, top, larguraTile, altura, 20);
+            arredondar(ctx, x, top, larguraTile, altura, 22);
             ctx.fill();
             ctx.strokeStyle = 'rgba(255,255,255,0.12)';
             ctx.lineWidth = 1;
-            arredondar(ctx, x, top, larguraTile, altura, 20);
+            arredondar(ctx, x, top, larguraTile, altura, 22);
             ctx.stroke();
 
             ctx.textAlign = 'center';
-            ctx.font = '700 46px Arial, sans-serif';
+            ctx.font = '700 56px Arial, sans-serif';
             ctx.fillStyle = '#ffffff';
-            ctx.fillText(String(tile.valor), x + larguraTile / 2, top + 70);
+            ctx.fillText(String(tile.valor), x + larguraTile / 2, top + 88);
 
-            ctx.font = '400 22px Arial, sans-serif';
+            ctx.font = '400 24px Arial, sans-serif';
             ctx.fillStyle = 'rgba(255,255,255,0.65)';
-            ctx.fillText(tile.rotulo, x + larguraTile / 2, top + 112);
+            ctx.fillText(tile.rotulo, x + larguraTile / 2, top + 138);
         });
 
         ctx.textAlign = 'left';
@@ -161,13 +171,13 @@
     // CALENDÁRIO
     // ---------------------------------------------------------------
     async function desenharCalendario(ctx, dados, topoInicial) {
-        let y = topoInicial + 74;
+        let y = topoInicial + 96;
 
-        ctx.font = '700 66px Arial, sans-serif';
+        ctx.font = '700 80px Arial, sans-serif';
         ctx.fillStyle = '#ffffff';
         ctx.fillText(dados.mesAno, 64, y);
 
-        y += 56;
+        y += 70;
         y = desenharTiles(ctx, [
             { valor: dados.diasTreinados, rotulo: 'dias treinados' },
             { valor: dados.sequencia, rotulo: 'sequência atual' },
@@ -175,21 +185,21 @@
         ], y);
 
         // Mini calendário -- grade de dias do mês, marcando os treinados.
-        y += 56;
+        y += 70;
         const diasSemana = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
         const gridX = 64;
         const gridW = W - 128;
         const cel = gridW / 7;
 
         ctx.textAlign = 'center';
-        ctx.font = '600 22px Arial, sans-serif';
+        ctx.font = '600 24px Arial, sans-serif';
         ctx.fillStyle = 'rgba(255,255,255,0.5)';
         diasSemana.forEach(function (d, i) {
             ctx.fillText(d, gridX + cel * i + cel / 2, y);
         });
 
-        y += 34;
-        const raio = Math.min(cel, 84) * 0.34;
+        y += 42;
+        const raio = Math.min(cel, 130) * 0.42;
         dados.semanas.forEach(function (semana) {
             semana.forEach(function (dia, col) {
                 if (!dia) return;
@@ -207,13 +217,13 @@
                 }
                 ctx.fill();
 
-                ctx.font = (dia.treinou ? '700 ' : '400 ') + '22px Arial, sans-serif';
+                ctx.font = (dia.treinou ? '700 ' : '400 ') + '26px Arial, sans-serif';
                 ctx.fillStyle = dia.treinou ? '#1a1a1a' : 'rgba(255,255,255,0.55)';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(String(dia.numero), cx, cy + 1);
                 ctx.textBaseline = 'alphabetic';
             });
-            y += raio * 2 + 14;
+            y += raio * 2 + 18;
         });
         ctx.textAlign = 'left';
     }
@@ -258,62 +268,62 @@
     }
 
     async function desenharEstatisticas(ctx, dados, topoInicial) {
-        let y = topoInicial + 74;
+        let y = topoInicial + 96;
 
-        ctx.font = '700 54px Arial, sans-serif';
+        ctx.font = '700 64px Arial, sans-serif';
         ctx.fillStyle = '#ffffff';
         ctx.fillText('Minhas Estatísticas', 64, y);
 
-        y += 20;
-        ctx.font = '400 26px Arial, sans-serif';
+        y += 26;
+        ctx.font = '400 28px Arial, sans-serif';
         ctx.fillStyle = 'rgba(255,255,255,0.55)';
-        ctx.fillText('Volume por músculo', 64, y + 34);
+        ctx.fillText('Volume por músculo', 64, y + 38);
 
         // Donut de volume por músculo
-        const cx = W / 2, cyDonut = y + 260;
-        desenharDonut(ctx, dados.musculos, cx, cyDonut, 190, 118);
+        const cx = W / 2, cyDonut = y + 340;
+        desenharDonut(ctx, dados.musculos, cx, cyDonut, 230, 145);
 
         ctx.textAlign = 'center';
-        ctx.font = '700 40px Arial, sans-serif';
+        ctx.font = '700 48px Arial, sans-serif';
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(dados.volumeTotalFormatado, cx, cyDonut + 6);
-        ctx.font = '400 22px Arial, sans-serif';
+        ctx.fillText(dados.volumeTotalFormatado, cx, cyDonut + 8);
+        ctx.font = '400 26px Arial, sans-serif';
         ctx.fillStyle = 'rgba(255,255,255,0.55)';
-        ctx.fillText('kg no total', cx, cyDonut + 36);
+        ctx.fillText('kg no total', cx, cyDonut + 42);
         ctx.textAlign = 'left';
 
         // Ranking top 5
-        let yList = cyDonut + 240;
-        ctx.font = '700 30px Arial, sans-serif';
+        let yList = cyDonut + 320;
+        ctx.font = '700 36px Arial, sans-serif';
         ctx.fillStyle = '#ffffff';
         ctx.fillText('Top 5 músculos mais treinados', 64, yList);
-        yList += 42;
+        yList += 54;
 
         const maiorVolume = dados.musculos.length ? dados.musculos[0].volume : 0;
         dados.musculos.slice(0, 5).forEach(function (m, i) {
             const corBase = PALETA_MUSCULOS[i % PALETA_MUSCULOS.length];
-            const barraX = 64, barraW = W - 128 - 170, barraY = yList + 8, barraH = 16;
+            const barraX = 64, barraW = W - 128 - 190, barraY = yList + 10, barraH = 20;
 
-            ctx.font = '600 26px Arial, sans-serif';
+            ctx.font = '600 30px Arial, sans-serif';
             ctx.fillStyle = '#ffffff';
             ctx.fillText((i + 1) + '. ' + m.nome, barraX, yList);
 
             ctx.textAlign = 'right';
-            ctx.font = '600 24px Arial, sans-serif';
+            ctx.font = '600 27px Arial, sans-serif';
             ctx.fillStyle = 'rgba(255,255,255,0.6)';
             ctx.fillText(Math.round(m.volume) + ' kg', W - 64, yList);
             ctx.textAlign = 'left';
 
             ctx.fillStyle = 'rgba(255,255,255,0.08)';
-            arredondar(ctx, barraX, barraY, barraW, barraH, 8);
+            arredondar(ctx, barraX, barraY, barraW, barraH, 10);
             ctx.fill();
 
-            const largura = maiorVolume > 0 ? Math.max(barraW * (m.volume / maiorVolume), 10) : 0;
+            const largura = maiorVolume > 0 ? Math.max(barraW * (m.volume / maiorVolume), 12) : 0;
             ctx.fillStyle = corBase;
-            arredondar(ctx, barraX, barraY, largura, barraH, 8);
+            arredondar(ctx, barraX, barraY, largura, barraH, 10);
             ctx.fill();
 
-            yList += 62;
+            yList += 80;
         });
     }
 
