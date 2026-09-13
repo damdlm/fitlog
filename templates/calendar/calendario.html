@@ -1868,7 +1868,20 @@
     const btnCompartilharCalendario = document.getElementById('btnCompartilharCalendario');
     if (btnCompartilharCalendario) {
         btnCompartilharCalendario.addEventListener('click', function () {
+            if (typeof FitLogShare === 'undefined') {
+                if (window.FitLogUtils) FitLogUtils.showToast('Não consegui carregar o recurso de compartilhar. Tenta recarregar a página.', 'danger');
+                return;
+            }
             if (!viewStart || !viewEnd) return;
+
+            const statDiasEl = document.getElementById('statDias');
+            // "–" é o placeholder mostrado enquanto o mês ainda está
+            // carregando (ver atualizarResumoMes) -- gerar a imagem
+            // nesse instante criaria um post com "– dias treinados".
+            if (!statDiasEl || statDiasEl.textContent.trim() === '–') {
+                if (window.FitLogUtils) FitLogUtils.showToast('Aguarde o calendário terminar de carregar.', 'info');
+                return;
+            }
 
             const inicioStr = formatarDataLocal(viewStart);
             const fimStr = formatarDataLocal(viewEnd);
@@ -1878,16 +1891,22 @@
             let mesAno = viewStart.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
             mesAno = mesAno.charAt(0).toUpperCase() + mesAno.slice(1);
 
+            const iconeOriginal = btnCompartilharCalendario.innerHTML;
             btnCompartilharCalendario.disabled = true;
+            btnCompartilharCalendario.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
             FitLogShare.compartilharCalendario({
                 nomeUsuario: NOME_USUARIO_EXIBICAO,
                 mesAno: mesAno,
-                diasTreinados: document.getElementById('statDias').textContent,
-                sequencia: document.getElementById('statSequencia').textContent,
-                volumeKg: document.getElementById('statVolume').textContent,
+                diasTreinados: statDiasEl.textContent.trim(),
+                sequencia: document.getElementById('statSequencia').textContent.trim(),
+                volumeKg: document.getElementById('statVolume').textContent.trim(),
                 semanas: montarSemanasDoMes(viewStart, viewEnd, datasComTreino)
+            }).catch(function () {
+                if (window.FitLogUtils) FitLogUtils.showToast('Não consegui gerar a imagem. Tenta de novo.', 'danger');
             }).finally(function () {
                 btnCompartilharCalendario.disabled = false;
+                btnCompartilharCalendario.innerHTML = iconeOriginal;
             });
         });
     }

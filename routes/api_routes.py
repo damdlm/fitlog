@@ -83,22 +83,25 @@ def api_progresso():
     })
 
 
-@api_bp.route("/tempo-treino")
+@api_bp.route("/atividade-geral")
 @login_required
 @acesso_premium_required('estatisticas')
-def api_tempo_treino():
+def api_atividade_geral():
     """
-    Duração média estimada das sessões de treino e horário do dia mais
-    comum, últimos 30 dias -- ver EstatisticaService.get_tempo_treino_stats
-    para a lógica (não há timer de sessão explícito no app).
+    Números concretos de atividade dos últimos 30 dias: treinos
+    realizados, séries, repetições, duração média e horário mais
+    comum -- ver EstatisticaService.get_atividade_geral.
     """
-    dados = EstatisticaService.get_tempo_treino_stats(dias=30)
+    dados = EstatisticaService.get_atividade_geral(dias=30)
     if not dados:
         return jsonify({
+            "treinos_realizados": 0,
+            "total_series": 0,
+            "total_repeticoes": 0,
             "duracao_media_min": None,
+            "tempo_total_min": None,
             "horario_mais_comum": None,
-            "distribuicao_horario": {},
-            "total_sessoes": 0
+            "distribuicao_horario": {}
         })
     return jsonify(dados)
 

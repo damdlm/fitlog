@@ -150,12 +150,20 @@
         display: block;
     }
 
-    /* ===== Tempo de Treino ===== */
+    /* ===== Atividade ===== */
     .est-tempo-stats {
         display: flex;
         gap: 32px;
         flex-wrap: wrap;
         margin-bottom: 18px;
+    }
+    .est-tempo-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+    }
+    @media (max-width: 575.98px) {
+        .est-tempo-stats-grid { grid-template-columns: repeat(2, 1fr); }
     }
     .est-tempo-stat-num {
         font-size: 1.7rem;
@@ -296,24 +304,42 @@
     </div>
 </div>
 
-<!-- Tempo de Treino -->
+<!-- Atividade -->
 <div class="card est-card mt-3">
     <div class="card-header bg-white border-0 pb-0">
         <h6 class="fw-bold mb-0">
-            <i class="bi bi-stopwatch me-1" style="color: #F28C33;"></i>Tempo de Treino
+            <i class="bi bi-lightning-charge-fill me-1" style="color: #F28C33;"></i>Atividade <span class="fw-normal text-muted" style="font-size: 0.8rem;">(últimos 30 dias)</span>
         </h6>
     </div>
     <div class="card-body">
         <div id="tempoTreinoConteudo">
-            <div class="est-tempo-stats">
+            <div class="est-tempo-stats est-tempo-stats-grid">
+                <div>
+                    <div class="est-tempo-stat-num"><span id="atvTreinos">—</span></div>
+                    <div class="est-tempo-stat-label">Treinos realizados</div>
+                </div>
+                <div>
+                    <div class="est-tempo-stat-num"><span id="atvSeries">—</span></div>
+                    <div class="est-tempo-stat-label">Séries totais</div>
+                </div>
+                <div>
+                    <div class="est-tempo-stat-num"><span id="atvRepeticoes">—</span></div>
+                    <div class="est-tempo-stat-label">Repetições totais</div>
+                </div>
                 <div>
                     <div class="est-tempo-stat-num"><span id="tempoDuracaoMedia">—</span><span class="unidade">min</span></div>
-                    <div class="est-tempo-stat-label">Duração média por sessão</div>
+                    <div class="est-tempo-stat-label">Duração média/sessão</div>
                 </div>
-                <div>
-                    <div class="est-tempo-stat-num"><span id="tempoHorarioComum">—</span></div>
-                    <div class="est-tempo-stat-label">Horário mais comum</div>
-                </div>
+            </div>
+
+            <hr class="my-3">
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                <span class="fw-bold" style="font-size: 0.85rem;">
+                    <i class="bi bi-clock-history me-1" style="color: #F28C33;"></i>Horário mais comum:
+                    <span id="tempoHorarioComum" class="text-muted fw-normal">—</span>
+                </span>
+                <span class="text-muted" style="font-size: 0.78rem;" id="atvTempoTotal"></span>
             </div>
             <div class="est-tempo-distribuicao">
                 <div class="est-tempo-seg est-tempo-seg-manha" id="segManha"></div>
@@ -328,7 +354,7 @@
         </div>
         <div class="est-empty" id="tempoTreinoVazio" style="display: none;">
             <i class="bi bi-stopwatch"></i>
-            Ainda não há sessões suficientes pra estimar seu tempo de treino.
+            Ainda não há treinos registrados nos últimos 30 dias.
         </div>
     </div>
 </div>
@@ -479,22 +505,34 @@
 
     carregarEvolucao('todos');
 
-    // ===== Tempo de Treino =====
-    fetch('/api/tempo-treino')
+    // ===== Atividade (últimos 30 dias) =====
+    let dadosAtividade = null;
+    fetch('/api/atividade-geral')
         .then(r => r.json())
         .then(data => {
+            dadosAtividade = data;
             const conteudo = document.getElementById('tempoTreinoConteudo');
             const vazio = document.getElementById('tempoTreinoVazio');
 
-            if (!data.total_sessoes) {
+            if (!data.treinos_realizados) {
                 conteudo.style.display = 'none';
                 vazio.style.display = 'block';
                 return;
             }
 
+            document.getElementById('atvTreinos').textContent = data.treinos_realizados;
+            document.getElementById('atvSeries').textContent = data.total_series;
+            document.getElementById('atvRepeticoes').textContent = data.total_repeticoes;
             document.getElementById('tempoDuracaoMedia').textContent =
                 data.duracao_media_min != null ? data.duracao_media_min : '—';
-            document.getElementById('tempoHorarioComum').textContent = data.horario_mais_comum || '—';
+            document.getElementById('tempoHorarioComum').textContent = data.horario_mais_comum || 'sem dados suficientes';
+
+            if (data.tempo_total_min != null) {
+                const horas = Math.floor(data.tempo_total_min / 60);
+                const min = data.tempo_total_min % 60;
+                document.getElementById('atvTempoTotal').textContent =
+                    `${horas > 0 ? horas + 'h' : ''}${min}min treinados no total`;
+            }
 
             const dist = data.distribuicao_horario || {};
             const total = (dist['Manhã'] || 0) + (dist['Tarde'] || 0) + (dist['Noite'] || 0);
@@ -515,6 +553,11 @@
     const btnCompartilharEstatisticas = document.getElementById('btnCompartilharEstatisticas');
     if (btnCompartilharEstatisticas) {
         btnCompartilharEstatisticas.addEventListener('click', function () {
+            if (typeof FitLogShare === 'undefined') {
+                if (window.FitLogUtils) FitLogUtils.showToast('Não consegui carregar o recurso de compartilhar. Tenta recarregar a página.', 'danger');
+                return;
+            }
+
             const musculos = Object.keys(muscleData)
                 .map(nome => ({ nome: nome, volume: muscleData[nome].volume_total || 0 }))
                 .filter(m => m.volume > 0)
@@ -527,15 +570,21 @@
 
             const volumeTotal = musculos.reduce((s, m) => s + m.volume, 0);
 
+            const iconeOriginal = btnCompartilharEstatisticas.innerHTML;
             btnCompartilharEstatisticas.disabled = true;
+            btnCompartilharEstatisticas.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Gerando...';
+
             FitLogShare.compartilharEstatisticas({
                 nomeUsuario: NOME_USUARIO_EXIBICAO,
                 musculos: musculos,
                 volumeTotalFormatado: volumeTotal >= 1000
                     ? (volumeTotal / 1000).toFixed(1).replace('.0', '') + 'k'
                     : Math.round(volumeTotal).toString()
+            }).catch(function () {
+                if (window.FitLogUtils) FitLogUtils.showToast('Não consegui gerar a imagem. Tenta de novo.', 'danger');
             }).finally(function () {
                 btnCompartilharEstatisticas.disabled = false;
+                btnCompartilharEstatisticas.innerHTML = iconeOriginal;
             });
         });
     }
