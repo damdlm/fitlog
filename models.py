@@ -640,6 +640,32 @@ class HistoricoMetricas(db.Model):
         return f'<HistoricoMetricas {self.coletado_em}>'
 
 
+class AcessoTela(db.Model):
+    """Contador agregado de acessos por tela, para o relatório "Telas
+    mais acessadas" do admin -- ver services/acesso_tela_service.py.
+
+    De propósito 1 linha por (endpoint, papel, dia) com um contador que
+    só incrementa -- não 1 linha por request -- pelo mesmo motivo do
+    EventoAnalytics acima: dá pra saber quais telas são mais usadas sem
+    guardar QUEM acessou nem em que horário exato. `papel` é
+    'aluno'/'professor'/'admin'/'anonimo' -- nunca o usuário
+    específico, e várias pessoas sempre compartilham o mesmo papel."""
+    __tablename__ = 'acessos_tela'
+
+    id = db.Column(db.Integer, primary_key=True)
+    endpoint = db.Column(db.String(120), nullable=False, index=True)  # ex: 'aluno.versoes'
+    papel = db.Column(db.String(20), nullable=False)  # 'aluno' | 'professor' | 'admin' | 'anonimo'
+    data = db.Column(db.Date, nullable=False, index=True)
+    contagem = db.Column(db.Integer, nullable=False, default=0)
+
+    __table_args__ = (
+        db.UniqueConstraint('endpoint', 'papel', 'data', name='uq_acesso_tela_endpoint_papel_data'),
+    )
+
+    def __repr__(self):
+        return f'<AcessoTela {self.endpoint} {self.papel} {self.data}: {self.contagem}>'
+
+
 class EventoAnalytics(db.Model):
     """Analytics de produto -- privacy-first, 100% server-side (ver
     services/analytics_service.py). Nenhum script de terceiro, nenhum

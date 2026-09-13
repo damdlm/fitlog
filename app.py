@@ -337,6 +337,36 @@ def create_app(config_class=None):
         return None
 
     # =============================================================
+    # TELAS MAIS ACESSADAS (relatório agregado do admin)
+    # =============================================================
+    # Conta cada navegação de página bem-sucedida (GET, 200) por
+    # endpoint+papel+dia -- ver services/acesso_tela_service.py e
+    # models.AcessoTela. Best-effort (nunca quebra a resposta normal)
+    # e propositalmente depois de calcular a resposta (after_request),
+    # não antes, pra só contar o que realmente terminou em página
+    # renderizada (200), não erros/redirects.
+    @app.after_request
+    def _registrar_acesso_tela(response):
+        try:
+            from flask import request as flask_request
+            from flask_login import current_user as flask_current_user
+            from services.acesso_tela_service import AcessoTelaService
+
+            endpoint = flask_request.endpoint or ""
+            if (
+                flask_request.method == "GET"
+                and response.status_code == 200
+                and AcessoTelaService.deve_contar(endpoint, flask_request.path)
+            ):
+                papel = "anonimo"
+                if flask_current_user.is_authenticated:
+                    papel = "admin" if flask_current_user.is_admin else flask_current_user.tipo_usuario
+                AcessoTelaService.registrar_acesso(endpoint, papel)
+        except Exception:
+            logging.getLogger(__name__).exception("AcessoTela: falha no hook de contagem")
+        return response
+
+    # =============================================================
     # COMANDOS CLI (cobrança/assinatura)
     # =============================================================
     # Rodar via Railway Cron (ou qualquer scheduler externo) apontando

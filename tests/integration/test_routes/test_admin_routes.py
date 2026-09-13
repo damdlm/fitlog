@@ -531,3 +531,68 @@ class TestMonitoramento:
         dados = resp.get_json()
         assert len(dados['pontos']) == 1
         assert 'cpu_processo_pct' in dados['pontos'][0]
+
+
+class TestRelatorioTelas:
+
+    def _criar_admin(self, app, username='admin_relatorio'):
+        u = _criar_usuario(username, tipo_usuario='admin')
+        with app.app_context():
+            from models import User
+            User.query.filter_by(id=u.id).update({'is_admin': True})
+            db.session.commit()
+        return u
+
+    def test_requer_admin(self, client, app):
+        with app.app_context():
+            _criar_usuario('aluno_sem_permissao_relatorio')
+        _login(client, 'aluno_sem_permissao_relatorio')
+
+        resp = client.get('/admin/relatorio-telas')
+        assert resp.status_code in (302, 403)
+
+    def test_pagina_carrega_para_admin_sem_dados(self, client, app):
+        self._criar_admin(app, 'admin_relatorio1')
+        _login(client, 'admin_relatorio1')
+
+        resp = client.get('/admin/relatorio-telas')
+        assert resp.status_code == 200
+
+    def test_navegar_pelo_app_gera_contagem_no_relatorio(self, client, app):
+        self._criar_admin(app, 'admin_relatorio2')
+        _login(client, 'admin_relatorio2')
+
+        # Duas navegações reais de página -- o hook after_request
+        # (ver app.py) deve ter contado ambas como 'admin'.
+        client.get('/admin/monitoramento')
+        client.get('/admin/monitoramento')
+
+        resp = client.get('/admin/relatorio-telas?dias=30')
+        assert resp.status_code == 200
+
+        with app.app_context():
+            from services.acesso_tela_service import AcessoTelaService
+            relatorio = AcessoTelaService.get_relatorio(dias=30)
+
+        tela = next(t for t in relatorio['telas'] if t['endpoint'] == 'admin.monitoramento')
+        assert tela['por_papel']['admin'] >= 2
+
+    def test_chamada_de_api_nao_entra_no_relatorio(self, client, app):
+        self._criar_admin(app, 'admin_relatorio3')
+        _login(client, 'admin_relatorio3')
+
+        client.get('/admin/api/monitoramento')
+
+        with app.app_context():
+            from services.acesso_tela_service import AcessoTelaService
+            relatorio = AcessoTelaService.get_relatorio(dias=30)
+
+        endpoints = [t['endpoint'] for t in relatorio['telas']]
+        assert 'admin.api_monitoramento' not in endpoints
+
+    def test_dias_invalido_cai_no_padrao_30(self, client, app):
+        self._criar_admin(app, 'admin_relatorio4')
+        _login(client, 'admin_relatorio4')
+
+        resp = client.get('/admin/relatorio-telas?dias=999')
+        assert resp.status_code == 200

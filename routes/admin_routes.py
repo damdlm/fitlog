@@ -6,6 +6,7 @@ from services.musculo_service import MusculoService
 from services.versao_service import VersaoService
 from services.billing_service import BillingService
 from services.monitoring_service import MonitoringService
+from services.acesso_tela_service import AcessoTelaService
 from services.tela_controlada_service import TelaControladaService
 from utils.exercise_utils import buscar_musculo_no_catalogo
 from utils.decorators import admin_required
@@ -377,6 +378,31 @@ def api_monitoramento():
     """Mesmo conteúdo da página acima, em JSON -- usado pelo
     auto-refresh no front-end (ver static/js/admin-monitoramento.js)."""
     return jsonify(MonitoringService.get_all_metrics())
+
+
+@admin_bp.route("/api/monitoramento/historico")
+@admin_required
+def api_monitoramento_historico():
+    """Série histórica (snapshots a cada ~10min, últimas 24h) para os
+    gráficos de tendência do painel -- ver
+    services/historico_metricas_service.py. Alimentada pelo comando CLI
+    `flask monitoramento-capturar-snapshot`, rodado pelo Railway Cron."""
+    from services.historico_metricas_service import HistoricoMetricasService
+    horas = request.args.get("horas", default=24, type=int)
+    return jsonify(HistoricoMetricasService.obter_serie(horas=horas))
+
+
+@admin_bp.route("/relatorio-telas")
+@admin_required
+def relatorio_telas():
+    """Relatório de telas mais acessadas -- agregado por papel
+    (aluno/professor/admin/anonimo), nunca por usuário específico. Ver
+    services/acesso_tela_service.py e models.AcessoTela."""
+    dias = request.args.get("dias", default=30, type=int)
+    if dias not in (7, 30, 90):
+        dias = 30
+    relatorio = AcessoTelaService.get_relatorio(dias=dias)
+    return render_template("admin/relatorio_telas.html", relatorio=relatorio)
 
 
 # =============================================

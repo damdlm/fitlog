@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-bar-chart-line" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Telas mais acessadas{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <p class="text-muted small mb-0">
+        <i class="bi bi-shield-check"></i> Agregado por papel (aluno/professor/admin) -- nunca por usuário específico.
+    </p>
+    <div class="btn-group btn-group-sm" role="group">
+        {% for opcao in [7, 30, 90] %}
+        <a href="{{ url_for('admin.relatorio_telas', dias=opcao) }}"
+           class="btn {{ 'btn-warning' if relatorio.dias == opcao else 'btn-outline-secondary' }}">
+            {{ opcao }} dias
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+{% if not relatorio.disponivel %}
+<div class="alert alert-secondary">
+    <i class="bi bi-exclamation-circle"></i> {{ relatorio.erro or "Não foi possível carregar o relatório." }}
+</div>
+{% elif not relatorio.telas %}
+<div class="alert alert-secondary">
+    <i class="bi bi-info-circle"></i> Ainda não há acessos registrados nos últimos {{ relatorio.dias }} dias.
+</div>
+{% else %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">
+            <i class="bi bi-trophy me-2" style="color: #F28C33;"></i>Ranking
+            <span class="text-muted small fw-normal">{{ relatorio.total_geral }} acesso(s) no total, últimos {{ relatorio.dias }} dias</span>
+        </h5>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead>
+                    <tr class="text-muted small">
+                        <th>#</th>
+                        <th>Tela</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-end">Aluno</th>
+                        <th class="text-end">Professor</th>
+                        <th class="text-end">Admin</th>
+                        <th class="text-end">Anônimo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tela in relatorio.telas %}
+                    <tr>
+                        <td class="text-muted">{{ loop.index }}</td>
+                        <td>
+                            {{ tela.nome_amigavel }}
+                            <div class="text-muted small"><code>{{ tela.endpoint }}</code></div>
+                        </td>
+                        <td class="text-end fw-bold">{{ tela.total }}</td>
+                        <td class="text-end">{{ tela.por_papel.aluno }}</td>
+                        <td class="text-end">{{ tela.por_papel.professor }}</td>
+                        <td class="text-end">{{ tela.por_papel.admin }}</td>
+                        <td class="text-end">{{ tela.por_papel.anonimo }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
