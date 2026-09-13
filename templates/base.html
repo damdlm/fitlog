@@ -1642,7 +1642,19 @@
             {% else %}
             <!-- Menu para não logados -->
             {% block header_guest_actions %}
-            <div class="d-flex align-items-center gap-2 ms-auto">
+            <!-- d-none d-lg-flex: escondido no mobile de propósito. O
+                 script static/js/modules/header-title-center.js centraliza
+                 o título do cabeçalho mobile considerando o espaço do
+                 grupo de ícones à direita (.order-lg-2, só existe pro
+                 usuário logado) -- sem usuário logado ele assume que não
+                 tem nada disputando espaço e centraliza na largura
+                 inteira do cabeçalho. Esses botões não tinham essa classe,
+                 então o título podia ficar espremido/colado neles. Nas
+                 poucas telas guest que ainda chegam aqui (reset de senha,
+                 login do financeiro) já existe outro caminho pro login no
+                 próprio conteúdo; ver contato_publico.html tem só a logo
+                 (volta pra landing, que tem os CTAs grandes de sempre). -->
+            <div class="d-none d-lg-flex align-items-center gap-2 ms-auto">
                 <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-sm">
                     <i class="bi bi-box-arrow-in-right"></i> Login
                 </a>
