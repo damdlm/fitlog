@@ -666,6 +666,42 @@ class AcessoTela(db.Model):
         return f'<AcessoTela {self.endpoint} {self.papel} {self.data}: {self.contagem}>'
 
 
+class CrashLog(db.Model):
+    """Registro de travamentos da aplicação -- frontend e backend --
+    para o painel /admin/crash-logs (ver services/crash_log_service.py).
+
+    Frontend: gravado via POST público (sem login) em
+    /admin/crash-logs/api/reportar, chamado por
+    static/js/crash-watchdog.js quando captura um erro JS não tratado,
+    uma promise rejeitada sem catch, a UI travada por tempo demais
+    (thread principal bloqueada) ou indício de que a sessão anterior
+    encerrou de forma anormal (ex: o processo do PWA sendo matado pelo
+    sistema por falta de memória).
+
+    Backend: gravado por app.py:erro_500, logo antes de renderizar a
+    página genérica de erro 500.
+
+    `usuario_id` fica nulo quando o travamento acontece antes do login
+    (ex: na própria tela de login) ou quando o usuário não está mais
+    autenticado no momento do erro."""
+    __tablename__ = 'crash_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    origem = db.Column(db.String(10), nullable=False, index=True)  # 'frontend' | 'backend'
+    tipo = db.Column(db.String(40), nullable=False)  # frontend: 'js_error'/'promise_rejeitada'/'ui_travada'/'crash_anterior'; backend: classe da exceção
+    mensagem = db.Column(db.Text, nullable=False)
+    detalhes = db.Column(db.Text, nullable=True)  # stack trace (JS) ou traceback (Python)
+    url = db.Column(db.String(500), nullable=True)
+    user_agent = db.Column(db.String(300), nullable=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
+    criado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+
+    usuario = db.relationship('User', foreign_keys=[usuario_id])
+
+    def __repr__(self):
+        return f'<CrashLog {self.origem}:{self.tipo} {self.criado_em}>'
+
+
 class EventoAnalytics(db.Model):
     """Analytics de produto -- privacy-first, 100% server-side (ver
     services/analytics_service.py). Nenhum script de terceiro, nenhum

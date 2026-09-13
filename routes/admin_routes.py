@@ -8,8 +8,10 @@ from services.billing_service import BillingService
 from services.monitoring_service import MonitoringService
 from services.acesso_tela_service import AcessoTelaService
 from services.tela_controlada_service import TelaControladaService
+from services.crash_log_service import CrashLogService
 from utils.exercise_utils import buscar_musculo_no_catalogo
 from utils.decorators import admin_required
+from extensions import limiter
 from models import db, ExercicioCustomizado, ExercicioUsuario, Musculo, RegistroTreino, HistoricoTreino, ExercicioSistema, TreinoVersao, VersaoExercicio, Plano
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
@@ -426,3 +428,63 @@ def telas_controladas():
 
     telas = TelaControladaService.listar_todas()
     return render_template("admin/telas_controladas.html", telas=telas)
+
+
+# =============================================
+# CRASH LOGS -- travamentos de frontend e backend (só admin visualiza)
+# =============================================
+
+@admin_bp.route("/crash-logs")
+@admin_required
+def crash_logs():
+    """Painel com os travamentos registrados: frontend (erro JS não
+    tratado, promise rejeitada, UI travada, ou indício de que a sessão
+    anterior morreu sem um encerramento limpo -- ver
+    static/js/crash-watchdog.js) e backend (exceção 500 não tratada --
+    ver app.py:erro_500). Ver CrashLogService para a lógica."""
+    origem = request.args.get("origem", "").strip() or None
+    page = request.args.get("page", default=1, type=int)
+    paginacao = CrashLogService.listar(origem=origem, page=page, per_page=30)
+    total_recentes = CrashLogService.contar_recentes(horas=24)
+    return render_template(
+        "admin/crash_logs.html",
+        paginacao=paginacao,
+        logs=paginacao.items,
+        filtro_origem=origem or "",
+        total_recentes=total_recentes,
+    )
+
+
+@admin_bp.route("/crash-logs/api/reportar", methods=["POST"])
+@limiter.limit("20 per minute")
+def api_reportar_crash():
+    """Recebe um travamento reportado pelo navegador (ver
+    static/js/crash-watchdog.js) e grava junto dos travamentos de
+    backend, pro mesmo painel.
+
+    Sem @login_required/@admin_required de propósito: um travamento
+    pode acontecer em qualquer tela, inclusive antes do login (ex: na
+    própria tela de login) -- protegido só por CSRF (igual qualquer
+    outro POST da aplicação; o token vai como campo de formulário
+    'csrf_token' porque o envio usa navigator.sendBeacon, que não
+    permite cabeçalho customizado) e por rate limit, pra não virar um
+    jeito de floodar a tabela.
+
+    Sempre responde 204: o frontend normalmente usa sendBeacon (que
+    nem lê a resposta) e, de qualquer forma, o reload já vai acontecer
+    independente do resultado -- não faz sentido o próprio relatório
+    de erro poder gerar um novo erro no cliente."""
+    mensagem = (request.form.get("mensagem") or "").strip()
+    if not mensagem:
+        return ("", 204)
+
+    usuario_id = current_user.id if current_user.is_authenticated else None
+    CrashLogService.registrar_frontend(
+        tipo=(request.form.get("tipo") or "").strip(),
+        mensagem=mensagem,
+        detalhes=request.form.get("detalhes"),
+        url=request.form.get("url"),
+        user_agent=request.headers.get("User-Agent"),
+        usuario_id=usuario_id,
+    )
+    return ("", 204)

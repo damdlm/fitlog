@@ -27,6 +27,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    <!-- Crash Watchdog -- carregado o mais cedo possível de propósito,
+         pra capturar erro/promise rejeitada mesmo de scripts que
+         carregam depois dele. static_v() evita servir uma versão em
+         cache desse script específico depois de um deploy (ver
+         app.py:static_v -- o mesmo problema já causou uma saga de
+         travamento no modal de exercícios documentada no projeto). -->
+    <script src="{{ static_v('js/crash-watchdog.js') }}"></script>
+
     <title>{% block title %}FitLog — Seu treino, sempre com você{% endblock %}</title>
     <meta name="description"
           content="{% block meta_description %}Registre seus treinos, acompanhe sua evolução e mantenha sua rotina de exercícios organizada em um só lugar com o FitLog.{% endblock %}">
@@ -1374,6 +1382,13 @@
                                     <span class="mega-desc">Escolher quais telas exigem plano pago</span>
                                 </span>
                             </a>
+                            <a class="mega-card" href="{{ url_for('admin.crash_logs') }}">
+                                <span class="mega-icon"><i class="bi bi-bug-fill"></i></span>
+                                <span>
+                                    <span class="mega-title">Travamentos</span>
+                                    <span class="mega-desc">Erros de frontend e backend registrados</span>
+                                </span>
+                            </a>
                         </div>
                     </div>
                 </li>
@@ -1665,6 +1680,10 @@
         <a href="{{ url_for('admin.telas_controladas') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'admin.telas_controladas' else '' }}" data-fl-click-feedback>
             <i class="bi bi-toggles"></i>
             <span>Telas</span>
+        </a>
+        <a href="{{ url_for('admin.crash_logs') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'admin.crash_logs' else '' }}" data-fl-click-feedback>
+            <i class="bi bi-bug-fill"></i>
+            <span>Logs</span>
         </a>
     </nav>
     {% else %}

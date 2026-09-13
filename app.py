@@ -6,7 +6,7 @@ from logging.handlers import RotatingFileHandler
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 
 from config import get_config
 from models import db, User
@@ -423,6 +423,16 @@ def create_app(config_class=None):
         else:
             print(f"{total} notificação(ões) lida(s) antiga(s) removida(s).")
 
+        # Reaproveita este mesmo cron semanal pra limpar travamentos
+        # antigos (/admin/crash-logs, retenção de 30 dias) -- em vez de
+        # provisionar mais um serviço de Railway Cron só pra isso.
+        from services.crash_log_service import CrashLogService
+        total_crashes = CrashLogService.limpar_antigas()
+        if total_crashes is None:
+            print("Falha ao limpar crash logs antigos (ver logs).")
+        else:
+            print(f"{total_crashes} crash log(s) antigo(s) removido(s).")
+
     # =============================================================
     # COMANDOS CLI (monitoramento)
     # =============================================================
@@ -586,6 +596,28 @@ def create_app(config_class=None):
         # mesmo sendo uma operação não relacionada ao erro original.
         db.session.rollback()
         app.logger.exception("Erro 500 não tratado")
+
+        # Grava no painel /admin/crash-logs -- depois do rollback acima
+        # (senão o INSERT do próprio log cairia na mesma transação
+        # quebrada) e em best-effort: CrashLogService já protege contra
+        # exceção própria, mas o try/except aqui também garante que uma
+        # falha de import (ex: circular, em algum cenário de app
+        # parcialmente inicializado) nunca impeça a página de erro de
+        # ser servida.
+        try:
+            import traceback
+            from flask_login import current_user as _current_user
+            from services.crash_log_service import CrashLogService
+            CrashLogService.registrar_backend(
+                tipo=type(e).__name__,
+                mensagem=str(e),
+                detalhes=traceback.format_exc(),
+                url=request.path,
+                usuario_id=_current_user.id if _current_user.is_authenticated else None,
+            )
+        except Exception:
+            app.logger.exception("Falha ao gravar CrashLog do erro 500")
+
         return render_template("errors/500.html"), 500
 
     # =============================================================
