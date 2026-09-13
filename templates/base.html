@@ -1658,6 +1658,10 @@
             <i class="bi bi-activity"></i>
             <span>Monitor</span>
         </a>
+        <a href="{{ url_for('admin.relatorio_telas') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'admin.relatorio_telas' else '' }}" data-fl-click-feedback>
+            <i class="bi bi-bar-chart-line"></i>
+            <span>Acessos</span>
+        </a>
         <a href="{{ url_for('admin.telas_controladas') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'admin.telas_controladas' else '' }}" data-fl-click-feedback>
             <i class="bi bi-toggles"></i>
             <span>Telas</span>
