@@ -65,54 +65,48 @@
         ctx.fillRect(0, 0, W, H);
     }
 
-    function desenharLogoBranca(ctx, img, x, y, w, h) {
-        // Recolore a logo (que originalmente tem o texto "FitLog" em
-        // cinza-escuro, pensada pra fundo claro) pra branco sólido,
-        // preservando o contorno/alfa da imagem -- fica limpa direto
-        // em cima do fundo escuro do poster, sem precisar de uma placa
-        // clara atrás (mesmo truque que apps como Strava usam pra
-        // versão do logo em telas escuras).
-        const off = document.createElement('canvas');
-        off.width = w;
-        off.height = h;
-        const octx = off.getContext('2d');
-        octx.drawImage(img, 0, 0, w, h);
-        octx.globalCompositeOperation = 'source-atop';
-        octx.fillStyle = '#ffffff';
-        octx.fillRect(0, 0, w, h);
-        ctx.drawImage(off, x, y);
-    }
-
     async function desenharCabecalho(ctx, nomeUsuario) {
         const logo = await carregarImagem('/static/images/logo.png');
-        const x = 64, y = 64;
-        const alturaLogo = 66;
+        const x = 64, y = 56;
+        const alturaChip = 128;
 
         if (logo) {
+            // logo.png tem fundo transparente mas o texto "FitLog" é
+            // cinza-escuro -- direto no fundo escuro do poster fica
+            // ilegível, por isso a placa clara por trás. (Tentei antes
+            // recolorir a logo pra branco sólido pra dispensar a placa,
+            // mas num desenho tão detalhado isso destrói a legibilidade
+            // em tamanho pequeno -- essa versão mantém a logo com as
+            // cores originais, igual ao arquivo de verdade.)
+            const alturaLogo = alturaChip - 36;
             const larguraLogo = alturaLogo * (logo.width / logo.height);
-            desenharLogoBranca(ctx, logo, x, y, larguraLogo, alturaLogo);
+            const larguraChip = larguraLogo + 44;
+
+            ctx.fillStyle = '#ffffff';
+            arredondar(ctx, x, y, larguraChip, alturaChip, 20);
+            ctx.fill();
+            ctx.drawImage(logo, x + 22, y + 18, larguraLogo, alturaLogo);
 
             ctx.textBaseline = 'middle';
-            ctx.font = '700 36px Arial, sans-serif';
+            ctx.font = '700 56px Arial, sans-serif';
             ctx.fillStyle = '#ffffff';
-            ctx.fillText(nomeUsuario, x + larguraLogo + 24, y + alturaLogo / 2);
+            ctx.fillText(nomeUsuario, x + larguraChip + 26, y + alturaChip / 2);
             ctx.textBaseline = 'alphabetic';
 
-            return y + alturaLogo;
+            return y + alturaChip;
         }
 
         // Fallback (logo não carregou): mantém o wordmark desenhado.
-        const alturaChip = alturaLogo + 26;
         ctx.textBaseline = 'middle';
-        ctx.font = '700 40px Arial, sans-serif';
+        ctx.font = '700 48px Arial, sans-serif';
         ctx.fillStyle = '#ffffff';
         const fitW = ctx.measureText('Fit').width;
         ctx.fillText('Fit', x, y + alturaChip / 2);
         ctx.fillStyle = LARANJA;
         ctx.fillText('Log', x + fitW, y + alturaChip / 2);
-        ctx.font = '700 34px Arial, sans-serif';
+        ctx.font = '700 52px Arial, sans-serif';
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(nomeUsuario, x + 260, y + alturaChip / 2);
+        ctx.fillText(nomeUsuario, x + 300, y + alturaChip / 2);
         ctx.textBaseline = 'alphabetic';
         return y + alturaChip;
     }
