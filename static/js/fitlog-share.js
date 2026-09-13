@@ -79,7 +79,7 @@
         octx.fillStyle = '#ffffff';
         octx.fillRect(0, 0, w, h);
 
-        const espessura = Math.max(6, h * 0.05);
+        const espessura = Math.max(3, h * 0.022);
         const passos = 20;
         for (let i = 0; i < passos; i++) {
             const angulo = (i / passos) * Math.PI * 2;
