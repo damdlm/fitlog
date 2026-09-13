@@ -9,6 +9,8 @@ from services.monitoring_service import MonitoringService
 from services.acesso_tela_service import AcessoTelaService
 from services.tela_controlada_service import TelaControladaService
 from services.crash_log_service import CrashLogService
+from services.plano_service import PlanoService
+from services.configuracao_service import ConfiguracaoService
 from utils.exercise_utils import buscar_musculo_no_catalogo
 from utils.decorators import admin_required
 from extensions import limiter
@@ -408,7 +410,8 @@ def relatorio_telas():
 
 
 # =============================================
-# TELAS CONTROLADAS -- quais telas exigem plano pago (só admin)
+# TELAS CONTROLADAS -- quais telas exigem plano pago, preço dos
+# planos, e a chave geral de cobrança ativa/desativada (só admin)
 # =============================================
 
 @admin_bp.route("/telas-controladas", methods=["GET", "POST"])
@@ -417,17 +420,50 @@ def telas_controladas():
     """Página onde o admin escolhe quais telas ficam livres e quais
     exigem Fit/Pró/Premium ativo pra acessar (ver
     models.py:TelaControlada e utils/decorators.py:acesso_premium_
-    required). A lista de telas em si (quais existem) é fixa no
-    código -- o admin só liga/desliga o bloqueio de cada uma, nunca
-    cria uma tela nova por aqui."""
+    required), edita o preço dos planos Fit/Pró/Premium (ver
+    services/plano_service.py) e liga/desliga a cobrança no app
+    inteiro -- modo grátis de lançamento (ver
+    services/configuracao_service.py).
+
+    Três formulários numa página só, diferenciados pelo campo oculto
+    'acao' -- cada um processa e salva só a parte dele, sem mexer nas
+    outras duas."""
     if request.method == "POST":
+        acao = request.form.get("acao")
+
+        if acao == "planos":
+            resultado = PlanoService.atualizar_precos(request.form)
+            if not resultado.ok:
+                for erro in resultado.erros:
+                    flash(erro, 'danger')
+            else:
+                flash('Preço dos planos atualizado!', 'success')
+            return redirect(url_for('admin.telas_controladas'))
+
+        if acao == "cobranca":
+            ativa = request.form.get("cobranca_ativa") == "on"
+            ConfiguracaoService.set_cobranca_ativa(ativa)
+            if ativa:
+                flash('Cobrança reativada -- planos voltam a ser exigidos normalmente.', 'success')
+            else:
+                flash('Cobrança desativada -- o app está liberado em modo grátis pra todo mundo.', 'warning')
+            return redirect(url_for('admin.telas_controladas'))
+
+        # acao == "telas" (ou ausente, formulário antigo sem o campo)
         chaves_marcadas = set(request.form.getlist("bloqueia"))
         TelaControladaService.atualizar(chaves_marcadas)
         flash('Configuração de telas salva!', 'success')
         return redirect(url_for('admin.telas_controladas'))
 
     telas = TelaControladaService.listar_todas()
-    return render_template("admin/telas_controladas.html", telas=telas)
+    planos = PlanoService.listar_editaveis()
+    cobranca_ativa = ConfiguracaoService.cobranca_ativa()
+    return render_template(
+        "admin/telas_controladas.html",
+        telas=telas,
+        planos=planos,
+        cobranca_ativa=cobranca_ativa,
+    )
 
 
 # =============================================

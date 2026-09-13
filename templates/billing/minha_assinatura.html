@@ -66,6 +66,16 @@
 {% endif %}
 {% endmacro %}
 
+{% if not cobranca_ativa %}
+<div class="ma-card mb-3">
+    <span class="ma-status-pill ma-status-atencao"><i class="bi bi-gift"></i> App gratuito no momento</span>
+    <p class="mt-3 mb-0">
+        O FitLog está liberado sem custo pra todo mundo durante o lançamento -- Estatísticas,
+        FitBot e gestão de alunos funcionam normalmente, sem precisar assinar nada.
+    </p>
+</div>
+{% endif %}
+
 {% if perfil == 'professor' %}
 <div class="ma-card">
     <p class="mb-2 text-muted" style="font-size: 0.9rem;">

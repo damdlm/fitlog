@@ -391,6 +391,34 @@ class Plano(db.Model):
         return f'<Plano {self.codigo} R${self.preco_centavos/100:.2f}>'
 
 
+class ConfiguracaoApp(db.Model):
+    """Configuração global do sistema, singleton (sempre id=1) -- hoje
+    só guarda se a cobrança está ativa (ver
+    services/configuracao_service.py), mas existe como singleton
+    genérico pra não precisar de migration nova a cada flag global
+    parecida no futuro.
+
+    cobranca_ativa=False é o "modo lançamento grátis": todo aluno e
+    professor passa a ter acesso completo (Estatísticas/FitBot e
+    gestão ilimitada de alunos), como se todos tivessem plano ativo,
+    sem cobrar nada nem acionar o Asaas -- pensado pra usar nos
+    primeiros meses após o lançamento do app. Ver
+    services/billing_service.py:usuario_tem_acesso_premium,
+    pode_cadastrar_aluno e professor_acesso_alunos_liberado."""
+    __tablename__ = 'configuracao_app'
+
+    id = db.Column(db.Integer, primary_key=True)
+    cobranca_ativa = db.Column(db.Boolean, nullable=False, default=True)
+    atualizado_em = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    def __repr__(self):
+        return f'<ConfiguracaoApp cobranca_ativa={self.cobranca_ativa}>'
+
+
 class TelaControlada(db.Model):
     """Registro das telas que o admin pode escolher bloquear pra quem
     não tem nenhum plano pago ativo (nem trial válido). `chave` é o

@@ -10,6 +10,7 @@ from flask_login import current_user, login_required
 from extensions import limiter
 from models import db, Plano
 from services.billing_service import BillingService, AssinaturaAtualizadaError, AssinaturaJaAtivaError, DadosCobrancaIncompletosError, NadaParaCancelarError
+from services.configuracao_service import ConfiguracaoService
 
 billing_bp = Blueprint('billing', __name__)
 logger = logging.getLogger(__name__)
@@ -55,6 +56,7 @@ def minha_assinatura():
         perfil='professor' if current_user.is_professor() else 'aluno',
         assinatura=assinatura,
         acesso_premium=assinatura.acesso_premium_ativo() if assinatura else False,
+        cobranca_ativa=ConfiguracaoService.cobranca_ativa(),
         cpf_cnpj=current_user.cpf_cnpj,
         telefone=current_user.telefone,
         endereco_cep=current_user.endereco_cep,
@@ -181,6 +183,13 @@ def assinar():
     especificamente pro checkout RECURRENT+CREDIT_CARD. Nunca pedimos
     isso no cadastro pra não criar fricção -- só na primeira vez que
     tenta assinar; depois fica salvo no usuário."""
+    if not ConfiguracaoService.cobranca_ativa():
+        # Modo grátis de lançamento (ver ConfiguracaoService) -- não
+        # faz sentido nenhum acionar o Asaas pra gerar uma cobrança
+        # que ninguém precisa pagar agora.
+        flash('O app está gratuito no momento, nenhuma assinatura é necessária.', 'info')
+        return redirect(url_for('billing.minha_assinatura'))
+
     campos_faltando = BillingService.campos_cobranca_faltando(current_user)
     if campos_faltando:
         cpf_cnpj = _cpf_cnpj_valido(request.form.get('cpf_cnpj', '')) if 'cpf_cnpj' in campos_faltando else current_user.cpf_cnpj

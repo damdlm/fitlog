@@ -186,7 +186,14 @@ class BillingService:
         vale pra aluno e professor por igual, e não importa qual plano
         está associado (Fit, Pró ou Premium todos liberam essas telas
         enquanto a assinatura estiver com status válido). A exceção de
-        admin fica a cargo de quem chama, não daqui."""
+        admin fica a cargo de quem chama, não daqui.
+
+        Se a cobrança estiver desativada globalmente (modo grátis de
+        lançamento -- ver ConfiguracaoService), libera geral sem olhar
+        pra assinatura nenhuma."""
+        from services.configuracao_service import ConfiguracaoService
+        if not ConfiguracaoService.cobranca_ativa():
+            return True
         assinatura = usuario.assinatura
         if assinatura is None:
             return False
@@ -306,7 +313,15 @@ class BillingService:
         liberam Estatísticas/FitBot, não gestão de mais alunos).
 
         Retorna (True, None) se pode, ou (False, mensagem) explicando
-        pra qual plano o professor precisa fazer upgrade."""
+        pra qual plano o professor precisa fazer upgrade.
+
+        Se a cobrança estiver desativada globalmente (modo grátis de
+        lançamento -- ver ConfiguracaoService), libera geral, sem
+        limite de alunos."""
+        from services.configuracao_service import ConfiguracaoService
+        if not ConfiguracaoService.cobranca_ativa():
+            return True, None
+
         novo_total = BillingService.contar_alunos_ativos(professor) + 1
         if novo_total <= LIMITE_ALUNOS_GRATIS:
             return True, None
@@ -331,7 +346,13 @@ class BillingService:
         carência de 15 dias de atraso esgotada (ver
         CARENCIA_DIAS_PROFESSOR_GESTAO e expirar_carencias_vencidas).
         O vínculo com os alunos nunca é apagado por isso, só o acesso
-        às telas. Até 2 alunos, nunca é bloqueado por cobrança."""
+        às telas. Até 2 alunos, nunca é bloqueado por cobrança.
+
+        Se a cobrança estiver desativada globalmente (modo grátis de
+        lançamento -- ver ConfiguracaoService), nunca bloqueia."""
+        from services.configuracao_service import ConfiguracaoService
+        if not ConfiguracaoService.cobranca_ativa():
+            return True
         if BillingService.contar_alunos_ativos(professor) <= LIMITE_ALUNOS_GRATIS:
             return True
         assinatura = professor.assinatura
