@@ -1275,8 +1275,8 @@
         }
     }
 
-    /* Cronômetro de intervalo -- barra compacta no rodapé: ampulheta +
-       tempo à esquerda, botões de ação à direita (como era antes); os
+    /* Cronômetro de intervalo -- barra compacta no rodapé: ampulheta,
+       sino, tempo e botões de ação centralizados como um grupo só; os
        atalhos de tempo (30s/1:00/...) ficam numa linha própria abaixo,
        ocupando a largura toda. */
     #cronoIntervaloBox.cronometro-box {
@@ -1284,8 +1284,9 @@
         flex-wrap: wrap;
         flex-direction: row;
         align-items: center;
+        justify-content: center;
         gap: 10px 14px;
-        text-align: left;
+        text-align: center;
         border: none;
         max-width: 420px;
         margin: 0 auto;
@@ -1299,15 +1300,13 @@
     #cronoIntervaloBox .cronometro-display {
         font-size: 2.4rem;
         margin: 0;
-        margin-right: auto;
         order: 2;
     }
 
     /* Sino de ativar/desativar o alarme sonoro do intervalo -- mesmo
-       "order" da ampulheta/label (1) pra ficar logo ao lado dela, à
-       esquerda da barra (antes do display, que continua com
-       margin-right:auto empurrando o tempo e os botões de play/zerar
-       pro lado direito). */
+       "order" da ampulheta/label (1) pra ficar logo ao lado dela, antes
+       do display. Com o grupo todo centralizado (justify-content:center
+       na caixa), a ordem só decide a sequência interna do grupo. */
     #cronoIntervaloBox #cronoIntervaloBtnAlarme {
         order: 1;
     }
