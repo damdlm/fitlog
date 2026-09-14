@@ -204,7 +204,7 @@ def salvar_registro():
                 num_series = int(request.form.get(f"num_series_{chave}", 3))
                 
                 if carga_float >= 0 and reps_int >= 0 and 1 <= num_series <= 10:
-                    dados_exercicios[chave] = {
+                    dado = {
                         'carga': carga_float,
                         'repeticoes': reps_int,
                         'num_series': num_series,
@@ -212,6 +212,30 @@ def salvar_registro():
                         'exercicio_id': ex.id,
                         'data_registro': data_obj
                     }
+
+                    # Séries com valores individuais (lançadas pelo modal da
+                    # seta, na tela de registro): cada série pode ter carga e
+                    # repetições diferentes, em vez do mesmo valor repetido
+                    # `num_series` vezes. Só ativa se a flag vier "individual"
+                    # E pelo menos a 1ª série tiver valor válido -- senão cai
+                    # no comportamento uniforme de sempre.
+                    if request.form.get(f"modo_series_{chave}") == "individual":
+                        series_individuais = []
+                        for i in range(1, num_series + 1):
+                            carga_serie = request.form.get(f"carga_{chave}_{i}")
+                            reps_serie = request.form.get(f"reps_{chave}_{i}")
+                            try:
+                                c = float(carga_serie) if carga_serie and carga_serie.strip() else carga_float
+                                r = int(reps_serie) if reps_serie and reps_serie.strip() else reps_int
+                                if c < 0 or r < 0:
+                                    c, r = carga_float, reps_int
+                            except (ValueError, TypeError):
+                                c, r = carga_float, reps_int
+                            series_individuais.append({'carga': c, 'repeticoes': r})
+                        if series_individuais:
+                            dado['series_individuais'] = series_individuais
+
+                    dados_exercicios[chave] = dado
             except (ValueError, TypeError):
                 continue
     

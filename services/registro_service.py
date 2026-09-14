@@ -309,10 +309,21 @@ class RegistroService(BaseService):
                     db.session.flush()
                     
                     for i in range(dados['num_series']):
+                        # Séries individuais (modal da seta, na tela de
+                        # registro): cada uma com sua própria carga/repetições,
+                        # em vez do mesmo valor repetido pra todas.
+                        series_individuais = dados.get('series_individuais')
+                        if series_individuais and i < len(series_individuais):
+                            carga_serie = series_individuais[i]['carga']
+                            reps_serie = series_individuais[i]['repeticoes']
+                        else:
+                            carga_serie = dados['carga']
+                            reps_serie = dados['repeticoes']
+
                         serie = HistoricoTreino(
                             registro_id=registro.id,
-                            carga=dados['carga'],
-                            repeticoes=dados['repeticoes'],
+                            carga=carga_serie,
+                            repeticoes=reps_serie,
                             ordem=i+1,
                             tempo_treino=tempo_treino
                         )

@@ -165,6 +165,131 @@
         background-color: var(--primary-orange);
         border-color: var(--primary-orange);
     }
+
+    /* Seta que abre o modal de "lançar séries com valores individuais":
+       o card inteiro (.row) fica num flex junto com o botão, então o
+       conteúdo do card é "empurrado" um pouco pra esquerda para abrir
+       espaço pra seta na borda direita. */
+    .exercise-row-flex {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+    .exercise-row-flex > .row {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .btn-abrir-series-modal {
+        flex-shrink: 0;
+        width: 26px;
+        align-self: stretch;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: transparent;
+        color: #c9c3b7;
+        font-size: 1.2rem;
+        cursor: pointer;
+        border-radius: var(--radius-sm);
+        transition: color 0.15s ease, background-color 0.15s ease;
+    }
+    .btn-abrir-series-modal:hover,
+    .btn-abrir-series-modal:focus-visible {
+        color: var(--primary-orange);
+        background: rgba(242, 140, 51, 0.08);
+        outline: none;
+    }
+    .exercise-row.is-desativado .btn-abrir-series-modal {
+        pointer-events: none;
+        opacity: 0.4;
+    }
+
+    /* Modal de séries individuais -- uma tabela com carga/repetições
+       por número de série, em vez de um valor único multiplicado pela
+       contagem de séries. */
+    .series-modal-header-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .series-modal-icone {
+        width: 42px;
+        height: 42px;
+        border-radius: var(--radius-sm);
+        background: var(--surface-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        overflow: hidden;
+        color: var(--primary-orange);
+        font-size: 1.1rem;
+    }
+    .series-modal-icone img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .series-modal-titulo {
+        font-weight: 700;
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .series-modal-select-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .series-modal-select-wrap label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #8a857a;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .series-modal-select-wrap select {
+        max-width: 150px;
+    }
+    .series-modal-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+        margin-bottom: 8px;
+    }
+    .series-modal-table th {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #8a857a;
+        font-weight: 700;
+        text-align: center;
+        padding-bottom: 2px;
+    }
+    .series-modal-table td {
+        text-align: center;
+        padding: 0 4px;
+    }
+    .series-modal-table td input {
+        width: 100%;
+        text-align: center;
+    }
+    .series-modal-numero {
+        font-weight: 700;
+        color: #6a6963;
+    }
+    .series-modal-footer-row {
+        display: flex;
+        justify-content: flex-start;
+        margin-top: 4px;
+    }
     .exercicio-switch-label {
         font-size: 0.78rem;
         font-weight: 600;
@@ -2238,6 +2363,39 @@
     <div class="modo-treino-footer" id="modoTreinoFooter"></div>
 </div>
 
+<!-- Modal de séries individuais: uma instância só, reaproveitada pra
+     qualquer exercício -- a seta de cada card só passa qual exercício
+     (data-exercicio-id) e o JS preenche a tabela na hora de abrir. -->
+<div class="modal fade" id="modalSeriesIndividuais" tabindex="-1" aria-labelledby="modalSeriesIndividuaisLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body p-3">
+                <div class="series-modal-header-row">
+                    <div class="series-modal-icone" id="seriesModalIcone"><i class="bi bi-activity"></i></div>
+                    <span class="series-modal-titulo" id="seriesModalTitulo">Exercício</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="series-modal-select-wrap">
+                    <label for="seriesModalSelect">Séries</label>
+                    <select class="form-select" id="seriesModalSelect"></select>
+                </div>
+                <table class="series-modal-table">
+                    <thead>
+                        <tr><th>Carga</th><th>Repetições</th><th>Série</th></tr>
+                    </thead>
+                    <tbody id="seriesModalBody"></tbody>
+                </table>
+                <div class="series-modal-footer-row">
+                    <button type="button" class="btn-marcar-feito" id="seriesModalBtnFeito"
+                            aria-pressed="false" aria-label="Marcar exercício como feito">
+                        <i class="bi bi-check-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row mb-4 d-none d-md-flex">
     <div class="col-12">
         <h2 class="display-6 fw-bold">
@@ -2394,12 +2552,17 @@
             
             <!-- O select de séries agora vai até 10 -->
             {% set max_opcoes = [6, series_selecionadas]|max %}
+            {% set series_atual = registro_atual.series if (registro_atual and registro_atual.series) else [] %}
+            {% set cargas_distintas = series_atual|map(attribute='carga')|unique|list %}
+            {% set reps_distintas = series_atual|map(attribute='repeticoes')|unique|list %}
+            {% set modo_inicial = 'individual' if (series_atual and (cargas_distintas|length > 1 or reps_distintas|length > 1)) else 'uniforme' %}
             
             <div class="exercise-row" data-exercicio-id="{{ chave_ex }}" 
                  data-ultima-carga="{{ ultima_carga }}"
                  data-ultimas-reps="{{ ultimas_reps }}"
                  data-ultimas-series="{{ ultimas_series }}">
                 
+                <div class="exercise-row-flex">
                 <div class="row align-items-center">
                     <div class="col-12 col-md-6">
                         <!-- Mesma estrutura visual do card "Último Treino" do dashboard -->
@@ -2497,6 +2660,31 @@
                         </div>
                     </div>
                     </div>
+                </div>
+                <button type="button" class="btn-abrir-series-modal"
+                        data-bs-toggle="modal" data-bs-target="#modalSeriesIndividuais"
+                        data-exercicio-id="{{ chave_ex }}"
+                        data-exercicio-nome="{{ ex.nome }}"
+                        data-gif-url="{{ ex.gif_url or '' }}"
+                        aria-label="Lançar séries com valores individuais de {{ ex.nome }}">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+                </div>
+
+                <!-- Valores por série (carga/repetições individuais) -- só usados
+                     quando o modal de séries individuais é aberto; até lá ficam
+                     vazios e o backend usa carga_/reps_ únicos (multiplicados
+                     pela contagem de séries), como sempre funcionou. -->
+                <input type="hidden" name="modo_series_{{ chave_ex }}" class="modo-series-flag" value="{{ modo_inicial }}">
+                <div class="series-individuais-inputs d-none" data-exercicio-id="{{ chave_ex }}">
+                    {% for n in range(1, max_opcoes + 1) %}
+                    <input type="number" step="0.5" min="0"
+                           name="carga_{{ chave_ex }}_{{ n }}" class="carga-serie-input" data-serie="{{ n }}"
+                           value="{% if series_atual|length >= n %}{{ series_atual[n-1].carga }}{% endif %}">
+                    <input type="number" min="0" max="100"
+                           name="reps_{{ chave_ex }}_{{ n }}" class="reps-serie-input" data-serie="{{ n }}"
+                           value="{% if series_atual|length >= n %}{{ series_atual[n-1].repeticoes }}{% endif %}">
+                    {% endfor %}
                 </div>
             </div>
             {% endfor %}
@@ -2669,6 +2857,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Marcar exercício como já feito (só visual, muda a cor da borda)
     inicializarBotoesMarcarFeito();
+
+    // Modal de séries com valores individuais (seta no canto do card)
+    inicializarModalSeriesIndividuais();
     
     // Garantir que o campo de data sempre comece preenchido com o dia
     // atual quando vier vazio. Setar dataInput.value direto não é
@@ -2962,21 +3153,183 @@ function atualizarResumo() {
 
         const cargaInput = row.querySelector('.carga-input');
         const repsInput = row.querySelector('.reps-input');
-        const carga = parseFloat(cargaInput?.value) || 0;
-        const reps = parseInt(repsInput?.value) || 0;
         const seriesSelect = document.getElementById(`series-select-${exId}`);
         const series = parseInt(seriesSelect?.value) || 3;
 
         const preenchido = cargaInput?.value !== '' && repsInput?.value !== '';
         row.classList.toggle('is-complete', !!preenchido);
 
-        volumeTotal += carga * reps * series;
+        // Exercício com séries individuais (lançadas pelo modal da seta):
+        // soma carga*reps de cada série separada, em vez de um valor único
+        // multiplicado pela contagem -- reflete valores realmente diferentes
+        // entre séries.
+        const modoFlag = row.querySelector('.modo-series-flag');
+        if (modoFlag && modoFlag.value === 'individual') {
+            const cargaPadrao = parseFloat(cargaInput?.value) || 0;
+            const repsPadrao = parseInt(repsInput?.value) || 0;
+            row.querySelectorAll('.carga-serie-input').forEach(cargaEl => {
+                const n = cargaEl.dataset.serie;
+                if (parseInt(n) > series) return; // fora da contagem atual de séries
+                const repsEl = row.querySelector(`.reps-serie-input[data-serie="${n}"]`);
+                // Campo dessa série específica não foi tocado no modal --
+                // mesmo fallback pro valor padrão que o backend usa ao salvar.
+                const c = (cargaEl.value !== '') ? (parseFloat(cargaEl.value) || 0) : cargaPadrao;
+                const r = (repsEl && repsEl.value !== '') ? (parseInt(repsEl.value) || 0) : repsPadrao;
+                volumeTotal += c * r;
+            });
+        } else {
+            const carga = parseFloat(cargaInput?.value) || 0;
+            const reps = parseInt(repsInput?.value) || 0;
+            volumeTotal += carga * reps * series;
+        }
     });
 
     const resumoElement = document.getElementById('resumo-volume');
     if (resumoElement) {
         resumoElement.textContent = volumeTotal + ' kg';
     }
+}
+
+/* Modal de séries individuais: aberto pela seta no canto de cada card,
+   permite lançar carga/repetições diferentes por número de série, em
+   vez de um valor único multiplicado pela contagem. É UMA instância só
+   de modal, reaproveitada -- ao abrir, lê os campos ocultos
+   (.carga-serie-input/.reps-serie-input) do card que disparou e monta a
+   tabela; ao editar uma célula, escreve de volta na hora no campo
+   oculto correspondente (sem precisar de um botão "salvar" -- mesmo
+   padrão dos outros controles da tela, tudo já fica no form). */
+function inicializarModalSeriesIndividuais() {
+    const modalEl = document.getElementById('modalSeriesIndividuais');
+    if (!modalEl || typeof bootstrap === 'undefined') return;
+
+    const tituloEl = document.getElementById('seriesModalTitulo');
+    const iconeEl = document.getElementById('seriesModalIcone');
+    const selectEl = document.getElementById('seriesModalSelect');
+    const bodyEl = document.getElementById('seriesModalBody');
+    const btnFeitoEl = document.getElementById('seriesModalBtnFeito');
+    let exIdAtual = null;
+
+    function linhas(exId) {
+        const row = document.querySelector(`.exercise-row[data-exercicio-id="${exId}"]`);
+        if (!row) return null;
+        return {
+            row: row,
+            modoFlag: row.querySelector('.modo-series-flag'),
+            seriesSelect: document.getElementById(`series-select-${exId}`),
+            cargaInput: row.querySelector('.carga-input'),
+            repsInput: row.querySelector('.reps-input'),
+            cargasSerie: row.querySelectorAll('.carga-serie-input'),
+            repsSerie: row.querySelectorAll('.reps-serie-input'),
+            btnFeito: row.querySelector('.btn-marcar-feito')
+        };
+    }
+
+    function montarTabela(exId) {
+        const ctx = linhas(exId);
+        if (!ctx) return;
+
+        const numSeries = parseInt(ctx.seriesSelect?.value) || 3;
+        const valorPadraoCarga = ctx.cargaInput?.value || '';
+        const valorPadraoReps = ctx.repsInput?.value || '';
+
+        bodyEl.innerHTML = '';
+        for (let n = 1; n <= numSeries; n++) {
+            const cargaOculto = row_getSerieInput(ctx.cargasSerie, n);
+            const repsOculto = row_getSerieInput(ctx.repsSerie, n);
+            const valorCarga = (cargaOculto && cargaOculto.value !== '') ? cargaOculto.value : valorPadraoCarga;
+            const valorReps = (repsOculto && repsOculto.value !== '') ? repsOculto.value : valorPadraoReps;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="number" step="0.5" min="0" inputmode="decimal" class="form-control series-modal-carga" data-serie="${n}" value="${valorCarga}"></td>
+                <td><input type="number" min="0" max="100" inputmode="numeric" class="form-control series-modal-reps" data-serie="${n}" value="${valorReps}"></td>
+                <td class="series-modal-numero">${n}</td>
+            `;
+            bodyEl.appendChild(tr);
+        }
+
+        bodyEl.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => sincronizarLinha(exId, input));
+        });
+    }
+
+    function row_getSerieInput(nodeList, n) {
+        for (const el of nodeList) {
+            if (parseInt(el.dataset.serie) === n) return el;
+        }
+        return null;
+    }
+
+    function sincronizarLinha(exId, inputAlterado) {
+        const ctx = linhas(exId);
+        if (!ctx) return;
+
+        // A partir do primeiro campo editado, o exercício passa a usar
+        // valores individuais por série (em vez do valor único * contagem).
+        if (ctx.modoFlag) ctx.modoFlag.value = 'individual';
+
+        const n = parseInt(inputAlterado.dataset.serie);
+        const ehCarga = inputAlterado.classList.contains('series-modal-carga');
+        const oculto = row_getSerieInput(ehCarga ? ctx.cargasSerie : ctx.repsSerie, n);
+        if (oculto) oculto.value = inputAlterado.value;
+
+        if (typeof atualizarResumo === 'function') atualizarResumo();
+        if (window.FitLogTreinoAutoSave) window.FitLogTreinoAutoSave.salvar();
+    }
+
+    selectEl.addEventListener('change', function () {
+        if (!exIdAtual) return;
+        const ctx = linhas(exIdAtual);
+        if (ctx && ctx.seriesSelect) {
+            ctx.seriesSelect.value = this.value;
+            ctx.seriesSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        montarTabela(exIdAtual);
+        if (typeof atualizarResumo === 'function') atualizarResumo();
+    });
+
+    btnFeitoEl.addEventListener('click', function () {
+        if (!exIdAtual) return;
+        const ctx = linhas(exIdAtual);
+        if (ctx && ctx.btnFeito) {
+            ctx.btnFeito.click();
+            const feito = ctx.row.classList.contains('is-feito');
+            btnFeitoEl.classList.toggle('is-ativo', feito);
+            btnFeitoEl.setAttribute('aria-pressed', String(feito));
+        }
+    });
+
+    modalEl.addEventListener('show.bs.modal', function (evt) {
+        const gatilho = evt.relatedTarget;
+        if (!gatilho) return;
+        exIdAtual = gatilho.dataset.exercicioId;
+        const nome = gatilho.dataset.exercicioNome || 'Exercício';
+        const gifUrl = gatilho.dataset.gifUrl;
+
+        tituloEl.textContent = nome;
+        tituloEl.title = nome;
+        iconeEl.innerHTML = gifUrl ? `<img src="${gifUrl}" alt="">` : '<i class="bi bi-activity"></i>';
+
+        const ctx = linhas(exIdAtual);
+        if (!ctx) return;
+
+        const numSeriesAtual = parseInt(ctx.seriesSelect?.value) || 3;
+        const maxOpcoes = Math.max(ctx.seriesSelect ? ctx.seriesSelect.options.length : 6, numSeriesAtual);
+        selectEl.innerHTML = '';
+        for (let n = 1; n <= maxOpcoes; n++) {
+            const opt = document.createElement('option');
+            opt.value = n;
+            opt.textContent = `${n} série${n !== 1 ? 's' : ''}`;
+            if (n === numSeriesAtual) opt.selected = true;
+            selectEl.appendChild(opt);
+        }
+
+        montarTabela(exIdAtual);
+
+        const feito = ctx.row.classList.contains('is-feito');
+        btnFeitoEl.classList.toggle('is-ativo', feito);
+        btnFeitoEl.setAttribute('aria-pressed', String(feito));
+    });
 }
 
 /* Liga/desliga um exercício: quando desmarcado, os campos de carga,
@@ -4081,9 +4434,17 @@ function tocarBipe() {
             var carga = row.querySelector('.carga-input');
             var reps = row.querySelector('.reps-input');
             var series = row.querySelector('select[name^="num_series_"]');
+            var modoFlag = row.querySelector('.modo-series-flag');
             if (carga) campos['carga_' + exId] = carga.value;
             if (reps) campos['reps_' + exId] = reps.value;
             if (series) campos['num_series_' + exId] = series.value;
+            if (modoFlag) campos['modo_series_' + exId] = modoFlag.value;
+            // Valores individuais por série (preenchidos só se o modal da
+            // seta foi usado) -- generico via querySelectorAll pra não
+            // precisar saber de antemão quantas séries existem.
+            row.querySelectorAll('.carga-serie-input, .reps-serie-input').forEach(function (input) {
+                if (input.name) campos[input.name] = input.value;
+            });
             if (row.classList.contains('is-desativado')) desativados.push(exId);
             if (row.classList.contains('is-feito')) feitos.push(exId);
         });
