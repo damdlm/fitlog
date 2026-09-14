@@ -3231,6 +3231,33 @@ function tocarBipe() {
     window.FitLogCronoTreino = {
         segundosAtuais: function () {
             return Math.round(segundosAtuais());
+        },
+        estaRodando: function () {
+            return rodando;
+        },
+        // Usado pelo auto-save de treino (ver script no fim da página) pra
+        // voltar direto pro modo treino em tela cheia com o cronômetro na
+        // mesma posição de antes, sem o usuário precisar clicar em
+        // "Iniciar treino" de novo depois de a página recarregar sozinha
+        // (ex: app trocado de plano em segundo plano no celular e o
+        // sistema mata o processo da WebView).
+        restaurar: function (segundosSalvos, estavaRodando) {
+            acumuladoSegundos = Math.max(0, segundosSalvos || 0);
+            inicioMs = Date.now();
+            rodando = !!estavaRodando;
+            atualizarDisplay();
+
+            if (rodando) {
+                intervalId = setInterval(atualizarDisplay, 1000);
+                elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i><span>Pausar</span>';
+                elBtnIniciar.classList.add('is-rodando');
+                pedirWakeLock();
+            } else {
+                elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i><span>Retomar</span>';
+            }
+
+            jaRevelouExercicios = true;
+            revelarExercicios();
         }
     };
 
@@ -3997,6 +4024,217 @@ function tocarBipe() {
     document.addEventListener('DOMContentLoaded', init);
 
     window.FitLogResumoTreino = { abrir: abrir };
+})();
+</script>
+
+<script>
+/**
+ * Auto-save do treino em andamento -- persiste periodicamente o estado
+ * da tela (cronômetro, cargas/reps/séries digitadas, exercícios
+ * desativados/marcados como feitos) no localStorage do aparelho, e
+ * tenta retomar automaticamente se a página recarregar sozinha com o
+ * treino ainda "em andamento".
+ *
+ * Cenário real que isso resolve: o app é trocado de plano em segundo
+ * plano no celular (ex: iOS) e o sistema mata o processo da WebView
+ * por falta de memória (ver comentário sobre isso em
+ * crash-watchdog.js). Ao voltar, a página recarrega do zero e, sem
+ * isso, o treino em andamento -- que até aqui só existia em memória --
+ * simplesmente sumia, voltando pra tela de "Iniciar treino".
+ *
+ * Usa localStorage (não sessionStorage) de propósito: sessionStorage
+ * não sobrevive de forma confiável quando o processo da WebView é
+ * encerrado pelo sistema, que é exatamente o cenário que precisamos
+ * cobrir.
+ */
+(function () {
+    'use strict';
+
+    var STORAGE_KEY = 'fitlog:treinoEmAndamento:v1';
+    var VALIDADE_MS = 6 * 60 * 60 * 1000; // 6h -- depois disso descarta (treino velho demais pra fazer sentido retomar sozinho)
+
+    var form = document.getElementById('registroForm');
+    if (!form) return; // nada de treino nesta carga de página (ex: ainda sem treino/data escolhidos)
+
+    function ls() {
+        try { return window.localStorage || null; } catch (e) { return null; }
+    }
+
+    function elTreinoHidden() { return form.querySelector('input[name="treino"]'); }
+    function elDataHidden() { return form.querySelector('input[name="data"]'); }
+
+    function coletarLinhasPorId() {
+        var linhas = {};
+        document.querySelectorAll('.exercise-row[data-exercicio-id]').forEach(function (row) {
+            linhas[row.dataset.exercicioId] = row;
+        });
+        return linhas;
+    }
+
+    function coletarEstado() {
+        var campos = {};
+        var desativados = [];
+        var feitos = [];
+        document.querySelectorAll('.exercise-row[data-exercicio-id]').forEach(function (row) {
+            var exId = row.dataset.exercicioId;
+            var carga = row.querySelector('.carga-input');
+            var reps = row.querySelector('.reps-input');
+            var series = row.querySelector('select[name^="num_series_"]');
+            if (carga) campos['carga_' + exId] = carga.value;
+            if (reps) campos['reps_' + exId] = reps.value;
+            if (series) campos['num_series_' + exId] = series.value;
+            if (row.classList.contains('is-desativado')) desativados.push(exId);
+            if (row.classList.contains('is-feito')) feitos.push(exId);
+        });
+
+        var tHidden = elTreinoHidden();
+        var dHidden = elDataHidden();
+        var crono = window.FitLogCronoTreino;
+
+        return {
+            v: 1,
+            savedAt: Date.now(),
+            treino: tHidden ? tHidden.value : '',
+            data: dHidden ? dHidden.value : '',
+            tempoSegundos: crono ? crono.segundosAtuais() : 0,
+            rodando: crono ? crono.estaRodando() : false,
+            campos: campos,
+            desativados: desativados,
+            feitos: feitos
+        };
+    }
+
+    function salvarEstado() {
+        var s = ls();
+        if (!s) return;
+        try {
+            if (!window.FitLogTreinoState || !window.FitLogTreinoState.emAndamento()) {
+                s.removeItem(STORAGE_KEY);
+                return;
+            }
+            s.setItem(STORAGE_KEY, JSON.stringify(coletarEstado()));
+        } catch (e) { /* localStorage cheio/indisponível -- sem auto-save, mas não quebra a tela */ }
+    }
+
+    function limparEstadoSalvo() {
+        var s = ls();
+        if (!s) return;
+        try { s.removeItem(STORAGE_KEY); } catch (e) { /* ignora */ }
+    }
+
+    function lerEstadoSalvo() {
+        var s = ls();
+        if (!s) return null;
+        try {
+            var bruto = s.getItem(STORAGE_KEY);
+            if (!bruto) return null;
+            var estado = JSON.parse(bruto);
+            if (!estado || typeof estado !== 'object') return null;
+            if (!estado.savedAt || (Date.now() - estado.savedAt) > VALIDADE_MS) return null;
+            return estado;
+        } catch (e) { return null; }
+    }
+
+    function restaurarCampos(campos) {
+        Object.keys(campos || {}).forEach(function (nome) {
+            var els = document.getElementsByName(nome);
+            if (els && els[0] != null) els[0].value = campos[nome];
+        });
+    }
+
+    function tentarRestaurar() {
+        var estado = lerEstadoSalvo();
+        if (!estado) return;
+
+        var tHidden = elTreinoHidden();
+        var dHidden = elDataHidden();
+        var treinoAtual = tHidden ? tHidden.value : '';
+        var dataAtual = dHidden ? dHidden.value : '';
+
+        // Só restaura se a página recarregou no MESMO treino/data que
+        // estava em andamento -- é o que acontece no cenário real (o
+        // sistema derruba o app e devolve a mesma URL). Se for
+        // diferente, os exercícios exibidos não batem com o que foi
+        // salvo, então é mais seguro descartar do que tentar misturar.
+        if (estado.treino !== treinoAtual || estado.data !== dataAtual) {
+            limparEstadoSalvo();
+            return;
+        }
+
+        var crono = window.FitLogCronoTreino;
+        if (!crono || typeof crono.restaurar !== 'function') {
+            limparEstadoSalvo();
+            return;
+        }
+
+        var linhas = coletarLinhasPorId();
+
+        restaurarCampos(estado.campos);
+
+        (estado.desativados || []).forEach(function (exId) {
+            var row = linhas[exId];
+            if (!row) return;
+            var switchEl = row.querySelector('.exercicio-switch');
+            if (switchEl) switchEl.checked = false;
+            if (typeof aplicarEstadoExercicio === 'function') aplicarEstadoExercicio(row, false);
+        });
+
+        (estado.feitos || []).forEach(function (exId) {
+            var row = linhas[exId];
+            if (!row) return;
+            var btn = row.querySelector('.btn-marcar-feito');
+            row.classList.add('is-feito');
+            if (btn) {
+                btn.classList.add('is-ativo');
+                btn.setAttribute('aria-pressed', 'true');
+            }
+        });
+
+        if (typeof atualizarResumo === 'function') atualizarResumo();
+
+        // Se o cronômetro estava rodando, soma o tempo real que passou
+        // desde o último auto-save (o mesmo que já acontece hoje quando
+        // a aba sobrevive em segundo plano -- ver segundosAtuais()).
+        var segundos = estado.tempoSegundos || 0;
+        if (estado.rodando) {
+            segundos += Math.max(0, (Date.now() - estado.savedAt) / 1000);
+        }
+        crono.restaurar(Math.round(segundos), estado.rodando);
+
+        if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
+            window.FitLogUtils.showToast('Treino retomado de onde você parou.', 'success');
+        }
+
+        // Já restaurado -- volta a salvar a partir daqui pra manter o
+        // estado atualizado caso a página seja derrubada de novo.
+        salvarEstado();
+    }
+
+    // Se o treino terminar (salvo com sucesso) ou for cancelado, apaga o
+    // que estava salvo -- sem isso, um treino antigo poderia "voltar"
+    // por engano numa sessão futura, ainda dentro da janela de validade.
+    if (window.FitLogTreinoState && typeof window.FitLogTreinoState.finalizar === 'function') {
+        var finalizarOriginal = window.FitLogTreinoState.finalizar;
+        window.FitLogTreinoState.finalizar = function () {
+            finalizarOriginal();
+            limparEstadoSalvo();
+        };
+    }
+
+    document.addEventListener('DOMContentLoaded', tentarRestaurar);
+
+    form.addEventListener('input', salvarEstado);
+    form.addEventListener('change', salvarEstado);
+    setInterval(salvarEstado, 5000);
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) salvarEstado();
+    });
+    window.addEventListener('pagehide', salvarEstado);
+
+    window.FitLogTreinoAutoSave = {
+        salvar: salvarEstado,
+        limpar: limparEstadoSalvo
+    };
 })();
 </script>
 {% endblock %}
