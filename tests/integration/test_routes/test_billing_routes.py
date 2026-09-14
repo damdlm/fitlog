@@ -750,3 +750,76 @@ class TestCancelarRota:
         resp = client.get('/billing/minha-assinatura')
         assert resp.status_code == 200
         assert b'Cancelar assinatura' not in resp.data
+
+
+# ---------------------------------------------------------------------
+# Flag tela_assinatura_ativa (ver services/configuracao_service.py e
+# utils/decorators.py:tela_assinatura_ativa_required)
+# ---------------------------------------------------------------------
+
+class TestTelaAssinaturaDesativada:
+    def test_tela_escondida_bloqueia_aluno(self, client, app):
+        with app.app_context():
+            from services.configuracao_service import ConfiguracaoService
+            ConfiguracaoService.set_tela_assinatura_ativa(False)
+            aluno = _criar_usuario('tela_assinatura_off_aluno')
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        resp = client.get('/billing/minha-assinatura')
+        assert resp.status_code == 302
+        assert '/billing/minha-assinatura' not in resp.headers.get('Location', '')
+
+    def test_tela_escondida_nao_bloqueia_admin(self, client, app):
+        with app.app_context():
+            from services.configuracao_service import ConfiguracaoService
+            ConfiguracaoService.set_tela_assinatura_ativa(False)
+            admin = _criar_usuario('tela_assinatura_off_admin')
+            admin.is_admin = True
+            db.session.commit()
+            admin_ref = User.query.get(admin.id)
+
+        _login(client, admin_ref)
+        resp = client.get('/billing/minha-assinatura')
+        assert resp.status_code == 200
+
+    def test_tela_ativa_por_padrao(self, client, app):
+        with app.app_context():
+            from services.configuracao_service import ConfiguracaoService
+            assert ConfiguracaoService.tela_assinatura_ativa() is True
+            aluno = _criar_usuario('tela_assinatura_default_aluno')
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        resp = client.get('/billing/minha-assinatura')
+        assert resp.status_code == 200
+
+    def test_link_some_do_menu_quando_desativada(self, client, app):
+        with app.app_context():
+            from services.configuracao_service import ConfiguracaoService
+            ConfiguracaoService.set_tela_assinatura_ativa(False)
+            aluno = _criar_usuario('tela_assinatura_menu_aluno')
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        resp = client.get('/aluno/dashboard')
+        assert resp.status_code == 200
+        assert b'billing/minha-assinatura' not in resp.data and b'Minha Assinatura' not in resp.data
+
+    def test_link_aparece_no_menu_quando_ativa(self, client, app):
+        with app.app_context():
+            aluno = _criar_usuario('tela_assinatura_menu_aluno_on')
+            BillingService.iniciar_trial(aluno)
+            db.session.commit()
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        resp = client.get('/aluno/dashboard')
+        assert resp.status_code == 200
+        assert b'Minha Assinatura' in resp.data
