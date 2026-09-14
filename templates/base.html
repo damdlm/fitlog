@@ -507,11 +507,21 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 0.65rem 0.9rem;
+            padding: 0.65rem 0.75rem;
             border-radius: 10px;
+            font-size: 1.05rem;
             position: relative;
             transition: background 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
         }
+
+        /* O rótulo de texto (ex: "Painel", "Professor") usa a classe
+           .visually-hidden do Bootstrap direto no HTML -- some visualmente
+           mas continua acessível a leitor de tela. No desktop o menu
+           mostra só o ícone, e o nome aparece no tooltip nativo (atributo
+           title) ao passar o mouse. Não precisa de media query: o
+           .mega-nav inteiro já só existe em telas >= lg (d-none
+           d-lg-flex); no mobile o menu é outro elemento (.bottom-nav),
+           que continua exatamente igual. */
 
         .mega-trigger:hover,
         .mega-trigger.active {
@@ -1342,8 +1352,8 @@
 
                 {% if current_user.is_admin %}
                 <li class="nav-item mega-item">
-                    <button type="button" class="nav-link mega-trigger {{ 'active' if request.blueprint in ['admin', 'version'] else '' }}" data-mega="admin">
-                        <i class="bi bi-gear-fill"></i> Painel <i class="bi bi-chevron-down mega-caret"></i>
+                    <button type="button" class="nav-link mega-trigger {{ 'active' if request.blueprint in ['admin', 'version'] else '' }}" data-mega="admin" title="Painel" aria-label="Painel">
+                        <i class="bi bi-gear-fill"></i><span class="mega-trigger-label visually-hidden">Painel</span> <i class="bi bi-chevron-down mega-caret"></i>
                     </button>
                     <div class="mega-panel" data-mega-panel="admin">
                         <div class="mega-grid mega-grid-1col">
@@ -1396,8 +1406,8 @@
 
                 {% if current_user.is_professor() and not current_user.is_admin %}
                 <li class="nav-item mega-item">
-                    <button type="button" class="nav-link mega-trigger {{ 'active' if request.blueprint == 'professor' else '' }}" data-mega="professor">
-                        <i class="bi bi-person-badge"></i> Professor <i class="bi bi-chevron-down mega-caret"></i>
+                    <button type="button" class="nav-link mega-trigger {{ 'active' if request.blueprint == 'professor' else '' }}" data-mega="professor" title="Professor" aria-label="Professor">
+                        <i class="bi bi-person-badge"></i><span class="mega-trigger-label visually-hidden">Professor</span> <i class="bi bi-chevron-down mega-caret"></i>
                         {% if current_user.solicitacoes_pendentes_count > 0 %}
                             <span class="badge rounded-pill bg-danger mega-badge-dot">{{ current_user.solicitacoes_pendentes_count }}</span>
                         {% endif %}
@@ -1444,8 +1454,8 @@
 
                 {% if current_user.pode_gerenciar_treino_proprio() and not current_user.is_admin %}
                 <li class="nav-item mega-item">
-                    <button type="button" class="nav-link mega-trigger {{ 'active' if request.blueprint in ['aluno', 'calendar', 'stats'] else '' }}" data-mega="treino">
-                        <i class="bi bi-heart-pulse"></i> {{ 'Meu Treino' if current_user.is_professor() else 'Treino' }} <i class="bi bi-chevron-down mega-caret"></i>
+                    <button type="button" class="nav-link mega-trigger {{ 'active' if request.blueprint in ['aluno', 'calendar', 'stats'] else '' }}" data-mega="treino" title="{{ 'Meu Treino' if current_user.is_professor() else 'Treino' }}" aria-label="{{ 'Meu Treino' if current_user.is_professor() else 'Treino' }}">
+                        <i class="bi bi-heart-pulse"></i><span class="mega-trigger-label visually-hidden">{{ 'Meu Treino' if current_user.is_professor() else 'Treino' }}</span> <i class="bi bi-chevron-down mega-caret"></i>
                     </button>
                     <div class="mega-panel" data-mega-panel="treino">
                         <div class="mega-columns">

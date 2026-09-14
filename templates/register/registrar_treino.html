@@ -2361,17 +2361,18 @@
 {% from "macros/exercicio_imagens.html" import botao_imagens_exercicio %}
 {% from "macros/exercicio_instrucoes.html" import botao_instrucoes_exercicio %}
 {% if exercicios %}
-{% set ns = namespace(descricao_treino=None) %}
+{% set ns = namespace(codigo_treino=None, nome_treino=None) %}
 {% for t in treinos_disponiveis %}
     {% if t.id|string == treino_selecionado %}
-        {% set ns.descricao_treino = t.descricao %}
+        {% set ns.codigo_treino = t.codigo %}
+        {% set ns.nome_treino = t.nome %}
     {% endif %}
 {% endfor %}
 <div class="card d-none" id="exerciciosCard">
     <div class="card-header bg-white p-3">
         <h4 class="mb-0">
             <i class="bi bi-list-check me-2" style="color: var(--primary-orange);"></i>
-            {% if ns.descricao_treino %}{{ ns.descricao_treino }}{% else %}Exercícios do Treino{% endif %}
+            {% if ns.nome_treino %}{{ ns.codigo_treino }} - {{ ns.nome_treino }}{% else %}Exercícios do Treino{% endif %}
             <span class="badge bg-secondary ms-2">{{ exercicios|length }} exercícios</span>
         </h4>
     </div>
