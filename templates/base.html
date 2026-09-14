@@ -1351,187 +1351,109 @@
             <ul class="navbar-nav mega-nav d-none d-lg-flex flex-row me-auto">
 
                 {% if current_user.is_admin %}
-                <li class="nav-item mega-item">
-                    <button type="button" class="nav-link mega-trigger {{ 'active' if request.blueprint in ['admin', 'version'] else '' }}" data-mega="admin" title="Painel" aria-label="Painel">
-                        <i class="bi bi-gear-fill"></i><span class="mega-trigger-label visually-hidden">Painel</span> <i class="bi bi-chevron-down mega-caret"></i>
-                    </button>
-                    <div class="mega-panel" data-mega-panel="admin">
-                        <div class="mega-grid mega-grid-1col">
-                            <a class="mega-card" href="{{ url_for('admin.contas') }}">
-                                <span class="mega-icon"><i class="bi bi-cash-coin"></i></span>
-                                <span>
-                                    <span class="mega-title">Contas e Cobrança</span>
-                                    <span class="mega-desc">Alunos e professores por plano e inadimplência</span>
-                                </span>
-                            </a>
-                            <a class="mega-card" href="{{ url_for('financeiro.painel') }}">
-                                <span class="mega-icon"><i class="bi bi-cash-stack"></i></span>
-                                <span>
-                                    <span class="mega-title">Financeiro</span>
-                                    <span class="mega-desc">Recebimentos, saldo no Asaas e taxas (confidencial)</span>
-                                </span>
-                            </a>
-                            <a class="mega-card" href="{{ url_for('admin.monitoramento') }}">
-                                <span class="mega-icon"><i class="bi bi-activity"></i></span>
-                                <span>
-                                    <span class="mega-title">Monitoramento</span>
-                                    <span class="mega-desc">CPU, memória, banco e cache em tempo real</span>
-                                </span>
-                            </a>
-                            <a class="mega-card" href="{{ url_for('admin.relatorio_telas') }}">
-                                <span class="mega-icon"><i class="bi bi-bar-chart-line"></i></span>
-                                <span>
-                                    <span class="mega-title">Telas Mais Acessadas</span>
-                                    <span class="mega-desc">Ranking de uso por tela, agregado por papel</span>
-                                </span>
-                            </a>
-                            <a class="mega-card" href="{{ url_for('admin.telas_controladas') }}">
-                                <span class="mega-icon"><i class="bi bi-toggles"></i></span>
-                                <span>
-                                    <span class="mega-title">Telas Controladas</span>
-                                    <span class="mega-desc">Escolher quais telas exigem plano pago</span>
-                                </span>
-                            </a>
-                            <a class="mega-card" href="{{ url_for('admin.crash_logs') }}">
-                                <span class="mega-icon"><i class="bi bi-bug-fill"></i></span>
-                                <span>
-                                    <span class="mega-title">Travamentos</span>
-                                    <span class="mega-desc">Erros de frontend e backend registrados</span>
-                                </span>
-                            </a>
-                        </div>
-                    </div>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.contas' else '' }}" href="{{ url_for('admin.contas') }}" title="Contas e Cobrança" aria-label="Contas e Cobrança">
+                        <i class="bi bi-cash-coin"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.blueprint == 'financeiro' else '' }}" href="{{ url_for('financeiro.painel') }}" title="Financeiro" aria-label="Financeiro">
+                        <i class="bi bi-cash-stack"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.monitoramento' else '' }}" href="{{ url_for('admin.monitoramento') }}" title="Monitoramento" aria-label="Monitoramento">
+                        <i class="bi bi-activity"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.relatorio_telas' else '' }}" href="{{ url_for('admin.relatorio_telas') }}" title="Telas Mais Acessadas" aria-label="Telas Mais Acessadas">
+                        <i class="bi bi-bar-chart-line"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.telas_controladas' else '' }}" href="{{ url_for('admin.telas_controladas') }}" title="Telas Controladas" aria-label="Telas Controladas">
+                        <i class="bi bi-toggles"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.crash_logs' else '' }}" href="{{ url_for('admin.crash_logs') }}" title="Travamentos" aria-label="Travamentos">
+                        <i class="bi bi-bug-fill"></i>
+                    </a>
                 </li>
                 {% endif %}
 
                 {% if current_user.is_professor() and not current_user.is_admin %}
-                <li class="nav-item mega-item">
-                    <button type="button" class="nav-link mega-trigger {{ 'active' if request.blueprint == 'professor' else '' }}" data-mega="professor" title="Professor" aria-label="Professor">
-                        <i class="bi bi-person-badge"></i><span class="mega-trigger-label visually-hidden">Professor</span> <i class="bi bi-chevron-down mega-caret"></i>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'professor.dashboard' else '' }}" href="{{ url_for('professor.dashboard') }}" title="Painel" aria-label="Painel">
+                        <i class="bi bi-speedometer2"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'professor.listar_alunos' else '' }}" href="{{ url_for('professor.listar_alunos') }}" title="Meus Alunos" aria-label="Meus Alunos">
+                        <i class="bi bi-people"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'professor.novo_aluno' else '' }}" href="{{ url_for('professor.novo_aluno') }}" title="Novo Aluno" aria-label="Novo Aluno">
+                        <i class="bi bi-person-plus"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'professor.solicitacoes' else '' }}" href="{{ url_for('professor.solicitacoes') }}" title="Solicitações" aria-label="Solicitações">
+                        <i class="bi bi-bell"></i>
                         {% if current_user.solicitacoes_pendentes_count > 0 %}
                             <span class="badge rounded-pill bg-danger mega-badge-dot">{{ current_user.solicitacoes_pendentes_count }}</span>
                         {% endif %}
-                    </button>
-                    <div class="mega-panel" data-mega-panel="professor">
-                        <div class="mega-grid">
-                            <a class="mega-card" href="{{ url_for('professor.dashboard') }}">
-                                <span class="mega-icon"><i class="bi bi-speedometer2"></i></span>
-                                <span>
-                                    <span class="mega-title">Painel</span>
-                                    <span class="mega-desc">O que precisa da sua atenção hoje</span>
-                                </span>
-                            </a>
-                            <a class="mega-card" href="{{ url_for('professor.listar_alunos') }}">
-                                <span class="mega-icon"><i class="bi bi-people"></i></span>
-                                <span>
-                                    <span class="mega-title">Meus Alunos</span>
-                                    <span class="mega-desc">Acompanhe o progresso de cada um</span>
-                                </span>
-                            </a>
-                            <a class="mega-card" href="{{ url_for('professor.novo_aluno') }}">
-                                <span class="mega-icon"><i class="bi bi-person-plus"></i></span>
-                                <span>
-                                    <span class="mega-title">Novo Aluno</span>
-                                    <span class="mega-desc">Cadastre um aluno diretamente</span>
-                                </span>
-                            </a>
-                            <a class="mega-card" href="{{ url_for('professor.solicitacoes') }}">
-                                <span class="mega-icon"><i class="bi bi-bell"></i></span>
-                                <span>
-                                    <span class="mega-title">
-                                        Solicitações
-                                        {% if current_user.solicitacoes_pendentes_count > 0 %}
-                                            <span class="badge bg-danger">{{ current_user.solicitacoes_pendentes_count }}</span>
-                                        {% endif %}
-                                    </span>
-                                    <span class="mega-desc">Pedidos de vínculo aguardando resposta</span>
-                                </span>
-                            </a>
-                        </div>
-                    </div>
+                    </a>
                 </li>
                 {% endif %}
 
                 {% if current_user.pode_gerenciar_treino_proprio() and not current_user.is_admin %}
-                <li class="nav-item mega-item">
-                    <button type="button" class="nav-link mega-trigger {{ 'active' if request.blueprint in ['aluno', 'calendar', 'stats'] else '' }}" data-mega="treino" title="{{ 'Meu Treino' if current_user.is_professor() else 'Treino' }}" aria-label="{{ 'Meu Treino' if current_user.is_professor() else 'Treino' }}">
-                        <i class="bi bi-heart-pulse"></i><span class="mega-trigger-label visually-hidden">{{ 'Meu Treino' if current_user.is_professor() else 'Treino' }}</span> <i class="bi bi-chevron-down mega-caret"></i>
-                    </button>
-                    <div class="mega-panel" data-mega-panel="treino">
-                        <div class="mega-columns">
-                            <div>
-                                <span class="mega-col-label">Acompanhamento</span>
-                                <div class="mega-grid mega-grid-1col">
-                                    <a class="mega-card" href="{{ url_for('aluno.dashboard') }}">
-                                        <span class="mega-icon"><i class="bi bi-speedometer2"></i></span>
-                                        <span>
-                                            <span class="mega-title">Dashboard</span>
-                                            <span class="mega-desc">Resumo do seu progresso</span>
-                                        </span>
-                                    </a>
-                                    <a class="mega-card" href="{{ url_for('calendar.calendario') }}">
-                                        <span class="mega-icon"><i class="bi bi-calendar"></i></span>
-                                        <span>
-                                            <span class="mega-title">Calendário</span>
-                                            <span class="mega-desc">Seus treinos ao longo do tempo</span>
-                                        </span>
-                                    </a>
-                                    <a class="mega-card" href="{{ url_for('aluno.estatisticas') }}">
-                                        <span class="mega-icon"><i class="bi bi-graph-up"></i></span>
-                                        <span>
-                                            <span class="mega-title">Estatísticas</span>
-                                            <span class="mega-desc">Evolução de carga e volume</span>
-                                        </span>
-                                    </a>
-                                    {% if current_user.is_aluno() %}
-                                    <a class="mega-card" href="{{ url_for('stats.visualizar_tabela') }}">
-                                        <span class="mega-icon"><i class="bi bi-table"></i></span>
-                                        <span>
-                                            <span class="mega-title">Tabela de Progresso</span>
-                                            <span class="mega-desc">Números por exercício</span>
-                                        </span>
-                                    </a>
-                                    {% endif %}
-                                    <a class="mega-card" href="{{ url_for('aluno.ranking') }}">
-                                        <span class="mega-icon"><i class="bi bi-trophy-fill"></i></span>
-                                        <span>
-                                            <span class="mega-title">Melhores Alunos</span>
-                                            <span class="mega-desc">Ranking dos últimos 30 dias</span>
-                                        </span>
-                                    </a>
-                                </div>
-                            </div>
-                            <div>
-                                <span class="mega-col-label">Gerenciar</span>
-                                <div class="mega-grid mega-grid-1col">
-                                    <a class="mega-card" href="{{ url_for('aluno.cadastrar_treinos') }}">
-                                        <span class="mega-icon"><i class="bi bi-clipboard2-plus"></i></span>
-                                        <span>
-                                            <span class="mega-title">Cadastrar Treinos</span>
-                                            <span class="mega-desc">Monte sua versão, treinos e exercícios</span>
-                                        </span>
-                                    </a>
-                                    <a class="mega-card" href="{{ url_for('aluno.exercicios') }}">
-                                        <span class="mega-icon"><i class="bi bi-list-check"></i></span>
-                                        <span>
-                                            <span class="mega-title">Meus Exercícios</span>
-                                            <span class="mega-desc">Catálogo pessoal de exercícios</span>
-                                        </span>
-                                    </a>
-                                    {% if current_user.is_aluno() %}
-                                    <a class="mega-card" href="{{ url_for('aluno.meu_professor') }}">
-                                        <span class="mega-icon"><i class="bi bi-person-badge"></i></span>
-                                        <span>
-                                            <span class="mega-title">Meu Professor</span>
-                                            <span class="mega-desc">Vínculo e solicitações</span>
-                                        </span>
-                                    </a>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.dashboard' else '' }}" href="{{ url_for('aluno.dashboard') }}" title="Dashboard" aria-label="Dashboard">
+                        <i class="bi bi-speedometer2"></i>
+                    </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.blueprint == 'calendar' else '' }}" href="{{ url_for('calendar.calendario') }}" title="Calendário" aria-label="Calendário">
+                        <i class="bi bi-calendar"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.estatisticas' else '' }}" href="{{ url_for('aluno.estatisticas') }}" title="Estatísticas" aria-label="Estatísticas">
+                        <i class="bi bi-graph-up"></i>
+                    </a>
+                </li>
+                {% if current_user.is_aluno() %}
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.blueprint == 'stats' else '' }}" href="{{ url_for('stats.visualizar_tabela') }}" title="Tabela de Progresso" aria-label="Tabela de Progresso">
+                        <i class="bi bi-table"></i>
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.ranking' else '' }}" href="{{ url_for('aluno.ranking') }}" title="Melhores Alunos" aria-label="Melhores Alunos">
+                        <i class="bi bi-trophy-fill"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.cadastrar_treinos' else '' }}" href="{{ url_for('aluno.cadastrar_treinos') }}" title="Cadastrar Treinos" aria-label="Cadastrar Treinos">
+                        <i class="bi bi-clipboard2-plus"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.exercicios' else '' }}" href="{{ url_for('aluno.exercicios') }}" title="Meus Exercícios" aria-label="Meus Exercícios">
+                        <i class="bi bi-list-check"></i>
+                    </a>
+                </li>
+                {% if current_user.is_aluno() %}
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.meu_professor' else '' }}" href="{{ url_for('aluno.meu_professor') }}" title="Meu Professor" aria-label="Meu Professor">
+                        <i class="bi bi-person-badge"></i>
+                    </a>
+                </li>
+                {% endif %}
                 {% endif %}
             </ul>
 
