@@ -45,6 +45,36 @@
     </div>
 </div>
 
+<div class="card mb-4 {% if not tela_assinatura_ativa %}border-warning{% endif %}">
+    <div class="card-body">
+        <h5 class="card-title mb-1">
+            <i class="bi bi-credit-card me-2" style="color: #F28C33;"></i>
+            Tela de assinatura
+        </h5>
+        <p class="text-muted">
+            Quando desativada, "Minha Assinatura" some do menu e fica bloqueada pra quem não é
+            admin (redireciona pra página inicial). Independente do modo grátis acima -- dá pra
+            esconder a tela de cobrança sem mexer em nenhuma outra regra de acesso.
+            {% if not tela_assinatura_ativa %}
+            <br><strong class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Tela de assinatura está DESATIVADA agora.</strong>
+            {% endif %}
+        </p>
+        <form method="POST" action="{{ url_for('admin.telas_controladas') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="acao" value="tela_assinatura">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch"
+                       name="tela_assinatura_ativa" id="tela-assinatura-ativa"
+                       {% if tela_assinatura_ativa %}checked{% endif %}
+                       onchange="this.form.submit()">
+                <label class="form-check-label" for="tela-assinatura-ativa">
+                    {% if tela_assinatura_ativa %}Tela visível (comportamento normal){% else %}Tela escondida/bloqueada{% endif %}
+                </label>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="card mb-4">
     <div class="card-body">
         <h5 class="card-title mb-1">

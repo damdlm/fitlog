@@ -421,13 +421,14 @@ def telas_controladas():
     exigem Fit/Pró/Premium ativo pra acessar (ver
     models.py:TelaControlada e utils/decorators.py:acesso_premium_
     required), edita o preço dos planos Fit/Pró/Premium (ver
-    services/plano_service.py) e liga/desliga a cobrança no app
-    inteiro -- modo grátis de lançamento (ver
+    services/plano_service.py), liga/desliga a cobrança no app
+    inteiro -- modo grátis de lançamento -- e liga/desliga a
+    visibilidade da própria tela de assinatura (ver
     services/configuracao_service.py).
 
-    Três formulários numa página só, diferenciados pelo campo oculto
+    Quatro formulários numa página só, diferenciados pelo campo oculto
     'acao' -- cada um processa e salva só a parte dele, sem mexer nas
-    outras duas."""
+    outras."""
     if request.method == "POST":
         acao = request.form.get("acao")
 
@@ -449,6 +450,15 @@ def telas_controladas():
                 flash('Cobrança desativada -- o app está liberado em modo grátis pra todo mundo.', 'warning')
             return redirect(url_for('admin.telas_controladas'))
 
+        if acao == "tela_assinatura":
+            ativa = request.form.get("tela_assinatura_ativa") == "on"
+            ConfiguracaoService.set_tela_assinatura_ativa(ativa)
+            if ativa:
+                flash('Tela de assinatura reativada -- volta a aparecer no menu pra todo mundo.', 'success')
+            else:
+                flash('Tela de assinatura desativada -- escondida do menu e bloqueada pra quem não é admin.', 'warning')
+            return redirect(url_for('admin.telas_controladas'))
+
         # acao == "telas" (ou ausente, formulário antigo sem o campo)
         chaves_marcadas = set(request.form.getlist("bloqueia"))
         TelaControladaService.atualizar(chaves_marcadas)
@@ -458,11 +468,13 @@ def telas_controladas():
     telas = TelaControladaService.listar_todas()
     planos = PlanoService.listar_editaveis()
     cobranca_ativa = ConfiguracaoService.cobranca_ativa()
+    tela_assinatura_ativa = ConfiguracaoService.tela_assinatura_ativa()
     return render_template(
         "admin/telas_controladas.html",
         telas=telas,
         planos=planos,
         cobranca_ativa=cobranca_ativa,
+        tela_assinatura_ativa=tela_assinatura_ativa,
     )
 
 

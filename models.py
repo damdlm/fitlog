@@ -404,11 +404,19 @@ class ConfiguracaoApp(db.Model):
     sem cobrar nada nem acionar o Asaas -- pensado pra usar nos
     primeiros meses após o lançamento do app. Ver
     services/billing_service.py:usuario_tem_acesso_premium,
-    pode_cadastrar_aluno e professor_acesso_alunos_liberado."""
+    pode_cadastrar_aluno e professor_acesso_alunos_liberado.
+
+    tela_assinatura_ativa=False esconde a tela "Minha Assinatura" (e
+    o link dela no menu) de quem não é admin -- independente de
+    cobranca_ativa. Pensado pra tirar a tela de cobrança de vista
+    durante o período grátis, sem precisar mexer em nenhuma outra
+    regra de acesso. Admin nunca é bloqueado por essa flag. Ver
+    routes/billing_routes.py."""
     __tablename__ = 'configuracao_app'
 
     id = db.Column(db.Integer, primary_key=True)
     cobranca_ativa = db.Column(db.Boolean, nullable=False, default=True)
+    tela_assinatura_ativa = db.Column(db.Boolean, nullable=False, default=True)
     atualizado_em = db.Column(
         db.DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -416,7 +424,7 @@ class ConfiguracaoApp(db.Model):
     )
 
     def __repr__(self):
-        return f'<ConfiguracaoApp cobranca_ativa={self.cobranca_ativa}>'
+        return f'<ConfiguracaoApp cobranca_ativa={self.cobranca_ativa} tela_assinatura_ativa={self.tela_assinatura_ativa}>'
 
 
 class TelaControlada(db.Model):

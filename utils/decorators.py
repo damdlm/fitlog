@@ -155,6 +155,36 @@ def professor_acesso_alunos_required(f):
     return decorated_function
 
 
+def tela_assinatura_ativa_required(f):
+    """Decorator pras rotas de /billing (minha_assinatura, faturas,
+    assinar, cancelar) -- bloqueia quando o admin desativou a tela de
+    assinatura (ver models.py:ConfiguracaoApp.tela_assinatura_ativa e
+    services/configuracao_service.py), independente de cobranca_ativa.
+    Pensado pra tirar a tela de vista durante o período grátis de
+    lançamento, sem mexer em nenhuma outra regra de acesso.
+
+    Admin nunca é bloqueado aqui (precisa poder checar/gerenciar
+    mesmo com a tela escondida dos demais usuários)."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            flash('Faça login para acessar esta página.', 'warning')
+            return redirect(url_for('auth.login'))
+
+        if current_user.is_admin:
+            return f(*args, **kwargs)
+
+        from services.configuracao_service import ConfiguracaoService
+        if not ConfiguracaoService.tela_assinatura_ativa():
+            if request.blueprint == 'api' or '/api/' in request.path:
+                return jsonify({'erro': 'tela_indisponivel'}), 404
+            flash('Essa página não está disponível no momento.', 'warning')
+            return redirect(url_for('main.index'))
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 def owner_or_admin(model_getter):
     """
     Decorator para verificar se o usuário atual é o dono do recurso ou admin.

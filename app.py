@@ -467,6 +467,7 @@ def create_app(config_class=None):
     @app.context_processor
     def utility_processor():
         from datetime import datetime
+        from services.configuracao_service import ConfiguracaoService
         return dict(
             data_atual_iso=data_atual_iso,
             data_atual_formatada=data_atual_formatada,
@@ -474,6 +475,7 @@ def create_app(config_class=None):
             formatar_data_para_input=formatar_data_para_input,
             now=datetime.now,
             google_site_verification=app.config.get('GOOGLE_SITE_VERIFICATION'),
+            tela_assinatura_ativa=ConfiguracaoService.tela_assinatura_ativa(),
         )
 
     # =============================================================

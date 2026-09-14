@@ -11,6 +11,7 @@ from extensions import limiter
 from models import db, Plano
 from services.billing_service import BillingService, AssinaturaAtualizadaError, AssinaturaJaAtivaError, DadosCobrancaIncompletosError, NadaParaCancelarError
 from services.configuracao_service import ConfiguracaoService
+from utils.decorators import tela_assinatura_ativa_required
 
 billing_bp = Blueprint('billing', __name__)
 logger = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ def webhook_asaas():
 
 @billing_bp.route('/minha-assinatura')
 @login_required
+@tela_assinatura_ativa_required
 def minha_assinatura():
     """Tela de status da assinatura do usuário logado -- uma cobrança
     só (aluno OU professor). Aluno vê trial/ativa/bloqueada do Plano
@@ -87,6 +89,7 @@ def minha_assinatura():
 
 @billing_bp.route('/minha-assinatura/faturas')
 @login_required
+@tela_assinatura_ativa_required
 def minhas_faturas():
     """Histórico de faturas (pagas/pendentes/vencidas) do usuário
     logado -- útil pro profissional que precisa de comprovante pra
@@ -108,6 +111,7 @@ def minhas_faturas():
 
 @billing_bp.route('/api/minha-assinatura')
 @login_required
+@tela_assinatura_ativa_required
 def api_minha_assinatura():
     """Mesma informação da tela acima, em JSON -- pra outras telas do
     front-end que precisam checar o status sem navegar pra cá (ex: um
@@ -166,6 +170,7 @@ def _telefone_valido(valor: str) -> str | None:
 
 @billing_bp.route('/assinar', methods=['POST'])
 @login_required
+@tela_assinatura_ativa_required
 @limiter.limit("10 per minute")
 def assinar():
     """Inicia (ou reaproveita) o checkout hospedado do Asaas e
@@ -295,6 +300,14 @@ def cancelar():
     """Cancela a assinatura do usuário logado -- protegido por CSRF
     normal, e o template já pede confirmação via diálogo do navegador
     antes de enviar o form (ver templates/billing/minha_assinatura.html).
+
+    Deliberadamente SEM @tela_assinatura_ativa_required -- mesmo com a
+    tela escondida (ver ConfiguracaoService.tela_assinatura_ativa),
+    cancelar nunca deve ficar bloqueado: seria prender alguém numa
+    assinatura paga sem forma de sair pela própria tela. Na prática,
+    com a tela de "Minha Assinatura" escondida não existe botão que
+    chegue aqui, então isso só importa se as duas flags forem mexidas
+    de forma inconsistente.
     Revoga o acesso premium imediatamente (ver
     BillingService.cancelar_assinatura)."""
     try:

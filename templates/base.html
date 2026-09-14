@@ -1576,7 +1576,7 @@
                                 <i class="bi bi-person"></i> Meu Perfil
                             </a>
                         </li>
-                        {% if (current_user.is_professor() or current_user.is_aluno()) and not current_user.is_admin %}
+                        {% if (current_user.is_professor() or current_user.is_aluno()) and not current_user.is_admin and tela_assinatura_ativa %}
                         <li>
                             <a class="dropdown-item" href="{{ url_for('billing.minha_assinatura') }}">
                                 <i class="bi bi-credit-card"></i> Minha Assinatura
