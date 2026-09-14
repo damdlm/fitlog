@@ -265,6 +265,70 @@ class TestTelasControladas:
             assert all(not t.bloqueia_sem_plano for t in TelaControlada.query.all())
 
 
+class TestTelasControladasProfessor:
+    """/admin/telas-controladas (form acao=telas_professor) -- grupo
+    SEPARADO de TestTelasControladas: aqui o admin escolhe quais telas
+    de gestão de alunos do professor bloqueiam quando ele está
+    inadimplente/com plano vencido (ver
+    services/tela_controlada_professor_service.py)."""
+
+    def _criar_admin(self, app, username='admin_telas_prof'):
+        u = _criar_usuario(username, tipo_usuario='admin')
+        with app.app_context():
+            from models import User
+            User.query.filter_by(id=u.id).update({'is_admin': True})
+            db.session.commit()
+        return u
+
+    def test_get_lista_as_telas_seedadas_separado_do_outro_grupo(self, client, app):
+        self._criar_admin(app)
+        _login(client, 'admin_telas_prof')
+
+        resp = client.get('/admin/telas-controladas')
+        assert resp.status_code == 200
+        corpo = resp.get_data(as_text=True)
+        assert 'Telas Controladas do Professor' in corpo
+        assert 'Painel' in corpo
+        assert 'Meus Alunos' in corpo
+        assert 'Novo Aluno' in corpo
+        assert 'Solicitações' in corpo
+
+    def test_post_atualiza_quais_telas_do_professor_bloqueiam(self, client, app):
+        from models import TelaControladaProfessor
+        self._criar_admin(app)
+        _login(client, 'admin_telas_prof')
+
+        resp = client.post('/admin/telas-controladas', data={
+            'acao': 'telas_professor',
+            'bloqueia_professor': ['professor_meus_alunos'],
+        }, follow_redirects=True)
+        assert resp.status_code == 200
+
+        with app.app_context():
+            bloqueadas = {t.chave for t in TelaControladaProfessor.query.filter_by(bloqueia_sem_plano=True).all()}
+            assert bloqueadas == {'professor_meus_alunos'}
+            assert TelaControladaProfessor.query.filter_by(chave='professor_dashboard').first().bloqueia_sem_plano is False
+
+    def test_post_telas_professor_nao_mexe_no_outro_grupo(self, client, app):
+        """Salvar o form de telas do professor não pode alterar nada
+        do grupo TelaControlada (Estatísticas/FitBot/etc) -- são
+        tabelas e formulários independentes."""
+        from models import TelaControlada
+        self._criar_admin(app)
+        _login(client, 'admin_telas_prof')
+
+        client.post('/admin/telas-controladas', data={
+            'acao': 'telas_professor',
+            'bloqueia_professor': [],
+        }, follow_redirects=True)
+
+        with app.app_context():
+            # estatisticas/fitbot/tabela_progresso continuam True (seed
+            # original) -- não foram tocados pelo form de professor.
+            assert TelaControlada.query.filter_by(chave='estatisticas').first().bloqueia_sem_plano is True
+            assert TelaControlada.query.filter_by(chave='fitbot').first().bloqueia_sem_plano is True
+
+
 class TestGerenciar:
     """/admin/gerenciar -- acessível a qualquer usuário logado, cada
     um vendo só os próprios dados (treinos, exercícios, últimas

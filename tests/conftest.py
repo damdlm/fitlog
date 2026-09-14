@@ -38,6 +38,7 @@ def app():
     with app.app_context():
         _db.create_all()
         _seed_telas_controladas()
+        _seed_telas_controladas_professor()
         yield app
         _db.session.remove()
         _db.drop_all()
@@ -55,6 +56,19 @@ def _seed_telas_controladas():
         TelaControlada(chave='calendario', nome_exibicao='Calendário', bloqueia_sem_plano=False),
         TelaControlada(chave='ranking', nome_exibicao='Ranking', bloqueia_sem_plano=False),
         TelaControlada(chave='dashboard', nome_exibicao='Dashboard', bloqueia_sem_plano=False),
+    ])
+    _db.session.commit()
+
+
+def _seed_telas_controladas_professor():
+    """Espelha o seed da migration d5e6f7a8b9c0 (telas_controladas_
+    professor) -- mesmo motivo de _seed_telas_controladas acima."""
+    from models import TelaControladaProfessor
+    _db.session.bulk_save_objects([
+        TelaControladaProfessor(chave='professor_dashboard', nome_exibicao='Painel', bloqueia_sem_plano=True),
+        TelaControladaProfessor(chave='professor_meus_alunos', nome_exibicao='Meus Alunos', bloqueia_sem_plano=True),
+        TelaControladaProfessor(chave='professor_novo_aluno', nome_exibicao='Novo Aluno', bloqueia_sem_plano=True),
+        TelaControladaProfessor(chave='professor_solicitacoes', nome_exibicao='Solicitações', bloqueia_sem_plano=True),
     ])
     _db.session.commit()
 

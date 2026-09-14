@@ -8,6 +8,7 @@ from services.billing_service import BillingService
 from services.monitoring_service import MonitoringService
 from services.acesso_tela_service import AcessoTelaService
 from services.tela_controlada_service import TelaControladaService
+from services.tela_controlada_professor_service import TelaControladaProfessorService
 from services.crash_log_service import CrashLogService
 from services.plano_service import PlanoService
 from services.configuracao_service import ConfiguracaoService
@@ -420,13 +421,17 @@ def telas_controladas():
     """Página onde o admin escolhe quais telas ficam livres e quais
     exigem Fit/Pró/Premium ativo pra acessar (ver
     models.py:TelaControlada e utils/decorators.py:acesso_premium_
-    required), edita o preço dos planos Fit/Pró/Premium (ver
+    required), quais telas de gestão de alunos do professor ficam
+    bloqueadas quando ele está inadimplente/com plano vencido (ver
+    models.py:TelaControladaProfessor e utils/decorators.py:
+    professor_acesso_tela_required -- grupo separado do anterior),
+    edita o preço dos planos Fit/Pró/Premium (ver
     services/plano_service.py), liga/desliga a cobrança no app
     inteiro -- modo grátis de lançamento -- e liga/desliga a
     visibilidade da própria tela de assinatura (ver
     services/configuracao_service.py).
 
-    Quatro formulários numa página só, diferenciados pelo campo oculto
+    Cinco formulários numa página só, diferenciados pelo campo oculto
     'acao' -- cada um processa e salva só a parte dele, sem mexer nas
     outras."""
     if request.method == "POST":
@@ -459,6 +464,12 @@ def telas_controladas():
                 flash('Tela de assinatura desativada -- escondida do menu e bloqueada pra quem não é admin.', 'warning')
             return redirect(url_for('admin.telas_controladas'))
 
+        if acao == "telas_professor":
+            chaves_marcadas = set(request.form.getlist("bloqueia_professor"))
+            TelaControladaProfessorService.atualizar(chaves_marcadas)
+            flash('Configuração de telas do professor salva!', 'success')
+            return redirect(url_for('admin.telas_controladas'))
+
         # acao == "telas" (ou ausente, formulário antigo sem o campo)
         chaves_marcadas = set(request.form.getlist("bloqueia"))
         TelaControladaService.atualizar(chaves_marcadas)
@@ -466,12 +477,14 @@ def telas_controladas():
         return redirect(url_for('admin.telas_controladas'))
 
     telas = TelaControladaService.listar_todas()
+    telas_professor = TelaControladaProfessorService.listar_todas()
     planos = PlanoService.listar_editaveis()
     cobranca_ativa = ConfiguracaoService.cobranca_ativa()
     tela_assinatura_ativa = ConfiguracaoService.tela_assinatura_ativa()
     return render_template(
         "admin/telas_controladas.html",
         telas=telas,
+        telas_professor=telas_professor,
         planos=planos,
         cobranca_ativa=cobranca_ativa,
         tela_assinatura_ativa=tela_assinatura_ativa,

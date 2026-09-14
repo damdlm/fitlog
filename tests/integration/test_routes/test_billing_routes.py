@@ -650,6 +650,37 @@ class TestGatingAcessoAosAlunos:
             resp = client.get(path)
             assert resp.status_code == 200, f'não deveria bloquear em {path}'
 
+    def test_admin_desmarcou_tela_do_professor_libera_mesmo_bloqueado(self, client, app):
+        """O gate das 4 telas agregadas é configurável (ver
+        TelaControladaProfessorService/models.TelaControladaProfessor,
+        grupo separado de TelaControlada) -- se o admin desmarcar a
+        tela em /admin/telas-controladas, ela fica livre mesmo pra um
+        professor inadimplente/com plano vencido."""
+        from services.tela_controlada_professor_service import TelaControladaProfessorService
+        with app.app_context():
+            _criar_planos()
+            professor = _criar_usuario('prof_bloqueado_tela_liberada', tipo_usuario='professor')
+            _vincular_alunos(professor, 5)
+            pro = Plano.query.filter_by(codigo='professor_pro').first()
+            assinatura = BillingService.iniciar_trial(professor)
+            assinatura.status = 'blocked'
+            assinatura.plano_id = pro.id
+            db.session.commit()
+            # Admin desmarca só 'professor_meus_alunos' -- as outras 3
+            # continuam bloqueadas (seed default).
+            TelaControladaProfessorService.atualizar({
+                'professor_dashboard', 'professor_novo_aluno', 'professor_solicitacoes'
+            })
+            professor_ref = User.query.get(professor.id)
+
+        _login(client, professor_ref)
+        resp = client.get('/professor/alunos')
+        assert resp.status_code == 200
+
+        resp = client.get('/professor/dashboard', follow_redirects=False)
+        assert resp.status_code == 302
+        assert '/billing/minha-assinatura' in resp.headers.get('Location', '')
+
 
 # ---------------------------------------------------------------------
 # POST /billing/assinar -- prevenção de cobrança dupla

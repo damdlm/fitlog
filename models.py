@@ -455,6 +455,46 @@ class TelaControlada(db.Model):
         return f'<TelaControlada {self.chave} bloqueia={self.bloqueia_sem_plano}>'
 
 
+class TelaControladaProfessor(db.Model):
+    """Registro das telas de GESTÃO DE ALUNOS do professor que o admin
+    pode escolher bloquear quando o professor está inadimplente/com
+    plano vencido (mais de 2 alunos, exigindo Pró/Premium, e
+    assinatura com status 'blocked' -- ver
+    BillingService.professor_acesso_alunos_liberado).
+
+    Propositalmente uma tabela separada de TelaControlada: aquela
+    outra gate usa BillingService.usuario_tem_acesso_premium (Fit/Pró/
+    Premium ativo, vale igual pra aluno e professor, pensada pra
+    Estatísticas/FitBot/etc); esta aqui é específica da regra de
+    limite de alunos do professor (ver utils/decorators.py:
+    professor_acesso_tela_required) e não deve se misturar com a
+    outra -- são categorias de bloqueio diferentes, com telas e
+    condições diferentes.
+
+    `chave` é o identificador estável usado no código (decorator
+    @professor_acesso_tela_required(chave)) -- nunca muda mesmo que
+    `nome_exibicao` mude. `bloqueia_sem_plano` é o único campo que o
+    admin edita: quando True, a tela é bloqueada pra professor
+    inadimplente/com plano vencido; quando False, a tela fica livre
+    mesmo pra quem está bloqueado.
+
+    O admin nunca cria/apaga linha por aqui -- só liga/desliga as que
+    já existem (seedadas na migration). Adicionar uma tela nova ao
+    controle é sempre uma mudança de código (decorar a rota + inserir
+    a linha), não uma ação do admin."""
+    __tablename__ = 'telas_controladas_professor'
+
+    id = db.Column(db.Integer, primary_key=True)
+    chave = db.Column(db.String(50), unique=True, nullable=False)
+    nome_exibicao = db.Column(db.String(100), nullable=False)
+    bloqueia_sem_plano = db.Column(db.Boolean, nullable=False, default=False)
+    atualizado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+                               onupdate=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<TelaControladaProfessor {self.chave} bloqueia={self.bloqueia_sem_plano}>'
+
+
 class Assinatura(db.Model):
     """Estado de cobrança de um usuário (aluno ou professor) -- UMA
     linha por usuário. Espelha o status vindo do gateway de pagamento

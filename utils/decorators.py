@@ -126,15 +126,19 @@ def acesso_premium_required(tela_chave):
 
 
 def professor_acesso_alunos_required(f):
-    """Decorator para as telas de gestão de alunos do professor --
-    tanto as agregadas (Painel, Meus Alunos, Novo Aluno, Solicitações)
-    quanto as que operam sobre um aluno específico (rotas com
-    <int:aluno_id> em professor_routes.py) -- bloqueia quando o
-    professor já passou da faixa gratuita (mais de 2 alunos, exigindo
-    Pró/Premium) e está com a assinatura 'blocked' (carência de 15
-    dias de atraso esgotada -- ver
-    services/billing_service.py:professor_acesso_alunos_liberado). O
-    vínculo com os alunos não é apagado, só o acesso às telas.
+    """Decorator para as telas do professor que operam sobre um aluno
+    específico (rotas com <int:aluno_id> em professor_routes.py) --
+    bloqueia INCONDICIONALMENTE (sem passar pela tela "Telas
+    Controladas do Professor" do admin) quando o professor já passou
+    da faixa gratuita (mais de 2 alunos, exigindo Pró/Premium) e está
+    com a assinatura 'blocked' (carência de 15 dias de atraso esgotada
+    -- ver services/billing_service.py:professor_acesso_alunos_
+    liberado). O vínculo com os alunos não é apagado, só o acesso às
+    telas.
+
+    Para as telas AGREGADAS (Painel, Meus Alunos, Novo Aluno,
+    Solicitações), que o admin pode escolher liberar/bloquear
+    individualmente, ver professor_acesso_tela_required abaixo.
 
     Só bloqueia professor -- aluno e admin nunca são afetados aqui (a
     checagem de posse do aluno em si continua sendo feita dentro de
@@ -155,6 +159,55 @@ def professor_acesso_alunos_required(f):
 
         return f(*args, **kwargs)
     return decorated_function
+
+
+def professor_acesso_tela_required(tela_chave):
+    """Decorator para as telas AGREGADAS de gestão de alunos do
+    professor (Painel, Meus Alunos, Novo Aluno, Solicitações) --
+    bloqueia professor inadimplente/com plano vencido (mesma condição
+    de professor_acesso_alunos_required: mais de 2 alunos e assinatura
+    'blocked'), MAS só se a tela em questão estiver marcada como
+    bloqueada pelo admin em "Telas Controladas do Professor" (ver
+    models.py:TelaControladaProfessor e
+    services/tela_controlada_professor_service.py). Uma tela livre
+    nunca bloqueia ninguém, mesmo com o professor inadimplente.
+
+    Grupo de configuração propositalmente SEPARADO da tela "Telas
+    Controladas" já existente (models.py:TelaControlada) -- aquela
+    cobre o gate de assinatura Fit/Pró/Premium ativa (Estatísticas/
+    FitBot/etc, via BillingService.usuario_tem_acesso_premium); esta
+    aqui cobre a regra de limite de alunos + inadimplência do
+    professor (via BillingService.professor_acesso_alunos_liberado),
+    que já internamente pula a regra quando a Cobrança está desativada
+    globalmente (modo grátis de lançamento).
+
+    tela_chave é o identificador estável da tela (ver seed na
+    migration de telas_controladas_professor) -- uso:
+    @professor_acesso_tela_required('professor_dashboard').
+
+    Só bloqueia professor -- aluno e admin nunca são afetados aqui."""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                flash('Faça login para acessar esta página.', 'warning')
+                return redirect(url_for('auth.login'))
+
+            if current_user.is_admin or not current_user.is_professor():
+                return f(*args, **kwargs)
+
+            from services.tela_controlada_professor_service import TelaControladaProfessorService
+            if not TelaControladaProfessorService.esta_bloqueada(tela_chave):
+                return f(*args, **kwargs)
+
+            from services.billing_service import BillingService
+            if not BillingService.professor_acesso_alunos_liberado(current_user):
+                flash('Regularize o pagamento do seu plano para voltar a acessar esta área.', 'warning')
+                return redirect(url_for('billing.minha_assinatura'))
+
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 
 def tela_assinatura_ativa_required(f):

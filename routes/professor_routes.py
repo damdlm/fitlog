@@ -9,7 +9,7 @@ from services.musculo_service import MusculoService
 from services.billing_service import BillingService
 from services.dashboard_service import DashboardService
 from services.notificacao_service import NotificacaoService
-from utils.decorators import professor_acesso_alunos_required
+from utils.decorators import professor_acesso_alunos_required, professor_acesso_tela_required
 from extensions import limiter
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 @professor_bp.route('/dashboard')
 @login_required
-@professor_acesso_alunos_required
+@professor_acesso_tela_required('professor_dashboard')
 def dashboard():
     """Painel operacional do professor: 'o que eu preciso fazer hoje'.
 
@@ -36,8 +36,9 @@ def dashboard():
     escopados a current_user.id (nunca a um ID vindo do request) --
     mesmo padrão de autorização das demais rotas deste arquivo. Não é
     uma tela premium (não passa por @acesso_premium_required), mas
-    fica sujeita ao mesmo bloqueio por inadimplência das demais telas
-    de gestão de alunos (ver professor_acesso_alunos_required).
+    fica sujeita ao bloqueio por inadimplência configurável pelo admin
+    em "Telas Controladas do Professor" (ver
+    professor_acesso_tela_required).
     """
     if not current_user.is_professor() and not current_user.is_admin:
         flash('Acesso negado.', 'danger')
@@ -62,7 +63,7 @@ def dashboard():
 
 @professor_bp.route('/alunos')
 @login_required
-@professor_acesso_alunos_required
+@professor_acesso_tela_required('professor_meus_alunos')
 def listar_alunos():
     """Lista os alunos vinculados e ativos do professor"""
     if not current_user.is_professor() and not current_user.is_admin:
@@ -110,7 +111,7 @@ def listar_alunos():
 
 @professor_bp.route('/aluno/novo', methods=['GET', 'POST'])
 @login_required
-@professor_acesso_alunos_required
+@professor_acesso_tela_required('professor_novo_aluno')
 def novo_aluno():
     """Cadastra um novo aluno e já vincula ao professor"""
     if not current_user.is_professor() and not current_user.is_admin:
@@ -315,7 +316,7 @@ def editar_aluno(aluno_id):
 
 @professor_bp.route('/solicitacoes')
 @login_required
-@professor_acesso_alunos_required
+@professor_acesso_tela_required('professor_solicitacoes')
 def solicitacoes():
     """Lista todas as solicitações de vínculo pendentes"""
     if not current_user.is_professor() and not current_user.is_admin:
@@ -332,7 +333,7 @@ def solicitacoes():
 
 @professor_bp.route('/solicitacao/<int:solicitacao_id>/aprovar')
 @login_required
-@professor_acesso_alunos_required
+@professor_acesso_tela_required('professor_solicitacoes')
 def aprovar_solicitacao(solicitacao_id):
     """Aprova uma solicitação de vínculo"""
     if not current_user.is_professor() and not current_user.is_admin:
@@ -377,7 +378,7 @@ def aprovar_solicitacao(solicitacao_id):
 
 @professor_bp.route('/solicitacao/<int:solicitacao_id>/recusar')
 @login_required
-@professor_acesso_alunos_required
+@professor_acesso_tela_required('professor_solicitacoes')
 def recusar_solicitacao(solicitacao_id):
     """Recusa uma solicitação de vínculo"""
     if not current_user.is_professor() and not current_user.is_admin:
