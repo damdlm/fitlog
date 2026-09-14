@@ -126,11 +126,13 @@ def acesso_premium_required(tela_chave):
 
 
 def professor_acesso_alunos_required(f):
-    """Decorator para as telas do professor que operam sobre um aluno
-    específico (ver rotas com <int:aluno_id> em professor_routes.py) --
-    bloqueia quando o professor já passou da faixa gratuita (mais de 2
-    alunos, exigindo Pró/Premium) e está com a assinatura 'blocked'
-    (carência de 15 dias de atraso esgotada -- ver
+    """Decorator para as telas de gestão de alunos do professor --
+    tanto as agregadas (Painel, Meus Alunos, Novo Aluno, Solicitações)
+    quanto as que operam sobre um aluno específico (rotas com
+    <int:aluno_id> em professor_routes.py) -- bloqueia quando o
+    professor já passou da faixa gratuita (mais de 2 alunos, exigindo
+    Pró/Premium) e está com a assinatura 'blocked' (carência de 15
+    dias de atraso esgotada -- ver
     services/billing_service.py:professor_acesso_alunos_liberado). O
     vínculo com os alunos não é apagado, só o acesso às telas.
 

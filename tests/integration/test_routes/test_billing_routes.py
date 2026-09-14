@@ -614,6 +614,42 @@ class TestGatingAcessoAosAlunos:
         resp = client.get(f'/professor/aluno/{aluno_id}')
         assert resp.status_code == 200
 
+    def test_professor_bloqueado_e_bloqueado_no_painel_alunos_novo_e_solicitacoes(self, client, app):
+        """As 4 telas agregadas do professor (Painel, Meus Alunos, Novo
+        Aluno, Solicitações) devem seguir a mesma regra das telas por
+        aluno específico: bloqueadas e redirecionadas pra assinatura
+        quando o professor já exige Pró/Premium (mais de 2 alunos) e
+        está com a assinatura em 'blocked'."""
+        with app.app_context():
+            _criar_planos()
+            professor = _criar_usuario('prof_bloqueado_telas_agregadas', tipo_usuario='professor')
+            _vincular_alunos(professor, 5)
+            pro = Plano.query.filter_by(codigo='professor_pro').first()
+            assinatura = BillingService.iniciar_trial(professor)
+            assinatura.status = 'blocked'
+            assinatura.plano_id = pro.id
+            db.session.commit()
+            professor_ref = User.query.get(professor.id)
+
+        _login(client, professor_ref)
+        for path in ('/professor/dashboard', '/professor/alunos', '/professor/aluno/novo', '/professor/solicitacoes'):
+            resp = client.get(path, follow_redirects=False)
+            assert resp.status_code == 302, f'esperava bloqueio em {path}'
+            assert '/billing/minha-assinatura' in resp.headers.get('Location', ''), f'esperava redirect pra assinatura em {path}'
+
+    def test_professor_ate_2_alunos_nunca_e_bloqueado_no_painel_alunos_novo_e_solicitacoes(self, client, app):
+        with app.app_context():
+            _criar_planos()
+            professor = _criar_usuario('prof_2alunos_telas_agregadas', tipo_usuario='professor')
+            _vincular_alunos(professor, 2)
+            db.session.commit()
+            professor_ref = User.query.get(professor.id)
+
+        _login(client, professor_ref)
+        for path in ('/professor/dashboard', '/professor/alunos', '/professor/aluno/novo', '/professor/solicitacoes'):
+            resp = client.get(path)
+            assert resp.status_code == 200, f'não deveria bloquear em {path}'
+
 
 # ---------------------------------------------------------------------
 # POST /billing/assinar -- prevenção de cobrança dupla

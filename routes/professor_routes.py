@@ -28,14 +28,16 @@ logger = logging.getLogger(__name__)
 
 @professor_bp.route('/dashboard')
 @login_required
+@professor_acesso_alunos_required
 def dashboard():
     """Painel operacional do professor: 'o que eu preciso fazer hoje'.
 
     Todos os números vêm de DashboardService.dados_professor, sempre
     escopados a current_user.id (nunca a um ID vindo do request) --
     mesmo padrão de autorização das demais rotas deste arquivo. Não é
-    uma tela premium (não passa por @acesso_premium_required): é a
-    ferramenta de trabalho básica do professor, igual a listar_alunos.
+    uma tela premium (não passa por @acesso_premium_required), mas
+    fica sujeita ao mesmo bloqueio por inadimplência das demais telas
+    de gestão de alunos (ver professor_acesso_alunos_required).
     """
     if not current_user.is_professor() and not current_user.is_admin:
         flash('Acesso negado.', 'danger')
@@ -60,6 +62,7 @@ def dashboard():
 
 @professor_bp.route('/alunos')
 @login_required
+@professor_acesso_alunos_required
 def listar_alunos():
     """Lista os alunos vinculados e ativos do professor"""
     if not current_user.is_professor() and not current_user.is_admin:
@@ -107,6 +110,7 @@ def listar_alunos():
 
 @professor_bp.route('/aluno/novo', methods=['GET', 'POST'])
 @login_required
+@professor_acesso_alunos_required
 def novo_aluno():
     """Cadastra um novo aluno e já vincula ao professor"""
     if not current_user.is_professor() and not current_user.is_admin:
@@ -311,6 +315,7 @@ def editar_aluno(aluno_id):
 
 @professor_bp.route('/solicitacoes')
 @login_required
+@professor_acesso_alunos_required
 def solicitacoes():
     """Lista todas as solicitações de vínculo pendentes"""
     if not current_user.is_professor() and not current_user.is_admin:
@@ -327,6 +332,7 @@ def solicitacoes():
 
 @professor_bp.route('/solicitacao/<int:solicitacao_id>/aprovar')
 @login_required
+@professor_acesso_alunos_required
 def aprovar_solicitacao(solicitacao_id):
     """Aprova uma solicitação de vínculo"""
     if not current_user.is_professor() and not current_user.is_admin:
@@ -371,6 +377,7 @@ def aprovar_solicitacao(solicitacao_id):
 
 @professor_bp.route('/solicitacao/<int:solicitacao_id>/recusar')
 @login_required
+@professor_acesso_alunos_required
 def recusar_solicitacao(solicitacao_id):
     """Recusa uma solicitação de vínculo"""
     if not current_user.is_professor() and not current_user.is_admin:
