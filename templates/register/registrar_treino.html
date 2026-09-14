@@ -2322,6 +2322,13 @@
 {% endif %}
 
 {% if exercicios %}
+{% set ns = namespace(codigo_treino=None, nome_treino=None) %}
+{% for t in treinos_disponiveis %}
+    {% if t.id|string == treino_selecionado %}
+        {% set ns.codigo_treino = t.codigo %}
+        {% set ns.nome_treino = t.nome %}
+    {% endif %}
+{% endfor %}
 <div class="empty-state mb-4" id="exerciciosProntoState">
     <div class="empty-icon is-play-trigger" id="playIniciarTreino" role="button" tabindex="0"
          aria-label="Iniciar treino">
@@ -2334,7 +2341,7 @@
 
 <div class="resumo-exercicios-preview mb-4" id="resumoExerciciosPreview">
     <h6 class="resumo-exercicios-titulo">
-        <i class="bi bi-list-check"></i>Exercícios deste treino
+        <i class="bi bi-list-check"></i>{% if ns.nome_treino %}{{ ns.codigo_treino }} - {{ ns.nome_treino }}{% else %}Exercícios deste treino{% endif %}
     </h6>
     <ul class="resumo-exercicios-lista">
         {% for ex in exercicios %}
@@ -2361,13 +2368,6 @@
 {% from "macros/exercicio_imagens.html" import botao_imagens_exercicio %}
 {% from "macros/exercicio_instrucoes.html" import botao_instrucoes_exercicio %}
 {% if exercicios %}
-{% set ns = namespace(codigo_treino=None, nome_treino=None) %}
-{% for t in treinos_disponiveis %}
-    {% if t.id|string == treino_selecionado %}
-        {% set ns.codigo_treino = t.codigo %}
-        {% set ns.nome_treino = t.nome %}
-    {% endif %}
-{% endfor %}
 <div class="card d-none" id="exerciciosCard">
     <div class="card-header bg-white p-3">
         <h4 class="mb-0">
