@@ -184,7 +184,7 @@
     }
     .btn-abrir-series-modal {
         flex-shrink: 0;
-        width: 20px;
+        width: 24px;
         min-height: 44px;
         display: flex;
         align-items: center;
@@ -192,7 +192,7 @@
         border: none;
         background: transparent;
         color: #8a857a;
-        font-size: 1.05rem;
+        font-size: 1.15rem;
         cursor: pointer;
         border-radius: var(--radius-sm);
         transition: color 0.15s ease, background-color 0.15s ease;
@@ -1075,7 +1075,15 @@
     @media (max-width: 767.98px) {
         .display-6 { font-size: 1.5rem; }
 
-        .card-body.p-4 { padding: 1rem !important; }
+        .card-body.p-4 { padding: 1rem 0.5rem !important; }
+
+        /* Reduz a margem lateral da página (herdada do .container global,
+           15px de cada lado) só nesta tela, pra sobrar mais largura pros
+           cards de exercício e pro botão de séries individuais. */
+        main.container {
+            padding-left: 6px !important;
+            padding-right: 6px !important;
+        }
 
         /* Rótulos grandes do formulário de busca pesam menos no topo */
         .card-body .form-label.fs-5 {
