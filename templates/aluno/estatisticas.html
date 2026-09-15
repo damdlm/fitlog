@@ -150,6 +150,64 @@
         display: block;
     }
 
+    /* ===== Recordes Pessoais ===== */
+    .est-pr-scroll {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+    .est-pr-card {
+        flex: 0 0 auto;
+        min-width: 168px;
+        border-radius: 14px;
+        border: 1px solid rgba(242, 140, 51, 0.25);
+        background: linear-gradient(135deg, rgba(242,140,51,0.08) 0%, rgba(255,255,255,0) 60%);
+        padding: 14px 16px;
+    }
+    .est-pr-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-bottom: 6px;
+    }
+    .est-pr-nome {
+        font-weight: 600;
+        color: var(--secondary-color);
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+    }
+    .est-pr-valor {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--secondary-color);
+    }
+    .est-pr-valor .unidade {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #8a8a8a;
+    }
+    .est-pr-data {
+        font-size: 0.74rem;
+        color: #8a8a8a;
+        margin-top: 2px;
+    }
+    .est-1rm-select {
+        border-radius: 999px;
+        border: 1px solid rgba(242, 140, 51, 0.3);
+        background: white;
+        color: var(--primary-color);
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 5px 12px;
+        max-width: 220px;
+    }
+
     /* ===== Atividade ===== */
     .est-tempo-stats {
         display: flex;
@@ -241,43 +299,43 @@
     </div>
 </div>
 
-<div class="row g-3 mb-3">
-    <!-- Gráfico de Volume por Músculo -->
-    <div class="col-lg-6">
-        <div class="card est-card h-100">
-            <div class="card-header bg-white border-0 pb-0">
-                <h6 class="fw-bold mb-0">
-                    <i class="bi bi-pie-chart me-1" style="color: #F28C33;"></i>Volume por Músculo
-                </h6>
-            </div>
-            <div class="card-body">
-                <canvas id="muscleChart" height="260"></canvas>
-            </div>
+<!-- Recordes Pessoais -->
+<div class="card est-card mb-3">
+    <div class="card-header bg-white border-0 pb-0">
+        <h6 class="fw-bold mb-0">
+            <i class="bi bi-trophy-fill me-1" style="color: #F28C33;"></i>Recordes Pessoais
+            <span class="fw-normal text-muted" style="font-size: 0.8rem;">(últimos 60 dias)</span>
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="est-pr-scroll" id="prScroll"></div>
+        <div class="est-empty" id="prVazio" style="display: none;">
+            <i class="bi bi-trophy"></i>
+            Nenhum recorde novo nos últimos 60 dias. Bora bater um PR?
         </div>
     </div>
+</div>
 
-    <!-- Ranking por Músculo -->
-    <div class="col-lg-6">
-        <div class="card est-card h-100">
-            <div class="card-header bg-white border-0 pb-0">
-                <h6 class="fw-bold mb-0">
-                    <i class="bi bi-bar-chart-steps me-1" style="color: #F28C33;"></i>Ranking por Músculo
-                </h6>
-            </div>
-            <div class="card-body" style="max-height: 320px; overflow-y: auto;">
-                {% set musculos_ordenados = musculo_stats.items()|sort(attribute='1.volume_total', reverse=True) %}
-                {% for musculo, stats in musculos_ordenados %}
-                <div class="est-ranking-item">
-                    <div class="est-ranking-top">
-                        <span class="est-ranking-nome">{{ musculo }}</span>
-                        <span class="est-ranking-valor">{{ stats.volume_total|int }}kg · {{ stats.qtd_registros }} registros</span>
-                    </div>
-                    <div class="est-ranking-bar-bg">
-                        <div class="est-ranking-bar-fill" style="width: {{ ((stats.volume_total / volume_maximo_musculo * 100) if volume_maximo_musculo > 0 else 0)|round(1) }}%;"></div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
+<!-- Progressão de Força (1RM estimado) -->
+<div class="card est-card mb-3">
+    <div class="card-header bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 pb-0">
+        <h6 class="fw-bold mb-0">
+            <i class="bi bi-graph-up-arrow me-1" style="color: #F28C33;"></i>Progressão de Força
+            <span class="fw-normal text-muted" style="font-size: 0.8rem;">(1RM estimado)</span>
+        </h6>
+        {% if exercicios_selecionaveis %}
+        <select class="est-1rm-select" id="seletor1RM">
+            {% for ex in exercicios_selecionaveis %}
+            <option value="{{ ex.tipo }}_{{ ex.id }}">{{ ex.nome }}</option>
+            {% endfor %}
+        </select>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <canvas id="rmChart" height="260" style="display: none;"></canvas>
+        <div class="est-empty" id="rmVazio">
+            <i class="bi bi-graph-up-arrow"></i>
+            Registre pelo menos duas sessões desse exercício pra ver a evolução.
         </div>
     </div>
 </div>
@@ -375,43 +433,104 @@
     }
 </script>
 <script>
-    // Dados do gráfico de pizza
+    // muscleData continua alimentando o card "Compartilhar" no final da
+    // página (imagem com o ranking de músculos) -- os quadros de Volume/
+    // Ranking por Músculo em si se mudaram para a página do calendário.
     const muscleData = {{ musculo_stats|tojson }};
-    const labels = Object.keys(muscleData);
-    const volumes = Object.values(muscleData).map(v => v.volume_total);
 
-    new Chart(document.getElementById('muscleChart'), {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: volumes,
-                backgroundColor: [
-                    '#F28C33', '#FFB366', '#2D2D2D', '#4A4A4A', '#17a2b8',
-                    '#28a745', '#dc3545', '#ffc107', '#6f42c1', '#fd7e14'
-                ],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'bottom' },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label || '';
-                            const value = context.raw || 0;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                            return `${label}: ${value.toFixed(0)}kg (${percentage}%)`;
+    // ===== Recordes Pessoais =====
+    fetch('/api/recordes-pessoais')
+        .then(r => r.json())
+        .then(recordes => {
+            const scroll = document.getElementById('prScroll');
+            const vazio = document.getElementById('prVazio');
+            if (!recordes.length) {
+                scroll.style.display = 'none';
+                vazio.style.display = 'block';
+                return;
+            }
+            scroll.innerHTML = recordes.map(pr => `
+                <div class="est-pr-card">
+                    <div class="est-pr-badge"><i class="bi bi-trophy-fill"></i> PR</div>
+                    <div class="est-pr-nome">${pr.nome}</div>
+                    <div class="est-pr-valor">${pr.carga}kg <span class="unidade">× ${pr.reps}</span></div>
+                    <div class="est-pr-data">~${pr.rm_estimado}kg de 1RM estimado · ${pr.data}</div>
+                </div>
+            `).join('');
+        })
+        .catch(() => {
+            document.getElementById('prScroll').style.display = 'none';
+            document.getElementById('prVazio').style.display = 'block';
+        });
+
+    // ===== Progressão de Força (1RM estimado) =====
+    let rmChart;
+
+    function carregarProgressaoForca(chaveExercicio) {
+        if (!chaveExercicio) return;
+        fetch(`/api/progressao-forca?exercicio=${encodeURIComponent(chaveExercicio)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (rmChart) rmChart.destroy();
+
+                const canvas = document.getElementById('rmChart');
+                const semDados = !data.valores || data.valores.length < 2;
+                canvas.style.display = semDados ? 'none' : 'block';
+                document.getElementById('rmVazio').style.display = semDados ? 'block' : 'none';
+                if (semDados) return;
+
+                rmChart = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: '1RM estimado (kg)',
+                            data: data.valores,
+                            borderColor: '#F28C33',
+                            backgroundColor: 'rgba(242, 140, 51, 0.12)',
+                            borderWidth: 2.5,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#F28C33',
+                            pointHoverRadius: 5,
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#1a1a1a',
+                                padding: 10,
+                                cornerRadius: 8,
+                                displayColors: false,
+                                callbacks: {
+                                    label: ctx => `${ctx.formattedValue} kg (1RM est.)`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { color: '#8a8a8a', font: { size: 11 } } },
+                            y: {
+                                grid: { color: 'rgba(0,0,0,0.05)' },
+                                ticks: { color: '#8a8a8a', font: { size: 11 }, callback: v => `${v}kg` }
+                            }
                         }
                     }
-                }
-            }
-        }
-    });
+                });
+            });
+    }
+
+    const seletor1RM = document.getElementById('seletor1RM');
+    if (seletor1RM) {
+        seletor1RM.addEventListener('change', () => carregarProgressaoForca(seletor1RM.value));
+        carregarProgressaoForca(seletor1RM.value);
+    } else {
+        document.getElementById('rmVazio').textContent = 'Cadastre exercícios na sua grade de treino pra ver a evolução de força aqui.';
+    }
 
     let evolucaoChart;
 

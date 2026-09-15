@@ -35,7 +35,7 @@ class EstatisticaService(BaseService):
     """Gerencia cálculos estatísticos"""
     
     @staticmethod
-    def calcular_por_musculo(user_id=None):
+    def calcular_por_musculo(user_id=None, data_inicio=None, data_fim=None):
         """
         Calcula estatísticas por músculo, somando as duas origens possíveis
         de exercício em RegistroTreino:
@@ -51,16 +51,33 @@ class EstatisticaService(BaseService):
         mais granular), então o resultado mescla as duas por nome -- cada
         nome de músculo que aparecer em qualquer uma das origens vira uma
         chave do dicionário retornado.
+
+        `data_inicio`/`data_fim` (datetime, opcionais) restringem os
+        registros somados a um período -- usado pelo filtro de período do
+        quadro "Volume/Ranking por Músculo" na página do calendário. O
+        filtro de data entra na condição do OUTER JOIN (não em .filter()),
+        pra continuar trazendo músculos com 0 registros no período em vez
+        de sumir da lista. Com filtro de período, o resultado não é
+        cacheado (chave variaria por período, e o cálculo já é uma
+        agregação SQL única, barata).
         """
         try:
             user_id = user_id or BaseService.get_current_user_id()
             if not user_id:
                 return {}
 
+            usa_cache = data_inicio is None and data_fim is None
             cache_key = f"estatistica:{user_id}:por_musculo"
-            cache_hit = CacheService.get(cache_key)
-            if cache_hit is not None:
-                return cache_hit
+            if usa_cache:
+                cache_hit = CacheService.get(cache_key)
+                if cache_hit is not None:
+                    return cache_hit
+
+            condicao_periodo_registro = []
+            if data_inicio is not None:
+                condicao_periodo_registro.append(RegistroTreino.data_registro >= data_inicio)
+            if data_fim is not None:
+                condicao_periodo_registro.append(RegistroTreino.data_registro <= data_fim)
 
             # --- Exercícios personalizados (via tabela Musculo) ---
             personalizados = db.session.query(
@@ -71,12 +88,13 @@ class EstatisticaService(BaseService):
                 db.func.coalesce(db.func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume_total')
             ).select_from(Musculo)\
              .outerjoin(ExercicioCustomizado, and_(ExercicioCustomizado.musculo_id == Musculo.id, ExercicioCustomizado.usuario_id == user_id))\
-             .outerjoin(RegistroTreino, and_(RegistroTreino.exercicio_usuario_id == ExercicioCustomizado.id, RegistroTreino.user_id == user_id))\
+             .outerjoin(RegistroTreino, and_(RegistroTreino.exercicio_usuario_id == ExercicioCustomizado.id, RegistroTreino.user_id == user_id, *condicao_periodo_registro))\
              .outerjoin(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
              .group_by(Musculo.id, Musculo.nome_exibicao)\
              .all()
 
             # --- Exercícios do catálogo do sistema (via grupo_muscular) ---
+            filtro_catalogo = [RegistroTreino.user_id == user_id] + condicao_periodo_registro
             do_catalogo = db.session.query(
                 ExercicioSistema.grupo_muscular.label('musculo'),
                 db.func.count(db.distinct(ExercicioSistema.id)).label('qtd_exercicios'),
@@ -86,7 +104,7 @@ class EstatisticaService(BaseService):
             ).select_from(RegistroTreino)\
              .join(ExercicioSistema, ExercicioSistema.id == RegistroTreino.exercicio_base_id)\
              .outerjoin(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
-             .filter(RegistroTreino.user_id == user_id)\
+             .filter(*filtro_catalogo)\
              .group_by(ExercicioSistema.grupo_muscular)\
              .all()
 
@@ -111,11 +129,135 @@ class EstatisticaService(BaseService):
                 atual['volume_total'] += float(r.volume_total)
                 stats[nome] = atual
 
-            CacheService.set(cache_key, stats, ttl_seconds=ESTATISTICA_CACHE_TTL_SEGUNDOS)
+            if usa_cache:
+                CacheService.set(cache_key, stats, ttl_seconds=ESTATISTICA_CACHE_TTL_SEGUNDOS)
             return stats
         except Exception as e:
             BaseService.handle_error(e, "Erro ao calcular estatísticas por músculo")
             return {}
+
+    @staticmethod
+    def progressao_forca_exercicio(exercicio_tipo, exercicio_id, user_id=None):
+        """
+        Progressão de 1RM estimado (fórmula de Epley: rm = carga * (1 +
+        repeticoes/30), a mesma usada por calculadoras de força validadas
+        pela NSCA) de um único exercício ao longo do tempo -- um ponto por
+        sessão (o maior 1RM estimado entre as séries daquela sessão), não
+        por série, pra não distorcer o gráfico com séries de aquecimento.
+
+        `exercicio_tipo` é 'usuario' ou 'base' -- ver comentário em
+        preparar_dados_tabela sobre por que a chave precisa do tipo junto
+        (IDs de exercício personalizado e de sistema vêm de sequências
+        independentes e podem coincidir em número).
+        """
+        try:
+            user_id = user_id or BaseService.get_current_user_id()
+            if not user_id:
+                return []
+
+            if exercicio_tipo == 'usuario':
+                filtro_exercicio = RegistroTreino.exercicio_usuario_id == exercicio_id
+            elif exercicio_tipo == 'base':
+                filtro_exercicio = RegistroTreino.exercicio_base_id == exercicio_id
+            else:
+                return []
+
+            registros = db.session.query(RegistroTreino)\
+                .options(joinedload(RegistroTreino.series))\
+                .filter(RegistroTreino.user_id == user_id, filtro_exercicio)\
+                .order_by(RegistroTreino.data_registro.asc())\
+                .all()
+
+            pontos = []
+            for r in registros:
+                melhor_rm = 0.0
+                for s in r.series:
+                    if not s.carga or not s.repeticoes:
+                        continue
+                    rm = float(s.carga) * (1 + s.repeticoes / 30.0)
+                    if rm > melhor_rm:
+                        melhor_rm = rm
+                if melhor_rm > 0:
+                    pontos.append({
+                        'data': r.data_registro,
+                        'rm_estimado': round(melhor_rm, 1)
+                    })
+            return pontos
+        except Exception as e:
+            BaseService.handle_error(e, f"Erro ao calcular progressão de força do exercício {exercicio_id}")
+            return []
+
+    @staticmethod
+    def calcular_recordes_pessoais(user_id=None, dias_recentes=60, limite=6):
+        """
+        Recordes pessoais (PRs): para cada exercício já registrado pelo
+        usuário, o maior 1RM estimado (Epley) de toda a história e a data
+        em que foi batido. Retorna só os PRs batidos nos últimos
+        `dias_recentes` dias, mais recentes primeiro -- é o "feed de
+        conquistas", não a lista completa de melhores marcas.
+
+        Varre o histórico completo em Python (mesmo espírito de
+        preparar_dados_tabela): achar o máximo por grupo E a data em que
+        ele ocorreu não é uma agregação SQL simples (precisaria de window
+        function), e o volume por usuário já foi medido como tratável
+        nesse formato (~2.400 registros/9.700 séries, ver comentário em
+        calcular_por_treino).
+        """
+        try:
+            user_id = user_id or BaseService.get_current_user_id()
+            if not user_id:
+                return []
+
+            registros = db.session.query(RegistroTreino)\
+                .options(
+                    joinedload(RegistroTreino.series),
+                    joinedload(RegistroTreino.exercicio),
+                    joinedload(RegistroTreino.exercicio_base)
+                )\
+                .filter(RegistroTreino.user_id == user_id)\
+                .order_by(RegistroTreino.data_registro.asc())\
+                .all()
+
+            melhor_por_exercicio = {}
+            for r in registros:
+                nome = None
+                if r.exercicio_usuario_id and r.exercicio:
+                    nome = r.exercicio.nome
+                elif r.exercicio_base_id and r.exercicio_base:
+                    nome = r.exercicio_base.nome
+                if not nome:
+                    continue
+
+                chave = f"{'usuario' if r.exercicio_usuario_id else 'base'}_{r.exercicio_usuario_id or r.exercicio_base_id}"
+
+                for s in r.series:
+                    if not s.carga or not s.repeticoes:
+                        continue
+                    rm = float(s.carga) * (1 + s.repeticoes / 30.0)
+                    atual = melhor_por_exercicio.get(chave)
+                    if atual is None or rm > atual['rm']:
+                        melhor_por_exercicio[chave] = {
+                            'nome': nome,
+                            'rm': rm,
+                            'data': r.data_registro,
+                            'carga': float(s.carga),
+                            'reps': s.repeticoes
+                        }
+
+            limite_data = datetime.now(timezone.utc) - timedelta(days=dias_recentes)
+            recentes = []
+            for v in melhor_por_exercicio.values():
+                data_registro = v['data']
+                if data_registro and data_registro.tzinfo is None:
+                    data_registro = data_registro.replace(tzinfo=timezone.utc)
+                if data_registro and data_registro >= limite_data:
+                    recentes.append(v)
+
+            recentes.sort(key=lambda v: v['data'], reverse=True)
+            return recentes[:limite]
+        except Exception as e:
+            BaseService.handle_error(e, "Erro ao calcular recordes pessoais")
+            return []
     
     @staticmethod
     def calcular_por_treino(user_id=None):

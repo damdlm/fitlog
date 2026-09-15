@@ -83,6 +83,83 @@ def api_progresso():
     })
 
 
+@api_bp.route("/musculo-stats")
+@login_required
+@acesso_premium_required('calendario')
+def api_musculo_stats():
+    """
+    Volume total e ranking por músculo, com filtro de período opcional --
+    usado pelo quadro "Volume/Ranking por Músculo" na página do
+    calendário. Aceita `dias=N` (últimos N dias corridos) OU
+    `inicio=YYYY-MM-DD&fim=YYYY-MM-DD` (intervalo fechado). Sem nenhum
+    dos dois, retorna o histórico completo.
+    """
+    dias = request.args.get('dias', type=int)
+    inicio_str = request.args.get('inicio')
+    fim_str = request.args.get('fim')
+
+    data_inicio = data_fim = None
+    if dias:
+        data_fim = datetime.now(timezone.utc)
+        data_inicio = data_fim - timedelta(days=dias)
+    elif inicio_str and fim_str:
+        try:
+            data_inicio = datetime.strptime(inicio_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            # fim é inclusivo (o dia inteiro selecionado no filtro), por
+            # isso soma quase 24h ao início do dia final em vez de usar a
+            # meia-noite do dia seguinte.
+            data_fim = datetime.strptime(fim_str, "%Y-%m-%d").replace(tzinfo=timezone.utc) \
+                + timedelta(days=1) - timedelta(seconds=1)
+        except ValueError:
+            return jsonify({"error": "Datas inválidas, use o formato AAAA-MM-DD"}), 400
+
+    musculo_stats = EstatisticaService.calcular_por_musculo(data_inicio=data_inicio, data_fim=data_fim)
+    volume_maximo = max((v['volume_total'] for v in musculo_stats.values()), default=0)
+
+    return jsonify({
+        "musculos": musculo_stats,
+        "volume_maximo": volume_maximo
+    })
+
+
+@api_bp.route("/progressao-forca")
+@login_required
+@acesso_premium_required('estatisticas')
+def api_progressao_forca():
+    """1RM estimado (Epley) ao longo do tempo para um exercício específico.
+
+    `exercicio` vem no formato "<tipo>_<id>" (tipo 'usuario' ou 'base'),
+    o mesmo formato de chave usado na Tabela de Progresso -- necessário
+    porque IDs de exercício personalizado e de sistema vêm de sequências
+    independentes e podem coincidir em número.
+    """
+    chave = request.args.get('exercicio', '')
+    tipo, _, id_str = chave.partition('_')
+    if tipo not in ('usuario', 'base') or not id_str.isdigit():
+        return jsonify({"error": "Parâmetro 'exercicio' inválido, use '<usuario|base>_<id>'"}), 400
+
+    pontos = EstatisticaService.progressao_forca_exercicio(tipo, int(id_str))
+    return jsonify({
+        "labels": [p['data'].strftime('%d/%m') for p in pontos],
+        "valores": [p['rm_estimado'] for p in pontos]
+    })
+
+
+@api_bp.route("/recordes-pessoais")
+@login_required
+@acesso_premium_required('estatisticas')
+def api_recordes_pessoais():
+    """Feed dos PRs (recordes pessoais de 1RM estimado) batidos recentemente."""
+    recordes = EstatisticaService.calcular_recordes_pessoais()
+    return jsonify([{
+        "nome": r['nome'],
+        "carga": r['carga'],
+        "reps": r['reps'],
+        "rm_estimado": round(r['rm'], 1),
+        "data": r['data'].strftime('%d/%m/%Y') if r['data'] else None
+    } for r in recordes])
+
+
 @api_bp.route("/atividade-geral")
 @login_required
 @acesso_premium_required('estatisticas')

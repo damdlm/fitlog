@@ -4,6 +4,7 @@ from . import aluno_bp
 from models import User
 from services.estatistica_service import EstatisticaService
 from services.treino_service import TreinoService
+from services.exercicio_service import ExercicioService
 from utils.decorators import acesso_premium_required
 import logging
 
@@ -38,11 +39,21 @@ def estatisticas():
 
     volume_maximo_musculo = max((v['volume_total'] for v in musculo_stats.values()), default=0)
 
+    # Lista de exercícios pra alimentar o seletor do gráfico "Progressão
+    # de Força (1RM estimado)". get_exercicios_dos_treinos já retorna só
+    # os exercícios da grade atual (com .tipo/.id/.nome), evitando trazer
+    # exercícios de treinos antigos que o aluno não usa mais.
+    exercicios_selecionaveis = sorted(
+        ExercicioService.get_exercicios_dos_treinos(user_id=current_user.id),
+        key=lambda ex: ex.nome
+    )
+
     return render_template('aluno/estatisticas.html',
                          musculo_stats=musculo_stats,
                          treinos_versao_ativa=treinos_versao_ativa,
                          musculo_destaque=musculo_destaque,
-                         volume_maximo_musculo=volume_maximo_musculo)
+                         volume_maximo_musculo=volume_maximo_musculo,
+                         exercicios_selecionaveis=exercicios_selecionaveis)
 
 @aluno_bp.route('/api/buscar-professores')
 @login_required
