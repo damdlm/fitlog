@@ -83,9 +83,27 @@ def api_progresso():
     })
 
 
+@api_bp.route("/kpis")
+@login_required
+@acesso_premium_required('estatisticas')
+def api_kpis():
+    """KPIs do período (volume, treinos, séries) com variação % vs. o
+    período anterior de mesmo tamanho -- alimenta a faixa de destaque no
+    topo das Estatísticas."""
+    dias = request.args.get('dias', type=int, default=30)
+    kpis = EstatisticaService.calcular_kpis_periodo(dias=dias)
+    if not kpis:
+        return jsonify({
+            "dias": dias, "volume_total": 0, "volume_variacao": None,
+            "treinos_realizados": 0, "treinos_variacao": None,
+            "total_series": 0, "series_variacao": None
+        })
+    return jsonify(kpis)
+
+
 @api_bp.route("/musculo-stats")
 @login_required
-@acesso_premium_required('calendario')
+@acesso_premium_required('estatisticas')
 def api_musculo_stats():
     """
     Volume total e ranking por músculo, com filtro de período opcional --

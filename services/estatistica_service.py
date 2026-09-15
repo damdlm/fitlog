@@ -137,6 +137,62 @@ class EstatisticaService(BaseService):
             return {}
 
     @staticmethod
+    def calcular_kpis_periodo(user_id=None, dias=30):
+        """
+        KPIs do período com comparação ao período imediatamente anterior de
+        mesmo tamanho (ex: últimos 30 dias vs. os 30 dias antes deles) --
+        o padrão de "trend" usado por dashboards de treino sérios (Strava,
+        Hevy Pro) em vez de só mostrar o número absoluto isolado.
+        """
+        try:
+            user_id = user_id or BaseService.get_current_user_id()
+            if not user_id:
+                return None
+
+            agora = datetime.now(timezone.utc)
+            inicio_atual = agora - timedelta(days=dias)
+            inicio_anterior = agora - timedelta(days=dias * 2)
+
+            def agregados(inicio, fim):
+                row = db.session.query(
+                    db.func.count(db.distinct(RegistroTreino.id)).label('treinos'),
+                    db.func.count(HistoricoTreino.id).label('series'),
+                    db.func.coalesce(db.func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume')
+                ).select_from(RegistroTreino)\
+                 .outerjoin(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
+                 .filter(
+                     RegistroTreino.user_id == user_id,
+                     RegistroTreino.data_registro >= inicio,
+                     RegistroTreino.data_registro < fim
+                 ).first()
+                return {
+                    'treinos': row.treinos or 0,
+                    'series': row.series or 0,
+                    'volume': float(row.volume or 0)
+                }
+
+            atual = agregados(inicio_atual, agora)
+            anterior = agregados(inicio_anterior, inicio_atual)
+
+            def variacao_pct(novo, velho):
+                if velho == 0:
+                    return None if novo == 0 else 100.0
+                return round(((novo - velho) / velho) * 100, 1)
+
+            return {
+                'dias': dias,
+                'volume_total': atual['volume'],
+                'volume_variacao': variacao_pct(atual['volume'], anterior['volume']),
+                'treinos_realizados': atual['treinos'],
+                'treinos_variacao': variacao_pct(atual['treinos'], anterior['treinos']),
+                'total_series': atual['series'],
+                'series_variacao': variacao_pct(atual['series'], anterior['series']),
+            }
+        except Exception as e:
+            BaseService.handle_error(e, "Erro ao calcular KPIs do período")
+            return None
+
+    @staticmethod
     def progressao_forca_exercicio(exercicio_tipo, exercicio_id, user_id=None):
         """
         Progressão de 1RM estimado (fórmula de Epley: rm = carga * (1 +

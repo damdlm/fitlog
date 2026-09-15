@@ -208,6 +208,66 @@
         max-width: 220px;
     }
 
+    /* ===== KPIs com comparação de período ===== */
+    .est-kpi-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 18px;
+    }
+    @media (max-width: 575.98px) {
+        .est-kpi-row { grid-template-columns: 1fr; }
+    }
+    .est-kpi-card {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 14px;
+        padding: 14px 16px;
+    }
+    .est-kpi-label {
+        font-size: 0.76rem;
+        color: rgba(255,255,255,0.6);
+        margin-bottom: 4px;
+    }
+    .est-kpi-valor {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: white;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .est-kpi-trend {
+        font-size: 0.76rem;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 2px 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+    }
+    .est-kpi-trend.up { background: rgba(40, 167, 69, 0.22); color: #6fe38a; }
+    .est-kpi-trend.down { background: rgba(220, 53, 69, 0.22); color: #ff8a94; }
+    .est-kpi-trend.flat { background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.7); }
+
+    /* ===== Volume/Ranking por Músculo ===== */
+    .est-musculo-filtro {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .est-musculo-custom {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 10px 0 4px;
+        flex-wrap: wrap;
+    }
+    .est-musculo-custom .form-control {
+        max-width: 150px;
+    }
+
     /* ===== Atividade ===== */
     .est-tempo-stats {
         display: flex;
@@ -297,10 +357,26 @@
             <i class="bi bi-share-fill"></i> Compartilhar
         </button>
     </div>
+
+    <!-- KPIs com comparação ao período anterior -->
+    <div class="est-kpi-row" id="kpiRow">
+        <div class="est-kpi-card">
+            <div class="est-kpi-label">Volume (30 dias)</div>
+            <div class="est-kpi-valor"><span id="kpiVolume">—</span><span id="kpiVolumeTrend"></span></div>
+        </div>
+        <div class="est-kpi-card">
+            <div class="est-kpi-label">Treinos realizados</div>
+            <div class="est-kpi-valor"><span id="kpiTreinos">—</span><span id="kpiTreinosTrend"></span></div>
+        </div>
+        <div class="est-kpi-card">
+            <div class="est-kpi-label">Séries totais</div>
+            <div class="est-kpi-valor"><span id="kpiSeries">—</span><span id="kpiSeriesTrend"></span></div>
+        </div>
+    </div>
 </div>
 
 <!-- Recordes Pessoais -->
-<div class="card est-card mb-3">
+<div class="card est-card mb-3" id="recordesPessoais">
     <div class="card-header bg-white border-0 pb-0">
         <h6 class="fw-bold mb-0">
             <i class="bi bi-trophy-fill me-1" style="color: #F28C33;"></i>Recordes Pessoais
@@ -336,6 +412,44 @@
         <div class="est-empty" id="rmVazio">
             <i class="bi bi-graph-up-arrow"></i>
             Registre pelo menos duas sessões desse exercício pra ver a evolução.
+        </div>
+    </div>
+</div>
+
+<!-- Volume/Ranking por Músculo -->
+<div class="card est-card mb-3" id="volumeMusculo">
+    <div class="card-header bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 pb-0">
+        <h6 class="fw-bold mb-0">
+            <i class="bi bi-bar-chart-steps me-1" style="color: #F28C33;"></i>Volume por Músculo
+        </h6>
+        <div class="est-musculo-filtro" id="filtroPeriodoMusculo">
+            <button type="button" class="est-pill" data-dias="7">7 dias</button>
+            <button type="button" class="est-pill active" data-dias="30">30 dias</button>
+            <button type="button" class="est-pill" data-dias="90">90 dias</button>
+            <button type="button" class="est-pill" data-dias="">Tudo</button>
+            <button type="button" class="est-pill" data-dias="custom">Personalizado</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="est-musculo-custom" id="musculoPeriodoCustom" style="display: none;">
+            <input type="date" class="form-control form-control-sm" id="musculoPeriodoInicio">
+            <span class="text-muted" style="font-size: 0.82rem;">até</span>
+            <input type="date" class="form-control form-control-sm" id="musculoPeriodoFim">
+            <button type="button" class="btn btn-sm btn-primary" id="musculoPeriodoAplicar">Aplicar</button>
+        </div>
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <canvas id="calMuscleChart" height="240"></canvas>
+                <div class="est-empty" id="calMuscleVazio" style="display: none;">
+                    <i class="bi bi-pie-chart"></i>Sem registros nesse período.
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div id="calMuscleRanking" style="max-height: 280px; overflow-y: auto;"></div>
+                <div class="est-empty" id="calMuscleRankingVazio" style="display: none;">
+                    <i class="bi bi-trophy"></i>Sem registros nesse período.
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -433,10 +547,151 @@
     }
 </script>
 <script>
-    // muscleData continua alimentando o card "Compartilhar" no final da
-    // página (imagem com o ranking de músculos) -- os quadros de Volume/
-    // Ranking por Músculo em si se mudaram para a página do calendário.
+    // muscleData alimenta o card "Compartilhar" no fim da página (imagem
+    // com o ranking de músculos) -- usa o histórico completo, independente
+    // do filtro de período do quadro Volume/Ranking por Músculo acima.
     const muscleData = {{ musculo_stats|tojson }};
+
+    // ===== KPIs com comparação ao período anterior =====
+    function formatarTrend(valor) {
+        if (valor === null || valor === undefined) return '';
+        const seta = valor > 0 ? '▲' : (valor < 0 ? '▼' : '—');
+        const classe = valor > 0 ? 'up' : (valor < 0 ? 'down' : 'flat');
+        return `<span class="est-kpi-trend ${classe}">${seta} ${Math.abs(valor)}%</span>`;
+    }
+
+    fetch('/api/kpis?dias=30')
+        .then(r => r.json())
+        .then(k => {
+            document.getElementById('kpiVolume').textContent = Math.round(k.volume_total) + 'kg';
+            document.getElementById('kpiVolumeTrend').innerHTML = formatarTrend(k.volume_variacao);
+            document.getElementById('kpiTreinos').textContent = k.treinos_realizados;
+            document.getElementById('kpiTreinosTrend').innerHTML = formatarTrend(k.treinos_variacao);
+            document.getElementById('kpiSeries').textContent = k.total_series;
+            document.getElementById('kpiSeriesTrend').innerHTML = formatarTrend(k.series_variacao);
+        })
+        .catch(() => {});
+
+    // ===== Volume/Ranking por Músculo (com filtro de período) =====
+    let calMuscleChart = null;
+
+    function renderizarMuscleChart(musculos) {
+        const canvas = document.getElementById('calMuscleChart');
+        const vazio = document.getElementById('calMuscleVazio');
+        const labels = Object.keys(musculos).filter(k => musculos[k].volume_total > 0);
+
+        if (calMuscleChart) { calMuscleChart.destroy(); calMuscleChart = null; }
+
+        if (!labels.length) {
+            canvas.style.display = 'none';
+            vazio.style.display = 'block';
+            return;
+        }
+        canvas.style.display = 'block';
+        vazio.style.display = 'none';
+
+        calMuscleChart = new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: labels.map(k => musculos[k].volume_total),
+                    backgroundColor: [
+                        '#F28C33', '#FFB366', '#2D2D2D', '#4A4A4A', '#17a2b8',
+                        '#28a745', '#dc3545', '#ffc107', '#6f42c1', '#fd7e14'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${label}: ${value.toFixed(0)}kg (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderizarRankingMusculo(musculos, volumeMaximo) {
+        const container = document.getElementById('calMuscleRanking');
+        const vazio = document.getElementById('calMuscleRankingVazio');
+        const ordenados = Object.entries(musculos)
+            .filter(([, s]) => s.volume_total > 0)
+            .sort((a, b) => b[1].volume_total - a[1].volume_total);
+
+        if (!ordenados.length) {
+            container.style.display = 'none';
+            vazio.style.display = 'block';
+            return;
+        }
+        container.style.display = 'block';
+        vazio.style.display = 'none';
+
+        container.innerHTML = ordenados.map(([nome, s]) => {
+            const largura = volumeMaximo > 0 ? ((s.volume_total / volumeMaximo) * 100).toFixed(1) : 0;
+            return `
+                <div class="est-ranking-item">
+                    <div class="est-ranking-top">
+                        <span class="est-ranking-nome">${nome}</span>
+                        <span class="est-ranking-valor">${Math.round(s.volume_total)}kg · ${s.qtd_registros} registros</span>
+                    </div>
+                    <div class="est-ranking-bar-bg">
+                        <div class="est-ranking-bar-fill" style="width: ${largura}%;"></div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    function carregarMusculoStats(params) {
+        fetch('/api/musculo-stats' + (params ? `?${params}` : ''))
+            .then(r => r.json())
+            .then(data => {
+                renderizarMuscleChart(data.musculos || {});
+                renderizarRankingMusculo(data.musculos || {}, data.volume_maximo || 0);
+            });
+    }
+
+    const filtroMusculo = document.getElementById('filtroPeriodoMusculo');
+    const musculoCustomBox = document.getElementById('musculoPeriodoCustom');
+
+    filtroMusculo.addEventListener('click', function (evento) {
+        const botao = evento.target.closest('.est-pill');
+        if (!botao) return;
+
+        filtroMusculo.querySelectorAll('.est-pill').forEach(p => p.classList.remove('active'));
+        botao.classList.add('active');
+
+        if (botao.dataset.dias === 'custom') {
+            musculoCustomBox.style.display = 'flex';
+            return;
+        }
+        musculoCustomBox.style.display = 'none';
+        carregarMusculoStats(botao.dataset.dias ? `dias=${botao.dataset.dias}` : '');
+    });
+
+    document.getElementById('musculoPeriodoAplicar').addEventListener('click', function () {
+        const inicio = document.getElementById('musculoPeriodoInicio').value;
+        const fim = document.getElementById('musculoPeriodoFim').value;
+        if (!inicio || !fim) {
+            if (window.FitLogUtils) FitLogUtils.showToast('Escolha as duas datas do período.', 'info');
+            return;
+        }
+        carregarMusculoStats(`inicio=${inicio}&fim=${fim}`);
+    });
+
+    carregarMusculoStats('dias=30');
 
     // ===== Recordes Pessoais =====
     fetch('/api/recordes-pessoais')
