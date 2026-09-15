@@ -209,19 +209,21 @@
     }
 
     /* Vista de detalhe do exercício (séries com valores individuais):
-       NÃO é um modal -- é o próprio card se expandindo no lugar, pra
-       ficar visualmente colado no rodapé do cronômetro de intervalo,
-       sem fundo escurecido. Enquanto um exercício está com detalhe
-       aberto (.is-focado), os outros cards da lista e a barra de
-       resumo somem, e só sobram o card detalhado + o cronômetro fixo
-       (que já mora fora daqui, sem precisar duplicar). */
+       visualmente se comporta como um modal -- o card se destaca por
+       cima da lista, com borda e sombra fortes, enquanto os demais
+       exercícios (e o cabeçalho do card) ficam esmaecidos atrás, em
+       vez de sumir. O cronômetro de intervalo continua fixo no rodapé
+       o tempo todo (já mora fora daqui, sem precisar duplicar). */
     .exercicio-detalhe-series {
         display: none;
+        position: relative;
+        z-index: 2;
         background: var(--surface, #fff);
         border-radius: var(--radius-md, 14px);
-        border-left: 4px solid var(--primary-orange);
+        border: 2px solid var(--primary-orange);
         padding: 18px 20px;
         margin-bottom: 12px;
+        box-shadow: 0 14px 32px rgba(45, 45, 45, 0.16), 0 2px 6px rgba(45, 45, 45, 0.08);
     }
     .exercise-row-wrap.is-focado > .exercise-row,
     .exercise-row-wrap.is-focado > .btn-abrir-series-modal {
@@ -231,9 +233,25 @@
         display: block;
         flex: 1 1 auto;
     }
-    #registroForm.tem-foco > .exercise-row-wrap:not(.is-focado),
+    /* Os demais exercícios (e o cabeçalho "X exercícios") ficam
+       esmaecidos -- não somem -- enquanto um deles está com o
+       detalhe aberto, dando a sensação de um modal flutuando por
+       cima da lista, como no rascunho. */
+    #registroForm.tem-foco > .exercise-row-wrap:not(.is-focado) {
+        opacity: 0.4;
+        filter: grayscale(0.4);
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+    }
     #registroForm.tem-foco .resumo-treino-box {
-        display: none;
+        opacity: 0.4;
+        pointer-events: none;
+    }
+    #exerciciosCard.tem-foco .card-header {
+        opacity: 0.4;
+        filter: grayscale(0.4);
+        pointer-events: none;
+        transition: opacity 0.2s ease;
     }
     .detalhe-series-header-row {
         display: flex;
@@ -333,7 +351,8 @@
     }
     .detalhe-series-footer-row {
         display: flex;
-        justify-content: flex-start;
+        align-items: center;
+        justify-content: space-between;
         margin-top: 4px;
     }
     .exercicio-switch-label {
@@ -2746,6 +2765,14 @@
                 </table>
 
                 <div class="detalhe-series-footer-row">
+                    <div class="exercicio-switch-wrap">
+                        <div class="form-check mb-0">
+                            <input class="form-check-input exercicio-switch-espelho" type="checkbox"
+                                   id="ativo-detalhe-{{ chave_ex }}"
+                                   checked
+                                   aria-label="Vou treinar {{ ex.nome }} hoje">
+                        </div>
+                    </div>
                     <button type="button" class="btn-marcar-feito" data-target-exercicio="{{ chave_ex }}"
                             aria-pressed="false" aria-label="Marcar {{ ex.nome }} como feito">
                         <i class="bi bi-check-lg"></i>
@@ -2903,6 +2930,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Liga/desliga por exercício ("vou treinar hoje?")
     inicializarSwitchesExercicio();
+    inicializarSwitchesEspelho();
     atualizarResumo();
 
     // Seleciona todo o texto ao focar nos inputs de carga/reps, pra
@@ -3281,12 +3309,14 @@ function inicializarModalSeriesIndividuais() {
         const wrap = detalhe ? detalhe.closest('.exercise-row-wrap') : null;
         if (!wrap) return;
         form.classList.add('tem-foco');
+        document.getElementById('exerciciosCard')?.classList.add('tem-foco');
         wrap.classList.add('is-focado');
         atualizarLinhasVisiveis(exId);
     }
 
     function fechar() {
         form.classList.remove('tem-foco');
+        document.getElementById('exerciciosCard')?.classList.remove('tem-foco');
         document.querySelectorAll('.exercise-row-wrap.is-focado').forEach(w => w.classList.remove('is-focado'));
     }
 
@@ -3425,6 +3455,30 @@ function inicializarSwitchesExercicio() {
         switchEl.addEventListener('change', function () {
             aplicarEstadoExercicio(row, this.checked);
             atualizarResumo();
+        });
+    });
+}
+
+/* Checkbox "espelho" do toggle "vou treinar hoje", que aparece de novo
+   no rodapé da vista de detalhe (mesma posição/estilo do card
+   compacto). Não tem lógica própria -- só reflete e replica cliques
+   pro checkbox real do card compacto, que continua sendo a única
+   fonte de verdade enviada no formulário. */
+function inicializarSwitchesEspelho() {
+    document.querySelectorAll('.exercicio-switch-espelho').forEach(function (espelho) {
+        const wrap = espelho.closest('.exercise-row-wrap');
+        const principal = wrap ? wrap.querySelector('.exercicio-switch') : null;
+        if (!principal) return;
+
+        espelho.checked = principal.checked;
+
+        espelho.addEventListener('change', function () {
+            if (principal.checked === espelho.checked) return;
+            principal.checked = espelho.checked;
+            principal.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        principal.addEventListener('change', function () {
+            espelho.checked = principal.checked;
         });
     });
 }
