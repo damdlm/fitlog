@@ -167,30 +167,31 @@
     }
 
     /* Seta que abre o modal de "lançar séries com valores individuais":
-       o card inteiro (.row) fica num flex junto com o botão, então o
-       conteúdo do card é "empurrado" um pouco pra esquerda para abrir
-       espaço pra seta na borda direita. */
-    .exercise-row-flex {
+       o card continua exatamente como sempre foi por dentro -- a seta
+       fica FORA dele, à direita, com o card inteiro (não só o conteúdo)
+       deslocado um pouco pra esquerda pra abrir espaço. */
+    .exercise-row-wrap {
         display: flex;
         align-items: center;
-        gap: 2px;
+        gap: 6px;
+        margin-bottom: 12px;
     }
-    .exercise-row-flex > .row {
+    .exercise-row-wrap > .exercise-row {
         flex: 1 1 auto;
         min-width: 0;
+        margin-bottom: 0;
     }
     .btn-abrir-series-modal {
         flex-shrink: 0;
-        width: 26px;
-        align-self: stretch;
+        width: 28px;
         min-height: 44px;
         display: flex;
         align-items: center;
         justify-content: center;
         border: none;
         background: transparent;
-        color: #c9c3b7;
-        font-size: 1.2rem;
+        color: #8a857a;
+        font-size: 1.3rem;
         cursor: pointer;
         border-radius: var(--radius-sm);
         transition: color 0.15s ease, background-color 0.15s ease;
@@ -201,7 +202,7 @@
         background: rgba(242, 140, 51, 0.08);
         outline: none;
     }
-    .exercise-row.is-desativado .btn-abrir-series-modal {
+    .exercise-row.is-desativado + .btn-abrir-series-modal {
         pointer-events: none;
         opacity: 0.4;
     }
@@ -1607,7 +1608,8 @@
     #modalConfirmarCancelamento,
     #modalResumoTreino,
     #modalImagensExercicio,
-    #modalInstrucoesExercicio {
+    #modalInstrucoesExercicio,
+    #modalSeriesIndividuais {
         z-index: 2000;
     }
 
@@ -2557,12 +2559,12 @@
             {% set reps_distintas = series_atual|map(attribute='repeticoes')|unique|list %}
             {% set modo_inicial = 'individual' if (series_atual and (cargas_distintas|length > 1 or reps_distintas|length > 1)) else 'uniforme' %}
             
+            <div class="exercise-row-wrap">
             <div class="exercise-row" data-exercicio-id="{{ chave_ex }}" 
                  data-ultima-carga="{{ ultima_carga }}"
                  data-ultimas-reps="{{ ultimas_reps }}"
                  data-ultimas-series="{{ ultimas_series }}">
                 
-                <div class="exercise-row-flex">
                 <div class="row align-items-center">
                     <div class="col-12 col-md-6">
                         <!-- Mesma estrutura visual do card "Último Treino" do dashboard -->
@@ -2661,15 +2663,6 @@
                     </div>
                     </div>
                 </div>
-                <button type="button" class="btn-abrir-series-modal"
-                        data-bs-toggle="modal" data-bs-target="#modalSeriesIndividuais"
-                        data-exercicio-id="{{ chave_ex }}"
-                        data-exercicio-nome="{{ ex.nome }}"
-                        data-gif-url="{{ ex.gif_url or '' }}"
-                        aria-label="Lançar séries com valores individuais de {{ ex.nome }}">
-                    <i class="bi bi-chevron-right"></i>
-                </button>
-                </div>
 
                 <!-- Valores por série (carga/repetições individuais) -- só usados
                      quando o modal de séries individuais é aberto; até lá ficam
@@ -2686,6 +2679,15 @@
                            value="{% if series_atual|length >= n %}{{ series_atual[n-1].repeticoes }}{% endif %}">
                     {% endfor %}
                 </div>
+            </div>
+            <button type="button" class="btn-abrir-series-modal"
+                    data-bs-toggle="modal" data-bs-target="#modalSeriesIndividuais"
+                    data-exercicio-id="{{ chave_ex }}"
+                    data-exercicio-nome="{{ ex.nome }}"
+                    data-gif-url="{{ ex.gif_url or '' }}"
+                    aria-label="Lançar séries com valores individuais de {{ ex.nome }}">
+                <i class="bi bi-chevron-right"></i>
+            </button>
             </div>
             {% endfor %}
 
