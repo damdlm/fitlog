@@ -54,6 +54,20 @@ DIAS_ATIVACAO_PIX_FALLBACK = 30
 ASAAS_BASE_URL_SANDBOX = "https://sandbox.asaas.com/api/v3"
 ASAAS_BASE_URL_PRODUCAO = "https://api.asaas.com/v3"
 
+# Dados fiscais fixos usados ao agendar a NFS-e de cada pagamento
+# confirmado (ver _agendar_nota_fiscal). Espelham o que já está
+# cadastrado em Notas Fiscais > Configurações > Serviços no painel da
+# Asaas (NBS 1.1103.22.00 -- item 01.05 da LC 116/2003, licenciamento
+# de uso de programas de computador -- CST 000 / cClassTrib 000001 /
+# indicador de operação 100501, alíquota ISS 0% por a conta ser MEI).
+# Mudar aqui exige mudar também no painel da Asaas, e vice-versa --
+# não há sincronização automática entre os dois.
+CODIGO_SERVICO_MUNICIPAL_NFSE = '1.1103.22.00'
+DESCRICAO_SERVICO_NFSE = (
+    'Licenciamento de uso de aplicativo de gestão e acompanhamento '
+    'de treinos físicos (SaaS), disponibilizado por assinatura mensal.'
+)
+
 
 def _proximo_vencimento_mensal(referencia: datetime) -> datetime:
     """"Mesmo dia do mês seguinte" -- usado pra calcular até quando um
@@ -1117,6 +1131,12 @@ class BillingService:
         if PagamentoRecebido.query.filter_by(gateway_payment_id=payment_id).first():
             return
 
+        # Agenda a NFS-e desse pagamento -- roda uma única vez por
+        # pagamento de verdade (não em reenvios do mesmo webhook),
+        # já que esse trecho só é alcançado antes do INSERT em
+        # PagamentoRecebido logo abaixo, com o dedup já checado acima.
+        BillingService._agendar_nota_fiscal(payment_id, valor)
+
         valor_bruto_centavos = round(valor * 100)
         net_value = payment.get('netValue')
         valor_liquido_centavos = round(net_value * 100) if net_value is not None else None
@@ -1140,6 +1160,58 @@ class BillingService:
             taxa_asaas_centavos=taxa_asaas_centavos,
             valor_liquido_centavos=valor_liquido_centavos,
         ))
+
+    @staticmethod
+    def _agendar_nota_fiscal(payment_id: str, valor: float):
+        """Agenda a emissão automática da NFS-e de uma cobrança
+        confirmada (Pix avulso ou parcela de assinatura por cartão --
+        as duas passam por aqui via _registrar_pagamento_recebido,
+        chamado de _aplicar_evento em todo evento de confirmação de
+        pagamento). Usa POST /v3/invoices vinculado ao payment_id, que
+        aproveita o serviço/alíquota já cadastrados em Notas Fiscais >
+        Configurações no painel da Asaas -- ver as constantes
+        CODIGO_SERVICO_MUNICIPAL_NFSE e DESCRICAO_SERVICO_NFSE acima.
+        Documentação: https://docs.asaas.com/reference/agendar-nota-fiscal
+
+        NÃO CONFIRMADO contra um pagamento real (mesmo padrão de aviso
+        já usado em criar_pagamento_pix_ativacao neste arquivo): a
+        documentação confirma que contas no Portal Nacional devem usar
+        municipalServiceCode em vez de municipalServiceId, mas não foi
+        possível confirmar sem uma chamada real se o valor esperado
+        nesse campo é o NBS completo (usado aqui), o item "01.05" da
+        LC 116, ou outro identificador. TESTAR contra a próxima
+        cobrança de valor baixo confirmada em produção, conferindo em
+        Notas Fiscais > Cobranças no painel se a nota foi agendada
+        (status SCHEDULED) ou se voltou com erro -- ajustar
+        CODIGO_SERVICO_MUNICIPAL_NFSE acima se necessário.
+
+        Falha aqui NUNCA pode derrubar o processamento do webhook --
+        só loga. Um pagamento confirmado precisa ficar registrado no
+        banco mesmo que a nota falhe; a nota sempre pode ser emitida
+        manualmente depois (Notas Fiscais > Cobranças > Emitir nota
+        fiscal, mesmo fluxo manual já usado antes de existir isto).
+        """
+        try:
+            resp = requests.post(
+                f'{BillingService._base_url()}/invoices',
+                json={
+                    'payment': payment_id,
+                    'value': valor,
+                    'serviceDescription': DESCRICAO_SERVICO_NFSE,
+                    'effectiveDate': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+                    'municipalServiceCode': CODIGO_SERVICO_MUNICIPAL_NFSE,
+                    'municipalServiceName': DESCRICAO_SERVICO_NFSE,
+                },
+                headers=BillingService._headers(),
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+            if resp.status_code >= 300:
+                logger.error(
+                    'Asaas respondeu %s ao agendar nota fiscal do pagamento %s: %s',
+                    resp.status_code, payment_id, resp.text,
+                )
+        except requests.RequestException:
+            logger.exception('Erro de rede ao agendar nota fiscal do pagamento %s', payment_id)
 
     @staticmethod
     def _iniciar_atraso(assinatura: Assinatura, agora: datetime):
