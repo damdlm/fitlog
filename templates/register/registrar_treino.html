@@ -174,7 +174,7 @@
     .exercise-row-wrap {
         display: flex;
         align-items: center;
-        gap: 2px;
+        gap: 6px;
         margin-bottom: 12px;
     }
     .exercise-row-wrap > .exercise-row {
@@ -184,7 +184,7 @@
     }
     .btn-abrir-series-modal {
         flex-shrink: 0;
-        width: 24px;
+        width: 28px;
         min-height: 44px;
         display: flex;
         align-items: center;
@@ -192,7 +192,7 @@
         border: none;
         background: transparent;
         color: #8a857a;
-        font-size: 1.15rem;
+        font-size: 1.3rem;
         cursor: pointer;
         border-radius: var(--radius-sm);
         transition: color 0.15s ease, background-color 0.15s ease;
@@ -209,21 +209,19 @@
     }
 
     /* Vista de detalhe do exercício (séries com valores individuais):
-       visualmente se comporta como um modal -- o card se destaca por
-       cima da lista, com borda e sombra fortes, enquanto os demais
-       exercícios (e o cabeçalho do card) ficam esmaecidos atrás, em
-       vez de sumir. O cronômetro de intervalo continua fixo no rodapé
-       o tempo todo (já mora fora daqui, sem precisar duplicar). */
+       NÃO é um modal -- é o próprio card se expandindo no lugar, pra
+       ficar visualmente colado no rodapé do cronômetro de intervalo,
+       sem fundo escurecido. Enquanto um exercício está com detalhe
+       aberto (.is-focado), os outros cards da lista e a barra de
+       resumo somem, e só sobram o card detalhado + o cronômetro fixo
+       (que já mora fora daqui, sem precisar duplicar). */
     .exercicio-detalhe-series {
         display: none;
-        position: relative;
-        z-index: 2;
         background: var(--surface, #fff);
         border-radius: var(--radius-md, 14px);
-        border: 2px solid var(--primary-orange);
+        border-left: 4px solid var(--primary-orange);
         padding: 18px 20px;
         margin-bottom: 12px;
-        box-shadow: 0 14px 32px rgba(45, 45, 45, 0.16), 0 2px 6px rgba(45, 45, 45, 0.08);
     }
     .exercise-row-wrap.is-focado > .exercise-row,
     .exercise-row-wrap.is-focado > .btn-abrir-series-modal {
@@ -233,31 +231,15 @@
         display: block;
         flex: 1 1 auto;
     }
-    /* Os demais exercícios (e o cabeçalho "X exercícios") ficam
-       esmaecidos -- não somem -- enquanto um deles está com o
-       detalhe aberto, dando a sensação de um modal flutuando por
-       cima da lista, como no rascunho. */
-    #registroForm.tem-foco > .exercise-row-wrap:not(.is-focado) {
-        opacity: 0.4;
-        filter: grayscale(0.4);
-        pointer-events: none;
-        transition: opacity 0.2s ease;
-    }
+    #registroForm.tem-foco > .exercise-row-wrap:not(.is-focado),
     #registroForm.tem-foco .resumo-treino-box {
-        opacity: 0.4;
-        pointer-events: none;
-    }
-    #exerciciosCard.tem-foco .card-header {
-        opacity: 0.4;
-        filter: grayscale(0.4);
-        pointer-events: none;
-        transition: opacity 0.2s ease;
+        display: none;
     }
     .detalhe-series-header-row {
         display: flex;
         align-items: center;
         gap: 10px;
-        margin-bottom: 16px;
+        margin-bottom: 10px;
     }
     .detalhe-series-icone {
         width: 42px;
@@ -305,28 +287,62 @@
         background: rgba(242, 140, 51, 0.08);
         outline: none;
     }
-    .detalhe-series-select-wrap {
+    /* Tag do músculo + últimos valores registrados (carga/reps/séries),
+       centralizados logo abaixo do título -- mesma info que já existe
+       em data-ultima-carga/data-ultimas-reps/data-ultimas-series. */
+    .detalhe-series-subinfo {
         display: flex;
         align-items: center;
-        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+        margin-bottom: 14px;
+        font-size: 0.78rem;
+        color: #8a857a;
+        text-align: center;
+    }
+    .detalhe-series-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--surface-muted);
+        border-radius: 999px;
+        padding: 3px 10px;
+        font-weight: 600;
+        color: #6a6963;
+        white-space: nowrap;
+    }
+    .detalhe-series-ultimos {
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .detalhe-series-select-wrap {
+        text-align: center;
         margin-bottom: 16px;
     }
     .detalhe-series-select-wrap label {
+        display: block;
         font-size: 0.72rem;
         text-transform: uppercase;
         letter-spacing: 0.03em;
         color: #8a857a;
         font-weight: 700;
-        white-space: nowrap;
+        margin-bottom: 6px;
     }
     .detalhe-series-select-wrap select {
-        max-width: 150px;
+        width: 100%;
+        max-width: 220px;
+        margin: 0 auto;
+        border-radius: 999px;
+        text-align: center;
+        text-align-last: center;
     }
     .detalhe-series-table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0 8px;
         margin-bottom: 8px;
+        table-layout: fixed;
     }
     .detalhe-series-table th {
         font-size: 0.7rem;
@@ -337,6 +353,9 @@
         text-align: center;
         padding-bottom: 2px;
     }
+    .detalhe-series-table th:last-child {
+        width: 46px;
+    }
     .detalhe-series-table td {
         text-align: center;
         padding: 0 4px;
@@ -344,16 +363,70 @@
     .detalhe-series-table td input {
         width: 100%;
         text-align: center;
+        border-radius: 999px;
     }
     .detalhe-series-numero {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--surface-muted);
         font-weight: 700;
         color: #6a6963;
+        font-size: 0.85rem;
     }
     .detalhe-series-footer-row {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        margin-top: 4px;
+        gap: 10px;
+        margin-top: 8px;
+    }
+    .exercicio-switch-detalhe {
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        accent-color: var(--primary-orange);
+        border: 2px solid var(--border-soft);
+        border-radius: var(--radius-sm);
+    }
+    .exercicio-switch-detalhe:checked {
+        background-color: var(--primary-orange);
+        border-color: var(--primary-orange);
+    }
+
+    /* Telas estreitas: reduz espaçamento e fonte da vista de detalhe pra
+       tudo caber sem cortar/quebrar feio -- mesmo critério já usado no
+       resto da tela pra telas <= 380px. */
+    @media (max-width: 380px) {
+        .exercicio-detalhe-series {
+            padding: 14px 14px;
+        }
+        .detalhe-series-icone {
+            width: 36px;
+            height: 36px;
+            font-size: 1rem;
+        }
+        .detalhe-series-titulo {
+            font-size: 0.92rem;
+        }
+        .detalhe-series-subinfo {
+            font-size: 0.72rem;
+            gap: 6px 10px;
+        }
+        .detalhe-series-table th {
+            font-size: 0.62rem;
+        }
+        .detalhe-series-table td input {
+            padding: 6px 4px;
+            font-size: 0.85rem;
+        }
+        .detalhe-series-numero {
+            width: 22px;
+            height: 22px;
+            font-size: 0.78rem;
+        }
     }
     .exercicio-switch-label {
         font-size: 0.78rem;
@@ -1094,15 +1167,7 @@
     @media (max-width: 767.98px) {
         .display-6 { font-size: 1.5rem; }
 
-        .card-body.p-4 { padding: 1rem 0.5rem !important; }
-
-        /* Reduz a margem lateral da página (herdada do .container global,
-           15px de cada lado) só nesta tela, pra sobrar mais largura pros
-           cards de exercício e pro botão de séries individuais. */
-        main.container {
-            padding-left: 6px !important;
-            padding-right: 6px !important;
-        }
+        .card-body.p-4 { padding: 1rem !important; }
 
         /* Rótulos grandes do formulário de busca pesam menos no topo */
         .card-body .form-label.fs-5 {
@@ -2732,6 +2797,13 @@
                     </button>
                 </div>
 
+                {% if ex.musculo or ultima_carga %}
+                <div class="detalhe-series-subinfo">
+                    {% if ex.musculo %}<span class="detalhe-series-tag"><i class="bi bi-tag-fill"></i> {{ ex.musculo }}</span>{% endif %}
+                    {% if ultima_carga %}<span class="detalhe-series-ultimos">{{ ultima_carga }}kg &nbsp; {{ ultimas_reps }}x &nbsp; {{ ultimas_series }} séries</span>{% endif %}
+                </div>
+                {% endif %}
+
                 <div class="detalhe-series-select-wrap">
                     <label for="series-detalhe-select-{{ chave_ex }}">Séries</label>
                     <select class="form-select series-detalhe-select" id="series-detalhe-select-{{ chave_ex }}" data-exercicio-id="{{ chave_ex }}">
@@ -2758,20 +2830,19 @@
                                        name="reps_{{ chave_ex }}_{{ n }}" class="form-control reps-serie-input" data-serie="{{ n }}"
                                        value="{% if series_atual|length >= n %}{{ series_atual[n-1].repeticoes }}{% elif ultimas_reps %}{{ ultimas_reps }}{% endif %}">
                             </td>
-                            <td class="detalhe-series-numero">{{ n }}</td>
+                            <td><span class="detalhe-series-numero">{{ n }}</span></td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
 
                 <div class="detalhe-series-footer-row">
-                    <div class="exercicio-switch-wrap">
-                        <div class="form-check mb-0">
-                            <input class="form-check-input exercicio-switch-espelho" type="checkbox"
-                                   id="ativo-detalhe-{{ chave_ex }}"
-                                   checked
-                                   aria-label="Vou treinar {{ ex.nome }} hoje">
-                        </div>
+                    <div class="form-check mb-0">
+                        <input class="form-check-input exercicio-switch-detalhe" type="checkbox"
+                               id="ativo-detalhe-{{ chave_ex }}"
+                               data-exercicio-id="{{ chave_ex }}"
+                               checked
+                               aria-label="Vou treinar {{ ex.nome }} hoje">
                     </div>
                     <button type="button" class="btn-marcar-feito" data-target-exercicio="{{ chave_ex }}"
                             aria-pressed="false" aria-label="Marcar {{ ex.nome }} como feito">
@@ -2930,7 +3001,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Liga/desliga por exercício ("vou treinar hoje?")
     inicializarSwitchesExercicio();
-    inicializarSwitchesEspelho();
     atualizarResumo();
 
     // Seleciona todo o texto ao focar nos inputs de carga/reps, pra
@@ -3309,14 +3379,18 @@ function inicializarModalSeriesIndividuais() {
         const wrap = detalhe ? detalhe.closest('.exercise-row-wrap') : null;
         if (!wrap) return;
         form.classList.add('tem-foco');
-        document.getElementById('exerciciosCard')?.classList.add('tem-foco');
         wrap.classList.add('is-focado');
         atualizarLinhasVisiveis(exId);
+
+        // O switch "ativo" do detalhe é um espelho -- herda o estado
+        // atual do switch real (card compacto) toda vez que abre.
+        const switchReal = document.querySelector(`.exercicio-switch[data-target-exercicio="${exId}"]`);
+        const switchDetalhe = document.getElementById(`ativo-detalhe-${exId}`);
+        if (switchReal && switchDetalhe) switchDetalhe.checked = switchReal.checked;
     }
 
     function fechar() {
         form.classList.remove('tem-foco');
-        document.getElementById('exerciciosCard')?.classList.remove('tem-foco');
         document.querySelectorAll('.exercise-row-wrap.is-focado').forEach(w => w.classList.remove('is-focado'));
     }
 
@@ -3375,6 +3449,21 @@ function inicializarModalSeriesIndividuais() {
         // Botão "marcar feito" dentro do detalhe -- mesmo alvo do botão
         // do card compacto (data-target-exercicio="{{chave}}"), então o
         // handler de inicializarBotoesMarcarFeito já cuida dos dois.
+    });
+
+    // Switch "ativo" do detalhe: espelha o switch real do card compacto
+    // (que continua sendo o único de fato "dono" do estado) -- ao mudar,
+    // só propaga o valor e dispara o change nele, reaproveitando toda a
+    // lógica de aplicarEstadoExercicio() já existente.
+    document.querySelectorAll('.exercicio-switch-detalhe').forEach(switchEl => {
+        switchEl.addEventListener('change', function () {
+            const exId = this.dataset.exercicioId;
+            const switchReal = document.querySelector(`.exercicio-switch[data-target-exercicio="${exId}"]`);
+            if (switchReal) {
+                switchReal.checked = this.checked;
+                switchReal.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
     });
 }
 
@@ -3455,30 +3544,6 @@ function inicializarSwitchesExercicio() {
         switchEl.addEventListener('change', function () {
             aplicarEstadoExercicio(row, this.checked);
             atualizarResumo();
-        });
-    });
-}
-
-/* Checkbox "espelho" do toggle "vou treinar hoje", que aparece de novo
-   no rodapé da vista de detalhe (mesma posição/estilo do card
-   compacto). Não tem lógica própria -- só reflete e replica cliques
-   pro checkbox real do card compacto, que continua sendo a única
-   fonte de verdade enviada no formulário. */
-function inicializarSwitchesEspelho() {
-    document.querySelectorAll('.exercicio-switch-espelho').forEach(function (espelho) {
-        const wrap = espelho.closest('.exercise-row-wrap');
-        const principal = wrap ? wrap.querySelector('.exercicio-switch') : null;
-        if (!principal) return;
-
-        espelho.checked = principal.checked;
-
-        espelho.addEventListener('change', function () {
-            if (principal.checked === espelho.checked) return;
-            principal.checked = espelho.checked;
-            principal.dispatchEvent(new Event('change', { bubbles: true }));
-        });
-        principal.addEventListener('change', function () {
-            espelho.checked = principal.checked;
         });
     });
 }
