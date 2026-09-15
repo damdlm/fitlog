@@ -559,7 +559,24 @@ class BillingService:
                 headers=BillingService._headers(),
                 timeout=REQUEST_TIMEOUT_SECONDS,
             )
-            BillingService._checar_resposta(resp, 'atualizar cliente')
+            if resp.status_code == 404:
+                # Cliente não existe mais no Asaas (ex: id de sandbox
+                # sobrevivendo depois da virada pra produção -- sandbox
+                # e produção são bases de clientes separadas -- ou
+                # removido manualmente no painel) -- recria do zero em
+                # vez de falhar o checkout inteiro.
+                resp = requests.post(
+                    f'{BillingService._base_url()}/customers',
+                    json=dados_cliente,
+                    headers=BillingService._headers(),
+                    timeout=REQUEST_TIMEOUT_SECONDS,
+                )
+                BillingService._checar_resposta(resp, 'recriar cliente')
+                customer_id = resp.json()['id']
+                assinatura.gateway_customer_id = customer_id
+                db.session.commit()
+            else:
+                BillingService._checar_resposta(resp, 'atualizar cliente')
         return customer_id
 
     @staticmethod
