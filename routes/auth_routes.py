@@ -7,6 +7,8 @@ from urllib.parse import urlparse, urljoin
 import logging
 from utils.validators import validar_email, validar_senha
 from utils.email_utils import enviar_email
+from utils.genero_utils import resolver_genero
+from utils.mensagens_boas_vindas import gerar_mensagem_boas_vindas
 from services.base_service import CacheService
 from services.billing_service import BillingService
 from services.analytics_service import AnalyticsService
@@ -101,7 +103,9 @@ def login():
         login_user(user, remember=remember)
         session['sv'] = user.session_version
         logger.info(f"Login OK -- usuario ID {user.id} ({user.tipo_usuario})")
-        flash(f'Bem-vindo, {user.nome_completo or user.username}!', 'boas-vindas')
+        nome_exibicao = user.nome_completo or user.username
+        genero = resolver_genero(user)
+        flash(gerar_mensagem_boas_vindas(nome_exibicao, genero), 'boas-vindas')
 
         return redirect(_safe_next_url(request.args.get('next')))
 
@@ -228,6 +232,11 @@ def register():
             return redirect(url_for('auth.register'))
         nome_completo = request.form.get('nome_completo', '').strip()
         telefone = request.form.get('telefone', '').strip()
+        # Opcional -- só aceita 'M'/'F'; qualquer outra coisa (campo não
+        # enviado, "prefiro não informar", ou um POST manual malicioso)
+        # vira None e cai na heurística por nome na hora de logar.
+        genero = request.form.get('genero', '').strip().upper()
+        genero = genero if genero in ('M', 'F') else None
 
         if not username or not email or not password:
             flash('Todos os campos são obrigatórios', 'danger')
@@ -278,6 +287,7 @@ def register():
                 email=email,
                 tipo_usuario=tipo_usuario,
                 nome_completo=nome_completo or None,
+                genero=genero,
                 telefone=telefone or None,
                 ativo=True,
             )
@@ -365,6 +375,8 @@ def update_profile():
         nome_completo = request.form.get('nome_completo', '').strip()
         email = request.form.get('email', '').strip()
         telefone = request.form.get('telefone', '').strip()
+        genero = request.form.get('genero', '').strip().upper()
+        genero = genero if genero in ('M', 'F') else None
 
         if not email:
             flash('E-mail é obrigatório', 'danger')
@@ -378,6 +390,7 @@ def update_profile():
         current_user.nome_completo = nome_completo or None
         current_user.email = email
         current_user.telefone = telefone or None
+        current_user.genero = genero
 
         if current_user.tipo_usuario == 'aluno':
             # Checkbox desmarcado não vem no POST -- ausência = False.

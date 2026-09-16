@@ -72,6 +72,12 @@ class User(UserMixin, db.Model):
     
     tipo_usuario = db.Column(db.String(20), nullable=False, default='aluno')
     nome_completo = db.Column(db.String(200))
+    # Opcional -- 'M' ou 'F'. Preenchido no cadastro/perfil por escolha do
+    # usuário; quando nulo, usado como fallback heurístico pelo primeiro
+    # nome só para personalizar a mensagem de boas-vindas (nunca exibido
+    # como dado factual do usuário em nenhuma outra tela). Ver
+    # utils/genero_utils.py:resolver_genero.
+    genero = db.Column(db.String(1), nullable=True)
     telefone = db.Column(db.String(20))
     data_nascimento = db.Column(db.Date)
     # Só dígitos (11 = CPF, 14 = CNPJ), sem pontuação -- exigido pelo
