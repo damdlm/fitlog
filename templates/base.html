@@ -24,7 +24,7 @@
         })();
     </script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Crash Watchdog -- carregado o mais cedo possível de propósito,
@@ -111,16 +111,25 @@
         /* ==========================================================
            Bloqueio de zoom acidental no mobile (principalmente iOS)
            Duas causas diferentes, duas correções:
-           1) touch-action: manipulation remove o "zoom" de duplo-toque
-              rápido em qualquer elemento, sem desativar o pinça-zoom
-              manual (esse continua funcionando, por acessibilidade).
+           1) touch-action: pan-x pan-y no html/body bloqueia a pinça
+              (pinch-to-zoom) mantendo o scroll normal funcionando.
+              Esse é o único mecanismo que o Safari no iPhone realmente
+              respeita -- desde o iOS 10 ele ignora completamente
+              maximum-scale/user-scalable no <meta viewport> (decisão
+              da Apple por acessibilidade), então o viewport sozinho
+              nunca bloqueia a pinça de verdade lá. Antes este bloco
+              usava "manipulation", que remove só o zoom de duplo-toque
+              e deixa a pinça manual passar -- por isso a pinça sempre
+              funcionou em qualquer tela, mesmo com o viewport
+              configurado.
            2) O Safari no iPhone dá zoom automático ao focar um campo
               de formulário (input/select/textarea) sempre que a fonte
               dele é menor que 16px — por isso forçamos 16px nesses
               campos só na faixa mobile, sem mudar o tamanho no desktop.
            ========================================================== */
-        html {
-            touch-action: manipulation;
+        html,
+        body {
+            touch-action: pan-x pan-y;
         }
 
         @media (max-width: 768px) {
