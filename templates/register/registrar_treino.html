@@ -275,27 +275,10 @@
         background-color: rgba(242, 140, 51, 0.06);
         outline: none;
     }
-    .btn-fechar-detalhe {
-        flex-shrink: 0;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: none;
-        background: transparent;
-        color: #8a857a;
-        font-size: 1.1rem;
-        cursor: pointer;
-        border-radius: 50%;
-        padding: 0;
-    }
-    .btn-fechar-detalhe:hover,
-    .btn-fechar-detalhe:focus-visible {
-        color: var(--primary-orange);
-        background: rgba(242, 140, 51, 0.08);
-        outline: none;
-    }
+    /* Botão (i) de instruções: nada de estilo próprio aqui -- reaproveita
+       .dash-registro-icon + .btn-instrucoes-exercicio (mesmas classes
+       globais do card, já estilizadas no CSS geral da tela/base.html)
+       pra ficar pixel a pixel igual. */
     /* Tag do músculo + últimos valores registrados (carga/reps/séries),
        centralizados logo abaixo do título -- mesmos badges cinza
        (.dash-badge) usados nesses mesmos dados dentro do card, em vez
@@ -417,22 +400,20 @@
         margin-top: 8px;
     }
 
-    /* Botão "OK" centralizado, pra quem prefere confirmar explicitamente
-       em vez de fechar clicando fora (que continua funcionando normal). */
-    .detalhe-series-ok-row {
-        display: flex;
-        justify-content: center;
-        margin-top: 16px;
-    }
+    /* Botão "OK" -- agora NA MESMA linha do switch/marcar-feito (meio
+       dos três, com space-between cuidando de deixá-lo entre os dois
+       nas pontas), compacto e do tamanho dos outros dois em vez de uma
+       faixa larga numa linha própria embaixo. */
     .btn-ok-series {
-        min-width: 140px;
-        padding: 9px 28px;
+        min-width: 72px;
+        height: 30px;
+        padding: 0 18px;
         border: none;
         border-radius: 999px;
         background: var(--primary-orange);
         color: #fff;
         font-weight: 700;
-        font-size: 0.95rem;
+        font-size: 0.85rem;
         letter-spacing: 0.02em;
         box-shadow: var(--shadow-sm);
         cursor: pointer;
@@ -2596,9 +2577,17 @@
                 <div class="detalhe-series-header-row">
                     <div class="detalhe-series-icone" id="seriesModalIcone"><i class="bi bi-activity"></i></div>
                     <span class="detalhe-series-titulo" id="seriesModalTitulo">Exercício</span>
-                    <button type="button" class="btn-fechar-detalhe d-none" id="seriesModalBtnInfo" aria-label="Ver instruções">
-                        <i class="bi bi-info-circle"></i>
-                    </button>
+                    <!-- Mesmo padrão do (i) do card: um .dash-registro-icon
+                         (a caixa laranja clarinha) envolvendo o botão
+                         .btn-instrucoes-exercicio (borda 2px, ícone
+                         bi-info-lg) -- reaproveitando as mesmas classes
+                         globais, não uma cópia própria do modal. -->
+                    <div class="dash-registro-icon d-none" id="seriesModalBtnInfoWrap">
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-instrucoes-exercicio"
+                                id="seriesModalBtnInfo" title="Ver passo a passo do exercício" aria-label="Ver instruções">
+                            <i class="bi bi-info-lg"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="detalhe-series-subinfo d-none" id="seriesModalSubinfo"></div>
@@ -2615,20 +2604,20 @@
                     <tbody id="seriesModalBody"></tbody>
                 </table>
 
+                <!-- OK fica DENTRO da mesma linha do switch/marcar-feito
+                     (compacto, no meio) em vez de uma linha própria
+                     embaixo -- alinhado com os outros dois botões. -->
                 <div class="detalhe-series-footer-row">
                     <div class="exercicio-switch-wrap">
                         <div class="form-check mb-0">
                             <input class="form-check-input" type="checkbox" id="seriesModalSwitch" aria-label="Vou treinar esse exercício hoje">
                         </div>
                     </div>
+                    <button type="button" class="btn-ok-series" data-bs-dismiss="modal">OK</button>
                     <button type="button" class="btn-marcar-feito" id="seriesModalBtnFeito"
                             aria-pressed="false" aria-label="Marcar exercício como feito">
                         <i class="bi bi-check-lg"></i>
                     </button>
-                </div>
-
-                <div class="detalhe-series-ok-row">
-                    <button type="button" class="btn-ok-series" data-bs-dismiss="modal">OK</button>
                 </div>
             </div>
         </div>
@@ -3457,6 +3446,7 @@ function inicializarModalSeriesIndividuais() {
     const iconeEl = document.getElementById('seriesModalIcone');
     const tituloEl = document.getElementById('seriesModalTitulo');
     const infoBtnEl = document.getElementById('seriesModalBtnInfo');
+    const infoBtnWrapEl = document.getElementById('seriesModalBtnInfoWrap');
     const subinfoEl = document.getElementById('seriesModalSubinfo');
     const selectEl = document.getElementById('seriesModalSelect');
     const bodyEl = document.getElementById('seriesModalBody');
@@ -3640,7 +3630,7 @@ function inicializarModalSeriesIndividuais() {
         } else {
             iconeEl.innerHTML = '<i class="bi bi-activity"></i>';
         }
-        infoBtnEl.classList.toggle('d-none', !instrucoesPassos);
+        infoBtnWrapEl.classList.toggle('d-none', !instrucoesPassos);
         if (instrucoesPassos) {
             infoBtnEl.dataset.nome = instrucoesNome;
             infoBtnEl.dataset.passos = instrucoesPassos;
