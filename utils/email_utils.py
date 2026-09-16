@@ -76,10 +76,16 @@ def enviar_email(destinatario, assunto, corpo_texto, corpo_html=None):
         resposta.raise_for_status()
         logger.info("E-mail enviado -- destinatario=%s assunto=%s", destinatario, assunto)
         return True
-    except Exception:
+    except requests.exceptions.HTTPError:
         # Falha de envio nao deve derrubar a request (ex: usuario pediria
         # reset de senha e receberia um erro 500 por causa do envio de
         # e-mail). O chamador trata isso mostrando uma mensagem generica
         # ao usuario.
+        logger.error(
+            "Falha ao enviar e-mail para %s -- status=%s corpo=%s",
+            destinatario, resposta.status_code, resposta.text,
+        )
+        return False
+    except Exception:
         logger.exception("Falha ao enviar e-mail para %s", destinatario)
         return False
