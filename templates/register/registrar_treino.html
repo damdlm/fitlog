@@ -392,10 +392,15 @@
         color: #6a6963;
         font-size: 0.85rem;
     }
+    /* Mesmo espaçamento do card: switch laranja numa ponta, botão
+       "marcar feito" verde na ponta OPOSTA (no card, a distância entre
+       os dois é o próprio campo de Carga/Repetições/Séries no meio --
+       aqui, sem esses campos no rodapé, space-between reproduz a mesma
+       posição nas pontas em vez dos dois ficarem colados). */
     .detalhe-series-footer-row {
         display: flex;
         align-items: center;
-        gap: 10px;
+        justify-content: space-between;
         margin-top: 8px;
     }
 
@@ -1759,6 +1764,16 @@
         z-index: 2000;
     }
 
+    /* Bordinha laranja em volta do modal, igual ao contorno do card
+       (.exercise-row): mesma cor/raio, só que nas 4 bordas (no card é
+       só a esquerda, mais grossa, porque a borda das outras 3 é a cor
+       neutra --border-soft; aqui, sem coluna lateral pra "gastar" a
+       cor, a borda inteira fica laranja). */
+    #modalSeriesIndividuais .modal-content {
+        border: 2px solid var(--primary-orange);
+        border-radius: var(--radius-md);
+    }
+
     /* Vídeo/gif de demonstração do exercício ~30% menor, só nesta tela.
        #modalImagensExercicio é um modal GLOBAL (vem do base.html) e é
        reaproveitado em outras telas também (cadastrar/editar treino) --
@@ -1812,6 +1827,24 @@
        FitBot) usam o z-index padrão do Bootstrap normalmente. */
     body.fl-modo-treino-ativo .modal-backdrop {
         z-index: 1950;
+    }
+
+    /* Ver comentário do JS (ativarCronometroFlutuante) -- classe ligada
+       só enquanto o rodapé foi movido pra fora do .modo-treino-overlay
+       (direto sob <body>), o que é o que realmente importa aqui: o
+       z-index só é comparado dentro do MESMO stacking context, então
+       só mover o nó de DOM pra fora dele (não position:fixed sozinho)
+       tira o rodapé do contexto do overlay (1900) e o deixa competir
+       de verdade com o backdrop (1950) e o próprio .modal (2000, que
+       cobre a tela inteira como área clicável de fechar, não só o
+       card central).
+       left/right/bottom:0 repõe visualmente o mesmo lugar de sempre. */
+    .modo-treino-footer.crono-flutuante {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 2010;
     }
 
     /* Mesmo caso do popover que mostra o nome completo do exercício
@@ -3922,6 +3955,70 @@ function tocarBipe() {
         document.body.style.overflow = '';
     }
     window.FitLogFecharModoTreinoTelaCheia = fecharModoTreinoTelaCheia;
+
+    /* O cronômetro de intervalo mora no rodapé do modo treino em tela
+       cheia (z-index 1900) -- abaixo do backdrop escurecido (1950),
+       então qualquer modal dessa tela (séries individuais, imagens,
+       instruções...) o deixava coberto e sem resposta a clique
+       enquanto estivesse aberto. Um filho não consegue "furar" o
+       stacking context do próprio pai (a stack de z-index só vale
+       DENTRO dele) -- por isso a solução não é só subir o z-index do
+       rodapé, e sim tirá-lo do fluxo com position:fixed enquanto um
+       desses modais estiver aberto: aí ele cria o próprio stacking
+       context, no mesmo nível do backdrop e do próprio .modal (que
+       cobre a tela inteira, não só o card central), e o z-index passa
+       a valer
+       de verdade. O padding-bottom compensa a altura que ele deixa de
+       ocupar no fluxo, pra nenhum exercício ficar escondido atrás dele. */
+    var MODAIS_MODO_TREINO = ['modalConfirmarCancelamento', 'modalResumoTreino',
+        'modalImagensExercicio', 'modalInstrucoesExercicio', 'modalSeriesIndividuais'];
+
+    function algumModalDoModoTreinoAberto() {
+        return MODAIS_MODO_TREINO.some(function (id) {
+            var el = document.getElementById(id);
+            return el && el.classList.contains('show');
+        });
+    }
+
+    function ativarCronometroFlutuante() {
+        var footer = document.getElementById('modoTreinoFooter');
+        var bodyModo = document.getElementById('modoTreinoBody');
+        if (!footer || !footer.childElementCount || footer.classList.contains('crono-flutuante')) return;
+        var altura = footer.getBoundingClientRect().height;
+        if (bodyModo) bodyModo.style.paddingBottom = altura + 'px';
+        // position:fixed sozinho NÃO tira o rodapé do stacking context do
+        // pai (.modo-treino-overlay, z-index 1900) -- isso só vale contra
+        // outros elementos dentro do MESMO contexto. Pra realmente ficar
+        // acima do backdrop/modal (que são outra subárvore do DOM), o nó
+        // precisa ser movido de verdade pra fora do overlay -- mesmo
+        // padrão de appendChild que o resto da tela já usa (ver
+        // revelarExercicios) pra reaproveitar o elemento com seus
+        // listeners, sem clonar.
+        footer.classList.add('crono-flutuante');
+        document.body.appendChild(footer);
+    }
+
+    function desativarCronometroFlutuante() {
+        var footer = document.getElementById('modoTreinoFooter');
+        var overlay = document.getElementById('modoTreinoOverlay');
+        var bodyModo = document.getElementById('modoTreinoBody');
+        if (footer && footer.classList.contains('crono-flutuante')) {
+            footer.classList.remove('crono-flutuante');
+            if (overlay) overlay.appendChild(footer);
+        }
+        if (bodyModo) bodyModo.style.paddingBottom = '';
+    }
+
+    MODAIS_MODO_TREINO.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('show.bs.modal', function () {
+            if (document.body.classList.contains('fl-modo-treino-ativo')) ativarCronometroFlutuante();
+        });
+        el.addEventListener('hidden.bs.modal', function () {
+            if (!algumModalDoModoTreinoAberto()) desativarCronometroFlutuante();
+        });
+    });
 
     var jaRevelouExercicios = false;
 
