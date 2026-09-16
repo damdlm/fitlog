@@ -10,6 +10,18 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/auth-login.css') }}">
+<style>
+    /* Truque para detectar o autopreenchimento do navegador: Chrome e
+       Safari aplicam a pseudo-classe :-webkit-autofill nos campos
+       preenchidos automaticamente, o que dispara a animação abaixo.
+       Usado pelo script no final da página para logar sem precisar
+       clicar em "Entrar" no mobile. */
+    @keyframes onAutoFillStart { from {} to {} }
+    #loginUsername:-webkit-autofill,
+    #loginPassword:-webkit-autofill {
+        animation-name: onAutoFillStart;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -106,6 +118,46 @@
                 : '<i class="bi bi-eye-slash"></i>';
             toggle.setAttribute('aria-label', mostrando ? 'Mostrar senha' : 'Ocultar senha');
         });
+    })();
+
+    (function () {
+        // No mobile, quando o navegador preenche usuário/senha com a
+        // senha salva, envia o formulário direto -- sem precisar tocar
+        // em "Entrar". Detecta o autopreenchimento via animationstart
+        // (ver keyframe onAutoFillStart no extra_css deste template).
+        // No desktop mantemos o comportamento normal (clique manual),
+        // já que lá o autopreenchimento nem sempre reflete intenção
+        // imediata de logar.
+        var isMobile = window.matchMedia('(max-width: 991px)').matches;
+        if (!isMobile) return;
+
+        var form = document.querySelector('.login-panel-form form');
+        var username = document.getElementById('loginUsername');
+        var password = document.getElementById('loginPassword');
+        if (!form || !username || !password) return;
+
+        var enviado = false;
+
+        function tentarEnviar() {
+            if (enviado) return;
+            if (!username.value.trim() || !password.value.trim()) return;
+            enviado = true;
+            if (form.requestSubmit) {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+        }
+
+        function aoDetectarAutofill(evento) {
+            if (evento.animationName !== 'onAutoFillStart') return;
+            // pequeno atraso para dar tempo do navegador preencher os
+            // dois campos antes de checar se já pode enviar
+            setTimeout(tentarEnviar, 150);
+        }
+
+        username.addEventListener('animationstart', aoDetectarAutofill);
+        password.addEventListener('animationstart', aoDetectarAutofill);
     })();
 </script>
 {% endblock %}
