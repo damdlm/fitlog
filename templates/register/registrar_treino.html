@@ -219,25 +219,43 @@
         margin-bottom: 10px;
     }
     .detalhe-series-icone {
-        width: 42px;
-        height: 42px;
-        border-radius: var(--radius-sm);
-        background: var(--surface-muted);
+        /* Mesmo visual do ícone do card (.dash-registro-icon no
+           base.html): fundo laranja clarinho, ícone laranja, cantos
+           radius-sm -- não mais o quadrado cinza arredondado(999px)
+           que destoava do card. */
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        border-radius: 10px;
+        background: rgba(242, 140, 51, 0.12);
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
         overflow: hidden;
-        color: var(--primary-orange);
+        color: var(--primary-color);
         font-size: 1.1rem;
     }
-    .detalhe-series-icone img {
+    /* Quando o exercício tem gif, o ícone vira um botão (mesmo padrão
+       do botao_imagens_exercicio do card) que abre o modal de imagens
+       -- nunca a tag <img> direto aqui dentro, que é o que causava o
+       ícone de imagem quebrada quando o gif falhava ao carregar. */
+    .detalhe-series-icone .btn-imagens-exercicio-modal {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: transparent;
+        color: inherit;
+        font-size: inherit;
+        padding: 0;
+        cursor: pointer;
     }
     .detalhe-series-titulo {
-        font-weight: 700;
+        font-weight: 600;
+        color: var(--secondary-color);
         flex: 1 1 auto;
         min-width: 0;
         overflow: hidden;
@@ -266,32 +284,16 @@
         outline: none;
     }
     /* Tag do músculo + últimos valores registrados (carga/reps/séries),
-       centralizados logo abaixo do título. */
+       centralizados logo abaixo do título -- mesmos badges cinza
+       (.dash-badge) usados nesses mesmos dados dentro do card, em vez
+       do chip pill/texto corrido que o modal usava antes. */
     .detalhe-series-subinfo {
         display: flex;
         align-items: center;
         justify-content: center;
         flex-wrap: wrap;
-        gap: 8px 14px;
+        gap: 6px;
         margin-bottom: 14px;
-        font-size: 0.78rem;
-        color: #8a857a;
-        text-align: center;
-    }
-    .detalhe-series-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        background: var(--surface-muted);
-        border-radius: 999px;
-        padding: 3px 10px;
-        font-weight: 600;
-        color: #6a6963;
-        white-space: nowrap;
-    }
-    .detalhe-series-ultimos {
-        font-weight: 600;
-        white-space: nowrap;
     }
     .detalhe-series-select-wrap {
         text-align: center;
@@ -306,13 +308,31 @@
         font-weight: 700;
         margin-bottom: 6px;
     }
+    /* Select "Séries" com a formatação idêntica ao .form-select do
+       card (.inputs-row .form-select): mesma borda grossa, altura,
+       negrito e brilho laranja no foco -- só centralizado, já que
+       aqui não está lado a lado com outros campos. */
     .detalhe-series-select-wrap select {
         width: 100%;
         max-width: 220px;
         margin: 0 auto;
-        border-radius: 999px;
+        height: 30px !important;
+        padding: 3px 24px 3px 8px !important;
+        font-size: 0.85rem !important;
+        font-weight: 700 !important;
+        font-family: inherit !important;
+        color: var(--dark-bg) !important;
+        border: 2px solid var(--border-soft) !important;
+        border-radius: var(--radius-sm) !important;
+        box-shadow: none !important;
+        background-color: var(--surface) !important;
         text-align: center;
         text-align-last: center;
+    }
+    .detalhe-series-select-wrap select:focus {
+        outline: none;
+        border-color: var(--primary-orange) !important;
+        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12) !important;
     }
     .detalhe-series-table {
         width: 100%;
@@ -337,10 +357,28 @@
         text-align: center;
         padding: 0 4px;
     }
+    /* Inputs de carga/repetições com a formatação idêntica aos
+       .carga-input/.reps-input do card (mesma borda grossa, altura,
+       negrito e brilho laranja no foco) -- não mais o pill fino de
+       antes. */
     .detalhe-series-table td input {
         width: 100%;
+        min-width: 0;
         text-align: center;
-        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.9rem !important;
+        padding: 3px !important;
+        height: 30px !important;
+        border: 2px solid var(--border-soft) !important;
+        border-radius: var(--radius-sm) !important;
+        box-shadow: none !important;
+        background: var(--surface);
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .detalhe-series-table td input:focus {
+        outline: none;
+        border-color: var(--primary-orange) !important;
+        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12) !important;
     }
     .detalhe-series-numero {
         display: inline-flex;
@@ -368,21 +406,21 @@
         .detalhe-series-icone {
             width: 36px;
             height: 36px;
+            min-width: 36px;
             font-size: 1rem;
         }
         .detalhe-series-titulo {
             font-size: 0.92rem;
         }
         .detalhe-series-subinfo {
-            font-size: 0.72rem;
-            gap: 6px 10px;
+            gap: 4px;
         }
         .detalhe-series-table th {
             font-size: 0.62rem;
         }
         .detalhe-series-table td input {
-            padding: 6px 4px;
-            font-size: 0.85rem;
+            padding: 3px !important;
+            font-size: 0.85rem !important;
         }
         .detalhe-series-numero {
             width: 22px;
@@ -3468,16 +3506,37 @@ function inicializarModalSeriesIndividuais() {
 
         tituloEl.textContent = nome;
         tituloEl.title = nome;
-        iconeEl.innerHTML = gifUrl ? `<img src="${gifUrl}" alt="">` : '<i class="bi bi-activity"></i>';
+        // Mesmo padrão do ícone do card (botao_imagens_exercicio): um
+        // botão que abre o modal de imagens quando há gif, nunca a
+        // tag <img> direto aqui dentro -- essa era a causa do ícone
+        // de imagem quebrada quando o gif falhava ao carregar.
+        if (gifUrl) {
+            iconeEl.innerHTML = `<button type="button" class="btn-imagens-exercicio-modal" data-nome="${nome}" data-gif="${gifUrl}" aria-label="Ver gif do exercício"><i class="bi bi-images"></i></button>`;
+            const btnImg = iconeEl.querySelector('.btn-imagens-exercicio-modal');
+            if (btnImg) {
+                btnImg.addEventListener('click', function () {
+                    if (typeof abrirModalImagensExercicio === 'function') abrirModalImagensExercicio(this);
+                });
+            }
+        } else {
+            iconeEl.innerHTML = '<i class="bi bi-activity"></i>';
+        }
         infoBtnEl.classList.toggle('d-none', !instrucoesPassos);
         if (instrucoesPassos) {
             infoBtnEl.dataset.nome = instrucoesNome;
             infoBtnEl.dataset.passos = instrucoesPassos;
         }
 
+        // Mesmos badges cinza (.dash-badge) que o card usa pros
+        // últimos valores registrados -- em vez do chip/texto corrido
+        // que o modal usava antes.
         let subinfoHtml = '';
-        if (musculo) subinfoHtml += `<span class="detalhe-series-tag"><i class="bi bi-tag-fill"></i> ${musculo}</span>`;
-        if (ultimaCarga) subinfoHtml += `<span class="detalhe-series-ultimos">${ultimaCarga}kg &nbsp; ${ultimasReps}x &nbsp; ${ultimasSeries} séries</span>`;
+        if (musculo) subinfoHtml += `<span class="dash-badge"><i class="bi bi-tag-fill"></i> ${musculo}</span>`;
+        if (ultimaCarga) {
+            subinfoHtml += `<span class="dash-badge">${ultimaCarga}kg</span>`;
+            subinfoHtml += `<span class="dash-badge">${ultimasReps}x</span>`;
+            subinfoHtml += `<span class="dash-badge">${ultimasSeries} série${ultimasSeries != 1 ? 's' : ''}</span>`;
+        }
         subinfoEl.innerHTML = subinfoHtml;
         subinfoEl.classList.toggle('d-none', !subinfoHtml);
 
