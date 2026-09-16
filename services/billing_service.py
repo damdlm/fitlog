@@ -1201,6 +1201,23 @@ class BillingService:
                     'effectiveDate': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
                     'municipalServiceCode': CODIGO_SERVICO_MUNICIPAL_NFSE,
                     'municipalServiceName': DESCRICAO_SERVICO_NFSE,
+                    # Exigido pela Asaas mesmo já havendo alíquota
+                    # configurada no painel (confirmado por erro 400
+                    # "Necessário informar os impostos da nota fiscal"
+                    # na primeira chamada real) -- MEI não recolhe ISS
+                    # por nota (embutido no DAS) nem detalha os
+                    # federais (PIS/COFINS/CSLL/INSS/IR), por isso
+                    # tudo zerado; ver alíquota configurada em Notas
+                    # Fiscais > Configurações no painel da Asaas.
+                    'taxes': {
+                        'retainIss': False,
+                        'iss': 0,
+                        'cofins': 0,
+                        'csll': 0,
+                        'inss': 0,
+                        'ir': 0,
+                        'pis': 0,
+                    },
                 },
                 headers=BillingService._headers(),
                 timeout=REQUEST_TIMEOUT_SECONDS,
