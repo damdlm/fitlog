@@ -365,7 +365,7 @@
                         '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>' +
                     '</div>' +
                     '<div class="modal-body text-center" style="background:#161616; padding:20px;">' +
-                        '<img id="fitlogSharePreview" src="" style="max-width:100%; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.4);">' +
+                        '<img id="fitlogSharePreview" src="" style="max-width:100%; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.4); touch-action: none;">' +
                     '</div>' +
                     '<div class="modal-footer justify-content-center" style="background:#161616; border:none; padding-bottom:24px;">' +
                         '<button type="button" class="btn btn-outline-light" id="fitlogShareBaixar">' +
