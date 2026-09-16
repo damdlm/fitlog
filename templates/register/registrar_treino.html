@@ -261,6 +261,19 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        /* Mesmo afordance do .exercicio-info-trigger do card: cursor e
+           destaque leve ao passar o mouse/focar, já que agora também
+           abre popover com nome completo + músculos ao clicar. */
+        cursor: pointer;
+        border-radius: 8px;
+        margin: -4px -6px;
+        padding: 4px 6px;
+        transition: background-color 0.15s ease;
+    }
+    .detalhe-series-titulo:hover,
+    .detalhe-series-titulo:focus-visible {
+        background-color: rgba(242, 140, 51, 0.06);
+        outline: none;
     }
     .btn-fechar-detalhe {
         flex-shrink: 0;
@@ -402,6 +415,35 @@
         align-items: center;
         justify-content: space-between;
         margin-top: 8px;
+    }
+
+    /* Botão "OK" centralizado, pra quem prefere confirmar explicitamente
+       em vez de fechar clicando fora (que continua funcionando normal). */
+    .detalhe-series-ok-row {
+        display: flex;
+        justify-content: center;
+        margin-top: 16px;
+    }
+    .btn-ok-series {
+        min-width: 140px;
+        padding: 9px 28px;
+        border: none;
+        border-radius: 999px;
+        background: var(--primary-orange);
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.95rem;
+        letter-spacing: 0.02em;
+        box-shadow: var(--shadow-sm);
+        cursor: pointer;
+    }
+    .btn-ok-series:hover,
+    .btn-ok-series:focus-visible {
+        filter: brightness(1.06);
+        outline: none;
+    }
+    .btn-ok-series:active {
+        filter: brightness(0.94);
     }
 
     /* Telas estreitas: reduz espaçamento e fonte do modal pra tudo
@@ -2584,6 +2626,10 @@
                         <i class="bi bi-check-lg"></i>
                     </button>
                 </div>
+
+                <div class="detalhe-series-ok-row">
+                    <button type="button" class="btn-ok-series" data-bs-dismiss="modal">OK</button>
+                </div>
             </div>
         </div>
     </div>
@@ -2883,6 +2929,7 @@
                     data-exercicio-id="{{ chave_ex }}"
                     data-exercicio-nome="{{ ex.nome }}"
                     data-exercicio-musculo="{{ ex.musculo or '' }}"
+                    data-exercicio-musculos-secundarios="{{ ex.musculos_secundarios_lista|join(', ') if ex.musculos_secundarios_lista else '' }}"
                     data-gif-url="{{ ex.gif_url or '' }}"
                     data-instrucoes-nome="{{ ex.nome }}"
                     data-instrucoes-passos="{% if ex.passos_pt %}{{ ex.passos_pt | tojson | forceescape }}{% endif %}"
@@ -3457,8 +3504,8 @@ function inicializarModalSeriesIndividuais() {
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="number" step="0.5" min="0" inputmode="decimal" class="form-control series-modal-carga" data-serie="${n}" value="${valorCarga}"></td>
-                <td><input type="number" min="0" max="100" inputmode="numeric" class="form-control series-modal-reps" data-serie="${n}" value="${valorReps}"></td>
+                <td><input type="number" step="0.5" min="0" inputmode="decimal" placeholder="0" class="form-control series-modal-carga" data-serie="${n}" value="${valorCarga}"></td>
+                <td><input type="number" min="0" max="100" inputmode="numeric" placeholder="0" class="form-control series-modal-reps" data-serie="${n}" value="${valorReps}"></td>
                 <td><span class="detalhe-series-numero">${n}</span></td>
             `;
             bodyEl.appendChild(tr);
@@ -3466,6 +3513,13 @@ function inicializarModalSeriesIndividuais() {
 
         bodyEl.querySelectorAll('input').forEach(input => {
             input.addEventListener('input', () => sincronizarLinha(exId, input));
+            // Mesmo comportamento dos inputs de carga/reps do card: ao
+            // focar, seleciona todo o texto (digita por cima direto, sem
+            // precisar apagar o valor anterior primeiro).
+            input.addEventListener('focus', function () { this.select(); });
+            input.addEventListener('mouseup', function (e) {
+                if (document.activeElement === this) e.preventDefault();
+            });
         });
     }
 
@@ -3491,6 +3545,18 @@ function inicializarModalSeriesIndividuais() {
             abrirModalInstrucoesExercicio(this);
         }
     });
+
+    // Popover com nome completo + músculos ao clicar no título -- mesmo
+    // conteúdo/padrão do popover .exercicio-info-trigger do card (ver
+    // inicializarPopoverDescricaoExercicio), só que fixo no nome do
+    // modal em vez de precisar detectar truncamento.
+    function escaparHtmlSeriesModal(valor) {
+        const div = document.createElement('div');
+        div.textContent = valor === undefined || valor === null ? '' : String(valor);
+        return div.innerHTML;
+    }
+    tituloEl.setAttribute('tabindex', '0');
+    tituloEl.setAttribute('role', 'button');
 
     selectEl.addEventListener('change', function () {
         if (!exIdAtual) return;
@@ -3530,6 +3596,7 @@ function inicializarModalSeriesIndividuais() {
 
         const nome = gatilho.dataset.exercicioNome || 'Exercício';
         const musculo = gatilho.dataset.exercicioMusculo || '';
+        const musculosSecundarios = gatilho.dataset.exercicioMusculosSecundarios || '';
         const gifUrl = gatilho.dataset.gifUrl;
         const ultimaCarga = gatilho.dataset.ultimaCarga || '';
         const ultimasReps = gatilho.dataset.ultimasReps || '';
@@ -3539,6 +3606,25 @@ function inicializarModalSeriesIndividuais() {
 
         tituloEl.textContent = nome;
         tituloEl.title = nome;
+
+        if (window.bootstrap) {
+            const popoverAnterior = bootstrap.Popover.getInstance(tituloEl);
+            if (popoverAnterior) popoverAnterior.dispose();
+            if (musculo || musculosSecundarios) {
+                const partes = ['<p class="mb-2">' + escaparHtmlSeriesModal(nome) + '</p>'];
+                if (musculo) partes.push('<div class="popover-musculo-linha"><strong>Músculo principal:</strong> ' + escaparHtmlSeriesModal(musculo) + '</div>');
+                if (musculosSecundarios) partes.push('<div class="popover-musculo-linha"><strong>Músculos secundários:</strong> ' + escaparHtmlSeriesModal(musculosSecundarios) + '</div>');
+                new bootstrap.Popover(tituloEl, {
+                    trigger: 'focus',
+                    placement: 'bottom',
+                    html: true,
+                    content: partes.join(''),
+                    container: 'body',
+                    customClass: 'popover-descricao-exercicio'
+                });
+            }
+        }
+
         // Mesmo padrão do ícone do card (botao_imagens_exercicio): um
         // botão que abre o modal de imagens quando há gif, nunca a
         // tag <img> direto aqui dentro -- essa era a causa do ícone
