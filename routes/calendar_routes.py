@@ -128,11 +128,26 @@ def api_eventos():
                     'data': data,
                     'volume_total': 0,
                     'treinos': [],
-                    'exercicios': 0
+                    'exercicios': 0,
+                    # tempo_treino é o cronômetro do topo da tela, salvo
+                    # repetido em toda série da mesma sessão -- por isso
+                    # não pode ser somado por registro/exercício (contaria
+                    # a mesma sessão várias vezes). Guardamos só um valor
+                    # por treino_versao_id e somamos esses no final, pro
+                    # caso raro de duas sessões distintas no mesmo dia.
+                    '_tempo_por_versao': {}
                 }
             
             volumes_por_dia[data_str]['volume_total'] += volume_total
             volumes_por_dia[data_str]['exercicios'] += 1
+
+            tempo_registro = 0
+            for s in r.series:
+                if s.tempo_treino:
+                    tempo_registro = max(tempo_registro, s.tempo_treino)
+            if tempo_registro:
+                tempos_versao = volumes_por_dia[data_str]['_tempo_por_versao']
+                tempos_versao[r.treino_versao_id] = max(tempo_registro, tempos_versao.get(r.treino_versao_id, 0))
             
             # Adicionar detalhe do treino
             treino = treinos_por_id.get(r.treino_versao_id)
@@ -191,7 +206,8 @@ def api_eventos():
                     'volume': dados['volume_total'],
                     'exercicios': dados['exercicios'],
                     'treinos': dados['treinos'],
-                    'descricao': descricao
+                    'descricao': descricao,
+                    'tempoTreinoSegundos': sum(dados['_tempo_por_versao'].values())
                 }
             })
         
