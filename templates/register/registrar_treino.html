@@ -935,24 +935,24 @@
        do .inputs-row para poder colar rótulo e campo no mobile.
        margin-top empurra o bloco de rótulos para baixo, deixando-o
        mais próximo dos campos (margin-bottom já é mínimo).
-       Mesma proporção de colunas do .inputs-row (5fr/3fr/5fr), pra
+       Mesma proporção de colunas do .inputs-row (4fr/3fr/6fr), pra
        cada rótulo ficar alinhado com o campo correspondente. */
     .inputs-row-labels {
         display: grid;
-        grid-template-columns: 5fr 3fr 5fr;
+        grid-template-columns: 4fr 3fr 6fr;
         gap: 8px;
         margin-top: 7px;
         margin-bottom: 1px;
     }
 
-    /* Repetições 30% mais estreita que as outras duas -- a largura
-       tirada dela é dividida igualmente entre Carga e Séries.
-       Proporção igual seria 1fr/1fr/1fr (33,3% cada); com Repetições
-       reduzida em 30% (33,3% -> ~23,3%) e a diferença repassada pra
-       Carga e Séries, a proporção vira 5fr/3fr/5fr (~38,5%/23,1%/38,5%). */
+    /* Séries mais larga que Carga (pedido do usuário, 16/09: o texto do
+       select "N séries" cortava com a seta encostada nele) -- Repetições
+       segue reduzida (30% menor que uma coluna igual, mesma lógica de
+       antes), mas a diferença toda repassada fica só com Séries em vez
+       de dividida igualmente com Carga. */
     .inputs-row {
         display: grid;
-        grid-template-columns: 5fr 3fr 5fr;
+        grid-template-columns: 4fr 3fr 6fr;
         gap: 8px;
         margin-top: 0;
     }
@@ -1241,7 +1241,7 @@
         }
 
         /* Rótulos: no mobile só precisa de ajuste de espaçamento -- a
-           proporção de colunas (5fr/3fr/5fr) já vem do estilo base. */
+           proporção de colunas (4fr/3fr/6fr) já vem do estilo base. */
         .inputs-row-labels {
             gap: 6px;
             margin-bottom: 2px !important;
@@ -1267,7 +1267,7 @@
             margin-bottom: 0 !important;
         }
 
-        /* Proporção de colunas (5fr/3fr/5fr) já vem do estilo base;
+        /* Proporção de colunas (4fr/3fr/6fr) já vem do estilo base;
            no mobile só reduz o espaçamento entre elas. */
         .inputs-row {
             gap: 6px;
