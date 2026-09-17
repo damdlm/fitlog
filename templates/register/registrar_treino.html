@@ -153,9 +153,16 @@
         display: flex;
         align-items: center;
     }
+    /* margin:0 zera o margin-top:.25em (~4px) que o Bootstrap aplica
+       por padrão em .form-check-input -- sem isso, o checkbox renderiza
+       4px mais alto/mais baixo que o necessário, parecendo maior e
+       desalinhado em relação aos outros botões da mesma linha (switch
+       vs OK vs marcar-feito no modal; mesmo problema também existia,
+       mais sutil, no card). */
     .exercicio-switch-wrap .form-check-input {
         width: 30px;
         height: 30px;
+        margin: 0;
         cursor: pointer;
         accent-color: var(--primary-orange);
         border: 2px solid var(--border-soft);
@@ -222,7 +229,9 @@
         /* Mesmo visual do ícone do card (.dash-registro-icon no
            base.html): fundo laranja clarinho, ícone laranja, cantos
            radius-sm -- não mais o quadrado cinza arredondado(999px)
-           que destoava do card. */
+           que destoava do card. Sem overflow:hidden -- o card não tem
+           (deixava a borda do botão interno sujeita a um corte sutil
+           diferente do card em alguns navegadores). */
         width: 40px;
         height: 40px;
         min-width: 40px;
@@ -232,26 +241,38 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        overflow: hidden;
         color: var(--primary-color);
         font-size: 1.1rem;
     }
     /* Quando o exercício tem gif, o ícone vira um botão (mesmo padrão
        do botao_imagens_exercicio do card) que abre o modal de imagens
        -- nunca a tag <img> direto aqui dentro, que é o que causava o
-       ícone de imagem quebrada quando o gif falhava ao carregar. */
+       ícone de imagem quebrada quando o gif falhava ao carregar.
+       Borda de 2px igual à do .btn-imagens-exercicio/.btn-instrucoes-exercicio
+       do card -- sem ela, o botão parece menor que o switch/marcar-feito
+       mesmo estando na mesma caixa de 40px (mesmo motivo do comentário
+       ao lado da definição original no card). */
     .detalhe-series-icone .btn-imagens-exercicio-modal {
         width: 100%;
         height: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: none;
+        border: 2px solid var(--border-soft);
+        border-radius: var(--radius-sm);
         background: transparent;
         color: inherit;
         font-size: inherit;
         padding: 0;
         cursor: pointer;
+        -webkit-appearance: none;
+        appearance: none;
+        box-shadow: none;
+    }
+    .detalhe-series-icone .btn-imagens-exercicio-modal:hover {
+        background: rgba(242, 140, 51, 0.22);
+        border-color: var(--primary-orange);
+        color: var(--primary-orange);
     }
     .detalhe-series-titulo {
         font-weight: 600;
@@ -3620,7 +3641,7 @@ function inicializarModalSeriesIndividuais() {
         // tag <img> direto aqui dentro -- essa era a causa do ícone
         // de imagem quebrada quando o gif falhava ao carregar.
         if (gifUrl) {
-            iconeEl.innerHTML = `<button type="button" class="btn-imagens-exercicio-modal" data-nome="${nome}" data-gif="${gifUrl}" aria-label="Ver gif do exercício"><i class="bi bi-images"></i></button>`;
+            iconeEl.innerHTML = `<button type="button" class="btn btn-sm btn-outline-secondary btn-imagens-exercicio-modal" data-nome="${nome}" data-gif="${gifUrl}" aria-label="Ver gif do exercício"><i class="bi bi-images"></i></button>`;
             const btnImg = iconeEl.querySelector('.btn-imagens-exercicio-modal');
             if (btnImg) {
                 btnImg.addEventListener('click', function () {
