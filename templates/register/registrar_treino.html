@@ -4100,6 +4100,12 @@ function tocarBipe() {
         if (!footer || !footer.childElementCount || footer.classList.contains('crono-flutuante')) return;
         var altura = footer.getBoundingClientRect().height;
         if (bodyModo) bodyModo.style.paddingBottom = altura + 'px';
+        // Avisa o CSS de modais que podem abrir por cima dela (instruções
+        // do exercício, por ex.) qual é a altura real da barra flutuante,
+        // pra eles reservarem espaço e não deixarem o próprio conteúdo
+        // escondido atrás dela -- ver #modalInstrucoesExercicio .modal-body
+        // em base.html.
+        document.documentElement.style.setProperty('--fl-crono-flutuante-altura', altura + 'px');
         // position:fixed sozinho NÃO tira o rodapé do stacking context do
         // pai (.modo-treino-overlay, z-index 1900) -- isso só vale contra
         // outros elementos dentro do MESMO contexto. Pra realmente ficar
@@ -4121,6 +4127,7 @@ function tocarBipe() {
             if (overlay) overlay.appendChild(footer);
         }
         if (bodyModo) bodyModo.style.paddingBottom = '';
+        document.documentElement.style.setProperty('--fl-crono-flutuante-altura', '0px');
     }
 
     MODAIS_MODO_TREINO.forEach(function (id) {

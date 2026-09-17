@@ -124,6 +124,17 @@
             --dark-bg: #2D2D2D;
             --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
             --primary-gradient: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+
+            /* Altura da barra flutuante do cronômetro de intervalo
+               (#cronoIntervaloBox.crono-flutuante), atualizada via JS em
+               ativarCronometroFlutuante()/desativarCronometroFlutuante()
+               (registrar_treino.html). 0px quando ela não está flutuando
+               por cima da tela (ex: fora do modo treino, ou nenhum modal
+               do modo treino aberto). Usada pelos modais que podem abrir
+               por cima dela (instruções, imagens, séries individuais)
+               pra reservar espaço e não deixar o próprio conteúdo do
+               modal ficar escondido/inacessível atrás da barra. */
+            --fl-crono-flutuante-altura: 0px;
         }
         
         body {
@@ -395,10 +406,27 @@
 
         /* Mensagem de boas-vindas (login) tem um tema próprio -- degradê
            de cinza bem escuro (quase preto) pro laranja da marca, com
-           texto e botão de fechar em branco pra manter contraste. */
+           texto e botão de fechar em branco pra manter contraste. Sem
+           ícone/emoji -- só uma barra de destaque à esquerda e
+           tipografia mais respirada, pra ficar com cara de notificação
+           de app em vez de alerta genérico. */
         .alert-boas-vindas {
             background: var(--gradient-boas-vindas);
             color: #fff;
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            padding-left: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.22), 0 2px 8px rgba(242,140,51,0.25);
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .boas-vindas-text {
+            display: block;
+            padding-right: 1.5rem;
+            font-size: 1.02rem;
+            font-weight: 500;
+            line-height: 1.4;
+            letter-spacing: 0.01em;
         }
 
         .alert-boas-vindas .btn-close {
@@ -1283,10 +1311,62 @@
         }
 
         /* ---- Modal de instruções (passo a passo) ---- */
+        /* O modal é centralizado verticalmente (.modal-dialog-centered) e,
+           antes, o modal-body tinha um max-height fixo de 70vh -- sem
+           considerar a barra flutuante do cronômetro de intervalo
+           (#cronoIntervaloBox.crono-flutuante, z-index 2010), que fica por
+           CIMA de qualquer coisa quando este modal é aberto durante um
+           treino (ver ativarCronometroFlutuante em registrar_treino.html).
+           Num exercício com passo a passo longo, a lista descia até
+           embaixo da tela e ficava coberta por essa barra: o usuário não
+           conseguia nem ler nem rolar até o fim, porque fisicamente não
+           havia mais tela visível/tocável abaixo dela.
+           Subtraindo --fl-crono-flutuante-altura (0px quando a barra não
+           está flutuando) do espaço disponível, o próprio modal encolhe
+           pra sempre deixar a barra de rolagem inteira visível ACIMA da
+           barra do cronômetro. */
+        /* O modal usa .modal-dialog-centered (centralização vertical via
+           flex) -- por isso o espaço reservado aqui é DOBRADO: como o
+           conteúdo fica centralizado entre o topo e o fundo da tela,
+           reduzir a altura do modal em X só empurra metade de X (X/2)
+           pra baixo dele (a outra metade some no topo, que já tinha
+           sobra). Reservar só a altura exata da barra deixaria a lista
+           terminando exatamente ATRÁS dela -- por isso 2x, com uma folga
+           extra de 20px por segurança. */
         #modalInstrucoesExercicio .modal-body {
+            position: relative;
             padding: 22px 24px 20px;
-            max-height: 70vh;
+            max-height: min(70vh, calc(100dvh - 150px - (var(--fl-crono-flutuante-altura, 0px) * 2) - 20px));
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
+        /* Fade indicando "role pra ver mais" -- sticky no fundo da área
+           rolável (não do modal inteiro), então acompanha a rolagem e fica
+           sempre colado no último pedaço visível da lista. Escondido por
+           padrão; o JS só mostra (.is-rolavel) quando a lista realmente
+           não cabe inteira, e esconde de novo (.no-fim) quando o usuário
+           chega no final -- senão ficaria sugerindo que dá pra rolar mais
+           mesmo depois de já ter visto o último passo. */
+        #modalInstrucoesExercicio .exmodal-scroll-fade {
+            display: none;
+            position: sticky;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            height: 32px;
+            margin-top: -32px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, #fff 85%);
+            pointer-events: none;
+        }
+
+        #modalInstrucoesExercicio .modal-body.is-rolavel .exmodal-scroll-fade {
+            display: block;
+        }
+
+        #modalInstrucoesExercicio .modal-body.is-rolavel.no-fim .exmodal-scroll-fade {
+            display: none;
         }
 
         .exmodal-steps {
@@ -1754,17 +1834,18 @@
                 {% for category, message in messages %}
                 <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
                     {% if category == 'success' %}
-                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <i class="bi bi-check-circle-fill me-2"></i>{{ message }}
                     {% elif category == 'boas-vindas' %}
-                        <i class="bi bi-hand-thumbs-up-fill me-2"></i>
+                        <span class="boas-vindas-text">{{ message }}</span>
                     {% elif category == 'danger' %}
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ message }}
                     {% elif category == 'warning' %}
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ message }}
                     {% elif category == 'info' %}
-                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+                    {% else %}
+                        {{ message }}
                     {% endif %}
-                    {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
                 {% endfor %}
@@ -1843,6 +1924,13 @@
                 </div>
                 <div class="modal-body">
                     <ol id="modalInstrucoesExercicioLista" class="exmodal-steps"></ol>
+                    <!-- Fade que indica "tem mais passo abaixo, role pra ver" --
+                         só fica visível quando o JS detecta que a lista
+                         realmente não cabe inteira (classe .is-rolavel) e
+                         some sozinho ao chegar no fim da lista (classe
+                         .no-fim), pra não ficar sugerindo rolagem que já
+                         não existe mais. Ver static/js/modules/exercicio-imagens.js. -->
+                    <div class="exmodal-scroll-fade" aria-hidden="true"></div>
                 </div>
             </div>
         </div>

@@ -164,5 +164,32 @@
         });
 
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
+
+        // Liga/desliga o fade de "role pra ver mais" (ver CSS em
+        // base.html) conforme o conteúdo realmente precisa de rolagem e
+        // conforme o usuário já rolou até o fim ou não. Roda de novo a
+        // cada 'shown.bs.modal' porque max-height do modal-body depende
+        // de --fl-crono-flutuante-altura, que só é conhecida depois do
+        // modal (e a barra flutuante, se houver) já estarem no layout
+        // final -- medir cedo demais (antes do show) dava dimensões
+        // erradas em alguns navegadores.
+        const corpoEl = modalEl.querySelector('.modal-body');
+        if (!corpoEl) return;
+
+        function atualizarFadeRolagem() {
+            const rolavel = corpoEl.scrollHeight > (corpoEl.clientHeight + 2);
+            corpoEl.classList.toggle('is-rolavel', rolavel);
+            const noFim = !rolavel ||
+                (corpoEl.scrollTop + corpoEl.clientHeight >= corpoEl.scrollHeight - 4);
+            corpoEl.classList.toggle('no-fim', noFim);
+        }
+
+        corpoEl.removeEventListener('scroll', atualizarFadeRolagem);
+        corpoEl.addEventListener('scroll', atualizarFadeRolagem, { passive: true });
+
+        modalEl.addEventListener('shown.bs.modal', function aoAbrir() {
+            atualizarFadeRolagem();
+            modalEl.removeEventListener('shown.bs.modal', aoAbrir);
+        });
     };
 })();
