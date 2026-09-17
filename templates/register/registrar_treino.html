@@ -1257,6 +1257,22 @@
         50% { box-shadow: 0 0 0 14px rgba(242, 140, 51, 0); }
     }
 
+    /* Campo "Data" fora do quadro dos treinos: rótulo ao lado do
+       input (não empilhado), numa linha compacta acima do card. */
+    .rt-data-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .rt-data-row .form-label {
+        white-space: nowrap;
+    }
+    .rt-data-row input[name="data"] {
+        flex: 0 1 200px;
+        min-width: 150px;
+    }
+
     /* Card "Pronto para treinar?" mais compacto em telas menores --
        o padding/ícone fixos deixavam o card alto demais em celular. */
     @media (max-width: 575.98px) {
@@ -2782,29 +2798,27 @@
     </div>
 </div>
 
-<div class="card treino-card mb-4">
-    <div class="card-body p-4">
-        <form method="get" class="row g-2 g-md-3 align-items-end" id="formBusca">
-            <div class="col-12 col-md-5">
-                <div id="campoDataTreino">
-                    <label class="form-label fw-bold">
-                        <i class="bi bi-calendar" style="color: var(--primary-orange);"></i>
-                        Data
-                    </label>
-                    <input type="text" name="data" id="inputDataTreino" class="form-control"
-                           value="{{ data_selecionada_str or data_atual_iso() }}"
-                           data-min="2020-01-01" data-max="{{ data_atual_iso() }}" required>
-                </div>
-                <!-- Vídeo mudo/invisível usado como fallback para manter a tela
-                     acesa em iOS quando a Wake Lock API nativa não está disponível
-                     (ex: PWA instalado em versões do iOS anteriores à 18.4).
-                     Técnica clássica também usada pela lib NoSleep.js. -->
-                <video id="cronoTreinoWakeVideo" muted playsinline loop
-                       style="position:fixed; top:0; left:0; width:1px; height:1px; opacity:0.01; pointer-events:none;"
-                       src="data:video/mp4;base64,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"></video>
-            </div>
+<form method="get" id="formBusca">
+    <div class="rt-data-row mb-3" id="campoDataTreino">
+        <label class="form-label fw-bold mb-0" for="inputDataTreino">
+            <i class="bi bi-calendar" style="color: var(--primary-orange);"></i>
+            Data
+        </label>
+        <input type="text" name="data" id="inputDataTreino" class="form-control"
+               value="{{ data_selecionada_str or data_atual_iso() }}"
+               data-min="2020-01-01" data-max="{{ data_atual_iso() }}" required>
+        <!-- Vídeo mudo/invisível usado como fallback para manter a tela
+             acesa em iOS quando a Wake Lock API nativa não está disponível
+             (ex: PWA instalado em versões do iOS anteriores à 18.4).
+             Técnica clássica também usada pela lib NoSleep.js. -->
+        <video id="cronoTreinoWakeVideo" muted playsinline loop
+               style="position:fixed; top:0; left:0; width:1px; height:1px; opacity:0.01; pointer-events:none;"
+               src="data:video/mp4;base64,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"></video>
+    </div>
 
-            <div class="col-12 col-md-5" id="linhaTreinoSelect">
+    <div class="card treino-card mb-4">
+        <div class="card-body p-4">
+            <div id="linhaTreinoSelect">
                 <label class="form-label fw-bold">
                     <i class="bi bi-trophy" style="color: var(--primary-orange);"></i>
                     Treino
@@ -2853,16 +2867,9 @@
                 </div>
                 {% endif %}
             </div>
-
-            <div class="col-4 col-md-2 d-none d-md-block">
-                <button type="submit" class="btn w-100" 
-                        style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none; padding: 6px;">
-                    <i class="bi bi-search d-md-me-2"></i><span class="d-none d-md-inline">Carregar</span>
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
-</div>
+</form>
 
 {% if erro_versao %}
 <div class="rt-versao-empty mb-4">
@@ -2876,7 +2883,7 @@
 {% endif %}
 
 {% if not erro_versao and not exercicios %}
-<div class="empty-state mb-4">
+<div class="empty-state mb-4 {% if not treino_selecionado %}d-none d-md-block{% endif %}">
     <div class="empty-icon"><i class="bi bi-clipboard2-pulse"></i></div>
     <h5>{% if treino_selecionado %}Nenhum exercício encontrado{% else %}Pronto para treinar?{% endif %}</h5>
     <p>
