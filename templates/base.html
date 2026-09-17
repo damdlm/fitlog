@@ -372,10 +372,27 @@
 
         /* Mensagem de boas-vindas (login) tem um tema próprio -- degradê
            de cinza bem escuro (quase preto) pro laranja da marca, com
-           texto e botão de fechar em branco pra manter contraste. */
+           texto e botão de fechar em branco pra manter contraste. Sem
+           ícone/emoji -- só uma barra de destaque à esquerda e
+           tipografia mais respirada, pra ficar com cara de notificação
+           de app em vez de alerta genérico. */
         .alert-boas-vindas {
             background: var(--gradient-boas-vindas);
             color: #fff;
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            padding-left: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.22), 0 2px 8px rgba(242,140,51,0.25);
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .boas-vindas-text {
+            display: block;
+            padding-right: 1.5rem;
+            font-size: 1.02rem;
+            font-weight: 500;
+            line-height: 1.4;
+            letter-spacing: 0.01em;
         }
 
         .alert-boas-vindas .btn-close {
@@ -1731,17 +1748,18 @@
                 {% for category, message in messages %}
                 <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
                     {% if category == 'success' %}
-                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <i class="bi bi-check-circle-fill me-2"></i>{{ message }}
                     {% elif category == 'boas-vindas' %}
-                        <i class="bi bi-hand-thumbs-up-fill me-2"></i>
+                        <span class="boas-vindas-text">{{ message }}</span>
                     {% elif category == 'danger' %}
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ message }}
                     {% elif category == 'warning' %}
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ message }}
                     {% elif category == 'info' %}
-                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+                    {% else %}
+                        {{ message }}
                     {% endif %}
-                    {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
                 {% endfor %}
