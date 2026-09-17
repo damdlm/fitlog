@@ -377,15 +377,20 @@ def create_app(config_class=None):
     @app.cli.command("billing-expirar-carencias")
     def billing_expirar_carencias():
         """Move para 'blocked' assinaturas com carência de pagamento
-        atrasado vencida, e também inicia a carência de quem pagou
-        via Pix e passou do período de ~1 mês sem renovar (Pix não
-        avisa atraso via webhook, diferente de cartão -- ver
-        BillingService.expirar_pix_vencidos). Rodar a cada hora."""
+        atrasado vencida, inicia a carência de quem pagou via Pix e
+        passou do período de ~1 mês sem renovar (Pix não avisa atraso
+        via webhook, diferente de cartão -- ver
+        BillingService.expirar_pix_vencidos), e finaliza cancelamentos
+        de cartão agendados cujo período já pago já passou (ver
+        BillingService.finalizar_cancelamentos_agendados). Rodar a
+        cada hora."""
         from services.billing_service import BillingService
         total_pix = BillingService.expirar_pix_vencidos()
         total = BillingService.expirar_carencias_vencidas()
+        total_cancelamentos = BillingService.finalizar_cancelamentos_agendados()
         print(f"{total_pix} assinatura(s) Pix movida(s) para past_due por período vencido.")
         print(f"{total} assinatura(s) movida(s) para blocked.")
+        print(f"{total_cancelamentos} cancelamento(s) agendado(s) finalizado(s).")
 
     @app.cli.command("billing-verificar-tiers")
     def billing_verificar_tiers():

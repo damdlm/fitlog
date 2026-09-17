@@ -311,6 +311,38 @@ function revelarOuEnviar(prefixo) {
     }
     form.submit();
 }
+
+(function () {
+    // Enquanto a página estiver esperando confirmação de pagamento
+    // (status ainda não é 'active'), confere periodicamente se já
+    // confirmou e recarrega sozinho -- sem isso, quem paga numa aba
+    // separada (Pix ou cartão) só vê a assinatura ativa dando F5
+    // manualmente. Pra de checar depois de ~10 minutos (LIMITE_TENTATIVAS)
+    // pra não ficar batendo na API pra sempre se a aba ficar aberta.
+    const statusInicial = "{{ assinatura.status if assinatura else 'sem_assinatura' }}";
+    if (statusInicial === 'active') return;
+
+    const LIMITE_TENTATIVAS = 60;
+    let tentativas = 0;
+    const intervalo = setInterval(async () => {
+        tentativas += 1;
+        if (tentativas > LIMITE_TENTATIVAS) {
+            clearInterval(intervalo);
+            return;
+        }
+        try {
+            const resp = await fetch('/billing/api/minha-assinatura', { headers: { 'Accept': 'application/json' } });
+            if (!resp.ok) return;
+            const dados = await resp.json();
+            if (dados.status && dados.status !== statusInicial) {
+                clearInterval(intervalo);
+                location.reload();
+            }
+        } catch (e) {
+            // Silencioso -- só tenta de novo no próximo ciclo.
+        }
+    }, 10000);
+})();
 </script>
 
 {% endblock %}

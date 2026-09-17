@@ -880,19 +880,40 @@ class BillingService:
 
     @staticmethod
     def cancelar_assinatura(usuario: User):
-        """Cancela definitivamente a assinatura do usuário no Asaas --
-        DELETE /subscriptions/{id}, que encerra a recorrência e remove
-        cobranças pendentes/vencidas (as já pagas ficam no histórico,
-        sem estorno automático). Ver
+        """Interrompe a renovação automática da assinatura do usuário
+        no Asaas -- DELETE /subscriptions/{id}, que encerra a
+        recorrência (cobranças pendentes/vencidas são removidas; as já
+        pagas ficam no histórico, sem estorno automático). Ver
         https://docs.asaas.com/reference/remover-assinatura
 
-        Revoga o acesso premium IMEDIATAMENTE (status='canceled' já
-        bloqueia Estatísticas/FitBot na próxima checagem) -- não guarda
-        acesso até o fim do período já pago. Levanta
-        NadaParaCancelarError se não houver nada pra cancelar."""
+        NÃO revoga o acesso premium imediatamente: o usuário já pagou
+        o ciclo atual, então o acesso continua até a data em que a
+        PRÓXIMA cobrança seria feita (nextDueDate, lido do Asaas antes
+        de cancelar) -- status continua 'active' até lá (só marca
+        cancelado_em como "cancelamento agendado"); quem transforma
+        isso em 'canceled' de verdade é
+        finalizar_cancelamentos_agendados, rodando junto do cron
+        horário de carências. Se não for possível ler o nextDueDate
+        (ex: 404, assinatura já removida no Asaas por fora), revoga na
+        hora por segurança -- melhor bloquear cedo demais do que
+        deixar acesso liberado indefinidamente sem saber até quando.
+
+        Levanta NadaParaCancelarError se não houver nada pra
+        cancelar."""
         assinatura = usuario.assinatura
         if assinatura is None or not assinatura.gateway_subscription_id:
             raise NadaParaCancelarError()
+
+        proximo_vencimento = None
+        resp_get = requests.get(
+            f'{BillingService._base_url()}/subscriptions/{assinatura.gateway_subscription_id}',
+            headers=BillingService._headers(),
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
+        if resp_get.status_code == 200:
+            data_str = resp_get.json().get('nextDueDate')
+            if data_str:
+                proximo_vencimento = datetime.strptime(data_str, '%Y-%m-%d').replace(tzinfo=timezone.utc)
 
         resp = requests.delete(
             f'{BillingService._base_url()}/subscriptions/{assinatura.gateway_subscription_id}',
@@ -906,10 +927,43 @@ class BillingService:
         if resp.status_code != 404:
             BillingService._checar_resposta(resp, 'cancelar assinatura')
 
-        assinatura.status = 'canceled'
         assinatura.cancelado_em = datetime.now(timezone.utc)
+        if proximo_vencimento is None:
+            assinatura.status = 'canceled'
+        else:
+            assinatura.periodo_atual_fim = proximo_vencimento
+            # status continua 'active' de propósito -- acesso_premium_ativo()
+            # já retorna True pra status 'active' sem checar mais nada.
+            # finalizar_cancelamentos_agendados vira 'canceled' quando
+            # periodo_atual_fim passar.
         db.session.commit()
-        logger.info('Assinatura %s (usuario=%s) cancelada pelo usuário', assinatura.id, usuario.id)
+        logger.info(
+            'Assinatura %s (usuario=%s) cancelada pelo usuário -- acesso mantido até %s',
+            assinatura.id, usuario.id,
+            proximo_vencimento or 'agora (não foi possível confirmar o próximo vencimento no Asaas)',
+        )
+
+    @staticmethod
+    def finalizar_cancelamentos_agendados() -> int:
+        """Vira 'canceled' de vez as assinaturas cujo cancelamento foi
+        pedido (cancelado_em setado por cancelar_assinatura) mas cujo
+        acesso foi mantido até o fim do período já pago
+        (periodo_atual_fim) -- até essa data passar, elas continuam
+        'active' de propósito. Rodar junto do cron horário de
+        carências (ver app.py: flask billing-expirar-carencias)."""
+        agora = datetime.now(timezone.utc)
+        pendentes = Assinatura.query.filter(
+            Assinatura.status == 'active',
+            Assinatura.cancelado_em.isnot(None),
+            Assinatura.periodo_atual_fim.isnot(None),
+            Assinatura.periodo_atual_fim <= agora,
+        ).all()
+        for assinatura in pendentes:
+            assinatura.status = 'canceled'
+        if pendentes:
+            db.session.commit()
+        return len(pendentes)
+
 
     @staticmethod
     def _checar_resposta(resp: requests.Response, contexto: str):
