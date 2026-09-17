@@ -6,14 +6,17 @@
 // A única função dele aqui é satisfazer o requisito do navegador
 // para permitir "Instalar app" / adicionar à tela inicial.
 
-const CACHE_NAME = 'fitlog-shell-v1';
+const CACHE_NAME = 'fitlog-shell-v2'; // bump pra forçar re-precache do offline.html
 
 // Só os assets realmente estáticos (não mudam por usuário/sessão)
 const SHELL_ASSETS = [
     '/static/icons/icon-192.png',
     '/static/icons/icon-512.png',
     '/static/images/logo.png',
+    '/static/offline.html',
 ];
+
+const OFFLINE_URL = '/static/offline.html';
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
@@ -74,6 +77,20 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Navegação (o usuário abrindo/recarregando uma página, não um
+    // fetch de API/asset) -- se a rede falhar (sem internet), em vez
+    // de deixar a promise do fetch() rejeitar dentro do respondWith
+    // (o que gera o erro "FetchEvent.respondWith received an error"
+    // e a tela de erro feia do Safari/Chrome), serve a página offline
+    // que ficou cacheada no install.
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request).catch(() => caches.match(OFFLINE_URL))
+        );
+        return;
+    }
+
     // Passthrough padrão — mantém o comportamento normal de rede
+    // pra tudo que não é navegação (chamadas de API, etc.)
     event.respondWith(fetch(event.request));
 });
