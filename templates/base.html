@@ -140,6 +140,17 @@
         body {
             background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Trava o arrasto lateral da PÁGINA (html/body) -- se algum
+               elemento acabar 1px mais largo que a tela, o iOS deixa
+               arrastar o documento inteiro de lado por baixo do menu
+               fixo do topo/rodapé, mostrando o fundo cinza. overflow-x
+               hidden aqui bloqueia isso sem afetar carrosséis internos
+               como o de Recordes Pessoais (que tem seu próprio
+               overflow-x: auto e continua rolando normalmente). */
+            overflow-x: hidden;
+        }
+        html {
+            overflow-x: hidden;
         }
 
         /* ==========================================================
@@ -164,6 +175,7 @@
         html,
         body {
             touch-action: pan-x pan-y;
+            overscroll-behavior-x: none;
         }
 
         @media (max-width: 768px) {
