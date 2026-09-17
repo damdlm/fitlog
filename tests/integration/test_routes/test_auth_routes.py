@@ -92,7 +92,14 @@ def test_login_user(client, db):
     }, follow_redirects=True)
 
     assert response.status_code == 200
-    assert b'Bem-vindo' in response.data
+    # Checa a presença do alerta de boas-vindas pela sua marcação (classe
+    # boas-vindas-text, ver templates/base.html), não pelo texto exato --
+    # a mensagem é sorteada aleatoriamente entre várias frases (ver
+    # utils/mensagens_boas_vindas.py) e nenhuma delas contém mais a
+    # palavra "Bem-vindo" desde que a mensagem foi trocada por frases
+    # mais descontraídas. Checar a classe garante que o teste continua
+    # válido não importa qual frase caia no sorteio.
+    assert 'boas-vindas-text' in response.get_data(as_text=True)
 
 
 def test_reset_password_request_page(client):

@@ -11,6 +11,12 @@ from utils.email_utils import enviar_email
 class _RespostaFake:
     def __init__(self, status_code=200):
         self.status_code = status_code
+        # Todo objeto requests.Response real tem .text -- esse mock não
+        # tinha, e utils/email_utils.py passou a ler resposta.text no log
+        # de erro (commit fafba89), quebrando esse teste com um
+        # AttributeError que nunca acontece em produção (só aqui, por o
+        # mock estar incompleto).
+        self.text = f'{{"error": "erro simulado {status_code}"}}'
 
     def raise_for_status(self):
         if self.status_code >= 400:
