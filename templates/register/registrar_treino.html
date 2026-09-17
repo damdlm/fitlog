@@ -219,14 +219,14 @@
         margin-bottom: 10px;
     }
     .detalhe-series-icone {
-        /* Mesmo visual do ícone do card (.dash-registro-icon no
-           base.html): fundo laranja clarinho, ícone laranja, cantos
-           radius-sm -- não mais o quadrado cinza arredondado(999px)
-           que destoava do card. */
-        width: 40px;
-        height: 40px;
-        min-width: 40px;
-        border-radius: 10px;
+        /* Mesmo tamanho/raio do ícone do card NESTA tela (.exercise-row
+           .dash-registro-icon, 30px/radius-sm) -- não o padrão global de
+           .dash-registro-icon (40px/10px) do base.html, que é o que
+           antes deixava esse botão maior que o do card. */
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        border-radius: var(--radius-sm);
         background: rgba(242, 140, 51, 0.12);
         display: flex;
         align-items: center;
@@ -234,24 +234,46 @@
         flex-shrink: 0;
         overflow: hidden;
         color: var(--primary-color);
-        font-size: 1.1rem;
+        font-size: 1rem;
     }
     /* Quando o exercício tem gif, o ícone vira um botão (mesmo padrão
        do botao_imagens_exercicio do card) que abre o modal de imagens
        -- nunca a tag <img> direto aqui dentro, que é o que causava o
-       ícone de imagem quebrada quando o gif falhava ao carregar. */
+       ícone de imagem quebrada quando o gif falhava ao carregar.
+       Borda de 2px igual ao .btn-imagens-exercicio/.btn-instrucoes-
+       exercicio do card -- sem ela o botão parece "menor" mesmo com a
+       mesma caixa de 30px, por não ter contorno próprio (mesmo motivo
+       documentado na regra do card, mais acima). */
     .detalhe-series-icone .btn-imagens-exercicio-modal {
         width: 100%;
         height: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: none;
+        border: 2px solid var(--border-soft);
+        border-radius: var(--radius-sm);
         background: transparent;
         color: inherit;
         font-size: inherit;
         padding: 0;
         cursor: pointer;
+    }
+    .detalhe-series-icone .btn-imagens-exercicio-modal:hover {
+        background: rgba(242, 140, 51, 0.22);
+        border-color: var(--primary-orange);
+        color: var(--primary-orange);
+    }
+    /* Botão (i) de instruções do modal (#seriesModalBtnInfoWrap) usa a
+       classe global .dash-registro-icon (40px, do base.html) porque é
+       compartilhada com outras telas -- aqui, escopado só a este modal,
+       sobrescrevemos pro mesmo 30px/radius-sm do card desta tela, senão
+       ele fica maior que o ícone de imagem ao lado (que já usa
+       .detalhe-series-icone, 30px) e que o (i) do card. */
+    #modalSeriesIndividuais .dash-registro-icon {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        border-radius: var(--radius-sm);
     }
     .detalhe-series-titulo {
         font-weight: 600;
@@ -431,12 +453,6 @@
        caber sem cortar/quebrar feio -- mesmo critério já usado no resto
        da tela pra telas <= 380px. */
     @media (max-width: 380px) {
-        .detalhe-series-icone {
-            width: 36px;
-            height: 36px;
-            min-width: 36px;
-            font-size: 1rem;
-        }
         .detalhe-series-titulo {
             font-size: 0.92rem;
         }
@@ -1821,6 +1837,19 @@
         #modalImagensExercicio .exmodal-media-frame img,
         #modalImagensExercicio .exmodal-media-frame video {
             max-height: 34vh;
+        }
+        /* Mesmo breakpoint/tamanho do ícone do card nesta tela
+           (.exercise-row .dash-registro-icon, 27px -- ver regra mais
+           acima). Antes o ícone do modal só encolhia em <=380px pra
+           36px, então em celulares comuns (390-430px de largura) ele
+           ficava perceptivelmente maior que o do card, que já estava
+           em 27px nessa faixa. */
+        .detalhe-series-icone,
+        #modalSeriesIndividuais .dash-registro-icon {
+            width: 27px;
+            height: 27px;
+            min-width: 27px;
+            font-size: 0.92rem;
         }
     }
 
