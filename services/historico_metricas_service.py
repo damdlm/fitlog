@@ -103,6 +103,35 @@ class HistoricoMetricasService:
             return {"disponivel": False, "erro": "falha ao consultar histórico", "pontos": []}
 
     @staticmethod
+    def obter_ultimo_railway():
+        """Métricas do Railway do snapshot mais recente já capturado
+        pelo cron (fitlog-cron-monitoramento-snapshot, que roda a cada
+        10min e é o único serviço com RAILWAY_API_TOKEN). Usado como
+        fallback por MonitoringService.get_railway_metrics quando
+        chamado do processo web, que não tem esse token de propósito.
+        Formato compatível com o retorno "ao vivo" de
+        RailwayMetricsService.get_metrics (chaves disponivel/servicos),
+        com coletado_em a mais indicando a origem/idade do dado."""
+        try:
+            linha = (
+                HistoricoMetricas.query
+                .order_by(HistoricoMetricas.coletado_em.desc())
+                .first()
+            )
+            servicos = (linha.dados or {}).get("railway_servicos") if linha else None
+            if not servicos:
+                return {"disponivel": False, "erro": "nenhum snapshot com dados do Railway ainda"}
+            return {
+                "disponivel": True,
+                "servicos": [{**s, "disponivel": True} for s in servicos],
+                "coletado_em": linha.coletado_em.isoformat(),
+                "fonte": "snapshot",
+            }
+        except Exception:
+            logger.exception("HistoricoMetricas: falha ao consultar último snapshot do Railway")
+            return {"disponivel": False, "erro": "falha ao consultar snapshot"}
+
+    @staticmethod
     def limpar_antigas(dias_retencao=RETENCAO_DIAS):
         """Remove snapshots mais antigos que `dias_retencao` dias.
         Chamado ao final de capturar_snapshot -- barato o suficiente

@@ -327,13 +327,29 @@ class MonitoringService:
     # =========================================================
     @staticmethod
     def get_railway_metrics():
-        """Métricas de CPU/memória direto da API do Railway -- ver
+        """Métricas de CPU/memória do Railway -- ver
         services/railway_metrics_service.py. Import local (não no topo
         do módulo) só para manter este arquivo sem depender de `requests`
         quando ninguém usa esse bloco (RAILWAY_API_TOKEN não configurada
-        é o caminho mais comum em dev)."""
+        é o caminho mais comum em dev).
+
+        RAILWAY_API_TOKEN só existe no serviço do cron
+        (fitlog-cron-monitoramento-snapshot), não no serviço web público
+        -- um token com esse alcance (gerencia o projeto inteiro no
+        Railway) não deve ficar acessível pelo mesmo processo que serve
+        requisições HTTP de qualquer visitante. Por isso, quando chamado
+        aqui (processo web, sem o token), a chamada à API real retorna
+        indisponível e cai pro fallback: o último snapshot que o cron
+        já capturou (até ~10min desatualizado, o que é aceitável pra um
+        painel de infraestrutura) -- ver
+        HistoricoMetricasService.obter_ultimo_railway."""
         from services.railway_metrics_service import RailwayMetricsService
-        return RailwayMetricsService.get_metrics()
+        ao_vivo = RailwayMetricsService.get_metrics()
+        if ao_vivo.get('disponivel'):
+            return ao_vivo
+
+        from services.historico_metricas_service import HistoricoMetricasService
+        return HistoricoMetricasService.obter_ultimo_railway()
 
     # =========================================================
     # FITBOT (uso técnico das IAs -- Groq/Gemini/reserva OpenAI)

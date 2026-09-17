@@ -3,6 +3,7 @@ import secrets
 import logging
 from logging.handlers import RotatingFileHandler
 
+import click
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 
@@ -365,6 +366,45 @@ def create_app(config_class=None):
         except Exception:
             logging.getLogger(__name__).exception("AcessoTela: falha no hook de contagem")
         return response
+
+    # =============================================================
+    # COMANDOS CLI (admin inicial)
+    # =============================================================
+    # Alternativa a manter ADMIN_PASSWORD como variável de ambiente
+    # permanente no serviço web -- essa variável só é lida uma vez
+    # (_criar_admin_inicial só roda se User.query.first() is None,
+    # ver create_app acima), então em qualquer ambiente que já tem
+    # usuários (como produção, hoje) ela fica exposta no processo que
+    # serve requisições públicas sem servir mais pra nada. Rodar
+    # "flask criar-admin-inicial" manualmente, uma vez, num ambiente
+    # novo (produção ou staging) que ainda não tem nenhum usuário --
+    # a senha é digitada na hora (não fica em nenhuma variável
+    # persistida) e nunca aparece no terminal graças ao hide_input.
+    @app.cli.command("criar-admin-inicial")
+    def criar_admin_inicial_cli():
+        """Cria o usuário admin inicial (mesma lógica/validações de
+        _criar_admin_inicial, usada automaticamente em dev/testes) sem
+        precisar de ADMIN_PASSWORD como variável de ambiente
+        permanente. Não faz nada se já existir algum usuário."""
+        if User.query.first() is not None:
+            print("Já existe pelo menos um usuário no banco -- nada a fazer.")
+            return
+        senha = click.prompt(
+            "Senha do admin (mínimo 12 caracteres)",
+            hide_input=True, confirmation_prompt=True,
+        )
+        # Reaproveita _criar_admin_inicial (validação de tamanho,
+        # criação do User, etc.) passando a senha só em memória, pelo
+        # tempo da chamada -- nunca grava em os.environ de verdade.
+        os.environ['ADMIN_PASSWORD'] = senha
+        try:
+            _criar_admin_inicial(app)
+        finally:
+            os.environ.pop('ADMIN_PASSWORD', None)
+        if User.query.first() is not None:
+            print("Admin criado com sucesso.")
+        else:
+            print("Não foi possível criar o admin -- ver o log de erro acima.")
 
     # =============================================================
     # COMANDOS CLI (cobrança/assinatura)
