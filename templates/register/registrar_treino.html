@@ -751,6 +751,126 @@
         box-shadow: var(--shadow-sm);
     }
 
+    /* ================= PICKER DE TREINO (substitui o <select> nativo) =================
+       Lista de cards clicáveis com o mesmo padrão visual do resto da tela:
+       badge laranja arredondado (igual .dash-registro-icon), borda/sombra
+       suave dos cards e destaque laranja no item selecionado. O <select>
+       nativo continua no DOM (visually-hidden) como fonte de verdade. */
+    .treino-picker {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 272px;
+        overflow-y: auto;
+        padding: 2px 2px 2px 0;
+    }
+    .treino-picker-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        text-align: left;
+        background: var(--surface);
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius-md);
+        padding: 10px 14px;
+        cursor: pointer;
+        transition: border-color 0.2s ease, background-color 0.2s ease,
+                    box-shadow 0.2s ease, transform 0.1s ease;
+    }
+    .treino-picker-item:hover {
+        border-color: var(--light-orange);
+        box-shadow: var(--shadow-sm);
+    }
+    .treino-picker-item:active {
+        transform: scale(0.99);
+    }
+    .treino-picker-item:focus-visible {
+        outline: 2px solid var(--primary-orange);
+        outline-offset: 2px;
+    }
+    .treino-picker-badge {
+        flex: 0 0 auto;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: rgba(242, 140, 51, 0.12);
+        color: var(--primary-orange);
+        font-weight: 700;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    .treino-picker-texto {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+    }
+    .treino-picker-nome {
+        font-weight: 600;
+        color: var(--dark-bg);
+        font-size: 0.95rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .treino-picker-desc {
+        font-size: 0.78rem;
+        color: #8a8a8a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .treino-picker-check {
+        flex: 0 0 auto;
+        color: var(--primary-orange);
+        font-size: 1.15rem;
+        line-height: 1;
+        opacity: 0;
+        transform: scale(0.75);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .treino-picker-item.is-selected {
+        border-color: var(--primary-orange);
+        background: rgba(242, 140, 51, 0.06);
+        box-shadow: var(--shadow-orange);
+    }
+    .treino-picker-item.is-selected .treino-picker-badge {
+        background: var(--primary-orange);
+        color: #fff;
+    }
+    .treino-picker-item.is-selected .treino-picker-check {
+        opacity: 1;
+        transform: scale(1);
+    }
+    /* Feedback de erro (equivalente ao .is-invalid do <select> nativo) ao
+       tentar iniciar o cronômetro sem treino selecionado. */
+    .treino-picker.is-invalid {
+        border-radius: var(--radius-md);
+        box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.45);
+        animation: treinoPickerShake 0.4s ease;
+    }
+    @keyframes treinoPickerShake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-4px); }
+        75% { transform: translateX(4px); }
+    }
+    .treino-picker-vazio {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 14px;
+        border-radius: var(--radius-md);
+        background: var(--surface-muted);
+        border: 1px dashed var(--border-soft);
+        color: #8a8a8a;
+        font-size: 0.9rem;
+    }
+
     /* ================= CRONÔMETROS ================= */
     .cronometro-box {
         display: flex;
@@ -2670,7 +2790,15 @@
                     <i class="bi bi-trophy" style="color: var(--primary-orange);"></i>
                     Treino
                 </label>
-                <select name="treino" class="form-select" required>
+
+                <!-- Select nativo mantido no DOM (só visualmente oculto, não
+                     display:none) pra continuar sendo a fonte de verdade do
+                     valor enviado no submit do #formBusca e pra não quebrar
+                     nada do JS que já procura por select[name="treino"]
+                     (auto-submit ao trocar, validação do cronômetro, nome
+                     do treino no resumo etc.) -- o picker abaixo é só a
+                     camada visual, sincronizada com ele via JS. -->
+                <select name="treino" id="treinoSelectNativo" class="visually-hidden" required aria-hidden="true" tabindex="-1">
                     <option value="">Selecione o treino</option>
                     {% for t in treinos_disponiveis %}
                     <option value="{{ t.id }}" {% if treino_selecionado == t.id|string %}selected{% endif %}>
@@ -2680,6 +2808,31 @@
                     <option value="" disabled>Nenhum treino disponível nesta versão</option>
                     {% endfor %}
                 </select>
+
+                {% if treinos_disponiveis %}
+                <div class="treino-picker" id="treinoPicker" role="listbox" aria-label="Selecione o treino">
+                    {% for t in treinos_disponiveis %}
+                    <button type="button"
+                            class="treino-picker-item {% if treino_selecionado == t.id|string %}is-selected{% endif %}"
+                            data-treino-id="{{ t.id }}"
+                            role="option"
+                            aria-selected="{{ 'true' if treino_selecionado == t.id|string else 'false' }}">
+                        <span class="treino-picker-badge">{{ t.codigo }}</span>
+                        <span class="treino-picker-texto">
+                            <span class="treino-picker-nome">{{ t.nome }}</span>
+                            {% if t.descricao %}
+                            <span class="treino-picker-desc">{{ t.descricao }}</span>
+                            {% endif %}
+                        </span>
+                        <span class="treino-picker-check"><i class="bi bi-check-circle-fill"></i></span>
+                    </button>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="treino-picker-vazio">
+                    <i class="bi bi-info-circle"></i> Nenhum treino disponível nesta versão
+                </div>
+                {% endif %}
             </div>
             
             <div class="col-12 col-md-5">
@@ -3172,6 +3325,35 @@ document.addEventListener('DOMContentLoaded', function() {
             form.submit();
         }, 550);
     }
+
+    // ====== Picker visual do treino (cards clicáveis no lugar do <select>) ======
+    // Só troca a camada visual: quem continua mandando é o <select> nativo
+    // (name="treino"), que segue sendo o valor enviado no submit e a fonte
+    // que todo o resto do JS da página já lê.
+    (function inicializarTreinoPicker() {
+        const picker = document.getElementById('treinoPicker');
+        const selectNativo = document.getElementById('treinoSelectNativo');
+        if (!picker || !selectNativo) return;
+
+        picker.addEventListener('click', function (ev) {
+            const item = ev.target.closest('.treino-picker-item');
+            if (!item) return;
+
+            const idSelecionado = item.dataset.treinoId;
+            if (selectNativo.value === idSelecionado) return; // já era o selecionado
+
+            selectNativo.value = idSelecionado;
+
+            picker.querySelectorAll('.treino-picker-item').forEach(function (el) {
+                const selecionado = el === item;
+                el.classList.toggle('is-selected', selecionado);
+                el.setAttribute('aria-selected', selecionado ? 'true' : 'false');
+            });
+            picker.classList.remove('is-invalid');
+
+            selectNativo.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    })();
 
     const treinoSelect = document.querySelector('select[name="treino"]');
     if (treinoSelect && dataInput) {
@@ -4190,6 +4372,7 @@ function tocarBipe() {
     }
 
     var elTreinoSelect = document.querySelector('select[name="treino"]');
+    var elTreinoPicker = document.getElementById('treinoPicker');
 
     function treinoSelecionadoValido() {
         return !!(elTreinoSelect && elTreinoSelect.value);
@@ -4202,6 +4385,13 @@ function tocarBipe() {
                 elTreinoSelect.classList.remove('is-invalid');
                 elTreinoSelect.removeEventListener('change', onChange);
             });
+        }
+        // A remoção do estado inválido do picker acontece no próprio
+        // handler de clique (inicializarTreinoPicker), já que o evento
+        // "change" do select nativo não borbulha até aqui (são irmãos,
+        // não select dentro do picker).
+        if (elTreinoPicker) {
+            elTreinoPicker.classList.add('is-invalid');
         }
         if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
             window.FitLogUtils.showToast('Selecione um treino antes de iniciar o cronômetro.', 'danger');
