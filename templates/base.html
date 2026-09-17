@@ -153,6 +153,26 @@
             overflow-x: hidden;
         }
 
+        /* "overflow-x: hidden" acima resolve o arrasto lateral, mas tem um
+           efeito colateral: qualquer valor de overflow diferente de
+           "visible" transforma o elemento num container de rolagem --
+           e isso quebra .navbar (position: sticky; top: 0; logo abaixo),
+           porque o sticky passa a ser calculado em relação a esse novo
+           container em vez do viewport real, principalmente no Safari/
+           iOS (o cabeçalho parava de "grudar" no topo ao rolar a
+           página). "overflow-x: clip" faz o mesmo bloqueio de arrasto
+           lateral só que, por definição do spec, SEM criar esse
+           container de rolagem -- resolve os dois problemas ao mesmo
+           tempo. É mais recente (Safari 16+, Chrome 90+, Firefox 113+),
+           então mantemos "hidden" acima como fallback pra navegadores
+           mais antigos e sobrescrevemos com "clip" só onde há suporte. */
+        @supports (overflow-x: clip) {
+            html,
+            body {
+                overflow-x: clip;
+            }
+        }
+
         /* ==========================================================
            Bloqueio de zoom acidental no mobile (principalmente iOS)
            Duas causas diferentes, duas correções:
