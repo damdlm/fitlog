@@ -3914,7 +3914,16 @@ function tocarBipe() {
     }
 
     function iniciarFallbackVideo() {
-        if (!elWakeVideo || usandoFallbackVideo) return;
+        if (!elWakeVideo) return;
+        // Checa o estado REAL do vídeo (elWakeVideo.paused), não uma
+        // flag separada -- o sistema operacional pausa o vídeo sozinho
+        // ao trocar de app em segundo plano, e sem checar o estado real
+        // a flag ficava "presa" em true, fazendo o código achar que o
+        // vídeo ainda estava tocando quando na verdade não estava mais.
+        // Isso fazia a tela voltar a hibernar depois de alternar entre
+        // aplicativos (a troca de app pausa o vídeo, mas ao voltar pro
+        // FitLog o código desistia de retomá-lo).
+        if (!elWakeVideo.paused) return;
         var p = elWakeVideo.play();
         if (p && typeof p.catch === 'function') {
             p.catch(function () {
