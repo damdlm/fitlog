@@ -207,6 +207,14 @@ class MonitoringService:
                         "FROM pg_stat_database WHERE datname = current_database()"
                     )).fetchone()
                     blks_hit, blks_total = hit_ratio_row
+                    # sum() sobre bigint no Postgres volta como Decimal
+                    # (psycopg2), que json.dumps não serializa -- isso
+                    # já vinha quebrando silenciosamente TODA captura de
+                    # snapshot (flask monitoramento-capturar-snapshot),
+                    # não só a parte do Railway. Convertendo pra float
+                    # aqui, antes da divisão.
+                    blks_hit = float(blks_hit) if blks_hit is not None else 0.0
+                    blks_total = float(blks_total) if blks_total else 0.0
                     cache_hit_ratio = (
                         round(100 * blks_hit / blks_total, 1)
                         if blks_total else None
