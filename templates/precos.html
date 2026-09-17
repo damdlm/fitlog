@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-tag" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Preços{% endblock %}
+
+{% block title %}Preços — FitLog{% endblock %}
+{% block meta_description %}Conheça os planos do FitLog para alunos e professores: teste grátis de 30 dias, sem cartão obrigatório para começar.{% endblock %}
+{% block og_title %}Preços — FitLog{% endblock %}
+{% block og_description %}Conheça os planos do FitLog para alunos e professores: teste grátis de 30 dias, sem cartão obrigatório para começar.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/precos.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="landing-hero precos-hero">
+    <h1>Um plano pra cada momento do seu treino</h1>
+    <p class="landing-subheadline">
+        30 dias grátis pra testar, sem cartão obrigatório. Cancele quando quiser.
+    </p>
+</section>
+
+<section class="landing-section">
+    <div class="precos-grid">
+        {% if planos.aluno_fit %}
+        <div class="preco-card">
+            <h3>Aluno Fit</h3>
+            <p class="preco-valor">R$ {{ "%.2f"|format(planos.aluno_fit.preco_centavos / 100)|replace('.', ',') }}<span>/mês</span></p>
+            <p class="preco-descricao">Para quem treina e quer acompanhar a própria evolução.</p>
+            <ul class="preco-lista">
+                <li><i class="bi bi-check2"></i> Registro de treinos com séries, cargas e repetições</li>
+                <li><i class="bi bi-check2"></i> Estatísticas e histórico completo de evolução</li>
+                <li><i class="bi bi-check2"></i> Calendário de treinos</li>
+                <li><i class="bi bi-check2"></i> FitBot para tirar dúvidas sobre o treino</li>
+                <li><i class="bi bi-check2"></i> App instalável no celular</li>
+            </ul>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Começar teste grátis</a>
+        </div>
+        {% endif %}
+
+        {% if planos.professor_pro %}
+        <div class="preco-card">
+            <h3>Professor Pró</h3>
+            <p class="preco-valor">R$ {{ "%.2f"|format(planos.professor_pro.preco_centavos / 100)|replace('.', ',') }}<span>/mês</span></p>
+            <p class="preco-descricao">
+                Para professores com
+                {% if planos.professor_pro.max_alunos %}até {{ planos.professor_pro.max_alunos }} alunos ativos{% else %}alunos ativos{% endif %}.
+            </p>
+            <ul class="preco-lista">
+                <li><i class="bi bi-check2"></i> Monte treinos personalizados para seus alunos</li>
+                <li><i class="bi bi-check2"></i> Acompanhe a evolução de cada aluno em um painel dedicado</li>
+                <li><i class="bi bi-check2"></i> FitBot para apoiar seus alunos</li>
+                <li><i class="bi bi-check2"></i> App instalável no celular</li>
+            </ul>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Começar teste grátis</a>
+        </div>
+        {% endif %}
+
+        {% if planos.professor_premium %}
+        <div class="preco-card preco-card-destaque">
+            <p class="preco-badge">Sem limite de alunos</p>
+            <h3>Professor Premium</h3>
+            <p class="preco-valor">R$ {{ "%.2f"|format(planos.professor_premium.preco_centavos / 100)|replace('.', ',') }}<span>/mês</span></p>
+            <p class="preco-descricao">Para professores com alunos ilimitados.</p>
+            <ul class="preco-lista">
+                <li><i class="bi bi-check2"></i> Tudo do Professor Pró</li>
+                <li><i class="bi bi-check2"></i> Alunos ativos ilimitados</li>
+            </ul>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Começar teste grátis</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="landing-section landing-privacy precos-faq">
+    <h2><i class="bi bi-question-circle"></i> Perguntas sobre cobrança</h2>
+    <div class="precos-faq-item">
+        <h3>Como funciona o teste grátis?</h3>
+        <p>Você tem 30 dias de acesso completo assim que cria sua conta, sem precisar cadastrar cartão. Só é cobrado quando decide assinar um dos planos.</p>
+    </div>
+    <div class="precos-faq-item">
+        <h3>Pix ou cartão de crédito?</h3>
+        <p>Os dois. No Pix, a cobrança não é automática: você paga a cada 30 dias, sem compromisso de renovação. No cartão, a cobrança é mensal e automática, e você pode cancelar quando quiser.</p>
+    </div>
+    <div class="precos-faq-item">
+        <h3>Como cancelo minha assinatura?</h3>
+        <p>Direto na tela "Minha Assinatura", a qualquer momento. Se você pagou por cartão, seu acesso continua ativo até o fim do período já pago -- você não perde o que já pagou.</p>
+    </div>
+</section>
+
+<section class="landing-cta-final">
+    <h2>Pronto para organizar sua rotina de treinos?</h2>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
+        <i class="bi bi-person-plus"></i> Criar minha conta
+    </a>
+</section>
+
+<nav class="landing-footer-links" aria-label="Links institucionais">
+    <a href="{{ url_for('privacidade.politica') }}">Política de Privacidade</a>
+    <span aria-hidden="true">·</span>
+    <a href="{{ url_for('privacidade.termos') }}">Termos de Uso</a>
+    <span aria-hidden="true">·</span>
+    <a href="{{ url_for('contato.publico') }}">Fale conosco</a>
+</nav>
+{% endblock %}

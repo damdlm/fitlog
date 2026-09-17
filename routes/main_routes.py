@@ -24,3 +24,17 @@ def index():
     treinos = TreinoService.get_da_versao_ativa()
 
     return render_template("index.html", treinos=treinos)
+
+
+@main_bp.route("/precos")
+def precos():
+    """Página pública de preços. Sem @login_required de propósito,
+    igual à landing -- precisa ser vista por quem ainda não tem conta.
+
+    Os valores vêm direto do banco via PlanoService.listar_editaveis()
+    (os mesmos 3 planos editáveis em /admin/telas-controladas), pra
+    refletir automaticamente qualquer ajuste de preço feito pelo admin
+    sem precisar mexer nesta página."""
+    from services.plano_service import PlanoService
+    planos = {p.codigo: p for p in PlanoService.listar_editaveis()}
+    return render_template("precos.html", planos=planos)

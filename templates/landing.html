@@ -33,6 +33,9 @@
                 Já tenho uma conta
             </a>
         </div>
+        <p class="landing-hero-link-preco">
+            <a href="{{ url_for('main.precos') }}">Ver preços dos planos</a>
+        </p>
     </div>
 </section>
 
@@ -94,6 +97,8 @@
 </section>
 
 <nav class="landing-footer-links" aria-label="Links institucionais">
+    <a href="{{ url_for('main.precos') }}">Preços</a>
+    <span aria-hidden="true">·</span>
     <a href="{{ url_for('privacidade.politica') }}">Política de Privacidade</a>
     <span aria-hidden="true">·</span>
     <a href="{{ url_for('privacidade.termos') }}">Termos de Uso</a>

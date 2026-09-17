@@ -1,0 +1,120 @@
+/* Página pública de preços do FitLog.
+   Reaproveita as variáveis e classes já definidas em landing.css
+   (--primary-color, .landing-hero, .landing-section etc.) -- só
+   acrescenta o que é específico dos cards de plano e do FAQ. */
+
+.precos-hero {
+    padding: 40px 32px;
+}
+
+.precos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+    max-width: 980px;
+    margin: 0 auto;
+}
+
+.preco-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    padding: 32px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.preco-card-destaque {
+    border: 2px solid var(--primary-color);
+    position: relative;
+}
+
+.preco-badge {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary-color);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 999px;
+    margin: 0;
+}
+
+.preco-card h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.preco-valor {
+    font-size: 2.1rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+.preco-valor span {
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: #666;
+}
+
+.preco-descricao {
+    color: #555;
+    font-size: 0.92rem;
+    margin-bottom: 20px;
+    min-height: 40px;
+}
+
+.preco-lista {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 24px;
+    text-align: left;
+    flex-grow: 1;
+}
+
+.preco-lista li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.preco-lista i {
+    color: var(--primary-color);
+    margin-top: 2px;
+}
+
+.precos-faq {
+    text-align: left;
+    max-width: 720px;
+    margin: 0 auto 48px;
+}
+
+.precos-faq h2 {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.precos-faq-item {
+    margin-bottom: 20px;
+}
+
+.precos-faq-item h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.precos-faq-item p {
+    color: #555;
+    font-size: 0.92rem;
+    margin: 0;
+}
