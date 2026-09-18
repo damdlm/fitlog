@@ -1,8 +1,12 @@
 """
 Testes para a UI de "iniciar treino" na tela de registrar treino:
-- o botão "Iniciar treino" (caixa .cronometro-actions) some da tela,
-  substituído pelo ícone de play clicável do card "Tudo pronto!";
-- o texto do card foi atualizado pra combinar com essa mudança;
+- com treino + data válidos e exercícios carregados, o treino entra em
+  andamento sozinho (deveAutoIniciarTreino) -- sem etapa intermediária
+  nem ícone de play clicável, esse fluxo foi removido;
+- o botão "Iniciar treino" (caixa .cronometro-actions) continua no DOM,
+  só escondido, reaproveitado pela lógica de cronômetro/wake lock;
+- o card "Pronto para treinar?" (estado vazio, antes de escolher um
+  treino) não referencia mais o fluxo antigo de clique manual;
 - o overlay de animação "scanner" (carregando exercícios) está presente
   e é usado ao trocar de treino/data (submeterComScanner).
 """
@@ -60,8 +64,13 @@ class TestBotaoIniciarTreinoSubstituidoPeloPlay:
         html = resp.get_data(as_text=True)
 
         assert resp.status_code == 200
-        assert 'id="playIniciarTreino"' in html
-        assert 'role="button"' in html
+        # Não existe mais etapa manual (ícone de play clicável): com
+        # treino + data válidos e exercícios encontrados, o JS entra
+        # direto no modo treino sozinho.
+        assert 'var deveAutoIniciarTreino = true;' in html
+        # O card de estado vazio ("Pronto para treinar?") não é
+        # renderizado quando já há exercícios carregados.
+        assert 'id="playIniciarTreino"' not in html
 
     def test_caixa_de_botoes_iniciar_zerar_fica_escondida(self, client, app):
         with app.app_context():
@@ -81,15 +90,19 @@ class TestBotaoIniciarTreinoSubstituidoPeloPlay:
     def test_texto_do_card_nao_referencia_mais_o_botao_removido(self, client, app):
         with app.app_context():
             user = _criar_usuario('ui_play_3')
-            treino = _montar_treino_com_exercicio(user)
-            treino_id = treino.id
+            _montar_treino_com_exercicio(user)  # precisa de versão ativa p/ não cair no branch de erro_versao
         _login(client, 'ui_play_3')
 
-        resp = client.get(f'/registrar/registrar-treino?data=2026-01-05&treino={treino_id}')
+        # Sem treino escolhido na query string -- é a única situação em
+        # que o card de estado vazio ("Pronto para treinar?") aparece.
+        resp = client.get('/registrar/registrar-treino?data=2026-01-05')
         html = resp.get_data(as_text=True)
 
+        assert 'Pronto para treinar?' in html
+        assert 'Escolha o treino e a data para carregar os exercícios' in html
         assert 'Clique em <strong>Iniciar treino</strong>' not in html
-        assert 'play acima' in html
+        assert 'play acima' not in html
+        assert 'id="playIniciarTreino"' not in html
 
 
 class TestAnimacaoDeCarregamentoAoTrocarTreino:
