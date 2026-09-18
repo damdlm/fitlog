@@ -129,8 +129,29 @@ def salvar_registro():
     # Presente só quando o formulário vem do modal de edição do calendário
     # (ver templates/calendar/calendario.html) -- é a data com que a sessão
     # já estava salva antes da edição, usada abaixo para descartar a sessão
-    # antiga caso o usuário tenha mudado a data.
+    # antiga caso o usuário tenha mudado a data. Também é o sinal de que
+    # "salvar" deve devolver a pessoa pro calendário (ver _redirect_apos_salvar
+    # logo abaixo), em vez do fluxo normal de registro.
     data_original = request.form.get("data_original")
+    veio_do_calendario = bool(data_original)
+
+    def _redirect_apos_salvar(sucesso, data_para_exibir=None):
+        """
+        Pra onde ir depois de tentar salvar -- sucesso ou erro. Quando o
+        formulário veio do modal de edição do calendário, sempre volta pra
+        lá (?data=... reaproveita o deep-link que a página já tem pra
+        abrir o evento daquele dia, ver dataParaAbrirAutomaticamente em
+        calendario.html) em vez do fluxo normal de registro (tela de
+        registrar treino / dashboard).
+        """
+        if veio_do_calendario:
+            data_alvo = data_para_exibir or data_original
+            return redirect(url_for("calendar.calendario", data=data_alvo))
+        if sucesso:
+            return redirect(url_for("main.index"))
+        return redirect(url_for("register.registrar_treino",
+                                 treino=treino_id,
+                                 data=data_registro))
 
     # Tempo total do treino (cronômetro do topo), em segundos
     tempo_treino_raw = request.form.get("tempo_treino")
@@ -144,26 +165,24 @@ def salvar_registro():
     # Validações básicas
     if not treino_id or not data_registro:
         flash("Treino e data são obrigatórios", "danger")
-        return redirect(url_for("register.registrar_treino"))
+        return _redirect_apos_salvar(sucesso=False)
     
     # Validar data
     data_valida, data_obj = validar_data(data_registro)
     if not data_valida:
         flash(data_obj, "danger")
-        return redirect(url_for("register.registrar_treino"))
+        return _redirect_apos_salvar(sucesso=False)
     
     # Descobrir versão ativa na data
     versao_ativa = VersaoService.get_ativa_por_data(data_obj)
     
     if not versao_ativa:
         flash(f"Não há versão ativa para {data_obj.strftime('%d/%m/%Y')}", "danger")
-        return redirect(url_for("register.registrar_treino", 
-                              data=data_registro))
+        return _redirect_apos_salvar(sucesso=False, data_para_exibir=data_obj.isoformat())
     
     if versao_ativa.data_fim and versao_ativa.data_fim < data_obj:
         flash(f"A versão {versao_ativa.numero_versao} foi finalizada em {versao_ativa.data_fim.strftime('%d/%m/%Y')}", "danger")
-        return redirect(url_for("register.registrar_treino", 
-                              data=data_registro))
+        return _redirect_apos_salvar(sucesso=False, data_para_exibir=data_obj.isoformat())
     
     # Verificar se o treino pertence à versão ativa
     treinos_disponiveis = VersaoService.get_treinos_para_registro(versao_ativa.id)
@@ -179,8 +198,7 @@ def salvar_registro():
     
     if not treino_valido:
         flash(f"Treino não encontrado na versão ativa!", "danger")
-        return redirect(url_for("register.registrar_treino", 
-                              data=data_registro))
+        return _redirect_apos_salvar(sucesso=False, data_para_exibir=data_obj.isoformat())
     
     # Calcular período e semana a partir da data
     periodo = data_para_periodo(data_obj)
@@ -278,15 +296,13 @@ def salvar_registro():
                 url=url_for('professor.calendario_aluno', aluno_id=current_user.id, data=data_obj.isoformat()),
                 chave_agrupamento=f'registro:{treino_id}:{data_obj.isoformat()}',
             )
-            return redirect(url_for("main.index"))
+            return _redirect_apos_salvar(sucesso=True, data_para_exibir=data_obj.isoformat())
         else:
             flash("❌ Erro ao salvar registros!", "danger")
     else:
         flash("⚠️ Nenhum dado válido para salvar!", "warning")
     
-    return redirect(url_for("register.registrar_treino", 
-                          treino=treino_id, 
-                          data=data_registro))
+    return _redirect_apos_salvar(sucesso=False, data_para_exibir=data_obj.isoformat())
 
 
 @register_bp.route("/api/treinos-por-data")
