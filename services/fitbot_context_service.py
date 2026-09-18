@@ -26,6 +26,7 @@ from services.versao_service import VersaoService
 from services.registro_service import RegistroService
 from services.estatistica_service import EstatisticaService
 from services.exercicio_service import ExercicioService
+from services.dashboard_service import DashboardService
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ HISTORICO = "HISTORICO"
 EVOLUCAO = "EVOLUCAO"
 ESTATISTICAS = "ESTATISTICAS"
 PERFIL = "PERFIL"
+PROGNOSTICO_ALUNOS = "PROGNOSTICO_ALUNOS"
 DUVIDA_GERAL = "DUVIDA_GERAL"
 
 MAX_EXERCICIOS_POR_TREINO_CONTEXTO = 15
@@ -96,6 +98,8 @@ class FitBotContextService:
                 dados = FitBotContextService._contexto_estatisticas(user_id)
             elif intencao == PERFIL:
                 dados = FitBotContextService._contexto_perfil(user_id)
+            elif intencao == PROGNOSTICO_ALUNOS:
+                dados = FitBotContextService._contexto_prognostico_alunos(user_id)
             else:
                 dados = None
         except Exception as e:
@@ -118,6 +122,14 @@ class FitBotContextService:
     @staticmethod
     def identificar_intencao(mensagem):
         texto = _normalizar(mensagem)
+
+        # Menção a "alunos" (plural) só faz sentido do lado do professor
+        # -- nenhuma outra intenção usa essa palavra, então basta ela
+        # aparecer (sozinha ou combinada com termos como "prognostico",
+        # "panorama", "parados" etc.) pra identificar o pedido de visão
+        # agregada, sem depender de bater uma frase exata.
+        if "alunos" in texto or "prognostico" in texto:
+            return PROGNOSTICO_ALUNOS
 
         if any(p in texto for p in (
             "evolu", "progred", "progressao", "progresso",
@@ -165,6 +177,78 @@ class FitBotContextService:
         if not usuario:
             return None
         return {"usuario": {"nome": usuario.nome_completo or usuario.username}}
+
+    # ------------------------------------------------------------------
+    # PROGNOSTICO_ALUNOS (só professor -- visão agregada de todos os
+    # alunos vinculados, nunca de um aluno específico)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _contexto_prognostico_alunos(user_id):
+        """
+        Contexto agregado dos alunos de um professor, para o FitBot
+        montar um prognóstico (quem está indo bem, quem precisa de
+        atenção, aderência geral etc.).
+
+        Só faz sentido para professores: `user_id` aqui é sempre o
+        próprio usuário autenticado (nunca um `aluno_id` -- não existe
+        "prognóstico dos alunos" de outro professor, nem de um aluno
+        avulso). Se `user_id` não for de um professor, retorna None e
+        o FitBot simplesmente ignora essa intenção, respondendo de
+        forma genérica (mesmo comportamento de qualquer outra intenção
+        sem dados disponíveis).
+
+        Reaproveita inteiramente DashboardService.dados_professor(), a
+        mesma agregação (e o mesmo cache de 60s) que já alimenta o
+        dashboard operacional do professor -- nenhuma query nova.
+        """
+        from models import User
+
+        usuario = User.query.get(user_id)
+        if not usuario or not usuario.is_professor():
+            return None
+
+        dashboard = DashboardService.dados_professor(user_id)
+        if not dashboard or not dashboard.get("total_alunos"):
+            return None
+
+        aderencia = dashboard.get("aderencia") or {}
+        atencao = dashboard.get("alunos_atencao") or {}
+        revisao = dashboard.get("treinos_revisao") or {}
+
+        return {
+            "professor": {"nome": usuario.nome_completo or usuario.username},
+            "total_alunos": dashboard.get("total_alunos"),
+            "alunos_novos_mes": dashboard.get("alunos_novos_mes"),
+            "treinaram_hoje": dashboard.get("treinaram_hoje"),
+            "aderencia_pct_ultimos_30_dias": aderencia.get("pct"),
+            "aderencia_pct_30_dias_anteriores": aderencia.get("pct_anterior"),
+            "alunos_precisando_atencao": {
+                # 7+ dias sem treinar (ou nunca treinaram) -- ver
+                # DashboardService.DIAS_SEM_TREINAR_ATENCAO.
+                "total": atencao.get("total"),
+                "detalhe": [
+                    {
+                        "nome": item["nome"],
+                        "dias_sem_treinar": item["dias_parado"],
+                        "nunca_treinou": item["nunca_treinou"],
+                    }
+                    for item in (atencao.get("itens") or [])
+                ],
+            },
+            "planos_de_treino_desatualizados": {
+                # versão ativa há 60+ dias sem revisão -- ver
+                # DashboardService.DIAS_VERSAO_SEM_REVISAO.
+                "total": revisao.get("total"),
+                "detalhe": [
+                    {
+                        "nome": item["nome"],
+                        "dias_sem_revisao": item["dias_sem_revisao"],
+                        "versao_atual": item["numero_versao"],
+                    }
+                    for item in (revisao.get("itens") or [])
+                ],
+            },
+        }
 
     # ------------------------------------------------------------------
     # TREINO ATUAL

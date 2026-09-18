@@ -235,3 +235,106 @@ def test_tentativa_de_manipulacao_nao_escapa_isolamento(app):
 def test_montar_contexto_sem_user_id_retorna_none(app):
     with app.app_context():
         assert FitBotContextService.montar_contexto('Qual é meu treino de hoje?', None) is None
+
+
+# ----------------------------------------------------------------------
+# PROGNOSTICO_ALUNOS
+# ----------------------------------------------------------------------
+from models import AlunoProfessor  # noqa: E402
+from services.fitbot_context_service import PROGNOSTICO_ALUNOS  # noqa: E402
+
+
+def _criar_professor(username):
+    professor = User(username=username, email=f'{username}@teste.com',
+                      tipo_usuario='professor', nome_completo=username.title())
+    professor.set_password('123456')
+    db.session.add(professor)
+    db.session.commit()
+    return professor
+
+
+def _associar_aluno(aluno_id, professor_id, dias_atras_associacao=90):
+    assoc = AlunoProfessor(
+        aluno_id=aluno_id, professor_id=professor_id, ativo=True,
+        data_associacao=datetime.now(timezone.utc) - timedelta(days=dias_atras_associacao),
+    )
+    db.session.add(assoc)
+    db.session.commit()
+    return assoc
+
+
+class TestIdentificarIntencaoPrognosticoAlunos:
+    @pytest.mark.parametrize('mensagem', [
+        'como estão meus alunos?',
+        'me dá um prognóstico dos alunos',
+        'panorama geral dos meus alunos',
+        'quais alunos estão parados?',
+        'situação dos alunos essa semana',
+    ])
+    def test_frases_reconhecidas(self, mensagem):
+        assert FitBotContextService.identificar_intencao(mensagem) == PROGNOSTICO_ALUNOS
+
+    def test_nao_conflita_com_evolucao_do_proprio_usuario(self):
+        # "evoluí" (1ª pessoa, sem menção a "alunos") continua caindo em
+        # EVOLUCAO, não em PROGNOSTICO_ALUNOS.
+        assert FitBotContextService.identificar_intencao('Eu evoluí no supino esse mês?') == EVOLUCAO
+
+
+class TestContextoPrognosticoAlunos:
+    def test_retorna_none_para_aluno_comum(self, app):
+        """A intenção só existe pro professor -- um aluno comum pedindo
+        isso não recebe dado nenhum de outros usuários."""
+        with app.app_context():
+            aluno = _criar_usuario('aluno_comum_prog')
+            contexto = FitBotContextService.montar_contexto('como estão meus alunos?', aluno.id)
+        assert contexto is None
+
+    def test_retorna_none_para_professor_sem_alunos_vinculados(self, app):
+        with app.app_context():
+            professor = _criar_professor('prof_sem_aluno')
+            contexto = FitBotContextService.montar_contexto('prognóstico dos meus alunos', professor.id)
+        assert contexto is None
+
+    def test_prognostico_com_alunos_reais(self, app):
+        with app.app_context():
+            professor = _criar_professor('prof_prog_1')
+
+            # aluno em dia -- treinou hoje
+            aluno_em_dia, _ = _criar_usuario_com_treino_e_registro(
+                'aluno_em_dia', 'Supino Reto', dias_atras=0)
+            _associar_aluno(aluno_em_dia.id, professor.id)
+
+            # aluno sumido -- treinou faz 10 dias (> 7, entra em alunos_atencao)
+            aluno_sumido, _ = _criar_usuario_com_treino_e_registro(
+                'aluno_sumido', 'Agachamento', dias_atras=10)
+            _associar_aluno(aluno_sumido.id, professor.id)
+
+            contexto = FitBotContextService.montar_contexto('como estão meus alunos?', professor.id)
+
+            assert contexto is not None
+            assert contexto['intencao'] == PROGNOSTICO_ALUNOS
+            assert contexto['professor']['nome'] == 'Prof_Prog_1'
+            assert contexto['total_alunos'] == 2
+
+            nomes_atencao = [i['nome'] for i in contexto['alunos_precisando_atencao']['detalhe']]
+            assert 'Aluno_Sumido' in nomes_atencao
+            assert 'Aluno_Em_Dia' not in nomes_atencao
+
+    def test_isola_alunos_entre_professores_diferentes(self, app):
+        """O prognóstico de um professor nunca inclui aluno de outro
+        professor, mesmo que a mensagem tente sugerir isso."""
+        with app.app_context():
+            professor_a = _criar_professor('prof_iso_a')
+            professor_b = _criar_professor('prof_iso_b')
+
+            aluno_a, _ = _criar_usuario_com_treino_e_registro('aluno_do_a', 'Supino Reto')
+            _associar_aluno(aluno_a.id, professor_a.id)
+
+            aluno_b, _ = _criar_usuario_com_treino_e_registro('aluno_do_b', 'Supino Reto')
+            _associar_aluno(aluno_b.id, professor_b.id)
+
+            contexto_a = FitBotContextService.montar_contexto('meus alunos, como estão?', professor_a.id)
+
+            assert contexto_a['total_alunos'] == 1
+            nomes = [i['nome'] for i in contexto_a['alunos_precisando_atencao']['detalhe']]
+            assert 'Aluno_Do_B' not in nomes
