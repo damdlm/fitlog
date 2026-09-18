@@ -677,21 +677,6 @@
         }
     }
 
-    .btn-load-last {
-        background: var(--surface);
-        color: var(--primary-orange);
-        border: 2px solid var(--primary-orange);
-        padding: 8px 18px;
-        border-radius: 25px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        transition: all 0.2s;
-    }
-    .btn-load-last:hover {
-        background: var(--primary-orange);
-        color: white;
-    }
-
     /* Remove setas do input number */
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button {
@@ -722,27 +707,6 @@
         color: var(--primary-orange);
         border-bottom-color: var(--primary-orange);
         outline: none;
-    }
-
-    .versao-badge {
-        background: linear-gradient(135deg, var(--primary-orange) 0%, var(--light-orange) 100%);
-        color: white;
-        padding: 5px 15px;
-        border-radius: 25px;
-        font-weight: 600;
-        font-size: 0.85rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        box-shadow: var(--shadow-orange);
-    }
-
-    .data-badge {
-        background: var(--dark-bg);
-        color: white;
-        padding: 5px 15px;
-        border-radius: 25px;
-        font-weight: 600;
     }
 
     .treino-card {
@@ -1186,53 +1150,6 @@
         margin: 0 auto;
     }
 
-    /* Resumo dos exercícios logo abaixo do card "Tudo pronto!" -- dá uma
-       prévia do que está no treino antes do usuário tocar no play. */
-    .resumo-exercicios-preview {
-        padding: 20px 24px;
-        border-radius: var(--radius-lg);
-        border: 1px solid var(--border-soft);
-        background: #fff;
-    }
-    .resumo-exercicios-titulo {
-        font-weight: 700;
-        color: var(--dark-bg);
-        margin-bottom: 12px;
-        font-size: 0.95rem;
-    }
-    .resumo-exercicios-titulo i {
-        color: var(--primary-orange);
-        margin-right: 6px;
-    }
-    .resumo-exercicios-lista {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    .resumo-exercicios-lista li {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        padding: 10px 0;
-        border-bottom: 1px solid var(--border-soft);
-    }
-    .resumo-exercicios-lista li:last-child {
-        border-bottom: none;
-    }
-    .resumo-exercicio-nome {
-        font-weight: 600;
-        color: var(--dark-bg);
-    }
-    .resumo-exercicio-musculo {
-        font-size: 0.78rem;
-        color: #8a8580;
-        background: var(--surface-muted);
-        padding: 2px 10px;
-        border-radius: 999px;
-        white-space: nowrap;
-    }
-
     /* Ícone de play clicável (substitui o botão "Iniciar treino" -- a
        própria animação do ícone é a ação). Sem o giro 3D do clipboard;
        em vez disso, um pulso sutil convida ao toque. */
@@ -1461,10 +1378,6 @@
             font-size: 0.98rem;
         }
 
-        .dash-registro-meta {
-            font-size: 0.76rem;
-        }
-
         .dash-registro-badges .dash-badge {
             font-size: 0.72rem;
             padding: 3px 8px;
@@ -1474,10 +1387,6 @@
             flex-direction: column;
             align-items: flex-start !important;
             gap: 10px;
-        }
-
-        .btn-load-last {
-            width: 100%;
         }
 
         .alert-version.d-flex {
@@ -3946,56 +3855,6 @@ function inicializarSwitchesExercicio() {
             atualizarResumo();
         });
     });
-}
-
-function carregarUltimoRegistro() {
-    let carregados = 0;
-    let totalExercicios = 0;
-
-    document.querySelectorAll('.exercise-row').forEach(row => {
-        const exId = row.dataset.exercicioId;
-        if (!exId) return;
-
-        // Não carrega dados anteriores em exercícios que o usuário
-        // desmarcou (não vai treinar hoje).
-        if (row.classList.contains('is-desativado')) return;
-
-        totalExercicios++;
-
-        const ultimaCarga = row.dataset.ultimaCarga;
-        const ultimasReps = row.dataset.ultimasReps;
-        const ultimasSeries = row.dataset.ultimasSeries;
-
-        if (ultimaCarga && ultimasReps &&
-            ultimaCarga !== 'undefined' && ultimasReps !== 'undefined' &&
-            ultimaCarga !== '' && ultimasReps !== '') {
-
-            const cargaInput = row.querySelector('.carga-input');
-            const repsInput = row.querySelector('.reps-input');
-            const seriesSelect = document.getElementById(`series-select-${exId}`);
-
-            if (cargaInput) cargaInput.value = ultimaCarga;
-            if (repsInput) repsInput.value = ultimasReps;
-            if (seriesSelect && ultimasSeries && ultimasSeries !== 'undefined') {
-                seriesSelect.value = ultimasSeries;
-            }
-
-            carregados++;
-        }
-    });
-
-    atualizarResumo();
-
-    const mensagem = carregados > 0
-        ? `${carregados} de ${totalExercicios} exercício(s) carregado(s) com dados do último treino!`
-        : 'Nenhum dado anterior encontrado para carregar.';
-    const tipo = carregados > 0 ? 'success' : 'warning';
-
-    if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
-        window.FitLogUtils.showToast(mensagem, tipo);
-    } else {
-        alert(mensagem);
-    }
 }
 
 /* ================= CRONÔMETROS ================= */
