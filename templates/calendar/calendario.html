@@ -508,6 +508,175 @@
         outline: none;
     }
 
+    /* Seta que abre o modal de séries individuais -- mesmo padrão da
+       tela de registro (templates/register/registrar_treino.html:
+       .exercise-row-wrap/.btn-abrir-series-modal), variáveis trocadas
+       pelas já usadas nesta página (--border-subtle no lugar de
+       --border-soft, --text-muted no lugar do cinza fixo). */
+    .editar-registro-card-wrap {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        margin-bottom: 12px;
+    }
+    .editar-registro-card-wrap > .editar-registro-card {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin-bottom: 0;
+    }
+    .btn-abrir-series-modal-cal {
+        flex-shrink: 0;
+        width: 24px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 1.15rem;
+        cursor: pointer;
+        border-radius: 10px;
+        transition: color 0.15s ease, background-color 0.15s ease;
+    }
+    .btn-abrir-series-modal-cal:hover,
+    .btn-abrir-series-modal-cal:focus-visible {
+        color: var(--primary-orange);
+        background: rgba(242, 140, 51, 0.08);
+        outline: none;
+    }
+
+    /* Modal de séries individuais -- mesma ideia da tela de registro,
+       mas sem ícone/gif/músculo/info (esse endpoint de edição não tem
+       esses dados) e sem switch/marcar-feito (não fazem sentido editando
+       um treino já registrado no passado) -- só título, carga/reps por
+       série e um OK pra fechar. */
+    #modalSeriesIndividuaisCalendario .modal-content {
+        border: 2px solid var(--primary-orange);
+        border-radius: 16px;
+    }
+    .detalhe-series-cal-titulo {
+        font-weight: 600;
+        color: var(--text-primary);
+        overflow-wrap: break-word;
+        margin-bottom: 14px;
+    }
+    .detalhe-series-cal-select-wrap {
+        text-align: center;
+        margin-bottom: 16px;
+    }
+    .detalhe-series-cal-select-wrap label {
+        display: block;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--text-muted);
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+    .detalhe-series-cal-select-wrap select {
+        width: 100%;
+        max-width: 220px;
+        margin: 0 auto;
+        height: 40px;
+        padding: 3px 24px 3px 8px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        font-family: inherit;
+        color: var(--text-primary);
+        border: 2px solid var(--border-subtle);
+        border-radius: 10px;
+        box-shadow: none;
+        background-color: var(--surface);
+        text-align: center;
+        text-align-last: center;
+    }
+    .detalhe-series-cal-select-wrap select:focus {
+        outline: none;
+        border-color: var(--primary-orange);
+        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12);
+    }
+    .detalhe-series-cal-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+        margin-bottom: 8px;
+        table-layout: fixed;
+    }
+    .detalhe-series-cal-table th {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--text-muted);
+        font-weight: 700;
+        text-align: center;
+        padding-bottom: 2px;
+    }
+    .detalhe-series-cal-table th:last-child {
+        width: 46px;
+    }
+    .detalhe-series-cal-table td {
+        text-align: center;
+        padding: 0 4px;
+    }
+    .detalhe-series-cal-table td input {
+        width: 100%;
+        min-width: 0;
+        text-align: center;
+        font-weight: 700;
+        font-size: 1rem;
+        padding: 3px;
+        height: 40px;
+        border: 2px solid var(--border-subtle);
+        border-radius: 10px;
+        box-shadow: none;
+        background: var(--surface);
+        color: var(--text-primary);
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .detalhe-series-cal-table td input:focus {
+        outline: none;
+        border-color: var(--primary-orange);
+        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12);
+    }
+    .detalhe-series-cal-numero {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: rgba(20, 20, 20, 0.05);
+        color: var(--text-muted);
+        font-weight: 700;
+        font-size: 0.82rem;
+    }
+    .detalhe-series-cal-ok-row {
+        display: flex;
+        justify-content: center;
+        margin-top: 16px;
+    }
+    .btn-ok-series-cal {
+        min-width: 140px;
+        padding: 9px 28px;
+        border: none;
+        border-radius: 999px;
+        background: var(--primary-orange);
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.95rem;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+    }
+    .btn-ok-series-cal:hover,
+    .btn-ok-series-cal:focus-visible {
+        filter: brightness(1.06);
+        outline: none;
+    }
+    .btn-ok-series-cal:active {
+        filter: brightness(0.94);
+    }
+
     .grupo-treino-volume {
         background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
         color: #fff;
@@ -1293,6 +1462,39 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de séries individuais -- mesmo componente da tela de registro
+     (ver templates/register/registrar_treino.html), adaptado: sem
+     ícone/gif/músculo/info (o endpoint de edição do calendário não tem
+     esses dados) e sem switch/marcar-feito (não fazem sentido editando
+     um treino do passado). Fica ACIMA do #modalEditarRegistro (mesmo
+     padrão de modal-sobre-modal, Bootstrap já suporta) -- aberto a
+     partir da seta de cada card dentro dele. -->
+<div class="modal fade" id="modalSeriesIndividuaisCalendario" tabindex="-1" aria-labelledby="seriesModalCalTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body p-3">
+                <div class="detalhe-series-cal-titulo" id="seriesModalCalTitulo">Exercício</div>
+
+                <div class="detalhe-series-cal-select-wrap">
+                    <label for="seriesModalCalSelect">Séries</label>
+                    <select class="form-select" id="seriesModalCalSelect"></select>
+                </div>
+
+                <table class="detalhe-series-cal-table">
+                    <thead>
+                        <tr><th>Carga</th><th>Repetições</th><th>Série</th></tr>
+                    </thead>
+                    <tbody id="seriesModalCalBody"></tbody>
+                </table>
+
+                <div class="detalhe-series-cal-ok-row">
+                    <button type="button" class="btn-ok-series-cal" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </div><!-- /.calendar-page -->
 {% endblock %}
 
@@ -1365,6 +1567,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         inicializarTema();
         inicializarCalendario();
+        inicializarModalSeriesIndividuaisCalendario();
     });
     
     function inicializarCalendario() {
@@ -1751,8 +1954,25 @@
 
                 corpo.innerHTML = dados.exercicios.map(ex => {
                     const vazio = ex.carga === 0 && ex.repeticoes === 0 && ex.num_series === 0;
+                    // Inputs ocultos com o valor de cada série (pro modal de
+                    // séries individuais poder pré-preencher ao abrir) --
+                    // mesmo padrão da tela de registro: um slot por número de
+                    // série até max(6, num_series atual), não só as que já
+                    // têm valor salvo.
+                    const maxOpcoes = Math.max(6, ex.num_series || 0);
+                    let seriesInputsHtml = '';
+                    for (let n = 1; n <= maxOpcoes; n++) {
+                        const serieDado = (ex.series || [])[n - 1];
+                        const cargaSerie = serieDado ? serieDado.carga : '';
+                        const repsSerie = serieDado ? serieDado.repeticoes : '';
+                        seriesInputsHtml += `<input type="hidden" name="carga_${ex.chave}_${n}" class="carga-serie-input" data-serie="${n}" value="${cargaSerie}">`;
+                        seriesInputsHtml += `<input type="hidden" name="reps_${ex.chave}_${n}" class="reps-serie-input" data-serie="${n}" value="${repsSerie}">`;
+                    }
                     return `
-                    <div class="editar-registro-card ${vazio ? 'editar-registro-card--vazio' : ''}">
+                    <div class="editar-registro-card-wrap">
+                    <div class="editar-registro-card ${vazio ? 'editar-registro-card--vazio' : ''}" data-exercicio-id="${ex.chave}">
+                        <input type="hidden" name="modo_series_${ex.chave}" class="modo-series-flag" value="${ex.modo_series || 'uniforme'}">
+                        ${seriesInputsHtml}
                         <div class="editar-registro-top">
                             <div class="editar-registro-nome">${escapeHtml(ex.nome)}</div>
                             ${vazio ? '<span class="editar-registro-badge-vazio">Não apontado</span>' : ''}
@@ -1779,6 +1999,14 @@
                             </div>
                         </div>
                     </div>
+                    <button type="button" class="btn-abrir-series-modal-cal"
+                            data-bs-toggle="modal" data-bs-target="#modalSeriesIndividuaisCalendario"
+                            data-exercicio-id="${ex.chave}"
+                            data-exercicio-nome="${escapeHtml(ex.nome)}"
+                            aria-label="Editar séries individualmente de ${escapeHtml(ex.nome)}">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                    </div>
                 `;
                 }).join('');
                 btnSalvar.disabled = false;
@@ -1795,6 +2023,141 @@
         input.value = novoValor;
     }
     window.alterarSeriesStepper = alterarSeriesStepper;
+
+    // Modal de séries individuais dentro da edição do calendário --
+    // mesma lógica de templates/register/registrar_treino.html
+    // (inicializarModalSeriesIndividuais), adaptada: sem ícone/info/
+    // switch/marcar-feito (não existem nesta tela), e a "contagem de
+    // séries" do card é o input .stepper-valor em vez de um <select>.
+    function inicializarModalSeriesIndividuaisCalendario() {
+        const modalEl = document.getElementById('modalSeriesIndividuaisCalendario');
+        if (!modalEl || typeof bootstrap === 'undefined') return;
+
+        const tituloEl = document.getElementById('seriesModalCalTitulo');
+        const selectEl = document.getElementById('seriesModalCalSelect');
+        const bodyEl = document.getElementById('seriesModalCalBody');
+        let exIdAtual = null;
+
+        function contexto(exId) {
+            const row = document.querySelector(`.editar-registro-card[data-exercicio-id="${exId}"]`);
+            if (!row) return null;
+            return {
+                row: row,
+                modoFlag: row.querySelector('.modo-series-flag'),
+                stepperValor: row.querySelector('.stepper-valor'),
+                cargaInput: row.querySelector('.carga-input'),
+                repsInput: row.querySelector('.reps-input'),
+                cargasSerie: row.querySelectorAll('.carga-serie-input'),
+                repsSerie: row.querySelectorAll('.reps-serie-input')
+            };
+        }
+
+        function pegarSerie(nodeList, n) {
+            for (const el of nodeList) {
+                if (parseInt(el.dataset.serie) === n) return el;
+            }
+            return null;
+        }
+
+        function montarTabela(exId) {
+            const ctx = contexto(exId);
+            if (!ctx) return;
+
+            const numSeries = parseInt(selectEl.value) || 3;
+            const valorPadraoCarga = ctx.cargaInput?.value || '';
+            const valorPadraoReps = ctx.repsInput?.value || '';
+
+            bodyEl.innerHTML = '';
+            for (let n = 1; n <= numSeries; n++) {
+                const cargaOculto = pegarSerie(ctx.cargasSerie, n);
+                const repsOculto = pegarSerie(ctx.repsSerie, n);
+                const valorCarga = (cargaOculto && cargaOculto.value !== '') ? cargaOculto.value : valorPadraoCarga;
+                const valorReps = (repsOculto && repsOculto.value !== '') ? repsOculto.value : valorPadraoReps;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="number" step="0.5" min="0" inputmode="decimal" placeholder="0" class="series-modal-cal-carga" data-serie="${n}" value="${valorCarga}"></td>
+                    <td><input type="number" min="0" max="100" inputmode="numeric" placeholder="0" class="series-modal-cal-reps" data-serie="${n}" value="${valorReps}"></td>
+                    <td><span class="detalhe-series-cal-numero">${n}</span></td>
+                `;
+                bodyEl.appendChild(tr);
+            }
+
+            bodyEl.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', () => sincronizarLinha(exId, input));
+                // Mesmo comportamento dos inputs de carga/reps do card: ao
+                // focar, seleciona todo o texto.
+                input.addEventListener('focus', function () { this.select(); });
+                input.addEventListener('mouseup', function (e) {
+                    if (document.activeElement === this) e.preventDefault();
+                });
+            });
+        }
+
+        function sincronizarLinha(exId, inputAlterado) {
+            const ctx = contexto(exId);
+            if (!ctx) return;
+
+            // A partir do primeiro campo editado, o exercício passa a usar
+            // valores individuais por série (em vez do valor único * contagem).
+            if (ctx.modoFlag) ctx.modoFlag.value = 'individual';
+
+            const n = parseInt(inputAlterado.dataset.serie);
+            const ehCarga = inputAlterado.classList.contains('series-modal-cal-carga');
+            const oculto = pegarSerie(ehCarga ? ctx.cargasSerie : ctx.repsSerie, n);
+            if (oculto) oculto.value = inputAlterado.value;
+        }
+
+        selectEl.addEventListener('change', function () {
+            if (!exIdAtual) return;
+            const ctx = contexto(exIdAtual);
+            // Reflete a nova contagem no stepper do card por trás -- mesmo
+            // valor que apareceria se a pessoa clicasse "+"/"−" ali direto.
+            if (ctx && ctx.stepperValor) ctx.stepperValor.value = this.value;
+            montarTabela(exIdAtual);
+        });
+
+        modalEl.addEventListener('show.bs.modal', function (evt) {
+            const gatilho = evt.relatedTarget;
+            if (!gatilho) return;
+            exIdAtual = gatilho.dataset.exercicioId;
+
+            const nome = gatilho.dataset.exercicioNome || 'Exercício';
+            tituloEl.textContent = nome;
+            tituloEl.title = nome;
+
+            const ctx = contexto(exIdAtual);
+            if (!ctx) return;
+
+            const numSeriesAtual = parseInt(ctx.stepperValor?.value) || 3;
+            const maxOpcoes = Math.max(6, numSeriesAtual);
+            selectEl.innerHTML = '';
+            for (let n = 1; n <= maxOpcoes; n++) {
+                const opt = document.createElement('option');
+                opt.value = n;
+                opt.textContent = `${n} série${n !== 1 ? 's' : ''}`;
+                if (n === numSeriesAtual) opt.selected = true;
+                selectEl.appendChild(opt);
+            }
+
+            montarTabela(exIdAtual);
+        });
+
+        // O Bootstrap não suporta modal empilhado sobre modal nativamente
+        // -- abrir este (via data-bs-toggle na seta) fecha automaticamente
+        // o #modalEditarRegistro por trás (confirmado testando: é assim
+        // que o Bootstrap se comporta por padrão, não é um bug daqui).
+        // Pra não deixar a pessoa "sem modal nenhum" depois de editar as
+        // séries, reabre o de edição ao fechar este -- o conteúdo dele
+        // continua intacto (hide() só esconde, não destrói o DOM/valores).
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            const editarModalEl = document.getElementById('modalEditarRegistro');
+            if (editarModalEl) {
+                bootstrap.Modal.getOrCreateInstance(editarModalEl).show();
+            }
+        });
+    }
+    window.inicializarModalSeriesIndividuaisCalendario = inicializarModalSeriesIndividuaisCalendario;
 
     // Abre automaticamente o detalhe do evento do dia vindo por deep link
     // (ver dataParaAbrirAutomaticamente, no topo do arquivo). Chamado

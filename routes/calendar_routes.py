@@ -366,12 +366,30 @@ def api_evento_dados_edicao():
         # zerados) entra com 0 explícito -- pedido pra manter todos os
         # exercícios do treino visíveis no modal, na mesma ordem, mesmo
         # os que a pessoa ainda não apontou nada.
+        # Lista completa de séries (não só a primeira) -- pro modal de
+        # séries individuais (mesmo componente da tela de registro, ver
+        # templates/register/registrar_treino.html) poder pré-preencher
+        # carga/reps por série ao reabrir a edição. modo_series usa a
+        # mesma regra de lá: "individual" só quando os valores realmente
+        # variam entre séries, senão "uniforme" (cai no campo único).
+        series_json = [
+            {
+                'carga': float(s.carga) if s.carga is not None else 0,
+                'repeticoes': s.repeticoes if s.repeticoes is not None else 0,
+            }
+            for s in series
+        ]
+        cargas_distintas = {s['carga'] for s in series_json}
+        reps_distintas = {s['repeticoes'] for s in series_json}
+        modo_series = 'individual' if series_json and (len(cargas_distintas) > 1 or len(reps_distintas) > 1) else 'uniforme'
         exercicios_json.append({
             'chave': chave,
             'nome': ex.nome,
             'carga': float(series[0].carga) if series and series[0].carga is not None else 0,
             'repeticoes': series[0].repeticoes if series and series[0].repeticoes is not None else 0,
             'num_series': len(series) if series else 0,
+            'series': series_json,
+            'modo_series': modo_series,
         })
 
     return jsonify({
