@@ -62,7 +62,19 @@ ASAAS_BASE_URL_PRODUCAO = "https://api.asaas.com/v3"
 # indicador de operação 100501, alíquota ISS 0% por a conta ser MEI).
 # Mudar aqui exige mudar também no painel da Asaas, e vice-versa --
 # não há sincronização automática entre os dois.
-CODIGO_SERVICO_MUNICIPAL_NFSE = '1.1103.22.00'
+#
+# CODIGO_SERVICO_MUNICIPAL_NFSE é o código de serviço da PREFEITURA de
+# Jaraguá do Sul/SC (não o NBS, nem o código nacional do Asaas --
+# são três tabelas diferentes; ver o erro real de uma tentativa
+# anterior: "Não foi possível localizar CodigoServicoMunicipal
+# 1.1103.22.00" quando o NBS foi usado aqui por engano). Confirmado em
+# fonte primária -- Lei Complementar Municipal nº 153/2014 (que altera
+# a LC 35/2003, lei do ISS de Jaraguá do Sul) e o Projeto de Lei
+# Complementar 3/2023 (mesma tabela, mais recente): item "1.05 -
+# Licenciamento ou cessão de direito de uso de programas de
+# computação", alíquota 2,0%. Jaraguá do Sul usa a mesma numeração da
+# LC 116/2003 federal para esse item.
+CODIGO_SERVICO_MUNICIPAL_NFSE = '1.05'
 DESCRICAO_SERVICO_NFSE = (
     'Licenciamento de uso de aplicativo de gestão e acompanhamento '
     'de treinos físicos (SaaS), disponibilizado por assinatura mensal.'
@@ -1227,17 +1239,15 @@ class BillingService:
         CODIGO_SERVICO_MUNICIPAL_NFSE e DESCRICAO_SERVICO_NFSE acima.
         Documentação: https://docs.asaas.com/reference/agendar-nota-fiscal
 
-        NÃO CONFIRMADO contra um pagamento real (mesmo padrão de aviso
-        já usado em criar_pagamento_pix_ativacao neste arquivo): a
-        documentação confirma que contas no Portal Nacional devem usar
-        municipalServiceCode em vez de municipalServiceId, mas não foi
-        possível confirmar sem uma chamada real se o valor esperado
-        nesse campo é o NBS completo (usado aqui), o item "01.05" da
-        LC 116, ou outro identificador. TESTAR contra a próxima
-        cobrança de valor baixo confirmada em produção, conferindo em
-        Notas Fiscais > Cobranças no painel se a nota foi agendada
-        (status SCHEDULED) ou se voltou com erro -- ajustar
-        CODIGO_SERVICO_MUNICIPAL_NFSE acima se necessário.
+        CODIGO_SERVICO_MUNICIPAL_NFSE já foi ajustado uma vez depois de
+        um erro real em produção (ver comentário na constante, acima)
+        -- se voltar a falhar com "CodigoServicoMunicipal" não
+        localizado, o formato pode precisar mudar (ex: "01.05" ou
+        "105" em vez de "1.05", dependendo de como o sistema da
+        prefeitura -- IPM Sistemas, em Jaraguá do Sul -- valida a
+        pontuação). TESTAR contra a próxima cobrança confirmada em
+        produção, conferindo em Notas Fiscais > Cobranças no painel se
+        a nota foi agendada (status SCHEDULED) ou se voltou com erro.
 
         Falha aqui NUNCA pode derrubar o processamento do webhook --
         só loga. Um pagamento confirmado precisa ficar registrado no
