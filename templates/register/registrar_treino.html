@@ -4316,7 +4316,7 @@ function tocarBipe() {
 
     var jaRevelouExercicios = false;
 
-    function iniciar() {
+    function iniciar(semTransicao) {
         rodando = true;
         inicioMs = Date.now();
         intervalId = setInterval(atualizarDisplay, 1000);
@@ -4332,19 +4332,25 @@ function tocarBipe() {
         if (jaRevelouExercicios) return;
         jaRevelouExercicios = true;
 
+        // No auto-início (logo depois do auto-submit do picker de treino),
+        // a "Carregando exercícios" já cobriu a troca de página -- abrir
+        // de novo a película aqui (os círculos girando) duplicava a
+        // transição. Só reaproveita essa película quando é o usuário
+        // clicando de verdade no botão "Iniciar treino".
+        if (semTransicao || !window.FitLogPageTransition) {
+            revelarExercicios();
+            return;
+        }
+
         // Reaproveita a mesma película de transição usada na navegação
         // entre páginas, para a entrada no modo treino em tela cheia
         // parecer uma troca de "página" -- só troca de tela de fato
         // depois que a película já cobriu o conteúdo.
-        if (window.FitLogPageTransition) {
-            window.FitLogPageTransition.show();
-            window.setTimeout(function () {
-                revelarExercicios();
-                window.FitLogPageTransition.hide();
-            }, window.FitLogPageTransition.NAV_DELAY_MS);
-        } else {
+        window.FitLogPageTransition.show();
+        window.setTimeout(function () {
             revelarExercicios();
-        }
+            window.FitLogPageTransition.hide();
+        }, window.FitLogPageTransition.NAV_DELAY_MS);
     }
 
     function pausar() {
@@ -4412,7 +4418,12 @@ function tocarBipe() {
     // transição incluídos) -- só que automaticamente, sem esperar um
     // segundo toque do usuário.
     if (deveAutoIniciarTreino) {
-        elBtnIniciar.click();
+        // Chama iniciar() direto (não elBtnIniciar.click()) pra pular a
+        // película de transição dos círculos -- ver comentário dentro
+        // de iniciar(). A validação de treino selecionado não é
+        // necessária aqui: só chegamos com deveAutoIniciarTreino=true
+        // quando exercicios já veio preenchido do servidor.
+        iniciar(true);
     }
 
     elBtnZerar.addEventListener('click', function () {
