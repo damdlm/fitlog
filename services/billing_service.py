@@ -77,7 +77,7 @@ ASAAS_BASE_URL_PRODUCAO = "https://api.asaas.com/v3"
 # (manual, editando a nota já criada, ou via um pagamento novo) antes
 # de confiar. Se rejeitar de novo, o próximo palpite a testar seria
 # '01.05.01.001'.
-CODIGO_SERVICO_MUNICIPAL_NFSE = '00.01.05'
+CODIGO_SERVICO_MUNICIPAL_NFSE = '01.05.00'
 DESCRICAO_SERVICO_NFSE = (
     'Licenciamento de uso de aplicativo de gestão e acompanhamento '
     'de treinos físicos (SaaS), disponibilizado por assinatura mensal.'
