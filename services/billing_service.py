@@ -67,18 +67,27 @@ ASAAS_BASE_URL_PRODUCAO = "https://api.asaas.com/v3"
 # Jaraguá do Sul/SC (não o NBS, nem o código nacional do Asaas --
 # são três tabelas diferentes; ver o erro real de uma tentativa
 # anterior: "Não foi possível localizar CodigoServicoMunicipal
-# 1.1103.22.00" quando o NBS foi usado aqui por engano). Confirmado em
-# fonte primária -- Lei Complementar Municipal nº 153/2014 (que altera
-# a LC 35/2003, lei do ISS de Jaraguá do Sul) e o Projeto de Lei
-# Complementar 3/2023 (mesma tabela, mais recente): item "1.05 -
-# Licenciamento ou cessão de direito de uso de programas de
-# computação", alíquota 2,0%. Jaraguá do Sul usa a mesma numeração da
-# LC 116/2003 federal para esse item.
-CODIGO_SERVICO_MUNICIPAL_NFSE = '1.05'
+# 1.1103.22.00" quando o NBS foi usado aqui por engano, e depois
+# "GW000004 - Código tributação Municipal incorreto. Exemplo:
+# 03.02.01 Informado: 1.05" quando o item da LC 116 foi usado sem o
+# detalhamento municipal). AINDA NÃO CONFIRMADO -- '01.05.01' é uma
+# hipótese (não uma certeza) de outra IA consultada, baseada no
+# detalhamento do item nacional 01.05, não verificada contra o
+# sistema real da prefeitura. Testar contra a próxima tentativa
+# (manual, editando a nota já criada, ou via um pagamento novo) antes
+# de confiar. Se rejeitar de novo, o próximo palpite a testar seria
+# '01.05.01.001'.
+CODIGO_SERVICO_MUNICIPAL_NFSE = '01.05.01'
 DESCRICAO_SERVICO_NFSE = (
     'Licenciamento de uso de aplicativo de gestão e acompanhamento '
     'de treinos físicos (SaaS), disponibilizado por assinatura mensal.'
 )
+
+# Ver o aviso completo dentro de _agendar_nota_fiscal. True = emissão
+# automática pausada (só loga, não chama a Asaas) até
+# CODIGO_SERVICO_MUNICIPAL_NFSE ser confirmado de verdade contra o
+# sistema da prefeitura -- 3 tentativas erradas em produção até agora.
+PAUSAR_EMISSAO_AUTOMATICA_NFSE = False
 
 
 def _proximo_vencimento_mensal(referencia: datetime) -> datetime:
@@ -1255,6 +1264,25 @@ class BillingService:
         manualmente depois (Notas Fiscais > Cobranças > Emitir nota
         fiscal, mesmo fluxo manual já usado antes de existir isto).
         """
+        if PAUSAR_EMISSAO_AUTOMATICA_NFSE:
+            # Pausado depois de 3 tentativas erradas em produção pra
+            # CODIGO_SERVICO_MUNICIPAL_NFSE (a mais recente: erro
+            # GW000004 -- "Código tributação Municipal incorreto.
+            # Exemplo: 03.02.01 Informado: 1.05"). O formato exigido
+            # pela prefeitura de Jaraguá do Sul (sistema IPM) é um
+            # código interno próprio deles, não achado em nenhuma lei
+            # pública nem na busca -- precisa ser confirmado direto no
+            # Livro Eletrônico de Serviços da prefeitura ou com o
+            # contador antes de reativar. Até lá, continuar emitindo
+            # manualmente (Notas Fiscais > Cobranças > Emitir nota
+            # fiscal), que já funcionou. Reativar virando essa
+            # constante pra False depois de confirmar o código certo.
+            logger.info(
+                'Emissão automática de nota fiscal pausada (payment=%s) -- '
+                'ver comentário de PAUSAR_EMISSAO_AUTOMATICA_NFSE.',
+                payment_id,
+            )
+            return
         try:
             resp = requests.post(
                 f'{BillingService._base_url()}/invoices',
