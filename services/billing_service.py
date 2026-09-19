@@ -1291,18 +1291,19 @@ class BillingService:
                     'value': valor,
                     'serviceDescription': DESCRICAO_SERVICO_NFSE,
                     'effectiveDate': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
-                    # municipalServiceCode/Name removidos pra TESTE --
-                    # a doc da Asaas diz que um dos dois (municipalServiceId
-                    # ou municipalServiceCode) é obrigatório pra Portal
-                    # Nacional, mas todo valor de CODIGO_SERVICO_MUNICIPAL_NFSE
-                    # testado até agora ('1.1103.22.00', '1.05', '01.05.01',
-                    # '01.05.00') foi rejeitado pelo Portal Nacional
-                    # especificamente pra Jaraguá do Sul. Testando sem
-                    # enviar nada, pra ver a mensagem de erro exata (deve
-                    # confirmar que é obrigatório, mas documentando o
-                    # teste conforme pedido). Se voltar a exigir, restaurar
+                    'municipalServiceName': DESCRICAO_SERVICO_NFSE,
+                    # TESTE: mantendo municipalServiceName (a
+                    # descrição) mas sem municipalServiceCode, pra ver
+                    # se a Asaas aceita mesmo assim (a doc diz que um
+                    # dos dois -- municipalServiceId ou
+                    # municipalServiceCode -- é obrigatório, mas vale
+                    # confirmar contra o comportamento real). Testado
+                    # antes SEM os dois: erro 400 "O parâmetro
+                    # Descrição do Serviço não pode ser vazio". Se essa
+                    # combinação também falhar, restaurar também
                     # 'municipalServiceCode': CODIGO_SERVICO_MUNICIPAL_NFSE,
-                    # 'municipalServiceName': DESCRICAO_SERVICO_NFSE,
+                    # (valor sem confirmação ainda -- ver constante no
+                    # topo do arquivo).
                     # Exigido pela Asaas mesmo já havendo alíquota
                     # configurada no painel (confirmado por erro 400
                     # "Necessário informar os impostos da nota fiscal"
