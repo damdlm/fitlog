@@ -17,6 +17,77 @@ class ExercicioService(BaseService):
     # =============================================
     
     @staticmethod
+    def buscar_por_chaves(chaves, user_id):
+        """Busca exercícios por chave prefixada ("u_5", "b_12", ...), pra
+        uso em exercícios AVULSOS -- lançados só numa sessão específica de
+        registro de treino, sem fazer parte da lista oficial do treino
+        (ver VersaoExercicio/get_exercicios). Retorna um dict {chave: ex},
+        já com os mesmos atributos extras que get_exercicios() adiciona
+        (tipo/prefixo/musculo/descricao_completa/musculos_secundarios_lista)
+        pra reaproveitar o mesmo card Jinja da tela de registro sem
+        precisar de um template à parte -- só que aqui marcados como
+        avulso=True, pro template saber que pode mostrar o botão de
+        remover (não faz sentido num exercício oficial do treino).
+
+        IDOR: chave "u_*" só resolve se o exercício pertencer a user_id
+        (mesma validação que get_exercicios faz pros oficiais) -- chave
+        "b_*" é catálogo global, sem dono, não precisa desse check.
+        """
+        resultado = {}
+        if not chaves:
+            return resultado
+
+        usuario_ids = []
+        base_ids = []
+        for chave in chaves:
+            # chave vem de request.args/form (usuário pode digitar
+            # qualquer coisa na URL) -- ignora silenciosamente qualquer
+            # coisa que não seja "u_<número>"/"b_<número>" em vez de
+            # deixar o int() explodir e derrubar a página inteira com
+            # um 500.
+            if not chave or not isinstance(chave, str):
+                continue
+            if chave.startswith('u_') and chave[2:].isdigit():
+                usuario_ids.append(int(chave[2:]))
+            elif chave.startswith('b_') and chave[2:].isdigit():
+                base_ids.append(int(chave[2:]))
+
+        with db.session.no_autoflush:
+            if usuario_ids:
+                ex_usuario = ExercicioUsuario.query.filter(
+                    ExercicioUsuario.id.in_(usuario_ids),
+                    ExercicioUsuario.usuario_id == user_id
+                ).options(joinedload(ExercicioUsuario.musculo_ref)).all()
+                for ex in ex_usuario:
+                    ex.tipo = 'usuario'
+                    ex.prefixo = 'u_'
+                    ex.musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
+                    ex.musculo = ex.musculo_nome
+                    ex.observacao_treino = None
+                    ex.descricao_completa = (ex.descricao or '').strip()
+                    ex.musculos_secundarios_lista = []
+                    ex.avulso = True
+                    db.session.expunge(ex)
+                    resultado[f'u_{ex.id}'] = ex
+
+            if base_ids:
+                ex_base = ExercicioSistema.query.filter(
+                    ExercicioSistema.id.in_(base_ids)
+                ).all()
+                for ex in ex_base:
+                    ex.tipo = 'base'
+                    ex.prefixo = 'b_'
+                    ex.musculo = ex.grupo_muscular or 'N/A'
+                    ex.observacao_treino = None
+                    ex.descricao_completa = (ex.instrucao_pt or '').strip()
+                    ex.musculos_secundarios_lista = ex.musculos_secundarios or []
+                    ex.avulso = True
+                    db.session.expunge(ex)
+                    resultado[f'b_{ex.id}'] = ex
+
+        return resultado
+
+    @staticmethod
     def get_all_base(limite=500):
         """Retorna todos os exercícios do catálogo base (exercicios_sistema)"""
         try:

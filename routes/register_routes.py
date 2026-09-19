@@ -28,6 +28,7 @@ def registrar_treino():
     versao_info = None
     erro_versao = None
     treinos_disponiveis = []
+    exercicios_catalogo = []
     
     # Validar a data e converter para objeto date
     data_valida, data_obj = validar_data(data_selecionada_str)
@@ -72,6 +73,8 @@ def registrar_treino():
             else:
                 # Buscar exercícios do treino nesta versão usando o CÓDIGO
                 exercicios = VersaoService.get_exercicios(versao_ativa.id, treino_codigo)
+                for ex in exercicios:
+                    ex.avulso = False
                 
                 logger.info(f"Buscando exercícios para versão {versao_ativa.id}, treino {treino_codigo}")
                 logger.info(f"Encontrados {len(exercicios)} exercícios")
@@ -92,6 +95,23 @@ def registrar_treino():
                         registros_map[f"u_{r.exercicio_usuario_id}"] = r
                     elif r.exercicio_base_id is not None:
                         registros_map[f"b_{r.exercicio_base_id}"] = r
+
+                # Exercícios AVULSOS: lançados nesta sessão específica (ver
+                # botão "Adicionar exercício" / ExercicioService.buscar_por_chaves)
+                # sem fazer parte da lista oficial do treino -- ficam só no
+                # registro deste dia, nunca em VersaoExercicio. Duas origens:
+                # 1) já têm registro salvo (chave em registros_map, mas fora
+                #    da lista oficial); 2) acabou de ser adicionado agora
+                #    (?avulso=u_5 na URL, ver o botão no template -- ainda
+                #    sem registro, entra zerado igual um exercício novo).
+                chaves_oficiais = {f"{ex.prefixo}{ex.id}" for ex in exercicios}
+                chaves_avulsas = {c for c in registros_map if c not in chaves_oficiais}
+                for chave_url in request.args.getlist("avulso"):
+                    if chave_url not in chaves_oficiais:
+                        chaves_avulsas.add(chave_url)
+                if chaves_avulsas:
+                    avulsos_map = ExercicioService.buscar_por_chaves(list(chaves_avulsas), current_user.id)
+                    exercicios = exercicios + list(avulsos_map.values())
                 
                 # Buscar histórico da ÚLTIMA sessão completa (carga, reps E
                 # número real de séries -- não uma janela fixa que pode
@@ -103,6 +123,11 @@ def registrar_treino():
                     exercicios,
                     versao_id=versao_ativa.id
                 )
+
+                # Catálogo completo (próprios + globais) pro seletor do botão
+                # "Adicionar exercício" -- mesma função já usada em
+                # cadastrar_treinos.html pro mesmo tipo de busca/seleção.
+                exercicios_catalogo = ExercicioService.get_exercicios_completos(user_id=current_user.id)
     
     return render_template(
         "register/registrar_treino.html",
@@ -114,7 +139,8 @@ def registrar_treino():
         registros=registros_map,
         historico_series=historico_series,
         versao_info=versao_info,
-        erro_versao=erro_versao
+        erro_versao=erro_versao,
+        exercicios_catalogo=exercicios_catalogo
     )
 
 
@@ -206,56 +232,87 @@ def salvar_registro():
     
     # Buscar exercícios do treino nesta versão usando o CÓDIGO
     exercicios = VersaoService.get_exercicios(versao_ativa.id, treino_codigo)
-    
+
+    def _extrair_dados_exercicio(chave, tipo, exercicio_id):
+        """Lê carga/repetições/séries (uniforme ou individual por série) de
+        um único exercício do formulário, pelo prefixo da chave ("u_5",
+        "b_12"). Mesma lógica tanto pros exercícios oficiais do treino
+        quanto pros avulsos (ver avulso_exercicios[] mais abaixo) -- só
+        muda de onde vem o (tipo, exercicio_id)."""
+        carga = request.form.get(f"carga_{chave}")
+        reps = request.form.get(f"reps_{chave}")
+        if not (carga and reps and carga.strip() and reps.strip()):
+            return None
+        try:
+            carga_float = float(carga)
+            reps_int = int(reps)
+            num_series = int(request.form.get(f"num_series_{chave}", 3))
+            if not (carga_float >= 0 and reps_int >= 0 and 1 <= num_series <= 10):
+                return None
+
+            dado = {
+                'carga': carga_float,
+                'repeticoes': reps_int,
+                'num_series': num_series,
+                'tipo': tipo,
+                'exercicio_id': exercicio_id,
+                'data_registro': data_obj
+            }
+
+            # Séries com valores individuais (lançadas pelo modal da
+            # seta, na tela de registro): cada série pode ter carga e
+            # repetições diferentes, em vez do mesmo valor repetido
+            # `num_series` vezes. Só ativa se a flag vier "individual"
+            # E pelo menos a 1ª série tiver valor válido -- senão cai
+            # no comportamento uniforme de sempre.
+            if request.form.get(f"modo_series_{chave}") == "individual":
+                series_individuais = []
+                for i in range(1, num_series + 1):
+                    carga_serie = request.form.get(f"carga_{chave}_{i}")
+                    reps_serie = request.form.get(f"reps_{chave}_{i}")
+                    try:
+                        c = float(carga_serie) if carga_serie and carga_serie.strip() else carga_float
+                        r = int(reps_serie) if reps_serie and reps_serie.strip() else reps_int
+                        if c < 0 or r < 0:
+                            c, r = carga_float, reps_int
+                    except (ValueError, TypeError):
+                        c, r = carga_float, reps_int
+                    series_individuais.append({'carga': c, 'repeticoes': r})
+                if series_individuais:
+                    dado['series_individuais'] = series_individuais
+
+            return dado
+        except (ValueError, TypeError):
+            return None
+
     # Processar dados dos exercícios
     dados_exercicios = {}
     
     for ex in exercicios:
         chave = f"{ex.prefixo}{ex.id}"  # ex: "u_5" ou "b_5" — evita colisão entre as duas tabelas
-        carga = request.form.get(f"carga_{chave}")
-        reps = request.form.get(f"reps_{chave}")
-        
-        if carga and reps and carga.strip() and reps.strip():
-            try:
-                carga_float = float(carga)
-                reps_int = int(reps)
-                num_series = int(request.form.get(f"num_series_{chave}", 3))
-                
-                if carga_float >= 0 and reps_int >= 0 and 1 <= num_series <= 10:
-                    dado = {
-                        'carga': carga_float,
-                        'repeticoes': reps_int,
-                        'num_series': num_series,
-                        'tipo': ex.tipo,
-                        'exercicio_id': ex.id,
-                        'data_registro': data_obj
-                    }
+        dado = _extrair_dados_exercicio(chave, ex.tipo, ex.id)
+        if dado:
+            dados_exercicios[chave] = dado
 
-                    # Séries com valores individuais (lançadas pelo modal da
-                    # seta, na tela de registro): cada série pode ter carga e
-                    # repetições diferentes, em vez do mesmo valor repetido
-                    # `num_series` vezes. Só ativa se a flag vier "individual"
-                    # E pelo menos a 1ª série tiver valor válido -- senão cai
-                    # no comportamento uniforme de sempre.
-                    if request.form.get(f"modo_series_{chave}") == "individual":
-                        series_individuais = []
-                        for i in range(1, num_series + 1):
-                            carga_serie = request.form.get(f"carga_{chave}_{i}")
-                            reps_serie = request.form.get(f"reps_{chave}_{i}")
-                            try:
-                                c = float(carga_serie) if carga_serie and carga_serie.strip() else carga_float
-                                r = int(reps_serie) if reps_serie and reps_serie.strip() else reps_int
-                                if c < 0 or r < 0:
-                                    c, r = carga_float, reps_int
-                            except (ValueError, TypeError):
-                                c, r = carga_float, reps_int
-                            series_individuais.append({'carga': c, 'repeticoes': r})
-                        if series_individuais:
-                            dado['series_individuais'] = series_individuais
-
-                    dados_exercicios[chave] = dado
-            except (ValueError, TypeError):
-                continue
+    # Exercícios AVULSOS: lançados só nesta sessão (botão "Adicionar
+    # exercício" na tela de registro, ver .btn-adicionar-exercicio-avulso),
+    # sem fazer parte da lista oficial do treino (nunca tocam
+    # VersaoExercicio). O formulário manda uma chave por avulso em
+    # avulso_exercicios[] -- os campos carga_/reps_/num_series_/
+    # modo_series_ seguem exatamente a mesma convenção dos oficiais.
+    # IDOR: chave "u_*" só é aceita se o exercício realmente pertencer a
+    # este usuário -- sem isso, dava pra registrar um treino apontando pro
+    # exercício customizado de qualquer outra pessoa só sabendo o ID.
+    chaves_avulsas_form = request.form.getlist("avulso_exercicios[]")
+    if chaves_avulsas_form:
+        avulsos_validos = ExercicioService.buscar_por_chaves(chaves_avulsas_form, current_user.id)
+        for chave in chaves_avulsas_form:
+            ex_avulso = avulsos_validos.get(chave)
+            if not ex_avulso:
+                continue  # chave inexistente, ou "u_*" que não pertence a este usuário
+            dado = _extrair_dados_exercicio(chave, ex_avulso.tipo, ex_avulso.id)
+            if dado:
+                dados_exercicios[chave] = dado
     
     if dados_exercicios:
         # Se a data foi alterada (edição pelo calendário), a sessão é

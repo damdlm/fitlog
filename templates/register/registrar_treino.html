@@ -51,6 +51,46 @@
         border-left-color: var(--success-green);
     }
 
+    /* Exercício avulso: lançado só nesta sessão, nunca faz parte da
+       lista oficial do treino (ver botão "Adicionar exercício" mais
+       abaixo). Borda tracejada azul em vez da laranja sólida normal --
+       diferencia visualmente sem parecer um erro/alerta (vermelho) nem
+       roubar o verde do "feito". position:relative só pro botão de
+       remover (canto superior direito) se posicionar em relação ao card. */
+    .exercise-row--avulso {
+        position: relative;
+        border-left-style: dashed;
+        border-left-color: #5b8def;
+    }
+    .avulso-badge {
+        background: rgba(91, 141, 239, 0.12) !important;
+        color: #3a68c9 !important;
+    }
+    .btn-remover-avulso {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: var(--surface-muted);
+        color: #8a857a;
+        border-radius: 50%;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: background-color 0.15s ease, color 0.15s ease;
+        z-index: 2;
+    }
+    .btn-remover-avulso:hover,
+    .btn-remover-avulso:focus-visible {
+        background: #fde2e1;
+        color: #c0392b;
+        outline: none;
+    }
+
     /* Botão "marcar como feito": fica do lado oposto ao switch de
        desmarcar exercício -- switch na coluna 1 (esquerda), este botão
        na coluna 3 (direita), colado no campo de Séries, na mesma linha
@@ -205,6 +245,105 @@
     .exercise-row.is-desativado + .btn-abrir-series-modal {
         pointer-events: none;
         opacity: 0.4;
+    }
+
+    /* Botão "Adicionar exercício" (avulso) -- fica sozinho, largura
+       total, abaixo do último card e acima do resumo do treino. Estilo
+       tracejado/discreto de propósito: não é uma ação do fluxo normal
+       de registrar (por isso não usa o laranja sólido dos outros
+       botões), é um extra ocasional. */
+    .btn-adicionar-avulso {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px;
+        margin-bottom: 16px;
+        border: 2px dashed var(--border-soft);
+        border-radius: var(--radius-md);
+        background: transparent;
+        color: #8a857a;
+        font-weight: 600;
+        font-size: 0.92rem;
+        cursor: pointer;
+        transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+    }
+    .btn-adicionar-avulso:hover,
+    .btn-adicionar-avulso:focus-visible {
+        border-color: var(--primary-orange);
+        color: var(--primary-orange);
+        background: rgba(242, 140, 51, 0.05);
+        outline: none;
+    }
+
+    /* Modal de adicionar exercício avulso -- busca + lista simples,
+       sem o checkbox multi-seleção do seletor de montar treino
+       (aqui é sempre um de cada vez: clicar já adiciona e recarrega). */
+    .avulso-picker-search-wrap {
+        position: relative;
+        margin-bottom: 12px;
+    }
+    .avulso-picker-search-wrap i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #8a857a;
+        font-size: 0.9rem;
+        pointer-events: none;
+    }
+    .avulso-picker-search-wrap input {
+        width: 100%;
+        height: 42px;
+        padding: 0 12px 0 36px;
+        border: 2px solid var(--border-soft);
+        border-radius: var(--radius-sm);
+        font-size: 0.92rem;
+    }
+    .avulso-picker-search-wrap input:focus {
+        outline: none;
+        border-color: var(--primary-orange);
+        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12);
+    }
+    .avulso-picker-lista {
+        max-height: 55vh;
+        overflow-y: auto;
+    }
+    .avulso-picker-item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 10px;
+        border: none;
+        border-bottom: 1px solid var(--border-soft);
+        background: transparent;
+        text-align: left;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+    .avulso-picker-item:hover,
+    .avulso-picker-item:focus-visible {
+        background: rgba(242, 140, 51, 0.06);
+        outline: none;
+    }
+    .avulso-picker-item:last-child {
+        border-bottom: none;
+    }
+    .avulso-picker-nome {
+        font-weight: 600;
+        color: var(--dark-bg);
+    }
+    .avulso-picker-musculo {
+        flex-shrink: 0;
+        font-size: 0.78rem;
+        color: #8a857a;
+        background: var(--surface-muted);
+        padding: 3px 9px;
+        border-radius: 999px;
+        white-space: nowrap;
     }
 
     /* Modal de séries individuais -- tabela com carga/repetições por
@@ -2641,6 +2780,52 @@
     <div class="modo-treino-footer" id="modoTreinoFooter"></div>
 </div>
 
+{% if treino_selecionado %}
+<!-- Modal pra adicionar um exercício avulso (ver botão "Adicionar
+     exercício" logo antes do resumo do treino) -- lista o catálogo
+     inteiro (próprios + globais), já sem os que estão no treino agora
+     (oficiais ou avulsos já adicionados), com busca client-side por
+     nome/músculo. Escolher um recarrega a página com ?avulso=<chave>. -->
+{% set chaves_no_treino = [] %}
+{% for ex in exercicios %}{% set _ = chaves_no_treino.append(ex.prefixo ~ ex.id) %}{% endfor %}
+<div class="modal fade" id="modalAdicionarAvulso" tabindex="-1" aria-labelledby="avulsoPickerTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="avulsoPickerTitulo">Adicionar exercício</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body p-3">
+                <p class="text-muted small mb-3">
+                    Entra só no registro de hoje -- não muda a lista oficial deste treino.
+                </p>
+                <div class="avulso-picker-search-wrap">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="avulsoPickerBusca" placeholder="Buscar por nome ou músculo...">
+                </div>
+                <div class="avulso-picker-lista" id="avulsoPickerLista">
+                    {% for ex in exercicios_catalogo %}
+                    {% set chave_cat = ex.prefixo ~ ex.id %}
+                    {% if chave_cat not in chaves_no_treino %}
+                    <button type="button" class="avulso-picker-item"
+                            data-chave="{{ chave_cat }}"
+                            data-nome="{{ ex.nome|lower }}"
+                            data-musculo="{{ (ex.musculo or '')|lower }}">
+                        <span class="avulso-picker-nome">{{ ex.nome }}</span>
+                        {% if ex.musculo %}<span class="avulso-picker-musculo">{{ ex.musculo }}</span>{% endif %}
+                    </button>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                <p class="text-muted small text-center py-3 d-none" id="avulsoPickerVazio">
+                    Nenhum exercício encontrado.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Modal de séries individuais: uma instância só, reaproveitada pra
      qualquer exercício -- a seta de cada card só passa os dados
      (data-attributes) e o JS preenche o conteúdo na hora de abrir. -->
@@ -2865,10 +3050,23 @@
             {% set modo_inicial = 'individual' if (series_atual and (cargas_distintas|length > 1 or reps_distintas|length > 1)) else 'uniforme' %}
             
             <div class="exercise-row-wrap">
-            <div class="exercise-row" data-exercicio-id="{{ chave_ex }}" 
+            {% if ex.avulso %}
+            <!-- Exercício avulso: lançado só nesta sessão específica (ver
+                 botão "Adicionar exercício" mais abaixo), nunca faz parte
+                 da lista oficial do treino -- por isso o backend só sabe
+                 que existe através desta chave marcada aqui. -->
+            <input type="hidden" name="avulso_exercicios[]" class="avulso-marker" value="{{ chave_ex }}">
+            {% endif %}
+            <div class="exercise-row{% if ex.avulso %} exercise-row--avulso{% endif %}" data-exercicio-id="{{ chave_ex }}" 
                  data-ultima-carga="{{ ultima_carga }}"
                  data-ultimas-reps="{{ ultimas_reps }}"
                  data-ultimas-series="{{ ultimas_series }}">
+                {% if ex.avulso %}
+                <button type="button" class="btn-remover-avulso" data-exercicio-id="{{ chave_ex }}"
+                        aria-label="Remover {{ ex.nome }} desta sessão">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+                {% endif %}
                 
                 <div class="row align-items-center">
                     <div class="col-12 col-md-6">
@@ -2887,6 +3085,7 @@
                                  data-musculos-secundarios="{{ ex.musculos_secundarios_lista|join(', ') if ex.musculos_secundarios_lista else '' }}">
                                 <div class="dash-registro-top">
                                     <span class="dash-registro-exercicio exercicio-nome-trunc" data-full-nome="{{ ex.nome }}">{{ ex.nome }}</span>
+                                    {% if ex.avulso %}<span class="dash-badge avulso-badge">Avulso</span>{% endif %}
                                 </div>
                                 {% if ex.observacao_treino %}
                                 <div class="dash-registro-obs">
@@ -3009,6 +3208,20 @@
             </button>
             </div>
 {% endfor %}
+
+            {% if treino_selecionado %}
+            <!-- Exercício avulso: lançado só nesta sessão (equipamento
+                 ocupado/quebrado, substituição pontual etc.) -- nunca
+                 altera a lista oficial do treino, só o registro deste
+                 dia. Abre o seletor; escolher um exercício recarrega a
+                 página com ?avulso=<chave> (mesmo padrão de navegação
+                 que trocar treino/data já usa nesta tela -- ver
+                 #formBusca), que entra como card zerado pronto pra
+                 preencher e salvar normal. -->
+            <button type="button" class="btn-adicionar-avulso" data-bs-toggle="modal" data-bs-target="#modalAdicionarAvulso">
+                <i class="bi bi-plus-lg"></i> Adicionar exercício
+            </button>
+            {% endif %}
 
             <!-- Resumo do treino -->
             <div class="row mt-4 p-3 bg-light rounded align-items-center resumo-treino-box">
@@ -3188,6 +3401,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Modal de séries com valores individuais (seta no canto do card)
     inicializarModalSeriesIndividuais();
+
+    // Exercício avulso: busca no seletor + adicionar (recarrega com
+    // ?avulso=) + remover (só client-side, tira o card e o marcador
+    // hidden antes de salvar).
+    inicializarAvulsoExercicio();
     
     // Garantir que o campo de data sempre comece preenchido com o dia
     // atual quando vier vazio. Setar dataInput.value direto não é
@@ -3785,6 +4003,58 @@ function inicializarModalSeriesIndividuais() {
         const feito = ctx.row.classList.contains('is-feito');
         btnFeitoEl.classList.toggle('is-ativo', feito);
         btnFeitoEl.setAttribute('aria-pressed', String(feito));
+    });
+}
+
+/* Exercício avulso: seletor (busca + clique adiciona) e botão de
+   remover nos cards já avulsos. Adicionar recarrega a página com
+   ?avulso=<chave> -- mesmo padrão de navegação que trocar treino/data
+   já usa nesta tela (ver #formBusca), então o novo card vem pronto,
+   renderizado pelo servidor com a mesma estrutura de sempre, sem
+   precisar montar HTML complexo via JS. */
+function inicializarAvulsoExercicio() {
+    const buscaInput = document.getElementById('avulsoPickerBusca');
+    const lista = document.getElementById('avulsoPickerLista');
+    const vazioEl = document.getElementById('avulsoPickerVazio');
+
+    if (buscaInput && lista) {
+        buscaInput.addEventListener('input', function () {
+            const termo = this.value.trim().toLowerCase();
+            let algumVisivel = false;
+            lista.querySelectorAll('.avulso-picker-item').forEach(function (item) {
+                const bate = !termo || item.dataset.nome.includes(termo) || item.dataset.musculo.includes(termo);
+                item.classList.toggle('d-none', !bate);
+                if (bate) algumVisivel = true;
+            });
+            if (vazioEl) vazioEl.classList.toggle('d-none', algumVisivel);
+        });
+
+        lista.addEventListener('click', function (evt) {
+            const item = evt.target.closest('.avulso-picker-item');
+            if (!item) return;
+            const url = new URL(window.location.href);
+            url.searchParams.append('avulso', item.dataset.chave);
+            window.location.href = url.toString();
+        });
+    }
+
+    document.querySelectorAll('.btn-remover-avulso').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const chave = this.dataset.exercicioId;
+            const wrap = this.closest('.exercise-row-wrap');
+            if (wrap) wrap.remove();
+
+            // Tira o ?avulso=<chave> da URL (se veio de lá) pra não
+            // reaparecer numa atualização da página -- se já tinha
+            // registro salvo de antes, sair sem essa chave no próximo
+            // "Salvar" já é suficiente pra remover de vez (o save
+            // substitui a sessão inteira, ver RegistroService.salvar_registros).
+            const url = new URL(window.location.href);
+            const valores = url.searchParams.getAll('avulso').filter(v => v !== chave);
+            url.searchParams.delete('avulso');
+            valores.forEach(v => url.searchParams.append('avulso', v));
+            window.history.replaceState(null, '', url.toString());
+        });
     });
 }
 
