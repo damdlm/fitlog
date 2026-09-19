@@ -1291,8 +1291,18 @@ class BillingService:
                     'value': valor,
                     'serviceDescription': DESCRICAO_SERVICO_NFSE,
                     'effectiveDate': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
-                    'municipalServiceCode': CODIGO_SERVICO_MUNICIPAL_NFSE,
-                    'municipalServiceName': DESCRICAO_SERVICO_NFSE,
+                    # municipalServiceCode/Name removidos pra TESTE --
+                    # a doc da Asaas diz que um dos dois (municipalServiceId
+                    # ou municipalServiceCode) é obrigatório pra Portal
+                    # Nacional, mas todo valor de CODIGO_SERVICO_MUNICIPAL_NFSE
+                    # testado até agora ('1.1103.22.00', '1.05', '01.05.01',
+                    # '01.05.00') foi rejeitado pelo Portal Nacional
+                    # especificamente pra Jaraguá do Sul. Testando sem
+                    # enviar nada, pra ver a mensagem de erro exata (deve
+                    # confirmar que é obrigatório, mas documentando o
+                    # teste conforme pedido). Se voltar a exigir, restaurar
+                    # 'municipalServiceCode': CODIGO_SERVICO_MUNICIPAL_NFSE,
+                    # 'municipalServiceName': DESCRICAO_SERVICO_NFSE,
                     # Exigido pela Asaas mesmo já havendo alíquota
                     # configurada no painel (confirmado por erro 400
                     # "Necessário informar os impostos da nota fiscal"
