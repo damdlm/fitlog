@@ -97,18 +97,22 @@ def registrar_treino():
                         registros_map[f"b_{r.exercicio_base_id}"] = r
 
                 # Exercícios AVULSOS: lançados nesta sessão específica (ver
-                # botão "Adicionar exercício" / ExercicioService.buscar_por_chaves)
-                # sem fazer parte da lista oficial do treino -- ficam só no
-                # registro deste dia, nunca em VersaoExercicio. Duas origens:
-                # 1) já têm registro salvo (chave em registros_map, mas fora
-                #    da lista oficial); 2) acabou de ser adicionado agora
-                #    (?avulso=u_5 na URL, ver o botão no template -- ainda
-                #    sem registro, entra zerado igual um exercício novo).
+                # Exercícios AVULSOS: lançados só nesta sessão específica
+                # (ver botão "Adicionar exercício" / ExercicioService.
+                # buscar_por_chaves), sem fazer parte da lista oficial do
+                # treino. NÃO ressurge sozinho a partir de um registro já
+                # salvo (mesmo do mesmo dia) -- só entra na tela quando
+                # está em ?avulso=u_5 na URL (o botão manda pra lá). Os
+                # dados salvos continuam intactos no banco pra
+                # histórico/calendário (ver editar treino do calendário,
+                # que mostra e permite editar avulsos normalmente) -- só
+                # a TELA DE REGISTRO não fica reoferecendo pra reeditar
+                # de novo sozinha a cada vez que a pessoa reabre o dia.
                 chaves_oficiais = {f"{ex.prefixo}{ex.id}" for ex in exercicios}
-                chaves_avulsas = {c for c in registros_map if c not in chaves_oficiais}
-                for chave_url in request.args.getlist("avulso"):
-                    if chave_url not in chaves_oficiais:
-                        chaves_avulsas.add(chave_url)
+                chaves_avulsas = {
+                    chave_url for chave_url in request.args.getlist("avulso")
+                    if chave_url not in chaves_oficiais
+                }
                 if chaves_avulsas:
                     avulsos_map = ExercicioService.buscar_por_chaves(list(chaves_avulsas), current_user.id)
                     exercicios = exercicios + list(avulsos_map.values())

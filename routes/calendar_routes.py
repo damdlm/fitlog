@@ -321,6 +321,7 @@ def api_evento_dados_edicao():
     e omitir o campo faz RegistroService._resolver_tempo_treino manter o
     tempo original da sessão em vez de zerar."""
     from services.versao_service import VersaoService
+    from services.exercicio_service import ExercicioService
     from utils.date_utils import validar_data
 
     data_str = request.args.get("data")
@@ -357,6 +358,18 @@ def api_evento_dados_edicao():
         elif r.exercicio_base_id is not None:
             registros_map[f"b_{r.exercicio_base_id}"] = r
 
+    # Exercícios AVULSOS (ver botão "Adicionar exercício" na tela de
+    # registro): não fazem parte da lista oficial do treino, então sem
+    # isso aqui o registro deles existia no banco mas nunca aparecia
+    # pra editar -- essa rota só olhava pra `exercicios` (lista oficial).
+    # Qualquer chave em registros_map que não esteja nos oficiais é um
+    # avulso; busca os dados (nome etc.) pra montar o card dele também.
+    chaves_oficiais = {f"{ex.prefixo}{ex.id}" for ex in exercicios}
+    chaves_avulsas = [c for c in registros_map if c not in chaves_oficiais]
+    if chaves_avulsas:
+        avulsos_map = ExercicioService.buscar_por_chaves(chaves_avulsas, current_user.id)
+        exercicios = exercicios + list(avulsos_map.values())
+
     exercicios_json = []
     for ex in exercicios:
         chave = f"{ex.prefixo}{ex.id}"
@@ -390,6 +403,7 @@ def api_evento_dados_edicao():
             'num_series': len(series) if series else 0,
             'series': series_json,
             'modo_series': modo_series,
+            'avulso': getattr(ex, 'avulso', False),
         })
 
     return jsonify({

@@ -410,6 +410,21 @@
         border-radius: 999px;
         white-space: nowrap;
     }
+    /* Mesma cor azul do badge "Avulso" da tela de registro
+       (registrar_treino.html: .avulso-badge) -- consistência entre as
+       duas telas que mostram esse tipo de exercício. */
+    .editar-registro-badge-avulso {
+        flex-shrink: 0;
+        font-size: .65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        color: #3a68c9;
+        background: rgba(91, 141, 239, 0.12);
+        padding: 3px 8px;
+        border-radius: 999px;
+        white-space: nowrap;
+    }
 
     /* Mesma proporção de colunas da tela de registro (5fr/3fr/5fr):
        Repetições um pouco mais estreita que Carga e Séries. */
@@ -1971,10 +1986,12 @@
                     return `
                     <div class="editar-registro-card-wrap">
                     <div class="editar-registro-card ${vazio ? 'editar-registro-card--vazio' : ''}" data-exercicio-id="${ex.chave}">
+                        ${ex.avulso ? `<input type="hidden" name="avulso_exercicios[]" class="avulso-marker" value="${ex.chave}">` : ''}
                         <input type="hidden" name="modo_series_${ex.chave}" class="modo-series-flag" value="${ex.modo_series || 'uniforme'}">
                         ${seriesInputsHtml}
                         <div class="editar-registro-top">
                             <div class="editar-registro-nome">${escapeHtml(ex.nome)}</div>
+                            ${ex.avulso ? '<span class="editar-registro-badge-avulso">Avulso</span>' : ''}
                             ${vazio ? '<span class="editar-registro-badge-vazio">Não apontado</span>' : ''}
                         </div>
                         <div class="editar-registro-labels">
