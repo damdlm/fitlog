@@ -62,21 +62,16 @@ ASAAS_BASE_URL_PRODUCAO = "https://api.asaas.com/v3"
 # indicador de operação 100501, alíquota ISS 0% por a conta ser MEI).
 # Mudar aqui exige mudar também no painel da Asaas, e vice-versa --
 # não há sincronização automática entre os dois.
-#
 # CODIGO_SERVICO_MUNICIPAL_NFSE é o código de serviço da PREFEITURA de
-# Jaraguá do Sul/SC (não o NBS, nem o código nacional do Asaas --
-# são três tabelas diferentes; ver o erro real de uma tentativa
-# anterior: "Não foi possível localizar CodigoServicoMunicipal
-# 1.1103.22.00" quando o NBS foi usado aqui por engano, e depois
-# "GW000004 - Código tributação Municipal incorreto. Exemplo:
-# 03.02.01 Informado: 1.05" quando o item da LC 116 foi usado sem o
-# detalhamento municipal). AINDA NÃO CONFIRMADO -- '01.05.01' é uma
-# hipótese (não uma certeza) de outra IA consultada, baseada no
-# detalhamento do item nacional 01.05, não verificada contra o
-# sistema real da prefeitura. Testar contra a próxima tentativa
-# (manual, editando a nota já criada, ou via um pagamento novo) antes
-# de confiar. Se rejeitar de novo, o próximo palpite a testar seria
-# '01.05.01.001'.
+# Jaraguá do Sul/SC (não o NBS, nem o Código de Tributação Nacional --
+# são tabelas independentes, sem fórmula de conversão entre elas,
+# confirmado empiricamente: nenhuma variação de "01.05" funcionou,
+# nem mesmo o próprio Código de Tributação Nacional da conta,
+# "010501", que a Asaas usa como fallback quando nada é enviado).
+# CONTINUA SEM CONFIRMAÇÃO. Só sai de alguém com login em
+# nfse.gov.br (ou no sistema da prefeitura) buscando o serviço por
+# descrição -- ver histórico completo de tentativas no comentário
+# dentro de _agendar_nota_fiscal.
 CODIGO_SERVICO_MUNICIPAL_NFSE = '01.05.00'
 DESCRICAO_SERVICO_NFSE = (
     'Licenciamento de uso de aplicativo de gestão e acompanhamento '
@@ -86,8 +81,9 @@ DESCRICAO_SERVICO_NFSE = (
 # Ver o aviso completo dentro de _agendar_nota_fiscal. True = emissão
 # automática pausada (só loga, não chama a Asaas) até
 # CODIGO_SERVICO_MUNICIPAL_NFSE ser confirmado de verdade contra o
-# sistema da prefeitura -- 3 tentativas erradas em produção até agora.
+# sistema da prefeitura -- 5 tentativas erradas em produção até agora.
 PAUSAR_EMISSAO_AUTOMATICA_NFSE = False
+
 
 
 def _proximo_vencimento_mensal(referencia: datetime) -> datetime:
@@ -1291,19 +1287,26 @@ class BillingService:
                     'value': valor,
                     'serviceDescription': DESCRICAO_SERVICO_NFSE,
                     'effectiveDate': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+                    'municipalServiceCode': CODIGO_SERVICO_MUNICIPAL_NFSE,
                     'municipalServiceName': DESCRICAO_SERVICO_NFSE,
-                    # TESTE: mantendo municipalServiceName (a
-                    # descrição) mas sem municipalServiceCode, pra ver
-                    # se a Asaas aceita mesmo assim (a doc diz que um
-                    # dos dois -- municipalServiceId ou
-                    # municipalServiceCode -- é obrigatório, mas vale
-                    # confirmar contra o comportamento real). Testado
-                    # antes SEM os dois: erro 400 "O parâmetro
-                    # Descrição do Serviço não pode ser vazio". Se essa
-                    # combinação também falhar, restaurar também
-                    # 'municipalServiceCode': CODIGO_SERVICO_MUNICIPAL_NFSE,
-                    # (valor sem confirmação ainda -- ver constante no
-                    # topo do arquivo).
+                    # HISTÓRICO DE TESTES (todos rejeitados pelo Portal
+                    # Nacional, especificamente pra Jaraguá do Sul):
+                    # '1.1103.22.00' (o NBS -- errado, tabela diferente)
+                    # '1.05', '01.05.01', '01.05.00' (variações do item
+                    # da LC 116 -- nenhuma bate com o código municipal)
+                    # campo ausente -- erro "Descrição do Serviço vazia"
+                    # '010501' (o próprio Código de Tributação Nacional
+                    # da conta, testado quando a Asaas usa ele como
+                    # fallback ao não receber nada -- também rejeitado,
+                    # confirmando que NÃO EXISTE conversão entre
+                    # Código de Tributação Nacional e Código de
+                    # Tributação Municipal de Jaraguá do Sul)
+                    # CONCLUSÃO: o valor certo só sai de alguém com
+                    # login em nfse.gov.br (ou no sistema da
+                    # prefeitura) buscando o serviço por descrição —
+                    # não existe fórmula de conversão a partir do item
+                    # da LC 116/NBS. Ver CODIGO_SERVICO_MUNICIPAL_NFSE
+                    # no topo do arquivo.
                     # Exigido pela Asaas mesmo já havendo alíquota
                     # configurada no painel (confirmado por erro 400
                     # "Necessário informar os impostos da nota fiscal"
