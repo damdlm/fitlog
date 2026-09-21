@@ -4,17 +4,22 @@ Serviço do FitBot — assistente virtual de treino do FitLog.
 Roteamento entre as IAs (pensado para não estourar os limites do
 plano gratuito, e com reserva caso o provedor principal caia):
 
-    - Mensagem SEM imagem  -> Groq (Llama 3.3), texto puro.
-                              Limite do plano free do Groq é bem mais
-                              folgado que o do Gemini, então toda
-                              conversa "de texto" vai para lá.
-                              Se o Groq falhar (rede, modelo
-                              descontinuado, erro do provedor etc.),
-                              cai automaticamente para a OpenAI
+    - Mensagem SEM imagem  -> Groq (modelo em GROQ_MODEL, ver
+                              config.py -- atualmente openai/gpt-oss-120b;
+                              llama-3.3-70b-versatile foi descontinuado
+                              pela Groq), texto puro. Limite do plano
+                              free do Groq é bem mais folgado que o do
+                              Gemini, então toda conversa "de texto"
+                              vai para lá. Se o Groq falhar (rede,
+                              modelo descontinuado, erro do provedor
+                              etc.), cai automaticamente para a OpenAI
                               (gpt-4o-mini) como reserva.
 
-    - Mensagem COM imagem  -> Gemini 1.5/2.5 Flash.
-                              É o modelo principal que enxerga
+    - Mensagem COM imagem  -> Gemini (modelo em GEMINI_MODEL, ver
+                              config.py -- atualmente
+                              gemini-3.5-flash-lite; gemini-1.5/2.5 já
+                              foram descontinuados/pararam de aceitar
+                              projetos novos). É o modelo principal que enxerga
                               imagem. O Gemini free tem only 15 RPM
                               (requisições por minuto) — esse limite
                               é GLOBAL da chave de API, ou seja, é
@@ -563,7 +568,12 @@ class FitBotService:
             }
 
         tempo_inicio = time.time()
-        modelo = current_app.config.get("GROQ_MODEL", "openai/gpt-oss-120b")
+        # Sem default duplicado aqui de propósito: GROQ_MODEL sempre
+        # existe em app.config (default já definido em config.py) --
+        # manter um segundo default aqui só criaria uma segunda fonte
+        # de verdade que poderia divergir da primeira (foi exatamente
+        # isso que aconteceu com GEMINI_MODEL, corrigido logo abaixo).
+        modelo = current_app.config.get("GROQ_MODEL")
 
         payload = {
             "model": modelo,
@@ -672,7 +682,15 @@ class FitBotService:
             }
 
         tempo_inicio = time.time()
-        modelo = current_app.config.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
+        # Sem default duplicado aqui de propósito (ver mesmo comentário
+        # em _chamar_groq): GEMINI_MODEL sempre existe em app.config,
+        # com o default certo definido uma única vez em config.py. Um
+        # segundo default hardcoded aqui já apontou pro modelo errado
+        # (gemini-2.5-flash-lite, desativado) depois que config.py foi
+        # atualizado pro gemini-3.5-flash-lite -- inofensivo por
+        # enquanto (a chave sempre está presente), mas um risco real se
+        # config.py um dia remover o default ou a env var for renomeada.
+        modelo = current_app.config.get("GEMINI_MODEL")
         url = GEMINI_ENDPOINT.format(model=modelo)
 
         texto_usuario = (mensagem or "Identifique este equipamento de treino.").strip()
