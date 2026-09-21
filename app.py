@@ -551,6 +551,18 @@ def create_app(config_class=None):
     # robots.txt NÃO é mecanismo de segurança -- as rotas privadas
     # abaixo já são protegidas por @login_required; isso só evita que
     # crawlers gastem tempo (e apareçam nos logs) nelas.
+    @app.route("/favicon.ico")
+    def favicon():
+        # Navegadores pedem /favicon.ico por padrão, fora de /static/.
+        # Sem esta rota isso gera um 404 legítimo em todo carregamento
+        # de página (visível nos logs de HTTP do Railway).
+        from flask import send_from_directory
+        return send_from_directory(
+            os.path.join(app.static_folder, "images"),
+            "favicon.ico",
+            mimetype="image/vnd.microsoft.icon",
+        )
+
     @app.route("/robots.txt")
     def robots_txt():
         from flask import Response
