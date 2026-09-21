@@ -1122,6 +1122,101 @@
         color: var(--primary-orange);
     }
 
+    /* ---- Tela de pré-início (lista de exercícios + Play/X) ----
+       Aparece um instante antes do treino começar de verdade, só pra
+       captar um toque real do usuário -- necessário pra Wake Lock API
+       nativa (mantém a tela acesa) funcionar no iPhone. Ver comentário
+       em cima de #preInicioTreinoOverlay no HTML e do listener do botão
+       de play mais abaixo no JS. */
+    #preInicioTreinoOverlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2300;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    #preInicioTreinoOverlay .pre-inicio-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-soft);
+    }
+
+    #preInicioTreinoOverlay .pre-inicio-header h4 {
+        margin: 0;
+        font-size: 1.1rem;
+        color: var(--dark-bg);
+    }
+
+    #preInicioTreinoOverlay .pre-inicio-btn-fechar {
+        border: none;
+        background: #f2f2f2;
+        color: var(--dark-bg);
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    #preInicioTreinoOverlay .pre-inicio-lista {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 20px;
+    }
+
+    #preInicioTreinoOverlay .pre-inicio-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--border-soft);
+    }
+
+    #preInicioTreinoOverlay .pre-inicio-item-num {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #f2f2f2;
+        color: var(--dark-bg);
+        font-weight: 700;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    #preInicioTreinoOverlay .pre-inicio-item-nome {
+        font-weight: 600;
+        color: var(--dark-bg);
+    }
+
+    #preInicioTreinoOverlay .pre-inicio-item-musculo {
+        font-size: 0.8rem;
+        color: #8a8a8a;
+    }
+
+    #preInicioTreinoOverlay .pre-inicio-footer {
+        padding: 16px 20px 20px;
+        border-top: 1px solid var(--border-soft);
+    }
+
+    #preInicioTreinoOverlay .pre-inicio-btn-play {
+        width: 100%;
+        justify-content: center;
+        padding: 14px;
+        font-size: 1.05rem;
+    }
+
     /* Botão redondo só com ícone (ex: play do intervalo, sem o texto "Iniciar") */
     .btn-cronometro-icon {
         width: 38px;
@@ -3016,6 +3111,43 @@
 </div>
 {% endif %}
 
+{% if exercicios %}
+<!-- Tela de pré-início: aparece um instante antes do treino em si.
+     Existe só pra captar um toque real do usuário no botão de play --
+     necessário pra Wake Lock API nativa (mantém a tela do iPhone acesa
+     durante o treino) conseguir ser concedida. Sem um toque real aqui,
+     a Apple recusa o pedido de wake lock (erro NotAllowedError) por
+     política da própria WebKit, e o app fica dependendo só do truque
+     de vídeo de fallback, que não é 100% confiável. Ver
+     inicializarPreInicioTreino() mais abaixo no JS. -->
+<div id="preInicioTreinoOverlay">
+    <div class="pre-inicio-header">
+        <h4>
+            {% if ns.nome_treino %}{{ ns.codigo_treino }} - {{ ns.nome_treino }}{% else %}Exercícios do Treino{% endif %}
+        </h4>
+        <button type="button" class="pre-inicio-btn-fechar" id="preInicioBtnFechar" aria-label="Voltar">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <div class="pre-inicio-lista">
+        {% for ex in exercicios %}
+        <div class="pre-inicio-item">
+            <span class="pre-inicio-item-num">{{ loop.index }}</span>
+            <span>
+                <span class="pre-inicio-item-nome d-block">{{ ex.nome }}</span>
+                {% if ex.musculo %}<span class="pre-inicio-item-musculo">{{ ex.musculo }}</span>{% endif %}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="pre-inicio-footer">
+        <button type="button" class="btn-cronometro btn-cronometro-primary pre-inicio-btn-play" id="preInicioBtnPlay">
+            <i class="bi bi-play-fill"></i> <span>Iniciar treino</span>
+        </button>
+    </div>
+</div>
+{% endif %}
+
 {% from "macros/exercicio_imagens.html" import botao_imagens_exercicio %}
 {% from "macros/exercicio_instrucoes.html" import botao_instrucoes_exercicio %}
 {% if exercicios %}
@@ -4624,21 +4756,47 @@ function tocarBipe() {
         }
     });
 
-    // Auto-iniciar: não existe mais uma etapa intermediária de "Tudo
-    // pronto, toque no play" -- ao escolher um treino no picker (já com
-    // uma data válida no campo), o #formBusca auto-submete, a página
-    // recarrega com os exercícios prontos, e aqui a gente já dispara a
-    // mesma ação de sempre por trás do botão "Iniciar treino"
-    // (iniciar() + revelarExercicios(), com wake lock e película de
-    // transição incluídos) -- só que automaticamente, sem esperar um
-    // segundo toque do usuário.
+    // Auto-iniciar foi substituído pela tela de pré-início (lista de
+    // exercícios + botão de play), logo abaixo -- ver
+    // inicializarPreInicioTreino(). O motivo: iniciar() chama
+    // pedirWakeLock(), e a Wake Lock API nativa da Apple só é concedida
+    // em resposta a um toque REAL do usuário (erro NotAllowedError caso
+    // contrário -- confirmado em testes reais no iPhone, iOS 18.7). Ao
+    // escolher o treino no picker, o #formBusca auto-submete e a página
+    // recarrega -- esse recarregamento "zera" a permissão de toque do
+    // navegador, então não dá pra reaproveitar o toque de antes. A
+    // tela de pré-início existe só pra captar um novo toque genuíno,
+    // no exato momento em que o usuário já quer começar mesmo (o botão
+    // "Iniciar treino" dela).
+    function inicializarPreInicioTreino() {
+        var overlay = document.getElementById('preInicioTreinoOverlay');
+        var btnPlay = document.getElementById('preInicioBtnPlay');
+        var btnFechar = document.getElementById('preInicioBtnFechar');
+        if (!overlay || !btnPlay) return;
+
+        btnPlay.addEventListener('click', function () {
+            // iniciar() precisa ser chamada AQUI, direto no handler de
+            // clique (sem nenhum await antes) -- é isso que preserva o
+            // "toque real" que a Wake Lock API exige. Qualquer atraso
+            // (um setTimeout, um fetch antes, etc.) faz o navegador
+            // considerar que o toque já "expirou" e a wake lock nativa
+            // volta a falhar.
+            overlay.remove();
+            iniciar(true);
+        });
+
+        if (btnFechar) {
+            btnFechar.addEventListener('click', function () {
+                // Nada foi iniciado ainda (nem cronômetro, nem wake
+                // lock) -- não precisa de confirmação, só volta pro
+                // picker limpo, igual ao botão de cancelar treino.
+                window.location.href = window.location.pathname;
+            });
+        }
+    }
+
     if (deveAutoIniciarTreino) {
-        // Chama iniciar() direto (não elBtnIniciar.click()) pra pular a
-        // película de transição dos círculos -- ver comentário dentro
-        // de iniciar(). A validação de treino selecionado não é
-        // necessária aqui: só chegamos com deveAutoIniciarTreino=true
-        // quando exercicios já veio preenchido do servidor.
-        iniciar(true);
+        inicializarPreInicioTreino();
     }
 
     elBtnZerar.addEventListener('click', function () {
@@ -5390,6 +5548,14 @@ function tocarBipe() {
             limparEstadoSalvo();
             return;
         }
+
+        // Um treino já estava em andamento (restaurando de um app
+        // derrubado em segundo plano, por exemplo) -- a tela de
+        // pré-início não faz sentido aqui, o treino já começou antes.
+        // Remove ela pra não ficar bloqueando o que crono.restaurar()
+        // vai mostrar logo abaixo.
+        var overlayPreInicio = document.getElementById('preInicioTreinoOverlay');
+        if (overlayPreInicio) overlayPreInicio.remove();
 
         var linhas = coletarLinhasPorId();
 
