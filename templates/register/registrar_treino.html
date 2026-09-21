@@ -4248,6 +4248,7 @@ function tocarBipe() {
                     wakeLock = null;
                     if (rodando) atualizarBadgeWakeLock('⚠️ wake lock liberado (' + infoAmbiente() + ')');
                 });
+                pararFallbackVideo(); // se o vídeo já estava rodando (retry bem-sucedido), não precisa mais dele
                 atualizarBadgeWakeLock('🔒 wake lock nativo ativo (' + infoAmbiente() + ')');
                 return;
             } catch (e) {
@@ -4353,12 +4354,18 @@ function tocarBipe() {
     // no primeiro toque/clique do usuário na página, se o treino já
     // estiver rodando e ainda não tivermos conseguido o wake lock,
     // tenta de novo -- agora com um gesto de usuário genuíno.
-    document.addEventListener('pointerdown', function primeiraInteracao() {
-        document.removeEventListener('pointerdown', primeiraInteracao);
+    // Repete a tentativa em TODO toque real do usuário (não só no primeiro)
+    // enquanto não tivermos um wake lock nativo -- a versão antiga usava
+    // { once: true } e se removia sozinha após a 1ª tentativa, então uma
+    // falha logo no início (ex: por timing entre o toque e a chamada
+    // assíncrona) deixava o app preso no fallback de vídeo pelo resto do
+    // treino inteiro, mesmo com dezenas de toques genuínos depois -- sem
+    // nenhuma nova tentativa. Agora tenta de novo a cada toque.
+    document.addEventListener('pointerdown', function () {
         if (rodando && !wakeLock) {
             pedirWakeLock();
         }
-    }, { once: true });
+    });
 
     function segundosAtuais() {
         if (!rodando) return acumuladoSegundos;
