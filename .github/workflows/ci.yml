@@ -1,8 +1,8 @@
 name: CI
 
 # Roda em todo push e Pull Request pra main -- pega erro antes de
-# chegar no Railway, que builda direto da main sem nenhuma checagem
-# hoje. Não precisa de Postgres/Redis reais: os testes usam SQLite em
+# chegar no Railway, que builda direto da main sem nenhuma checagem.
+# Não precisa de Postgres/Redis reais: os testes usam SQLite em
 # memória (ver tests/conftest.py) e as extensões (cache, rate limiter)
 # caem pra modo em-memória sozinhas quando REDIS_URL não está setada
 # (ver config.py) -- por isso não tem nenhum "services:" aqui.
@@ -13,11 +13,18 @@ on:
     branches: [main]
 
 jobs:
-  testes:
-    name: Testes (pytest)
+  lint-and-test:
     runs-on: ubuntu-latest
+
+    env:
+      # Necessária só pra config.py não falhar durante o import; os
+      # testes em si usam SQLite em memória, não essa SECRET_KEY.
+      SECRET_KEY: ci-only-secret-key-not-for-production
+      FLASK_ENV: testing
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout do código
+        uses: actions/checkout@v4
 
       - name: Configurar Python
         uses: actions/setup-python@v5
@@ -25,37 +32,31 @@ jobs:
           python-version: "3.12.8"
           cache: pip
 
-      - name: Instalar dependências
-        run: pip install -r requirements.txt
+      - name: Instalar dependências do sistema (libpq para psycopg2)
+        run: sudo apt-get update && sudo apt-get install -y libpq-dev
+
+      - name: Instalar dependências Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint (flake8)
+        run: |
+          # E9/F63/F7/F82: erros de sintaxe e imports/nomes quebrados
+          # nunca podem passar -- essa linha FALHA o build.
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # O resto do flake8 (estilo) só gera aviso, não quebra o build --
+          # o projeto nunca rodou lint de estilo em CI antes, então é
+          # provável que haja avisos acumulados que não são culpa do PR
+          # atual.
+          flake8 . --count --exit-zero --max-line-length=120 --statistics
 
       - name: Rodar testes com cobertura
-        run: pytest
+        run: pytest --cov-report=xml
 
-  lint:
-    name: Lint (flake8 + mypy)
-    runs-on: ubuntu-latest
-    # Não bloqueia PR/merge -- o projeto nunca rodou lint em CI antes
-    # de hoje, então é provável que existam avisos acumulados que não
-    # são culpa do PR atual. Fica visível no resumo do PR pra ir sendo
-    # limpo aos poucos, sem travar todo mundo agora. Trocar pra
-    # bloqueante (removendo os "continue-on-error") quando o código já
-    # estiver limpo o suficiente.
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configurar Python
-        uses: actions/setup-python@v5
+      - name: Publicar relatório de cobertura como artefato
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          python-version: "3.12.8"
-          cache: pip
-
-      - name: Instalar dependências
-        run: pip install -r requirements.txt
-
-      - name: flake8
-        run: flake8 .
-        continue-on-error: true
-
-      - name: mypy
-        run: mypy .
-        continue-on-error: true
+          name: coverage-report
+          path: coverage.xml
