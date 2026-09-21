@@ -1603,17 +1603,6 @@
         color: var(--dark-bg);
     }
 
-    /* Badge de diagnóstico temporário -- ver comentário no HTML acima */
-    #wakeLockStatusBadge {
-        display: block;
-        font-size: 0.6rem;
-        line-height: 1.2;
-        text-align: center;
-        opacity: 0.65;
-        white-space: nowrap;
-        color: var(--dark-bg);
-    }
-
     #top-save-bar .btn-save,
     #top-save-bar .btn-cancel-treino,
     #top-save-bar .top-save-bar-actions .btn-pausar-treino {
@@ -2722,11 +2711,6 @@
     <div id="top-save-bar" class="d-none">
         <div class="top-save-bar-crono">
             <span class="top-save-bar-crono-value" id="cronoTreinoDisplay">00:00</span>
-            <!-- Indicador temporário de diagnóstico: mostra em tempo real se a
-                 tela está protegida contra hibernação e por qual mecanismo.
-                 Ver função atualizarBadgeWakeLock() -- pode ser removido
-                 depois que confirmarmos a causa da hibernação no iPhone. -->
-            <span id="wakeLockStatusBadge" class="wake-lock-status-badge" aria-live="polite"></span>
         </div>
         <div class="top-save-bar-actions">
             <button type="button" id="btnCancelarTreino" class="btn btn-cancel-treino">
@@ -4220,7 +4204,11 @@ function tocarBipe() {
     var wakeLock = null;
     var usandoFallbackVideo = false;
 
-    // ---- Badge de diagnóstico temporário (ver comentário no HTML) ----
+    // Badge de diagnóstico visível foi removido da UI depois de confirmarmos
+    // a causa da hibernação no iPhone. A função abaixo continua existindo
+    // (não faz nada, já que o elemento não existe mais) só pra não precisar
+    // tocar em cada ponto de chamada -- se precisar depurar de novo no
+    // futuro, basta devolver o <span id="wakeLockStatusBadge"> no HTML.
     var elWakeBadge = document.getElementById('wakeLockStatusBadge');
     function atualizarBadgeWakeLock(texto) {
         if (elWakeBadge) elWakeBadge.textContent = texto;
