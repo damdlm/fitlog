@@ -4226,23 +4226,35 @@ function tocarBipe() {
         if (elWakeBadge) elWakeBadge.textContent = texto;
     }
 
+    // Extrai "iOS 17.5" / "iOS ?" do userAgent e se está rodando como PWA
+    // instalado (standalone) -- só pra aparecer junto no badge de
+    // diagnóstico, sem precisar o usuário ir em Ajustes conferir a versão.
+    function infoAmbiente() {
+        var ua = navigator.userAgent || '';
+        var m = ua.match(/OS (\d+)[_.](\d+)(?:[_.](\d+))?/); // "OS 17_5_1" no UA do iOS
+        var versaoIOS = m ? ('iOS ' + m[1] + '.' + m[2] + (m[3] ? '.' + m[3] : '')) : 'não-iOS/desconhecido';
+        var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+        var navegador = /CriOS/.test(ua) ? 'Chrome' : (/FxiOS/.test(ua) ? 'Firefox' : (/Safari/.test(ua) ? 'Safari' : 'outro'));
+        return versaoIOS + ' · ' + navegador + (standalone ? ' · PWA instalado' : ' · aba normal');
+    }
+
     async function pedirWakeLock() {
         if ('wakeLock' in navigator) {
             try {
                 wakeLock = await navigator.wakeLock.request('screen');
                 wakeLock.addEventListener('release', function () {
                     wakeLock = null;
-                    if (rodando) atualizarBadgeWakeLock('⚠️ wake lock liberado');
+                    if (rodando) atualizarBadgeWakeLock('⚠️ wake lock liberado (' + infoAmbiente() + ')');
                 });
-                atualizarBadgeWakeLock('🔒 wake lock nativo ativo');
+                atualizarBadgeWakeLock('🔒 wake lock nativo ativo (' + infoAmbiente() + ')');
                 return;
             } catch (e) {
                 wakeLock = null;
-                atualizarBadgeWakeLock('⚠️ wake lock falhou: ' + (e && e.name || 'erro'));
+                atualizarBadgeWakeLock('⚠️ wake lock falhou: ' + (e && e.name || 'erro') + ' (' + infoAmbiente() + ')');
                 // cai para o fallback de vídeo abaixo
             }
         } else {
-            atualizarBadgeWakeLock('⚠️ wake lock não suportado');
+            atualizarBadgeWakeLock('⚠️ wake lock não suportado (' + infoAmbiente() + ')');
         }
         iniciarFallbackVideo();
     }
@@ -4261,14 +4273,14 @@ function tocarBipe() {
         // aplicativos (a troca de app pausa o vídeo, mas ao voltar pro
         // FitLog o código desistia de retomá-lo).
         if (!elWakeVideo.paused) {
-            atualizarBadgeWakeLock('🎥 fallback de vídeo ativo');
+            atualizarBadgeWakeLock('🎥 fallback de vídeo ativo (' + infoAmbiente() + ')');
             return;
         }
         var p = elWakeVideo.play();
         if (p && typeof p.then === 'function') {
             p.then(function () {
                 usandoFallbackVideo = true;
-                atualizarBadgeWakeLock('🎥 fallback de vídeo ativo');
+                atualizarBadgeWakeLock('🎥 fallback de vídeo ativo (' + infoAmbiente() + ')');
             }).catch(function (e) {
                 // Autoplay pode falhar se não houver interação do usuário
                 // ainda -- o clique em "Iniciar treino" já conta como
@@ -4282,11 +4294,31 @@ function tocarBipe() {
         }
     }
 
+    var pausaIntencionalVideo = false;
+
     function pararFallbackVideo() {
         if (!elWakeVideo || !usandoFallbackVideo) return;
+        pausaIntencionalVideo = true;
         elWakeVideo.pause();
         elWakeVideo.currentTime = 0;
         usandoFallbackVideo = false;
+        pausaIntencionalVideo = false;
+    }
+
+    // Vigia: o vídeo de fallback pode parar sozinho (o próprio sistema
+    // decide, sem disparar nenhum erro de JS -- é justamente por isso que
+    // o badge podia mostrar "ativo" e a tela hibernar mesmo assim, sem
+    // nenhum jeito de saber pelo código). Esse listener escuta o evento
+    // nativo 'pause' do <video>: se ele parar sem ter sido nós a mandar
+    // parar (pausaIntencionalVideo), tenta retomar na hora e avisa no
+    // badge -- vira visível no próprio print que o usuário já está mandando.
+    if (elWakeVideo) {
+        elWakeVideo.addEventListener('pause', function () {
+            if (!pausaIntencionalVideo && rodando && usandoFallbackVideo) {
+                atualizarBadgeWakeLock('⚠️ vídeo parou sozinho, retomando... (' + infoAmbiente() + ')');
+                iniciarFallbackVideo();
+            }
+        });
     }
 
     async function liberarWakeLock() {
