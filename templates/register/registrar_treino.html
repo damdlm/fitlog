@@ -4862,7 +4862,14 @@ function tocarBipe() {
             // considerar que o toque já "expirou" e a wake lock nativa
             // volta a falhar.
             overlay.remove();
-            iniciar(true);
+            // Sem "true" aqui de propósito: pedirWakeLock() (dentro de
+            // iniciar()) já roda de forma síncrona, no mesmo clique,
+            // ANTES desta checagem -- então deixar a película de
+            // transição aparecer depois não atrasa nem quebra o pedido
+            // de Wake Lock. A película cobre a troca visual entre a
+            // lista de pré-início (que acabou de ser removida do DOM,
+            // duas linhas acima) e o modo treino em tela cheia.
+            iniciar();
         });
 
         if (btnFechar) {
