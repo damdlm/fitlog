@@ -82,7 +82,7 @@ DESCRICAO_SERVICO_NFSE = (
 # automática pausada (só loga, não chama a Asaas) até
 # CODIGO_SERVICO_MUNICIPAL_NFSE ser confirmado de verdade contra o
 # sistema da prefeitura -- 5 tentativas erradas em produção até agora.
-PAUSAR_EMISSAO_AUTOMATICA_NFSE = False
+PAUSAR_EMISSAO_AUTOMATICA_NFSE = True
 
 
 
