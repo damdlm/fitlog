@@ -4267,6 +4267,24 @@ function tocarBipe() {
         }
     });
 
+    // O auto-início (deveAutoIniciarTreino, mais abaixo) chama iniciar()
+    // direto no carregamento da página, sem nenhum toque do usuário
+    // NESTE documento -- e navegadores (principalmente Safari/iOS) só
+    // concedem a Wake Lock API (e garantem o autoplay do vídeo de
+    // fallback) em resposta a uma interação real. Sem isso, o pedido
+    // de wakeLock() dentro de iniciar() pode falhar silenciosamente e
+    // a tela volta a hibernar durante o treino -- mesmo com o
+    // cronômetro rodando normalmente. Este listener cobre esse buraco:
+    // no primeiro toque/clique do usuário na página, se o treino já
+    // estiver rodando e ainda não tivermos conseguido o wake lock,
+    // tenta de novo -- agora com um gesto de usuário genuíno.
+    document.addEventListener('pointerdown', function primeiraInteracao() {
+        document.removeEventListener('pointerdown', primeiraInteracao);
+        if (rodando && !wakeLock) {
+            pedirWakeLock();
+        }
+    }, { once: true });
+
     function segundosAtuais() {
         if (!rodando) return acumuladoSegundos;
         return acumuladoSegundos + (Date.now() - inicioMs) / 1000;
