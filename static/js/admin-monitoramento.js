@@ -258,6 +258,10 @@
         document.getElementById("mon-assinaturas-ativas").textContent = n.assinaturas_ativas ?? "--";
         document.getElementById("mon-assinaturas-trial").textContent = n.assinaturas_trial ?? "--";
         document.getElementById("mon-assinaturas-inadimplentes").textContent = n.assinaturas_inadimplentes ?? "--";
+        document.getElementById("mon-mrr").textContent = n.mrr_reais != null ? `R$ ${n.mrr_reais.toFixed(2).replace(".", ",")}` : "--";
+        document.getElementById("mon-taxa-conversao").textContent = n.taxa_conversao_trial_pct != null ? `${n.taxa_conversao_trial_pct}%` : "--";
+        document.getElementById("mon-taxa-churn").textContent = n.taxa_churn_pct != null ? `${n.taxa_churn_pct}%` : "--";
+        document.getElementById("mon-cancelamentos-30d").textContent = n.cancelamentos_30d ?? "--";
     }
 
     /**

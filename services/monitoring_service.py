@@ -21,9 +21,9 @@ aquele bloco como indisponível.
 import os
 import time
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
-from models import db, User, TreinoVersao, RegistroTreino, Assinatura
+from models import db, User, TreinoVersao, RegistroTreino, Assinatura, Plano
 
 logger = logging.getLogger(__name__)
 
@@ -315,6 +315,49 @@ class MonitoringService:
             ).count()
             assinaturas_trial = Assinatura.query.filter_by(status="trialing").count()
 
+            # MRR estimado -- soma do preço do plano de cada assinatura
+            # 'active' (Pix avulso entra igual: enquanto ativo, é
+            # receita recorrente na prática, mesmo cobrada manualmente
+            # a cada ciclo em vez de via assinatura recorrente).
+            mrr_centavos = (
+                db.session.query(db.func.coalesce(db.func.sum(Plano.preco_centavos), 0))
+                .join(Assinatura, Assinatura.plano_id == Plano.id)
+                .filter(Assinatura.status == "active")
+                .scalar()
+            )
+
+            agora = datetime.now(timezone.utc)
+            trinta_dias_atras = agora - timedelta(days=30)
+
+            # Conversão trial -> pago: dentre quem teve o trial
+            # encerrado (trial_termina_em) nos últimos 30 dias, quantos
+            # estão 'active' hoje. Aproximação -- não captura quem
+            # converteu e já cancelou de novo dentro da mesma janela.
+            trials_encerrados = Assinatura.query.filter(
+                Assinatura.trial_termina_em.isnot(None),
+                Assinatura.trial_termina_em >= trinta_dias_atras,
+                Assinatura.trial_termina_em <= agora,
+            ).all()
+            total_trials_encerrados = len(trials_encerrados)
+            trials_convertidos = sum(1 for a in trials_encerrados if a.status == "active")
+            taxa_conversao_trial_pct = (
+                round(100 * trials_convertidos / total_trials_encerrados, 1)
+                if total_trials_encerrados else None
+            )
+
+            # Churn: assinaturas canceladas nos últimos 30 dias sobre a
+            # base que existia (ativas hoje + canceladas no período) --
+            # aproximação simples de taxa mensal de cancelamento.
+            cancelamentos_30d = Assinatura.query.filter(
+                Assinatura.cancelado_em.isnot(None),
+                Assinatura.cancelado_em >= trinta_dias_atras,
+            ).count()
+            base_para_churn = assinaturas_ativas + cancelamentos_30d
+            taxa_churn_pct = (
+                round(100 * cancelamentos_30d / base_para_churn, 1)
+                if base_para_churn else None
+            )
+
             return {
                 "disponivel": True,
                 "total_usuarios": total_usuarios,
@@ -325,6 +368,11 @@ class MonitoringService:
                 "assinaturas_ativas": assinaturas_ativas,
                 "assinaturas_trial": assinaturas_trial,
                 "assinaturas_inadimplentes": assinaturas_inadimplentes,
+                "mrr_reais": round(mrr_centavos / 100, 2),
+                "taxa_conversao_trial_pct": taxa_conversao_trial_pct,
+                "trials_encerrados_30d": total_trials_encerrados,
+                "taxa_churn_pct": taxa_churn_pct,
+                "cancelamentos_30d": cancelamentos_30d,
             }
         except Exception:
             logger.exception("Erro ao coletar métricas de negócio")
