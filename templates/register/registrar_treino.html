@@ -1132,61 +1132,106 @@
         position: fixed;
         inset: 0;
         z-index: 2300;
-        background: #fff;
+        background: var(--surface);
         display: flex;
         flex-direction: column;
         padding-top: env(safe-area-inset-top, 0px);
         padding-bottom: env(safe-area-inset-bottom, 0px);
+        animation: preInicioEntrada .32s cubic-bezier(.22,.8,.36,1) both;
     }
 
-    #preInicioTreinoOverlay .pre-inicio-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 16px 20px;
-        border-bottom: 1px solid var(--border-soft);
+    @keyframes preInicioEntrada {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
 
-    #preInicioTreinoOverlay .pre-inicio-header h4 {
-        margin: 0;
-        font-size: 1.1rem;
-        color: var(--dark-bg);
+    @media (prefers-reduced-motion: reduce) {
+        #preInicioTreinoOverlay { animation: none; }
+    }
+
+    /* Faixa superior: mesmo gradiente laranja do botão principal do
+       cronômetro, pra abrir a tela com uma sensação de "vamos lá" em
+       vez de um cabeçalho neutro de lista. */
+    #preInicioTreinoOverlay .pre-inicio-hero {
+        position: relative;
+        padding: 22px 22px 26px;
+        background: linear-gradient(135deg, var(--primary-orange) 0%, var(--light-orange) 100%);
+        color: #fff;
+        flex-shrink: 0;
     }
 
     #preInicioTreinoOverlay .pre-inicio-btn-fechar {
+        position: absolute;
+        top: 18px;
+        right: 18px;
         border: none;
-        background: #f2f2f2;
-        color: var(--dark-bg);
-        width: 36px;
-        height: 36px;
+        background: rgba(255, 255, 255, 0.22);
+        color: #fff;
+        width: 34px;
+        height: 34px;
         border-radius: 50%;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.1rem;
-        flex-shrink: 0;
+        font-size: 1rem;
+    }
+
+    #preInicioTreinoOverlay .pre-inicio-hero-icone {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.22);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        margin-bottom: 14px;
+    }
+
+    #preInicioTreinoOverlay .pre-inicio-hero-titulo {
+        margin: 0 0 4px;
+        font-size: 1.4rem;
+        font-weight: 800;
+        line-height: 1.2;
+        padding-right: 40px;
+    }
+
+    #preInicioTreinoOverlay .pre-inicio-hero-sub {
+        margin: 0;
+        font-size: 0.92rem;
+        opacity: 0.92;
     }
 
     #preInicioTreinoOverlay .pre-inicio-lista {
         flex: 1;
         overflow-y: auto;
-        padding: 8px 20px;
+        padding: 20px 22px 8px;
+        background: var(--surface-muted);
     }
 
+    /* Numeração em trilha: uma linha fina conecta os círculos, porque
+       isto É de fato uma sequência (a ordem dos exercícios do treino),
+       não uma lista solta -- diferente de rotular itens que não têm
+       uma ordem real. */
     #preInicioTreinoOverlay .pre-inicio-item {
         display: flex;
+        gap: 14px;
+    }
+
+    #preInicioTreinoOverlay .pre-inicio-item-track {
+        display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 12px;
-        padding: 14px 0;
-        border-bottom: 1px solid var(--border-soft);
+        flex-shrink: 0;
     }
 
     #preInicioTreinoOverlay .pre-inicio-item-num {
-        width: 28px;
-        height: 28px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
-        background: #f2f2f2;
-        color: var(--dark-bg);
+        background: #fff;
+        border: 1.5px solid var(--light-orange);
+        color: var(--primary-orange);
         font-weight: 700;
         font-size: 0.85rem;
         display: inline-flex;
@@ -1195,9 +1240,24 @@
         flex-shrink: 0;
     }
 
+    #preInicioTreinoOverlay .pre-inicio-item-linha {
+        width: 2px;
+        flex: 1;
+        min-height: 22px;
+        background: var(--border-soft);
+        margin: 2px 0;
+    }
+
+    #preInicioTreinoOverlay .pre-inicio-item-info {
+        padding-bottom: 22px;
+        padding-top: 4px;
+    }
+
     #preInicioTreinoOverlay .pre-inicio-item-nome {
+        display: block;
         font-weight: 600;
         color: var(--dark-bg);
+        line-height: 1.3;
     }
 
     #preInicioTreinoOverlay .pre-inicio-item-musculo {
@@ -1206,15 +1266,30 @@
     }
 
     #preInicioTreinoOverlay .pre-inicio-footer {
-        padding: 16px 20px 20px;
+        padding: 14px 22px;
+        padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+        background: var(--surface);
         border-top: 1px solid var(--border-soft);
+        box-shadow: var(--shadow-md);
     }
 
     #preInicioTreinoOverlay .pre-inicio-btn-play {
         width: 100%;
         justify-content: center;
-        padding: 14px;
+        padding: 15px;
         font-size: 1.05rem;
+        border-radius: var(--radius-lg, 16px);
+        box-shadow: var(--shadow-orange);
+        animation: preInicioRespirar 2.6s ease-in-out .5s infinite;
+    }
+
+    @keyframes preInicioRespirar {
+        0%, 100% { box-shadow: var(--shadow-orange); }
+        50% { box-shadow: 0 6px 22px rgba(242, 140, 51, 0.38); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #preInicioTreinoOverlay .pre-inicio-btn-play { animation: none; }
     }
 
     /* Botão redondo só com ícone (ex: play do intervalo, sem o texto "Iniciar") */
@@ -3121,22 +3196,27 @@
      de vídeo de fallback, que não é 100% confiável. Ver
      inicializarPreInicioTreino() mais abaixo no JS. -->
 <div id="preInicioTreinoOverlay">
-    <div class="pre-inicio-header">
-        <h4>
-            {% if ns.nome_treino %}{{ ns.codigo_treino }} - {{ ns.nome_treino }}{% else %}Exercícios do Treino{% endif %}
-        </h4>
+    <div class="pre-inicio-hero">
         <button type="button" class="pre-inicio-btn-fechar" id="preInicioBtnFechar" aria-label="Voltar">
             <i class="bi bi-x-lg"></i>
         </button>
+        <div class="pre-inicio-hero-icone"><i class="bi bi-lightning-charge-fill"></i></div>
+        <h1 class="pre-inicio-hero-titulo">
+            {% if ns.nome_treino %}{{ ns.codigo_treino }} - {{ ns.nome_treino }}{% else %}Exercícios do Treino{% endif %}
+        </h1>
+        <p class="pre-inicio-hero-sub">{{ exercicios|length }} exercício{{ 's' if exercicios|length != 1 else '' }} te esperando</p>
     </div>
     <div class="pre-inicio-lista">
         {% for ex in exercicios %}
         <div class="pre-inicio-item">
-            <span class="pre-inicio-item-num">{{ loop.index }}</span>
-            <span>
-                <span class="pre-inicio-item-nome d-block">{{ ex.nome }}</span>
+            <div class="pre-inicio-item-track">
+                <span class="pre-inicio-item-num">{{ loop.index }}</span>
+                {% if not loop.last %}<span class="pre-inicio-item-linha"></span>{% endif %}
+            </div>
+            <div class="pre-inicio-item-info">
+                <span class="pre-inicio-item-nome">{{ ex.nome }}</span>
                 {% if ex.musculo %}<span class="pre-inicio-item-musculo">{{ ex.musculo }}</span>{% endif %}
-            </span>
+            </div>
         </div>
         {% endfor %}
     </div>
