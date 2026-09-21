@@ -1603,6 +1603,17 @@
         color: var(--dark-bg);
     }
 
+    /* Badge de diagnóstico temporário -- ver comentário no HTML acima */
+    #wakeLockStatusBadge {
+        display: block;
+        font-size: 0.6rem;
+        line-height: 1.2;
+        text-align: center;
+        opacity: 0.65;
+        white-space: nowrap;
+        color: var(--dark-bg);
+    }
+
     #top-save-bar .btn-save,
     #top-save-bar .btn-cancel-treino,
     #top-save-bar .top-save-bar-actions .btn-pausar-treino {
@@ -2711,6 +2722,11 @@
     <div id="top-save-bar" class="d-none">
         <div class="top-save-bar-crono">
             <span class="top-save-bar-crono-value" id="cronoTreinoDisplay">00:00</span>
+            <!-- Indicador temporário de diagnóstico: mostra em tempo real se a
+                 tela está protegida contra hibernação e por qual mecanismo.
+                 Ver função atualizarBadgeWakeLock() -- pode ser removido
+                 depois que confirmarmos a causa da hibernação no iPhone. -->
+            <span id="wakeLockStatusBadge" class="wake-lock-status-badge" aria-live="polite"></span>
         </div>
         <div class="top-save-bar-actions">
             <button type="button" id="btnCancelarTreino" class="btn btn-cancel-treino">
@@ -4204,24 +4220,38 @@ function tocarBipe() {
     var wakeLock = null;
     var usandoFallbackVideo = false;
 
+    // ---- Badge de diagnóstico temporário (ver comentário no HTML) ----
+    var elWakeBadge = document.getElementById('wakeLockStatusBadge');
+    function atualizarBadgeWakeLock(texto) {
+        if (elWakeBadge) elWakeBadge.textContent = texto;
+    }
+
     async function pedirWakeLock() {
         if ('wakeLock' in navigator) {
             try {
                 wakeLock = await navigator.wakeLock.request('screen');
                 wakeLock.addEventListener('release', function () {
                     wakeLock = null;
+                    if (rodando) atualizarBadgeWakeLock('⚠️ wake lock liberado');
                 });
+                atualizarBadgeWakeLock('🔒 wake lock nativo ativo');
                 return;
             } catch (e) {
                 wakeLock = null;
+                atualizarBadgeWakeLock('⚠️ wake lock falhou: ' + (e && e.name || 'erro'));
                 // cai para o fallback de vídeo abaixo
             }
+        } else {
+            atualizarBadgeWakeLock('⚠️ wake lock não suportado');
         }
         iniciarFallbackVideo();
     }
 
     function iniciarFallbackVideo() {
-        if (!elWakeVideo) return;
+        if (!elWakeVideo) {
+            atualizarBadgeWakeLock('⚠️ sem proteção (vídeo ausente)');
+            return;
+        }
         // Checa o estado REAL do vídeo (elWakeVideo.paused), não uma
         // flag separada -- o sistema operacional pausa o vídeo sozinho
         // ao trocar de app em segundo plano, e sem checar o estado real
@@ -4230,16 +4260,26 @@ function tocarBipe() {
         // Isso fazia a tela voltar a hibernar depois de alternar entre
         // aplicativos (a troca de app pausa o vídeo, mas ao voltar pro
         // FitLog o código desistia de retomá-lo).
-        if (!elWakeVideo.paused) return;
+        if (!elWakeVideo.paused) {
+            atualizarBadgeWakeLock('🎥 fallback de vídeo ativo');
+            return;
+        }
         var p = elWakeVideo.play();
-        if (p && typeof p.catch === 'function') {
-            p.catch(function () {
+        if (p && typeof p.then === 'function') {
+            p.then(function () {
+                usandoFallbackVideo = true;
+                atualizarBadgeWakeLock('🎥 fallback de vídeo ativo');
+            }).catch(function (e) {
                 // Autoplay pode falhar se não houver interação do usuário
                 // ainda -- o clique em "Iniciar treino" já conta como
                 // interação, então normalmente funciona.
+                usandoFallbackVideo = false;
+                atualizarBadgeWakeLock('⚠️ sem proteção (autoplay bloqueado: ' + (e && e.name || 'erro') + ')');
             });
+        } else {
+            usandoFallbackVideo = true;
+            atualizarBadgeWakeLock('🎥 fallback de vídeo ativo');
         }
-        usandoFallbackVideo = true;
     }
 
     function pararFallbackVideo() {
@@ -4259,6 +4299,7 @@ function tocarBipe() {
             wakeLock = null;
         }
         pararFallbackVideo();
+        atualizarBadgeWakeLock('');
     }
 
     document.addEventListener('visibilitychange', function () {
