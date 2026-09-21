@@ -704,10 +704,17 @@ def create_app(config_class=None):
         # e X-Frame-Options acima já cobre o mesmo que frame-ancestors).
         # Endurecimento futuro (remover unsafe-inline via nonce) fica
         # para uma tarefa própria, por template, testando um de cada vez.
+        # media-src precisa liberar "data:" além de "https:" -- o vídeo
+        # mudo/invisível usado como fallback de wake lock (impedir a tela
+        # de hibernar em PWAs iOS sem suporte à Wake Lock API nativa) usa
+        # src="data:video/mp4;base64,...". Sem "data:" aqui, o CSP bloqueia
+        # silenciosamente o carregamento do vídeo em QUALQUER navegador --
+        # a proteção contra hibernação nunca chegava a entrar em ação
+        # nesse cenário (achado em 21/09 investigando hibernação no iPhone).
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "img-src 'self' data: https:; "
-            "media-src 'self' https:; "
+            "media-src 'self' https: data:; "
             "font-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
