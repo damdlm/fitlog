@@ -4344,24 +4344,21 @@ function tocarBipe() {
     });
 
     // O auto-início (deveAutoIniciarTreino, mais abaixo) chama iniciar()
-    // direto no carregamento da página, sem nenhum toque do usuário
-    // NESTE documento -- e navegadores (principalmente Safari/iOS) só
-    // concedem a Wake Lock API (e garantem o autoplay do vídeo de
-    // fallback) em resposta a uma interação real. Sem isso, o pedido
-    // de wakeLock() dentro de iniciar() pode falhar silenciosamente e
-    // a tela volta a hibernar durante o treino -- mesmo com o
-    // cronômetro rodando normalmente. Este listener cobre esse buraco:
-    // no primeiro toque/clique do usuário na página, se o treino já
-    // estiver rodando e ainda não tivermos conseguido o wake lock,
-    // tenta de novo -- agora com um gesto de usuário genuíno.
-    // Repete a tentativa em TODO toque real do usuário (não só no primeiro)
-    // enquanto não tivermos um wake lock nativo -- a versão antiga usava
-    // { once: true } e se removia sozinha após a 1ª tentativa, então uma
-    // falha logo no início (ex: por timing entre o toque e a chamada
-    // assíncrona) deixava o app preso no fallback de vídeo pelo resto do
-    // treino inteiro, mesmo com dezenas de toques genuínos depois -- sem
-    // nenhuma nova tentativa. Agora tenta de novo a cada toque.
-    document.addEventListener('pointerdown', function () {
+    // direto no carregamento da página, sem nenhum toque do usuário --
+    // e a Wake Lock API exige uma "ativação do usuário" real pra ser
+    // concedida. Sem isso, o pedido de wakeLock() dentro de iniciar()
+    // falha (NotAllowedError) e a tela volta a hibernar durante o
+    // treino, mesmo com o cronômetro rodando normalmente. Este listener
+    // tenta de novo a cada 'click' real do usuário, enquanto não
+    // tivermos um wake lock nativo (não é { once: true } -- uma falha
+    // isolada não pode travar o app sem nenhuma nova tentativa pelo
+    // resto do treino).
+    //
+    // 'click' e não 'pointerdown'/'touchstart': confirmado no blog
+    // oficial do WebKit, um toque de DEDO só concede ativação real no
+    // pointerup/touchend -- nunca no pointerdown. 'click' cobre isso de
+    // forma uniforme em qualquer tipo de ponteiro (mouse, toque, caneta).
+    document.addEventListener('click', function () {
         if (rodando && !wakeLock) {
             pedirWakeLock();
         }
