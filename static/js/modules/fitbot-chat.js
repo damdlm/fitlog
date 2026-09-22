@@ -20,8 +20,14 @@
     var MAX_HISTORICO = 10;
     var DURACAO_ESTADO_TALKING_MS = 2500;
     var DURACAO_ESTADO_ERROR_MS = 3000;
-    var DURACAO_ESTADO_BYE_MS = 1200;
-    var DURACAO_ATRASO_ABERTURA_MS = 2000; // tempo que o quadro do robô fica escondido ao abrir o chat
+    var DURACAO_ESTADO_BYE_MS = 1200; // usado ao FECHAR o chat (despedirEFechar) -- fechamento continua rápido
+    // Duração do "tchau.mp4" especificamente na ABERTURA do chat. Precisa ser
+    // maior que DURACAO_ESTADO_BYE_MS: o crossfade de entrada do vídeo sozinho
+    // já consome CROSSFADE_DURACAO_MS (1000ms), então com um valor curto o
+    // vídeo mal termina de aparecer e o código já manda trocar pro idle --
+    // dá a sensação de "pular" de um vídeo pro outro sem o primeiro ser visto.
+    var DURACAO_ESTADO_BYE_ABERTURA_MS = 2200;
+    var DURACAO_ATRASO_ABERTURA_MS = 400; // tempo que o quadro do robô fica escondido ao abrir o chat
 
     // Vídeos "de humor" do FitBot — sem significado fixo, só para
     // deixar a espera mais divertida. Um é sorteado toda vez que o
@@ -105,6 +111,7 @@
     var ultimoVideoAleatorioIdle = null;
     var proximoIdleEhPadrao = false;
     var idleRotationTimeoutId = null;
+    var idleBufferPreparado = null; // buffer (A ou B) já carregado/decodificado, pronto pra ativar sem espera de rede
     var DURACAO_ROTACAO_IDLE_FALLBACK_MS = 6000; // usado só se não der pra ler a duração do vídeo
 
     var historico = [];               // [{papel: 'usuario'|'bot', texto: '...'}]
@@ -197,13 +204,19 @@
 
             setState('bye'); // sempre inicia com o vídeo "tchau.mp4"
 
+            // Já carrega o próximo vídeo idle em paralelo, enquanto o
+            // "tchau.mp4" ainda está na tela -- assim, quando o timeout
+            // abaixo trocar pro idle, o vídeo já está pronto (sem espera
+            // de rede) e a troca fica suave.
+            prepararProximoVideoIdle();
+
             aberturaTimeoutId = setTimeout(function () {
                 setState('idle');
                 if (primeiraVez) {
                     adicionarMensagem('bot', sortearSaudacaoInicial());
                 }
                 aberturaTimeoutId = null;
-            }, DURACAO_ESTADO_BYE_MS);
+            }, DURACAO_ESTADO_BYE_ABERTURA_MS);
         }, DURACAO_ATRASO_ABERTURA_MS);
     }
 
@@ -337,8 +350,76 @@
         return escolhido;
     }
 
+    // Crossfade: o novo sobe de opacidade enquanto o antigo desce, ao mesmo
+    // tempo (CSS: transition de opacity em ambos) -- em vez do corte seco
+    // que causava o "piscar".
+    function iniciarCrossfadeIdle(bufferNovo) {
+        var bufferAnterior = elIdleAtivo;
+
+        bufferNovo.classList.add('is-active');
+        if (bufferAnterior && bufferAnterior !== bufferNovo) {
+            bufferAnterior.classList.remove('is-active');
+        }
+
+        elIdleAtivo = bufferNovo;
+        elIdleInativo = bufferAnterior;
+
+        // Só pausa o buffer antigo depois que o fade terminar, pra não
+        // "congelar" ele no meio da transição visível.
+        if (bufferAnterior && bufferAnterior !== bufferNovo) {
+            setTimeout(function () {
+                if (bufferAnterior !== elIdleAtivo) {
+                    bufferAnterior.pause();
+                }
+            }, CROSSFADE_DURACAO_MS);
+        }
+    }
+
+    // Carrega o próximo vídeo idle no buffer escondido e decodifica o
+    // primeiro frame, SEM ativar/crossfade ainda -- permite chamar isso
+    // com antecedência (ex.: enquanto "tchau.mp4" ainda está na tela, na
+    // abertura do chat) pra eliminar a espera de rede na hora de ativar.
+    function prepararProximoVideoIdle() {
+        if (!elIdleInativo || idleBufferPreparado === elIdleInativo) return;
+
+        var proximoNome = escolherProximoVideoIdle();
+        var bufferAlvo = elIdleInativo;
+
+        bufferAlvo.src = PASTA_VIDEOS + proximoNome;
+        bufferAlvo.load();
+
+        bufferAlvo.addEventListener('loadedmetadata', function aoCarregar() {
+            bufferAlvo.removeEventListener('loadedmetadata', aoCarregar);
+
+            var promessaPreload = bufferAlvo.play();
+            function marcarPronto() {
+                idleBufferPreparado = bufferAlvo;
+            }
+            if (promessaPreload && promessaPreload.then) {
+                promessaPreload.then(marcarPronto).catch(marcarPronto);
+            } else {
+                marcarPronto();
+            }
+        });
+    }
+
     function sortearVideoIdle() {
         if (!elIdleInativo) return;
+
+        // Já tem um vídeo pré-carregado pronto (ver prepararProximoVideoIdle)?
+        // Ativa direto, sem esperar metadados/decodificação -- evita o
+        // engasgo/pulo bem na troca do "tchau.mp4" pro idle na abertura.
+        if (idleBufferPreparado === elIdleInativo) {
+            var bufferPronto = elIdleInativo;
+            idleBufferPreparado = null;
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    iniciarCrossfadeIdle(bufferPronto);
+                });
+            });
+            agendarProximaRotacaoIdle();
+            return;
+        }
 
         var proximoNome = escolherProximoVideoIdle();
         var bufferAlvo = elIdleInativo; // carrega o próximo vídeo no buffer que está escondido agora
@@ -363,43 +444,18 @@
                     // começar a subir.
                     requestAnimationFrame(function () {
                         requestAnimationFrame(function () {
-                            iniciarCrossfade(bufferAlvo);
+                            iniciarCrossfadeIdle(bufferAlvo);
                         });
                     });
                 }).catch(function () {
-                    iniciarCrossfade(bufferAlvo);
+                    iniciarCrossfadeIdle(bufferAlvo);
                 });
             } else {
-                iniciarCrossfade(bufferAlvo);
+                iniciarCrossfadeIdle(bufferAlvo);
             }
 
             agendarProximaRotacaoIdle();
         });
-
-        function iniciarCrossfade(bufferNovo) {
-            var bufferAnterior = elIdleAtivo;
-
-            // Crossfade: o novo sobe de opacidade enquanto o antigo desce,
-            // ao mesmo tempo (CSS: transition de opacity em ambos) -- em
-            // vez do corte seco que causava o "piscar".
-            bufferNovo.classList.add('is-active');
-            if (bufferAnterior && bufferAnterior !== bufferNovo) {
-                bufferAnterior.classList.remove('is-active');
-            }
-
-            elIdleAtivo = bufferNovo;
-            elIdleInativo = bufferAnterior;
-
-            // Só pausa o buffer antigo depois que o fade terminar, pra não
-            // "congelar" ele no meio da transição visível.
-            if (bufferAnterior && bufferAnterior !== bufferNovo) {
-                setTimeout(function () {
-                    if (bufferAnterior !== elIdleAtivo) {
-                        bufferAnterior.pause();
-                    }
-                }, CROSSFADE_DURACAO_MS);
-            }
-        }
     }
 
     function agendarProximaRotacaoIdle() {
