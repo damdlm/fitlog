@@ -1781,7 +1781,16 @@
        enquanto o usuário rola a tela. Agrupa duas fileiras que sobem e
        descem juntas: o cronômetro do treino + botão Finalizar (quando
        há exercícios carregados) e o cronômetro de intervalo entre
-       séries, sempre visível, em formato compacto/horizontal. */
+       séries, sempre visível, em formato compacto/horizontal.
+       max-width + margin auto -- em telas mais largas que um celular
+       comum (tablet, ou o .container do Bootstrap ficando bem largo),
+       essa barra passava a esticar de ponta a ponta, e como o
+       cronômetro e os botões ficam nas duas pontas (justify-content:
+       space-between), TODO aquele espaço sobrando virava um vão
+       enorme entre os dois -- em vez de mexer no tamanho do texto (o
+       que só piora a leitura), a correção certa é não deixar a barra
+       esticar tanto assim. Fica centralizada com uma largura de celular
+       "confortável" em telas maiores. */
     #top-sticky-bar {
         position: sticky;
         top: var(--navbar-height, 64px);
@@ -1790,30 +1799,25 @@
         flex-direction: column;
         gap: 8px;
         margin-bottom: 1.25rem;
+        max-width: 480px;
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
     }
 
-    /* Padding/gap em clamp() -- escala suavemente com a largura da tela
-       em vez de valores fixos. Antes, essa regra base só entrava em
-       telas ≥576px (abaixo disso os breakpoints mais estreitos, logo
-       adiante, já assumem) -- só que nessa faixa mais larga o padding
-       fixo (10px 16px) somado ao justify-content: space-between jogava
-       TODO o espaço sobrando dentro de um único vão, entre o
-       cronômetro e os botões, em vez de distribuir proporcionalmente.
-       Com clamp(), o espaçamento cresce de forma gradual conforme a
-       tela alarga, sem esse salto desproporcional. */
     #top-save-bar,
     #cronoIntervaloBox {
         background: #fff;
         box-shadow: 0 4px 16px rgba(45, 45, 45, 0.10);
         border-radius: var(--radius-md);
-        padding: clamp(8px, 1.6vw, 10px) clamp(8px, 2.6vw, 16px);
+        padding: 10px 16px;
     }
 
     #top-save-bar {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: clamp(6px, 2vw, 12px);
+        gap: 12px;
     }
 
     #top-save-bar .top-save-bar-crono {
@@ -1824,7 +1828,7 @@
     #top-save-bar .top-save-bar-crono-value {
         font-family: 'Courier New', ui-monospace, monospace;
         font-variant-numeric: tabular-nums;
-        font-size: clamp(1.65rem, 3.2vw, 1.85rem);
+        font-size: 1.85rem;
         font-weight: 700;
         line-height: 1;
         color: var(--dark-bg);
@@ -1837,7 +1841,7 @@
         align-items: center;
         justify-content: center;
         height: 38px;
-        padding: 0 clamp(8px, 2.4vw, 14px);
+        padding: 0 14px;
         box-sizing: border-box;
         border: 2px solid var(--primary-orange);
         border-radius: var(--radius-md);
@@ -1849,10 +1853,10 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: clamp(3px, 1vw, 4px);
+        gap: 4px;
         height: 38px;
-        padding: 0 clamp(5px, 1.6vw, 8px);
-        font-size: clamp(0.82rem, 1.8vw, 0.92rem);
+        padding: 0 8px;
+        font-size: 0.92rem;
         white-space: nowrap;
         font-weight: 600;
         letter-spacing: .1px;
@@ -1870,10 +1874,25 @@
         transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
     }
 
+    /* Cancelar e Pausar são maiores que Salvar de propósito -- são os
+       dois botões que o usuário mais precisa achar/tocar rápido em
+       pleno treino (interromper ou seguir), então ganham mais destaque
+       que Salvar (que só é usado uma vez, no final). */
+    #top-save-bar .btn-cancel-treino,
+    #top-save-bar .top-save-bar-actions .btn-pausar-treino {
+        font-size: 1rem;
+        padding: 0 11px;
+    }
+
     #top-save-bar .btn-save i,
     #top-save-bar .btn-cancel-treino i,
     #top-save-bar .top-save-bar-actions .btn-pausar-treino i {
         font-size: 0.95rem;
+    }
+
+    #top-save-bar .btn-cancel-treino i,
+    #top-save-bar .top-save-bar-actions .btn-pausar-treino i {
+        font-size: 1.02rem;
     }
 
     #top-save-bar .btn-save {
@@ -1929,7 +1948,7 @@
         /* Largura fixa baseada na palavra mais longa que o botão exibe
            ("Retomar") -- assim ele não muda de tamanho ao alternar entre
            "Pausar" e "Retomar". */
-        min-width: 96px;
+        min-width: 104px;
         background: #F5A623;
         color: #2D2D2D;
         box-shadow: 0 4px 14px rgba(245, 166, 35, 0.30);
@@ -1973,13 +1992,26 @@
             font-size: 0.82rem;
             gap: 3px;
         }
+        /* Cancelar/Pausar continuam um pouco maiores que Salvar aqui
+           também -- só um pouco, pra não arriscar o "Finalizar" cortar
+           (é a palavra mais longa dos três, por isso ficou de fora
+           desse aumento). */
+        #top-save-bar .btn-cancel-treino,
         #top-save-bar .btn-pausar-treino {
-            min-width: 76px;
+            font-size: 0.88rem;
+            padding: 6px 6px;
+        }
+        #top-save-bar .btn-pausar-treino {
+            min-width: 82px;
         }
         #top-save-bar .btn-save i,
         #top-save-bar .btn-cancel-treino i,
         #top-save-bar .btn-pausar-treino i {
             font-size: 0.78rem;
+        }
+        #top-save-bar .btn-cancel-treino i,
+        #top-save-bar .btn-pausar-treino i {
+            font-size: 0.86rem;
         }
     }
 
@@ -2003,6 +2035,14 @@
             font-size: 0.7rem;
             gap: 2px;
         }
+        /* Cancelar ganha um pouco mais aqui também -- Pausar já perde o
+           texto embaixo (só ícone), então o "aumento" dele vira maior
+           ícone, não fonte. Salvar ("Finalizar") continua o menor dos
+           três pra não arriscar cortar nessa largura tão apertada. */
+        #top-save-bar .btn-cancel-treino {
+            font-size: 0.76rem;
+            padding: 6px 5px;
+        }
         /* Com 3 botões + cronômetro nessa largura, o texto "Pausar"/
            "Retomar" é o mais dispensável -- vira só ícone pra garantir
            que os outros dois continuem legíveis. */
@@ -2013,7 +2053,7 @@
             min-width: 0;
         }
         #top-save-bar .btn-pausar-treino i {
-            font-size: 0.95rem;
+            font-size: 1.05rem;
         }
     }
 
