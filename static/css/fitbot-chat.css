@@ -205,23 +205,13 @@
     height: 100%;
     object-fit: cover;
     opacity: 0;
-    /* Precisa bater com CROSSFADE_DURACAO_MS no fitbot-chat.js. Curto de
-       propósito: a troca é SEQUENCIAL (sumir por completo, só depois o
-       próximo aparecer -- ver trocarVideoAtivo/iniciarCrossfadeIdle no JS),
-       não um crossfade simultâneo -- por isso não pode ser longo demais,
-       senão a troca fica lenta (sumir + aparecer, um depois do outro). */
-    transition: opacity .35s ease-in-out;
+    /* Precisa bater com CROSSFADE_DURACAO_MS no fitbot-chat.js. */
+    transition: opacity .3s ease-in-out;
 }
 
 /* Máquina de estados: o vídeo ativo (marcado via JS com .is-active) fica
-   visível. A troca entre vídeos é SEQUENCIAL (o JS remove .is-active do
-   atual, espera ele sumir por completo, só então adiciona no próximo) --
-   nunca os dois com opacidade > 0 ao mesmo tempo. Isso substituiu um
-   crossfade simultâneo anterior, que causava dois vídeos de conteúdo
-   diferente (poses/ações distintas do robô) visivelmente sobrepostos
-   durante a troca -- o corte seco puro (sem nenhuma transição) também já
-   foi tentado antes e causava um "piscar" (frame preto entre os vídeos);
-   o fade sequencial evita as duas coisas.
+   visível, com um crossfade suave de 0,3s -- o vídeo antigo esmaece
+   enquanto o novo já vai aparecendo (opacity: transition em ambos).
    O vídeo nunca fica com display:none — só opacity:0 — para que a troca
    não pegue um frame preto/parado no meio da transição. Para o estado
    "idle" há dois vídeos com data-state="idle" (buffers A/B); só um deles
