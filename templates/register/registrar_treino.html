@@ -1782,6 +1782,12 @@
        descem juntas: o cronômetro do treino + botão Finalizar (quando
        há exercícios carregados) e o cronômetro de intervalo entre
        séries, sempre visível, em formato compacto/horizontal. */
+    /* Margem negativa cancelando o gutter padrão do .container do
+       Bootstrap (12px de cada lado) -- SEM depender de media query,
+       pra valer em qualquer largura de tela. As duas tentativas
+       anteriores só entravam dentro de um breakpoint específico
+       (≤575.98px), e aparentemente o aparelho de teste não estava
+       nem batendo nessa faixa -- por isso pareciam não fazer nada. */
     #top-sticky-bar {
         position: sticky;
         top: var(--navbar-height, 64px);
@@ -1790,6 +1796,8 @@
         flex-direction: column;
         gap: 8px;
         margin-bottom: 1.25rem;
+        margin-left: -10px;
+        margin-right: -10px;
     }
 
     #top-save-bar,
@@ -1800,11 +1808,10 @@
         padding: 10px 16px;
     }
 
-    /* Padding lateral menor só aqui -- o timer estava com um respiro
-       grande demais até a borda da barra. */
+    /* Padding lateral bem menor só na barra do cronômetro do treino. */
     #top-save-bar {
-        padding-left: 10px;
-        padding-right: 10px;
+        padding-left: 4px;
+        padding-right: 4px;
     }
 
     /* flex-start (não space-between) -- cronômetro e os 3 botões ficam
@@ -1965,17 +1972,6 @@
        ícone reduzidos. É esse aperto que garante que "Finalizar" caiba
        inteiro sem cortar, sem precisar quebrar linha. */
     @media (max-width: 575.98px) {
-        /* Margem negativa cancelando o gutter padrão do .container do
-           Bootstrap (12px de cada lado) -- é isso que estava fazendo a
-           distância até a borda continuar grande mesmo eu tendo
-           reduzido o padding da própria barra antes: aquele padding
-           era só uma fração do espaço total até a borda real da tela,
-           o resto vinha do container da página, que eu não tinha
-           tocado. */
-        #top-sticky-bar {
-            margin-left: -10px;
-            margin-right: -10px;
-        }
         #top-save-bar {
             padding: 8px 4px;
             gap: 4px;
