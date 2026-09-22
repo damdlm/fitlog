@@ -72,7 +72,7 @@ ASAAS_BASE_URL_PRODUCAO = "https://api.asaas.com/v3"
 # nfse.gov.br (ou no sistema da prefeitura) buscando o serviço por
 # descrição -- ver histórico completo de tentativas no comentário
 # dentro de _agendar_nota_fiscal.
-CODIGO_SERVICO_MUNICIPAL_NFSE = '01.05.00'
+CODIGO_SERVICO_MUNICIPAL_NFSE = '01.05.01'
 DESCRICAO_SERVICO_NFSE = (
     'Licenciamento de uso de aplicativo de gestão e acompanhamento '
     'de treinos físicos (SaaS), disponibilizado por assinatura mensal.'
