@@ -1485,9 +1485,7 @@
 
     /* Campo "Data" fora do quadro dos treinos: um "chip" com ícone e
        rótulo pequeno acima do valor (em vez de label solto + input
-       cru do Bootstrap), mais o atalho "Hoje" ao lado -- cobre o caso
-       mais comum (registrar o treino do próprio dia) sem precisar
-       abrir o calendário. */
+       cru do Bootstrap). */
     .rt-data-row {
         display: flex;
         align-items: stretch;
@@ -1547,30 +1545,7 @@
         outline: none;
         box-shadow: none;
     }
-    .rt-data-hoje-btn {
-        flex: 0 0 auto;
-        border: 1px solid var(--border-soft);
-        background: var(--surface);
-        color: var(--dark-bg);
-        font-weight: 600;
-        font-size: 0.85rem;
-        padding: 0 18px;
-        border-radius: var(--radius-md);
-        box-shadow: var(--shadow-sm);
-        transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
-    }
-    .rt-data-hoje-btn:hover {
-        border-color: var(--primary-orange);
-        color: var(--primary-orange);
-    }
-    /* Estado ativo (a data selecionada já é hoje) -- o botão também
-       funciona como indicador, não só como ação. */
-    .rt-data-hoje-btn.is-hoje {
-        border-color: var(--primary-orange);
-        background: rgba(242, 140, 51, 0.08);
-        color: var(--primary-orange);
-        cursor: default;
-    }
+
 
     /* Card "Pronto para treinar?" mais compacto em telas menores --
        o padding/ícone fixos deixavam o card alto demais em celular. */
@@ -3147,7 +3122,6 @@
                        data-min="2020-01-01" data-max="{{ data_atual_iso() }}" required>
             </div>
         </div>
-        <button type="button" class="rt-data-hoje-btn" id="btnDataHoje">Hoje</button>
         <!-- Vídeo mudo/invisível usado como fallback para manter a tela
              acesa em iOS quando a Wake Lock API nativa não está disponível
              (ex: PWA instalado em versões do iOS anteriores à 18.4).
@@ -3572,40 +3546,6 @@
     });
 })();
 
-// Botão "Hoje" ao lado do campo de data: atalho pro caso mais comum
-// (registrar o treino do próprio dia), sem precisar abrir o
-// calendário. Também funciona como indicador -- fica destacado quando
-// a data selecionada já é hoje.
-(function () {
-    var elData = document.getElementById('inputDataTreino');
-    var btnHoje = document.getElementById('btnDataHoje');
-    if (!elData || !btnHoje) return;
-
-    function hojeISO() {
-        return new Date().toISOString().split('T')[0];
-    }
-
-    function atualizarEstadoBotao() {
-        btnHoje.classList.toggle('is-hoje', elData.value === hojeISO());
-    }
-
-    btnHoje.addEventListener('click', function () {
-        // setDate(..., true) já dispara "change" no input original --
-        // é o mesmo evento que o listener de auto-submit (mais abaixo
-        // no script principal) já escuta pra recarregar a página
-        // quando treino e data estão preenchidos.
-        var hoje = hojeISO();
-        if (elData._flatpickr) {
-            elData._flatpickr.setDate(hoje, true);
-        } else {
-            elData.value = hoje;
-        }
-        atualizarEstadoBotao();
-    });
-
-    elData.addEventListener('change', atualizarEstadoBotao);
-    atualizarEstadoBotao();
-})();
 </script>
 <script>
 // Verdadeiro quando a página já carregou com um treino + data válidos e
