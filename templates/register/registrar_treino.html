@@ -1483,20 +1483,93 @@
         50% { box-shadow: 0 0 0 14px rgba(242, 140, 51, 0); }
     }
 
-    /* Campo "Data" fora do quadro dos treinos: rótulo ao lado do
-       input (não empilhado), numa linha compacta acima do card. */
+    /* Campo "Data" fora do quadro dos treinos: um "chip" com ícone e
+       rótulo pequeno acima do valor (em vez de label solto + input
+       cru do Bootstrap), mais o atalho "Hoje" ao lado -- cobre o caso
+       mais comum (registrar o treino do próprio dia) sem precisar
+       abrir o calendário. */
     .rt-data-row {
         display: flex;
-        align-items: center;
+        align-items: stretch;
         flex-wrap: wrap;
         gap: 10px;
     }
-    .rt-data-row .form-label {
-        white-space: nowrap;
+    .rt-data-field {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1 1 220px;
+        min-width: 0;
+        background: var(--surface);
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius-md);
+        padding: 8px 14px;
+        box-shadow: var(--shadow-sm);
     }
-    .rt-data-row input[name="data"] {
-        flex: 0 1 200px;
-        min-width: 150px;
+    .rt-data-field-icone {
+        flex: 0 0 auto;
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        background: rgba(242, 140, 51, 0.12);
+        color: var(--primary-orange);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    .rt-data-field-texto {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        flex: 1;
+    }
+    .rt-data-field-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #8a8580;
+        margin-bottom: 1px;
+    }
+    /* O flatpickr (altInput: true) copia a classe do input original pro
+       campo visível -- essas regras valem pros dois. */
+    .rt-data-field-texto input[name="data"],
+    .rt-data-field-texto input.flatpickr-input {
+        border: none;
+        padding: 0;
+        height: auto;
+        font-weight: 600;
+        color: var(--dark-bg);
+        font-size: 0.98rem;
+        background: transparent;
+        box-shadow: none !important;
+    }
+    .rt-data-field-texto input:focus {
+        outline: none;
+        box-shadow: none;
+    }
+    .rt-data-hoje-btn {
+        flex: 0 0 auto;
+        border: 1px solid var(--border-soft);
+        background: var(--surface);
+        color: var(--dark-bg);
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0 18px;
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
+        transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+    }
+    .rt-data-hoje-btn:hover {
+        border-color: var(--primary-orange);
+        color: var(--primary-orange);
+    }
+    /* Estado ativo (a data selecionada já é hoje) -- o botão também
+       funciona como indicador, não só como ação. */
+    .rt-data-hoje-btn.is-hoje {
+        border-color: var(--primary-orange);
+        background: rgba(242, 140, 51, 0.08);
+        color: var(--primary-orange);
+        cursor: default;
     }
 
     /* Card "Pronto para treinar?" mais compacto em telas menores --
@@ -3065,13 +3138,16 @@
 
 <form method="get" id="formBusca">
     <div class="rt-data-row mb-3" id="campoDataTreino">
-        <label class="form-label fw-bold mb-0" for="inputDataTreino">
-            <i class="bi bi-calendar" style="color: var(--primary-orange);"></i>
-            Data
-        </label>
-        <input type="text" name="data" id="inputDataTreino" class="form-control"
-               value="{{ data_selecionada_str or data_atual_iso() }}"
-               data-min="2020-01-01" data-max="{{ data_atual_iso() }}" required>
+        <div class="rt-data-field">
+            <span class="rt-data-field-icone"><i class="bi bi-calendar-event"></i></span>
+            <div class="rt-data-field-texto">
+                <label class="rt-data-field-label" for="inputDataTreino">Data do treino</label>
+                <input type="text" name="data" id="inputDataTreino" class="form-control"
+                       value="{{ data_selecionada_str or data_atual_iso() }}"
+                       data-min="2020-01-01" data-max="{{ data_atual_iso() }}" required>
+            </div>
+        </div>
+        <button type="button" class="rt-data-hoje-btn" id="btnDataHoje">Hoje</button>
         <!-- Vídeo mudo/invisível usado como fallback para manter a tela
              acesa em iOS quando a Wake Lock API nativa não está disponível
              (ex: PWA instalado em versões do iOS anteriores à 18.4).
@@ -3086,7 +3162,7 @@
             <div id="linhaTreinoSelect">
                 <label class="form-label fw-bold">
                     <i class="bi bi-trophy" style="color: var(--primary-orange);"></i>
-                    Treino
+                    Qual treino hoje?
                 </label>
 
                 <!-- Select nativo mantido no DOM (só visualmente oculto, não
@@ -3494,6 +3570,41 @@
         disableMobile: true,
         allowInput: false
     });
+})();
+
+// Botão "Hoje" ao lado do campo de data: atalho pro caso mais comum
+// (registrar o treino do próprio dia), sem precisar abrir o
+// calendário. Também funciona como indicador -- fica destacado quando
+// a data selecionada já é hoje.
+(function () {
+    var elData = document.getElementById('inputDataTreino');
+    var btnHoje = document.getElementById('btnDataHoje');
+    if (!elData || !btnHoje) return;
+
+    function hojeISO() {
+        return new Date().toISOString().split('T')[0];
+    }
+
+    function atualizarEstadoBotao() {
+        btnHoje.classList.toggle('is-hoje', elData.value === hojeISO());
+    }
+
+    btnHoje.addEventListener('click', function () {
+        // setDate(..., true) já dispara "change" no input original --
+        // é o mesmo evento que o listener de auto-submit (mais abaixo
+        // no script principal) já escuta pra recarregar a página
+        // quando treino e data estão preenchidos.
+        var hoje = hojeISO();
+        if (elData._flatpickr) {
+            elData._flatpickr.setDate(hoje, true);
+        } else {
+            elData.value = hoje;
+        }
+        atualizarEstadoBotao();
+    });
+
+    elData.addEventListener('change', atualizarEstadoBotao);
+    atualizarEstadoBotao();
 })();
 </script>
 <script>
