@@ -2853,6 +2853,131 @@
     @media (prefers-reduced-motion: reduce) {
         .fl-scan-line { animation: none; }
     }
+
+    /* ============================================================
+       AJUSTE RESPONSIVO - BARRA SUPERIOR DO TREINO
+       Cronômetro próximo à lateral + botões distribuídos.
+       ============================================================ */
+
+    #top-save-bar {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        box-sizing: border-box;
+        gap: 8px;
+        padding-left: 4px;
+        padding-right: 4px;
+        justify-content: flex-start;
+    }
+
+    #top-save-bar .top-save-bar-crono {
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+        margin: 0;
+    }
+
+    #top-save-bar .top-save-bar-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        flex: 1 1 auto;
+        min-width: 0;
+        width: auto;
+    }
+
+    #top-save-bar .top-save-bar-actions .btn-cancel-treino,
+    #top-save-bar .top-save-bar-actions .btn-pausar-treino,
+    #top-save-bar .top-save-bar-actions .btn-save {
+        flex: 1 1 0;
+        min-width: 0;
+        width: 0;
+        height: 40px;
+        padding: 0 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        white-space: nowrap;
+        box-sizing: border-box;
+    }
+
+    #top-save-bar .top-save-bar-crono-value {
+        height: 40px;
+        padding: 0 10px;
+        box-sizing: border-box;
+    }
+
+    @media (max-width: 575.98px) {
+        #top-save-bar {
+            gap: 6px;
+            padding-left: 2px;
+            padding-right: 2px;
+        }
+
+        #top-save-bar .top-save-bar-crono-value {
+            font-size: 1.55rem;
+            padding: 0 7px;
+        }
+
+        #top-save-bar .top-save-bar-actions {
+            gap: 4px;
+        }
+
+        #top-save-bar .top-save-bar-actions .btn-cancel-treino,
+        #top-save-bar .top-save-bar-actions .btn-pausar-treino,
+        #top-save-bar .top-save-bar-actions .btn-save {
+            flex: 1 1 0;
+            min-width: 0;
+            width: 0;
+            height: 40px;
+            padding: 0 4px;
+            font-size: 0.82rem;
+        }
+
+        #top-save-bar .top-save-bar-actions .btn-cancel-treino i,
+        #top-save-bar .top-save-bar-actions .btn-pausar-treino i,
+        #top-save-bar .top-save-bar-actions .btn-save i {
+            font-size: 0.82rem;
+        }
+    }
+
+    @media (max-width: 360px) {
+        #top-save-bar {
+            gap: 4px;
+            padding-left: 2px;
+            padding-right: 2px;
+        }
+
+        #top-save-bar .top-save-bar-crono-value {
+            font-size: 1.3rem;
+            padding: 0 5px;
+        }
+
+        #top-save-bar .top-save-bar-actions {
+            gap: 3px;
+        }
+
+        #top-save-bar .top-save-bar-actions .btn-cancel-treino,
+        #top-save-bar .top-save-bar-actions .btn-pausar-treino,
+        #top-save-bar .top-save-bar-actions .btn-save {
+            flex: 1 1 0;
+            min-width: 0;
+            width: 0;
+            padding: 0 4px;
+            font-size: 0.74rem;
+        }
+
+        #top-save-bar .top-save-bar-actions .btn-pausar-treino span {
+            display: none;
+        }
+
+        #top-save-bar .top-save-bar-actions .btn-pausar-treino i {
+            font-size: 1.05rem;
+        }
+    }
+
 </style>
 
 <!-- Loading ao selecionar treino/data -- some assim que a página troca -->
