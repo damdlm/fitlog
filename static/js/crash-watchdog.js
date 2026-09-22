@@ -239,10 +239,43 @@
     // Ao voltar de segundo plano, o "gap" entre frames é só o tempo
     // que a aba passou oculta (rAF pausa quando a aba não está
     // visível) -- não é um travamento de verdade, então reseta a
-    // referência em vez de medir esse intervalo.
-    document.addEventListener('visibilitychange', function () {
+    // referência em vez de medir esse intervalo. 'pageshow' cobre o
+    // mesmo caso como reforço: no iPhone, ao trocar de app, o
+    // WKWebView pode ficar suspenso de verdade (não só "aba oculta"),
+    // e não há garantia de que 'visibilitychange' sempre dispare e
+    // termine de rodar ANTES do primeiro frame retomado -- com dois
+    // eventos resetando a mesma referência, a chance de nenhum dos
+    // dois chegar a tempo fica bem menor.
+    function resetarReferenciaDeFrame() {
         ultimoFrame = performance.now();
-    });
+    }
+    document.addEventListener('visibilitychange', resetarReferenciaDeFrame);
+    window.addEventListener('pageshow', resetarReferenciaDeFrame);
+
+    // Mesmo com os resets acima, a ORDEM entre esses eventos e o
+    // primeiro frame retomado não é garantida -- por isso, antes de
+    // recarregar por "UI travada", confirma que o travamento é de
+    // verdade em vez de agir na primeira medição. Um gap grande logo
+    // após voltar de segundo plano (troca de app no iPhone) tende a
+    // ser só esse salto do relógio, não um travamento real: se fosse
+    // real, o próximo frame (daqui a pouco) também vai mostrar um gap
+    // grande, porque a thread principal continua bloqueada; se foi só
+    // o salto do retorno, os frames já estão fluindo normalmente de
+    // novo e o gap da confirmação vai ser pequeno.
+    var confirmandoTravamento = false;
+    function confirmarTravamentoAntesDeRecarregar() {
+        if (confirmandoTravamento) return;
+        confirmandoTravamento = true;
+        setTimeout(function () {
+            confirmandoTravamento = false;
+            if (document.hidden) return; // foi ocultada de novo nesse meio-tempo -- não julga agora
+            var gapConfirmacao = performance.now() - ultimoFrame;
+            if (gapConfirmacao > FREEZE_REPORT_MS) {
+                recarregar(); // travamento confirmado: os frames continuam sem fluir
+            }
+            // senão: era só o salto do retorno de segundo plano -- a UI já respondeu normalmente, segue sem recarregar
+        }, 300);
+    }
 
     function tick(agora) {
         var gap = agora - ultimoFrame;
@@ -252,7 +285,7 @@
             var mensagem = 'UI travada por ' + Math.round(gap) + 'ms';
             enviarRelato('ui_travada', mensagem, null);
             if (gap > FREEZE_RELOAD_MS) {
-                recarregar();
+                confirmarTravamentoAntesDeRecarregar();
             }
         }
 
