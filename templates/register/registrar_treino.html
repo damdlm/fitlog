@@ -2941,6 +2941,27 @@
         #top-save-bar .top-save-bar-actions .btn-save i {
             font-size: 0.82rem;
         }
+
+        /* Passou de 59:59 -- o cronômetro mostra horas ("1:00:00", mais
+           largo que "MM:SS") e não sobra espaço pra manter a legenda do
+           Pausar/Retomar junto com Cancelar/Salvar por extenso. O botão
+           some com o texto e vira só ícone (classe alternada via JS em
+           atualizarClasseHoraAtiva()); Cancelar/Salvar, que continuam
+           com flex:1, ocupam o espaço que sobrou. */
+        #top-save-bar.crono-hora-ativa .top-save-bar-crono-value {
+            font-size: 1.3rem;
+            padding: 0 5px;
+        }
+
+        #top-save-bar.crono-hora-ativa .top-save-bar-actions .btn-pausar-treino {
+            flex: 0 0 auto;
+            width: auto;
+            padding: 0 9px;
+        }
+
+        #top-save-bar.crono-hora-ativa .top-save-bar-actions .btn-pausar-treino span {
+            display: none;
+        }
     }
 
     @media (max-width: 360px) {
@@ -2975,6 +2996,15 @@
 
         #top-save-bar .top-save-bar-actions .btn-pausar-treino i {
             font-size: 1.05rem;
+        }
+
+        /* Mesmo cenário de "1:00:00" acima, mas em telas ainda menores --
+           o Pausar/Retomar já vira ícone aqui por padrão (regra acima);
+           falta só encolher mais um pouco o cronômetro pra garantir que
+           os outros dois botões não fiquem espremidos demais. */
+        #top-save-bar.crono-hora-ativa .top-save-bar-crono-value {
+            font-size: 1.1rem;
+            padding: 0 4px;
         }
     }
 
@@ -4618,7 +4648,20 @@ function tocarBipe() {
     var elBtnIniciar = document.getElementById('cronoTreinoBtnIniciar');
     var elBtnZerar = document.getElementById('cronoTreinoBtnZerar');
     var elWakeVideo = document.getElementById('cronoTreinoWakeVideo');
+    var elTopBar = document.getElementById('top-save-bar');
     if (!elBox || !elDisplay || !elBtnIniciar || !elBtnZerar) return;
+
+    // A partir de 1h de treino o cronômetro passa a exibir "H:MM:SS"
+    // (ex: "1:00:00"), mais largo que o "MM:SS" normal -- em telas
+    // pequenas isso pode não caber junto com o cronômetro + 3 botões.
+    // Essa classe no #top-save-bar avisa o CSS pra enxugar o botão
+    // Pausar/Retomar (só ícone) e abrir espaço nesse cenário.
+    var UMA_HORA_SEGUNDOS = 3600;
+    function atualizarClasseHoraAtiva(totalSegundos) {
+        if (elTopBar) {
+            elTopBar.classList.toggle('crono-hora-ativa', totalSegundos >= UMA_HORA_SEGUNDOS);
+        }
+    }
 
     var rodando = false;
     var inicioMs = null;        // timestamp de quando o cronômetro começou a rodar
@@ -4790,7 +4833,9 @@ function tocarBipe() {
     }
 
     function atualizarDisplay() {
-        elDisplay.textContent = formatarTempo(segundosAtuais());
+        var seg = segundosAtuais();
+        elDisplay.textContent = formatarTempo(seg);
+        atualizarClasseHoraAtiva(seg);
     }
 
     // Exposto globalmente para o handler de submit do formulário conseguir
@@ -4817,10 +4862,14 @@ function tocarBipe() {
             if (rodando) {
                 intervalId = setInterval(atualizarDisplay, 1000);
                 elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i><span>Pausar</span>';
+                elBtnIniciar.title = 'Pausar treino';
+                elBtnIniciar.setAttribute('aria-label', 'Pausar treino');
                 elBtnIniciar.classList.add('is-rodando');
                 pedirWakeLock();
             } else {
                 elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i><span>Retomar</span>';
+                elBtnIniciar.title = 'Retomar treino';
+                elBtnIniciar.setAttribute('aria-label', 'Retomar treino');
             }
 
             jaRevelouExercicios = true;
@@ -4968,6 +5017,8 @@ function tocarBipe() {
         inicioMs = Date.now();
         intervalId = setInterval(atualizarDisplay, 1000);
         elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i><span>Pausar</span>';
+        elBtnIniciar.title = 'Pausar treino';
+        elBtnIniciar.setAttribute('aria-label', 'Pausar treino');
         elBtnIniciar.classList.add('is-rodando');
         pedirWakeLock();
 
@@ -5011,6 +5062,8 @@ function tocarBipe() {
         rodando = false;
         clearInterval(intervalId);
         elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i><span>Retomar</span>';
+        elBtnIniciar.title = 'Retomar treino';
+        elBtnIniciar.setAttribute('aria-label', 'Retomar treino');
         elBtnIniciar.classList.remove('is-rodando');
         liberarWakeLock();
     }
