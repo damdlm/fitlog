@@ -356,7 +356,27 @@
             }, CROSSFADE_DURACAO_MS);
         }
 
+        // O buffer pode já estar tocando escondido há um tempo (o preload
+        // dá play assim que termina de carregar, pra decodificar o primeiro
+        // frame -- ver carregarVideoIdleNoBuffer), então sem resetar aqui
+        // ele ficaria visível "no meio" do próprio loop. Volta pro início
+        // exatamente no instante em que fica visível, garantindo que ele
+        // é mostrado por inteiro, do começo ao fim.
+        try {
+            bufferNovo.currentTime = 0;
+        } catch (e) {
+            // Alguns navegadores lançam se o seek ainda não é permitido
+            // nesse readyState -- inofensivo, o vídeo só não reinicia
+            // exatamente do zero dessa vez.
+        }
         bufferNovo.classList.add('is-active');
+
+        // Só agenda a próxima rotação AGORA, com o vídeo já reiniciado e
+        // realmente visível -- contar a partir de antes (como acontecia
+        // antes dessa correção) media a duração a partir de um instante
+        // em que o vídeo podia já estar adiantado, cortando ele antes de
+        // terminar.
+        agendarProximaRotacaoIdle();
     }
 
     // Carrega um vídeo idle num buffer específico e decodifica o primeiro
@@ -448,13 +468,13 @@
             // "escondido" atual, ativa com crossfade. Aguarda dois frames
             // pintados antes do fade, garantindo que o primeiro frame já
             // está decodificado e visível assim que a opacidade começar
-            // a subir.
+            // a subir. iniciarCrossfadeIdle é quem agenda a próxima
+            // rotação, já com o vídeo reiniciado e de fato visível.
             requestAnimationFrame(function () {
                 requestAnimationFrame(function () {
                     iniciarCrossfadeIdle(bufferAlvo);
                 });
             });
-            agendarProximaRotacaoIdle();
         }
 
         if (idleBufferPreparado === bufferAlvo) {

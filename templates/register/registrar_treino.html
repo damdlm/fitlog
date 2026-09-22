@@ -2978,25 +2978,6 @@
         }
     }
 
-    /* Modo compacto: só entra quando o JS mede (ajustarBarraTreino())
-       que o conteúdo realmente transborda a barra -- nunca por suposição
-       de largura de tela ou de duração do treino. É por isso que esta
-       regra NÃO está dentro de nenhum @media: o gatilho é a classe
-       .top-save-bar--compacta, aplicada/removida via JS conforme o
-       espaço realmente disponível a cada momento (redimensionar janela,
-       cronômetro passar de horas, "Pausar" virar "Retomar" etc. -- tudo
-       que muda a largura do conteúdo). Enxuga primeiro o texto do botão
-       Pausar/Retomar, que é o mais dispensável dos três; Cancelar/Salvar
-       (flex:1) ocupam o espaço que sobra. */
-    #top-save-bar.top-save-bar--compacta .top-save-bar-actions .btn-pausar-treino {
-        flex: 0 0 auto;
-        width: auto;
-    }
-
-    #top-save-bar.top-save-bar--compacta .top-save-bar-actions .btn-pausar-treino span {
-        display: none;
-    }
-
 </style>
 
 <!-- Loading ao selecionar treino/data -- some assim que a página troca -->
@@ -4637,57 +4618,7 @@ function tocarBipe() {
     var elBtnIniciar = document.getElementById('cronoTreinoBtnIniciar');
     var elBtnZerar = document.getElementById('cronoTreinoBtnZerar');
     var elWakeVideo = document.getElementById('cronoTreinoWakeVideo');
-    var elTopBar = document.getElementById('top-save-bar');
     if (!elBox || !elDisplay || !elBtnIniciar || !elBtnZerar) return;
-
-    // Quando o cronômetro passa de 59:59 ele passa a exibir horas
-    // ("1:00:00" em vez de "00:00"), mais largo -- e em telas estreitas
-    // pode não sobrar espaço pra também mostrar a legenda do botão
-    // Pausar/Retomar por extenso. Em vez de supor isso por uma faixa
-    // fixa de largura de tela (o que comprimiria a barra mesmo quando
-    // ainda cabe tudo), MEDE se o conteúdo realmente transborda a barra
-    // e só aí ativa o modo compacto (só ícone no Pausar/Retomar).
-    var barraTreinoApertada = false;
-    function ajustarBarraTreino() {
-        if (!elTopBar) return;
-        // Volta pro estado "completo" antes de medir -- senão, uma vez
-        // apertada, a barra nunca saberia que voltou a caber tudo (ex:
-        // tela virou de retrato pra paisagem, ou o cronômetro foi
-        // reiniciado num "Cancelar" e voltou a ter só 2 dígitos).
-        if (barraTreinoApertada) {
-            elTopBar.classList.remove('top-save-bar--compacta');
-            barraTreinoApertada = false;
-        }
-        // Espera o próximo frame: precisa medir DEPOIS que o navegador
-        // recalcular o layout sem a classe, senão a medição pega o
-        // estado (comprimido) anterior.
-        requestAnimationFrame(function () {
-            if (!elTopBar) return;
-            if (elTopBar.scrollWidth > elTopBar.clientWidth + 1) {
-                elTopBar.classList.add('top-save-bar--compacta');
-                barraTreinoApertada = true;
-            }
-        });
-    }
-
-    // Só remede quando algo que pode mudar a largura do conteúdo
-    // acontece de fato (texto do cronômetro mudou de tamanho, ex.
-    // "9:59" -> "10:00" ou "59:59" -> "1:00:00"; ou a janela foi
-    // redimensionada/girada) -- não a cada tick do cronômetro, que
-    // seria trabalho de medição desnecessário.
-    var ultimoTamanhoDisplay = elDisplay.textContent.length;
-    function ajustarBarraTreinoSeMudouTamanho(textoAtual) {
-        if (textoAtual.length !== ultimoTamanhoDisplay) {
-            ultimoTamanhoDisplay = textoAtual.length;
-            ajustarBarraTreino();
-        }
-    }
-
-    var resizeTimeoutId = null;
-    window.addEventListener('resize', function () {
-        clearTimeout(resizeTimeoutId);
-        resizeTimeoutId = setTimeout(ajustarBarraTreino, 150);
-    });
 
     var rodando = false;
     var inicioMs = null;        // timestamp de quando o cronômetro começou a rodar
@@ -4859,9 +4790,7 @@ function tocarBipe() {
     }
 
     function atualizarDisplay() {
-        var texto = formatarTempo(segundosAtuais());
-        elDisplay.textContent = texto;
-        ajustarBarraTreinoSeMudouTamanho(texto);
+        elDisplay.textContent = formatarTempo(segundosAtuais());
     }
 
     // Exposto globalmente para o handler de submit do formulário conseguir
@@ -4888,14 +4817,10 @@ function tocarBipe() {
             if (rodando) {
                 intervalId = setInterval(atualizarDisplay, 1000);
                 elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i><span>Pausar</span>';
-                elBtnIniciar.title = 'Pausar treino';
-                elBtnIniciar.setAttribute('aria-label', 'Pausar treino');
                 elBtnIniciar.classList.add('is-rodando');
                 pedirWakeLock();
             } else {
                 elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i><span>Retomar</span>';
-                elBtnIniciar.title = 'Retomar treino';
-                elBtnIniciar.setAttribute('aria-label', 'Retomar treino');
             }
 
             jaRevelouExercicios = true;
@@ -4955,11 +4880,6 @@ function tocarBipe() {
         }
 
         if (window.FitLogTreinoState) window.FitLogTreinoState.iniciar();
-
-        // Só agora a barra está visível E com o botão de Pausar/Retomar
-        // já dentro dela -- é o primeiro momento em que faz sentido medir
-        // se cabe tudo.
-        ajustarBarraTreino();
     }
 
     function fecharModoTreinoTelaCheia() {
@@ -5048,14 +4968,8 @@ function tocarBipe() {
         inicioMs = Date.now();
         intervalId = setInterval(atualizarDisplay, 1000);
         elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i><span>Pausar</span>';
-        elBtnIniciar.title = 'Pausar treino';
-        elBtnIniciar.setAttribute('aria-label', 'Pausar treino');
         elBtnIniciar.classList.add('is-rodando');
         pedirWakeLock();
-        // "Retomar" -> "Pausar" muda a largura do botão -- remede (não
-        // faz nada ainda na primeira chamada, antes do botão entrar na
-        // barra -- revelarExercicios() cuida dela logo mais abaixo).
-        ajustarBarraTreino();
 
         // revelarExercicios() (entrar no modo treino em tela cheia) só faz
         // sentido na PRIMEIRA vez que o treino é iniciado. Em "Retomar"
@@ -5097,12 +5011,8 @@ function tocarBipe() {
         rodando = false;
         clearInterval(intervalId);
         elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i><span>Retomar</span>';
-        elBtnIniciar.title = 'Retomar treino';
-        elBtnIniciar.setAttribute('aria-label', 'Retomar treino');
         elBtnIniciar.classList.remove('is-rodando');
         liberarWakeLock();
-        // "Pausar" -> "Retomar" muda a largura do botão -- remede.
-        ajustarBarraTreino();
     }
 
     var elTreinoSelect = document.querySelector('select[name="treino"]');
