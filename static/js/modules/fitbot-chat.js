@@ -44,7 +44,11 @@
     // padrão, aleatório, padrão... sempre alternando.
     var VIDEO_PADRAO_IDLE = 'padrao.mp4';
     var PASTA_VIDEOS = '/static/videos/fitbot/';
-    var CROSSFADE_DURACAO_MS = 1000; // duração do fade suave entre os vídeos, em ms (precisa bater com o CSS)
+    // Duração de CADA metade da troca sequencial (sumir OU aparecer -- ver
+    // trocarVideoAtivo/iniciarCrossfadeIdle). Precisa bater com o CSS
+    // (.fitbot-avatar-frame video). Curto de propósito: a troca completa
+    // leva o dobro disso (sumir, depois aparecer).
+    var CROSSFADE_DURACAO_MS = 350;
 
     // Saudações iniciais do FitBot -- uma é sorteada e mostrada só na
     // primeira vez que o chat é aberto (ver onModalShown / primeiraVez).
@@ -261,6 +265,9 @@
 
     function trocarVideoAtivo(estado, aoFicarVisivel) {
         var videos = elWidget.querySelectorAll('.fitbot-avatar-frame video');
+        var videoAlvo = null;
+        var haviaVideoSumindo = false;
+
         for (var i = 0; i < videos.length; i++) {
             var video = videos[i];
             var ehDoEstadoAtual = video.getAttribute('data-state') === estado;
@@ -274,6 +281,7 @@
             if (!ehDoEstadoAtual) {
                 if (video.classList.contains('is-active')) {
                     video.classList.remove('is-active');
+                    haviaVideoSumindo = true;
                     // Só pausa depois que o fade (CROSSFADE_DURACAO_MS) terminar --
                     // pausar na hora congela o quadro no meio da transição visível
                     // e ainda deixa o vídeo "frio" (precisando decodificar de novo)
@@ -288,7 +296,23 @@
                 continue;
             }
 
-            ativarVideoComPreload(video, aoFicarVisivel);
+            videoAlvo = video;
+        }
+
+        if (!videoAlvo) return;
+
+        // Troca SEQUENCIAL: só ativa o próximo vídeo depois que o anterior
+        // já sumiu por completo (CROSSFADE_DURACAO_MS) -- nunca ao mesmo
+        // tempo. Dois vídeos de conteúdo diferente (poses/ações distintas
+        // do robô) visíveis simultaneamente durante um crossfade dava
+        // exatamente a sensação de "um vídeo começando antes do outro
+        // terminar" que foi reportada.
+        if (haviaVideoSumindo) {
+            setTimeout(function () {
+                ativarVideoComPreload(videoAlvo, aoFicarVisivel);
+            }, CROSSFADE_DURACAO_MS);
+        } else {
+            ativarVideoComPreload(videoAlvo, aoFicarVisivel);
         }
     }
 
@@ -356,28 +380,31 @@
         return escolhido;
     }
 
-    // Crossfade: o novo sobe de opacidade enquanto o antigo desce, ao mesmo
-    // tempo (CSS: transition de opacity em ambos) -- em vez do corte seco
-    // que causava o "piscar".
+    // Troca SEQUENCIAL entre os dois buffers de idle: o buffer antigo some
+    // por completo primeiro, só depois o novo aparece -- mesmo motivo do
+    // trocarVideoAtivo acima (nunca dois vídeos com conteúdo diferente
+    // visíveis ao mesmo tempo).
     function iniciarCrossfadeIdle(bufferNovo) {
         var bufferAnterior = elIdleAtivo;
+        var bufferAnteriorEstavaAtivo = !!(bufferAnterior && bufferAnterior !== bufferNovo && bufferAnterior.classList.contains('is-active'));
 
-        bufferNovo.classList.add('is-active');
-        if (bufferAnterior && bufferAnterior !== bufferNovo) {
-            bufferAnterior.classList.remove('is-active');
+        function ativarNovo() {
+            bufferNovo.classList.add('is-active');
         }
 
         elIdleAtivo = bufferNovo;
         elIdleInativo = bufferAnterior;
 
-        // Só pausa o buffer antigo depois que o fade terminar, pra não
-        // "congelar" ele no meio da transição visível.
-        if (bufferAnterior && bufferAnterior !== bufferNovo) {
+        if (bufferAnteriorEstavaAtivo) {
+            bufferAnterior.classList.remove('is-active');
             setTimeout(function () {
                 if (bufferAnterior !== elIdleAtivo) {
                     bufferAnterior.pause();
                 }
+                ativarNovo();
             }, CROSSFADE_DURACAO_MS);
+        } else {
+            ativarNovo();
         }
     }
 
