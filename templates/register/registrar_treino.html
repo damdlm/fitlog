@@ -1965,8 +1965,19 @@
        ícone reduzidos. É esse aperto que garante que "Finalizar" caiba
        inteiro sem cortar, sem precisar quebrar linha. */
     @media (max-width: 575.98px) {
+        /* Margem negativa cancelando o gutter padrão do .container do
+           Bootstrap (12px de cada lado) -- é isso que estava fazendo a
+           distância até a borda continuar grande mesmo eu tendo
+           reduzido o padding da própria barra antes: aquele padding
+           era só uma fração do espaço total até a borda real da tela,
+           o resto vinha do container da página, que eu não tinha
+           tocado. */
+        #top-sticky-bar {
+            margin-left: -10px;
+            margin-right: -10px;
+        }
         #top-save-bar {
-            padding: 8px 5px;
+            padding: 8px 4px;
             gap: 4px;
         }
         #top-save-bar .top-save-bar-crono-value {
@@ -1976,18 +1987,18 @@
         #top-save-bar .top-save-bar-actions {
             gap: 3px;
         }
-        /* Margens laterais/fonte um pouco maiores que a versão anterior
-           deste breakpoint, mas iguais nos três botões -- diferenciar
-           só deixava capenga a alinhamento entre eles. */
+        /* Padding horizontal reduzido -- a versão anterior (6px 6px)
+           tinha ficado com folga demais nos botões, principalmente no
+           Pausar. */
         #top-save-bar .btn-save,
         #top-save-bar .btn-cancel-treino,
         #top-save-bar .btn-pausar-treino {
-            padding: 6px 6px;
+            padding: 6px 4px;
             font-size: 0.86rem;
             gap: 3px;
         }
         #top-save-bar .btn-pausar-treino {
-            min-width: 82px;
+            min-width: 78px;
         }
         #top-save-bar .btn-save i,
         #top-save-bar .btn-cancel-treino i,
