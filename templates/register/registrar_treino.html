@@ -2036,12 +2036,12 @@
         order: 2;
     }
 
-    /* Sino de ativar/desativar o alarme sonoro do intervalo -- mesmo
-       "order" da ampulheta/label (1) pra ficar logo ao lado dela, antes
-       do display. Com o grupo todo centralizado (justify-content:center
-       na caixa), a ordem só decide a sequência interna do grupo. */
+    /* Sino de ativar/desativar o alarme sonoro do intervalo -- vem ANTES
+       da ampulheta/label (order 1) nessa fileira, antes do display.
+       Com o grupo todo centralizado (justify-content:center na caixa),
+       a ordem só decide a sequência interna do grupo. */
     #cronoIntervaloBox #cronoIntervaloBtnAlarme {
-        order: 1;
+        order: 0;
     }
 
     .btn-alarme-toggle {
