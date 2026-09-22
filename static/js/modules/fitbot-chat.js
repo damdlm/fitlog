@@ -21,13 +21,13 @@
     var DURACAO_ESTADO_TALKING_MS = 2500;
     var DURACAO_ESTADO_ERROR_MS = 3000;
     var DURACAO_ESTADO_BYE_MS = 1200; // usado ao FECHAR o chat (despedirEFechar) -- fechamento continua rápido
-    // Duração do "tchau.mp4" especificamente na ABERTURA do chat. Precisa ser
-    // maior que DURACAO_ESTADO_BYE_MS: o crossfade de entrada do vídeo sozinho
-    // já consome CROSSFADE_DURACAO_MS (1000ms), então com um valor curto o
-    // vídeo mal termina de aparecer e o código já manda trocar pro idle --
-    // dá a sensação de "pular" de um vídeo pro outro sem o primeiro ser visto.
-    var DURACAO_ESTADO_BYE_ABERTURA_MS = 2200;
-    var DURACAO_ATRASO_ABERTURA_MS = 400; // tempo que o quadro do robô fica escondido ao abrir o chat
+    // Duração que o "tchau.mp4" fica exibido na ABERTURA do chat, contada a
+    // partir do momento em que ele REALMENTE fica visível (callback
+    // aoFicarVisivel de setState/ativarVideoComPreload) -- nunca a partir da
+    // troca de estado em si. Contar a partir da troca de estado foi a causa
+    // real do vídeo seguinte começar a aparecer por cima do primeiro ainda
+    // no meio do fade-in em conexões/dispositivos mais lentos.
+    var DURACAO_ESTADO_BYE_ABERTURA_MS = 1800;
 
     // Vídeos "de humor" do FitBot — sem significado fixo, só para
     // deixar a espera mais divertida. Um é sorteado toda vez que o
@@ -100,18 +100,18 @@
 
     var elWidget, elModal, elMessages, elForm, elTextarea, elSendBtn,
         elImageInput, elImageBtn, elImagePreview, elImagePreviewThumb,
-        elImageRemoveBtn, elTyping, elIdleVideoA, elIdleVideoB, elCloseBtn,
-        elAvatarCorner;
+        elImageRemoveBtn, elTyping, elIdleVideoA, elIdleVideoB, elCloseBtn;
 
     // elIdleAtivo é o buffer visível agora; elIdleInativo é onde o
     // próximo vídeo é pré-carregado antes do crossfade (double buffer).
     var elIdleAtivo = null;
     var elIdleInativo = null;
-
     var ultimoVideoAleatorioIdle = null;
     var proximoIdleEhPadrao = false;
     var idleRotationTimeoutId = null;
     var idleBufferPreparado = null; // buffer (A ou B) já carregado/decodificado, pronto pra ativar sem espera de rede
+    var idleBufferEmCarregamento = null; // buffer que está no meio de um load() ainda sem loadedmetadata (evita 2 loads concorrentes no mesmo buffer)
+    var idleAoTerminarCarregamento = null; // callback de quem pediu o vídeo idle enquanto um load já estava em andamento (ver sortearVideoIdle)
     var DURACAO_ROTACAO_IDLE_FALLBACK_MS = 6000; // usado só se não der pra ler a duração do vídeo
 
     var historico = [];               // [{papel: 'usuario'|'bot', texto: '...'}]
@@ -148,7 +148,6 @@
         elIdleAtivo = elIdleVideoA;
         elIdleInativo = elIdleVideoB;
         elCloseBtn = elModal.querySelector('[data-bs-dismiss="modal"]');
-        elAvatarCorner = elWidget.querySelector('.fitbot-avatar-corner');
 
         setState('idle');
 
@@ -192,24 +191,19 @@
             aberturaTimeoutId = null;
         }
 
-        // O quadro do robô fica escondido por um tempo antes de aparecer.
-        if (elAvatarCorner) {
-            elAvatarCorner.classList.add('is-hidden-inicio');
-        }
+        // Sem atraso artificial: o quadro aparece desde já. Quem controla o
+        // que fica visível é só a opacidade de cada <video> (ver CSS).
 
-        aberturaTimeoutId = setTimeout(function () {
-            if (elAvatarCorner) {
-                elAvatarCorner.classList.remove('is-hidden-inicio');
-            }
+        // Já carrega o próximo vídeo idle em paralelo, desde o início --
+        // assim, quando a troca pro idle acontecer (depois do tchau.mp4),
+        // o vídeo já está pronto e a troca é imediata, sem espera de rede.
+        prepararProximoVideoIdle();
 
-            setState('bye'); // sempre inicia com o vídeo "tchau.mp4"
-
-            // Já carrega o próximo vídeo idle em paralelo, enquanto o
-            // "tchau.mp4" ainda está na tela -- assim, quando o timeout
-            // abaixo trocar pro idle, o vídeo já está pronto (sem espera
-            // de rede) e a troca fica suave.
-            prepararProximoVideoIdle();
-
+        // "aoFicarVisivel" só dispara quando o tchau.mp4 de fato terminou
+        // de decodificar o primeiro frame e começou seu fade-in -- o timer
+        // de quanto tempo ele fica em tela conta a partir DAÍ, nunca do
+        // instante em que mandamos trocar de estado (ver constante acima).
+        setState('bye', function aoFicarVisivel() {
             aberturaTimeoutId = setTimeout(function () {
                 setState('idle');
                 if (primeiraVez) {
@@ -217,22 +211,27 @@
                 }
                 aberturaTimeoutId = null;
             }, DURACAO_ESTADO_BYE_ABERTURA_MS);
-        }, DURACAO_ATRASO_ABERTURA_MS);
+        });
     }
 
     function despedirEFechar() {
-        setState('bye');
-        setTimeout(function () {
-            var instancia = bootstrap.Modal.getOrCreateInstance(elModal);
-            instancia.hide();
-            setState('idle');
-        }, DURACAO_ESTADO_BYE_MS);
+        setState('bye', function aoFicarVisivel() {
+            setTimeout(function () {
+                var instancia = bootstrap.Modal.getOrCreateInstance(elModal);
+                instancia.hide();
+                setState('idle');
+            }, DURACAO_ESTADO_BYE_MS);
+        });
     }
 
     /* ------------------------------------------------------------
        Máquina de estados do robô
        ------------------------------------------------------------ */
-    function setState(novoEstado) {
+    // aoFicarVisivel (opcional): chamado quando o vídeo do novo estado
+    // realmente terminou de aparecer (não antes) -- ver ativarVideoComPreload.
+    // Só se aplica a estados de vídeo único (bye/talking/error/thinking);
+    // pro 'idle' (dois buffers, crossfade próprio) não é usado.
+    function setState(novoEstado, aoFicarVisivel) {
         if (estadoTimeoutId) {
             clearTimeout(estadoTimeoutId);
             estadoTimeoutId = null;
@@ -257,10 +256,10 @@
             sortearVideoIdle();
         }
 
-        trocarVideoAtivo(novoEstado);
+        trocarVideoAtivo(novoEstado, aoFicarVisivel);
     }
 
-    function trocarVideoAtivo(estado) {
+    function trocarVideoAtivo(estado, aoFicarVisivel) {
         var videos = elWidget.querySelectorAll('.fitbot-avatar-frame video');
         for (var i = 0; i < videos.length; i++) {
             var video = videos[i];
@@ -289,7 +288,7 @@
                 continue;
             }
 
-            ativarVideoComPreload(video);
+            ativarVideoComPreload(video, aoFicarVisivel);
         }
     }
 
@@ -298,8 +297,14 @@
     // que acontecia quando o vídeo estava pausado numa posição antiga
     // (ex.: "tchau.mp4" da última vez que o chat foi aberto) e a gente
     // tentava mostrar ele já em fade antes do navegador ter o frame pronto.
-    function ativarVideoComPreload(video) {
-        if (video.classList.contains('is-active')) return;
+    // aoAtivar (opcional): chamado assim que a classe is-active é aplicada
+    // (o vídeo começou a de fato aparecer) -- é o que permite a quem chamou
+    // contar o "tempo em tela" a partir da aparição real, não da intenção.
+    function ativarVideoComPreload(video, aoAtivar) {
+        if (video.classList.contains('is-active')) {
+            if (aoAtivar) aoAtivar();
+            return;
+        }
 
         function tocarEEsmaecer() {
             var promessa = video.play();
@@ -307,6 +312,7 @@
                 requestAnimationFrame(function () {
                     requestAnimationFrame(function () {
                         video.classList.add('is-active');
+                        if (aoAtivar) aoAtivar();
                     });
                 });
             }
@@ -375,55 +381,26 @@
         }
     }
 
-    // Carrega o próximo vídeo idle no buffer escondido e decodifica o
-    // primeiro frame, SEM ativar/crossfade ainda -- permite chamar isso
-    // com antecedência (ex.: enquanto "tchau.mp4" ainda está na tela, na
-    // abertura do chat) pra eliminar a espera de rede na hora de ativar.
-    function prepararProximoVideoIdle() {
-        if (!elIdleInativo || idleBufferPreparado === elIdleInativo) return;
-
-        var proximoNome = escolherProximoVideoIdle();
-        var bufferAlvo = elIdleInativo;
-
-        bufferAlvo.src = PASTA_VIDEOS + proximoNome;
-        bufferAlvo.load();
-
-        bufferAlvo.addEventListener('loadedmetadata', function aoCarregar() {
-            bufferAlvo.removeEventListener('loadedmetadata', aoCarregar);
-
-            var promessaPreload = bufferAlvo.play();
-            function marcarPronto() {
-                idleBufferPreparado = bufferAlvo;
-            }
-            if (promessaPreload && promessaPreload.then) {
-                promessaPreload.then(marcarPronto).catch(marcarPronto);
-            } else {
-                marcarPronto();
-            }
-        });
-    }
-
-    function sortearVideoIdle() {
-        if (!elIdleInativo) return;
-
-        // Já tem um vídeo pré-carregado pronto (ver prepararProximoVideoIdle)?
-        // Ativa direto, sem esperar metadados/decodificação -- evita o
-        // engasgo/pulo bem na troca do "tchau.mp4" pro idle na abertura.
-        if (idleBufferPreparado === elIdleInativo) {
-            var bufferPronto = elIdleInativo;
-            idleBufferPreparado = null;
-            requestAnimationFrame(function () {
-                requestAnimationFrame(function () {
-                    iniciarCrossfadeIdle(bufferPronto);
-                });
-            });
-            agendarProximaRotacaoIdle();
+    // Carrega um vídeo idle num buffer específico e decodifica o primeiro
+    // frame, SEM ativar/crossfade ainda -- usado tanto pelo pré-carregamento
+    // antecipado (prepararProximoVideoIdle, ex.: enquanto "tchau.mp4" ainda
+    // está na tela) quanto pela troca normal de idle (sortearVideoIdle).
+    // Ter um ÚNICO caminho de carregamento, com o guard de
+    // idleBufferEmCarregamento abaixo, é o que evita dois carregamentos
+    // concorrentes no MESMO buffer -- foi essa disputa (o preload inicial da
+    // página e o preload da abertura do chat competindo pelo mesmo buffer
+    // ao mesmo tempo) que causava vídeos se atravessando/travando quando o
+    // chat era aberto antes do vídeo idle inicial da página terminar de
+    // carregar (comum em conexão mais lenta).
+    function carregarVideoIdleNoBuffer(bufferAlvo, aoPronto) {
+        if (idleBufferPreparado === bufferAlvo) {
+            if (aoPronto) aoPronto();
             return;
         }
+        if (idleBufferEmCarregamento === bufferAlvo) return; // já tem um load() em andamento pra esse buffer -- não duplica
 
+        idleBufferEmCarregamento = bufferAlvo;
         var proximoNome = escolherProximoVideoIdle();
-        var bufferAlvo = elIdleInativo; // carrega o próximo vídeo no buffer que está escondido agora
-
         bufferAlvo.src = PASTA_VIDEOS + proximoNome;
         bufferAlvo.load();
 
@@ -434,28 +411,85 @@
         // "piscar").
         bufferAlvo.addEventListener('loadedmetadata', function aoCarregar() {
             bufferAlvo.removeEventListener('loadedmetadata', aoCarregar);
+            if (idleBufferEmCarregamento === bufferAlvo) idleBufferEmCarregamento = null;
 
             var promessaPreload = bufferAlvo.play();
+            function marcarPronto() {
+                idleBufferPreparado = bufferAlvo;
+                if (aoPronto) aoPronto();
+                // Alguém (sortearVideoIdle) pode ter pedido esse mesmo buffer
+                // enquanto o load já estava em andamento por outra via (ex.:
+                // prepararProximoVideoIdle) -- avisa agora que terminou.
+                if (idleAoTerminarCarregamento) {
+                    var cb = idleAoTerminarCarregamento;
+                    idleAoTerminarCarregamento = null;
+                    cb();
+                }
+            }
             if (promessaPreload && promessaPreload.then) {
-                promessaPreload.then(function () {
-                    // Aguarda dois frames pintados antes de iniciar o fade,
-                    // garantindo que o primeiro frame do novo vídeo já
-                    // está decodificado e visível assim que a opacidade
-                    // começar a subir.
-                    requestAnimationFrame(function () {
-                        requestAnimationFrame(function () {
-                            iniciarCrossfadeIdle(bufferAlvo);
-                        });
-                    });
-                }).catch(function () {
-                    iniciarCrossfadeIdle(bufferAlvo);
-                });
+                promessaPreload.then(marcarPronto).catch(marcarPronto);
             } else {
-                iniciarCrossfadeIdle(bufferAlvo);
+                marcarPronto();
+            }
+        });
+    }
+
+    // Carrega o próximo vídeo idle no buffer escondido com antecedência,
+    // pra eliminar a espera de rede na hora de ativar (ex.: chamado na
+    // abertura do chat, enquanto "tchau.mp4" ainda está na tela).
+    function prepararProximoVideoIdle() {
+        if (!elIdleInativo) return;
+        carregarVideoIdleNoBuffer(elIdleInativo, null);
+    }
+
+    function sortearVideoIdle() {
+        if (!elIdleInativo) return;
+
+        var bufferAlvo = elIdleInativo;
+
+        function ativarAgora() {
+            idleBufferPreparado = null;
+
+            // Se o estado do robô mudou enquanto esse vídeo carregava (ex.:
+            // usuário já fechou o chat, ou já entrou em "thinking"/"bye"
+            // antes do load terminar -- comum em conexão lenta), NÃO ativa
+            // por cima do que está na tela agora. Só marca como pronto:
+            // na próxima vez que o idle realmente entrar de verdade, o
+            // fast-path abaixo (idleBufferPreparado === bufferAlvo) usa
+            // esse mesmo vídeo já carregado, sem gastar rede de novo.
+            if (!elWidget.classList.contains('is-idle')) {
+                idleBufferPreparado = bufferAlvo;
+                return;
             }
 
+            // Consome o vídeo pré-carregado: se ele ainda for o buffer
+            // "escondido" atual, ativa com crossfade. Aguarda dois frames
+            // pintados antes do fade, garantindo que o primeiro frame já
+            // está decodificado e visível assim que a opacidade começar
+            // a subir.
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    iniciarCrossfadeIdle(bufferAlvo);
+                });
+            });
             agendarProximaRotacaoIdle();
-        });
+        }
+
+        if (idleBufferPreparado === bufferAlvo) {
+            ativarAgora();
+            return;
+        }
+
+        if (idleBufferEmCarregamento === bufferAlvo) {
+            // Já tem um load em andamento pra esse buffer (disparado por
+            // prepararProximoVideoIdle) -- espera ele terminar em vez de
+            // disparar um load() concorrente por cima (era essa disputa
+            // que corrompia o carregamento e travava a troca).
+            idleAoTerminarCarregamento = ativarAgora;
+            return;
+        }
+
+        carregarVideoIdleNoBuffer(bufferAlvo, ativarAgora);
     }
 
     function agendarProximaRotacaoIdle() {
