@@ -1792,19 +1792,28 @@
         margin-bottom: 1.25rem;
     }
 
+    /* Padding/gap em clamp() -- escala suavemente com a largura da tela
+       em vez de valores fixos. Antes, essa regra base só entrava em
+       telas ≥576px (abaixo disso os breakpoints mais estreitos, logo
+       adiante, já assumem) -- só que nessa faixa mais larga o padding
+       fixo (10px 16px) somado ao justify-content: space-between jogava
+       TODO o espaço sobrando dentro de um único vão, entre o
+       cronômetro e os botões, em vez de distribuir proporcionalmente.
+       Com clamp(), o espaçamento cresce de forma gradual conforme a
+       tela alarga, sem esse salto desproporcional. */
     #top-save-bar,
     #cronoIntervaloBox {
         background: #fff;
         box-shadow: 0 4px 16px rgba(45, 45, 45, 0.10);
         border-radius: var(--radius-md);
-        padding: 10px 16px;
+        padding: clamp(8px, 1.6vw, 10px) clamp(8px, 2.6vw, 16px);
     }
 
     #top-save-bar {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
+        gap: clamp(6px, 2vw, 12px);
     }
 
     #top-save-bar .top-save-bar-crono {
@@ -1815,7 +1824,7 @@
     #top-save-bar .top-save-bar-crono-value {
         font-family: 'Courier New', ui-monospace, monospace;
         font-variant-numeric: tabular-nums;
-        font-size: 1.85rem;
+        font-size: clamp(1.65rem, 3.2vw, 1.85rem);
         font-weight: 700;
         line-height: 1;
         color: var(--dark-bg);
@@ -1828,7 +1837,7 @@
         align-items: center;
         justify-content: center;
         height: 38px;
-        padding: 0 14px;
+        padding: 0 clamp(8px, 2.4vw, 14px);
         box-sizing: border-box;
         border: 2px solid var(--primary-orange);
         border-radius: var(--radius-md);
@@ -1840,10 +1849,10 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 4px;
+        gap: clamp(3px, 1vw, 4px);
         height: 38px;
-        padding: 0 8px;
-        font-size: 0.92rem;
+        padding: 0 clamp(5px, 1.6vw, 8px);
+        font-size: clamp(0.82rem, 1.8vw, 0.92rem);
         white-space: nowrap;
         font-weight: 600;
         letter-spacing: .1px;
@@ -1888,7 +1897,7 @@
     #top-save-bar .top-save-bar-actions {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: clamp(3px, 1vw, 4px);
         flex-shrink: 0;
     }
 
