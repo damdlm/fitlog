@@ -1781,16 +1781,7 @@
        enquanto o usuário rola a tela. Agrupa duas fileiras que sobem e
        descem juntas: o cronômetro do treino + botão Finalizar (quando
        há exercícios carregados) e o cronômetro de intervalo entre
-       séries, sempre visível, em formato compacto/horizontal.
-       max-width + margin auto -- em telas mais largas que um celular
-       comum (tablet, ou o .container do Bootstrap ficando bem largo),
-       essa barra passava a esticar de ponta a ponta, e como o
-       cronômetro e os botões ficam nas duas pontas (justify-content:
-       space-between), TODO aquele espaço sobrando virava um vão
-       enorme entre os dois -- em vez de mexer no tamanho do texto (o
-       que só piora a leitura), a correção certa é não deixar a barra
-       esticar tanto assim. Fica centralizada com uma largura de celular
-       "confortável" em telas maiores. */
+       séries, sempre visível, em formato compacto/horizontal. */
     #top-sticky-bar {
         position: sticky;
         top: var(--navbar-height, 64px);
@@ -1799,10 +1790,6 @@
         flex-direction: column;
         gap: 8px;
         margin-bottom: 1.25rem;
-        max-width: 480px;
-        margin-left: auto;
-        margin-right: auto;
-        width: 100%;
     }
 
     #top-save-bar,
@@ -1813,11 +1800,21 @@
         padding: 10px 16px;
     }
 
+    /* flex-start (não space-between) -- cronômetro e os 3 botões ficam
+       um grupo só, grudados, com um gap fixo entre eles. Com
+       space-between, os dois grupos iam cada um pra uma ponta da barra
+       e TODO o espaço sobrando (que numa tela de celular é bastante,
+       já que o conteúdo é bem menor que a largura toda) virava um vão
+       enorme entre o cronômetro e o Cancelar. Com flex-start, esse
+       espaço sobrando vira uma margem discreta depois do Salvar, em vez
+       de rachar os elementos ao meio -- e o visual fica igual em
+       qualquer largura de tela, sem depender de max-width nem de
+       cálculo de vw. */
     #top-save-bar {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 12px;
+        justify-content: flex-start;
+        gap: 10px;
     }
 
     #top-save-bar .top-save-bar-crono {
@@ -1833,20 +1830,25 @@
         line-height: 1;
         color: var(--dark-bg);
         /* Altura fixa (não padding vertical) pra bater exatamente com a
-           altura dos botões (Cancelar/Pausar/Salvar, todos 38px) -- com
+           altura dos botões (Cancelar/Pausar/Salvar, todos 40px) -- com
            padding vertical, a caixa crescia/encolhia junto com o
            font-size de cada breakpoint e nunca alinhava certinho com os
            botões ao lado. */
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        height: 38px;
+        height: 40px;
         padding: 0 14px;
         box-sizing: border-box;
         border: 2px solid var(--primary-orange);
         border-radius: var(--radius-md);
     }
 
+    /* Os 3 botões (Cancelar/Pausar/Salvar) do MESMO tamanho -- uma
+       versão anterior deixava só Cancelar/Pausar maiores que Salvar
+       "de propósito", pra dar mais destaque a eles, mas na prática só
+       deixou os três com alturas/fontes desencontradas e capengas.
+       Tamanho único, maior que o original, nos três. */
     #top-save-bar .btn-save,
     #top-save-bar .btn-cancel-treino,
     #top-save-bar .top-save-bar-actions .btn-pausar-treino {
@@ -1854,9 +1856,9 @@
         align-items: center;
         justify-content: center;
         gap: 4px;
-        height: 38px;
-        padding: 0 8px;
-        font-size: 0.92rem;
+        height: 40px;
+        padding: 0 11px;
+        font-size: 1rem;
         white-space: nowrap;
         font-weight: 600;
         letter-spacing: .1px;
@@ -1874,22 +1876,7 @@
         transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
     }
 
-    /* Cancelar e Pausar são maiores que Salvar de propósito -- são os
-       dois botões que o usuário mais precisa achar/tocar rápido em
-       pleno treino (interromper ou seguir), então ganham mais destaque
-       que Salvar (que só é usado uma vez, no final). */
-    #top-save-bar .btn-cancel-treino,
-    #top-save-bar .top-save-bar-actions .btn-pausar-treino {
-        font-size: 1rem;
-        padding: 0 11px;
-    }
-
     #top-save-bar .btn-save i,
-    #top-save-bar .btn-cancel-treino i,
-    #top-save-bar .top-save-bar-actions .btn-pausar-treino i {
-        font-size: 0.95rem;
-    }
-
     #top-save-bar .btn-cancel-treino i,
     #top-save-bar .top-save-bar-actions .btn-pausar-treino i {
         font-size: 1.02rem;
@@ -1916,7 +1903,7 @@
     #top-save-bar .top-save-bar-actions {
         display: flex;
         align-items: center;
-        gap: clamp(3px, 1vw, 4px);
+        gap: 6px;
         flex-shrink: 0;
     }
 
@@ -1982,33 +1969,20 @@
         #top-save-bar .top-save-bar-actions {
             gap: 3px;
         }
-        /* Margens laterais dos 3 botões reduzidas (padding horizontal
-           menor) SEM mexer na fonte -- é isso que garante que
-           "Finalizar" caiba inteiro sem cortar nas telas mais estreitas. */
+        /* Margens laterais/fonte um pouco maiores que a versão anterior
+           deste breakpoint, mas iguais nos três botões -- diferenciar
+           só deixava capenga a alinhamento entre eles. */
         #top-save-bar .btn-save,
         #top-save-bar .btn-cancel-treino,
         #top-save-bar .btn-pausar-treino {
-            padding: 6px 5px;
-            font-size: 0.82rem;
-            gap: 3px;
-        }
-        /* Cancelar/Pausar continuam um pouco maiores que Salvar aqui
-           também -- só um pouco, pra não arriscar o "Finalizar" cortar
-           (é a palavra mais longa dos três, por isso ficou de fora
-           desse aumento). */
-        #top-save-bar .btn-cancel-treino,
-        #top-save-bar .btn-pausar-treino {
-            font-size: 0.88rem;
             padding: 6px 6px;
+            font-size: 0.86rem;
+            gap: 3px;
         }
         #top-save-bar .btn-pausar-treino {
             min-width: 82px;
         }
         #top-save-bar .btn-save i,
-        #top-save-bar .btn-cancel-treino i,
-        #top-save-bar .btn-pausar-treino i {
-            font-size: 0.78rem;
-        }
         #top-save-bar .btn-cancel-treino i,
         #top-save-bar .btn-pausar-treino i {
             font-size: 0.86rem;
@@ -2031,17 +2005,9 @@
         #top-save-bar .btn-save,
         #top-save-bar .btn-cancel-treino,
         #top-save-bar .btn-pausar-treino {
-            padding: 6px 4px;
-            font-size: 0.7rem;
-            gap: 2px;
-        }
-        /* Cancelar ganha um pouco mais aqui também -- Pausar já perde o
-           texto embaixo (só ícone), então o "aumento" dele vira maior
-           ícone, não fonte. Salvar ("Finalizar") continua o menor dos
-           três pra não arriscar cortar nessa largura tão apertada. */
-        #top-save-bar .btn-cancel-treino {
-            font-size: 0.76rem;
             padding: 6px 5px;
+            font-size: 0.74rem;
+            gap: 2px;
         }
         /* Com 3 botões + cronômetro nessa largura, o texto "Pausar"/
            "Retomar" é o mais dispensável -- vira só ícone pra garantir
