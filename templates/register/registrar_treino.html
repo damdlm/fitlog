@@ -3047,6 +3047,16 @@
         .modo-treino-body #registroForm {
             display: grid;
             grid-template-columns: minmax(0, 1fr) 300px;
+            /* Sem isso, em monitor bem largo a coluna principal esticava
+               até o fim da tela (o overlay é position:fixed inset:0,
+               não tem o max-width do .container do Bootstrap que as
+               outras telas do site têm) -- daí cada exercise-row também
+               esticava, e como o nome não precisa de tanto espaço,
+               sobrava um vão enorme antes de carga/repetições/séries.
+               1200px é a largura total (lista + gap + resumo) a partir
+               da qual passa a sobrar espaço nas laterais em vez de
+               esticar o conteúdo. */
+            max-width: 1200px;
             /* Linhas explícitas (folga generosa -- nenhum treino chega
                perto de 30 exercícios) só pra "-1" na regra do resumo,
                logo abaixo, conseguir apontar pro fim do grid de verdade:
@@ -3103,6 +3113,65 @@
         .modo-treino-body #registroForm > .resumo-treino-box .resumo-treino-inner > div:last-child {
             border-bottom: none;
             padding-bottom: 0;
+        }
+
+        /* Cabeçalho/rodapé (cronômetro+ações, cronômetro de intervalo):
+           a regra antiga (.modo-treino-header > *, mais acima neste
+           arquivo) centraliza um bloco de 640px no meio da tela INTEIRA
+           -- fazia sentido sozinha, mas ficou desalinhada da lista +
+           resumo lateral novos, que começam a 38px da borda (14px de
+           .modo-treino-body + 24px do .card-body.p-4) e vão até 38px da
+           borda oposta, não fixos em 640px. Troca o bloco centralizado
+           por um com a MESMA margem lateral do conteúdo abaixo, pra
+           cronômetro/botões ficarem alinhados com a lista+resumo. */
+        /* 38px é o mesmo recuo do conteúdo abaixo (14px do
+           .modo-treino-body + 24px do .card-body.p-4) -- os dois
+           descontam o padding horizontal que cada um já tem
+           (.modo-treino-header: 6px; .modo-treino-footer: 14px) pra a
+           borda esquerda bater exatamente com a da lista/resumo. */
+        .modo-treino-header > * {
+            margin-left: 32px;
+            margin-right: auto;
+        }
+        .modo-treino-footer > * {
+            margin-left: 24px;
+            margin-right: auto;
+        }
+        /* #cronoIntervaloBox.cronometro-box (ID+classe) tem um "margin:0
+           auto" próprio que pesa mais que a regra genérica acima --
+           precisa da mesma combinação ID+classe aqui pra vencer o
+           empate e realinhar o cronômetro de intervalo (com sino,
+           display, play/zerar e os presets 30s-3:00, tudo dentro dessa
+           mesma caixa) junto com o resto. */
+        #cronoIntervaloBox.cronometro-box {
+            margin: 0 auto 0 24px;
+        }
+
+        /* Card de exercício: as duas colunas (ícone+nome+badges / check+
+           campos+concluir) são centralizadas uma contra a outra
+           (align-items-center do Bootstrap) -- funciona bem quando as
+           duas têm altura parecida, mas quando o exercício tem "últimos
+           valores" (badges "25kg 10x 4 séries" abaixo do nome), a
+           coluna da esquerda fica mais alta e os botões/campos da
+           direita (interruptor, campos, concluir) descem pra ficar
+           centralizados contra ELA -- saem da mesma linha do ícone/nome
+           /instruções. Alinhar as duas pelo TOPO em vez de centralizar
+           resolve, e funciona igual com ou sem badges. */
+        .modo-treino-body .exercise-row .row.align-items-center {
+            align-items: flex-start !important;
+        }
+
+        /* As duas colunas do card vêm 50/50 do Bootstrap (.col-md-6) --
+           sobra muito pra ícone+nome (que raramente precisa de metade
+           da largura) e o vão fica vazio antes de carga/repetições/
+           séries. 38/62 aproxima melhor do que cada lado realmente usa. */
+        .modo-treino-body .exercise-row .row.align-items-center > .col-12.col-md-6:first-child {
+            flex: 0 0 38%;
+            max-width: 38%;
+        }
+        .modo-treino-body .exercise-row .row.align-items-center > .col-12.col-md-6:last-child {
+            flex: 0 0 62%;
+            max-width: 62%;
         }
 
         /* Cards de exercício com mais respiro e hover pensado pra mouse
