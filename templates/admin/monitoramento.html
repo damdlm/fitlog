@@ -27,7 +27,7 @@
         </div>
         <div id="mon-processo-conteudo" class="row g-4">
             <div class="col-6 col-md-3">
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Soma do uso de CPU de todos os workers do Gunicorn, em % de um núcleo.">CPU (todos os workers)</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Soma do uso de CPU de todos os workers do Gunicorn, em % de um núcleo.">CPU (todos os workers)</div>
                 <div class="d-flex align-items-center gap-2">
                     <div class="progress flex-grow-1" style="height: 8px;">
                         <div id="mon-cpu-processo-bar" class="progress-bar" style="width:0%; background-color:#F28C33;"></div>
@@ -36,7 +36,7 @@
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Uso de CPU do servidor inteiro, incluindo processos fora do Fitlog.">CPU (sistema)</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Uso de CPU do servidor inteiro, incluindo processos fora do Fitlog.">CPU (sistema)</div>
                 <div class="d-flex align-items-center gap-2">
                     <div class="progress flex-grow-1" style="height: 8px;">
                         <div id="mon-cpu-sistema-bar" class="progress-bar" style="width:0%; background-color:#F28C33;"></div>
@@ -45,11 +45,11 @@
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Soma da memória RAM usada por todos os workers do Gunicorn.">Memória (todos os workers)</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Soma da memória RAM usada por todos os workers do Gunicorn.">Memória (todos os workers)</div>
                 <div class="fw-bold" id="mon-mem-processo-val">--</div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Uso de memória RAM do servidor inteiro.">Memória (sistema)</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Uso de memória RAM do servidor inteiro.">Memória (sistema)</div>
                 <div class="d-flex align-items-center gap-2">
                     <div class="progress flex-grow-1" style="height: 8px;">
                         <div id="mon-mem-sistema-bar" class="progress-bar" style="width:0%; background-color:#F28C33;"></div>
@@ -58,15 +58,15 @@
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Total de threads ativas somando todos os workers.">Threads</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Total de threads ativas somando todos os workers.">Threads</div>
                 <div class="fw-bold" id="mon-threads-val">--</div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Há quanto tempo o worker atual está rodando sem reiniciar.">Uptime (worker)</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Há quanto tempo o worker atual está rodando sem reiniciar.">Uptime (worker)</div>
                 <div class="fw-bold" id="mon-uptime-val">--</div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Identificador do processo do worker que respondeu esta requisição -- pode mudar a cada acesso, já que há vários workers.">PID (worker atual)</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Identificador do processo do worker que respondeu esta requisição -- pode mudar a cada acesso, já que há vários workers.">PID (worker atual)</div>
                 <div class="fw-bold" id="mon-pid-val">--</div>
             </div>
         </div>
@@ -104,16 +104,18 @@
                     <i class="bi bi-exclamation-circle"></i> <span id="mon-banco-erro"></span>
                 </div>
                 <div id="mon-banco-conteudo">
+                    <div class="table-responsive">
                     <table class="table table-sm mb-0">
                         <tbody>
-                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" title="O tipo de banco de dados usado.">Dialeto</td><td class="text-end fw-bold" id="mon-db-dialeto">--</td></tr>
-                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" title="Espaço em disco ocupado pelo banco de dados inteiro.">Tamanho</td><td class="text-end fw-bold" id="mon-db-tamanho">--</td></tr>
-                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" title="Quantas conexões existem no banco agora, e quantas estão realmente em uso neste instante.">Conexões (total / ativas)</td><td class="text-end fw-bold" id="mon-db-conexoes">--</td></tr>
-                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" title="Número máximo de conexões simultâneas que o banco aceita antes de recusar novas.">Limite de conexões</td><td class="text-end fw-bold" id="mon-db-max-conexoes">--</td></tr>
-                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" title="Percentual de leituras que vieram da memória do Postgres em vez do disco -- quanto mais perto de 100%, melhor a performance.">Cache hit ratio</td><td class="text-end fw-bold" id="mon-db-hit-ratio">--</td></tr>
-                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" title="Conexões do pool do SQLAlchemy: quantas em uso, o tamanho normal do pool, e quantas extras (overflow) foram abertas além do normal.">Pool (em uso / tamanho / overflow)</td><td class="text-end fw-bold" id="mon-db-pool">--</td></tr>
+                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" tabindex="0" title="O tipo de banco de dados usado.">Dialeto</td><td class="text-end fw-bold" id="mon-db-dialeto">--</td></tr>
+                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Espaço em disco ocupado pelo banco de dados inteiro.">Tamanho</td><td class="text-end fw-bold" id="mon-db-tamanho">--</td></tr>
+                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Quantas conexões existem no banco agora, e quantas estão realmente em uso neste instante.">Conexões (total / ativas)</td><td class="text-end fw-bold" id="mon-db-conexoes">--</td></tr>
+                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Número máximo de conexões simultâneas que o banco aceita antes de recusar novas.">Limite de conexões</td><td class="text-end fw-bold" id="mon-db-max-conexoes">--</td></tr>
+                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Percentual de leituras que vieram da memória do Postgres em vez do disco -- quanto mais perto de 100%, melhor a performance.">Cache hit ratio</td><td class="text-end fw-bold" id="mon-db-hit-ratio">--</td></tr>
+                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Conexões do pool do SQLAlchemy: quantas em uso, o tamanho normal do pool, e quantas extras (overflow) foram abertas além do normal.">Pool (em uso / tamanho / overflow)</td><td class="text-end fw-bold" id="mon-db-pool">--</td></tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -130,16 +132,18 @@
                     <i class="bi bi-exclamation-circle"></i> <span id="mon-cache-erro"></span>
                 </div>
                 <div id="mon-cache-conteudo">
+                    <div class="table-responsive">
                     <table class="table table-sm mb-0">
                         <tbody>
-                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" title="Versão do Redis rodando.">Versão</td><td class="text-end fw-bold" id="mon-cache-versao">--</td></tr>
-                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" title="Memória que o Redis está usando agora, e o pico histórico desde que o processo começou.">Memória usada (pico)</td><td class="text-end fw-bold" id="mon-cache-memoria">--</td></tr>
-                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" title="Quantas conexões ativas existem com o Redis agora (workers do app, crons, etc).">Clientes conectados</td><td class="text-end fw-bold" id="mon-cache-clientes">--</td></tr>
-                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" title="Quantidade de chaves guardadas no cache neste momento.">Total de chaves</td><td class="text-end fw-bold" id="mon-cache-chaves">--</td></tr>
-                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" title="Percentual de vezes que o app pediu algo ao cache e encontrou, em vez de precisar buscar no banco -- quanto maior, melhor.">Hit rate</td><td class="text-end fw-bold" id="mon-cache-hitrate">--</td></tr>
-                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" title="Há quanto tempo o Redis está rodando sem reiniciar.">Uptime</td><td class="text-end fw-bold" id="mon-cache-uptime">--</td></tr>
+                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Versão do Redis rodando.">Versão</td><td class="text-end fw-bold" id="mon-cache-versao">--</td></tr>
+                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Memória que o Redis está usando agora, e o pico histórico desde que o processo começou.">Memória usada (pico)</td><td class="text-end fw-bold" id="mon-cache-memoria">--</td></tr>
+                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Quantas conexões ativas existem com o Redis agora (workers do app, crons, etc).">Clientes conectados</td><td class="text-end fw-bold" id="mon-cache-clientes">--</td></tr>
+                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Quantidade de chaves guardadas no cache neste momento.">Total de chaves</td><td class="text-end fw-bold" id="mon-cache-chaves">--</td></tr>
+                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Percentual de vezes que o app pediu algo ao cache e encontrou, em vez de precisar buscar no banco -- quanto maior, melhor.">Hit rate</td><td class="text-end fw-bold" id="mon-cache-hitrate">--</td></tr>
+                            <tr><td class="text-muted mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Há quanto tempo o Redis está rodando sem reiniciar.">Uptime</td><td class="text-end fw-bold" id="mon-cache-uptime">--</td></tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -153,11 +157,12 @@
     <div class="col-lg-6">
         <div class="card h-100">
             <div class="card-body">
-                <h5 class="card-title mb-3 mon-tip" data-bs-toggle="tooltip" title="Uso de CPU e memória de cada serviço do projeto no Railway, no momento da última captura do cron de monitoramento (pode ter até ~10 minutos de atraso)."><i class="bi bi-hdd-network me-2" style="color: #F28C33;"></i>Railway (infraestrutura)</h5>
+                <h5 class="card-title mb-3 mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Uso de CPU e memória de cada serviço do projeto no Railway, no momento da última captura do cron de monitoramento (pode ter até ~10 minutos de atraso)."><i class="bi bi-hdd-network me-2" style="color: #F28C33;"></i>Railway (infraestrutura)</h5>
                 <div id="mon-railway-indisponivel" class="text-muted small d-none">
                     <i class="bi bi-exclamation-circle"></i> <span id="mon-railway-erro"></span>
                 </div>
                 <div id="mon-railway-conteudo">
+                    <div class="table-responsive">
                     <table class="table table-sm mb-0">
                         <thead>
                             <tr class="text-muted small">
@@ -170,6 +175,7 @@
                             <tr><td colspan="3" class="text-muted">carregando...</td></tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -181,11 +187,12 @@
     <div class="col-lg-6">
         <div class="card h-100">
             <div class="card-body">
-                <h5 class="card-title mb-3 mon-tip" data-bs-toggle="tooltip" title="Quantas vezes o FitBot foi chamado, pra qual provedor de IA, taxa de sucesso, tempo médio de resposta e tokens consumidos, nas últimas 24 horas."><i class="bi bi-robot me-2" style="color: #F28C33;"></i>FitBot (uso de IA) <span class="text-muted small fw-normal">últimas 24h</span></h5>
+                <h5 class="card-title mb-3 mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Quantas vezes o FitBot foi chamado, pra qual provedor de IA, taxa de sucesso, tempo médio de resposta e tokens consumidos, nas últimas 24 horas."><i class="bi bi-robot me-2" style="color: #F28C33;"></i>FitBot (uso de IA) <span class="text-muted small fw-normal">últimas 24h</span></h5>
                 <div id="mon-fitbot-indisponivel" class="text-muted small d-none">
                     <i class="bi bi-exclamation-circle"></i> <span id="mon-fitbot-erro"></span>
                 </div>
                 <div id="mon-fitbot-conteudo">
+                    <div class="table-responsive">
                     <table class="table table-sm mb-0">
                         <thead>
                             <tr class="text-muted small">
@@ -200,6 +207,7 @@
                             <tr><td colspan="5" class="text-muted">carregando...</td></tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -219,19 +227,19 @@
         </div>
         <div id="mon-historico-conteudo" class="row g-4 d-none">
             <div class="col-md-6 col-lg-3">
-                <div class="text-muted small mb-1 mon-tip" data-bs-toggle="tooltip" title="Evolução do uso de CPU do processo nas últimas 24h, por amostras a cada ~10 minutos.">CPU (processo)</div>
+                <div class="text-muted small mb-1 mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Evolução do uso de CPU do processo nas últimas 24h, por amostras a cada ~10 minutos.">CPU (processo)</div>
                 <svg id="mon-spark-cpu" class="mon-sparkline" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
             </div>
             <div class="col-md-6 col-lg-3">
-                <div class="text-muted small mb-1 mon-tip" data-bs-toggle="tooltip" title="Evolução do uso de memória do servidor nas últimas 24h, por amostras a cada ~10 minutos.">Memória (sistema)</div>
+                <div class="text-muted small mb-1 mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Evolução do uso de memória do servidor nas últimas 24h, por amostras a cada ~10 minutos.">Memória (sistema)</div>
                 <svg id="mon-spark-mem" class="mon-sparkline" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
             </div>
             <div class="col-md-6 col-lg-3">
-                <div class="text-muted small mb-1 mon-tip" data-bs-toggle="tooltip" title="Evolução do número de conexões ativas com o banco nas últimas 24h.">Conexões DB (ativas)</div>
+                <div class="text-muted small mb-1 mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Evolução do número de conexões ativas com o banco nas últimas 24h.">Conexões DB (ativas)</div>
                 <svg id="mon-spark-db" class="mon-sparkline" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
             </div>
             <div class="col-md-6 col-lg-3">
-                <div class="text-muted small mb-1 mon-tip" data-bs-toggle="tooltip" title="Evolução da taxa de acerto do cache Redis nas últimas 24h.">Cache hit rate (Redis)</div>
+                <div class="text-muted small mb-1 mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Evolução da taxa de acerto do cache Redis nas últimas 24h.">Cache hit rate (Redis)</div>
                 <svg id="mon-spark-cache" class="mon-sparkline" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
             </div>
         </div>
@@ -250,54 +258,54 @@
         <div id="mon-negocio-conteudo" class="row g-4 text-center">
             <div class="col-6 col-md-3 col-lg">
                 <div class="fs-3 fw-bold" id="mon-total-usuarios">--</div>
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Total de contas ativas no Fitlog (alunos + professores), independente do status de assinatura.">Usuários ativos</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Total de contas ativas no Fitlog (alunos + professores), independente do status de assinatura.">Usuários ativos</div>
             </div>
             <div class="col-6 col-md-3 col-lg">
                 <div class="fs-3 fw-bold" id="mon-total-alunos">--</div>
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Quantidade de contas do tipo aluno.">Alunos</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Quantidade de contas do tipo aluno.">Alunos</div>
             </div>
             <div class="col-6 col-md-3 col-lg">
                 <div class="fs-3 fw-bold" id="mon-total-professores">--</div>
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Quantidade de contas do tipo professor.">Professores</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Quantidade de contas do tipo professor.">Professores</div>
             </div>
             <div class="col-6 col-md-3 col-lg">
                 <div class="fs-3 fw-bold" id="mon-total-treinos">--</div>
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Total de versões de treino já criadas na plataforma.">Treinos cadastrados</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Total de versões de treino já criadas na plataforma.">Treinos cadastrados</div>
             </div>
             <div class="col-6 col-md-3 col-lg">
                 <div class="fs-3 fw-bold" id="mon-registros-hoje">--</div>
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Quantos registros de treino (séries/execuções) foram salvos hoje.">Registros hoje</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Quantos registros de treino (séries/execuções) foram salvos hoje.">Registros hoje</div>
             </div>
             <div class="col-6 col-md-3 col-lg">
                 <div class="fs-3 fw-bold text-success" id="mon-assinaturas-ativas">--</div>
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Assinaturas com status 'active' agora -- geram acesso liberado e contam pro MRR.">Assinaturas ativas</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Assinaturas com status 'active' agora -- geram acesso liberado e contam pro MRR.">Assinaturas ativas</div>
             </div>
             <div class="col-6 col-md-3 col-lg">
                 <div class="fs-3 fw-bold text-warning" id="mon-assinaturas-trial">--</div>
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Contas no período de teste grátis, ainda sem ter pago nada.">Em teste</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Contas no período de teste grátis, ainda sem ter pago nada.">Em teste</div>
             </div>
             <div class="col-6 col-md-3 col-lg">
                 <div class="fs-3 fw-bold text-danger" id="mon-assinaturas-inadimplentes">--</div>
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Assinaturas com pagamento atrasado (past_due) ou já bloqueadas por falta de pagamento (blocked).">Inadimplentes</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Assinaturas com pagamento atrasado (past_due) ou já bloqueadas por falta de pagamento (blocked).">Inadimplentes</div>
             </div>
         </div>
         <hr>
         <div id="mon-negocio-conteudo-2" class="row g-4 text-center">
             <div class="col-6 col-md-3 col-lg">
                 <div class="fs-3 fw-bold text-success" id="mon-mrr">--</div>
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Soma do preço do plano de todas as assinaturas ativas -- quanto a base atual gera de receita recorrente por mês. Inclui Pix, que é cobrado manualmente a cada ciclo, não uma recorrência automática garantida.">MRR estimado</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Soma do preço do plano de todas as assinaturas ativas -- quanto a base atual gera de receita recorrente por mês. Inclui Pix, que é cobrado manualmente a cada ciclo, não uma recorrência automática garantida.">MRR estimado</div>
             </div>
             <div class="col-6 col-md-3 col-lg">
                 <div class="fs-3 fw-bold" id="mon-taxa-conversao">--</div>
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Dos usuários cujo teste grátis terminou nos últimos 30 dias, qual % está com assinatura ativa hoje.">Conversão trial → pago (30d)</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Dos usuários cujo teste grátis terminou nos últimos 30 dias, qual % está com assinatura ativa hoje.">Conversão trial → pago (30d)</div>
             </div>
             <div class="col-6 col-md-3 col-lg">
                 <div class="fs-3 fw-bold" id="mon-taxa-churn">--</div>
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Percentual de assinaturas canceladas nos últimos 30 dias, sobre a base de ativos + cancelados no período.">Churn (30d)</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Percentual de assinaturas canceladas nos últimos 30 dias, sobre a base de ativos + cancelados no período.">Churn (30d)</div>
             </div>
             <div class="col-6 col-md-3 col-lg">
                 <div class="fs-3 fw-bold" id="mon-cancelamentos-30d">--</div>
-                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" title="Número bruto de assinaturas canceladas nos últimos 30 dias -- o valor por trás do % de churn.">Cancelamentos (30d)</div>
+                <div class="text-muted small mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Número bruto de assinaturas canceladas nos últimos 30 dias -- o valor por trás do % de churn.">Cancelamentos (30d)</div>
             </div>
         </div>
     </div>
