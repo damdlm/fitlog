@@ -319,8 +319,14 @@
     window.MON_HISTORICO_API_URL = "{{ url_for('admin.api_monitoramento_historico') }}";
     // Os elementos com tooltip (.mon-tip) são texto estático, nunca
     // recriados pelo JS de refresh -- inicializar uma vez já basta.
-    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-        new bootstrap.Tooltip(el);
+    // Precisa esperar o "load" (não basta o script estar aqui no meio
+    // do <body>): o bootstrap.bundle.min.js só carrega DEPOIS do
+    // {% block content %} inteiro, lá no fim do base.html -- rodar
+    // isso antes do load faz `bootstrap` ainda não existir.
+    window.addEventListener('load', function () {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            new bootstrap.Tooltip(el);
+        });
     });
 </script>
 <script src="{{ static_v('js/admin-monitoramento.js') }}"></script>
