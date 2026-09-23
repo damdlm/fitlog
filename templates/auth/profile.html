@@ -3,6 +3,37 @@
 {% block page_icon %}<i class="bi bi-person-circle" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Meu Perfil{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Mantém Dados / Senha / Privacidade sempre na mesma linha, até no mobile */
+    #profileTabs {
+        flex-wrap: nowrap;
+    }
+    #profileTabs .nav-item {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+    #profileTabs .nav-link {
+        width: 100%;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    @media (max-width: 576px) {
+        #profileTabs .nav-link {
+            padding: 0.6rem 0.4rem;
+            font-size: 0.8rem;
+        }
+        #profileTabs .nav-link i {
+            display: block;
+            margin: 0 0 0.15rem 0 !important;
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
@@ -19,20 +50,20 @@
                         <button class="nav-link active" id="dados-tab" data-bs-toggle="tab" 
                                 data-bs-target="#dados" type="button" role="tab"
                                 style="color: #F28C33; font-weight: 600;">
-                            <i class="bi bi-person me-2"></i>Dados
+                            <i class="bi bi-person me-md-2"></i>Dados
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="senha-tab" data-bs-toggle="tab" 
                                 data-bs-target="#senha" type="button" role="tab"
                                 style="color: #F28C33; font-weight: 600;">
-                            <i class="bi bi-key me-2"></i>Senha
+                            <i class="bi bi-key me-md-2"></i>Senha
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <a class="nav-link" href="{{ url_for('privacidade.central') }}"
                            style="color: #F28C33; font-weight: 600;">
-                            <i class="bi bi-shield-lock me-2"></i>Privacidade
+                            <i class="bi bi-shield-lock me-md-2"></i>Privacidade
                         </a>
                     </li>
                 </ul>
