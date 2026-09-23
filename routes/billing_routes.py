@@ -308,8 +308,12 @@ def cancelar():
     com a tela de "Minha Assinatura" escondida não existe botão que
     chegue aqui, então isso só importa se as duas flags forem mexidas
     de forma inconsistente.
-    Revoga o acesso premium imediatamente (ver
-    BillingService.cancelar_assinatura)."""
+
+    NÃO revoga o acesso premium imediatamente: o acesso continua até o
+    fim do período já pago (nextDueDate lido do Asaas antes de
+    cancelar a recorrência) -- só é revogado na hora se esse prazo não
+    puder ser confirmado no Asaas. Ver BillingService.cancelar_assinatura
+    pra a lógica completa."""
     try:
         BillingService.cancelar_assinatura(current_user)
     except NadaParaCancelarError:
