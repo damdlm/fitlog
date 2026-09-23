@@ -2978,6 +2978,144 @@
         }
     }
 
+    /* ======================================================================
+       MODERNIZAÇÃO DESKTOP (>=768px) -- 22/09
+       Tudo dentro deste único @media (min-width:768px): celular (<768px)
+       continua 100% intocado -- nenhuma regra aqui sobrescreve nada fora
+       desse breakpoint, só adiciona layout por cima a partir dele.
+       Duas telas afetadas:
+         (1) seleção de treino/data (#formBusca, antes do registro)
+         (2) treino em andamento (#registroForm dentro do modo-treino
+             tela cheia, .modo-treino-body)
+       Não mexe em .modo-treino-header/.modo-treino-footer (cronômetro,
+       ações) nem em nenhuma regra/estrutura já existente -- só reflui o
+       CONTEÚDO das duas telas acima, sem mover nó nenhum no DOM (zero
+       mudança de JS), então o histórico de z-index/stacking-context já
+       documentado nesta tela continua valendo sem alteração. */
+    @media (min-width: 768px) {
+
+        /* ---- Fase 1: campo de data + card do treino lado a lado ----
+           #formBusca tem, nesta ordem, #campoDataTreino e .treino-card
+           como filhos diretos -- grid de 2 colunas (data fixa à
+           esquerda, treino flexível à direita) em vez de empilhados. */
+        #formBusca {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            align-items: start;
+            gap: 20px;
+        }
+        #campoDataTreino,
+        #formBusca .treino-card {
+            margin-bottom: 0 !important;
+        }
+        #campoDataTreino .rt-data-row {
+            height: 100%;
+        }
+        #campoDataTreino .rt-data-field {
+            height: 100%;
+            align-items: flex-start;
+            padding: 18px 16px;
+        }
+
+        .treino-card .card-body {
+            padding: 28px 32px;
+        }
+
+        /* Picker de treino: grid responsivo em vez de lista com scroll
+           travado em 272px -- em tela larga sobra espaço de sobra pra
+           mostrar tudo de uma vez. */
+        .treino-picker {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            max-height: none;
+            gap: 10px;
+        }
+        .treino-picker-item {
+            padding: 14px 16px;
+        }
+        .treino-picker-item:hover {
+            transform: translateY(-2px);
+        }
+
+        /* ---- Fase 2: lista de exercícios + resumo fixo na lateral ----
+           #registroForm tem, nesta ordem, N vezes .exercise-row-wrap, o
+           botão .btn-adicionar-avulso e por fim .resumo-treino-box.
+           Grid de 2 colunas: só o resumo pede coluna 2 explicitamente
+           (ocupando a altura inteira via grid-row:1/-1 + sticky) -- tudo
+           o resto cai sozinho na coluna 1, na mesma ordem de sempre,
+           sem precisar marcar nenhum outro elemento individualmente. */
+        .modo-treino-body #registroForm {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 300px;
+            /* Linhas explícitas (folga generosa -- nenhum treino chega
+               perto de 30 exercícios) só pra "-1" na regra do resumo,
+               logo abaixo, conseguir apontar pro fim do grid de verdade:
+               "-1" só enxerga linhas EXPLÍCITAS, nunca as implícitas que
+               o navegador cria sozinho pros cards -- sem isso aqui, o
+               resumo ficava confinado à 1ª linha e esticava o 1º card. */
+            grid-template-rows: repeat(30, auto);
+            align-items: start;
+            gap: 28px;
+        }
+        .modo-treino-body #registroForm > .exercise-row-wrap,
+        .modo-treino-body #registroForm > .btn-adicionar-avulso {
+            grid-column: 1;
+        }
+
+        .modo-treino-body #registroForm > .resumo-treino-box {
+            grid-column: 2;
+            grid-row: 1 / -1;
+            position: sticky;
+            top: 8px;
+            align-self: start;
+            display: block !important;
+            margin: 0 !important;
+            background: var(--surface);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: 22px;
+        }
+        .modo-treino-body #registroForm > .resumo-treino-box > [class*="col-"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: none !important;
+            padding: 0 !important;
+        }
+        .modo-treino-body #registroForm > .resumo-treino-box > [class*="col-"] + [class*="col-"] {
+            margin-top: 18px;
+            padding-top: 16px !important;
+            border-top: 1px dashed var(--border-soft);
+            text-align: left !important;
+        }
+        .modo-treino-body #registroForm > .resumo-treino-box .resumo-treino-inner {
+            flex-direction: column !important;
+            gap: 14px !important;
+        }
+        .modo-treino-body #registroForm > .resumo-treino-box .resumo-treino-inner > div {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-soft);
+            padding-bottom: 12px;
+        }
+        .modo-treino-body #registroForm > .resumo-treino-box .resumo-treino-inner > div:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        /* Cards de exercício com mais respiro e hover pensado pra mouse
+           (leve elevação, não só sombra) -- só dentro do treino em
+           andamento, não afeta o card compacto de pré-início. */
+        .modo-treino-body .exercise-row {
+            padding: 20px 24px;
+        }
+        .modo-treino-body .exercise-row:hover {
+            transform: translateY(-1px);
+        }
+    }
+
 </style>
 
 <!-- Loading ao selecionar treino/data -- some assim que a página troca -->
