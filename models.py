@@ -551,6 +551,15 @@ class Assinatura(db.Model):
     periodo_atual_fim = db.Column(db.DateTime(timezone=True), nullable=True)
     carencia_termina_em = db.Column(db.DateTime(timezone=True), nullable=True)
     cancelado_em = db.Column(db.DateTime(timezone=True), nullable=True)
+    # Id (no Asaas) do último payment que efetivamente confirmou/ativou
+    # o plano (EVENTOS_CONFIRMACAO_PAGAMENTO). Usado só pra decidir se
+    # um webhook de atraso/cancelamento posterior é sobre ESSA cobrança
+    # (regride o status de verdade) ou sobre uma cobrança antiga já
+    # substituída por um pagamento mais novo (ignora -- ver
+    # BillingService._deve_ignorar_evento_regressivo). Sem isso, uma
+    # cobrança Pix antiga que vence/é cancelada DEPOIS que uma nova já
+    # foi paga derrubava um plano em dia.
+    gateway_ultimo_pagamento_confirmado_id = db.Column(db.String(60), nullable=True)
 
     # forma_pagamento: 'cartao' (checkout hospedado, cobrança
     # recorrente automática todo mês) ou 'pix' (pagamento avulso --

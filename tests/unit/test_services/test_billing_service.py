@@ -675,6 +675,128 @@ class TestProcessarWebhook:
             assert any('Webhook Asaas recebido' in m and 'CHECKOUT_PAID' in m for m in mensagens)
 
 
+class TestEventoRegressivoIgnoraCobrancaAntiga:
+    """Regressão: uma cobrança Pix antiga (nunca paga, ou cancelada)
+    não pode derrubar uma assinatura que já foi renovada por uma
+    cobrança mais nova e ainda está dentro do período pago. Ver
+    BillingService._deve_ignorar_evento_regressivo."""
+
+    def _criar_assinatura_pix(self, status='trialing'):
+        aluno = _criar_usuario(f'pix_regressivo_{id(object())}')
+        assinatura = Assinatura(
+            usuario_id=aluno.id, status=status, forma_pagamento='pix',
+            gateway_customer_id='cus_123',
+        )
+        db.session.add(assinatura)
+        db.session.commit()
+        return assinatura
+
+    def test_overdue_de_cobranca_antiga_e_ignorado_com_periodo_vigente(self, app):
+        with app.app_context():
+            assinatura = self._criar_assinatura_pix()
+
+            # Cobrança nova é paga: ativa o plano e marca qual payment
+            # foi o responsável.
+            BillingService.processar_webhook({
+                'id': 'evt_confirma', 'event': 'PAYMENT_CONFIRMED',
+                'payment': {'id': 'pay_novo', 'externalReference': str(assinatura.id)},
+            })
+            db.session.refresh(assinatura)
+            assert assinatura.status == 'active'
+            periodo_fim = assinatura.periodo_atual_fim.replace(tzinfo=timezone.utc) \
+                if assinatura.periodo_atual_fim.tzinfo is None else assinatura.periodo_atual_fim
+            assert periodo_fim > datetime.now(timezone.utc)
+            assert assinatura.gateway_ultimo_pagamento_confirmado_id == 'pay_novo'
+
+            # Uma cobrança ANTIGA e diferente vence depois (webhook
+            # fora de ordem, ou o Asaas só avisou depois) -- não pode
+            # derrubar o plano que já está pago e vigente.
+            BillingService.processar_webhook({
+                'id': 'evt_overdue_antigo', 'event': 'PAYMENT_OVERDUE',
+                'payment': {'id': 'pay_antigo', 'externalReference': str(assinatura.id)},
+            })
+            db.session.refresh(assinatura)
+            assert assinatura.status == 'active'
+            assert assinatura.carencia_termina_em is None
+
+    def test_cancelamento_de_cobranca_antiga_e_ignorado_com_periodo_vigente(self, app):
+        with app.app_context():
+            assinatura = self._criar_assinatura_pix()
+            BillingService.processar_webhook({
+                'id': 'evt_confirma2', 'event': 'PAYMENT_CONFIRMED',
+                'payment': {'id': 'pay_novo', 'externalReference': str(assinatura.id)},
+            })
+            db.session.refresh(assinatura)
+
+            BillingService.processar_webhook({
+                'id': 'evt_delete_antigo', 'event': 'PAYMENT_DELETED',
+                'payment': {'id': 'pay_antigo', 'externalReference': str(assinatura.id)},
+            })
+            db.session.refresh(assinatura)
+            assert assinatura.status == 'active'
+            assert assinatura.cancelado_em is None
+
+    def test_evento_sobre_a_propria_cobranca_vigente_regride_normalmente(self, app):
+        """Se o evento de atraso/cancelamento é sobre a MESMA cobrança
+        que ativou o período atual (ex: reembolso do pagamento que
+        acabou de confirmar), não é uma "cobrança antiga" -- tem que
+        aplicar normalmente."""
+        with app.app_context():
+            assinatura = self._criar_assinatura_pix()
+            BillingService.processar_webhook({
+                'id': 'evt_confirma3', 'event': 'PAYMENT_CONFIRMED',
+                'payment': {'id': 'pay_novo', 'externalReference': str(assinatura.id)},
+            })
+            db.session.refresh(assinatura)
+
+            BillingService.processar_webhook({
+                'id': 'evt_refund_atual', 'event': 'PAYMENT_REFUNDED',
+                'payment': {'id': 'pay_novo', 'externalReference': str(assinatura.id)},
+            })
+            db.session.refresh(assinatura)
+            assert assinatura.status == 'canceled'
+            assert assinatura.cancelado_em is not None
+
+    def test_overdue_e_aplicado_normalmente_quando_periodo_ja_expirou(self, app):
+        """Sem período pago vigente (já expirado), não há o que
+        proteger -- o evento aplica normalmente, mesmo vindo de um
+        payment_id diferente do último confirmado."""
+        with app.app_context():
+            assinatura = self._criar_assinatura_pix(status='active')
+            assinatura.periodo_atual_fim = datetime.now(timezone.utc) - timedelta(days=1)
+            assinatura.gateway_ultimo_pagamento_confirmado_id = 'pay_velho'
+            db.session.commit()
+
+            BillingService.processar_webhook({
+                'id': 'evt_overdue_expirado', 'event': 'PAYMENT_OVERDUE',
+                'payment': {'id': 'pay_outro', 'externalReference': str(assinatura.id)},
+            })
+            db.session.refresh(assinatura)
+            assert assinatura.status == 'past_due'
+            assert assinatura.carencia_termina_em is not None
+
+    def test_cartao_nao_e_afetado_pela_guarda(self, app):
+        """Assinatura via cartão nunca usa periodo_atual_fim -- a
+        guarda precisa continuar transparente pra esse fluxo, igual
+        sempre foi (Asaas quem controla a recorrência de verdade)."""
+        with app.app_context():
+            aluno = _criar_usuario(f'cartao_regressivo_{id(object())}')
+            assinatura = Assinatura(
+                usuario_id=aluno.id, status='active', forma_pagamento='cartao',
+                gateway_subscription_id='sub_cartao_1',
+            )
+            db.session.add(assinatura)
+            db.session.commit()
+
+            BillingService.processar_webhook({
+                'id': 'evt_overdue_cartao', 'event': 'PAYMENT_OVERDUE',
+                'payment': {'subscription': 'sub_cartao_1', 'id': 'pay_qualquer'},
+            })
+            db.session.refresh(assinatura)
+            assert assinatura.status == 'past_due'
+            assert assinatura.carencia_termina_em is not None
+
+
 # ---------------------------------------------------------------------
 # Expiração de carência (job periódico)
 # ---------------------------------------------------------------------

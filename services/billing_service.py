@@ -1162,12 +1162,34 @@ class BillingService:
             if assinatura.forma_pagamento == 'pix':
                 assinatura.periodo_atual_fim = _proximo_vencimento_mensal(agora)
             if payment:
+                # Marca qual payment foi o responsável por essa
+                # ativação -- é contra esse id que um futuro evento de
+                # atraso/cancelamento é comparado (ver
+                # _deve_ignorar_evento_regressivo), pra não deixar uma
+                # cobrança antiga e já substituída derrubar o plano.
+                assinatura.gateway_ultimo_pagamento_confirmado_id = payment.get('id')
                 BillingService._registrar_pagamento_recebido(assinatura, payment)
         elif tipo_evento in EVENTOS_ATRASO:
-            BillingService._iniciar_atraso(assinatura, agora)
+            if BillingService._deve_ignorar_evento_regressivo(assinatura, payment):
+                logger.info(
+                    'Evento %s ignorado p/ assinatura %s: período vigente (periodo_atual_fim=%s) já '
+                    'garantido por outro pagamento (payment=%s, último confirmado=%s)',
+                    tipo_evento, assinatura.id, assinatura.periodo_atual_fim,
+                    (payment or {}).get('id'), assinatura.gateway_ultimo_pagamento_confirmado_id,
+                )
+            else:
+                BillingService._iniciar_atraso(assinatura, agora)
         elif tipo_evento in EVENTOS_CANCELAMENTO:
-            assinatura.status = 'canceled'
-            assinatura.cancelado_em = agora
+            if BillingService._deve_ignorar_evento_regressivo(assinatura, payment):
+                logger.info(
+                    'Evento %s ignorado p/ assinatura %s: período vigente (periodo_atual_fim=%s) já '
+                    'garantido por outro pagamento (payment=%s, último confirmado=%s)',
+                    tipo_evento, assinatura.id, assinatura.periodo_atual_fim,
+                    (payment or {}).get('id'), assinatura.gateway_ultimo_pagamento_confirmado_id,
+                )
+            else:
+                assinatura.status = 'canceled'
+                assinatura.cancelado_em = agora
         else:
             # Antes era logger.debug -- INVISÍVEL em produção, já que
             # app.logger está configurado pra nível INFO (ver app.py).
@@ -1335,6 +1357,53 @@ class BillingService:
                 )
         except requests.RequestException:
             logger.exception('Erro de rede ao agendar nota fiscal do pagamento %s', payment_id)
+
+    @staticmethod
+    def _deve_ignorar_evento_regressivo(assinatura: Assinatura, payment: dict = None) -> bool:
+        """Decide se um evento de atraso/cancelamento (EVENTOS_ATRASO /
+        EVENTOS_CANCELAMENTO) deve ser IGNORADO em vez de regredir o
+        status da assinatura.
+
+        Motivo: Pix é pagamento avulso -- cada cobrança gerada é um
+        `payment` novo no Asaas, mas todas ficam ligadas ao MESMO
+        registro de Assinatura (via gateway_customer_id). Se uma
+        cobrança antiga nunca foi paga (ou foi cancelada) e o usuário
+        já pagou uma cobrança MAIS NOVA que ativou o plano, o webhook
+        de vencimento/cancelamento da cobrança antiga pode chegar
+        DEPOIS -- o Asaas não garante ordem de entrega. Sem essa
+        checagem, esse webhook atrasado derrubava (past_due/canceled)
+        um plano que já está pago e dentro do período de 30 dias.
+
+        Só ignora quando:
+        1. existe um período pago vigente (periodo_atual_fim no
+           futuro -- só é preenchido pelo fluxo Pix; cartão nunca usa
+           esse campo, então pra cartão esta função sempre retorna
+           False e o evento é aplicado normalmente, como sempre foi); E
+        2. o evento não é sobre a cobrança que gerou essa ativação
+           (payment.id diferente de gateway_ultimo_pagamento_confirmado_id,
+           ou sem id nenhum pra comparar -- neste caso, mais seguro não
+           regredir um período que sabemos estar pago).
+
+        Se o evento FOR sobre a própria cobrança vigente (ex: reembolso
+        do pagamento que ativou o período atual), aplica normalmente --
+        não existe "cobrança antiga" aqui, é a atual sendo revertida."""
+        agora = datetime.now(timezone.utc)
+        periodo_fim = assinatura.periodo_atual_fim
+        # SQLite (usado nos testes) não preserva timezone em colunas
+        # DateTime(timezone=True) -- ao reconsultar, o valor volta sem
+        # tzinfo. Em produção (Postgres) isso não acontece, mas trata
+        # de qualquer forma por segurança: assume UTC (é sempre o que
+        # este campo é gravado como, ver agora = datetime.now(timezone.utc)
+        # em todo o resto deste arquivo).
+        if periodo_fim is not None and periodo_fim.tzinfo is None:
+            periodo_fim = periodo_fim.replace(tzinfo=timezone.utc)
+        periodo_vigente = periodo_fim and periodo_fim > agora
+        if not periodo_vigente:
+            return False
+        payment_id = (payment or {}).get('id')
+        if not payment_id:
+            return True
+        return payment_id != assinatura.gateway_ultimo_pagamento_confirmado_id
 
     @staticmethod
     def _iniciar_atraso(assinatura: Assinatura, agora: datetime):
