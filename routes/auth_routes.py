@@ -210,6 +210,21 @@ def check_email():
     return jsonify({'exists': existe})
 
 
+@auth_bp.route('/check-username')
+@limiter.limit("20 per minute")
+def check_username():
+    """
+    Verifica se um nome de usuário já está cadastrado -- usado na tela
+    de cadastro para avisar o usuário assim que ele sai do campo
+    Usuário, antes mesmo de tentar submeter o formulário.
+    """
+    username = request.args.get('username', '').strip()
+    if not username:
+        return jsonify({'exists': False})
+    existe = User.query.filter_by(username=username).first() is not None
+    return jsonify({'exists': existe})
+
+
 @auth_bp.route('/register', methods=['GET', 'POST'])
 @limiter.limit("5 per hour")
 def register():

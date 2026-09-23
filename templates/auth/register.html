@@ -79,6 +79,11 @@
                                minlength="3" maxlength="80">
                     </div>
                     <span class="login-field-hint">Mínimo 3 caracteres</span>
+                    <div id="usernameFeedback" class="register-email-alert d-flex align-items-center gap-2 mt-2 mb-0 py-2 px-3 d-none"
+                         style="animation: fitlogFadeIn 0.2s ease-out;">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <span>Este nome de usuário já está em uso. Escolha outro.</span>
+                    </div>
                 </div>
 
                 <div class="login-field">
@@ -195,64 +200,108 @@
         radioProfessor.addEventListener('change', atualizarInfo);
         atualizarInfo();
 
-        // --- Validação de e-mail já cadastrado ---
-        const emailInput = document.getElementById('emailInput');
-        const emailFeedback = document.getElementById('emailFeedback');
-        const emailGroup = emailInput.closest('.login-input-group');
-        const form = emailInput.closest('form');
+        // --- Validação de usuário/e-mail já cadastrados ---
+        // Os dois campos usam o mesmo mecanismo: ao sair do campo (blur),
+        // consulta o backend; se já existir, mostra o aviso, marca o campo
+        // e devolve o foco pra ele -- tudo client-side, sem recarregar a
+        // página, então os outros campos já preenchidos nunca são limpos.
+        const form = document.querySelector('form');
         const submitBtnCadastro = form.querySelector('button[type="submit"]');
         const submitBtnCadastroHtmlOriginal = submitBtnCadastro.innerHTML;
 
-        function mostrarFeedbackEmail() {
-            emailFeedback.classList.remove('d-none');
-            emailInput.classList.add('is-invalid');
-            if (emailGroup) emailGroup.classList.add('is-invalid-group');
-        }
+        function criarValidadorDeCampo({ input, feedback, endpoint, param }) {
+            const grupo = input.closest('.login-input-group');
+            let ultimaChecagem = 0; // evita que uma resposta atrasada sobreponha uma mais nova
 
-        function esconderFeedbackEmail() {
-            emailFeedback.classList.add('d-none');
-            emailInput.classList.remove('is-invalid');
-            if (emailGroup) emailGroup.classList.remove('is-invalid-group');
-        }
-
-        async function emailJaExiste(email) {
-            const resp = await fetch('/auth/check-email?email=' + encodeURIComponent(email));
-            const dados = await resp.json();
-            return dados.exists;
-        }
-
-        emailInput.addEventListener('blur', async function() {
-            const email = emailInput.value.trim();
-            esconderFeedbackEmail();
-            if (!email) return;
-            try {
-                if (await emailJaExiste(email)) mostrarFeedbackEmail();
-            } catch (erro) {
-                console.error('Erro ao verificar e-mail:', erro);
+            function mostrarFeedback() {
+                feedback.classList.remove('d-none');
+                input.classList.add('is-invalid');
+                if (grupo) grupo.classList.add('is-invalid-group');
             }
+
+            function esconderFeedback() {
+                feedback.classList.add('d-none');
+                input.classList.remove('is-invalid');
+                if (grupo) grupo.classList.remove('is-invalid-group');
+            }
+
+            async function jaExiste(valor) {
+                const resp = await fetch(`${endpoint}?${param}=` + encodeURIComponent(valor));
+                const dados = await resp.json();
+                return dados.exists;
+            }
+
+            function focarEDestacar() {
+                input.classList.add('fitlog-shake');
+                setTimeout(() => input.classList.remove('fitlog-shake'), 400);
+                input.focus();
+                input.select();
+            }
+
+            input.addEventListener('blur', async function() {
+                const valor = input.value.trim();
+                esconderFeedback();
+                if (!valor) return;
+                const minhaChecagem = ++ultimaChecagem;
+                try {
+                    const existe = await jaExiste(valor);
+                    // Se o usuário já mudou o campo ou saiu de novo enquanto
+                    // a requisição estava em voo, essa resposta é descartada.
+                    if (minhaChecagem !== ultimaChecagem) return;
+                    if (existe) {
+                        mostrarFeedback();
+                        // Devolve o foco ao campo com problema, sem tocar
+                        // nos demais campos do formulário.
+                        focarEDestacar();
+                    }
+                } catch (erro) {
+                    console.error(`Erro ao verificar ${param}:`, erro);
+                }
+            });
+
+            input.addEventListener('input', esconderFeedback);
+
+            return { jaExiste, mostrarFeedback, focarEDestacar };
+        }
+
+        const validadorUsername = criarValidadorDeCampo({
+            input: document.getElementById('regUsername'),
+            feedback: document.getElementById('usernameFeedback'),
+            endpoint: '/auth/check-username',
+            param: 'username',
         });
 
-        emailInput.addEventListener('input', esconderFeedbackEmail);
+        const validadorEmail = criarValidadorDeCampo({
+            input: document.getElementById('emailInput'),
+            feedback: document.getElementById('emailFeedback'),
+            endpoint: '/auth/check-email',
+            param: 'email',
+        });
 
         form.addEventListener('submit', async function(evento) {
             evento.preventDefault();
-            const email = emailInput.value.trim();
+            const usernameInput = document.getElementById('regUsername');
+            const emailInput = document.getElementById('emailInput');
 
             submitBtnCadastro.disabled = true;
             submitBtnCadastro.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Verificando...';
 
             try {
-                if (await emailJaExiste(email)) {
-                    mostrarFeedbackEmail();
-                    emailInput.classList.add('fitlog-shake');
-                    setTimeout(() => emailInput.classList.remove('fitlog-shake'), 400);
-                    emailInput.focus();
-                    emailInput.select();
+                // Usuário é checado primeiro -- se os dois já existirem, o
+                // foco fica no primeiro campo do formulário (username).
+                if (await validadorUsername.jaExiste(usernameInput.value.trim())) {
+                    validadorUsername.mostrarFeedback();
+                    validadorUsername.focarEDestacar();
+                    return;
+                }
+                if (await validadorEmail.jaExiste(emailInput.value.trim())) {
+                    validadorEmail.mostrarFeedback();
+                    validadorEmail.focarEDestacar();
                     return;
                 }
                 form.submit();
             } catch (erro) {
-                console.error('Erro ao verificar e-mail:', erro);
+                console.error('Erro ao verificar usuário/e-mail:', erro);
                 form.submit();
             } finally {
                 submitBtnCadastro.disabled = false;
