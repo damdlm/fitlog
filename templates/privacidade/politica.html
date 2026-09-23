@@ -6,6 +6,8 @@
 {% block page_icon %}<i class="bi bi-shield-lock" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Política de Privacidade{% endblock %}
 
+{% block header_guest_actions %}{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-9 col-lg-8">
@@ -20,7 +22,7 @@
 
                 <h5 class="mt-4" style="color: #F28C33;">1. Quem é o responsável pelos seus dados (controlador)</h5>
                 <p>
-                    Razão social/CNPJ: <strong> DAMIANO DE LIMA - 64.661.766/0001-08</strong><br>
+                    CNPJ: <strong> 64.661.766/0001-08</strong><br>
                     Endereço: <strong> Jaraguá do Sul - SC</strong><br>
                     Contato para assuntos de privacidade: pela tela de <a href="{{ url_for('contato.index') if current_user.is_authenticated else url_for('auth.login') }}">Contato</a> do próprio FitLog.
                 </p>
