@@ -83,7 +83,6 @@
                                             <option value="M" {% if user.genero == 'M' %}selected{% endif %}>Masculino</option>
                                             <option value="F" {% if user.genero == 'F' %}selected{% endif %}>Feminino</option>
                                         </select>
-                                        <div class="form-text">Usado só para personalizar sua mensagem de boas-vindas.</div>
                                     </div>
 
                                     {% if user.tipo_usuario == 'aluno' %}
@@ -96,7 +95,6 @@
                                         </label>
                                         <div class="form-text">
                                             Quando ativado, seu nome e suas estatísticas de treino
-                                            (dias treinados e tempo de treino dos últimos 30 dias)
                                             ficam visíveis para outros alunos no ranking geral.
                                         </div>
                                     </div>
