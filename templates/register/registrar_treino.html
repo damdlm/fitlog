@@ -3006,20 +3006,32 @@
         }
     }
 
+    /* Elemento novo (cabeçalho de tabela da lista de exercícios em
+       desktop, ver dentro do @media abaixo) -- escondido por padrão
+       pra nunca aparecer no mobile, mesmo que o navegador não carregue
+       o @media abaixo por algum motivo. */
+    .exercicio-tabela-head {
+        display: none;
+    }
+
     /* ======================================================================
-       MODERNIZAÇÃO DESKTOP (>=768px) -- 22/09
+       MODERNIZAÇÃO DESKTOP (>=768px) -- 22-24/09
        Tudo dentro deste único @media (min-width:768px): celular (<768px)
        continua 100% intocado -- nenhuma regra aqui sobrescreve nada fora
        desse breakpoint, só adiciona layout por cima a partir dele.
-       Duas telas afetadas:
+       Três telas afetadas:
          (1) seleção de treino/data (#formBusca, antes do registro)
-         (2) treino em andamento (#registroForm dentro do modo-treino
+         (2) pré-início (#preInicioTreinoOverlay, visão geral antes de
+             começar)
+         (3) treino em andamento (#registroForm dentro do modo-treino
              tela cheia, .modo-treino-body)
        Não mexe em .modo-treino-header/.modo-treino-footer (cronômetro,
        ações) nem em nenhuma regra/estrutura já existente -- só reflui o
-       CONTEÚDO das duas telas acima, sem mover nó nenhum no DOM (zero
-       mudança de JS), então o histórico de z-index/stacking-context já
-       documentado nesta tela continua valendo sem alteração. */
+       CONTEÚDO das telas acima. A única mudança de HTML é um elemento
+       novo (.exercicio-tabela-head, cabeçalho da lista) que não existia
+       -- tudo o resto continua exatamente os mesmos nós do DOM, só
+       reorganizados via CSS Grid, então o histórico de z-index/
+       stacking-context já documentado nesta tela segue valendo. */
     @media (min-width: 768px) {
 
         /* ---- Fase 1: campo de data + card do treino lado a lado ----
@@ -3059,10 +3071,38 @@
             gap: 10px;
         }
         .treino-picker-item {
-            padding: 14px 16px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 20px 18px;
+            border-radius: var(--radius-lg);
+            position: relative;
         }
         .treino-picker-item:hover {
             transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .treino-picker-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+        }
+        .treino-picker-texto {
+            gap: 3px;
+        }
+        .treino-picker-nome {
+            font-size: 1.02rem;
+            white-space: normal;
+        }
+        .treino-picker-desc {
+            white-space: normal;
+        }
+        .treino-picker-check {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            font-size: 1.3rem;
         }
 
         /* ---- Fase 2: lista de exercícios + resumo fixo na lateral ----
@@ -3210,6 +3250,105 @@
         }
         .modo-treino-body .exercise-row:hover {
             transform: translateY(-1px);
+        }
+
+        /* Cabeçalho de tabela: "CARGA / REPETIÇÕES / SÉRIES" aparecia
+           repetido em cada card (.inputs-row-labels) -- em desktop isso
+           vira ruído visual repetido; escondo a versão por card e mostro
+           uma única vez no topo da lista (o elemento novo
+           .exercicio-tabela-head já nasce com display:none lá em cima,
+           fora deste @media -- aqui só reativo pra desktop). Colunas
+           alinhadas com o grid de carga/reps/séries de cada linha. */
+        .exercicio-tabela-head {
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
+            gap: 14px;
+            align-items: end;
+            padding: 0 24px;
+            margin-bottom: 10px;
+        }
+        .exercicio-tabela-head span {
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: .2px;
+            color: #a39c90;
+            text-align: center;
+            min-width: 78px;
+        }
+        .exercicio-tabela-head span:first-child {
+            text-align: left;
+            min-width: 0;
+        }
+        .modo-treino-body #registroForm > .exercicio-tabela-head {
+            grid-column: 1;
+        }
+        .modo-treino-body .exercicio-valores-grid .inputs-row-labels {
+            display: none;
+        }
+
+        /* ---- Pré-início (visão geral antes de começar) ----
+           Mobile é uma pilha vertical (hero flutuante > lista com trilha
+           numerada > rodapé com o play) -- os 3 continuam exatamente os
+           mesmos elementos e ordem no DOM, só a DISPOSIÇÃO muda: vira um
+           grid de 2 colunas -- hero + botão empilhados numa coluna
+           esquerda (o cartão flutuante do hero fica mais alto, com o
+           conteúdo centralizado nele; o botão de play, que no mobile é
+           pequeno e centralizado, vira largura cheia aqui pra preencher
+           a coluna) -- e a lista ocupa a coluna direita inteira, virando
+           um grid de cards em vez da lista com linha conectando os
+           números (que só faz sentido numa coluna única). */
+        #preInicioTreinoOverlay {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            grid-template-rows: 1fr auto;
+        }
+        #preInicioTreinoOverlay .pre-inicio-hero {
+            grid-column: 1;
+            grid-row: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            margin: 0 0 12px;
+            padding: 32px 26px;
+        }
+        #preInicioTreinoOverlay .pre-inicio-footer {
+            grid-column: 1;
+            grid-row: 2;
+            padding: 0;
+            background: transparent;
+            border-top: none;
+            box-shadow: none;
+            display: block;
+        }
+        #preInicioTreinoOverlay .pre-inicio-btn-play {
+            width: 100%;
+            min-width: 0;
+        }
+        #preInicioTreinoOverlay .pre-inicio-lista {
+            grid-column: 2;
+            grid-row: 1 / 3;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            align-content: start;
+            gap: 12px;
+            padding: 40px;
+        }
+        #preInicioTreinoOverlay .pre-inicio-item {
+            background: var(--surface);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            box-shadow: var(--shadow-sm);
+            align-items: center;
+        }
+        /* A linha que conecta os números só faz sentido numa lista de
+           coluna única -- em grid de cards cada exercício já é
+           autocontido, então ela some (mas o número continua). */
+        #preInicioTreinoOverlay .pre-inicio-item-linha {
+            display: none;
+        }
+        #preInicioTreinoOverlay .pre-inicio-item-info {
+            padding: 0;
         }
     }
 
@@ -3699,6 +3838,17 @@
             <input type="hidden" name="treino" value="{{ treino_selecionado }}">
             <input type="hidden" name="data" value="{{ data_selecionada_str or data_atual_iso() }}">
             <input type="hidden" name="tempo_treino" id="tempoTreinoInput" value="0">
+
+            <!-- Cabeçalho de tabela (só visível em desktop, ver CSS) --
+                 mesmas colunas do grid de carga/reps/séries de cada
+                 linha, mostradas uma vez só em vez de repetidas em
+                 cada card. -->
+            <div class="exercicio-tabela-head">
+                <span>Exercício</span>
+                <span>Carga</span>
+                <span>Repetições</span>
+                <span>Séries</span>
+            </div>
 
             {% for ex in exercicios %}
             {% set chave_ex = ex.prefixo ~ ex.id %}
