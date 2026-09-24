@@ -38,3 +38,12 @@ def precos():
     from services.plano_service import PlanoService
     planos = {p.codigo: p for p in PlanoService.listar_editaveis()}
     return render_template("precos.html", planos=planos)
+
+
+@main_bp.route("/faq")
+def faq():
+    """Página pública de perguntas frequentes. Sem @login_required de
+    propósito, igual à landing e a /precos -- precisa ser vista por
+    quem ainda não tem conta, inclusive linkada a partir da tela
+    pública de contato (templates/contato_publico.html)."""
+    return render_template("faq.html")

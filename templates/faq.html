@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-question-circle" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Perguntas frequentes{% endblock %}
+
+{% block title %}Perguntas frequentes — FitLog{% endblock %}
+{% block meta_description %}Tire suas dúvidas sobre o FitLog: teste grátis, planos, pagamento, cancelamento e como funciona o vínculo entre aluno e professor.{% endblock %}
+{% block og_title %}Perguntas frequentes — FitLog{% endblock %}
+{% block og_description %}Tire suas dúvidas sobre o FitLog: teste grátis, planos, pagamento, cancelamento e como funciona o vínculo entre aluno e professor.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/precos.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="landing-hero precos-hero">
+    <h1>Perguntas frequentes</h1>
+    <p class="landing-subheadline">
+        Se não encontrar o que procura aqui, é só <a href="{{ url_for('contato.publico') }}" style="color:#fff; text-decoration:underline;">falar com a gente</a> -- respondemos em até 24h úteis.
+    </p>
+</section>
+
+<section class="landing-section landing-privacy precos-faq">
+    <h2><i class="bi bi-rocket-takeoff"></i> Começando</h2>
+    <div class="precos-faq-item">
+        <h3>Como funciona o teste grátis?</h3>
+        <p>Você tem 30 dias de acesso completo assim que cria sua conta, sem precisar cadastrar cartão. Só é cobrado quando decide assinar um dos planos.</p>
+    </div>
+    <div class="precos-faq-item">
+        <h3>Qual a diferença entre os planos?</h3>
+        <p>O <strong>Aluno Fit</strong> é para quem treina e quer registrar e acompanhar sua própria evolução. O <strong>Professor Pró</strong> e o <strong>Professor Premium</strong> são para quem monta treinos para outras pessoas -- a diferença entre os dois é o número de alunos ativos que você pode gerenciar ao mesmo tempo (o Premium não tem limite). Veja os valores atuais na <a href="{{ url_for('main.precos') }}">página de preços</a>.</p>
+    </div>
+    <div class="precos-faq-item">
+        <h3>Como funciona o vínculo entre aluno e professor?</h3>
+        <p>O aluno envia uma solicitação de vínculo para o professor escolhido, e o professor aceita ou recusa. Cada aluno fica vinculado a um professor por vez -- é esse professor que monta e acompanha os treinos dele. Sem vínculo, o aluno usa o FitLog de forma independente, registrando os próprios treinos.</p>
+    </div>
+</section>
+
+<section class="landing-section landing-privacy precos-faq">
+    <h2><i class="bi bi-credit-card"></i> Pagamento e cobrança</h2>
+    <div class="precos-faq-item">
+        <h3>Pix ou cartão de crédito?</h3>
+        <p>Os dois. No Pix, a cobrança não é automática: você paga a cada 30 dias, sem compromisso de renovação. No cartão, a cobrança é mensal e automática.</p>
+    </div>
+    <div class="precos-faq-item">
+        <h3>Como cancelo minha assinatura?</h3>
+        <p>Direto na tela "Minha Assinatura", a qualquer momento. Se você pagou por cartão, seu acesso continua ativo até o fim do período já pago -- você não perde o que já pagou. Assinaturas por Pix simplesmente não são renovadas se você não pagar de novo.</p>
+    </div>
+    <div class="precos-faq-item">
+        <h3>Vou receber nota fiscal?</h3>
+        <p>Sim, a nota fiscal de serviço é emitida automaticamente a cada pagamento confirmado.</p>
+    </div>
+</section>
+
+<section class="landing-cta-final">
+    <h2>Ainda com dúvida?</h2>
+    <a href="{{ url_for('contato.publico') }}" class="btn btn-primary btn-lg">
+        <i class="bi bi-chat-heart"></i> Falar com a gente
+    </a>
+</section>
+
+<nav class="landing-footer-links" aria-label="Links institucionais">
+    <a href="{{ url_for('main.precos') }}">Preços</a>
+    <span aria-hidden="true">·</span>
+    <a href="{{ url_for('privacidade.politica') }}">Política de Privacidade</a>
+    <span aria-hidden="true">·</span>
+    <a href="{{ url_for('privacidade.termos') }}">Termos de Uso</a>
+    <span aria-hidden="true">·</span>
+    <a href="{{ url_for('contato.publico') }}">Fale conosco</a>
+</nav>
+{% endblock %}
