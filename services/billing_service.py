@@ -1091,6 +1091,25 @@ class BillingService:
             assinatura = Assinatura.query.filter_by(gateway_customer_id=customer_id).first()
         if assinatura and subscription_id and not assinatura.gateway_subscription_id:
             assinatura.gateway_subscription_id = subscription_id
+        elif (
+            assinatura and subscription_id
+            and assinatura.gateway_subscription_id
+            and subscription_id != assinatura.gateway_subscription_id
+            and tipo_evento in EVENTOS_CONFIRMACAO_PAGAMENTO
+        ):
+            # Chegou um pagamento confirmado de uma subscription
+            # DIFERENTE da que já tínhamos salva -- acontece quando um
+            # usuário past_due/blocked reabre o checkout ("Assinar
+            # agora" continua disponível nesses status, de propósito,
+            # pra dar chance de regularizar) em vez de esperar o Asaas
+            # tentar cobrar de novo: isso cria uma SEGUNDA assinatura
+            # recorrente no Asaas pro mesmo cliente. Só sabemos que a
+            # nova é de verdade (paga) neste exato momento -- por isso
+            # só troca/cancela aqui, nunca num evento de atraso ou
+            # qualquer outro (evita destruir a assinatura antiga por
+            # causa de um checkout novo que o usuário nem chegou a
+            # pagar). Ver BillingService._substituir_gateway_subscription_id.
+            BillingService._substituir_gateway_subscription_id(assinatura, subscription_id)
 
         # Quando o payment confirmado veio de cartão, o Asaas costuma
         # incluir um objeto 'creditCard' com os últimos dígitos e a
@@ -1357,6 +1376,50 @@ class BillingService:
                 )
         except requests.RequestException:
             logger.exception('Erro de rede ao agendar nota fiscal do pagamento %s', payment_id)
+
+    @staticmethod
+    def _substituir_gateway_subscription_id(assinatura: Assinatura, subscription_id_novo: str):
+        """Troca o gateway_subscription_id salvo pelo novo, cancelando
+        ANTES a assinatura antiga no Asaas (best-effort -- loga e segue
+        mesmo se a chamada falhar, nunca impede a ativação da nova).
+
+        Sem isso, um usuário past_due/blocked que reabre o checkout em
+        vez de deixar o Asaas tentar cobrar de novo ficaria com DUAS
+        assinaturas recorrentes ativas pro mesmo cliente: a antiga
+        (ainda tentando cobrar um cartão que já sabemos que falha) e a
+        nova (que acabou de confirmar). Resultado, sem essa troca:
+        risco de cobrança duplicada todo mês, e a antiga fica órfã --
+        cancelar_assinatura só conhece o id salvo aqui, então o usuário
+        nunca consegue cancelar a que ficou pra trás pelo app.
+
+        404 ao cancelar a antiga conta como sucesso (já não existe mais
+        no Asaas -- nada a fazer)."""
+        antigo = assinatura.gateway_subscription_id
+        try:
+            resp = requests.delete(
+                f'{BillingService._base_url()}/subscriptions/{antigo}',
+                headers=BillingService._headers(),
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+            if resp.status_code >= 300 and resp.status_code != 404:
+                logger.error(
+                    'Falha ao cancelar assinatura antiga %s no Asaas (substituída por %s) '
+                    'da assinatura local %s: HTTP %s -- %s',
+                    antigo, subscription_id_novo, assinatura.id, resp.status_code, resp.text[:500],
+                )
+            else:
+                logger.info(
+                    'Assinatura antiga %s cancelada no Asaas (substituída por %s) da assinatura '
+                    'local %s -- evita cobrança duplicada num mesmo cliente',
+                    antigo, subscription_id_novo, assinatura.id,
+                )
+        except requests.RequestException:
+            logger.exception(
+                'Erro de rede ao cancelar assinatura antiga %s no Asaas (substituída por %s) '
+                'da assinatura local %s -- pode ficar cobrando em duplicidade, checar manualmente no painel',
+                antigo, subscription_id_novo, assinatura.id,
+            )
+        assinatura.gateway_subscription_id = subscription_id_novo
 
     @staticmethod
     def _deve_ignorar_evento_regressivo(assinatura: Assinatura, payment: dict = None) -> bool:

@@ -674,6 +674,32 @@ class TestProcessarWebhook:
             mensagens = [r.message for r in caplog.records]
             assert any('Webhook Asaas recebido' in m and 'CHECKOUT_PAID' in m for m in mensagens)
 
+    def test_subscription_deleted_apos_cancelamento_proprio_nao_revoga_cedo(self, app):
+        """Depois que o próprio usuário cancela (cancelar_assinatura),
+        guardamos periodo_atual_fim = nextDueDate e mantemos
+        status='active' de propósito -- o Asaas dispara SUBSCRIPTION_DELETED
+        confirmando a exclusão que nós mesmos acabamos de pedir. Sem a
+        guarda de _deve_ignorar_evento_regressivo, esse webhook
+        derrubaria o acesso na hora, ignorando o período que o usuário
+        já pagou (payment vem vazio nesse tipo de evento, então não há
+        payment_id pra comparar -- e como já existe um período pago
+        vigente, o evento é ignorado em vez de aplicado)."""
+        with app.app_context():
+            assinatura = self._criar_assinatura_com_subscription(status='active')
+            assinatura.forma_pagamento = 'cartao'
+            assinatura.cancelado_em = datetime.now(timezone.utc)
+            assinatura.periodo_atual_fim = datetime.now(timezone.utc) + timedelta(days=10)
+            db.session.commit()
+
+            payload = {
+                'id': 'evt_sub_deleted_proprio', 'event': 'SUBSCRIPTION_DELETED',
+                'subscription': {'id': 'sub_123'},
+            }
+            BillingService.processar_webhook(payload)
+
+            db.session.refresh(assinatura)
+            assert assinatura.status == 'active'
+
 
 class TestEventoRegressivoIgnoraCobrancaAntiga:
     """Regressão: uma cobrança Pix antiga (nunca paga, ou cancelada)
@@ -795,6 +821,115 @@ class TestEventoRegressivoIgnoraCobrancaAntiga:
             db.session.refresh(assinatura)
             assert assinatura.status == 'past_due'
             assert assinatura.carencia_termina_em is not None
+
+
+class TestSubstituiSubscriptionAntigaAoConfirmarNova:
+    """Regressão: usuário past_due/blocked que reabre o checkout (em
+    vez de esperar o Asaas tentar cobrar de novo) cria uma SEGUNDA
+    assinatura recorrente no Asaas pro mesmo cliente. Sem tratar isso,
+    o banco local continuava apontando pra assinatura ANTIGA (só grava
+    gateway_subscription_id se ainda estava vazio) -- risco de cobrança
+    duplicada todo mês, e a antiga ficava órfã (cancelar_assinatura só
+    conhece o id salvo no banco)."""
+
+    def _criar_assinatura_cartao(self, status='past_due', subscription_id='sub_velha'):
+        aluno = _criar_usuario(f'troca_subscription_{id(object())}')
+        assinatura = Assinatura(
+            usuario_id=aluno.id, status=status, forma_pagamento='cartao',
+            gateway_subscription_id=subscription_id,
+            gateway_customer_id='cus_troca_teste',
+        )
+        db.session.add(assinatura)
+        db.session.commit()
+        return assinatura
+
+    def test_confirmacao_de_subscription_diferente_cancela_a_antiga_e_troca(self, app, monkeypatch):
+        chamadas_delete = []
+
+        def _delete_fake(url, **kwargs):
+            chamadas_delete.append(url)
+            return _RespostaFake({}, status_code=200)
+
+        monkeypatch.setattr('services.billing_service.requests.delete', _delete_fake)
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            assinatura = self._criar_assinatura_cartao(status='past_due', subscription_id='sub_velha')
+
+            BillingService.processar_webhook({
+                'id': 'evt_nova_subscription', 'event': 'PAYMENT_CONFIRMED',
+                'payment': {'subscription': 'sub_nova', 'id': 'pay_nova', 'customer': 'cus_troca_teste'},
+            })
+
+            db.session.refresh(assinatura)
+            assert assinatura.status == 'active'
+            assert assinatura.gateway_subscription_id == 'sub_nova'
+            assert len(chamadas_delete) == 1
+            assert 'sub_velha' in chamadas_delete[0]
+
+    def test_confirmacao_da_mesma_subscription_nao_cancela_nada(self, app, monkeypatch):
+        """Renovação normal (mesma subscription de sempre) não deve
+        chamar o Asaas pra cancelar coisa nenhuma."""
+        chamadas_delete = []
+        monkeypatch.setattr(
+            'services.billing_service.requests.delete',
+            lambda url, **k: chamadas_delete.append(url),
+        )
+
+        with app.app_context():
+            assinatura = self._criar_assinatura_cartao(status='active', subscription_id='sub_1')
+
+            BillingService.processar_webhook({
+                'id': 'evt_renovacao_normal', 'event': 'PAYMENT_CONFIRMED',
+                'payment': {'subscription': 'sub_1', 'id': 'pay_mensal'},
+            })
+
+            db.session.refresh(assinatura)
+            assert assinatura.gateway_subscription_id == 'sub_1'
+            assert chamadas_delete == []
+
+    def test_falha_ao_cancelar_antiga_nao_impede_ativacao_da_nova(self, app, monkeypatch):
+        """Best-effort: se o Asaas recusar cancelar a antiga (ex: erro
+        500), a nova ainda tem que ser ativada -- o usuário não pode
+        ficar sem acesso só porque a faxina da assinatura órfã falhou."""
+        monkeypatch.setattr(
+            'services.billing_service.requests.delete',
+            lambda url, **k: _RespostaFake({'errors': [{'description': 'erro simulado'}]}, status_code=500),
+        )
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            assinatura = self._criar_assinatura_cartao(status='blocked', subscription_id='sub_velha')
+
+            BillingService.processar_webhook({
+                'id': 'evt_nova_apesar_da_falha', 'event': 'PAYMENT_CONFIRMED',
+                'payment': {'subscription': 'sub_nova_2', 'id': 'pay_nova_2', 'customer': 'cus_troca_teste'},
+            })
+
+            db.session.refresh(assinatura)
+            assert assinatura.status == 'active'
+            assert assinatura.gateway_subscription_id == 'sub_nova_2'
+
+    def test_falha_de_rede_ao_cancelar_antiga_nao_impede_ativacao_da_nova(self, app, monkeypatch):
+        import requests as requests_module
+
+        def _delete_com_erro_de_rede(url, **kwargs):
+            raise requests_module.ConnectionError('falha simulada')
+
+        monkeypatch.setattr('services.billing_service.requests.delete', _delete_com_erro_de_rede)
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            assinatura = self._criar_assinatura_cartao(status='past_due', subscription_id='sub_velha')
+
+            BillingService.processar_webhook({
+                'id': 'evt_nova_apesar_da_falha_rede', 'event': 'PAYMENT_CONFIRMED',
+                'payment': {'subscription': 'sub_nova_3', 'id': 'pay_nova_3', 'customer': 'cus_troca_teste'},
+            })
+
+            db.session.refresh(assinatura)
+            assert assinatura.status == 'active'
+            assert assinatura.gateway_subscription_id == 'sub_nova_3'
 
 
 # ---------------------------------------------------------------------
