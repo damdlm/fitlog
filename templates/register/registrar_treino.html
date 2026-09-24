@@ -1007,9 +1007,9 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 34px;
-        height: 34px;
-        font-size: 1.15rem;
+        width: 38px;
+        height: 38px;
+        font-size: 1.05rem;
         border: 2px solid var(--primary-orange, #F28C33);
         border-radius: 50%;
         animation: ampulheta-girar 3.2s linear infinite;
@@ -2095,13 +2095,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 46px;
-        height: 46px;
+        width: 38px;
+        height: 38px;
         border-radius: 50%;
         border: 2px solid var(--primary-orange, #F28C33);
         background: transparent;
         color: #ced4da;
-        font-size: 1.5rem;
+        font-size: 1.05rem;
         padding: 0;
         cursor: pointer;
         transition: color .15s ease, background-color .15s ease;
@@ -2156,8 +2156,12 @@
     }
 
     /* Reiniciar do intervalo ganha a mesma bordinha laranja da ampulheta
-       e do sino, pra reforçar que os três fazem parte do mesmo grupo. */
+       e do sino, no mesmo tamanho dos dois, pra reforçar que fazem parte
+       do mesmo grupo (o Iniciar/play continua maior, como ação principal). */
     #cronoIntervaloBox #cronoIntervaloBtnZerar {
+        width: 38px;
+        height: 38px;
+        font-size: 1.05rem;
         border: 2px solid var(--primary-orange, #F28C33);
     }
 
