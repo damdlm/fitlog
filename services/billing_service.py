@@ -653,14 +653,19 @@ class BillingService:
 
         agora = datetime.now(timezone.utc)
         periodo_vigente = assinatura.periodo_atual_fim and assinatura.periodo_atual_fim > agora
+        # Cartão não usa periodo_atual_fim (só cartão tem gateway_subscription_id
+        # com recorrência automática de verdade) -- então "vigente" pra
+        # cartão é simplesmente ter uma subscription ativa, não uma data.
+        cartao_ativo = (
+            assinatura.status == 'active' and assinatura.forma_pagamento == 'cartao'
+            and assinatura.gateway_subscription_id
+        )
         # Bloqueia pro MESMO plano ainda vigente independente da forma de
         # pagamento atual -- se já está ativo via cartão (cobrança
-        # recorrente automática) e a pessoa clica em "pagar com Pix" pro
-        # mesmo plano, não faz sentido nenhum gerar uma segunda cobrança
-        # avulsa: ela já está em dia. Antes só cobria o caso pix->pix,
-        # deixando passar cartão->pix sem aviso.
-        if (assinatura.status == 'active'
-                and assinatura.plano_id == plano.id and periodo_vigente):
+        # recorrente automática) ou via Pix (periodo_atual_fim no futuro)
+        # e a pessoa tenta pagar de novo pro mesmo plano, não faz sentido
+        # nenhum gerar uma segunda cobrança: ela já está em dia.
+        if assinatura.status == 'active' and assinatura.plano_id == plano.id and (periodo_vigente or cartao_ativo):
             raise AssinaturaJaAtivaError(plano)
 
         customer_id = BillingService._obter_ou_criar_cliente_asaas(usuario, assinatura)
@@ -686,6 +691,13 @@ class BillingService:
         # o plano só passa a valer de verdade (status='active' +
         # periodo_atual_fim) quando o webhook confirmar o pagamento --
         # ver _aplicar_evento. Isso aqui só marca a INTENÇÃO.
+        #
+        # gateway_subscription_id É MANTIDO de propósito quando
+        # cartao_ativo (não zera aqui): só cancelamos a recorrência de
+        # cartão em _aplicar_evento, no momento em que esse Pix
+        # REALMENTE confirmar -- se cancelássemos já aqui e o usuário
+        # abandonar o Pix sem pagar, ele ficaria sem nenhuma forma de
+        # pagamento funcionando, pior do que a situação de origem.
         assinatura.plano_id = plano.id
         assinatura.forma_pagamento = 'pix'
         assinatura.cartao_ultimos_digitos = None
@@ -1180,6 +1192,19 @@ class BillingService:
             # garante a renovação dele é o próprio Asaas.
             if assinatura.forma_pagamento == 'pix':
                 assinatura.periodo_atual_fim = _proximo_vencimento_mensal(agora)
+                if assinatura.gateway_subscription_id:
+                    # Sobrou uma assinatura recorrente de CARTÃO de uma
+                    # troca de forma de pagamento pra Pix (ver
+                    # criar_pagamento_pix_ativacao) -- só cancela agora,
+                    # que esse Pix confirmou de verdade. Cancelar já na
+                    # hora de gerar o Pix seria arriscado: se o usuário
+                    # abandonasse o Pix sem pagar, ficaria sem NENHUMA
+                    # forma de pagamento funcionando.
+                    BillingService._cancelar_subscription_asaas(
+                        assinatura.gateway_subscription_id, assinatura.id,
+                        motivo='troca de cartão para pix confirmada',
+                    )
+                    assinatura.gateway_subscription_id = None
             if payment:
                 # Marca qual payment foi o responsável por essa
                 # ativação -- é contra esse id que um futuro evento de
@@ -1378,6 +1403,39 @@ class BillingService:
             logger.exception('Erro de rede ao agendar nota fiscal do pagamento %s', payment_id)
 
     @staticmethod
+    def _cancelar_subscription_asaas(subscription_id: str, assinatura_id: int, motivo: str) -> bool:
+        """DELETE /subscriptions/{id} no Asaas, best-effort: loga e
+        retorna False se falhar, mas NUNCA levanta -- quem chama decide
+        se isso deve impedir o resto do fluxo (normalmente não deve,
+        ver usos em _substituir_gateway_subscription_id e
+        criar_pagamento_pix_ativacao). 404 conta como sucesso (já não
+        existe mais no Asaas -- nada a fazer)."""
+        try:
+            resp = requests.delete(
+                f'{BillingService._base_url()}/subscriptions/{subscription_id}',
+                headers=BillingService._headers(),
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+            if resp.status_code >= 300 and resp.status_code != 404:
+                logger.error(
+                    'Falha ao cancelar assinatura %s no Asaas (%s) da assinatura local %s: HTTP %s -- %s',
+                    subscription_id, motivo, assinatura_id, resp.status_code, resp.text[:500],
+                )
+                return False
+            logger.info(
+                'Assinatura %s cancelada no Asaas (%s) da assinatura local %s',
+                subscription_id, motivo, assinatura_id,
+            )
+            return True
+        except requests.RequestException:
+            logger.exception(
+                'Erro de rede ao cancelar assinatura %s no Asaas (%s) da assinatura local %s -- '
+                'pode ficar cobrando em duplicidade, checar manualmente no painel',
+                subscription_id, motivo, assinatura_id,
+            )
+            return False
+
+    @staticmethod
     def _substituir_gateway_subscription_id(assinatura: Assinatura, subscription_id_novo: str):
         """Troca o gateway_subscription_id salvo pelo novo, cancelando
         ANTES a assinatura antiga no Asaas (best-effort -- loga e segue
@@ -1390,35 +1448,11 @@ class BillingService:
         nova (que acabou de confirmar). Resultado, sem essa troca:
         risco de cobrança duplicada todo mês, e a antiga fica órfã --
         cancelar_assinatura só conhece o id salvo aqui, então o usuário
-        nunca consegue cancelar a que ficou pra trás pelo app.
-
-        404 ao cancelar a antiga conta como sucesso (já não existe mais
-        no Asaas -- nada a fazer)."""
+        nunca consegue cancelar a que ficou pra trás pelo app."""
         antigo = assinatura.gateway_subscription_id
-        try:
-            resp = requests.delete(
-                f'{BillingService._base_url()}/subscriptions/{antigo}',
-                headers=BillingService._headers(),
-                timeout=REQUEST_TIMEOUT_SECONDS,
-            )
-            if resp.status_code >= 300 and resp.status_code != 404:
-                logger.error(
-                    'Falha ao cancelar assinatura antiga %s no Asaas (substituída por %s) '
-                    'da assinatura local %s: HTTP %s -- %s',
-                    antigo, subscription_id_novo, assinatura.id, resp.status_code, resp.text[:500],
-                )
-            else:
-                logger.info(
-                    'Assinatura antiga %s cancelada no Asaas (substituída por %s) da assinatura '
-                    'local %s -- evita cobrança duplicada num mesmo cliente',
-                    antigo, subscription_id_novo, assinatura.id,
-                )
-        except requests.RequestException:
-            logger.exception(
-                'Erro de rede ao cancelar assinatura antiga %s no Asaas (substituída por %s) '
-                'da assinatura local %s -- pode ficar cobrando em duplicidade, checar manualmente no painel',
-                antigo, subscription_id_novo, assinatura.id,
-            )
+        BillingService._cancelar_subscription_asaas(
+            antigo, assinatura.id, motivo=f'substituída por {subscription_id_novo}',
+        )
         assinatura.gateway_subscription_id = subscription_id_novo
 
     @staticmethod

@@ -1360,6 +1360,148 @@ class TestPrevencaoDeCobrancaDupla:
 
 
 # ---------------------------------------------------------------------
+# criar_pagamento_pix_ativacao -- troca de forma de pagamento
+# ---------------------------------------------------------------------
+
+class TestPixBloqueiaCartaoAtivoMesmoPlano:
+    """Regressão: o comentário original do código já dizia que cartão
+    ativo pro mesmo plano deveria bloquear um Pix duplicado -- mas a
+    condição implementada checava periodo_atual_fim, campo que cartão
+    nunca preenche. Confirmado por reprodução antes de corrigir: uma
+    assinatura active/cartao/mesmo plano conseguia gerar um Pix novo
+    sem erro nenhum."""
+
+    def _criar_assinatura_cartao_ativa(self, plano):
+        aluno = _criar_usuario(f'pix_bloqueio_cartao_{id(object())}')
+        _preencher_dados_cobranca(aluno)
+        assinatura = Assinatura(
+            usuario_id=aluno.id, status='active', forma_pagamento='cartao',
+            plano_id=plano.id, gateway_subscription_id='sub_cartao_vigente',
+            gateway_customer_id='cus_existente',
+        )
+        db.session.add(assinatura)
+        db.session.commit()
+        return aluno, assinatura
+
+    def test_cartao_ativo_mesmo_plano_levanta_assinatura_ja_ativa(self, app):
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            _, _, fit = _criar_planos_professor()
+            aluno, assinatura = self._criar_assinatura_cartao_ativa(fit)
+
+            try:
+                BillingService.criar_pagamento_pix_ativacao(aluno, fit)
+                assert False, 'deveria ter levantado AssinaturaJaAtivaError'
+            except AssinaturaJaAtivaError:
+                pass
+
+            # Não deve ter mexido em nada -- nem tentado chamar o Asaas.
+            db.session.refresh(assinatura)
+            assert assinatura.forma_pagamento == 'cartao'
+            assert assinatura.gateway_subscription_id == 'sub_cartao_vigente'
+
+    def test_cartao_ativo_plano_diferente_gera_pix_mas_mantem_subscription_ate_confirmar(self, app, monkeypatch):
+        """Upgrade/downgrade voluntário saindo do cartão pro Pix: deve
+        gerar o Pix normalmente (plano diferente, não é duplicidade),
+        mas NÃO pode cancelar a assinatura de cartão ainda -- só quando
+        o Pix confirmar de fato (ver TestPixConfirmadoCancelaCartaoAntigo)."""
+        monkeypatch.setattr(
+            'services.billing_service.requests.put',
+            lambda url, **k: _RespostaFake({'id': 'cus_existente'}),
+        )
+        monkeypatch.setattr(
+            'services.billing_service.requests.post',
+            lambda url, **k: _RespostaFake({'id': 'pay_pix_novo', 'invoiceUrl': 'https://pix/fake'}),
+        )
+        chamadas_delete = []
+        monkeypatch.setattr(
+            'services.billing_service.requests.delete',
+            lambda url, **k: chamadas_delete.append(url),
+        )
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            _, pro, premium = _criar_planos_professor()
+            aluno, assinatura = self._criar_assinatura_cartao_ativa(pro)
+
+            link = BillingService.criar_pagamento_pix_ativacao(aluno, premium)
+            assert link == 'https://pix/fake'
+
+            db.session.refresh(assinatura)
+            assert assinatura.plano_id == premium.id
+            assert assinatura.forma_pagamento == 'pix'
+            # Ainda não cancelou -- Pix só foi GERADO, não confirmado.
+            assert assinatura.gateway_subscription_id == 'sub_cartao_vigente'
+            assert chamadas_delete == []
+
+
+class TestPixConfirmadoCancelaCartaoAntigo:
+    """Quando o Pix gerado numa troca cartão->pix É confirmado, a
+    assinatura de cartão antiga (deixada de propósito intacta em
+    criar_pagamento_pix_ativacao) tem que ser cancelada nesse momento
+    -- senão o cartão continua sendo cobrado todo mês em paralelo ao
+    Pix, sem o usuário perceber."""
+
+    def test_webhook_confirmado_cancela_subscription_de_cartao_residual(self, app, monkeypatch):
+        chamadas_delete = []
+
+        def _delete_fake(url, **kwargs):
+            chamadas_delete.append(url)
+            return _RespostaFake({}, status_code=200)
+
+        monkeypatch.setattr('services.billing_service.requests.delete', _delete_fake)
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            aluno = _criar_usuario('pix_confirma_cancela_cartao')
+            assinatura = Assinatura(
+                usuario_id=aluno.id, status='trialing', forma_pagamento='pix',
+                gateway_subscription_id='sub_cartao_residual',
+                gateway_customer_id='cus_troca',
+            )
+            db.session.add(assinatura)
+            db.session.commit()
+
+            BillingService.processar_webhook({
+                'id': 'evt_pix_confirma_troca', 'event': 'PAYMENT_CONFIRMED',
+                'payment': {'id': 'pay_pix_confirmado', 'customer': 'cus_troca'},
+            })
+
+            db.session.refresh(assinatura)
+            assert assinatura.status == 'active'
+            assert assinatura.gateway_subscription_id is None
+            assert len(chamadas_delete) == 1
+            assert 'sub_cartao_residual' in chamadas_delete[0]
+
+    def test_webhook_pix_sem_subscription_residual_nao_chama_delete(self, app, monkeypatch):
+        """Confirmação normal de Pix (nunca teve cartão antes) não deve
+        tentar cancelar nada -- gateway_subscription_id já é None."""
+        chamadas_delete = []
+        monkeypatch.setattr(
+            'services.billing_service.requests.delete',
+            lambda url, **k: chamadas_delete.append(url),
+        )
+
+        with app.app_context():
+            aluno = _criar_usuario('pix_confirma_normal')
+            assinatura = Assinatura(
+                usuario_id=aluno.id, status='trialing', forma_pagamento='pix',
+                gateway_customer_id='cus_normal',
+            )
+            db.session.add(assinatura)
+            db.session.commit()
+
+            BillingService.processar_webhook({
+                'id': 'evt_pix_normal', 'event': 'PAYMENT_CONFIRMED',
+                'payment': {'id': 'pay_normal', 'customer': 'cus_normal'},
+            })
+
+            db.session.refresh(assinatura)
+            assert assinatura.status == 'active'
+            assert chamadas_delete == []
+
+
+# ---------------------------------------------------------------------
 # Cancelamento de assinatura
 # ---------------------------------------------------------------------
 
