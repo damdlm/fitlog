@@ -1076,6 +1076,16 @@
             }
         }
 
+        /* Enquanto o ícone de instalar o app estiver ativo (app ainda não
+           instalado), ele ocupa o lugar do ícone do FitBot no cabeçalho
+           mobile, em vez de aparecer ao lado -- o FitBot some até o app
+           ser instalado (ou até o usuário dispensar o convite). */
+        @media (max-width: 991.98px) {
+            body.pwa-header-icon-active .fitbot-toggle-btn {
+                display: none !important;
+            }
+        }
+
         /* ===== Modal de confirmação global (substitui window.confirm) =====
            Mesmo padrão visual do aviso "Cancelar treino?" da tela de
            registro: ícone circular, título, texto e botões empilhados de
