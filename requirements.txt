@@ -12,6 +12,14 @@ requests==2.33.0
 # =========================
 psycopg2==2.9.9
 
+# O Railway passou a fornecer o DATABASE_URL do Postgres gerenciado no
+# formato "postgresql+psycopg://" (driver psycopg 3), em vez do antigo
+# "postgresql://" que caía no psycopg2 acima. Sem isso, o deploy quebra
+# na migração do Alembic com "ModuleNotFoundError: No module named
+# 'psycopg'". Mantemos os dois instalados pra funcionar com qualquer um
+# dos dois formatos de URL.
+psycopg[binary]==3.2.3
+
 # =========================
 # MIGRATIONS (usado via Procfile: alembic upgrade head)
 # =========================
