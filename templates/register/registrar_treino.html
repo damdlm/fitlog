@@ -1151,54 +1151,60 @@
 
     /* Faixa superior: mesmo gradiente laranja do botão principal do
        cronômetro, pra abrir a tela com uma sensação de "vamos lá" em
-       vez de um cabeçalho neutro de lista. */
+       vez de um cabeçalho neutro de lista. Menor que antes e com uma
+       borda branca em volta, pra parecer um cartão flutuando sobre a
+       lista em vez de uma faixa colada nas bordas da tela. */
     #preInicioTreinoOverlay .pre-inicio-hero {
         position: relative;
-        padding: 22px 22px 26px;
+        margin: 12px 12px 0;
+        padding: 16px 18px 18px;
         background: linear-gradient(135deg, var(--primary-orange) 0%, var(--light-orange) 100%);
         color: #fff;
         flex-shrink: 0;
+        border: 3px solid #fff;
+        border-radius: 18px;
+        box-shadow: var(--shadow-md, 0 4px 14px rgba(0, 0, 0, 0.12));
     }
 
     #preInicioTreinoOverlay .pre-inicio-btn-fechar {
         position: absolute;
-        top: 18px;
-        right: 18px;
+        top: 14px;
+        right: 14px;
         border: none;
         background: rgba(255, 255, 255, 0.22);
         color: #fff;
-        width: 34px;
-        height: 34px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 1rem;
+        font-size: 0.92rem;
     }
 
     #preInicioTreinoOverlay .pre-inicio-hero-icone {
-        width: 46px;
-        height: 46px;
-        border-radius: 14px;
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
         background: rgba(255, 255, 255, 0.22);
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.3rem;
-        margin-bottom: 14px;
+        font-size: 1.1rem;
+        margin-bottom: 10px;
     }
 
     #preInicioTreinoOverlay .pre-inicio-hero-titulo {
         margin: 0 0 4px;
-        font-size: 1.4rem;
+        font-size: 1.2rem;
         font-weight: 800;
         line-height: 1.2;
-        padding-right: 40px;
+        padding-right: 36px;
     }
 
     #preInicioTreinoOverlay .pre-inicio-hero-sub {
         margin: 0;
-        font-size: 0.92rem;
+        font-size: 0.85rem;
         opacity: 0.92;
     }
 
@@ -1271,13 +1277,19 @@
         background: var(--surface);
         border-top: 1px solid var(--border-soft);
         box-shadow: var(--shadow-md);
+        display: flex;
+        justify-content: center;
     }
 
+    /* Botão menor que antes (não ocupa mais a largura toda) e com o
+       ícone de play redondo, no mesmo estilo dos outros ícones de ação
+       da tela (Cancelar/Salvar/Pausar). */
     #preInicioTreinoOverlay .pre-inicio-btn-play {
-        width: 100%;
+        width: auto;
+        min-width: 200px;
         justify-content: center;
-        padding: 15px;
-        font-size: 1.05rem;
+        padding: 11px 24px;
+        font-size: 0.95rem;
         border-radius: var(--radius-lg, 16px);
         box-shadow: var(--shadow-orange);
         animation: preInicioRespirar 2.6s ease-in-out .5s infinite;
@@ -2772,7 +2784,7 @@
     /* ====== Modal de confirmação ao cancelar/sair com treino em
        andamento ====== */
     .confirmar-cancelamento-content {
-        border: none;
+        border: 2px solid var(--bs-danger, #dc3545);
         border-radius: var(--radius-lg);
     }
 
@@ -3648,7 +3660,7 @@
     </div>
     <div class="pre-inicio-footer">
         <button type="button" class="btn-cronometro btn-cronometro-primary pre-inicio-btn-play" id="preInicioBtnPlay">
-            <i class="bi bi-play-fill"></i> <span>Iniciar treino</span>
+            <i class="bi bi-play-circle"></i> <span>Iniciar treino</span>
         </button>
     </div>
 </div>
@@ -5023,11 +5035,11 @@ function tocarBipe() {
 
             if (rodando) {
                 intervalId = setInterval(atualizarDisplay, 1000);
-                elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i><span>Pausar</span>';
+                elBtnIniciar.innerHTML = '<i class="bi bi-pause-circle"></i><span>Pausar</span>';
                 elBtnIniciar.classList.add('is-rodando');
                 pedirWakeLock();
             } else {
-                elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i><span>Retomar</span>';
+                elBtnIniciar.innerHTML = '<i class="bi bi-play-circle"></i><span>Retomar</span>';
             }
 
             jaRevelouExercicios = true;
@@ -5174,7 +5186,7 @@ function tocarBipe() {
         rodando = true;
         inicioMs = Date.now();
         intervalId = setInterval(atualizarDisplay, 1000);
-        elBtnIniciar.innerHTML = '<i class="bi bi-pause-fill"></i><span>Pausar</span>';
+        elBtnIniciar.innerHTML = '<i class="bi bi-pause-circle"></i><span>Pausar</span>';
         elBtnIniciar.classList.add('is-rodando');
         pedirWakeLock();
 
@@ -5217,7 +5229,7 @@ function tocarBipe() {
         acumuladoSegundos = segundosAtuais();
         rodando = false;
         clearInterval(intervalId);
-        elBtnIniciar.innerHTML = '<i class="bi bi-play-fill"></i><span>Retomar</span>';
+        elBtnIniciar.innerHTML = '<i class="bi bi-play-circle"></i><span>Retomar</span>';
         elBtnIniciar.classList.remove('is-rodando');
         liberarWakeLock();
     }
