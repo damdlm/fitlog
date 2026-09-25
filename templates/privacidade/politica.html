@@ -35,7 +35,7 @@
                     <li><strong>Dados de treino:</strong> versões e treinos que você monta, exercícios, séries, cargas e repetições, histórico de execução.</li>
                     <li><strong>Informações de evolução física:</strong> seu histórico de treino ao longo do tempo (usado para gráficos/estatísticas de progresso dentro do próprio app).</li>
                     <li><strong>Dados de assinatura/pagamento:</strong> se você assinar um plano pago, CEP e CPF/CNPJ (exigidos pelo meio de pagamento) e identificadores da cobrança (nunca o número completo do cartão).</li>
-                    <li><strong>Dados técnicos e de segurança:</strong> endereço IP e registros de eventos de segurança (ex.: tentativas de login), usados só para proteger sua conta contra acesso indevido.</li>
+                    <li><strong>Dados técnicos e de segurança:</strong> endereço IP e registros de eventos de segurança (ex.: tentativas de login), usados só para proteger sua conta contra acesso indevido. Também mantemos um registro interno de travamentos/erros técnicos (URL, navegador usado e a mensagem do erro) para identificar e corrigir falhas do FitLog.</li>
                     <li><strong>Informações fornecidas ao FitBot:</strong> as mensagens que você envia ao assistente e, se você optar por enviar, fotos de equipamentos de treino.</li>
                     <li><strong>Imagens:</strong> só as fotos que você mesmo decide enviar ao FitBot para tirar dúvidas sobre um equipamento.</li>
                 </ul>
@@ -73,6 +73,7 @@
                     <li><strong>Asaas</strong>, nosso meio de pagamento, se você assinar um plano — nunca guardamos o número completo do seu cartão.</li>
                     <li><strong>Resend</strong>, serviço usado para enviar e-mails transacionais (ex.: redefinição de senha).</li>
                     <li><strong>Railway</strong>, provedor de infraestrutura onde o FitLog roda.</li>
+                    <li><strong>Sentry</strong>, ferramenta de monitoramento de erros técnicos -- configurada para não coletar automaticamente dados pessoais (IP, cookies ou dados de sessão); pode conter incidentalmente algum dado pessoal apenas se ele aparecer no texto de uma mensagem de erro específica.</li>
                 </ul>
                 <p>Não vendemos dados pessoais a terceiros e não usamos ferramentas de publicidade ou rastreamento de terceiros (analytics de anúncios, pixels de redes sociais, etc.).</p>
 

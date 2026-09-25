@@ -32,6 +32,8 @@ from models import (
     VersaoGlobal,
     ExercicioUsuario,
     RegistroTreino,
+    Assinatura,
+    PagamentoRecebido,
 )
 from services.base_service import CacheService
 
@@ -229,6 +231,33 @@ class PrivacidadeService:
                 .order_by(ConsentimentoLGPD.criado_em).all()
         ]
 
+        # Assinatura -- não inclui gateway_customer_id/gateway_subscription_id
+        # (identificadores internos do Asaas, não dado que o usuário
+        # precise de volta na portabilidade, mesma lógica de excluir
+        # senha/tokens).
+        assinatura = user.assinatura
+        dados_assinatura = None
+        if assinatura is not None:
+            dados_assinatura = {
+                'status': assinatura.status,
+                'plano': assinatura.plano.nome if assinatura.plano else None,
+                'forma_pagamento': assinatura.forma_pagamento,
+                'trial_termina_em': assinatura.trial_termina_em.isoformat() if assinatura.trial_termina_em else None,
+                'periodo_atual_fim': assinatura.periodo_atual_fim.isoformat() if assinatura.periodo_atual_fim else None,
+                'cancelado_em': assinatura.cancelado_em.isoformat() if assinatura.cancelado_em else None,
+            }
+
+        pagamentos = [
+            {
+                'plano': p.plano_codigo,
+                'forma_pagamento': p.forma_pagamento,
+                'valor_pago_reais': round(p.valor_bruto_centavos / 100, 2),
+                'confirmado_em': p.confirmado_em.isoformat() if p.confirmado_em else None,
+            }
+            for p in PagamentoRecebido.query.filter_by(usuario_id=user.id)
+                .order_by(PagamentoRecebido.confirmado_em).all()
+        ]
+
         return {
             'dados_pessoais': {
                 'username': user.username,
@@ -236,14 +265,24 @@ class PrivacidadeService:
                 'email': user.email,
                 'telefone': user.telefone,
                 'data_nascimento': user.data_nascimento.isoformat() if user.data_nascimento else None,
+                'genero': user.genero,
                 'tipo_usuario': user.tipo_usuario,
                 'criado_em': user.created_at.isoformat() if user.created_at else None,
                 'ultimo_login': user.last_login.isoformat() if user.last_login else None,
+            },
+            'dados_endereco': {
+                'cep': user.endereco_cep,
+                'numero': user.endereco_numero,
+            },
+            'dados_fiscais': {
+                'cpf_cnpj': user.cpf_cnpj,
             },
             'vinculo_professor': (
                 {'nome': professor.nome_completo or professor.username}
                 if professor else None
             ),
+            'dados_assinatura': dados_assinatura,
+            'dados_pagamentos': pagamentos,
             'versoes_de_treino': versoes,
             'registros_de_treino': registros,
             'exercicios_criados': exercicios_criados,
