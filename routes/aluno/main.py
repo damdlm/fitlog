@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from . import aluno_bp
 from models import db, User, AlunoProfessor, SolicitacaoVinculo, TreinoVersao, VersaoGlobal, ExercicioCustomizado, RegistroTreino
 from utils.decorators import acesso_premium_required
+from services.avaliacao_professor_service import AvaliacaoProfessorService
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 import logging
@@ -128,9 +129,38 @@ def meu_professor():
     if not current_user.is_aluno():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
-    
+
     professor = current_user.get_professor()
-    return render_template('aluno/meu_professor.html', professor=professor)
+    resumo_avaliacoes = None
+    minha_nota = None
+    if professor:
+        resumo_avaliacoes = AvaliacaoProfessorService.resumo(professor.id)
+        minha_nota = AvaliacaoProfessorService.nota_do_aluno(current_user.id, professor.id)
+
+    return render_template(
+        'aluno/meu_professor.html',
+        professor=professor,
+        resumo_avaliacoes=resumo_avaliacoes,
+        minha_nota=minha_nota,
+    )
+
+@aluno_bp.route('/avaliar-professor', methods=['POST'])
+@login_required
+def avaliar_professor():
+    """Registra (ou atualiza) a nota de 1-5 estrelas do aluno pro seu
+    professor vinculado."""
+    if not current_user.is_aluno():
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('main.index'))
+
+    professor = current_user.get_professor()
+    if not professor:
+        flash('Você não está vinculado a nenhum professor.', 'warning')
+        return redirect(url_for('aluno.meu_professor'))
+
+    ok, mensagem = AvaliacaoProfessorService.avaliar(current_user, professor.id, request.form.get('nota'))
+    flash(mensagem, 'success' if ok else 'danger')
+    return redirect(url_for('aluno.meu_professor'))
 
 @aluno_bp.route('/buscar-professores')
 @login_required

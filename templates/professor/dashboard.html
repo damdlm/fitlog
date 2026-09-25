@@ -147,6 +147,25 @@
     <p class="dash-hero-subtitle">Aqui está um resumo do que merece sua atenção hoje.</p>
 </div>
 
+<!-- Página pública -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4 p-3"
+     style="background: #FFF8EF; border: 1px dashed #FFB366; border-radius: 12px;">
+    <div>
+        <strong><i class="bi bi-person-badge me-1"></i> Sua página pública</strong>
+        <span class="text-muted"> -- divulgue seu trabalho e receba alunos com um link só seu.</span>
+    </div>
+    <div class="d-flex gap-2">
+        {% if current_user.professor_slug %}
+        <a href="{{ url_for('professor.pagina_publica', slug=current_user.professor_slug) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-eye"></i> Ver
+        </a>
+        {% endif %}
+        <a href="{{ url_for('professor.editar_pagina_publica') }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-pencil"></i> Editar página
+        </a>
+    </div>
+</div>
+
 <!-- Indicadores principais -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">

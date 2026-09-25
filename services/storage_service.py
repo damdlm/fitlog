@@ -100,6 +100,39 @@ class StorageService:
             return False
 
     @classmethod
+    def upload_fileobj(cls, fileobj, chave: str, content_type: str = None) -> bool:
+        """Sobe um arquivo direto de um stream em memória (ex: o
+        FileStorage de um upload via Flask, `request.files['foto']`)
+        pro bucket, sem precisar gravar em disco primeiro -- diferente
+        de upload_file (usado pelo script de migração, que parte de um
+        arquivo já no disco)."""
+        client = cls._get_client()
+        if client is None:
+            return False
+        try:
+            extra_args = {"ContentType": content_type} if content_type else {}
+            client.upload_fileobj(fileobj, cls._bucket_name, chave, ExtraArgs=extra_args)
+            return True
+        except Exception:
+            logger.exception("StorageService: falha ao subir (fileobj) %s", chave)
+            return False
+
+    @classmethod
+    def delete_object(cls, chave: str) -> bool:
+        """Remove um objeto do bucket (ex: foto antiga substituída por
+        uma nova). Falha silenciosa -- não é crítico se a chave antiga
+        ficar órfã no bucket."""
+        client = cls._get_client()
+        if client is None:
+            return False
+        try:
+            client.delete_object(Bucket=cls._bucket_name, Key=chave)
+            return True
+        except Exception:
+            logger.warning("StorageService: falha ao remover %s", chave, exc_info=True)
+            return False
+
+    @classmethod
     def generate_presigned_url(cls, chave: str, expira_em_segundos: int = 3600) -> str | None:
         """Gera uma URL temporária de leitura pra chave `chave`. Usada
         pela rota /exercicios-media pra redirecionar o navegador direto

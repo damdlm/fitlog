@@ -112,11 +112,59 @@ class User(UserMixin, db.Model):
     # ver migration e5f6a7b8c9d0. Default True (aparece), reversível a
     # qualquer momento em Meu Perfil.
     aparecer_no_ranking = db.Column(db.Boolean, nullable=False, default=True)
-    
+
+    # =====================================================
+    # PÁGINA PÚBLICA DO PROFESSOR (só usado quando tipo_usuario='professor')
+    # =====================================================
+    # URL amigável e estável (ex: /professor/pagina/marcos-camargo) --
+    # gerada uma única vez (ver ProfessorPerfilService.garantir_slug) e
+    # nunca muda depois, mesmo se o professor editar o nome, para não
+    # quebrar um link já compartilhado.
+    professor_slug = db.Column(db.String(220), unique=True, nullable=True)
+    professor_tagline = db.Column(db.String(200), nullable=True)
+    professor_bio = db.Column(db.Text, nullable=True)
+    professor_cref = db.Column(db.String(30), nullable=True)
+    # Lista de strings (ex: ["emagrecimento", "hipertrofia"]) -- vocabulário
+    # fixo validado em ProfessorPerfilService.ESPECIALIDADES_VALIDAS.
+    professor_especialidades = db.Column(db.JSON, nullable=True)
+    # Só o @handle do Instagram, sem URL nem "@" (ex: "marcoscamargo_ed").
+    professor_instagram = db.Column(db.String(120), nullable=True)
+    # Chave do objeto no bucket S3-compatível (StorageService), servida
+    # via rota /professores-media/<chave> -- mesmo padrão da mídia dos
+    # exercícios. Cada upload novo grava com uma chave nova (nome com
+    # timestamp), então a URL pode ser cacheada como imutável no
+    # navegador (ver app.py:professores_media).
+    professor_foto_chave = db.Column(db.String(255), nullable=True)
+    # Controla se o bloco de avaliação (nota média + estrelas) aparece
+    # na página pública -- o professor pode preencher tudo e ainda
+    # assim ocultar só esse bloco. Default True.
+    professor_mostrar_avaliacoes = db.Column(db.Boolean, nullable=False, default=True)
+
     # Relacionamentos
     versoes = db.relationship('VersaoGlobal', backref='usuario', lazy=True, cascade='all, delete-orphan')
     registros = db.relationship('RegistroTreino', backref='usuario', lazy=True, cascade='all, delete-orphan')
-    
+
+    @property
+    def professor_foto_url(self):
+        """URL pra exibir a foto de perfil do professor, ou None se ele
+        nunca fez upload (o template cai pro círculo com iniciais)."""
+        if not self.professor_foto_chave:
+            return None
+        from flask import url_for
+        return url_for('professores_media', caminho=self.professor_foto_chave)
+
+    @property
+    def professor_iniciais(self):
+        """Iniciais pro avatar-placeholder (até 2 letras), a partir do
+        nome completo ou, na falta dele, do username."""
+        base = (self.nome_completo or self.username or '?').strip()
+        partes = [p for p in base.split() if p]
+        if not partes:
+            return '?'
+        if len(partes) == 1:
+            return partes[0][0].upper()
+        return (partes[0][0] + partes[-1][0]).upper()
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
         # CORREÇÃO 10 (hardening de segurança): incrementa a versão da
@@ -1156,6 +1204,40 @@ class Notificacao(db.Model):
 
     def __repr__(self):
         return f'<Notificacao {self.id} tipo={self.tipo} destinatario={self.destinatario_id} lida={self.lida}>'
+
+
+# =====================================================
+# AVALIAÇÃO DO PROFESSOR PELO ALUNO (nota de 1 a 5 estrelas)
+# =====================================================
+
+class AvaliacaoProfessor(db.Model):
+    """Nota (1-5) que um aluno dá ao seu professor, exibida como média
+    na página pública dele (se professor_mostrar_avaliacoes=True). Um
+    aluno só pode ter UMA nota por professor -- avaliar de novo
+    atualiza a existente em vez de criar outra (ver unique constraint
+    abaixo e AvaliacaoProfessorService.avaliar)."""
+    __tablename__ = 'avaliacoes_professor'
+
+    id = db.Column(db.Integer, primary_key=True)
+    aluno_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    professor_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    nota = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+                            onupdate=lambda: datetime.now(timezone.utc))
+
+    aluno = db.relationship('User', foreign_keys=[aluno_id])
+    professor = db.relationship('User', foreign_keys=[professor_id], backref=db.backref(
+        'avaliacoes_recebidas', lazy='dynamic', cascade='all, delete-orphan'))
+
+    __table_args__ = (
+        db.UniqueConstraint('aluno_id', 'professor_id', name='uq_avaliacao_aluno_professor'),
+        db.CheckConstraint('nota >= 1 AND nota <= 5', name='ck_avaliacao_nota_1_a_5'),
+        db.Index('idx_avaliacao_professor', 'professor_id'),
+    )
+
+    def __repr__(self):
+        return f'<AvaliacaoProfessor aluno={self.aluno_id} professor={self.professor_id} nota={self.nota}>'
 
 
 # =====================================================

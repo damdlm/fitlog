@@ -832,6 +832,49 @@ def create_app(config_class=None):
             EXERCICIOS_MEDIA_DIR, caminho, max_age=60 * 60 * 24 * 30
         )
 
+    # =============================================================
+    # FOTO DE PERFIL DO PROFESSOR (mesmo bucket S3-compatível acima,
+    # pasta "professores/") -- ver services/professor_perfil_service.py
+    # e models.py:User.professor_foto_url. Cada upload novo grava com
+    # uma chave nova (nome com timestamp), então -- diferente da mídia
+    # de exercícios, que tem fallback de volume local -- aqui não há
+    # fallback: sem bucket configurado, o upload já é recusado na
+    # origem (ProfessorPerfilService.salvar_foto), então nunca existe
+    # uma chave pra servir sem o bucket.
+    @app.route("/professores-media/<path:caminho>")
+    def professores_media(caminho):
+        from flask import Response, stream_with_context, abort
+        import mimetypes
+        from services.storage_service import StorageService
+
+        obj = StorageService.get_object_stream(caminho, range_header=request.headers.get("Range"))
+        if not obj:
+            abort(404)
+
+        content_type = obj["content_type"] or mimetypes.guess_type(caminho)[0] or "application/octet-stream"
+        headers = {
+            "Cache-Control": "public, max-age=31536000, immutable",
+            "Accept-Ranges": "bytes",
+        }
+        if obj["content_length"] is not None:
+            headers["Content-Length"] = str(obj["content_length"])
+        if obj["content_range"]:
+            headers["Content-Range"] = obj["content_range"]
+
+        def gerar():
+            stream = obj["body"]
+            try:
+                while True:
+                    trecho = stream.read(64 * 1024)
+                    if not trecho:
+                        break
+                    yield trecho
+            finally:
+                stream.close()
+
+        status = 206 if obj["is_partial"] else 200
+        return Response(stream_with_context(gerar()), status=status, mimetype=content_type, headers=headers)
+
     return app  # ← estava faltando isso!
 
 

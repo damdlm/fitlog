@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-person-badge" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Página do Professor{% endblock %}
+
+{% set nome_exibicao = professor.nome_completo or professor.username %}
+{% set descricao_curta = professor.professor_tagline or ('Página de ' ~ nome_exibicao ~ ' no FitLog') %}
+
+{% block title %}{{ nome_exibicao }} — FitLog{% endblock %}
+{% block meta_description %}{{ descricao_curta }}{% endblock %}
+{% block og_title %}{{ nome_exibicao }} — FitLog{% endblock %}
+{% block og_description %}{{ descricao_curta }}{% endblock %}
+{% block og_image %}{{ canonical_url(professor.professor_foto_url) if professor.professor_foto_url else canonical_url('/static/images/og-fitlog.jpg') }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/professor-pagina.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+
+        <div class="pp-hero">
+            {% if eh_dono %}
+            <a href="{{ url_for('professor.editar_pagina_publica') }}" class="pp-edit-fab">
+                <i class="bi bi-pencil-fill"></i> Editar dados
+            </a>
+            {% endif %}
+
+            <div class="pp-avatar">
+                {% if professor.professor_foto_url %}
+                    <img src="{{ professor.professor_foto_url }}" alt="Foto de {{ nome_exibicao }}">
+                {% else %}
+                    {{ professor.professor_iniciais }}
+                {% endif %}
+            </div>
+
+            <h1>{{ nome_exibicao }}</h1>
+
+            {% if professor.professor_cref %}
+            <div class="pp-cref">CREF {{ professor.professor_cref }}</div>
+            {% endif %}
+
+            {% if professor.professor_tagline %}
+            <p class="pp-tagline">{{ professor.professor_tagline }}</p>
+            {% endif %}
+
+            {% if professor.professor_mostrar_avaliacoes and resumo_avaliacoes.total > 0 %}
+            <div class="pp-stars-row">
+                {% for i in range(1, 6) %}
+                    <i class="bi {{ 'bi-star-fill pp-star-on' if i <= resumo_avaliacoes.media|round(0, 'floor') else 'bi-star-fill' }}"></i>
+                {% endfor %}
+                <span class="pp-stars-num">{{ resumo_avaliacoes.media }} · {{ resumo_avaliacoes.total }} avaliaç{{ 'ão' if resumo_avaliacoes.total == 1 else 'ões' }}</span>
+            </div>
+            {% endif %}
+
+            <button type="button" id="ppShareBtn" class="pp-share-btn"
+                    data-url="{{ canonical_url() }}"
+                    data-titulo="{{ nome_exibicao }} — FitLog"
+                    title="Compartilhar">
+                <i class="bi bi-share-fill"></i>
+            </button>
+        </div>
+
+        {% if professor.professor_bio or especialidades %}
+        <section class="mb-5">
+            <div class="pp-section-title">Sobre mim</div>
+            {% if professor.professor_bio %}
+            <p style="line-height: 1.7;">{{ professor.professor_bio }}</p>
+            {% endif %}
+            {% if especialidades %}
+            <div class="mt-2">
+                {% for esp in especialidades %}
+                <span class="pp-chip">{{ esp }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        <section class="mb-5">
+            <div class="pp-section-title">Serviços oferecidos</div>
+
+            <div class="pp-service-card">
+                <div class="pp-service-icon"><i class="bi bi-people-fill"></i></div>
+                <div>
+                    <h3 class="h6 mb-1">Acompanhamento presencial</h3>
+                    <p class="mb-0 text-muted small">Treinos montados e ajustados junto com você na academia, com acompanhamento da evolução a cada sessão.</p>
+                </div>
+            </div>
+
+            <div class="pp-service-card">
+                <div class="pp-service-icon"><i class="bi bi-laptop"></i></div>
+                <div>
+                    <h3 class="h6 mb-1">Consultoria online</h3>
+                    <p class="mb-0 text-muted small">Planilha de treino personalizada, revisada periodicamente, com suporte por mensagem para dúvidas.</p>
+                </div>
+            </div>
+
+            <div class="pp-service-card">
+                <div class="pp-service-icon"><i class="bi bi-clipboard2-pulse"></i></div>
+                <div>
+                    <h3 class="h6 mb-1">Avaliação física</h3>
+                    <p class="mb-0 text-muted small">Medidas, composição corporal e definição de objetivos para montar o ponto de partida do seu treino.</p>
+                </div>
+            </div>
+        </section>
+
+        {% if professor.professor_mostrar_avaliacoes and resumo_avaliacoes.total > 0 %}
+        <section class="mb-5">
+            <div class="pp-section-title">Avaliação dos alunos</div>
+            <div class="pp-rating-card">
+                <div class="pp-rating-big">{{ resumo_avaliacoes.media }}</div>
+                <div>
+                    <div class="pp-rating-stars">
+                        {% for i in range(1, 6) %}
+                            <i class="bi {{ 'bi-star-fill pp-star-on' if i <= resumo_avaliacoes.media|round(0, 'floor') else 'bi-star-fill' }}"></i>
+                        {% endfor %}
+                    </div>
+                    <small class="text-muted">{{ resumo_avaliacoes.total }} avaliaç{{ 'ão' if resumo_avaliacoes.total == 1 else 'ões' }} de alunos</small>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if professor.professor_instagram %}
+        <section class="mb-5">
+            <div class="pp-section-title">Links</div>
+            <a class="pp-link-btn" href="https://instagram.com/{{ professor.professor_instagram }}" target="_blank" rel="noopener">
+                <i class="bi bi-instagram"></i> Instagram
+            </a>
+        </section>
+        {% endif %}
+
+        {% if not professor.professor_bio and not professor.professor_tagline and eh_dono %}
+        <div class="alert alert-warning">
+            <i class="bi bi-info-circle me-2"></i>
+            Sua página ainda está quase em branco -- só você (logado) consegue ver este aviso.
+            <a href="{{ url_for('professor.editar_pagina_publica') }}">Complete seus dados</a> pra ela ficar pronta pra compartilhar.
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/professor-pagina.js') }}"></script>
+{% endblock %}

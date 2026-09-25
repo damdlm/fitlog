@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, abort
 from flask_login import login_required, current_user
 from models import db, User, AlunoProfessor, RegistroTreino, SolicitacaoVinculo, VersaoGlobal, HistoricoTreino, TreinoVersao
 from services.treino_service import TreinoService
@@ -9,6 +9,8 @@ from services.musculo_service import MusculoService
 from services.billing_service import BillingService
 from services.dashboard_service import DashboardService
 from services.notificacao_service import NotificacaoService
+from services.professor_perfil_service import ProfessorPerfilService, ESPECIALIDADES_VALIDAS
+from services.avaliacao_professor_service import AvaliacaoProfessorService
 from utils.decorators import professor_acesso_alunos_required, professor_acesso_tela_required
 from extensions import limiter
 from datetime import datetime, timezone
@@ -1202,3 +1204,78 @@ def versao_excluir_aluno(aluno_id, versao_id):
         logger.exception("Erro inesperado ao excluir versão do aluno")
         flash('Não foi possível concluir a operação.', 'danger')
     return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_id))
+
+# =============================================
+# PÁGINA PÚBLICA DO PROFESSOR
+# =============================================
+
+@professor_bp.route('/pagina/editar', methods=['GET'])
+@login_required
+def editar_pagina_publica():
+    """Tela de edição da página pública (perfil de divulgação) do
+    professor -- foto, tagline, sobre mim, CREF, especialidades,
+    Instagram e se mostra ou não a média de avaliações."""
+    if not current_user.is_professor() and not current_user.is_admin:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('main.index'))
+
+    return render_template(
+        'professor/editar_pagina_publica.html',
+        especialidades_disponiveis=ESPECIALIDADES_VALIDAS,
+        especialidades_selecionadas=set(current_user.professor_especialidades or []),
+    )
+
+
+@professor_bp.route('/pagina/editar', methods=['POST'])
+@login_required
+@limiter.limit("30 per hour", key_func=_chave_por_professor)
+def salvar_pagina_publica():
+    """Salva os campos de texto da página pública (a foto tem rota
+    própria, /pagina/foto, pra permitir preview antes de salvar o
+    resto sem perder o que já foi digitado)."""
+    if not current_user.is_professor() and not current_user.is_admin:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('main.index'))
+
+    ok, mensagem = ProfessorPerfilService.atualizar_perfil(current_user, request.form)
+    flash(mensagem, 'success' if ok else 'danger')
+    return redirect(url_for('professor.editar_pagina_publica'))
+
+
+@professor_bp.route('/pagina/foto', methods=['POST'])
+@login_required
+@limiter.limit("10 per hour", key_func=_chave_por_professor)
+def upload_foto_pagina_publica():
+    """Upload da foto de perfil exibida na página pública (bucket
+    S3-compatível -- ver services/professor_perfil_service.py)."""
+    if not current_user.is_professor() and not current_user.is_admin:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('main.index'))
+
+    arquivo = request.files.get('foto')
+    ok, mensagem = ProfessorPerfilService.salvar_foto(current_user, arquivo)
+    flash(mensagem, 'success' if ok else 'danger')
+    return redirect(url_for('professor.editar_pagina_publica'))
+
+
+@professor_bp.route('/pagina/<slug>')
+def pagina_publica(slug):
+    """Página pública de divulgação do professor -- acessível SEM
+    login (é o link que ele compartilha com potenciais alunos), mesmo
+    padrão de rota pública de main_routes.py/landing e contato_routes.py/
+    contato_publico. Retorna 404 se o slug não existir ou pertencer a
+    uma conta inativa (nunca revela isso na mensagem)."""
+    professor = ProfessorPerfilService.get_por_slug(slug)
+    if not professor:
+        abort(404)
+
+    resumo_avaliacoes = AvaliacaoProfessorService.resumo(professor.id)
+    eh_dono = current_user.is_authenticated and current_user.id == professor.id
+
+    return render_template(
+        'professor/pagina_publica.html',
+        professor=professor,
+        especialidades=ProfessorPerfilService.especialidades_selecionadas(professor),
+        resumo_avaliacoes=resumo_avaliacoes,
+        eh_dono=eh_dono,
+    )

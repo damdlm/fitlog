@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-pencil-square" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Editar Minha Página{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/professor-pagina.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0" style="color: #F28C33;">
+                <i class="bi bi-person-badge"></i> Minha Página Pública
+            </h4>
+            {% if current_user.professor_slug %}
+            <a href="{{ url_for('professor.pagina_publica', slug=current_user.professor_slug) }}"
+               target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-eye"></i> Ver minha página
+            </a>
+            {% endif %}
+        </div>
+
+        <p class="text-muted">
+            Essa é a página que você pode compartilhar com potenciais alunos -- com sua foto, sua
+            história, seus serviços e sua nota de avaliação (se você escolher mostrar).
+        </p>
+
+        <!-- FOTO -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <h6 class="mb-3"><i class="bi bi-camera me-2"></i>Foto de perfil</h6>
+                <form action="{{ url_for('professor.upload_foto_pagina_publica') }}" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="pp-photo-preview-wrap">
+                        <div class="pp-avatar" id="ppFotoPreview" style="width: 84px; height: 84px; font-size: 28px; color: #F28C33; border-color: #eee;">
+                            {% if current_user.professor_foto_url %}
+                                <img src="{{ current_user.professor_foto_url }}" alt="Foto atual">
+                            {% else %}
+                                {{ current_user.professor_iniciais }}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <input type="file" name="foto" id="ppFotoInput" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mb-2">
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <i class="bi bi-upload"></i> Enviar foto
+                            </button>
+                            <div class="form-text">JPG, PNG ou WEBP -- até 4MB.</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- DADOS -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form action="{{ url_for('professor.salvar_pagina_publica') }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-3">
+                        <label for="ppTagline" class="form-label fw-bold">Frase de impacto</label>
+                        <input type="text" class="form-control" id="ppTagline" name="tagline" maxlength="200"
+                               data-contador-max="200" data-contador-alvo="ppTaglineContador"
+                               value="{{ current_user.professor_tagline or '' }}"
+                               placeholder="Ex: Transforme seu corpo com treinos sob medida para a sua rotina">
+                        <div class="pp-char-counter" id="ppTaglineContador"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ppCref" class="form-label fw-bold">CREF</label>
+                        <input type="text" class="form-control" id="ppCref" name="cref" maxlength="30"
+                               value="{{ current_user.professor_cref or '' }}" placeholder="Ex: 123456-G/SC">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ppBio" class="form-label fw-bold">Sobre mim</label>
+                        <textarea class="form-control" id="ppBio" name="bio" rows="5" maxlength="1000"
+                                  data-contador-max="1000" data-contador-alvo="ppBioContador"
+                                  placeholder="Sua história, sua formação em Educação Física e sua experiência.">{{ current_user.professor_bio or '' }}</textarea>
+                        <div class="pp-char-counter" id="ppBioContador"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Especialidades</label>
+                        <div>
+                            {% for chave, rotulo in especialidades_disponiveis.items() %}
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="especialidades"
+                                       value="{{ chave }}" id="ppEsp{{ chave }}"
+                                       {{ 'checked' if chave in especialidades_selecionadas else '' }}>
+                                <label class="form-check-label" for="ppEsp{{ chave }}">{{ rotulo }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ppInstagram" class="form-label fw-bold">Instagram</label>
+                        <div class="input-group">
+                            <span class="input-group-text">@</span>
+                            <input type="text" class="form-control" id="ppInstagram" name="instagram" maxlength="120"
+                                   value="{{ current_user.professor_instagram or '' }}" placeholder="seu.usuario">
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch mb-4">
+                        <input class="form-check-input" type="checkbox" role="switch" name="mostrar_avaliacoes"
+                               id="ppMostrarAvaliacoes" {{ 'checked' if current_user.professor_mostrar_avaliacoes else '' }}>
+                        <label class="form-check-label" for="ppMostrarAvaliacoes">
+                            Mostrar minha nota de avaliação (estrelas) na página pública
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> Salvar
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/professor-pagina.js') }}"></script>
+{% endblock %}
