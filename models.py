@@ -561,18 +561,6 @@ class Assinatura(db.Model):
     # foi paga derrubava um plano em dia.
     gateway_ultimo_pagamento_confirmado_id = db.Column(db.String(60), nullable=True)
 
-    # Quando a assinatura entrou em atraso (começo do past_due atual) --
-    # é o "dia 0" da régua de notificações de vencimento (ver
-    # BillingService._iniciar_atraso / notificar_vencimentos_pendentes).
-    # None enquanto está em dia. Zerado de volta pra None assim que o
-    # pagamento confirma de novo (não é histórico -- só marca o atraso
-    # ATUAL, se houver).
-    vencido_em = db.Column(db.DateTime(timezone=True), nullable=True)
-    # Quantos dias desde vencido_em já foram notificados pela última vez
-    # -- evita notificar duas vezes no mesmo dia caso o job de
-    # notificação rode mais de uma vez (idempotência simples).
-    ultima_notificacao_vencimento_dias = db.Column(db.Integer, nullable=True)
-
     # forma_pagamento: 'cartao' (checkout hospedado, cobrança
     # recorrente automática todo mês) ou 'pix' (pagamento avulso --
     # sem débito automático -- que ativa o plano por ~1 mês; pra
@@ -843,14 +831,49 @@ class VersaoGlobal(db.Model):
     data_fim = db.Column(db.Date)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    
+
+    # Validade opcional da versão, em meses, contada a partir de
+    # data_inicio (que já é sempre a data real de início de uso: data da
+    # criação da versão ou da clonagem, nunca uma data escolhida pelo
+    # cliente -- ver VersaoService.create_livre/clonar_versao*). Nula =
+    # versão sem prazo (comportamento de sempre, compatível com versões
+    # já existentes).
+    validade_meses = db.Column(db.Integer, nullable=True)
+
+    # Marca quando o alerta de "expirando" já foi disparado (aluno +
+    # professor, ver services/notificacao_service.py e o comando CLI
+    # "versoes-alertar-expiracao"), pra nunca notificar duas vezes a
+    # mesma expiração. Nula = ainda não alertado. É resetado pra None se
+    # a validade for alterada, pra permitir alertar de novo se fizer
+    # sentido com o novo prazo.
+    alerta_expiracao_enviado_em = db.Column(db.DateTime(timezone=True), nullable=True)
+
     treinos = db.relationship('TreinoVersao', backref='versao_ref', lazy=True, cascade='all, delete-orphan')
     registros = db.relationship('RegistroTreino', backref='versao_ref', lazy=True, cascade='all, delete-orphan')
-    
+
     __table_args__ = (
         db.UniqueConstraint('user_id', 'numero_versao', name='unique_versao_por_usuario'),
         db.Index('idx_versao_user_data', 'user_id', 'data_inicio', 'data_fim'),
     )
+
+    @property
+    def data_expiracao(self):
+        """Data em que a validade acaba, ou None se a versão não tem
+        prazo definido (validade_meses nula)."""
+        if not self.validade_meses:
+            return None
+        from dateutil.relativedelta import relativedelta
+        return self.data_inicio + relativedelta(months=self.validade_meses)
+
+    @property
+    def dias_para_expirar(self):
+        """Quantos dias faltam pra data_expiracao (negativo se já
+        passou). None se a versão não tem prazo definido."""
+        data_exp = self.data_expiracao
+        if data_exp is None:
+            return None
+        from datetime import date
+        return (data_exp - date.today()).days
 
 
 class TreinoVersao(db.Model):

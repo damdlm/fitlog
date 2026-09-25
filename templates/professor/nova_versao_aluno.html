@@ -63,6 +63,18 @@
             <input type="text" id="descricao" name="descricao" class="form-control form-control-lg"
                    placeholder="Ex: Foco em hipertrofia - Setembro" maxlength="200" required autofocus>
         </div>
+        <div class="mb-3">
+            <label for="validade_meses" class="form-label fw-bold">Validade (opcional)</label>
+            <div class="input-group">
+                <input type="number" id="validade_meses" name="validade_meses" class="form-control"
+                       placeholder="Sem prazo" min="1" max="24" step="1" inputmode="numeric">
+                <span class="input-group-text">meses</span>
+            </div>
+            <div class="form-text">
+                Deixe em branco pra versão sem prazo. Se preenchido, {{ aluno.nome_completo or aluno.username }}
+                e você recebem um aviso quando estiver perto de vencer.
+            </div>
+        </div>
         <button type="submit" class="btn btn-lg w-100" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
             <i class="bi bi-check-circle"></i> Criar versão
         </button>

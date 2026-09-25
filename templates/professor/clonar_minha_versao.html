@@ -146,9 +146,15 @@
                 <span><i class="bi bi-trophy"></i> {{ total_treinos }} treino{{ 's' if total_treinos != 1 else '' }}</span>
             </div>
         </div>
-        <form method="post">
+        <form method="post" class="d-flex align-items-center gap-2 flex-wrap">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="versao_id" value="{{ v.id }}">
+            <div class="input-group input-group-sm" style="width: 150px;">
+                <input type="number" name="validade_meses" class="form-control" min="1" max="24" step="1"
+                       inputmode="numeric" placeholder="{{ v.validade_meses or 'Sem prazo' }}"
+                       title="Validade em meses pra essa cópia (em branco = mantém a validade desta versão)">
+                <span class="input-group-text">meses</span>
+            </div>
             <button type="submit" class="btn cv-btn-clonar"
                     data-confirm-title="Clonar esta versão para {{ aluno.nome_completo or aluno.username }}?"
                     data-confirm-icon="bi-copy"

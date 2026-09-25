@@ -782,8 +782,9 @@ def nova_versao_aluno(aluno_id):
 
     if request.method == 'POST':
         descricao = request.form.get('descricao', '')
+        validade_meses = request.form.get('validade_meses') or None
         try:
-            nova_versao = VersaoService.create_livre(descricao, user_id=aluno.id)
+            nova_versao = VersaoService.create_livre(descricao, user_id=aluno.id, validade_meses=validade_meses)
             flash('Versão criada!', 'success')
             return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=nova_versao.id))
         except ValueError as e:
@@ -818,9 +819,14 @@ def clonar_minha_versao_aluno(aluno_id):
 
     if request.method == 'POST':
         versao_id = request.form.get('versao_id', type=int)
+        # Campo vazio = mantém a validade da versão de origem (ver
+        # VersaoService.clonar_versao_de_professor); só sobrescreve se o
+        # professor de fato digitou um número pra essa cópia.
+        validade_meses = request.form.get('validade_meses') or '__manter__'
         try:
             nova_versao = VersaoService.clonar_versao_de_professor(
-                versao_id=versao_id, professor_id=current_user.id, aluno_id=aluno.id
+                versao_id=versao_id, professor_id=current_user.id, aluno_id=aluno.id,
+                validade_meses=validade_meses,
             )
             flash(f'Sua versão foi clonada para {aluno.nome_completo or aluno.username} como v{nova_versao.numero_versao}!', 'success')
             return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=nova_versao.id))

@@ -12,18 +12,19 @@ TreinoService de CRUD -- foram removidos junto com as telas que os usavam
 ("Nova Versão", "Meus Treinos"); versões e treinos agora só se criam via
 VersaoService.create_livre/adicionar_treino_livre.
 """
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 from models import (
     db, User, Musculo, VersaoGlobal, TreinoVersao,
-    VersaoExercicio, ExercicioUsuario, ExercicioSistema,
+    VersaoExercicio, ExercicioUsuario, ExercicioSistema, AlunoProfessor,
+    Notificacao,
 )
 from services.versao_service import VersaoService
 
 
-def _criar_usuario(username):
+def _criar_usuario(username, tipo_usuario='aluno'):
     user = User(username=username, email=f'{username}@teste.com',
-                tipo_usuario='aluno', nome_completo=username.title())
+                tipo_usuario=tipo_usuario, nome_completo=username.title())
     user.set_password('123456')
     db.session.add(user)
     db.session.commit()
@@ -37,12 +38,20 @@ def _criar_musculo(user_id):
     return musculo
 
 
-def _criar_versao(user_id, descricao='Bloco', data_inicio=date(2026, 1, 1), data_fim=None):
+def _criar_versao(user_id, descricao='Bloco', data_inicio=date(2026, 1, 1), data_fim=None,
+                   validade_meses=None, alerta_expiracao_enviado_em=None):
     versao = VersaoGlobal(numero_versao=1, descricao=descricao, divisao='ABC',
-                           data_inicio=data_inicio, data_fim=data_fim, user_id=user_id)
+                           data_inicio=data_inicio, data_fim=data_fim, user_id=user_id,
+                           validade_meses=validade_meses,
+                           alerta_expiracao_enviado_em=alerta_expiracao_enviado_em)
     db.session.add(versao)
     db.session.commit()
     return versao
+
+
+def _vincular(aluno_id, professor_id):
+    db.session.add(AlunoProfessor(aluno_id=aluno_id, professor_id=professor_id, ativo=True))
+    db.session.commit()
 
 
 def _criar_treino(versao_id, codigo='A', nome='Treino A', descricao='d'):
@@ -153,3 +162,172 @@ class TestGetExerciciosAgrupadosPorTreino:
 
             assert 'Exercicio de A' in nomes_a
             assert 'Exercicio de B' not in nomes_a
+
+
+class TestValidadeMesesEExpiracao:
+    """VersaoGlobal.data_expiracao/dias_para_expirar e
+    VersaoService._validar_validade_meses (feature de validade em meses
+    + alerta de expiração)."""
+
+    def test_sem_validade_meses_nao_tem_data_expiracao(self, app):
+        with app.app_context():
+            u = _criar_usuario('val_1')
+            versao = _criar_versao(u.id, data_inicio=date(2026, 1, 1))
+            assert versao.data_expiracao is None
+            assert versao.dias_para_expirar is None
+
+    def test_data_expiracao_soma_meses_a_partir_de_data_inicio(self, app):
+        with app.app_context():
+            u = _criar_usuario('val_2')
+            versao = _criar_versao(u.id, data_inicio=date(2026, 1, 15), validade_meses=3)
+            assert versao.data_expiracao == date(2026, 4, 15)
+
+    def test_dias_para_expirar_conta_a_partir_de_hoje(self, app):
+        with app.app_context():
+            hoje = date.today()
+            u_futura = _criar_usuario('val_3_futura')
+            u_vencida = _criar_usuario('val_3_vencida')
+
+            versao_futura = _criar_versao(u_futura.id, data_inicio=hoje, validade_meses=1)
+            assert versao_futura.dias_para_expirar > 0
+
+            versao_vencida = _criar_versao(u_vencida.id, descricao='Vencida',
+                                            data_inicio=hoje - timedelta(days=400), validade_meses=1)
+            assert versao_vencida.dias_para_expirar < 0
+
+    def test_validar_validade_meses_aceita_vazio_como_sem_prazo(self, app):
+        with app.app_context():
+            assert VersaoService._validar_validade_meses(None) is None
+            assert VersaoService._validar_validade_meses('') is None
+
+    def test_validar_validade_meses_converte_string_numerica(self, app):
+        with app.app_context():
+            assert VersaoService._validar_validade_meses('6') == 6
+
+    def test_validar_validade_meses_rejeita_valor_fora_do_limite(self, app):
+        with app.app_context():
+            import pytest
+            with pytest.raises(ValueError):
+                VersaoService._validar_validade_meses(0)
+            with pytest.raises(ValueError):
+                VersaoService._validar_validade_meses(999)
+
+    def test_validar_validade_meses_rejeita_nao_numerico(self, app):
+        with app.app_context():
+            import pytest
+            with pytest.raises(ValueError):
+                VersaoService._validar_validade_meses('abc')
+
+    def test_create_livre_grava_validade_meses(self, app):
+        with app.app_context():
+            u = _criar_usuario('val_create')
+            versao = VersaoService.create_livre('Bloco com prazo', user_id=u.id, validade_meses=2)
+            assert versao.validade_meses == 2
+            assert versao.data_expiracao is not None
+
+    def test_clonar_versao_carrega_validade_da_origem(self, app):
+        with app.app_context():
+            u = _criar_usuario('val_clone')
+            origem = _criar_versao(u.id, data_inicio=date(2026, 1, 1),
+                                    data_fim=date(2026, 2, 1), validade_meses=4)
+            clone = VersaoService.clonar_versao(origem.id, user_id=u.id)
+            assert clone.validade_meses == 4
+
+    def test_clonar_versao_de_professor_aceita_validade_explicita(self, app):
+        with app.app_context():
+            prof = _criar_usuario('val_prof', tipo_usuario='professor')
+            aluno = _criar_usuario('val_aluno')
+            origem = _criar_versao(prof.id, data_inicio=date(2026, 1, 1), validade_meses=6)
+            nova = VersaoService.clonar_versao_de_professor(
+                origem.id, professor_id=prof.id, aluno_id=aluno.id, validade_meses=1
+            )
+            assert nova.validade_meses == 1
+
+    def test_clonar_versao_de_professor_mantem_validade_da_origem_por_padrao(self, app):
+        with app.app_context():
+            prof = _criar_usuario('val_prof2', tipo_usuario='professor')
+            aluno = _criar_usuario('val_aluno2')
+            origem = _criar_versao(prof.id, data_inicio=date(2026, 1, 1), validade_meses=6)
+            nova = VersaoService.clonar_versao_de_professor(
+                origem.id, professor_id=prof.id, aluno_id=aluno.id
+            )
+            assert nova.validade_meses == 6
+
+
+class TestAlertarExpiracoes:
+    """VersaoService.alertar_expiracoes -- comando CLI
+    'versoes-alertar-expiracao'."""
+
+    def test_sem_versoes_com_validade_nao_alerta_nada(self, app):
+        with app.app_context():
+            u = _criar_usuario('alerta_1')
+            _criar_versao(u.id, data_inicio=date.today())
+            assert VersaoService.alertar_expiracoes() == 0
+
+    def test_versao_longe_do_vencimento_nao_alerta(self, app):
+        with app.app_context():
+            u = _criar_usuario('alerta_2')
+            _criar_versao(u.id, data_inicio=date.today(), validade_meses=12)
+            assert VersaoService.alertar_expiracoes() == 0
+            assert Notificacao.query.count() == 0
+
+    def test_versao_dentro_da_janela_notifica_dono_sem_professor(self, app):
+        with app.app_context():
+            u = _criar_usuario('alerta_3')
+            # data_inicio há 355 dias + validade de 12 meses cai dentro
+            # da janela de 15 dias antes de vencer, sem precisar
+            # depender do calendário exato.
+            versao = _criar_versao(u.id, data_inicio=date.today() - timedelta(days=355),
+                                    validade_meses=12)
+            total = VersaoService.alertar_expiracoes()
+            assert total == 1
+
+            db.session.refresh(versao)
+            assert versao.alerta_expiracao_enviado_em is not None
+
+            notifs = Notificacao.query.filter_by(destinatario_id=u.id).all()
+            assert len(notifs) == 1
+            assert notifs[0].tipo == 'versao_expirando'
+
+    def test_versao_dentro_da_janela_notifica_tambem_o_professor_vinculado(self, app):
+        with app.app_context():
+            prof = _criar_usuario('alerta_prof', tipo_usuario='professor')
+            aluno = _criar_usuario('alerta_aluno')
+            _vincular(aluno.id, prof.id)
+            _criar_versao(aluno.id, data_inicio=date.today() - timedelta(days=355), validade_meses=12)
+
+            total = VersaoService.alertar_expiracoes()
+            assert total == 1
+
+            notif_aluno = Notificacao.query.filter_by(destinatario_id=aluno.id).first()
+            notif_prof = Notificacao.query.filter_by(destinatario_id=prof.id).first()
+            assert notif_aluno is not None
+            assert notif_prof is not None
+            assert notif_prof.tipo == 'versao_expirando'
+
+    def test_versao_ja_alertada_nao_alerta_de_novo(self, app):
+        with app.app_context():
+            u = _criar_usuario('alerta_4')
+            _criar_versao(
+                u.id, data_inicio=date.today() - timedelta(days=355), validade_meses=12,
+                alerta_expiracao_enviado_em=datetime.now(timezone.utc),
+            )
+            assert VersaoService.alertar_expiracoes() == 0
+            assert Notificacao.query.count() == 0
+
+    def test_versao_finalizada_nao_alerta(self, app):
+        with app.app_context():
+            u = _criar_usuario('alerta_5')
+            _criar_versao(
+                u.id, data_inicio=date.today() - timedelta(days=355), validade_meses=12,
+                data_fim=date.today(),
+            )
+            assert VersaoService.alertar_expiracoes() == 0
+
+    def test_versao_ja_vencida_ainda_alerta_uma_vez(self, app):
+        """Cobre o caso do cron não ter rodado no dia certo: mesmo já
+        tendo passado do prazo, ainda deve gerar UM alerta."""
+        with app.app_context():
+            u = _criar_usuario('alerta_6')
+            _criar_versao(u.id, data_inicio=date.today() - timedelta(days=800), validade_meses=12)
+            assert VersaoService.alertar_expiracoes() == 1

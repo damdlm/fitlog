@@ -562,15 +562,41 @@ class VersaoService(BaseService):
     # nunca com str(exception) original (não vazar detalhes internos).
     # ==========================================================
 
+    # Limite superior de validade aceito, em meses -- evita valores
+    # absurdos digitados por engano (ex: 999) sem precisar de uma regra
+    # de negócio mais sofisticada.
+    VALIDADE_MESES_MAXIMO = 24
+
     @staticmethod
-    def create_livre(descricao, user_id=None):
+    def _validar_validade_meses(validade_meses):
+        """Normaliza e valida o prazo de validade em meses vindo de um
+        formulário: '' ou None vira None (sem prazo, comportamento de
+        sempre). Caso contrário, precisa ser um inteiro entre 1 e
+        VALIDADE_MESES_MAXIMO."""
+        if validade_meses in (None, ''):
+            return None
+        try:
+            validade_meses = int(validade_meses)
+        except (TypeError, ValueError):
+            raise ValueError("Validade deve ser um número inteiro de meses.")
+        if validade_meses <= 0 or validade_meses > VersaoService.VALIDADE_MESES_MAXIMO:
+            raise ValueError(
+                f"Validade deve ser entre 1 e {VersaoService.VALIDADE_MESES_MAXIMO} meses."
+            )
+        return validade_meses
+
+    @staticmethod
+    def create_livre(descricao, user_id=None, validade_meses=None):
         """
         Cria uma nova versão "livre" (sem campo de divisão, sem data de
         início/fim informados pelo usuário):
         - data_inicio = data atual do SERVIDOR (nunca aceita do cliente,
-          pra não permitir versão retroativa/futura forjada);
+          pra não permitir versão retroativa/futura forjada) -- é a
+          partir dela que a validade (validade_meses) é contada;
         - data_fim = None (só é preenchida ao finalizar, com a data real
           de finalização);
+        - validade_meses: prazo de validade opcional, em meses (None =
+          sem prazo, igual ao comportamento de sempre);
         - só é permitida se o usuário não tiver nenhuma versão ativa no
           momento (nunca fecha silenciosamente a versão anterior --
           diferente de create(), que fazia isso; aqui exigimos que o
@@ -585,6 +611,8 @@ class VersaoService(BaseService):
             raise ValueError("Descrição da versão é obrigatória.")
         if len(descricao) > 200:
             raise ValueError("Descrição deve ter no máximo 200 caracteres.")
+
+        validade_meses = VersaoService._validar_validade_meses(validade_meses)
 
         versao_atual = VersaoService.get_ativa(user_id=user_id)
         if versao_atual:
@@ -603,7 +631,8 @@ class VersaoService(BaseService):
                 divisao='LIVRE',
                 data_inicio=data_inicio,
                 data_fim=None,
-                user_id=user_id
+                user_id=user_id,
+                validade_meses=validade_meses,
             )
             db.session.add(nova_versao)
             db.session.commit()
@@ -936,7 +965,11 @@ class VersaoService(BaseService):
                 divisao='LIVRE',
                 data_inicio=data_inicio,
                 data_fim=None,
-                user_id=user_id
+                user_id=user_id,
+                # A validade da cópia acompanha a da versão de origem --
+                # data_inicio já reinicia agora, então o prazo (se
+                # houver) volta a contar do zero a partir de hoje.
+                validade_meses=origem.validade_meses,
             )
             db.session.add(nova_versao)
             db.session.flush()
@@ -976,7 +1009,7 @@ class VersaoService(BaseService):
             raise ValueError("Não foi possível clonar a versão.")
 
     @staticmethod
-    def clonar_versao_de_professor(versao_id, professor_id, aluno_id):
+    def clonar_versao_de_professor(versao_id, professor_id, aluno_id, validade_meses='__manter__'):
         """Cria uma nova versão ATIVA para o aluno, copiando a estrutura
         (treinos + exercícios, com observações) de uma versão que
         pertence ao PRÓPRIO PROFESSOR -- diferente de clonar_versao,
@@ -995,6 +1028,11 @@ class VersaoService(BaseService):
           Se por algum motivo o aluno ainda não tiver essa cópia (ex:
           exercício criado antes do vínculo profesor/aluno existir), ela
           é criada agora, na hora do clone, seguindo a mesma lógica.
+        - validade_meses: prazo de validade (em meses) pra versão do
+          aluno, contado a partir de hoje (data da clonagem). Por padrão
+          (sentinela '__manter__') acompanha a validade da versão de
+          origem do professor; passe um número pra definir um prazo
+          diferente pra esse aluno, ou None pra deixar sem prazo.
 
         Não copia nenhum histórico de registro: a versão clonada começa
         zerada, só com a estrutura de treinos.
@@ -1005,6 +1043,11 @@ class VersaoService(BaseService):
         origem = VersaoGlobal.query.filter_by(id=versao_id, user_id=professor_id).first()
         if not origem:
             raise ValueError("Versão não encontrada.")
+
+        if validade_meses == '__manter__':
+            validade_meses = origem.validade_meses
+        else:
+            validade_meses = VersaoService._validar_validade_meses(validade_meses)
 
         versao_atual_aluno = VersaoService.get_ativa(user_id=aluno_id)
         if versao_atual_aluno:
@@ -1026,7 +1069,8 @@ class VersaoService(BaseService):
                 divisao='LIVRE',
                 data_inicio=data_inicio,
                 data_fim=None,
-                user_id=aluno_id
+                user_id=aluno_id,
+                validade_meses=validade_meses,
             )
             db.session.add(nova_versao)
             db.session.flush()
@@ -1168,3 +1212,95 @@ class VersaoService(BaseService):
             db.session.rollback()
             logger.exception(f"Erro ao excluir versão {versao_id}")
             raise ValueError("Não foi possível excluir a versão.")
+
+    # Quantos dias antes do vencimento o alerta de expiração dispara
+    # (ver alertar_expiracoes). Uma janela só, não é obrigatório rodar o
+    # cron diariamente pra pegar a versão -- ver alerta_expiracao_
+    # enviado_em, que evita alertar a mesma expiração mais de uma vez.
+    LIMIAR_DIAS_ALERTA_EXPIRACAO = 15
+
+    @staticmethod
+    def alertar_expiracoes():
+        """Varre todas as versões ATIVAS com validade definida
+        (data_fim IS NULL, validade_meses preenchido) ainda não
+        alertadas (alerta_expiracao_enviado_em IS NULL) e que já
+        entraram na janela de alerta (LIMIAR_DIAS_ALERTA_EXPIRACAO) --
+        inclusive se já passou do prazo (dias_para_expirar negativo),
+        pra cobrir o caso do cron não ter rodado bem na hora certa.
+
+        Notifica o próprio dono da versão (aluno, ou o professor quando
+        a versão é dele mesmo) e, se houver um professor vinculado,
+        notifica o professor também sobre o aluno. Marca
+        alerta_expiracao_enviado_em pra nunca repetir o alerta da mesma
+        expiração.
+
+        Pensado pra rodar 1x por dia via Railway Cron (comando CLI
+        "versoes-alertar-expiracao", ver app.py). Retorna quantas
+        versões foram alertadas.
+        """
+        from services.notificacao_service import NotificacaoService
+
+        candidatas = VersaoGlobal.query.filter(
+            VersaoGlobal.data_fim.is_(None),
+            VersaoGlobal.validade_meses.isnot(None),
+            VersaoGlobal.alerta_expiracao_enviado_em.is_(None),
+        ).all()
+
+        total_alertadas = 0
+        for versao in candidatas:
+            dias = versao.dias_para_expirar
+            if dias is None or dias > VersaoService.LIMIAR_DIAS_ALERTA_EXPIRACAO:
+                continue
+
+            dono = versao.usuario
+            if not dono:
+                continue
+
+            if dias > 1:
+                prazo_txt = f"vence em {dias} dias"
+            elif dias == 1:
+                prazo_txt = "vence amanhã"
+            elif dias == 0:
+                prazo_txt = "vence hoje"
+            else:
+                prazo_txt = f"venceu há {abs(dias)} dia(s)"
+
+            nome_dono = dono.nome_completo or dono.username
+            url_versao = f"/versao/{versao.id}"
+
+            try:
+                # Sempre notifica o dono da versão (aluno auto-gerido ou
+                # professor treinando por conta própria).
+                NotificacaoService.criar_ou_agrupar(
+                    destinatario_id=dono.id,
+                    remetente_id=None,
+                    tipo='versao_expirando',
+                    titulo='Sua versão de treino está expirando',
+                    mensagem=f"Sua versão v{versao.numero_versao} ({versao.descricao}) {prazo_txt}.",
+                    url=url_versao,
+                    chave_agrupamento=f"versao_expirando:{versao.id}",
+                )
+
+                # E, se houver um professor vinculado a esse dono, avisa
+                # o professor também -- ele que definiu/acompanha o
+                # plano do aluno.
+                professor = BaseService.get_professor_do_aluno(dono.id)
+                if professor:
+                    NotificacaoService.criar_ou_agrupar(
+                        destinatario_id=professor.id,
+                        remetente_id=None,
+                        tipo='versao_expirando',
+                        titulo='Versão de um aluno está expirando',
+                        mensagem=f"A versão v{versao.numero_versao} de {nome_dono} {prazo_txt}.",
+                        url=f"/professor/aluno/{dono.id}/versao/{versao.id}",
+                        chave_agrupamento=f"versao_expirando_professor:{versao.id}",
+                    )
+
+                versao.alerta_expiracao_enviado_em = datetime.now(timezone.utc)
+                db.session.commit()
+                total_alertadas += 1
+            except Exception:
+                db.session.rollback()
+                logger.exception(f"Erro ao alertar expiração da versão {versao.id}")
+
+        return total_alertadas

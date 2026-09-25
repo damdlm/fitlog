@@ -33,6 +33,8 @@
                 return 'bi-plus-circle';
             case 'versao_finalizada':
                 return 'bi-flag';
+            case 'versao_expirando':
+                return 'bi-hourglass-split';
             default:
                 return 'bi-pencil-square';
         }

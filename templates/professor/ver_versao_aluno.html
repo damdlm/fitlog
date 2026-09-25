@@ -126,6 +126,16 @@
                 <h6 class="text-muted">Período</h6>
                 <h5>{{ versao.data_inicio.strftime('%d/%m/%Y') if versao.data_inicio else '?' }}</h5>
                 <h5>até {{ versao.data_fim.strftime('%d/%m/%Y') if versao.data_fim else 'Atual' }}</h5>
+                {% if not versao.data_fim and versao.data_expiracao %}
+                {% set dias = versao.dias_para_expirar %}
+                <small style="color: {{ '#DC3545' if dias is not none and dias <= 15 else '#6B7280' }};">
+                    <i class="bi bi-hourglass-split"></i>
+                    {% if dias < 0 %}Venceu em {{ versao.data_expiracao.strftime('%d/%m/%Y') }}
+                    {% elif dias == 0 %}Vence hoje
+                    {% elif dias == 1 %}Vence amanhã
+                    {% else %}Vence em {{ versao.data_expiracao.strftime('%d/%m/%Y') }} ({{ dias }}d){% endif %}
+                </small>
+                {% endif %}
             </div>
         </div>
     </div>

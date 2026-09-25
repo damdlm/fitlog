@@ -452,6 +452,15 @@
             <span><i class="bi bi-calendar3"></i> Início em {{ versao.data_inicio.strftime('%d/%m/%Y') if versao.data_inicio else '?' }}</span>
             {% if versao.data_fim %}
             <span><i class="bi bi-calendar-check"></i> Encerrada em {{ versao.data_fim.strftime('%d/%m/%Y') }}</span>
+            {% elif versao.data_expiracao %}
+            {% set dias = versao.dias_para_expirar %}
+            <span style="color: {{ '#DC3545' if dias is not none and dias <= 15 else 'var(--ct-muted)' }};">
+                <i class="bi bi-hourglass-split"></i>
+                {% if dias < 0 %}Venceu em {{ versao.data_expiracao.strftime('%d/%m/%Y') }}
+                {% elif dias == 0 %}Vence hoje
+                {% elif dias == 1 %}Vence amanhã
+                {% else %}Vence em {{ versao.data_expiracao.strftime('%d/%m/%Y') }} ({{ dias }} dias){% endif %}
+            </span>
             {% endif %}
             <span><i class="bi bi-trophy"></i> {{ total_treinos }}/{{ max_treinos }} treinos</span>
             <span><i class="bi bi-list-check"></i> {{ total_ex.value }} exercício{{ 's' if total_ex.value != 1 else '' }}</span>

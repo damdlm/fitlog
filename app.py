@@ -448,17 +448,6 @@ def create_app(config_class=None):
             novo = m['tier_novo'].codigo if m['tier_novo'] else 'gratuito'
             print(f"professor_id={m['professor'].id} {atual} -> {novo}")
 
-    @app.cli.command("billing-notificar-vencimentos")
-    def billing_notificar_vencimentos():
-        """Notifica (na tela de notificações in-app) quem está em
-        atraso de pagamento (past_due/blocked), no ritmo: diário nos 3
-        primeiros dias, a cada 3 dias nos 15 dias seguintes, e a cada
-        10 dias depois disso -- enquanto continuar sem regularizar. Ver
-        BillingService.notificar_vencimentos_pendentes. Rodar 1x/dia."""
-        from services.billing_service import BillingService
-        total = BillingService.notificar_vencimentos_pendentes()
-        print(f"{total} notificação(ões) de vencimento enviada(s).")
-
     # =============================================================
     # COMANDOS CLI (notificações)
     # =============================================================
@@ -488,6 +477,21 @@ def create_app(config_class=None):
             print("Falha ao limpar crash logs antigos (ver logs).")
         else:
             print(f"{total_crashes} crash log(s) antigo(s) removido(s).")
+
+    # =============================================================
+    # COMANDOS CLI (versões de treino)
+    # =============================================================
+    @app.cli.command("versoes-alertar-expiracao")
+    def versoes_alertar_expiracao():
+        """Notifica o dono de cada versão ativa com validade definida
+        (VersaoGlobal.validade_meses) que está entrando na janela de
+        vencimento (ver VersaoService.LIMIAR_DIAS_ALERTA_EXPIRACAO), e
+        também o professor vinculado a ele, se houver. Cada expiração só
+        gera um alerta (ver VersaoGlobal.alerta_expiracao_enviado_em).
+        Rodar diariamente."""
+        from services.versao_service import VersaoService
+        total = VersaoService.alertar_expiracoes()
+        print(f"{total} versão(ões) alertada(s) por expiração próxima.")
 
     # =============================================================
     # COMANDOS CLI (monitoramento)

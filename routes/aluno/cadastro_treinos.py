@@ -113,8 +113,9 @@ def cadastrar_treinos_criar_versao():
         return redirect(url_for('main.index'))
 
     descricao = request.form.get('descricao', '')
+    validade_meses = request.form.get('validade_meses') or None
     try:
-        VersaoService.create_livre(descricao, user_id=current_user.id)
+        VersaoService.create_livre(descricao, user_id=current_user.id, validade_meses=validade_meses)
         flash('Versão criada! Agora adicione os treinos.', 'success')
     except ValueError as e:
         flash(str(e), 'danger')
