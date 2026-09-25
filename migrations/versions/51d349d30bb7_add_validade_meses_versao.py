@@ -9,7 +9,7 @@ expiração (ver comando CLI "versoes-alertar-expiracao" e
 VersaoService/NotificacaoService).
 
 Revision ID: 51d349d30bb7
-Revises: b1c2d3e4f5a6
+Revises: c2d3e4f5a6b7
 Create Date: 2026-09-24 00:00:00.000000
 """
 from alembic import op
@@ -17,7 +17,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '51d349d30bb7'
-down_revision = 'b1c2d3e4f5a6'
+down_revision = 'c2d3e4f5a6b7'
 branch_labels = None
 depends_on = None
 

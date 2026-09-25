@@ -226,6 +226,8 @@
                 <i class="bi bi-flag"></i>
             {% elif n.tipo == 'versao_expirando' %}
                 <i class="bi bi-hourglass-split"></i>
+            {% elif n.tipo == 'plano_vencido' %}
+                <i class="bi bi-credit-card"></i>
             {% else %}
                 <i class="bi bi-pencil-square"></i>
             {% endif %}

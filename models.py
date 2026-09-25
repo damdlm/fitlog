@@ -561,6 +561,18 @@ class Assinatura(db.Model):
     # foi paga derrubava um plano em dia.
     gateway_ultimo_pagamento_confirmado_id = db.Column(db.String(60), nullable=True)
 
+    # Quando a assinatura entrou em atraso (começo do past_due atual) --
+    # é o "dia 0" da régua de notificações de vencimento (ver
+    # BillingService._iniciar_atraso / notificar_vencimentos_pendentes).
+    # None enquanto está em dia. Zerado de volta pra None assim que o
+    # pagamento confirma de novo (não é histórico -- só marca o atraso
+    # ATUAL, se houver).
+    vencido_em = db.Column(db.DateTime(timezone=True), nullable=True)
+    # Quantos dias desde vencido_em já foram notificados pela última vez
+    # -- evita notificar duas vezes no mesmo dia caso o job de
+    # notificação rode mais de uma vez (idempotência simples).
+    ultima_notificacao_vencimento_dias = db.Column(db.Integer, nullable=True)
+
     # forma_pagamento: 'cartao' (checkout hospedado, cobrança
     # recorrente automática todo mês) ou 'pix' (pagamento avulso --
     # sem débito automático -- que ativa o plano por ~1 mês; pra
