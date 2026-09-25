@@ -37,6 +37,16 @@ logger = logging.getLogger(__name__)
 TRIAL_DIAS = 30
 CARENCIA_DIAS_PADRAO = 3
 CARENCIA_DIAS_PROFESSOR_GESTAO = 15
+
+# Régua de notificação in-app de plano vencido (ver
+# BillingService.notificar_vencimentos_pendentes): dias fixos (desde
+# vencido_em) em que sempre notifica -- diário nos 3 primeiros dias, e
+# depois a cada 3 dias por mais 15 dias (6, 9, 12, 15, 18). Depois do
+# último dia dessa lista, passa a notificar a cada
+# DIAS_NOTIFICACAO_VENCIMENTO_INTERVALO_FINAL dias, indefinidamente
+# (enquanto continuar sem regularizar).
+DIAS_NOTIFICACAO_VENCIMENTO_FIXOS = (1, 2, 3, 6, 9, 12, 15, 18)
+DIAS_NOTIFICACAO_VENCIMENTO_INTERVALO_FINAL = 10
 LIMITE_ALUNOS_GRATIS = 2
 REQUEST_TIMEOUT_SECONDS = 10
 
@@ -1184,6 +1194,10 @@ class BillingService:
         if tipo_evento in EVENTOS_CONFIRMACAO_PAGAMENTO:
             assinatura.status = 'active'
             assinatura.carencia_termina_em = None
+            # Regularizou -- para a régua de notificações de vencimento
+            # (ver _iniciar_atraso / notificar_vencimentos_pendentes).
+            assinatura.vencido_em = None
+            assinatura.ultima_notificacao_vencimento_dias = None
             # Pix é pagamento avulso (sem assinatura recorrente no
             # Asaas) -- cada confirmação vale por ~1 mês a partir de
             # AGORA, não a partir de um "próximo vencimento" que o
@@ -1503,6 +1517,67 @@ class BillingService:
         return payment_id != assinatura.gateway_ultimo_pagamento_confirmado_id
 
     @staticmethod
+    def _deve_notificar_vencimento(dias: int) -> bool:
+        """dias: quantos dias inteiros se passaram desde vencido_em.
+        True nos dias fixos da régua (1, 2, 3, 6, 9, 12, 15, 18), e daí
+        em diante a cada DIAS_NOTIFICACAO_VENCIMENTO_INTERVALO_FINAL
+        dias (28, 38, 48, ...)."""
+        if dias in DIAS_NOTIFICACAO_VENCIMENTO_FIXOS:
+            return True
+        ultimo_fixo = DIAS_NOTIFICACAO_VENCIMENTO_FIXOS[-1]
+        if dias > ultimo_fixo:
+            return (dias - ultimo_fixo) % DIAS_NOTIFICACAO_VENCIMENTO_INTERVALO_FINAL == 0
+        return False
+
+    @staticmethod
+    def notificar_vencimentos_pendentes() -> int:
+        """Job periódico (1x/dia): notifica na tela de notificações
+        in-app quem está past_due ou blocked por atraso de pagamento,
+        no ritmo de _deve_notificar_vencimento -- mensagem suave, sem
+        tom de cobrança, só lembrando que o plano venceu e como
+        regularizar. Para sozinho quando o pagamento confirma de novo
+        (vencido_em é zerado em _aplicar_evento) ou quando o usuário
+        cancela de propósito (nunca chega a ter vencido_em setado,
+        já que isso só acontece via _iniciar_atraso, disparado por
+        atraso de pagamento, nunca por cancelamento voluntário).
+
+        Idempotente: se rodar mais de uma vez no mesmo dia, não duplica
+        a notificação (ver ultima_notificacao_vencimento_dias)."""
+        from services.notificacao_service import NotificacaoService
+        agora = datetime.now(timezone.utc)
+        candidatas = Assinatura.query.filter(
+            Assinatura.status.in_(('past_due', 'blocked')),
+            Assinatura.vencido_em.isnot(None),
+        ).all()
+        total = 0
+        for assinatura in candidatas:
+            vencido_em = assinatura.vencido_em
+            if vencido_em.tzinfo is None:
+                vencido_em = vencido_em.replace(tzinfo=timezone.utc)
+            dias = (agora.date() - vencido_em.date()).days
+            if dias <= 0:
+                continue
+            if not BillingService._deve_notificar_vencimento(dias):
+                continue
+            if assinatura.ultima_notificacao_vencimento_dias == dias:
+                continue
+            NotificacaoService._criar(
+                destinatario_id=assinatura.usuario_id,
+                remetente_id=None,
+                tipo='plano_vencido',
+                titulo='Seu plano expirou',
+                mensagem=(
+                    'Seu plano expirou, faça uma nova assinatura para '
+                    'aproveitar todos os recursos do FitLog.'
+                ),
+                url='/minha-assinatura',
+            )
+            assinatura.ultima_notificacao_vencimento_dias = dias
+            db.session.commit()
+            total += 1
+        return total
+
+    @staticmethod
     def _iniciar_atraso(assinatura: Assinatura, agora: datetime):
         """Move a assinatura pra 'past_due' e calcula até quando a
         carência aguenta antes de bloquear de vez -- extraído de
@@ -1519,6 +1594,12 @@ class BillingService:
             else CARENCIA_DIAS_PADRAO
         )
         assinatura.carencia_termina_em = agora + timedelta(days=dias_carencia)
+        # Marca o dia 0 da régua de notificações de vencimento -- só se
+        # ainda não tiver um (não reinicia a contagem por engano se essa
+        # função for chamada de novo enquanto já está em atraso).
+        if not assinatura.vencido_em:
+            assinatura.vencido_em = agora
+            assinatura.ultima_notificacao_vencimento_dias = None
 
     @staticmethod
     def expirar_carencias_vencidas():

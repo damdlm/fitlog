@@ -10,7 +10,7 @@ processamento idempotente de webhook do Asaas.
 """
 from datetime import datetime, timedelta, timezone
 
-from models import db, User, AlunoProfessor, Assinatura, EventoWebhookAsaas, Plano
+from models import db, User, AlunoProfessor, Assinatura, EventoWebhookAsaas, Plano, Notificacao
 from services.billing_service import (
     AssinaturaAtualizadaError, AssinaturaJaAtivaError, BillingService,
     DadosCobrancaIncompletosError, NadaParaCancelarError, TRIAL_DIAS,
@@ -935,6 +935,144 @@ class TestSubstituiSubscriptionAntigaAoConfirmarNova:
 # ---------------------------------------------------------------------
 # Expiração de carência (job periódico)
 # ---------------------------------------------------------------------
+
+class TestDeveNotificarVencimento:
+    """Regra pura da régua de notificação -- diário nos 3 primeiros
+    dias, a cada 3 dias nos 15 seguintes (6, 9, 12, 15, 18), depois a
+    cada 10 dias indefinidamente."""
+
+    def test_dias_fixos_da_regua(self):
+        for dia in (1, 2, 3, 6, 9, 12, 15, 18):
+            assert BillingService._deve_notificar_vencimento(dia) is True
+
+    def test_dias_fora_da_regua_fixa_nao_notifica(self):
+        for dia in (0, 4, 5, 7, 8, 10, 11, 13, 14, 16, 17):
+            assert BillingService._deve_notificar_vencimento(dia) is False
+
+    def test_apos_ultimo_dia_fixo_notifica_a_cada_dez_dias(self):
+        assert BillingService._deve_notificar_vencimento(28) is True
+        assert BillingService._deve_notificar_vencimento(38) is True
+        assert BillingService._deve_notificar_vencimento(48) is True
+        for dia in (19, 20, 25, 27, 29, 35, 37, 40):
+            assert BillingService._deve_notificar_vencimento(dia) is False
+
+
+class TestNotificarVencimentosPendentes:
+    def _criar_assinatura_vencida(self, dias_atras, status='past_due', ultima_notificacao=None):
+        aluno = _criar_usuario(f'vencimento_notif_{id(object())}')
+        assinatura = Assinatura(
+            usuario_id=aluno.id, status=status,
+            vencido_em=datetime.now(timezone.utc) - timedelta(days=dias_atras),
+            ultima_notificacao_vencimento_dias=ultima_notificacao,
+        )
+        db.session.add(assinatura)
+        db.session.commit()
+        return aluno, assinatura
+
+    def test_dia_1_gera_notificacao_com_a_mensagem_suave(self, app):
+        with app.app_context():
+            aluno, assinatura = self._criar_assinatura_vencida(dias_atras=1)
+
+            total = BillingService.notificar_vencimentos_pendentes()
+
+            assert total == 1
+            notificacao = Notificacao.query.filter_by(destinatario_id=aluno.id).first()
+            assert notificacao is not None
+            assert notificacao.tipo == 'plano_vencido'
+            assert notificacao.mensagem == (
+                'Seu plano expirou, faça uma nova assinatura para '
+                'aproveitar todos os recursos do FitLog.'
+            )
+            assert notificacao.url == '/minha-assinatura'
+            db.session.refresh(assinatura)
+            assert assinatura.ultima_notificacao_vencimento_dias == 1
+
+    def test_dia_fora_da_regua_nao_gera_notificacao(self, app):
+        with app.app_context():
+            aluno, _ = self._criar_assinatura_vencida(dias_atras=4)
+
+            total = BillingService.notificar_vencimentos_pendentes()
+
+            assert total == 0
+            assert Notificacao.query.filter_by(destinatario_id=aluno.id).count() == 0
+
+    def test_ja_notificado_hoje_nao_duplica(self, app):
+        """Job rodando duas vezes no mesmo dia não deve criar duas
+        notificações -- idempotência via ultima_notificacao_vencimento_dias."""
+        with app.app_context():
+            aluno, _ = self._criar_assinatura_vencida(dias_atras=3, ultima_notificacao=3)
+
+            total = BillingService.notificar_vencimentos_pendentes()
+
+            assert total == 0
+            assert Notificacao.query.filter_by(destinatario_id=aluno.id).count() == 0
+
+    def test_blocked_tambem_e_notificado(self, app):
+        with app.app_context():
+            aluno, _ = self._criar_assinatura_vencida(dias_atras=6, status='blocked')
+
+            total = BillingService.notificar_vencimentos_pendentes()
+
+            assert total == 1
+            assert Notificacao.query.filter_by(destinatario_id=aluno.id).count() == 1
+
+    def test_active_nunca_e_notificado_mesmo_com_vencido_em_zumbi(self, app):
+        """Defensivo: só considera past_due/blocked -- mesmo que por
+        algum bug vencido_em tenha ficado preenchido, active não deveria
+        receber esse tipo de notificação."""
+        with app.app_context():
+            aluno, _ = self._criar_assinatura_vencida(dias_atras=1, status='active')
+
+            total = BillingService.notificar_vencimentos_pendentes()
+
+            assert total == 0
+
+    def test_sem_vencido_em_nao_e_candidata(self, app):
+        with app.app_context():
+            aluno = _criar_usuario('vencimento_sem_vencido_em')
+            assinatura = Assinatura(usuario_id=aluno.id, status='past_due')
+            db.session.add(assinatura)
+            db.session.commit()
+
+            total = BillingService.notificar_vencimentos_pendentes()
+
+            assert total == 0
+
+    def test_iniciar_atraso_marca_vencido_em(self, app):
+        with app.app_context():
+            aluno = _criar_usuario('inicia_atraso_marca')
+            assinatura = Assinatura(usuario_id=aluno.id, status='active')
+            db.session.add(assinatura)
+            db.session.commit()
+
+            agora = datetime.now(timezone.utc)
+            BillingService._iniciar_atraso(assinatura, agora)
+
+            assert assinatura.vencido_em == agora
+            assert assinatura.ultima_notificacao_vencimento_dias is None
+
+    def test_confirmacao_de_pagamento_limpa_vencido_em(self, app):
+        with app.app_context():
+            aluno = _criar_usuario('confirma_limpa_vencido')
+            assinatura = Assinatura(
+                usuario_id=aluno.id, status='past_due', forma_pagamento='pix',
+                vencido_em=datetime.now(timezone.utc) - timedelta(days=5),
+                ultima_notificacao_vencimento_dias=3,
+                gateway_customer_id='cus_limpa_vencido',
+            )
+            db.session.add(assinatura)
+            db.session.commit()
+
+            BillingService.processar_webhook({
+                'id': 'evt_confirma_limpa_vencido', 'event': 'PAYMENT_CONFIRMED',
+                'payment': {'id': 'pay_regulariza', 'customer': 'cus_limpa_vencido'},
+            })
+
+            db.session.refresh(assinatura)
+            assert assinatura.status == 'active'
+            assert assinatura.vencido_em is None
+            assert assinatura.ultima_notificacao_vencimento_dias is None
+
 
 class TestExpirarCarenciasVencidas:
     def test_move_para_blocked_apos_carencia_vencida(self, app):

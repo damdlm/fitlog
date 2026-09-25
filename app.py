@@ -448,6 +448,17 @@ def create_app(config_class=None):
             novo = m['tier_novo'].codigo if m['tier_novo'] else 'gratuito'
             print(f"professor_id={m['professor'].id} {atual} -> {novo}")
 
+    @app.cli.command("billing-notificar-vencimentos")
+    def billing_notificar_vencimentos():
+        """Notifica (na tela de notificações in-app) quem está em
+        atraso de pagamento (past_due/blocked), no ritmo: diário nos 3
+        primeiros dias, a cada 3 dias nos 15 dias seguintes, e a cada
+        10 dias depois disso -- enquanto continuar sem regularizar. Ver
+        BillingService.notificar_vencimentos_pendentes. Rodar 1x/dia."""
+        from services.billing_service import BillingService
+        total = BillingService.notificar_vencimentos_pendentes()
+        print(f"{total} notificação(ões) de vencimento enviada(s).")
+
     # =============================================================
     # COMANDOS CLI (notificações)
     # =============================================================
