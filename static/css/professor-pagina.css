@@ -512,8 +512,65 @@
     fill: #ff9627;
 }
 
+/* =========================================================
+   SOBRE MIM (fora do cartão do pôster, mas no mesmo tema escuro
+   -- antes esta seção não tinha NENHUM CSS e caía no fundo branco
+   padrão da página, com texto preto cru).
+   ========================================================= */
+.pp-about {
+    position: relative;
+    margin-top: 22px;
+    padding: 22px 24px 26px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #171717 0%, #0d0d0d 100%);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .18);
+}
+
+.pp-section-title {
+    color: #fff;
+    font-weight: 900;
+    font-size: 1.05rem;
+    letter-spacing: .3px;
+    margin-bottom: 12px;
+}
+
+.pp-about-text {
+    color: #d5d5d5;
+    font-size: .92rem;
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-line;
+}
+
+.pp-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.pp-chip {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 148, 39, .45);
+    color: #ffb066;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .2px;
+}
+
 /* RESPONSIVIDADE PARA CELULAR */
 @media (max-width: 560px) {
+    /* Pôster de ponta a ponta na tela (sem faixa branca nas laterais) --
+       antes só o .pp-poster perdia o border-radius, mas o .pp-page
+       continuava com padding lateral, então o efeito "tela cheia" nunca
+       acontecia de verdade. */
+    .pp-page {
+        padding: 0 0 40px;
+    }
+
     .pp-poster {
         padding: 27px 19px 27px;
         border-radius: 0;
@@ -530,5 +587,50 @@
     }
     .pp-name-last {
         font-size: 2.55rem;
+    }
+    .pp-tagline {
+        font-size: .84rem;
+    }
+
+    .pp-services {
+        margin-top: 24px;
+    }
+    .pp-service {
+        padding: 13px 6px 12px;
+    }
+    .pp-service-title {
+        font-size: .62rem;
+        padding: 5px 9px;
+    }
+    .pp-service p {
+        font-size: .64rem;
+    }
+
+    .pp-about {
+        margin: 22px 16px 0;
+        padding: 20px 18px 22px;
+        border-radius: 14px;
+    }
+}
+
+/* Telas bem pequenas (iPhone SE e afins) -- reduz mais um passo e some
+   com decorações que só serviriam pra poluir um espaço já apertado. */
+@media (max-width: 380px) {
+    .pp-ring {
+        width: 205px !important;
+        height: 205px !important;
+        min-width: 205px !important;
+        min-height: 205px !important;
+    }
+    .pp-name-first {
+        font-size: 1.8rem;
+    }
+    .pp-name-last {
+        font-size: 2.15rem;
+    }
+    .pp-bars-left,
+    .pp-bars-right,
+    .pp-deco-x-left {
+        display: none;
     }
 }
