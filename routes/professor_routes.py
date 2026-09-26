@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, abort
 from flask_login import login_required, current_user
 from models import db, User, AlunoProfessor, RegistroTreino, SolicitacaoVinculo, VersaoGlobal, HistoricoTreino, TreinoVersao
+from services.base_service import BaseService
 from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
 from services.versao_service import VersaoService
@@ -360,17 +361,9 @@ def aprovar_solicitacao(solicitacao_id):
 
     solicitacao.status = 'aprovado'
     solicitacao.data_resposta = datetime.now(timezone.utc)
-    
-    vinculo_existente = AlunoProfessor.query.filter_by(aluno_id=solicitacao.aluno_id, ativo=True).first()
-    if not vinculo_existente:
-        vinculo = AlunoProfessor(
-            aluno_id=solicitacao.aluno_id,
-            professor_id=current_user.id,
-            data_associacao=datetime.now(timezone.utc),
-            ativo=True
-        )
-        db.session.add(vinculo)
-    
+
+    BaseService.vincular_aluno_professor(solicitacao.aluno_id, current_user.id)
+
     db.session.commit()
     
     logger.info(f"Solicitação {solicitacao_id} aprovada pelo professor {current_user.id}")

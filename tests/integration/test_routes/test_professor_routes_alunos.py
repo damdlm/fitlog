@@ -263,6 +263,41 @@ class TestSolicitacoes:
                                                        ativo=True).first()
             assert vinculo is not None
 
+    def test_aprovar_para_aluno_com_vinculo_inativo_antigo_nao_quebra(self, client, app):
+        """Regressão: aluno_professor.aluno_id é UNIQUE no banco -- um
+        aluno que já foi desvinculado de um professor antes (linha
+        ativo=False) ainda ocupa essa linha. Aprovar uma nova
+        solicitação pra esse aluno tem que REATIVAR a linha existente,
+        não tentar inserir uma nova (senão dá IntegrityError -> 500,
+        era exatamente esse o bug)."""
+        with app.app_context():
+            prof_antigo = _criar_usuario('pr_solic_antigo', tipo_usuario='professor')
+            prof_novo = _criar_usuario('pr_solic_novo', tipo_usuario='professor')
+            aluno = _criar_usuario('pr_solic_aluno_revinculo')
+            # Vínculo antigo, já desativado -- é essa linha que causa o
+            # conflito de UNIQUE se o código tentar criar uma nova.
+            _associar(aluno.id, prof_antigo.id, ativo=False)
+
+            s = SolicitacaoVinculo(aluno_id=aluno.id, professor_id=prof_novo.id, status='pendente',
+                                    data_solicitacao=datetime.now(timezone.utc))
+            db.session.add(s)
+            db.session.commit()
+            solicitacao_id, aluno_id, prof_novo_id, username = s.id, aluno.id, prof_novo.id, prof_novo.username
+
+        _login(client, username)
+        resp = client.get(f'/professor/solicitacao/{solicitacao_id}/aprovar', follow_redirects=True)
+        assert resp.status_code == 200
+
+        with app.app_context():
+            s_atualizada = db.session.get(SolicitacaoVinculo, solicitacao_id)
+            assert s_atualizada.status == 'aprovado'
+            # Continua existindo só UMA linha pra esse aluno (a antiga
+            # foi reaproveitada, reativada e com o professor trocado).
+            vinculos = AlunoProfessor.query.filter_by(aluno_id=aluno_id).all()
+            assert len(vinculos) == 1
+            assert vinculos[0].ativo is True
+            assert vinculos[0].professor_id == prof_novo_id
+
     def test_recusar_nao_cria_vinculo(self, client, app):
         with app.app_context():
             prof = _criar_usuario('pr_solic_3', tipo_usuario='professor')

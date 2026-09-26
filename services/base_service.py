@@ -211,3 +211,38 @@ class BaseService:
                     AlunoProfessor.ativo == True,
                 )
                 .first())
+
+    @staticmethod
+    def vincular_aluno_professor(aluno_id, professor_id):
+        """Cria ou reativa o vínculo entre um aluno e um professor.
+
+        AlunoProfessor.aluno_id tem constraint UNIQUE no banco -- um
+        aluno só pode ter UMA linha na tabela, mesmo com ativo=False
+        (ex: aluno que já foi desvinculado de outro professor antes).
+        Por isso, ao vincular, é preciso REAPROVEITAR essa linha se ela
+        já existir (reativando e trocando o professor_id), nunca criar
+        uma linha nova sem checar -- senão o INSERT quebra com
+        IntegrityError (foi exatamente o bug do 500 em "aprovar
+        solicitação" pra um aluno que já tinha sido desvinculado antes).
+
+        Adiciona à sessão mas não dá commit -- quem chama decide quando
+        commitar, junto do resto da transação (ex: marcar a solicitação
+        como aprovada). Retorna a linha (nova ou reaproveitada).
+        """
+        from models import db, AlunoProfessor
+        from datetime import datetime, timezone
+
+        vinculo = AlunoProfessor.query.filter_by(aluno_id=aluno_id).first()
+        if vinculo:
+            vinculo.professor_id = professor_id
+            vinculo.ativo = True
+            vinculo.data_associacao = datetime.now(timezone.utc)
+        else:
+            vinculo = AlunoProfessor(
+                aluno_id=aluno_id,
+                professor_id=professor_id,
+                data_associacao=datetime.now(timezone.utc),
+                ativo=True,
+            )
+            db.session.add(vinculo)
+        return vinculo

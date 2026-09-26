@@ -273,17 +273,16 @@ class TestAssociarProfessor:
             resultado = AlunoService.associar_professor(aluno_id, prof_id)
             assert resultado is True
 
-    def test_troca_de_professor_falha_bug_constraint_unica(self, app):
+    def test_troca_de_professor_reaproveita_linha_existente(self, app):
         """
-        NOTA (bug conhecido): AlunoProfessor.aluno_id tem unique=True no
-        nível do banco (uma linha por aluno, no total -- não apenas por
-        associação ativa). O fluxo de "troca de professor" em
-        associar_professor() desativa a associação antiga (ativo=False)
-        e tenta inserir uma nova linha para o mesmo aluno_id, o que
-        sempre viola a constraint UNIQUE e lança IntegrityError. O
-        try/except captura o erro, faz rollback e retorna False -- ou
-        seja, hoje NUNCA é possível trocar o professor de um aluno já
-        associado. Este teste documenta o comportamento atual.
+        AlunoProfessor.aluno_id tem unique=True no nível do banco (uma
+        linha por aluno, no total -- não apenas por associação ativa).
+        associar_professor() precisa REAPROVEITAR a linha existente
+        (trocando professor_id e reativando) em vez de tentar inserir
+        uma linha nova pro mesmo aluno_id -- ver
+        BaseService.vincular_aluno_professor. Antes esse fluxo
+        quebrava com IntegrityError (era o mesmo bug por trás do 500 em
+        "aprovar solicitação" pra aluno já vinculado antes).
         """
         with app.app_context():
             admin_id = _criar_usuario('as_assoc_9', is_admin=True).id
@@ -297,12 +296,15 @@ class TestAssociarProfessor:
         with app.test_request_context():
             login_user(db.session.get(User, admin_id))
             resultado = AlunoService.associar_professor(aluno_id, prof_novo_id)
-            assert resultado is False
+            assert resultado is True
 
-            # A associação antiga permanece ativa, já que o rollback
-            # desfaz também a alteração de assoc_existente.ativo = False.
-            antiga = db.session.get(AlunoProfessor, assoc_antiga_id)
-            assert antiga.ativo is True
+            # Continua existindo só uma linha pra esse aluno -- a mesma
+            # linha antiga, agora com o professor novo.
+            vinculos = AlunoProfessor.query.filter_by(aluno_id=aluno_id).all()
+            assert len(vinculos) == 1
+            assert vinculos[0].id == assoc_antiga_id
+            assert vinculos[0].ativo is True
+            assert vinculos[0].professor_id == prof_novo_id
 
 
 class TestDesassociarProfessor:

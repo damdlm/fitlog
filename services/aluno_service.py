@@ -110,28 +110,19 @@ class AlunoService(BaseService):
                 logger.warning(f"Professor {professor_id} não encontrado ou não é professor")
                 return False
             
-            # Verificar se já existe associação ativa
+            # Já associado a esse mesmo professor? Não faz nada.
             assoc_existente = AlunoProfessor.query.filter_by(
                 aluno_id=aluno_id,
                 ativo=True
             ).first()
-            
-            if assoc_existente:
-                if assoc_existente.professor_id == professor_id:
-                    logger.info(f"Aluno {aluno_id} já está associado ao professor {professor_id}")
-                    return True
-                else:
-                    # Desativar associação antiga
-                    assoc_existente.ativo = False
-            
-            # Criar nova associação
-            nova_assoc = AlunoProfessor(
-                aluno_id=aluno_id,
-                professor_id=professor_id,
-                data_associacao=datetime.now(timezone.utc),
-                ativo=True
-            )
-            db.session.add(nova_assoc)
+            if assoc_existente and assoc_existente.professor_id == professor_id:
+                logger.info(f"Aluno {aluno_id} já está associado ao professor {professor_id}")
+                return True
+
+            # Cria ou reativa a linha (aluno_id é UNIQUE na tabela, então
+            # nunca criamos uma linha nova sem checar -- ver
+            # BaseService.vincular_aluno_professor).
+            BaseService.vincular_aluno_professor(aluno_id, professor_id)
             db.session.commit()
             
             logger.info(f"Aluno {aluno_id} associado ao professor {professor_id}")
