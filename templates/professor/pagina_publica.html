@@ -17,131 +17,166 @@
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
+<div class="pp-page">
+    <div class="pp-column">
 
         {% set partes_nome = nome_exibicao.split(' ') %}
         {% set primeiro_nome = partes_nome[0] %}
         {% set sobrenome = partes_nome[1:] | join(' ') %}
 
-        <div class="pph-card">
-            <div class="pph-dots tl"></div>
-            <div class="pph-dots br"></div>
+        <article class="pp-poster">
 
-            <div class="pph-shape" style="top: 10px; left: 16px;">
-                <svg viewBox="0 0 24 24" width="28" height="28" fill="none"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-            </div>
-            <div class="pph-shape" style="top: 18px; left: 64px;">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-            </div>
-            <div class="pph-shape" style="top: 170px; left: 8px;">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-            </div>
-            <div class="pph-shape" style="top: 44px; right: 16px;">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><circle cx="7.5" cy="7.5" r="6.3" stroke="currentColor" stroke-width="1.6"/></svg>
+            <!-- Decoração de fundo -->
+            <div class="pp-dots pp-dots-top"></div>
+            <div class="pp-dots pp-dots-bottom"></div>
+
+            <div class="pp-deco pp-deco-x pp-deco-x-top">
+                <span></span><span></span>
             </div>
 
-            <div class="pph-badges left"><span></span><span></span><span></span></div>
-            <div class="pph-badges right"><span></span><span></span><span></span></div>
+            <div class="pp-deco pp-deco-plus pp-deco-plus-top">
+                <span></span><span></span>
+            </div>
 
-            <div class="pph-topbar">
-                <button type="button" id="ppShareBtn" class="pph-icon-btn"
+            <div class="pp-deco pp-deco-x pp-deco-x-left">
+                <span></span><span></span>
+            </div>
+
+            <div class="pp-deco pp-deco-x pp-deco-x-right">
+                <span></span><span></span>
+            </div>
+
+            <div class="pp-deco pp-deco-plus pp-deco-plus-left">
+                <span></span><span></span>
+            </div>
+
+            <div class="pp-deco pp-deco-plus pp-deco-plus-right">
+                <span></span><span></span>
+            </div>
+
+            <div class="pp-dot pp-dot-right-top"></div>
+            <div class="pp-dot pp-dot-left-bottom"></div>
+            <div class="pp-dot pp-dot-center-right"></div>
+
+            <!-- Pequenas barras laterais -->
+            <div class="pp-bars pp-bars-left" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+            </div>
+
+            <div class="pp-bars pp-bars-right" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+            </div>
+
+            <!-- Ações -->
+            <div class="pp-actions">
+                <button type="button"
+                        id="ppShareBtn"
+                        class="pp-action"
                         data-url="{{ canonical_url() }}"
                         data-titulo="{{ nome_exibicao }} — FitLog"
-                        title="Compartilhar">
+                        title="Compartilhar"
+                        aria-label="Compartilhar">
                     <i class="bi bi-share-fill"></i>
                 </button>
+
                 {% if eh_dono %}
-                <a href="{{ url_for('professor.editar_pagina_publica') }}" class="pph-icon-btn" title="Editar dados">
+                <a href="{{ url_for('professor.editar_pagina_publica') }}"
+                   class="pp-action"
+                   title="Editar dados"
+                   aria-label="Editar dados">
                     <i class="bi bi-pencil-fill"></i>
                 </a>
                 {% endif %}
             </div>
 
-            <div class="pph-marca">
-                <svg viewBox="0 0 48 42" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2 40c0-9 5-14 11-14 3 0 4 2 7 2 4 0 3-4 8-4 1 0 2 .2 2.6.7L18 37c-1 1.6-3 2-4.6 1L2 40z" fill="#e8e8e8"/>
-                    <path d="M22 26l6-8 4 4 10-13" stroke="url(#pphg)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                    <path d="M42 9h-5.5l5.5-1.2V9z" fill="url(#pphg)"/>
-                    <path d="M32 40V22M38 40V17M44 40V9" stroke="url(#pphg)" stroke-width="4.4" stroke-linecap="round"/>
-                    <defs><linearGradient id="pphg" x1="20" y1="30" x2="44" y2="8"><stop stop-color="#FFCB4D"/><stop offset="1" stop-color="#E8433A"/></linearGradient></defs>
-                </svg>
-                <span class="pph-wordmark"><b>Fit</b><span>Log</span></span>
-            </div>
-
-            <div class="pph-foto-wrap">
-                <div class="pph-ring-glow">
-                    <div class="pph-ring-outer"></div>
-                    <div class="pph-ring">
-                        <div class="pph-foto">
-                            {% if professor.professor_foto_url %}
-                                <img src="{{ professor.professor_foto_url }}" alt="Foto de {{ nome_exibicao }}">
-                            {% else %}
-                                <div class="pph-placeholder">
-                                    <svg viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
-                                        <circle cx="50" cy="28" r="20" fill="#4a4a4a"/>
-                                        <path d="M10 95c2-28 20-42 40-42s38 14 40 42z" fill="#4a4a4a"/>
-                                    </svg>
-                                </div>
-                            {% endif %}
-                        </div>
+            <!-- Foto -->
+            <div class="pp-photo-area">
+                <div class="pp-ring">
+                    <div class="pp-photo">
+                        {% if professor.professor_foto_url %}
+                            <img src="{{ professor.professor_foto_url }}" alt="Foto de {{ nome_exibicao }}">
+                        {% else %}
+                            <div class="pp-placeholder">
+                                <svg viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <circle cx="50" cy="28" r="20" fill="#4a4a4a"/>
+                                    <path d="M10 95c2-28 20-42 40-42s38 14 40 42z" fill="#4a4a4a"/>
+                                </svg>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
-            <div class="pph-eyebrow">Personal Trainer</div>
-            <div class="pph-nome">
+            <!-- Identidade -->
+            <div class="pp-eyebrow">Personal Trainer</div>
+
+            <div class="pp-name">
                 {% if sobrenome %}
-                    <span class="l1">{{ primeiro_nome | upper }}</span>
-                    <span class="l2">{{ sobrenome | upper }}</span>
+                    <span class="pp-name-first">{{ primeiro_nome | upper }}</span>
+                    <span class="pp-name-last">{{ sobrenome | upper }}</span>
                 {% else %}
-                    <span class="l2">{{ primeiro_nome | upper }}</span>
+                    <span class="pp-name-last pp-name-only">{{ primeiro_nome | upper }}</span>
                 {% endif %}
             </div>
+
             {% if professor.professor_cref %}
-            <div class="pph-cref">CREF {{ professor.professor_cref }}</div>
-            {% endif %}
-            {% if professor.professor_tagline %}
-            <p class="pph-tagline">{{ professor.professor_tagline }}</p>
+            <div class="pp-cref">CREF {{ professor.professor_cref }}</div>
             {% endif %}
 
-            <div class="pph-pills">
-                <div class="pph-pill-col">
-                    <span class="pph-pill-tag">Presencial</span>
+            {% if professor.professor_tagline %}
+            <p class="pp-tagline">{{ professor.professor_tagline }}</p>
+            {% endif %}
+
+            <!-- Especialidades / serviços -->
+            <div class="pp-services">
+                <div class="pp-service">
+                    <span class="pp-service-title">Presencial</span>
                     <p>Acompanhamento na academia, treino a treino.</p>
                 </div>
-                <div class="pph-pill-col">
-                    <span class="pph-pill-tag">Online</span>
+
+                <div class="pp-service">
+                    <span class="pp-service-title">Online</span>
                     <p>Consultoria à distância, com suporte por mensagem.</p>
                 </div>
-                <div class="pph-pill-col">
-                    <span class="pph-pill-tag">Avaliação</span>
+
+                <div class="pp-service">
+                    <span class="pp-service-title">Avaliação</span>
                     <p>Medidas e composição corporal pro seu ponto de partida.</p>
                 </div>
             </div>
 
             {% if professor.professor_mostrar_avaliacoes and resumo_avaliacoes.total > 0 %}
-            <div class="pph-cta">★ {{ resumo_avaliacoes.media }} — {{ resumo_avaliacoes.total }} avaliaç{{ 'ão' if resumo_avaliacoes.total == 1 else 'ões' }} de alunos</div>
+            <div class="pp-rating">
+                ★ {{ resumo_avaliacoes.media }} — {{ resumo_avaliacoes.total }} avaliaç{{ 'ão' if resumo_avaliacoes.total == 1 else 'ões' }} de alunos
+            </div>
             {% endif %}
 
+            <!-- Redes sociais -->
             {% if professor.professor_instagram %}
-            <div class="pph-social">
-                <a href="https://instagram.com/{{ professor.professor_instagram }}" target="_blank" rel="noopener">
-                    <svg viewBox="0 0 24 24"><path d="M12 2c-2.7 0-3 0-4.1.06-1.1.05-1.8.22-2.5.47a5 5 0 00-1.8 1.17 5 5 0 00-1.17 1.8c-.25.7-.42 1.4-.47 2.5C2 8.9 2 9.2 2 12s0 3 .06 4.1c.05 1.1.22 1.8.47 2.5a5 5 0 001.17 1.8 5 5 0 001.8 1.17c.7.25 1.4.42 2.5.47C9 22 9.2 22 12 22s3 0 4.1-.06c1.1-.05 1.8-.22 2.5-.47a5 5 0 001.8-1.17 5 5 0 001.17-1.8c.25-.7.42-1.4.47-2.5.06-1.1.06-1.4.06-4.1s0-3-.06-4.1c-.05-1.1-.22-1.8-.47-2.5a5 5 0 00-1.17-1.8 5 5 0 00-1.8-1.17c-.7-.25-1.4-.42-2.5-.47C15 2 14.7 2 12 2zm0 4.9a5.1 5.1 0 110 10.2 5.1 5.1 0 010-10.2zm0 1.8a3.3 3.3 0 100 6.6 3.3 3.3 0 000-6.6zm5.3-2a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"/></svg>
+            <div class="pp-social">
+                <a href="https://instagram.com/{{ professor.professor_instagram }}"
+                   target="_blank"
+                   rel="noopener">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 2c-2.7 0-3 0-4.1.06-1.1.05-1.8.22-2.5.47a5 5 0 00-1.8 1.17 5 5 0 00-1.17 1.8c-.25.7-.42 1.4-.47 2.5C2 8.9 2 9.2 2 12s0 3 .06 4.1c.05 1.1.22 1.8.47 2.5a5 5 0 001.17 1.8 5 5 0 001.8 1.17c.7.25 1.4.42 2.5.47C9 22 9.2 22 12 22s3 0 4.1-.06c1.1-.05 1.8-.22 2.5-.47a5 5 0 001.8-1.17 5 5 0 001.17-1.8c.25-.7.42-1.4.47-2.5.06-1.1.06-1.4.06-4.1s0-3-.06-4.1c-.05-1.1-.22-1.8-.47-2.5a5 5 0 00-1.17-1.8 5 5 0 00-1.8-1.17c-.7-.25-1.4-.42-2.5-.47C15 2 14.7 2 12 2zm0 4.9a5.1 5.1 0 110 10.2 5.1 5.1 0 010-10.2zm0 1.8a3.3 3.3 0 100 6.6 3.3 3.3 0 000-6.6zm5.3-2a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"/>
+                    </svg>
                     @{{ professor.professor_instagram }}
                 </a>
             </div>
             {% endif %}
-        </div>
+        </article>
 
+        <!-- Conteúdo normal da página, fora do pôster -->
         {% if professor.professor_bio or especialidades %}
-        <section class="mb-5">
+        <section class="pp-about">
             <div class="pp-section-title">Sobre mim</div>
+
             {% if professor.professor_bio %}
-            <p style="line-height: 1.7;">{{ professor.professor_bio }}</p>
+            <p class="pp-about-text">{{ professor.professor_bio }}</p>
             {% endif %}
+
             {% if especialidades %}
-            <div class="mt-2">
+            <div class="pp-chips">
                 {% for esp in especialidades %}
                 <span class="pp-chip">{{ esp }}</span>
                 {% endfor %}

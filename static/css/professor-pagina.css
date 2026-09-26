@@ -1,763 +1,934 @@
 /* =========================================================
-   FitLog — Página pública do professor
-   Layout inspirado no pôster de referência enviado.
-   Mantém as classes/Jinja existentes do template.
+   FITLOG — PÁGINA PÚBLICA DO PROFESSOR
+   Pôster inspirado diretamente na referência visual enviada.
    ========================================================= */
 
-.pp-avatar {
-    width: 100px;
-    height: 100px;
+.pp-page {
+    width: 100%;
+    padding: 0 16px 48px;
+}
+
+.pp-column {
+    width: 100%;
+    max-width: 672px;
+    margin: 0 auto;
+}
+
+/* =========================================================
+   PÔSTER
+   ========================================================= */
+
+.pp-poster {
+    --yellow: #ffd21a;
+    --orange: #ff8a28;
+    --red: #f04b45;
+    --black: #080808;
+    --black-2: #121212;
+    --muted: #9b9b9b;
+    --line: rgba(255,255,255,.20);
+
+    position: relative;
+    width: 100%;
+    min-height: 960px;
+    overflow: hidden;
+
+    padding: 42px 44px 34px;
+
+    background:
+        radial-gradient(
+            ellipse 430px 330px at 50% 28%,
+            rgba(255, 128, 37, .13) 0%,
+            rgba(255, 128, 37, .035) 48%,
+            transparent 74%
+        ),
+        linear-gradient(180deg, #1c1c1c 0%, #0b0b0b 57%, #050505 100%);
+
+    color: #fff;
+    isolation: isolate;
+
+    box-shadow: 0 20px 55px rgba(0,0,0,.25);
+}
+
+/* =========================================================
+   TEXTURA DE PONTOS
+   ========================================================= */
+
+.pp-dots {
+    position: absolute;
+    z-index: 0;
+    width: 115px;
+    height: 86px;
+
+    background-image:
+        radial-gradient(circle, #3a3a3a 2px, transparent 2.3px);
+    background-size: 17px 17px;
+
+    opacity: .78;
+    pointer-events: none;
+}
+
+.pp-dots-top {
+    top: 5px;
+    left: 7px;
+}
+
+.pp-dots-bottom {
+    right: 6px;
+    bottom: 0;
+}
+
+/* =========================================================
+   FORMAS GEOMÉTRICAS
+   ========================================================= */
+
+.pp-deco {
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.pp-deco-x {
+    width: 54px;
+    height: 54px;
+}
+
+.pp-deco-x span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 2px;
+    background: #f7f7f7;
+    transform-origin: center;
+}
+
+.pp-deco-x span:first-child {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.pp-deco-x span:last-child {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.pp-deco-x-top {
+    top: 69px;
+    left: 48px;
+    width: 40px;
+    height: 40px;
+}
+
+.pp-deco-x-left {
+    left: -16px;
+    top: 360px;
+    width: 84px;
+    height: 84px;
+}
+
+.pp-deco-x-right {
+    right: -16px;
+    top: 28px;
+    width: 91px;
+    height: 91px;
+}
+
+.pp-deco-plus {
+    width: 29px;
+    height: 29px;
+}
+
+.pp-deco-plus span {
+    position: absolute;
+    background: #f7f7f7;
+    border-radius: 1px;
+}
+
+.pp-deco-plus span:first-child {
+    width: 100%;
+    height: 2px;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.pp-deco-plus span:last-child {
+    width: 2px;
+    height: 100%;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+}
+
+.pp-deco-plus-top {
+    right: 109px;
+    top: 35px;
+}
+
+.pp-deco-plus-left {
+    left: 136px;
+    bottom: 397px;
+    transform: scale(.78);
+}
+
+.pp-deco-plus-right {
+    right: 117px;
+    bottom: 390px;
+    transform: scale(.65);
+}
+
+.pp-dot {
+    position: absolute;
+    z-index: 1;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
-    margin: 0 auto 14px;
-    border: 4px solid rgba(255, 255, 255, 0.65);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
     background: #fff;
+}
+
+.pp-dot-right-top {
+    top: 124px;
+    right: 105px;
+}
+
+.pp-dot-center-right {
+    top: 505px;
+    right: 58px;
+}
+
+.pp-dot-left-bottom {
+    bottom: 143px;
+    left: 110px;
+}
+
+/* =========================================================
+   BARRAS LATERAIS
+   ========================================================= */
+
+.pp-bars {
+    position: absolute;
+    z-index: 1;
+    top: 195px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.pp-bars-left {
+    left: 64px;
+}
+
+.pp-bars-right {
+    right: 64px;
+}
+
+.pp-bars span {
+    display: block;
+    width: 11px;
+    height: 14px;
+    background: linear-gradient(
+        180deg,
+        #ffdc18 0%,
+        #ffb027 50%,
+        #f05a40 100%
+    );
+}
+
+/* =========================================================
+   AÇÕES
+   ========================================================= */
+
+.pp-actions {
+    position: absolute;
+    z-index: 8;
+    top: 18px;
+    right: 20px;
+
+    display: flex;
+    gap: 5px;
+}
+
+.pp-action {
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
-    font-size: 34px;
-    font-weight: 800;
-    color: var(--primary-color);
+
+    width: 34px;
+    height: 34px;
+
+    border: 0;
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.08);
+    color: rgba(255,255,255,.78);
+
+    text-decoration: none;
+    font-size: .84rem;
+
+    transition:
+        background .18s ease,
+        color .18s ease,
+        transform .18s ease;
 }
 
-.pp-avatar img {
+.pp-action:hover {
+    background: rgba(255,255,255,.16);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+/* =========================================================
+   FOTO + ANEL
+   ========================================================= */
+
+.pp-photo-area {
+    position: relative;
+    z-index: 3;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    margin-top: 14px;
+}
+
+.pp-ring {
+    position: relative;
+
+    width: 315px;
+    height: 315px;
+
+    padding: 15px;
+
+    border-radius: 50%;
+
+    background:
+        conic-gradient(
+            from 205deg,
+            #ffd51b 0deg,
+            #ffc21e 70deg,
+            #ff9429 145deg,
+            #f04b45 235deg,
+            #ff7e31 300deg,
+            #ffd21a 360deg
+        );
+
+    box-shadow:
+        0 17px 40px rgba(0,0,0,.65),
+        0 0 55px rgba(255,112,38,.18),
+        inset 0 0 0 1px rgba(255,255,255,.16);
+}
+
+.pp-ring::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+
+    border: 1px solid rgba(255,255,255,.11);
+    border-radius: 50%;
+}
+
+.pp-photo {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-}
 
-.pp-share-btn {
-    position: absolute;
-    bottom: -22px;
-    right: 28px;
-    background: #fff;
-    color: var(--secondary-color);
-    border: none;
-    width: 46px;
-    height: 46px;
+    overflow: hidden;
     border-radius: 50%;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
+
+    background: #000;
+
+    border: 7px solid #101010;
+
+    box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.08);
 }
 
-.pp-share-btn:hover {
-    color: var(--primary-color);
+.pp-photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+    object-position: center;
 }
 
-.pp-edit-fab {
+.pp-placeholder {
+    position: relative;
+    width: 100%;
+    height: 100%;
+
+    background:
+        radial-gradient(
+            circle at 50% 28%,
+            #3a3a3a 0%,
+            #242424 52%,
+            #141414 100%
+        );
+}
+
+.pp-placeholder svg {
     position: absolute;
-    top: 16px;
-    right: 16px;
-    background: rgba(0, 0, 0, 0.22);
+    left: 50%;
+    bottom: -8px;
+
+    width: 150px;
+
+    transform: translateX(-50%);
+}
+
+/* =========================================================
+   NOME / IDENTIDADE
+   ========================================================= */
+
+.pp-eyebrow {
+    position: relative;
+    z-index: 3;
+
+    margin-top: 28px;
+
+    text-align: center;
+
+    color: #ff9427;
+
+    font-size: .76rem;
+    line-height: 1;
+    font-weight: 800;
+
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+}
+
+.pp-name {
+    position: relative;
+    z-index: 3;
+
+    margin-top: 9px;
+
+    text-align: center;
+    line-height: .91;
+}
+
+.pp-name-first,
+.pp-name-last {
+    display: block;
+
+    font-weight: 950;
+    letter-spacing: -1px;
+    text-transform: uppercase;
+}
+
+.pp-name-first {
     color: #fff;
-    border: none;
-    padding: 7px 14px;
-    border-radius: 18px;
-    font-size: 0.82rem;
+    font-size: 3.05rem;
+}
+
+.pp-name-last {
+    margin-top: 4px;
+
+    font-size: 3.55rem;
+
+    background:
+        linear-gradient(
+            90deg,
+            #ffd21a 0%,
+            #ffae20 42%,
+            #ff6140 100%
+        );
+
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.pp-name-only {
+    font-size: 3.5rem;
+    margin-top: 0;
+}
+
+.pp-cref {
+    position: relative;
+    z-index: 3;
+
+    margin-top: 12px;
+
+    color: #999;
+
+    text-align: center;
+
+    font-size: .73rem;
     font-weight: 700;
-    text-decoration: none;
+    letter-spacing: .8px;
+}
+
+.pp-tagline {
+    position: relative;
+    z-index: 3;
+
+    width: min(100%, 455px);
+    margin: 12px auto 0;
+
+    color: #d0d0d0;
+
+    text-align: center;
+
+    font-size: .88rem;
+    font-weight: 500;
+    line-height: 1.48;
+}
+
+/* =========================================================
+   TRÊS COLUNAS
+   ========================================================= */
+
+.pp-services {
+    position: relative;
+    z-index: 3;
+
+    display: flex;
+
+    width: 100%;
+
+    margin-top: 30px;
+
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+.pp-service {
+    flex: 1;
+    min-width: 0;
+
+    padding: 15px 10px 14px;
+
+    text-align: center;
+}
+
+.pp-service + .pp-service {
+    border-left: 1px solid var(--line);
+}
+
+.pp-service-title {
+    display: inline-block;
+
+    padding: 6px 11px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #ffd21a 0%,
+            #ffb321 45%,
+            #ff6540 100%
+        );
+
+    color: #17100a;
+
+    font-size: .66rem;
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: .45px;
+
+    text-transform: uppercase;
+}
+
+.pp-service p {
+    margin: 9px 0 0;
+
+    color: #999;
+
+    font-size: .66rem;
+    line-height: 1.45;
+}
+
+/* =========================================================
+   AVALIAÇÃO
+   ========================================================= */
+
+.pp-rating {
+    position: relative;
+    z-index: 3;
+
+    width: fit-content;
+    max-width: 100%;
+
+    margin: 23px auto 0;
+    padding: 10px 22px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #ffd21a 0%,
+            #ffb020 43%,
+            #f15a40 100%
+        );
+
+    color: #17100a;
+
+    font-size: .75rem;
+    font-weight: 900;
+    letter-spacing: .35px;
+
+    text-align: center;
+    text-transform: uppercase;
+
+    box-shadow: 0 8px 22px rgba(240,75,69,.18);
+}
+
+/* =========================================================
+   INSTAGRAM
+   ========================================================= */
+
+.pp-social {
+    position: relative;
+    z-index: 3;
+
+    display: flex;
+    justify-content: center;
+
+    margin-top: 34px;
+}
+
+.pp-social a {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
+
+    color: #d6d6d6;
+
+    font-size: .72rem;
+    font-weight: 700;
+
+    text-decoration: none;
 }
 
-.pp-edit-fab:hover {
-    background: rgba(0, 0, 0, 0.35);
+.pp-social a:hover {
     color: #fff;
+}
+
+.pp-social svg {
+    width: 17px;
+    height: 17px;
+
+    fill: #ff9627;
+}
+
+/* =========================================================
+   CONTEÚDO ABAIXO DO PÔSTER
+   ========================================================= */
+
+.pp-about {
+    margin: 34px 0 0;
 }
 
 .pp-section-title {
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: .6px;
-    color: var(--primary-color);
+    margin-bottom: 13px;
+
+    color: var(--primary-color, #f28c33);
+
+    font-size: .78rem;
     font-weight: 800;
-    margin-bottom: 14px;
+    letter-spacing: .7px;
+
+    text-transform: uppercase;
+}
+
+.pp-about-text {
+    margin: 0;
+
+    line-height: 1.7;
+}
+
+.pp-chips {
+    margin-top: 12px;
 }
 
 .pp-chip {
     display: inline-block;
-    background: #FFF3E8;
-    color: #B85F14;
-    font-size: 0.8rem;
-    font-weight: 700;
-    padding: 5px 12px;
-    border-radius: 16px;
+
     margin: 0 6px 6px 0;
-}
+    padding: 5px 12px;
 
-.pp-star-input {
-    display: inline-flex;
-    flex-direction: row-reverse;
-    gap: 4px;
-}
+    border-radius: 16px;
 
-.pp-star-input input {
-    display: none;
-}
+    background: #fff3e8;
+    color: #b85f14;
 
-.pp-star-input label {
-    font-size: 1.6rem;
-    color: #E0E0E0;
-    cursor: pointer;
-    transition: color .12s ease;
-}
-
-.pp-star-input input:checked ~ label,
-.pp-star-input label:hover,
-.pp-star-input label:hover ~ label {
-    color: var(--primary-color);
-}
-
-.pp-photo-preview-wrap {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    flex-wrap: wrap;
-}
-
-.pp-char-counter {
-    font-size: 0.78rem;
-    color: #999;
-    text-align: right;
-    margin-top: 4px;
-}
-
-/* =========================================================
-   HERO / PÔSTER
-   ========================================================= */
-
-.pph-card {
-    --amarelo: #FFCC24;
-    --amarelo-2: #FFC20A;
-    --laranja: #FF8A24;
-    --vermelho: #F04A43;
-    --bg-escuro: #090909;
-    --bg-escuro-2: #111111;
-    --linha-escura: rgba(255,255,255,.20);
-    --texto-mudo: #9E9E9E;
-
-    --grad-anel:
-        conic-gradient(
-            from 205deg,
-            #FFD31A 0deg,
-            #FFB21F 75deg,
-            #FF7A31 150deg,
-            #F04A43 235deg,
-            #FFB91C 310deg,
-            #FFD31A 360deg
-        );
-
-    --grad-pill:
-        linear-gradient(
-            90deg,
-            #FFD21A 0%,
-            #FFB323 43%,
-            #FF633D 100%
-        );
-
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    max-width: 644px;
-    min-height: 900px;
-    margin: 0 auto 40px;
-    padding: 32px 42px 34px;
-    border-radius: 0;
-    background:
-        radial-gradient(circle at 50% 18%, rgba(255, 137, 36, .14), transparent 31%),
-        linear-gradient(180deg, #171717 0%, #0B0B0B 52%, #050505 100%);
-    color: #fff;
-    isolation: isolate;
-    box-shadow: 0 22px 60px rgba(0,0,0,.22);
-}
-
-/* Pontos decorativos */
-.pph-card::before {
-    content: "";
-    position: absolute;
-    top: 12px;
-    left: 8px;
-    width: 130px;
-    height: 82px;
-    background-image: radial-gradient(circle, #3B3B3B 2px, transparent 2.2px);
-    background-size: 17px 17px;
-    opacity: .72;
-    z-index: 0;
-}
-
-.pph-card::after {
-    content: "";
-    position: absolute;
-    right: 5px;
-    bottom: 0;
-    width: 145px;
-    height: 125px;
-    background-image: radial-gradient(circle, #3B3B3B 2px, transparent 2.2px);
-    background-size: 17px 17px;
-    opacity: .72;
-    z-index: 0;
-}
-
-.pph-dots {
-    display: none;
-}
-
-/* X grande no canto inferior esquerdo e superior direito */
-.pph-shape {
-    position: absolute;
-    color: #F4F4F4;
-    opacity: .96;
-    z-index: 0;
-    pointer-events: none;
-}
-
-.pph-shape svg {
-    overflow: visible;
-}
-
-.pph-shape:nth-of-type(3) {
-    top: 355px !important;
-    left: -9px !important;
-}
-
-.pph-shape:nth-of-type(3) svg {
-    width: 72px !important;
-    height: 72px !important;
-}
-
-.pph-shape:nth-of-type(5) {
-    top: 35px !important;
-    right: -8px !important;
-}
-
-.pph-shape:nth-of-type(5) svg {
-    width: 86px !important;
-    height: 86px !important;
-}
-
-.pph-shape:nth-of-type(2) {
-    top: 32px !important;
-    left: auto !important;
-    right: 107px !important;
-}
-
-.pph-shape:nth-of-type(2) svg {
-    width: 30px !important;
-    height: 30px !important;
-}
-
-.pph-shape:nth-of-type(4) {
-    top: 108px !important;
-    right: 104px !important;
-}
-
-.pph-shape:nth-of-type(4) svg {
-    width: 19px !important;
-    height: 19px !important;
-}
-
-/* Colunas de pequenos retângulos */
-.pph-badges {
-    position: absolute;
-    top: 194px;
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    z-index: 1;
-}
-
-.pph-badges.left {
-    left: 62px;
-}
-
-.pph-badges.right {
-    right: 62px;
-}
-
-.pph-badges span {
-    display: block;
-    width: 11px;
-    height: 13px;
-    border-radius: 0;
-    background: var(--grad-pill);
-    opacity: 1;
-}
-
-/* Barra superior */
-.pph-topbar {
-    position: relative;
-    z-index: 5;
-    min-height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-    margin: -2px -16px 0;
-}
-
-.pph-icon-btn {
-    background: transparent;
-    color: rgba(255,255,255,.78);
-    border: 0;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: .92rem;
-    text-decoration: none;
-}
-
-.pph-icon-btn:hover {
-    background: rgba(255,255,255,.10);
-    color: #fff;
-}
-
-/* Marca */
-.pph-marca {
-    position: relative;
-    z-index: 3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    margin: 2px 0 24px;
-}
-
-.pph-marca svg {
-    width: 22px;
-    height: 22px;
-}
-
-.pph-marca .pph-wordmark {
-    font-weight: 800;
-    font-size: 1.02rem;
-    letter-spacing: .2px;
-}
-
-.pph-marca .pph-wordmark b {
-    color: #fff;
-}
-
-.pph-marca .pph-wordmark span {
-    background: var(--grad-pill);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-}
-
-/* Foto */
-.pph-foto-wrap {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    justify-content: center;
-}
-
-.pph-ring-glow {
-    position: relative;
-    width: 304px;
-    height: 304px;
-    border-radius: 50%;
-    filter: drop-shadow(0 0 22px rgba(255, 125, 37, .18));
-}
-
-.pph-ring-outer {
-    position: absolute;
-    inset: -7px;
-    border-radius: 50%;
-    border: 1px solid rgba(255,255,255,.12);
-}
-
-.pph-ring {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: var(--grad-anel);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow:
-        0 18px 42px rgba(0,0,0,.55),
-        inset 0 0 0 1px rgba(255,255,255,.18);
-}
-
-.pph-foto {
-    width: 244px;
-    height: 244px;
-    border-radius: 50%;
-    overflow: hidden;
-    background: #000;
-    border: 7px solid #101010;
-    box-shadow: 0 0 0 1px rgba(255,255,255,.05);
-}
-
-.pph-foto img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.pph-foto .pph-placeholder {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    background: radial-gradient(circle at 50% 30%, #3a3a3a 0%, #232323 55%, #161616 100%);
-}
-
-.pph-foto .pph-placeholder svg {
-    position: absolute;
-    bottom: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 138px;
-    opacity: .9;
-}
-
-/* Título */
-.pph-eyebrow {
-    position: relative;
-    z-index: 2;
-    text-align: center;
-    margin-top: 24px;
-    font-size: .76rem;
-    font-weight: 800;
-    letter-spacing: 2.6px;
-    text-transform: uppercase;
-    color: #FF9A28;
-}
-
-.pph-nome {
-    position: relative;
-    z-index: 2;
-    text-align: center;
-    margin-top: 6px;
-    line-height: .94;
-}
-
-.pph-nome .l1 {
-    display: block;
-    font-size: 2.75rem;
-    font-weight: 900;
-    letter-spacing: -.5px;
-}
-
-.pph-nome .l2 {
-    display: block;
-    font-size: 3.15rem;
-    font-weight: 950;
-    letter-spacing: -.8px;
-    background: var(--grad-pill);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    margin-top: 4px;
-    word-break: break-word;
-}
-
-.pph-cref {
-    position: relative;
-    z-index: 2;
-    text-align: center;
-    margin-top: 10px;
-    font-size: .76rem;
-    color: var(--texto-mudo);
-    font-weight: 600;
-    letter-spacing: .7px;
-}
-
-.pph-tagline {
-    position: relative;
-    z-index: 2;
-    text-align: center;
-    margin-top: 12px;
-    margin-bottom: 0;
-    font-size: .92rem;
-    color: #D4D4D4;
-    line-height: 1.5;
-    max-width: 430px;
-    margin-left: auto;
-    margin-right: auto;
-    font-weight: 500;
-}
-
-/* Três blocos inferiores */
-.pph-pills {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    margin-top: 30px;
-    border-top: 1px solid var(--linha-escura);
-    border-bottom: 1px solid var(--linha-escura);
-}
-
-.pph-pill-col {
-    flex: 1;
-    min-width: 0;
-    padding: 16px 12px 15px;
-    text-align: center;
-}
-
-.pph-pill-col + .pph-pill-col {
-    border-left: 1px solid var(--linha-escura);
-}
-
-.pph-pill-tag {
-    display: inline-block;
-    background: var(--grad-pill);
-    color: #1A1006;
-    font-weight: 900;
-    font-size: .69rem;
-    letter-spacing: .45px;
-    padding: 6px 11px;
-    border-radius: 0;
-    margin-bottom: 9px;
-    text-transform: uppercase;
-}
-
-.pph-pill-col p {
-    margin: 0;
-    font-size: .69rem;
-    color: #A8A8A8;
-    line-height: 1.45;
-}
-
-/* CTA / avaliações */
-.pph-cta {
-    position: relative;
-    z-index: 2;
-    margin: 23px auto 0;
-    width: fit-content;
-    max-width: 100%;
-    background: var(--grad-pill);
-    color: #1A1006;
-    text-align: center;
-    font-weight: 900;
-    font-size: .82rem;
-    letter-spacing: .45px;
-    padding: 9px 22px;
-    border-radius: 0;
-    text-transform: uppercase;
-    box-shadow: 0 8px 20px rgba(232,67,58,.22);
-}
-
-/* Redes sociais */
-.pph-social {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    justify-content: center;
-    gap: 28px;
-    flex-wrap: wrap;
-    margin-top: 34px;
-    font-size: .73rem;
-    color: #D8D8D8;
+    font-size: .8rem;
     font-weight: 700;
 }
 
-.pph-social a {
-    color: inherit;
-    text-decoration: none;
-}
+/* =========================================================
+   DESKTOP
+   ========================================================= */
 
-.pph-social span,
-.pph-social a {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-}
-
-.pph-social svg {
-    width: 16px;
-    height: 16px;
-    fill: #FF9A28;
-}
-
-/* Conteúdo que vem abaixo do pôster */
-.pph-card + section {
-    margin-top: 12px;
+@media (min-width: 769px) {
+    .pp-page {
+        padding-top: 0;
+    }
 }
 
 /* =========================================================
-   RESPONSIVO
+   TABLET
    ========================================================= */
 
-@media (max-width: 700px) {
-    .pph-card {
+@media (max-width: 768px) {
+    .pp-page {
+        padding: 0 10px 35px;
+    }
+
+    .pp-poster {
         min-height: auto;
-        padding: 26px 24px 28px;
-        margin-bottom: 30px;
+        padding: 35px 34px 30px;
     }
 
-    .pph-ring-glow {
-        width: 270px;
-        height: 270px;
+    .pp-ring {
+        width: 290px;
+        height: 290px;
+        padding: 14px;
     }
 
-    .pph-foto {
-        width: 218px;
-        height: 218px;
+    .pp-name-first {
+        font-size: 2.7rem;
+    }
+
+    .pp-name-last,
+    .pp-name-only {
+        font-size: 3.15rem;
+    }
+
+    .pp-bars-left {
+        left: 38px;
+    }
+
+    .pp-bars-right {
+        right: 38px;
+    }
+
+    .pp-deco-x-left {
+        left: -25px;
+    }
+
+    .pp-deco-x-right {
+        right: -24px;
+    }
+}
+
+/* =========================================================
+   CELULAR
+   ========================================================= */
+
+@media (max-width: 560px) {
+    .pp-page {
+        padding: 0;
+    }
+
+    .pp-column {
+        max-width: 100%;
+    }
+
+    .pp-poster {
+        min-height: auto;
+
+        padding: 27px 19px 27px;
+
+        border-radius: 0;
+
+        box-shadow: none;
+    }
+
+    .pp-actions {
+        top: 10px;
+        right: 10px;
+    }
+
+    .pp-action {
+        width: 31px;
+        height: 31px;
+        font-size: .78rem;
+    }
+
+    .pp-photo-area {
+        margin-top: 20px;
+    }
+
+    .pp-ring {
+        width: 250px;
+        height: 250px;
+        padding: 12px;
+    }
+
+    .pp-photo {
         border-width: 6px;
     }
 
-    .pph-badges.left {
-        left: 24px;
+    .pp-bars {
+        top: 166px;
     }
 
-    .pph-badges.right {
-        right: 24px;
+    .pp-bars-left {
+        left: 12px;
     }
 
-    .pph-nome .l1 {
-        font-size: 2.2rem;
+    .pp-bars-right {
+        right: 12px;
     }
 
-    .pph-nome .l2 {
-        font-size: 2.55rem;
-    }
-
-    .pph-pills {
-        margin-top: 25px;
-    }
-
-    .pph-pill-col {
-        padding-left: 7px;
-        padding-right: 7px;
-    }
-
-    .pph-shape:nth-of-type(3) {
-        left: -26px !important;
-    }
-
-    .pph-shape:nth-of-type(5) {
-        right: -25px !important;
-    }
-}
-
-@media (max-width: 520px) {
-    .pph-card {
-        padding: 20px 16px 24px;
-    }
-
-    .pph-topbar {
-        margin-right: -4px;
-    }
-
-    .pph-marca {
-        margin-bottom: 20px;
-    }
-
-    .pph-ring-glow {
-        width: 228px;
-        height: 228px;
-    }
-
-    .pph-foto {
-        width: 184px;
-        height: 184px;
-        border-width: 5px;
-    }
-
-    .pph-badges {
-        top: 165px;
-    }
-
-    .pph-badges.left {
-        left: 8px;
-    }
-
-    .pph-badges.right {
-        right: 8px;
-    }
-
-    .pph-badges span {
+    .pp-bars span {
         width: 8px;
         height: 10px;
     }
 
-    .pph-shape:nth-of-type(3) svg {
-        width: 58px !important;
-        height: 58px !important;
+    .pp-deco-x-top {
+        top: 52px;
+        left: 24px;
+        width: 30px;
+        height: 30px;
     }
 
-    .pph-shape:nth-of-type(5) svg {
-        width: 65px !important;
-        height: 65px !important;
+    .pp-deco-plus-top {
+        top: 27px;
+        right: 75px;
+        transform: scale(.75);
     }
 
-    .pph-eyebrow {
-        margin-top: 19px;
+    .pp-deco-x-left {
+        top: 305px;
+        left: -30px;
+        width: 66px;
+        height: 66px;
+    }
+
+    .pp-deco-x-right {
+        top: 24px;
+        right: -28px;
+        width: 70px;
+        height: 70px;
+    }
+
+    .pp-deco-plus-left {
+        display: none;
+    }
+
+    .pp-deco-plus-right {
+        right: 70px;
+        bottom: 290px;
+        transform: scale(.55);
+    }
+
+    .pp-dot-right-top {
+        top: 95px;
+        right: 71px;
+    }
+
+    .pp-dot-center-right {
+        top: 430px;
+        right: 29px;
+    }
+
+    .pp-dot-left-bottom {
+        bottom: 102px;
+        left: 72px;
+    }
+
+    .pp-eyebrow {
+        margin-top: 23px;
         font-size: .67rem;
         letter-spacing: 2px;
     }
 
-    .pph-nome .l1 {
-        font-size: 1.8rem;
+    .pp-name-first {
+        font-size: 2.15rem;
+        letter-spacing: -.5px;
     }
 
-    .pph-nome .l2 {
-        font-size: 2.2rem;
+    .pp-name-last,
+    .pp-name-only {
+        font-size: 2.55rem;
+        letter-spacing: -.6px;
     }
 
-    .pph-tagline {
-        font-size: .84rem;
+    .pp-cref {
+        margin-top: 9px;
+        font-size: .67rem;
     }
 
-    .pph-pills {
-        margin-top: 22px;
+    .pp-tagline {
+        font-size: .82rem;
+        line-height: 1.45;
     }
 
-    .pph-pill-col {
-        padding: 13px 5px;
+    .pp-services {
+        margin-top: 23px;
     }
 
-    .pph-pill-tag {
-        font-size: .58rem;
+    .pp-service {
+        padding: 12px 5px;
+    }
+
+    .pp-service-title {
         padding: 5px 7px;
+        font-size: .56rem;
     }
 
-    .pph-pill-col p {
-        font-size: .61rem;
+    .pp-service p {
+        margin-top: 7px;
+        font-size: .57rem;
     }
 
-    .pph-social {
-        gap: 18px;
+    .pp-rating {
+        margin-top: 18px;
+        padding: 8px 14px;
+        font-size: .65rem;
+    }
+
+    .pp-social {
         margin-top: 27px;
+    }
+
+    .pp-social a {
+        font-size: .67rem;
+    }
+
+    .pp-dots {
+        opacity: .55;
     }
 }
 
-@media (max-width: 380px) {
-    .pph-card {
-        padding-left: 11px;
-        padding-right: 11px;
+/* =========================================================
+   CELULARES MUITO PEQUENOS
+   ========================================================= */
+
+@media (max-width: 390px) {
+    .pp-poster {
+        padding-left: 14px;
+        padding-right: 14px;
     }
 
-    .pph-ring-glow {
-        width: 205px;
-        height: 205px;
+    .pp-ring {
+        width: 218px;
+        height: 218px;
+        padding: 11px;
     }
 
-    .pph-foto {
-        width: 165px;
-        height: 165px;
+    .pp-name-first {
+        font-size: 1.85rem;
     }
 
-    .pph-nome .l1 {
-        font-size: 1.6rem;
+    .pp-name-last,
+    .pp-name-only {
+        font-size: 2.15rem;
     }
 
-    .pph-nome .l2 {
-        font-size: 1.95rem;
+    .pp-service {
+        padding-left: 3px;
+        padding-right: 3px;
     }
 
-    .pph-pill-col p {
-        font-size: .57rem;
+    .pp-service-title {
+        font-size: .52rem;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .pp-service p {
+        font-size: .52rem;
     }
 }
