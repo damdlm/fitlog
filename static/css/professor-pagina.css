@@ -1,7 +1,7 @@
 /* =========================================================
-   Página pública do professor + tela de edição + estrelas
-   Usa as variáveis de cor já definidas em templates/base.html
-   (--primary-color, --secondary-color, --gradient-primary)
+   FitLog — Página pública do professor
+   Layout inspirado no pôster de referência enviado.
+   Mantém as classes/Jinja existentes do template.
    ========================================================= */
 
 .pp-avatar {
@@ -90,11 +90,6 @@
     margin: 0 6px 6px 0;
 }
 
-/* Widget de estrelas clicáveis (avaliação do aluno) -- radios
-   escondidos + labels em ordem invertida via flex-direction: row-reverse,
-   pra que o CSS "~ label:hover" ilumine da esquerda pra estrela hovered
-   sem precisar de JS pra pintar (JS só serve pra habilitar o botão
-   Enviar e opcionalmente auto-enviar). */
 .pp-star-input {
     display: inline-flex;
     flex-direction: row-reverse;
@@ -133,96 +128,198 @@
 }
 
 /* =========================================================
-   HERO estilo pôster (card de divulgação, topo da página
-   pública) -- paleta própria (escura + amarelo/laranja/
-   vermelho), independente da paleta clara do resto do site.
+   HERO / PÔSTER
    ========================================================= */
 
 .pph-card {
-    --amarelo: #FFCB4D;
-    --laranja: #F2762E;
-    --vermelho: #E8433A;
-    --grad-anel: conic-gradient(from 210deg, var(--amarelo), var(--laranja) 45%, var(--vermelho) 72%, var(--amarelo));
-    --grad-pill: linear-gradient(90deg, var(--amarelo), var(--vermelho));
-    --bg-escuro: #111111;
-    --linha-escura: #2a2a2a;
-    --texto-mudo: #9c9c9c;
+    --amarelo: #FFCC24;
+    --amarelo-2: #FFC20A;
+    --laranja: #FF8A24;
+    --vermelho: #F04A43;
+    --bg-escuro: #090909;
+    --bg-escuro-2: #111111;
+    --linha-escura: rgba(255,255,255,.20);
+    --texto-mudo: #9E9E9E;
+
+    --grad-anel:
+        conic-gradient(
+            from 205deg,
+            #FFD31A 0deg,
+            #FFB21F 75deg,
+            #FF7A31 150deg,
+            #F04A43 235deg,
+            #FFB91C 310deg,
+            #FFD31A 360deg
+        );
+
+    --grad-pill:
+        linear-gradient(
+            90deg,
+            #FFD21A 0%,
+            #FFB323 43%,
+            #FF633D 100%
+        );
 
     position: relative;
     overflow: hidden;
-    border-radius: 18px;
-    margin-bottom: 40px;
-    padding: 34px 22px 28px;
+    width: 100%;
+    max-width: 644px;
+    min-height: 900px;
+    margin: 0 auto 40px;
+    padding: 32px 42px 34px;
+    border-radius: 0;
     background:
-        radial-gradient(ellipse 420px 260px at 50% 6%, rgba(242, 118, 46, .16), transparent 65%),
-        var(--bg-escuro);
+        radial-gradient(circle at 50% 18%, rgba(255, 137, 36, .14), transparent 31%),
+        linear-gradient(180deg, #171717 0%, #0B0B0B 52%, #050505 100%);
     color: #fff;
     isolation: isolate;
+    box-shadow: 0 22px 60px rgba(0,0,0,.22);
+}
+
+/* Pontos decorativos */
+.pph-card::before {
+    content: "";
+    position: absolute;
+    top: 12px;
+    left: 8px;
+    width: 130px;
+    height: 82px;
+    background-image: radial-gradient(circle, #3B3B3B 2px, transparent 2.2px);
+    background-size: 17px 17px;
+    opacity: .72;
+    z-index: 0;
+}
+
+.pph-card::after {
+    content: "";
+    position: absolute;
+    right: 5px;
+    bottom: 0;
+    width: 145px;
+    height: 125px;
+    background-image: radial-gradient(circle, #3B3B3B 2px, transparent 2.2px);
+    background-size: 17px 17px;
+    opacity: .72;
+    z-index: 0;
 }
 
 .pph-dots {
-    position: absolute;
-    width: 80px;
-    height: 56px;
-    background-image: radial-gradient(#333 1.4px, transparent 1.4px);
-    background-size: 15px 15px;
-    opacity: .65;
-    z-index: 0;
+    display: none;
 }
-.pph-dots.tl { top: 0; left: 0; }
-.pph-dots.br { bottom: 0; right: 0; }
 
+/* X grande no canto inferior esquerdo e superior direito */
 .pph-shape {
     position: absolute;
-    color: #4a4a4a;
-    opacity: .85;
+    color: #F4F4F4;
+    opacity: .96;
     z-index: 0;
+    pointer-events: none;
 }
 
+.pph-shape svg {
+    overflow: visible;
+}
+
+.pph-shape:nth-of-type(3) {
+    top: 355px !important;
+    left: -9px !important;
+}
+
+.pph-shape:nth-of-type(3) svg {
+    width: 72px !important;
+    height: 72px !important;
+}
+
+.pph-shape:nth-of-type(5) {
+    top: 35px !important;
+    right: -8px !important;
+}
+
+.pph-shape:nth-of-type(5) svg {
+    width: 86px !important;
+    height: 86px !important;
+}
+
+.pph-shape:nth-of-type(2) {
+    top: 32px !important;
+    left: auto !important;
+    right: 107px !important;
+}
+
+.pph-shape:nth-of-type(2) svg {
+    width: 30px !important;
+    height: 30px !important;
+}
+
+.pph-shape:nth-of-type(4) {
+    top: 108px !important;
+    right: 104px !important;
+}
+
+.pph-shape:nth-of-type(4) svg {
+    width: 19px !important;
+    height: 19px !important;
+}
+
+/* Colunas de pequenos retângulos */
 .pph-badges {
     position: absolute;
-    top: 150px;
+    top: 194px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    z-index: 0;
-}
-.pph-badges.left { left: 16px; }
-.pph-badges.right { right: 16px; }
-.pph-badges span {
-    display: block;
-    width: 9px;
-    height: 9px;
-    border-radius: 2px;
-    background: var(--grad-pill);
-    opacity: .9;
+    gap: 7px;
+    z-index: 1;
 }
 
+.pph-badges.left {
+    left: 62px;
+}
+
+.pph-badges.right {
+    right: 62px;
+}
+
+.pph-badges span {
+    display: block;
+    width: 11px;
+    height: 13px;
+    border-radius: 0;
+    background: var(--grad-pill);
+    opacity: 1;
+}
+
+/* Barra superior */
 .pph-topbar {
     position: relative;
-    z-index: 3;
+    z-index: 5;
+    min-height: 32px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 8px;
-    margin-bottom: 4px;
+    margin: -2px -16px 0;
 }
 
 .pph-icon-btn {
-    background: rgba(255, 255, 255, .1);
-    color: #fff;
-    border: none;
+    background: transparent;
+    color: rgba(255,255,255,.78);
+    border: 0;
     width: 34px;
     height: 34px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: .9rem;
+    font-size: .92rem;
     text-decoration: none;
 }
-.pph-icon-btn:hover { background: rgba(255, 255, 255, .2); color: #fff; }
 
+.pph-icon-btn:hover {
+    background: rgba(255,255,255,.10);
+    color: #fff;
+}
+
+/* Marca */
 .pph-marca {
     position: relative;
     z-index: 3;
@@ -230,11 +327,24 @@
     align-items: center;
     justify-content: center;
     gap: 7px;
-    margin: 2px 0 26px;
+    margin: 2px 0 24px;
 }
-.pph-marca svg { width: 22px; height: 22px; }
-.pph-marca .pph-wordmark { font-weight: 800; font-size: 1.02rem; letter-spacing: .2px; }
-.pph-marca .pph-wordmark b { color: #fff; }
+
+.pph-marca svg {
+    width: 22px;
+    height: 22px;
+}
+
+.pph-marca .pph-wordmark {
+    font-weight: 800;
+    font-size: 1.02rem;
+    letter-spacing: .2px;
+}
+
+.pph-marca .pph-wordmark b {
+    color: #fff;
+}
+
 .pph-marca .pph-wordmark span {
     background: var(--grad-pill);
     -webkit-background-clip: text;
@@ -242,16 +352,29 @@
     color: transparent;
 }
 
-.pph-foto-wrap { position: relative; z-index: 2; display: flex; justify-content: center; }
+/* Foto */
+.pph-foto-wrap {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+}
 
 .pph-ring-glow {
     position: relative;
-    width: 216px;
-    height: 216px;
+    width: 304px;
+    height: 304px;
     border-radius: 50%;
-    box-shadow: 0 0 60px 6px rgba(242, 118, 46, .35);
+    filter: drop-shadow(0 0 22px rgba(255, 125, 37, .18));
 }
-.pph-ring-outer { position: absolute; inset: -6px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .12); }
+
+.pph-ring-outer {
+    position: absolute;
+    inset: -7px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.12);
+}
+
 .pph-ring {
     width: 100%;
     height: 100%;
@@ -260,74 +383,112 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 14px 34px rgba(0, 0, 0, .55), inset 0 0 0 1px rgba(255, 255, 255, .15);
+    box-shadow:
+        0 18px 42px rgba(0,0,0,.55),
+        inset 0 0 0 1px rgba(255,255,255,.18);
 }
+
 .pph-foto {
-    width: 172px;
-    height: 172px;
+    width: 244px;
+    height: 244px;
     border-radius: 50%;
     overflow: hidden;
     background: #000;
-    border: 5px solid var(--bg-escuro);
+    border: 7px solid #101010;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.05);
 }
-.pph-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.pph-foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 .pph-foto .pph-placeholder {
     width: 100%;
     height: 100%;
     position: relative;
     background: radial-gradient(circle at 50% 30%, #3a3a3a 0%, #232323 55%, #161616 100%);
 }
-.pph-foto .pph-placeholder svg { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 138px; opacity: .9; }
 
+.pph-foto .pph-placeholder svg {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 138px;
+    opacity: .9;
+}
+
+/* Título */
 .pph-eyebrow {
     position: relative;
     z-index: 2;
     text-align: center;
-    margin-top: 22px;
-    font-size: .7rem;
-    font-weight: 700;
-    letter-spacing: 2.2px;
+    margin-top: 24px;
+    font-size: .76rem;
+    font-weight: 800;
+    letter-spacing: 2.6px;
     text-transform: uppercase;
-    color: var(--laranja);
+    color: #FF9A28;
 }
-.pph-nome { position: relative; z-index: 2; text-align: center; margin-top: 6px; line-height: .98; }
-.pph-nome .l1 { display: block; font-size: 1.7rem; font-weight: 800; letter-spacing: .3px; }
+
+.pph-nome {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    margin-top: 6px;
+    line-height: .94;
+}
+
+.pph-nome .l1 {
+    display: block;
+    font-size: 2.75rem;
+    font-weight: 900;
+    letter-spacing: -.5px;
+}
+
 .pph-nome .l2 {
     display: block;
-    font-size: 2.3rem;
-    font-weight: 900;
-    letter-spacing: .3px;
+    font-size: 3.15rem;
+    font-weight: 950;
+    letter-spacing: -.8px;
     background: var(--grad-pill);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    margin-top: 1px;
+    margin-top: 4px;
     word-break: break-word;
 }
+
 .pph-cref {
     position: relative;
     z-index: 2;
     text-align: center;
     margin-top: 10px;
-    font-size: .78rem;
+    font-size: .76rem;
     color: var(--texto-mudo);
     font-weight: 600;
-    letter-spacing: .6px;
+    letter-spacing: .7px;
 }
+
 .pph-tagline {
     position: relative;
     z-index: 2;
     text-align: center;
     margin-top: 12px;
-    font-size: .94rem;
-    color: #d4d4d4;
-    line-height: 1.55;
-    max-width: 340px;
+    margin-bottom: 0;
+    font-size: .92rem;
+    color: #D4D4D4;
+    line-height: 1.5;
+    max-width: 430px;
     margin-left: auto;
     margin-right: auto;
     font-weight: 500;
 }
 
+/* Três blocos inferiores */
 .pph-pills {
     position: relative;
     z-index: 2;
@@ -336,50 +497,267 @@
     border-top: 1px solid var(--linha-escura);
     border-bottom: 1px solid var(--linha-escura);
 }
-.pph-pill-col { flex: 1; padding: 16px 9px; text-align: center; }
-.pph-pill-col + .pph-pill-col { border-left: 1px solid var(--linha-escura); }
+
+.pph-pill-col {
+    flex: 1;
+    min-width: 0;
+    padding: 16px 12px 15px;
+    text-align: center;
+}
+
+.pph-pill-col + .pph-pill-col {
+    border-left: 1px solid var(--linha-escura);
+}
+
 .pph-pill-tag {
     display: inline-block;
     background: var(--grad-pill);
-    color: #1a1006;
-    font-weight: 800;
-    font-size: .68rem;
-    letter-spacing: .5px;
-    padding: 6px 10px;
-    border-radius: 5px;
+    color: #1A1006;
+    font-weight: 900;
+    font-size: .69rem;
+    letter-spacing: .45px;
+    padding: 6px 11px;
+    border-radius: 0;
     margin-bottom: 9px;
     text-transform: uppercase;
 }
-.pph-pill-col p { margin: 0; font-size: .7rem; color: var(--texto-mudo); line-height: 1.5; }
 
+.pph-pill-col p {
+    margin: 0;
+    font-size: .69rem;
+    color: #A8A8A8;
+    line-height: 1.45;
+}
+
+/* CTA / avaliações */
 .pph-cta {
     position: relative;
     z-index: 2;
-    margin-top: 22px;
+    margin: 23px auto 0;
+    width: fit-content;
+    max-width: 100%;
     background: var(--grad-pill);
-    color: #1a1006;
+    color: #1A1006;
     text-align: center;
-    font-weight: 800;
-    font-size: .85rem;
-    letter-spacing: .5px;
-    padding: 12px;
-    border-radius: 7px;
+    font-weight: 900;
+    font-size: .82rem;
+    letter-spacing: .45px;
+    padding: 9px 22px;
+    border-radius: 0;
     text-transform: uppercase;
-    box-shadow: 0 8px 20px rgba(232, 67, 58, .25);
+    box-shadow: 0 8px 20px rgba(232,67,58,.22);
 }
 
+/* Redes sociais */
 .pph-social {
     position: relative;
     z-index: 2;
     display: flex;
     justify-content: center;
-    gap: 26px;
+    gap: 28px;
     flex-wrap: wrap;
-    margin-top: 24px;
-    font-size: .78rem;
-    color: #d8d8d8;
-    font-weight: 600;
+    margin-top: 34px;
+    font-size: .73rem;
+    color: #D8D8D8;
+    font-weight: 700;
 }
-.pph-social a { color: inherit; text-decoration: none; }
-.pph-social span, .pph-social a { display: inline-flex; align-items: center; gap: 7px; }
-.pph-social svg { width: 16px; height: 16px; fill: var(--laranja); }
+
+.pph-social a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.pph-social span,
+.pph-social a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.pph-social svg {
+    width: 16px;
+    height: 16px;
+    fill: #FF9A28;
+}
+
+/* Conteúdo que vem abaixo do pôster */
+.pph-card + section {
+    margin-top: 12px;
+}
+
+/* =========================================================
+   RESPONSIVO
+   ========================================================= */
+
+@media (max-width: 700px) {
+    .pph-card {
+        min-height: auto;
+        padding: 26px 24px 28px;
+        margin-bottom: 30px;
+    }
+
+    .pph-ring-glow {
+        width: 270px;
+        height: 270px;
+    }
+
+    .pph-foto {
+        width: 218px;
+        height: 218px;
+        border-width: 6px;
+    }
+
+    .pph-badges.left {
+        left: 24px;
+    }
+
+    .pph-badges.right {
+        right: 24px;
+    }
+
+    .pph-nome .l1 {
+        font-size: 2.2rem;
+    }
+
+    .pph-nome .l2 {
+        font-size: 2.55rem;
+    }
+
+    .pph-pills {
+        margin-top: 25px;
+    }
+
+    .pph-pill-col {
+        padding-left: 7px;
+        padding-right: 7px;
+    }
+
+    .pph-shape:nth-of-type(3) {
+        left: -26px !important;
+    }
+
+    .pph-shape:nth-of-type(5) {
+        right: -25px !important;
+    }
+}
+
+@media (max-width: 520px) {
+    .pph-card {
+        padding: 20px 16px 24px;
+    }
+
+    .pph-topbar {
+        margin-right: -4px;
+    }
+
+    .pph-marca {
+        margin-bottom: 20px;
+    }
+
+    .pph-ring-glow {
+        width: 228px;
+        height: 228px;
+    }
+
+    .pph-foto {
+        width: 184px;
+        height: 184px;
+        border-width: 5px;
+    }
+
+    .pph-badges {
+        top: 165px;
+    }
+
+    .pph-badges.left {
+        left: 8px;
+    }
+
+    .pph-badges.right {
+        right: 8px;
+    }
+
+    .pph-badges span {
+        width: 8px;
+        height: 10px;
+    }
+
+    .pph-shape:nth-of-type(3) svg {
+        width: 58px !important;
+        height: 58px !important;
+    }
+
+    .pph-shape:nth-of-type(5) svg {
+        width: 65px !important;
+        height: 65px !important;
+    }
+
+    .pph-eyebrow {
+        margin-top: 19px;
+        font-size: .67rem;
+        letter-spacing: 2px;
+    }
+
+    .pph-nome .l1 {
+        font-size: 1.8rem;
+    }
+
+    .pph-nome .l2 {
+        font-size: 2.2rem;
+    }
+
+    .pph-tagline {
+        font-size: .84rem;
+    }
+
+    .pph-pills {
+        margin-top: 22px;
+    }
+
+    .pph-pill-col {
+        padding: 13px 5px;
+    }
+
+    .pph-pill-tag {
+        font-size: .58rem;
+        padding: 5px 7px;
+    }
+
+    .pph-pill-col p {
+        font-size: .61rem;
+    }
+
+    .pph-social {
+        gap: 18px;
+        margin-top: 27px;
+    }
+}
+
+@media (max-width: 380px) {
+    .pph-card {
+        padding-left: 11px;
+        padding-right: 11px;
+    }
+
+    .pph-ring-glow {
+        width: 205px;
+        height: 205px;
+    }
+
+    .pph-foto {
+        width: 165px;
+        height: 165px;
+    }
+
+    .pph-nome .l1 {
+        font-size: 1.6rem;
+    }
+
+    .pph-nome .l2 {
+        font-size: 1.95rem;
+    }
+
+    .pph-pill-col p {
+        font-size: .57rem;
+    }
+}
