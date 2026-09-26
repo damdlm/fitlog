@@ -166,14 +166,17 @@
 }
 
 .pp-deco-plus-left {
-    bottom: 397px;
-    left: 136px;
+    /* Ancorado no topo (perto do anel), não na base do pôster --
+       com "bottom" ele colidia com o nome/frase quando o texto real
+       do professor deixa o pôster mais alto que o mockup original. */
+    top: 130px;
+    left: 18px;
     transform: scale(.78);
 }
 
 .pp-deco-plus-right {
-    right: 117px;
-    bottom: 390px;
+    top: 260px;
+    right: 20px;
     transform: scale(.65);
 }
 
@@ -338,7 +341,18 @@
     transform: translateX(-50%);
 }
 
-/* TIPOGRAFIA DO TÍTULO E NOME */
+/* TIPOGRAFIA DO TÍTULO E NOME
+   Fonte geométrica bem pesada (Montserrat 800/900), carregada via
+   Google Fonts no <head> do base.html -- ver comentário no link
+   dessa fonte. Cai pro padrão do site (Segoe UI) se não carregar. */
+.pp-eyebrow,
+.pp-name-first,
+.pp-name-last,
+.pp-service-title,
+.pp-rating {
+    font-family: 'Montserrat', 'Segoe UI', sans-serif;
+}
+
 .pp-eyebrow {
     position: relative;
     z-index: 3;
