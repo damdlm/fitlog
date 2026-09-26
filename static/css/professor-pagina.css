@@ -1,6 +1,5 @@
 /* =========================================================
-   FITLOG — PÁGINA PÚBLICA DO PROFESSOR
-   Layout inspirado na referência enviada.
+   FITLOG — PÁGINA PÚBLICA DO PROFESSOR (ESTILO REFERÊNCIA)
    ========================================================= */
 
 .pp-page {
@@ -13,7 +12,6 @@
     max-width: 672px;
     margin: 0 auto;
 }
-
 
 /* =========================================================
    PÔSTER
@@ -31,11 +29,8 @@
     position: relative;
     width: 100%;
     min-height: 960px;
-
     overflow: hidden;
-
     padding: 42px 44px 34px;
-
     background:
         radial-gradient(
             ellipse 430px 330px at 50% 28%,
@@ -49,14 +44,10 @@
             #0b0b0b 57%,
             #050505 100%
         );
-
     color: #fff;
-
     isolation: isolate;
-
     box-shadow: 0 20px 55px rgba(0, 0, 0, .25);
 }
-
 
 /* =========================================================
    TEXTURA DE PONTOS
@@ -64,23 +55,17 @@
 
 .pp-dots {
     position: absolute;
-
     z-index: 0;
-
     width: 115px;
     height: 86px;
-
     background-image:
         radial-gradient(
             circle,
             #3a3a3a 2px,
             transparent 2.3px
         );
-
     background-size: 17px 17px;
-
     opacity: .78;
-
     pointer-events: none;
 }
 
@@ -94,21 +79,15 @@
     bottom: 0;
 }
 
-
 /* =========================================================
-   FORMAS GEOMÉTRICAS
+   FORMAS GEOMÉTRICAS (X e +)
    ========================================================= */
 
 .pp-deco {
     position: absolute;
-
     z-index: 1;
-
     pointer-events: none;
 }
-
-
-/* X */
 
 .pp-deco-x {
     width: 54px;
@@ -117,65 +96,42 @@
 
 .pp-deco-x span {
     position: absolute;
-
     top: 50%;
     left: 50%;
-
     width: 100%;
     height: 2px;
-
     background: #f7f7f7;
-
     transform-origin: center;
 }
 
 .pp-deco-x span:first-child {
-    transform:
-        translate(-50%, -50%)
-        rotate(45deg);
+    transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .pp-deco-x span:last-child {
-    transform:
-        translate(-50%, -50%)
-        rotate(-45deg);
+    transform: translate(-50%, -50%) rotate(-45deg);
 }
-
-
-/* X superior esquerdo */
 
 .pp-deco-x-top {
     top: 69px;
     left: 48px;
-
     width: 40px;
     height: 40px;
 }
 
-
-/* X lateral esquerdo */
-
 .pp-deco-x-left {
     top: 360px;
     left: -16px;
-
     width: 84px;
     height: 84px;
 }
 
-
-/* X superior direito */
-
 .pp-deco-x-right {
     top: 28px;
     right: -16px;
-
     width: 91px;
     height: 91px;
 }
-
-
-/* PLUS */
 
 .pp-deco-plus {
     width: 29px;
@@ -184,75 +140,50 @@
 
 .pp-deco-plus span {
     position: absolute;
-
     background: #f7f7f7;
-
     border-radius: 1px;
 }
 
 .pp-deco-plus span:first-child {
     top: 50%;
     left: 0;
-
     width: 100%;
     height: 2px;
-
     transform: translateY(-50%);
 }
 
 .pp-deco-plus span:last-child {
     top: 0;
     left: 50%;
-
     width: 2px;
     height: 100%;
-
     transform: translateX(-50%);
 }
-
-
-/* Plus superior */
 
 .pp-deco-plus-top {
     top: 35px;
     right: 109px;
 }
 
-
-/* Plus inferior esquerdo */
-
 .pp-deco-plus-left {
     bottom: 397px;
     left: 136px;
-
     transform: scale(.78);
 }
-
-
-/* Plus inferior direito */
 
 .pp-deco-plus-right {
     right: 117px;
     bottom: 390px;
-
     transform: scale(.65);
 }
 
-
-/* =========================================================
-   PONTOS ISOLADOS
-   ========================================================= */
-
+/* PONTOS ISOLADOS */
 .pp-dot {
     position: absolute;
-
     z-index: 1;
-
     width: 7px;
     height: 7px;
-
     border-radius: 50%;
-
     background: #fff;
 }
 
@@ -271,21 +202,13 @@
     left: 110px;
 }
 
-
-/* =========================================================
-   BARRAS LATERAIS
-   ========================================================= */
-
+/* BARRAS LATERAIS */
 .pp-bars {
     position: absolute;
-
     z-index: 1;
-
     top: 195px;
-
     display: flex;
     flex-direction: column;
-
     gap: 7px;
 }
 
@@ -299,560 +222,269 @@
 
 .pp-bars span {
     display: block;
-
     width: 11px;
     height: 14px;
-
     border-radius: 1px;
-
-    background:
-        linear-gradient(
-            180deg,
-            #ffdc18 0%,
-            #ffb027 50%,
-            #f05a40 100%
-        );
+    background: linear-gradient(180deg, #ffdc18 0%, #ffb027 50%, #f05a40 100%);
 }
 
-
-/* =========================================================
-   BOTÕES SUPERIORES
-   ========================================================= */
-
+/* AÇÕES */
 .pp-actions {
     position: absolute;
-
     z-index: 8;
-
     top: 18px;
     right: 20px;
-
     display: flex;
-
     gap: 5px;
 }
 
 .pp-action {
     display: flex;
-
     align-items: center;
     justify-content: center;
-
     width: 34px;
     height: 34px;
-
     padding: 0;
-
     border: 0;
     border-radius: 50%;
-
     background: rgba(255, 255, 255, .08);
-
     color: rgba(255, 255, 255, .78);
-
     text-decoration: none;
-
     font-size: .84rem;
-
-    transition:
-        background .18s ease,
-        color .18s ease,
-        transform .18s ease;
+    transition: background .18s ease, color .18s ease, transform .18s ease;
 }
 
 .pp-action:hover {
     background: rgba(255, 255, 255, .16);
-
     color: #fff;
-
     transform: translateY(-1px);
 }
 
-
-/* =========================================================
-   ÁREA DA FOTO
-   ========================================================= */
-
+/* FOTO E ANEL */
 .pp-photo-area {
     position: relative;
-
     z-index: 3;
-
     width: 100%;
-
     display: flex;
-
     align-items: center;
     justify-content: center;
-
     margin: 14px auto 0;
 }
 
-
-/* =========================================================
-   ANEL DA FOTO
-   ========================================================= */
-
 .pp-ring {
     position: relative;
-
     width: 315px !important;
     height: 315px !important;
-
     min-width: 315px !important;
     min-height: 315px !important;
-
     flex: 0 0 315px;
-
     box-sizing: border-box;
-
     padding: 15px !important;
-
     border-radius: 50%;
-
-    background:
-        conic-gradient(
-            from 205deg,
-            #ffd51b 0deg,
-            #ffc21e 70deg,
-            #ff9429 145deg,
-            #f04b45 235deg,
-            #ff7e31 300deg,
-            #ffd21a 360deg
-        );
-
+    background: conic-gradient(
+        from 205deg,
+        #ffd51b 0deg,
+        #ffc21e 70deg,
+        #ff9429 145deg,
+        #f04b45 235deg,
+        #ff7e31 300deg,
+        #ffd21a 360deg
+    );
     box-shadow:
         0 17px 40px rgba(0, 0, 0, .65),
         0 0 55px rgba(255, 112, 38, .18),
         inset 0 0 0 1px rgba(255, 255, 255, .16);
 }
 
-
-/* Borda externa fina */
-
 .pp-ring::before {
     content: "";
-
     position: absolute;
-
     inset: -6px;
-
-    border:
-        1px solid
-        rgba(255, 255, 255, .11);
-
+    border: 1px solid rgba(255, 255, 255, .11);
     border-radius: 50%;
-
     pointer-events: none;
 }
 
-
-/* =========================================================
-   FOTO
-   ========================================================= */
-
 .pp-photo {
     position: relative;
-
     width: 100% !important;
     height: 100% !important;
-
-    min-width: 0 !important;
-    min-height: 0 !important;
-
-    max-width: none !important;
-    max-height: none !important;
-
-    box-sizing: border-box;
-
     overflow: hidden;
-
     border-radius: 50%;
-
-    border:
-        7px solid
-        #101010;
-
+    border: 7px solid #101010;
     background: #000;
-
-    box-shadow:
-        inset 0 0 0 1px
-        rgba(255, 255, 255, .08);
 }
-
-
-/* =========================================================
-   IMAGEM DO PROFESSOR
-   ========================================================= */
 
 .pp-photo img {
     display: block !important;
-
     width: 100% !important;
     height: 100% !important;
-
-    min-width: 100% !important;
-    min-height: 100% !important;
-
-    max-width: none !important;
-    max-height: none !important;
-
-    margin: 0 !important;
-    padding: 0 !important;
-
-    border: 0 !important;
-
-    box-sizing: border-box !important;
-
     object-fit: cover !important;
-
     object-position: center center !important;
-
-    /*
-       Controle do zoom da fotografia.
-
-       1.00 = tamanho normal
-       0.90 = pessoa um pouco menor
-       0.85 = pessoa menor
-       1.10 = pessoa maior
-    */
-
-    transform: scale(1.00);
-
-    transform-origin: center center;
-
-    transition:
-        transform .2s ease;
 }
-
-
-/* =========================================================
-   PLACEHOLDER
-   ========================================================= */
 
 .pp-placeholder {
     position: relative;
-
     width: 100%;
     height: 100%;
-
-    background:
-        radial-gradient(
-            circle at 50% 28%,
-            #3a3a3a 0%,
-            #242424 52%,
-            #141414 100%
-        );
+    background: radial-gradient(circle at 50% 28%, #3a3a3a 0%, #242424 52%, #141414 100%);
 }
 
 .pp-placeholder svg {
     position: absolute;
-
     left: 50%;
     bottom: -8px;
-
     width: 150px;
-
-    transform:
-        translateX(-50%);
+    transform: translateX(-50%);
 }
 
-
-/* =========================================================
-   TÍTULO PEQUENO
-   ========================================================= */
-
+/* TIPOGRAFIA DO TÍTULO E NOME */
 .pp-eyebrow {
     position: relative;
-
     z-index: 3;
-
     margin-top: 28px;
-
     color: #ff9427;
-
     text-align: center;
-
     font-size: .76rem;
-
     line-height: 1;
-
     font-weight: 800;
-
     letter-spacing: 2.5px;
-
     text-transform: uppercase;
 }
 
-
-/* =========================================================
-   NOME
-   ========================================================= */
-
 .pp-name {
     position: relative;
-
     z-index: 3;
-
     margin-top: 9px;
-
     text-align: center;
-
     line-height: .91;
 }
 
 .pp-name-first,
 .pp-name-last {
     display: block;
-
     font-weight: 950;
-
     letter-spacing: -1px;
-
     text-transform: uppercase;
 }
 
 .pp-name-first {
     color: #fff;
-
     font-size: 3.05rem;
 }
 
 .pp-name-last {
     margin-top: 4px;
-
     font-size: 3.55rem;
-
-    background:
-        linear-gradient(
-            90deg,
-            #ffd21a 0%,
-            #ffae20 42%,
-            #ff6140 100%
-        );
-
+    background: linear-gradient(90deg, #ffd21a 0%, #ffae20 42%, #ff6140 100%);
     -webkit-background-clip: text;
     background-clip: text;
-
     color: transparent;
 }
 
-.pp-name-only {
-    margin-top: 0;
-
-    font-size: 3.5rem;
-}
-
-
-/* =========================================================
-   CREF
-   ========================================================= */
-
 .pp-cref {
     position: relative;
-
     z-index: 3;
-
     margin-top: 12px;
-
     color: #999;
-
     text-align: center;
-
     font-size: .73rem;
-
     font-weight: 700;
-
     letter-spacing: .8px;
 }
 
-
-/* =========================================================
-   TAGLINE
-   ========================================================= */
-
 .pp-tagline {
     position: relative;
-
     z-index: 3;
-
     width: min(100%, 455px);
-
-    margin:
-        12px auto 0;
-
+    margin: 12px auto 0;
     color: #d0d0d0;
-
     text-align: center;
-
     font-size: .88rem;
-
     font-weight: 500;
-
     line-height: 1.48;
 }
 
-
-/* =========================================================
-   TRÊS COLUNAS
-   ========================================================= */
-
+/* TRÊS COLUNAS (CARDIO, NUTRITION, EXERCISE) */
 .pp-services {
     position: relative;
-
     z-index: 3;
-
     display: flex;
-
     width: 100%;
-
     margin-top: 30px;
-
-    border-top:
-        1px solid
-        var(--line);
-
-    border-bottom:
-        1px solid
-        var(--line);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
 }
 
 .pp-service {
     flex: 1;
-
     min-width: 0;
-
-    padding:
-        15px 10px 14px;
-
+    padding: 15px 10px 14px;
     text-align: center;
 }
 
 .pp-service + .pp-service {
-    border-left:
-        1px solid
-        var(--line);
+    border-left: 1px solid var(--line);
 }
-
-
-/* Título dos serviços */
 
 .pp-service-title {
     display: inline-block;
-
-    padding:
-        6px 11px;
-
-    background:
-        linear-gradient(
-            90deg,
-            #ffd21a 0%,
-            #ffb321 45%,
-            #ff6540 100%
-        );
-
+    padding: 6px 11px;
+    background: linear-gradient(90deg, #ffd21a 0%, #ffb321 45%, #ff6540 100%);
     color: #17100a;
-
     font-size: .66rem;
-
     line-height: 1;
-
     font-weight: 900;
-
     letter-spacing: .45px;
-
     text-transform: uppercase;
 }
 
-
-/* Texto */
-
 .pp-service p {
-    margin:
-        9px 0 0;
-
+    margin: 9px 0 0;
     color: #999;
-
     font-size: .66rem;
-
     line-height: 1.45;
 }
 
-
-/* =========================================================
-   AVALIAÇÕES
-   ========================================================= */
+/* BOTÃO INFERIOR (REGISTRATION OPEN) */
+.pp-registration-area {
+    display: flex;
+    justify-content: center;
+    margin-top: 23px;
+}
 
 .pp-rating {
     position: relative;
-
     z-index: 3;
-
     width: fit-content;
-
     max-width: 100%;
-
-    margin:
-        23px auto 0;
-
-    padding:
-        10px 22px;
-
-    background:
-        linear-gradient(
-            90deg,
-            #ffd21a 0%,
-            #ffb020 43%,
-            #f15a40 100%
-        );
-
+    padding: 10px 22px;
+    background: linear-gradient(90deg, #ffd21a 0%, #ffb020 43%, #f15a40 100%);
     color: #17100a;
-
     font-size: .75rem;
-
     font-weight: 900;
-
     letter-spacing: .35px;
-
     text-align: center;
-
     text-transform: uppercase;
-
-    box-shadow:
-        0 8px 22px
-        rgba(240, 75, 69, .18);
+    box-shadow: 0 8px 22px rgba(240, 75, 69, .18);
 }
 
-
-/* =========================================================
-   REDES SOCIAIS
-   ========================================================= */
-
+/* REDES SOCIAIS */
 .pp-social {
     position: relative;
-
     z-index: 3;
-
     display: flex;
-
     justify-content: center;
-
-    margin-top: 34px;
+    margin-top: 24px;
 }
 
 .pp-social a {
     display: inline-flex;
-
     align-items: center;
-
     gap: 7px;
-
     color: #d6d6d6;
-
     font-size: .72rem;
-
     font-weight: 700;
-
     text-decoration: none;
 }
 
@@ -863,433 +495,26 @@
 .pp-social svg {
     width: 17px;
     height: 17px;
-
     fill: #ff9627;
 }
 
-
-/* =========================================================
-   CONTEÚDO ABAIXO DO PÔSTER
-   ========================================================= */
-
-.pp-about {
-    margin:
-        34px 0 0;
-}
-
-.pp-section-title {
-    margin-bottom: 13px;
-
-    color:
-        var(--primary-color, #f28c33);
-
-    font-size: .78rem;
-
-    font-weight: 800;
-
-    letter-spacing: .7px;
-
-    text-transform: uppercase;
-}
-
-.pp-about-text {
-    margin: 0;
-
-    line-height: 1.7;
-}
-
-.pp-chips {
-    margin-top: 12px;
-}
-
-.pp-chip {
-    display: inline-block;
-
-    margin:
-        0 6px 6px 0;
-
-    padding:
-        5px 12px;
-
-    border-radius: 16px;
-
-    background: #fff3e8;
-
-    color: #b85f14;
-
-    font-size: .8rem;
-
-    font-weight: 700;
-}
-
-
-/* =========================================================
-   TABLET
-   ========================================================= */
-
-@media (max-width: 768px) {
-
-    .pp-page {
-        padding:
-            0 10px 35px;
-    }
-
-    .pp-poster {
-        min-height: auto;
-
-        padding:
-            35px 34px 30px;
-    }
-
-    /* FOTO */
-
-    .pp-ring {
-        width: 290px !important;
-        height: 290px !important;
-
-        min-width: 290px !important;
-        min-height: 290px !important;
-
-        flex-basis: 290px;
-
-        padding: 14px !important;
-    }
-
-    /* NOME */
-
-    .pp-name-first {
-        font-size: 2.7rem;
-    }
-
-    .pp-name-last,
-    .pp-name-only {
-        font-size: 3.15rem;
-    }
-
-    /* BARRAS */
-
-    .pp-bars-left {
-        left: 38px;
-    }
-
-    .pp-bars-right {
-        right: 38px;
-    }
-
-    /* X */
-
-    .pp-deco-x-left {
-        left: -25px;
-    }
-
-    .pp-deco-x-right {
-        right: -24px;
-    }
-}
-
-
-/* =========================================================
-   CELULAR
-   ========================================================= */
-
+/* RESPONSIVIDADE PARA CELULAR */
 @media (max-width: 560px) {
-
-    .pp-page {
-        padding: 0;
-    }
-
-    .pp-column {
-        max-width: 100%;
-    }
-
     .pp-poster {
-        min-height: auto;
-
-        padding:
-            27px 19px 27px;
-
+        padding: 27px 19px 27px;
         border-radius: 0;
-
         box-shadow: none;
     }
-
-
-    /* BOTÕES */
-
-    .pp-actions {
-        top: 10px;
-        right: 10px;
-    }
-
-    .pp-action {
-        width: 31px;
-        height: 31px;
-
-        font-size: .78rem;
-    }
-
-
-    /* FOTO */
-
-    .pp-photo-area {
-        margin-top: 20px;
-    }
-
     .pp-ring {
         width: 250px !important;
         height: 250px !important;
-
         min-width: 250px !important;
         min-height: 250px !important;
-
-        flex-basis: 250px;
-
-        padding: 12px !important;
     }
-
-    .pp-photo {
-        border-width: 6px;
-    }
-
-
-    /* BARRAS */
-
-    .pp-bars {
-        top: 166px;
-    }
-
-    .pp-bars-left {
-        left: 12px;
-    }
-
-    .pp-bars-right {
-        right: 12px;
-    }
-
-    .pp-bars span {
-        width: 8px;
-        height: 10px;
-    }
-
-
-    /* DECORAÇÃO */
-
-    .pp-deco-x-top {
-        top: 52px;
-        left: 24px;
-
-        width: 30px;
-        height: 30px;
-    }
-
-    .pp-deco-plus-top {
-        top: 27px;
-        right: 75px;
-
-        transform: scale(.75);
-    }
-
-    .pp-deco-x-left {
-        top: 305px;
-        left: -30px;
-
-        width: 66px;
-        height: 66px;
-    }
-
-    .pp-deco-x-right {
-        top: 24px;
-        right: -28px;
-
-        width: 70px;
-        height: 70px;
-    }
-
-    .pp-deco-plus-left {
-        display: none;
-    }
-
-    .pp-deco-plus-right {
-        right: 70px;
-        bottom: 290px;
-
-        transform: scale(.55);
-    }
-
-
-    /* PONTOS */
-
-    .pp-dot-right-top {
-        top: 95px;
-        right: 71px;
-    }
-
-    .pp-dot-center-right {
-        top: 430px;
-        right: 29px;
-    }
-
-    .pp-dot-left-bottom {
-        bottom: 102px;
-        left: 72px;
-    }
-
-
-    /* TÍTULO */
-
-    .pp-eyebrow {
-        margin-top: 23px;
-
-        font-size: .67rem;
-
-        letter-spacing: 2px;
-    }
-
-
-    /* NOME */
-
     .pp-name-first {
         font-size: 2.15rem;
-
-        letter-spacing: -.5px;
     }
-
-    .pp-name-last,
-    .pp-name-only {
+    .pp-name-last {
         font-size: 2.55rem;
-
-        letter-spacing: -.6px;
-    }
-
-
-    /* CREF */
-
-    .pp-cref {
-        margin-top: 9px;
-
-        font-size: .67rem;
-    }
-
-
-    /* TAGLINE */
-
-    .pp-tagline {
-        font-size: .82rem;
-
-        line-height: 1.45;
-    }
-
-
-    /* SERVIÇOS */
-
-    .pp-services {
-        margin-top: 23px;
-    }
-
-    .pp-service {
-        padding:
-            12px 5px;
-    }
-
-    .pp-service-title {
-        padding:
-            5px 7px;
-
-        font-size: .56rem;
-    }
-
-    .pp-service p {
-        margin-top: 7px;
-
-        font-size: .57rem;
-    }
-
-
-    /* AVALIAÇÃO */
-
-    .pp-rating {
-        margin-top: 18px;
-
-        padding:
-            8px 14px;
-
-        font-size: .65rem;
-    }
-
-
-    /* SOCIAL */
-
-    .pp-social {
-        margin-top: 27px;
-    }
-
-    .pp-social a {
-        font-size: .67rem;
-    }
-
-
-    /* PONTOS */
-
-    .pp-dots {
-        opacity: .55;
-    }
-}
-
-
-/* =========================================================
-   CELULARES MUITO PEQUENOS
-   ========================================================= */
-
-@media (max-width: 390px) {
-
-    .pp-poster {
-        padding-left: 14px;
-        padding-right: 14px;
-    }
-
-
-    /* FOTO */
-
-    .pp-ring {
-        width: 218px !important;
-        height: 218px !important;
-
-        min-width: 218px !important;
-        min-height: 218px !important;
-
-        flex-basis: 218px;
-
-        padding: 11px !important;
-    }
-
-
-    /* NOME */
-
-    .pp-name-first {
-        font-size: 1.85rem;
-    }
-
-    .pp-name-last,
-    .pp-name-only {
-        font-size: 2.15rem;
-    }
-
-
-    /* SERVIÇOS */
-
-    .pp-service {
-        padding-left: 3px;
-        padding-right: 3px;
-    }
-
-    .pp-service-title {
-        font-size: .52rem;
-
-        padding-left: 5px;
-        padding-right: 5px;
-    }
-
-    .pp-service p {
-        font-size: .52rem;
     }
 }

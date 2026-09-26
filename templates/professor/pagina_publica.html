@@ -127,31 +127,36 @@
             <p class="pp-tagline">{{ professor.professor_tagline }}</p>
             {% endif %}
 
-            <!-- Especialidades / serviços -->
+            <!-- Três blocos principais (Cardio / Nutrition / Exercise ajustados para os pilares do professor) -->
             <div class="pp-services">
                 <div class="pp-service">
-                    <span class="pp-service-title">Presencial</span>
-                    <p>Acompanhamento na academia, treino a treino.</p>
+                    <span class="pp-service-title">Cardio</span>
+                    <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh.</p>
                 </div>
 
                 <div class="pp-service">
-                    <span class="pp-service-title">Online</span>
-                    <p>Consultoria à distância, com suporte por mensagem.</p>
+                    <span class="pp-service-title">Nutrition</span>
+                    <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh.</p>
                 </div>
 
                 <div class="pp-service">
-                    <span class="pp-service-title">Avaliação</span>
-                    <p>Medidas e composição corporal pro seu ponto de partida.</p>
+                    <span class="pp-service-title">Exercise</span>
+                    <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh.</p>
                 </div>
             </div>
 
+            <!-- Botão de Destaque / Registration Open idêntico ao modelo -->
+            <div class="pp-registration-area">
+                <div class="pp-rating">Registration Open</div>
+            </div>
+
+            <!-- Redes sociais e Avaliações se houver -->
             {% if professor.professor_mostrar_avaliacoes and resumo_avaliacoes.total > 0 %}
-            <div class="pp-rating">
+            <div class="pp-rating-info" style="margin-top: 15px; text-align: center; font-size: 0.75rem; color: #ccc;">
                 ★ {{ resumo_avaliacoes.media }} — {{ resumo_avaliacoes.total }} avaliaç{{ 'ão' if resumo_avaliacoes.total == 1 else 'ões' }} de alunos
             </div>
             {% endif %}
 
-            <!-- Redes sociais -->
             {% if professor.professor_instagram %}
             <div class="pp-social">
                 <a href="https://instagram.com/{{ professor.professor_instagram }}"
@@ -166,31 +171,21 @@
             {% endif %}
         </article>
 
-        <!-- Conteúdo normal da página, fora do pôster -->
+        <!-- Conteúdo extra abaixo do pôster (caso queira manter bio detalhada) -->
         {% if professor.professor_bio or especialidades %}
-        <section class="pp-about">
+        <section class="pp-about" style="margin-top: 30px; padding: 0 10px;">
             <div class="pp-section-title">Sobre mim</div>
-
             {% if professor.professor_bio %}
             <p class="pp-about-text">{{ professor.professor_bio }}</p>
             {% endif %}
-
             {% if especialidades %}
-            <div class="pp-chips">
+            <div class="pp-chips" style="margin-top: 10px;">
                 {% for esp in especialidades %}
                 <span class="pp-chip">{{ esp }}</span>
                 {% endfor %}
             </div>
             {% endif %}
         </section>
-        {% endif %}
-
-        {% if not professor.professor_bio and not professor.professor_tagline and eh_dono %}
-        <div class="alert alert-warning">
-            <i class="bi bi-info-circle me-2"></i>
-            Sua página ainda está quase em branco -- só você (logado) consegue ver este aviso.
-            <a href="{{ url_for('professor.editar_pagina_publica') }}">Complete seus dados</a> pra ela ficar pronta pra compartilhar.
-        </div>
         {% endif %}
 
     </div>
