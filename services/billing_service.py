@@ -47,6 +47,14 @@ CARENCIA_DIAS_PROFESSOR_GESTAO = 15
 # (enquanto continuar sem regularizar).
 DIAS_NOTIFICACAO_VENCIMENTO_FIXOS = (1, 2, 3, 6, 9, 12, 15, 18)
 DIAS_NOTIFICACAO_VENCIMENTO_INTERVALO_FINAL = 10
+
+# Intervalo mínimo entre lembretes de "tier desatualizado" (professor
+# com mais alunos do que o plano de gestão atual cobre) -- ver
+# BillingService.notificar_professores_tier_desatualizado. Menos
+# urgente que vencimento (o professor não perde acesso por isso, só
+# não consegue cadastrar/aprovar MAIS alunos), por isso um intervalo
+# fixo simples em vez de uma régua crescente.
+INTERVALO_NOTIFICACAO_TIER_DIAS = 7
 LIMITE_ALUNOS_GRATIS = 2
 REQUEST_TIMEOUT_SECONDS = 10
 
@@ -439,6 +447,72 @@ class BillingService:
                 'tier_novo': plano_necessario,
             })
         return mudancas
+
+    @staticmethod
+    def notificar_professores_tier_desatualizado() -> int:
+        """Job periódico (ex: diário, junto de billing-verificar-tiers):
+        notifica na tela de notificações in-app o professor cujo plano
+        de gestão ATUAL não cobre mais a quantidade de alunos que ele
+        tem -- só o caso que efetivamente bloqueia (upgrade necessário
+        pra continuar cadastrando/aprovando alunos), nunca o caso
+        inverso (professor pagando por mais capacidade do que usa não
+        é urgente e fica de fora daqui de propósito -- ver
+        verificar_mudancas_tier_professores, que reporta os dois casos
+        só pra log/auditoria, sem notificar ninguém).
+
+        NÃO aplica nenhuma troca de plano/cobrança sozinho -- só avisa,
+        igual o resto dessa régua de notificações. Repete a cada
+        INTERVALO_NOTIFICACAO_TIER_DIAS dias enquanto não regularizar,
+        e some sozinho quando resolver (upgrade feito, ou perdeu
+        alunos e não precisa mais)."""
+        from services.notificacao_service import NotificacaoService
+        agora = datetime.now(timezone.utc)
+        total = 0
+        professores = User.query.filter_by(tipo_usuario='professor', ativo=True).all()
+        for professor in professores:
+            assinatura = professor.assinatura
+            plano_necessario = BillingService.plano_gestao_necessario(professor)
+            plano_atual = (
+                assinatura.plano if (assinatura and assinatura.status == 'active') else None
+            )
+            ordem_necessaria = ORDEM_PLANOS_GESTAO.get(plano_necessario.codigo, 0) if plano_necessario else 0
+            ordem_atual = ORDEM_PLANOS_GESTAO.get(plano_atual.codigo, 0) if plano_atual else 0
+
+            if ordem_necessaria <= ordem_atual:
+                # Em dia (ou sobrando capacidade) -- limpa o cooldown
+                # pra não deixar uma notificação antiga suprimindo um
+                # NOVO desalinhamento por até 7 dias, se voltar a
+                # crescer logo depois de resolver o anterior.
+                if assinatura and assinatura.tier_desatualizado_notificado_em:
+                    assinatura.tier_desatualizado_notificado_em = None
+                    db.session.commit()
+                continue
+
+            if assinatura is None:
+                continue  # mesma nota de professor_acesso_alunos_liberado
+
+            ultima = assinatura.tier_desatualizado_notificado_em
+            if ultima is not None:
+                if ultima.tzinfo is None:
+                    ultima = ultima.replace(tzinfo=timezone.utc)
+                if (agora - ultima) < timedelta(days=INTERVALO_NOTIFICACAO_TIER_DIAS):
+                    continue
+
+            NotificacaoService._criar(
+                destinatario_id=professor.id,
+                remetente_id=None,
+                tipo='tier_desatualizado',
+                titulo='Hora de fazer upgrade',
+                mensagem=(
+                    f'Você já tem alunos suficientes para o plano {plano_necessario.nome}. '
+                    'Faça upgrade para continuar cadastrando novos alunos no FitLog.'
+                ),
+                url='/minha-assinatura',
+            )
+            assinatura.tier_desatualizado_notificado_em = agora
+            db.session.commit()
+            total += 1
+        return total
 
     # ================================================================
     # Painel do admin
@@ -980,6 +1054,23 @@ class BillingService:
             'Assinatura %s (usuario=%s) cancelada pelo usuário -- acesso mantido até %s',
             assinatura.id, usuario.id,
             proximo_vencimento or 'agora (não foi possível confirmar o próximo vencimento no Asaas)',
+        )
+
+        from services.notificacao_service import NotificacaoService
+        if proximo_vencimento is not None:
+            mensagem = (
+                f'Sua assinatura foi cancelada. Seu acesso continua liberado até '
+                f'{proximo_vencimento.strftime("%d/%m/%Y")}.'
+            )
+        else:
+            mensagem = 'Sua assinatura foi cancelada e o acesso premium foi encerrado.'
+        NotificacaoService._criar(
+            destinatario_id=usuario.id,
+            remetente_id=None,
+            tipo='assinatura_cancelada',
+            titulo='Assinatura cancelada',
+            mensagem=mensagem,
+            url='/minha-assinatura',
         )
 
     @staticmethod
@@ -1596,10 +1687,25 @@ class BillingService:
         assinatura.carencia_termina_em = agora + timedelta(days=dias_carencia)
         # Marca o dia 0 da régua de notificações de vencimento -- só se
         # ainda não tiver um (não reinicia a contagem por engano se essa
-        # função for chamada de novo enquanto já está em atraso).
+        # função for chamada de novo enquanto já está em atraso), e já
+        # dispara a primeira notificação NA HORA (dia 0) -- o resto da
+        # régua (dias 1, 2, 3, 6, 9...) é coberta por
+        # notificar_vencimentos_pendentes, que roda 1x/dia.
         if not assinatura.vencido_em:
             assinatura.vencido_em = agora
-            assinatura.ultima_notificacao_vencimento_dias = None
+            assinatura.ultima_notificacao_vencimento_dias = 0
+            from services.notificacao_service import NotificacaoService
+            NotificacaoService._criar(
+                destinatario_id=assinatura.usuario_id,
+                remetente_id=None,
+                tipo='plano_vencido',
+                titulo='Seu plano expirou',
+                mensagem=(
+                    'Seu plano expirou, faça uma nova assinatura para '
+                    'aproveitar todos os recursos do FitLog.'
+                ),
+                url='/minha-assinatura',
+            )
 
     @staticmethod
     def expirar_carencias_vencidas():

@@ -1038,7 +1038,7 @@ class TestNotificarVencimentosPendentes:
 
             assert total == 0
 
-    def test_iniciar_atraso_marca_vencido_em(self, app):
+    def test_iniciar_atraso_marca_vencido_em_e_notifica_no_dia_0(self, app):
         with app.app_context():
             aluno = _criar_usuario('inicia_atraso_marca')
             assinatura = Assinatura(usuario_id=aluno.id, status='active')
@@ -1048,8 +1048,16 @@ class TestNotificarVencimentosPendentes:
             agora = datetime.now(timezone.utc)
             BillingService._iniciar_atraso(assinatura, agora)
 
-            assert assinatura.vencido_em == agora
-            assert assinatura.ultima_notificacao_vencimento_dias is None
+            vencido_em = assinatura.vencido_em
+            if vencido_em.tzinfo is None:
+                vencido_em = vencido_em.replace(tzinfo=timezone.utc)
+            assert vencido_em == agora
+            # Notifica na hora (dia 0) -- por isso já marca 0, não None,
+            # pra não colidir com o dia 1 da régua diária no dia seguinte.
+            assert assinatura.ultima_notificacao_vencimento_dias == 0
+            notificacao = Notificacao.query.filter_by(destinatario_id=aluno.id).first()
+            assert notificacao is not None
+            assert notificacao.tipo == 'plano_vencido'
 
     def test_confirmacao_de_pagamento_limpa_vencido_em(self, app):
         with app.app_context():
@@ -1759,3 +1767,180 @@ class TestCancelarAssinatura:
 
             assinatura_atualizada = Assinatura.query.filter_by(usuario_id=aluno.id).first()
             assert assinatura_atualizada.status == 'active'  # não mudou
+
+    def test_cancelamento_com_periodo_pago_notifica_com_a_data(self, app, monkeypatch):
+        monkeypatch.setattr(
+            'services.billing_service.requests.get',
+            lambda *a, **k: _RespostaFake({'nextDueDate': '2026-11-15'}, status_code=200),
+        )
+        monkeypatch.setattr(
+            'services.billing_service.requests.delete',
+            lambda *a, **k: _RespostaFake({}, status_code=200),
+        )
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            aluno = _criar_usuario('cancelar_notifica_com_data')
+            assinatura = BillingService.iniciar_trial(aluno)
+            assinatura.status = 'active'
+            assinatura.gateway_subscription_id = 'sub_notifica'
+            db.session.commit()
+
+            BillingService.cancelar_assinatura(aluno)
+
+            notificacao = Notificacao.query.filter_by(destinatario_id=aluno.id).first()
+            assert notificacao is not None
+            assert notificacao.tipo == 'assinatura_cancelada'
+            assert '15/11/2026' in notificacao.mensagem
+
+    def test_cancelamento_sem_confirmar_prazo_notifica_encerramento_imediato(self, app, monkeypatch):
+        monkeypatch.setattr(
+            'services.billing_service.requests.get',
+            lambda *a, **k: _RespostaFake({}, status_code=404),
+        )
+        monkeypatch.setattr(
+            'services.billing_service.requests.delete',
+            lambda *a, **k: _RespostaFake({}, status_code=200),
+        )
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            aluno = _criar_usuario('cancelar_notifica_sem_data')
+            assinatura = BillingService.iniciar_trial(aluno)
+            assinatura.status = 'active'
+            assinatura.gateway_subscription_id = 'sub_notifica_2'
+            db.session.commit()
+
+            BillingService.cancelar_assinatura(aluno)
+
+            notificacao = Notificacao.query.filter_by(destinatario_id=aluno.id).first()
+            assert notificacao is not None
+            assert notificacao.tipo == 'assinatura_cancelada'
+            assert 'encerrado' in notificacao.mensagem.lower()
+
+
+# ---------------------------------------------------------------------
+# Notificação de tier desatualizado (professor precisando de upgrade)
+# ---------------------------------------------------------------------
+
+class TestNotificarProfessoresTierDesatualizado:
+    def test_professor_acima_da_faixa_e_notificado(self, app):
+        with app.app_context():
+            pro, premium, _ = _criar_planos_professor()
+            professor = _criar_usuario('tier_precisa_upgrade', tipo_usuario='professor')
+            assinatura = Assinatura(
+                usuario_id=professor.id, status='active', plano_id=pro.id,
+            )
+            db.session.add(assinatura)
+            db.session.commit()
+            _vincular_alunos(professor, 10)  # passa da faixa do Pró (3-9 nesse fixture)
+            db.session.commit()
+
+            total = BillingService.notificar_professores_tier_desatualizado()
+
+            assert total == 1
+            notificacao = Notificacao.query.filter_by(destinatario_id=professor.id).first()
+            assert notificacao is not None
+            assert notificacao.tipo == 'tier_desatualizado'
+            assert 'Premium' in notificacao.mensagem
+            db.session.refresh(assinatura)
+            assert assinatura.tier_desatualizado_notificado_em is not None
+
+    def test_professor_dentro_da_faixa_nao_e_notificado(self, app):
+        with app.app_context():
+            pro, premium, _ = _criar_planos_professor()
+            professor = _criar_usuario('tier_em_dia', tipo_usuario='professor')
+            assinatura = Assinatura(usuario_id=professor.id, status='active', plano_id=pro.id)
+            db.session.add(assinatura)
+            db.session.commit()
+            _vincular_alunos(professor, 5)  # cabe no Pró
+            db.session.commit()
+
+            total = BillingService.notificar_professores_tier_desatualizado()
+
+            assert total == 0
+            assert Notificacao.query.filter_by(destinatario_id=professor.id).count() == 0
+
+    def test_professor_com_sobra_de_capacidade_nao_e_notificado(self, app):
+        """Premium pagando por mais do que usa -- não é urgente, não notifica."""
+        with app.app_context():
+            _criar_planos_professor()
+            premium = Plano.query.filter_by(codigo='professor_premium').first()
+            professor = _criar_usuario('tier_sobra_capacidade', tipo_usuario='professor')
+            assinatura = Assinatura(usuario_id=professor.id, status='active', plano_id=premium.id)
+            db.session.add(assinatura)
+            db.session.commit()
+            _vincular_alunos(professor, 5)
+            db.session.commit()
+
+            total = BillingService.notificar_professores_tier_desatualizado()
+
+            assert total == 0
+
+    def test_dentro_do_cooldown_nao_notifica_de_novo(self, app):
+        with app.app_context():
+            pro, premium, _ = _criar_planos_professor()
+            professor = _criar_usuario('tier_cooldown', tipo_usuario='professor')
+            assinatura = Assinatura(
+                usuario_id=professor.id, status='active', plano_id=pro.id,
+                tier_desatualizado_notificado_em=datetime.now(timezone.utc) - timedelta(days=2),
+            )
+            db.session.add(assinatura)
+            db.session.commit()
+            _vincular_alunos(professor, 10)
+            db.session.commit()
+
+            total = BillingService.notificar_professores_tier_desatualizado()
+
+            assert total == 0
+
+    def test_apos_cooldown_notifica_de_novo(self, app):
+        with app.app_context():
+            pro, premium, _ = _criar_planos_professor()
+            professor = _criar_usuario('tier_pos_cooldown', tipo_usuario='professor')
+            assinatura = Assinatura(
+                usuario_id=professor.id, status='active', plano_id=pro.id,
+                tier_desatualizado_notificado_em=datetime.now(timezone.utc) - timedelta(days=8),
+            )
+            db.session.add(assinatura)
+            db.session.commit()
+            _vincular_alunos(professor, 10)
+            db.session.commit()
+
+            total = BillingService.notificar_professores_tier_desatualizado()
+
+            assert total == 1
+
+    def test_resolvido_limpa_o_cooldown(self, app):
+        """Professor que já fez upgrade (ou perdeu alunos) não deve
+        ficar com um cooldown velho travando um aviso novo no futuro."""
+        with app.app_context():
+            pro, premium, _ = _criar_planos_professor()
+            professor = _criar_usuario('tier_resolvido', tipo_usuario='professor')
+            assinatura = Assinatura(
+                usuario_id=professor.id, status='active', plano_id=premium.id,
+                tier_desatualizado_notificado_em=datetime.now(timezone.utc),
+            )
+            db.session.add(assinatura)
+            db.session.commit()
+            _vincular_alunos(professor, 10)  # cabe no Premium
+            db.session.commit()
+
+            BillingService.notificar_professores_tier_desatualizado()
+
+            db.session.refresh(assinatura)
+            assert assinatura.tier_desatualizado_notificado_em is None
+
+    def test_alunos_dentro_da_faixa_gratis_nunca_notifica(self, app):
+        with app.app_context():
+            _criar_planos_professor()
+            professor = _criar_usuario('tier_faixa_gratis', tipo_usuario='professor')
+            assinatura = Assinatura(usuario_id=professor.id, status='trialing')
+            db.session.add(assinatura)
+            db.session.commit()
+            _vincular_alunos(professor, 2)
+            db.session.commit()
+
+            total = BillingService.notificar_professores_tier_desatualizado()
+
+            assert total == 0

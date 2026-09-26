@@ -228,6 +228,10 @@
                 <i class="bi bi-hourglass-split"></i>
             {% elif n.tipo == 'plano_vencido' %}
                 <i class="bi bi-credit-card"></i>
+            {% elif n.tipo == 'tier_desatualizado' %}
+                <i class="bi bi-arrow-up-circle"></i>
+            {% elif n.tipo == 'assinatura_cancelada' %}
+                <i class="bi bi-info-circle"></i>
             {% else %}
                 <i class="bi bi-pencil-square"></i>
             {% endif %}

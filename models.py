@@ -620,6 +620,12 @@ class Assinatura(db.Model):
     # -- evita notificar duas vezes no mesmo dia caso o job de
     # notificação rode mais de uma vez (idempotência simples).
     ultima_notificacao_vencimento_dias = db.Column(db.Integer, nullable=True)
+    # Última vez que o professor foi notificado de que o plano de
+    # gestão atual não cobre mais a quantidade de alunos que ele tem
+    # (upgrade necessário) -- controla o intervalo entre lembretes
+    # (ver BillingService.notificar_professores_tier_desatualizado).
+    # Sempre None pra assinatura de aluno (só professor usa isso).
+    tier_desatualizado_notificado_em = db.Column(db.DateTime(timezone=True), nullable=True)
 
     # forma_pagamento: 'cartao' (checkout hospedado, cobrança
     # recorrente automática todo mês) ou 'pix' (pagamento avulso --
