@@ -30,6 +30,23 @@ BIO_TAMANHO_MAXIMO = 1000
 CREF_TAMANHO_MAXIMO = 30
 INSTAGRAM_TAMANHO_MAXIMO = 120
 
+# Descrição curta de cada especialidade, usada nas 3 caixas de destaque
+# da página pública (ver ProfessorPerfilService.servicos_destaque).
+_DESCRICOES_ESPECIALIDADES = {
+    'emagrecimento': 'Foco em queima de gordura e composição corporal.',
+    'hipertrofia': 'Treino direcionado para ganho de massa muscular.',
+    'reabilitacao': 'Fortalecimento seguro no pós-lesão, junto ao seu tratamento.',
+    'terceira_idade': 'Treino adaptado, com foco em mobilidade e autonomia.',
+}
+
+# Itens genéricos usados só pra completar as 3 caixas quando o
+# professor marcou menos de 3 especialidades (ou nenhuma).
+_SERVICOS_GENERICOS_PADRAO = [
+    {'titulo': 'Presencial', 'descricao': 'Acompanhamento na academia, treino a treino.'},
+    {'titulo': 'Online', 'descricao': 'Consultoria à distância, com suporte por mensagem.'},
+    {'titulo': 'Avaliação', 'descricao': 'Medidas e composição corporal pro seu ponto de partida.'},
+]
+
 
 class ProfessorPerfilService(BaseService):
 
@@ -167,3 +184,22 @@ class ProfessorPerfilService(BaseService):
         fixa do vocabulário (não na ordem que foram salvas)."""
         selecionadas = set(professor.professor_especialidades or [])
         return [label for chave, label in ESPECIALIDADES_VALIDAS.items() if chave in selecionadas]
+
+    @staticmethod
+    def servicos_destaque(professor: User) -> list[dict]:
+        """As 3 caixas de destaque (título + descrição) da página
+        pública. Usa as especialidades reais que o professor marcou
+        (na ordem fixa do vocabulário) e só completa com os itens
+        genéricos (Presencial/Online/Avaliação) se sobrar espaço --
+        quem marcou 3 ou mais especialidades vê só conteúdo real."""
+        selecionadas = set(professor.professor_especialidades or [])
+        servicos = [
+            {'titulo': label, 'descricao': _DESCRICOES_ESPECIALIDADES[chave]}
+            for chave, label in ESPECIALIDADES_VALIDAS.items()
+            if chave in selecionadas
+        ]
+        for generico in _SERVICOS_GENERICOS_PADRAO:
+            if len(servicos) >= 3:
+                break
+            servicos.append(generico)
+        return servicos[:3]

@@ -1269,6 +1269,7 @@ def pagina_publica(slug):
         'professor/pagina_publica.html',
         professor=professor,
         especialidades=ProfessorPerfilService.especialidades_selecionadas(professor),
+        servicos=ProfessorPerfilService.servicos_destaque(professor),
         resumo_avaliacoes=resumo_avaliacoes,
         eh_dono=eh_dono,
     )

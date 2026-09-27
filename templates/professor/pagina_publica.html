@@ -127,22 +127,15 @@
             <p class="pp-tagline">{{ professor.professor_tagline }}</p>
             {% endif %}
 
-            <!-- Três blocos principais (Cardio / Nutrition / Exercise ajustados para os pilares do professor) -->
+            <!-- Especialidades / serviços (reais, vindos do cadastro --
+                 ver ProfessorPerfilService.servicos_destaque) -->
             <div class="pp-services">
+                {% for servico in servicos %}
                 <div class="pp-service">
-                    <span class="pp-service-title">Cardio</span>
-                    <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh.</p>
+                    <span class="pp-service-title">{{ servico.titulo }}</span>
+                    <p>{{ servico.descricao }}</p>
                 </div>
-
-                <div class="pp-service">
-                    <span class="pp-service-title">Nutrition</span>
-                    <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh.</p>
-                </div>
-
-                <div class="pp-service">
-                    <span class="pp-service-title">Exercise</span>
-                    <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh.</p>
-                </div>
+                {% endfor %}
             </div>
 
             <!-- Botão de Destaque / Registration Open idêntico ao modelo -->
