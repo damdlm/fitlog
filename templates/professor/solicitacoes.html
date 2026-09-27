@@ -1,41 +1,83 @@
 {% extends "base.html" %}
 
+{% block page_icon %}<i class="bi bi-bell" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Solicitações de Vínculo{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>
-        <i class="bi bi-bell me-2" style="color: #F28C33;"></i>
-        Solicitações de Vínculo
-    </h2>
+<style>
+    /* Mesma linguagem visual de professor/alunos.html e
+       professor/visualizar_aluno.html: avatar com iniciais em
+       gradiente, cards com respiro maior, sem título duplicado no
+       corpo da página (o título já vive no cabeçalho via
+       page_icon/page_title). */
+    .sv-avatar {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--gradient-primary, linear-gradient(135deg, #F28C33 0%, #FFB366 100%));
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.05rem;
+    }
+    .sv-card {
+        border-radius: 16px;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        transition: box-shadow 0.15s ease;
+    }
+    .sv-card:hover {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    }
+    .sv-meta {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    .sv-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .sv-meta i {
+        color: var(--primary-color, #F28C33);
+    }
+</style>
+
+<div class="d-flex justify-content-end mb-3">
     <a href="{{ url_for('professor.listar_alunos') }}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Voltar
     </a>
 </div>
 
 {% if solicitacoes %}
-    <div class="row">
+    <div class="row g-3">
         {% for sol in solicitacoes %}
-        <div class="col-md-6 mb-3">
-            <div class="card">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-person-circle me-2" style="color: #F28C33;"></i>
-                        {{ sol.aluno.nome_completo or sol.aluno.username }}
-                    </h5>
-                </div>
+        {% set nome_exibicao = sol.aluno.nome_completo or sol.aluno.username %}
+        {% set partes = nome_exibicao.split() %}
+        {% set iniciais = (partes[0][0] ~ (partes[1][0] if partes|length > 1 else ''))|upper %}
+        <div class="col-md-6">
+            <div class="card sv-card h-100">
                 <div class="card-body">
-                    <p>
-                        <strong>Usuário:</strong> {{ sol.aluno.username }}<br>
-                        <strong>E-mail:</strong> {{ sol.aluno.email }}<br>
-                        <strong>Solicitado em:</strong> {{ sol.data_solicitacao.strftime('%d/%m/%Y %H:%M') }}
-                    </p>
-                    
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle me-2"></i>
-                        Este aluno deseja se vincular a você como professor.
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="sv-avatar">{{ iniciais }}</div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">{{ nome_exibicao }}</div>
+                            <div class="text-muted small">@{{ sol.aluno.username }}</div>
+                        </div>
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                            <i class="bi bi-clock-history"></i> Pendente
+                        </span>
                     </div>
-                    
+
+                    <div class="sv-meta d-flex flex-column gap-1 mb-3">
+                        <span><i class="bi bi-envelope"></i> {{ sol.aluno.email }}</span>
+                        <span><i class="bi bi-calendar3"></i> Solicitado em {{ sol.data_solicitacao.strftime('%d/%m/%Y às %H:%M') }}</span>
+                    </div>
+
                     <div class="d-flex gap-2">
-                        <a href="{{ url_for('professor.aprovar_solicitacao', solicitacao_id=sol.id) }}" 
+                        <a href="{{ url_for('professor.aprovar_solicitacao', solicitacao_id=sol.id) }}"
                            class="btn btn-success flex-fill"
                            data-confirm-title="Aprovar vínculo com este aluno?"
                            data-confirm-variant="info"
@@ -44,8 +86,8 @@
                            data-confirm-method="get">
                             <i class="bi bi-check-lg"></i> Aprovar
                         </a>
-                        <a href="{{ url_for('professor.recusar_solicitacao', solicitacao_id=sol.id) }}" 
-                           class="btn btn-danger flex-fill"
+                        <a href="{{ url_for('professor.recusar_solicitacao', solicitacao_id=sol.id) }}"
+                           class="btn btn-outline-danger flex-fill"
                            data-confirm-title="Recusar esta solicitação?"
                            data-confirm-icon="bi-x-lg"
                            data-confirm-label="Sim, recusar"
@@ -59,11 +101,11 @@
         {% endfor %}
     </div>
 {% else %}
-    <div class="card">
+    <div class="card sv-card">
         <div class="card-body text-center py-5">
             <i class="bi bi-inbox fs-1 d-block mb-3" style="color: #ccc;"></i>
             <h5>Nenhuma solicitação pendente</h5>
-            <p class="text-muted">Quando um aluno solicitar vínculo, aparecerá aqui.</p>
+            <p class="text-muted mb-0">Quando um aluno solicitar vínculo, aparecerá aqui.</p>
         </div>
     </div>
 {% endif %}
