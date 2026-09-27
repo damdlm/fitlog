@@ -1,0 +1,225 @@
+/* =========================================================
+   FITLOG — PÁGINA "MEU PROFESSOR" (ALUNO)
+   ========================================================= */
+
+.mp-card {
+    border-radius: 18px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+}
+
+/* -----------------------------------------------------
+   CABEÇALHO DO PERFIL
+   ----------------------------------------------------- */
+.mp-profile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    padding: 28px 24px;
+    background: linear-gradient(180deg, #FFF8F1 0%, #FFFFFF 100%);
+}
+
+.mp-avatar-photo {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 6px 18px rgba(242, 140, 51, 0.28);
+}
+
+.mp-avatar-fallback {
+    width: 84px;
+    height: 84px;
+    min-width: 84px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-primary, linear-gradient(135deg, #F28C33 0%, #FFB366 100%));
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.8rem;
+    box-shadow: 0 6px 18px rgba(242, 140, 51, 0.28);
+}
+
+.mp-profile-info {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+.mp-profile-info h3 {
+    margin: 0 0 4px;
+    font-weight: 700;
+}
+
+.mp-profile-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+    font-size: 0.88rem;
+    color: #6c757d;
+}
+
+.mp-profile-meta a {
+    color: var(--primary-color, #F28C33);
+    text-decoration: none;
+    font-weight: 600;
+}
+.mp-profile-meta a:hover {
+    text-decoration: underline;
+}
+
+/* -----------------------------------------------------
+   RESUMO DE AVALIAÇÕES (média do professor, somente leitura)
+   -- mesmo idioma visual de reviews consagrado em apps como
+   Google/Airbnb/Uber: estrelas preenchidas + nota numérica +
+   contagem de avaliações.
+   ----------------------------------------------------- */
+.mp-rating-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.mp-rating-stars {
+    display: inline-flex;
+    gap: 2px;
+    color: #F2A33D;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.mp-rating-value {
+    font-weight: 700;
+    color: var(--secondary-color, #2D2D2D);
+}
+
+.mp-rating-count {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.mp-rating-empty {
+    color: #9a9a9a;
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+/* -----------------------------------------------------
+   INFO CARDS (e-mail, telefone, vínculo desde)
+   ----------------------------------------------------- */
+.mp-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.mp-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: #F8F9FA;
+}
+
+.mp-info-item i {
+    color: var(--primary-color, #F28C33);
+    font-size: 1.1rem;
+    margin-top: 2px;
+}
+
+.mp-info-item .mp-info-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #9a9a9a;
+    margin-bottom: 2px;
+}
+
+.mp-info-item .mp-info-value {
+    font-weight: 600;
+    color: var(--secondary-color, #2D2D2D);
+    word-break: break-word;
+}
+
+/* -----------------------------------------------------
+   "SUA AVALIAÇÃO" -- estrelas interativas
+   Técnica CSS-only clássica (sem JS): os radios vêm em ordem
+   invertida no HTML (5,4,3,2,1) e o container usa row-reverse,
+   assim o combinador ~ (general sibling, que só enxerga
+   elementos DEPOIS no DOM) consegue acender a estrela sob o
+   mouse e todas à esquerda dela.
+   ----------------------------------------------------- */
+.mp-rate-card {
+    border-radius: 16px;
+    background: linear-gradient(135deg, #FFF4E8 0%, #FFFFFF 100%);
+    border: 1px solid rgba(242, 140, 51, 0.15);
+    padding: 20px 22px;
+}
+
+.pp-star-input {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    gap: 2px;
+}
+
+.pp-star-input input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.pp-star-input label {
+    cursor: pointer;
+    font-size: 2rem;
+    line-height: 1;
+    color: #DADCE0;
+    transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.pp-star-input label:hover {
+    transform: scale(1.12);
+}
+
+.pp-star-input input:checked ~ label,
+.pp-star-input label:hover,
+.pp-star-input label:hover ~ label {
+    color: #F2A33D;
+}
+
+.pp-star-input input:focus-visible + label {
+    outline: 2px solid #F28C33;
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+.mp-rate-hint {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* -----------------------------------------------------
+   SOLICITAÇÕES ENVIADAS (quando o aluno não tem professor)
+   ----------------------------------------------------- */
+.mp-request-item {
+    border-radius: 14px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 14px 16px;
+}
+
+@media (max-width: 575.98px) {
+    .mp-profile {
+        flex-direction: column;
+        text-align: center;
+        padding: 24px 18px;
+    }
+    .mp-profile-meta {
+        justify-content: center;
+    }
+}
