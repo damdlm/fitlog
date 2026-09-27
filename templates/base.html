@@ -102,7 +102,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fitbot-chat.css') }}">
     {% if current_user.is_authenticated %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pwa-install.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/notificacoes.css') }}">
+    <link rel="stylesheet" href="{{ static_v('css/notificacoes.css') }}">
     {% endif %}
     
     <!-- CSS Personalizado -->
@@ -562,13 +562,25 @@
             display: none; /* remove a setinha padrão do Bootstrap */
         }
 
-        /* Badge de notificação sobre o avatar (ex: solicitações pendentes) */
+        /* Badge de notificação sobre o avatar (ex: solicitações pendentes).
+           Mesma fórmula de static/css/notificacoes.css (.notif-bell-badge)
+           -- os dois badges (sino e avatar) precisam ficar padronizados. */
         .btn-avatar .bottom-nav-badge {
             position: absolute;
-            top: -2px;
-            right: -4px;
-            font-size: 0.55rem;
-            padding: 0.15em 0.4em;
+            top: -3px;
+            right: -3px;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 4px;
+            font-size: 0.6rem;
+            line-height: 1;
+            font-weight: 700;
+            border: 2px solid #fff;
+            box-sizing: border-box;
         }
 
         .avatar-circle {

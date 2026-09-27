@@ -37,14 +37,29 @@
     display: none; /* remove a setinha padrão do dropdown do Bootstrap */
 }
 
+/* Badge de contagem (nº de não lidas) -- círculo compacto encostado
+   no canto superior direito do sino, na frente do ícone (z-index
+   acima + contorno branco pra não parecer "colado" no fundo do
+   botão). Cresce em pílula só quando o número tem 2+ dígitos (ex:
+   "10", "99+"). Mesma fórmula usada em .btn-avatar .bottom-nav-badge
+   (badge de solicitações sobre o avatar) -- os dois precisam ficar
+   visualmente padronizados. */
 .notif-bell-badge {
     position: absolute;
-    top: -2px;
-    right: -4px;
+    top: -3px;
+    right: -3px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
     font-size: 0.6rem;
-    padding: 0.2em 0.42em;
-    min-width: 1.1em;
-    line-height: 1.3;
+    line-height: 1;
+    font-weight: 700;
+    border: 2px solid #fff;
+    box-sizing: border-box;
 }
 
 .notif-dropdown-menu {
