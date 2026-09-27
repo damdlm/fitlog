@@ -43,8 +43,17 @@
    botão). Cresce em pílula só quando o número tem 2+ dígitos (ex:
    "10", "99+"). Mesma fórmula usada em .btn-avatar .bottom-nav-badge
    (badge de solicitações sobre o avatar) -- os dois precisam ficar
-   visualmente padronizados. */
-.notif-bell-badge {
+   visualmente padronizados.
+
+   ATENÇÃO ESPECIFICIDADE: o bootstrap.min.css tem uma regra
+   ".btn .badge{position:relative;top:-1px}" (2 classes). Um seletor
+   ".notif-bell-badge" sozinho (1 classe) empata/perde pra ela e o
+   badge volta a ser position:relative -- vira item de flex normal ao
+   lado do sino em vez de ficar no canto (mesma categoria de bug do
+   comentário acima sobre a borda, "já aconteceu 2x"). Por isso o
+   seletor aqui é composto (3 classes = especificidade maior, vence
+   independente da ordem de carregamento dos arquivos). */
+.notif-bell-btn.btn-avatar .notif-bell-badge {
     position: absolute;
     top: -3px;
     right: -3px;
