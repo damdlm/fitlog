@@ -1,0 +1,183 @@
+/* =========================================================
+   TELA "EDITAR MINHA PÁGINA"
+   templates/professor/editar_pagina_publica.html
+   Antes era só Bootstrap padrão (card branco, checkbox cru,
+   botão azul genérico) -- aqui puxa pra mesma identidade
+   visual (laranja/gradiente) da página pública em si.
+   ========================================================= */
+
+.epp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.epp-header h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    margin: 0;
+}
+
+.epp-subtitle {
+    color: #7a7a7a;
+    font-size: .92rem;
+    line-height: 1.55;
+    margin-bottom: 26px;
+}
+
+.epp-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, .07);
+}
+
+.epp-card .card-body {
+    padding: 26px 26px 24px;
+}
+
+.epp-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    color: #222;
+    margin-bottom: 18px;
+}
+
+.epp-card-title i {
+    color: #F28C33;
+}
+
+.epp-field {
+    margin-bottom: 20px;
+}
+
+.epp-field:last-child {
+    margin-bottom: 0;
+}
+
+.epp-field label {
+    font-weight: 700;
+    font-size: .88rem;
+    color: #333;
+    margin-bottom: 6px;
+}
+
+.epp-field .form-control,
+.epp-field .input-group-text {
+    border-radius: 10px;
+    border-color: #e6e6e6;
+}
+
+.epp-field .form-control:focus {
+    border-color: #F28C33;
+    box-shadow: 0 0 0 .2rem rgba(242, 140, 51, .15);
+}
+
+.pp-char-counter {
+    text-align: right;
+    font-size: .74rem;
+    color: #9a9a9a;
+    margin-top: 4px;
+}
+
+/* Especialidades como chips clicáveis em vez de checkbox cru */
+.epp-chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.epp-chip-option {
+    position: relative;
+}
+
+.epp-chip-option input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
+}
+
+.epp-chip-option label {
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1.5px solid #e6e6e6;
+    color: #555;
+    font-weight: 600;
+    font-size: .86rem;
+    cursor: pointer;
+    transition: all .15s ease;
+    margin: 0;
+}
+
+.epp-chip-option input:checked + label {
+    border-color: transparent;
+    color: #fff;
+    background: linear-gradient(135deg, #FFC93C 0%, #F28C33 55%, #F2543D 100%);
+}
+
+.epp-chip-option input:focus-visible + label {
+    outline: 2px solid #F28C33;
+    outline-offset: 2px;
+}
+
+.epp-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: #faf7f2;
+    border-radius: 12px;
+}
+
+.epp-toggle label {
+    margin: 0;
+    font-size: .88rem;
+    color: #444;
+}
+
+.epp-toggle .form-check-input {
+    width: 2.4em;
+    height: 1.3em;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.epp-toggle .form-check-input:checked {
+    background-color: #F28C33;
+    border-color: #F28C33;
+}
+
+.epp-submit {
+    border: none;
+    border-radius: 12px;
+    padding: 11px 28px;
+    font-weight: 800;
+    color: #fff;
+    background: linear-gradient(135deg, #FFC93C 0%, #F28C33 55%, #F2543D 100%);
+    box-shadow: 0 8px 20px rgba(242, 140, 51, .3);
+    transition: opacity .15s ease;
+}
+
+.epp-submit:hover,
+.epp-submit:focus,
+.epp-submit:active {
+    color: #fff;
+    opacity: .92;
+}
+
+@media (max-width: 560px) {
+    .epp-card .card-body {
+        padding: 20px 18px 18px;
+    }
+}

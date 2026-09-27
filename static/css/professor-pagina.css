@@ -561,6 +561,43 @@
     letter-spacing: .2px;
 }
 
+/* =========================================================
+   AVATAR / PREVIEW DE FOTO (tela "Editar Minha Página")
+   -- antes .pp-avatar não tinha NENHUM CSS em lugar nenhum do
+   projeto: só um style inline com width/height no <div>, sem
+   nada pro <img> dentro dele. Resultado: a foto enviada (ou a
+   prévia antes de enviar) aparecia no tamanho original da
+   imagem, sem recorte nem arredondamento -- "desconfigurada".
+   ========================================================= */
+.pp-photo-preview-wrap {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.pp-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    font-weight: 800;
+    text-transform: uppercase;
+    border: 3px solid transparent;
+    background:
+        linear-gradient(#fff, #fff) padding-box,
+        linear-gradient(135deg, #FFC93C 0%, #F28C33 55%, #F2543D 100%) border-box;
+}
+
+.pp-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 /* RESPONSIVIDADE PARA CELULAR */
 @media (max-width: 560px) {
     /* Pôster de ponta a ponta na tela (sem faixa branca nas laterais) --
