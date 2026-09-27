@@ -4,8 +4,8 @@
 {% block page_title %}Editar Minha Página{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/professor-pagina.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/editar-pagina-publica.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/professor-pagina.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/editar-pagina-publica.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -127,5 +127,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/professor-pagina.js') }}"></script>
+<script src="{{ static_v('js/professor-pagina.js') }}"></script>
 {% endblock %}

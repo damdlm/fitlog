@@ -13,7 +13,7 @@
 {% block og_image %}{{ canonical_url(professor.professor_foto_url) if professor.professor_foto_url else canonical_url('/static/images/og-fitlog.jpg') }}{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/professor-pagina.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/professor-pagina.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -186,5 +186,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/professor-pagina.js') }}"></script>
+<script src="{{ static_v('js/professor-pagina.js') }}"></script>
 {% endblock %}
