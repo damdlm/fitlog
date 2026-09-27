@@ -130,12 +130,12 @@
 
             <!-- Botão de Destaque / Registration Open idêntico ao modelo -->
             <div class="pp-registration-area">
-                <div class="pp-rating">Registration Open</div>
+                <div class="pp-rating">Vagas Abertas</div>
             </div>
 
             <!-- Redes sociais e Avaliações se houver -->
             {% if professor.professor_mostrar_avaliacoes and resumo_avaliacoes.total > 0 %}
-            <div class="pp-rating-info" style="margin-top: 15px; text-align: center; font-size: 0.75rem; color: #ccc;">
+            <div class="pp-rating-info">
                 ★ {{ resumo_avaliacoes.media }} — {{ resumo_avaliacoes.total }} avaliaç{{ 'ão' if resumo_avaliacoes.total == 1 else 'ões' }} de alunos
             </div>
             {% endif %}
@@ -156,13 +156,13 @@
 
         <!-- Conteúdo extra abaixo do pôster (caso queira manter bio detalhada) -->
         {% if professor.professor_bio or especialidades %}
-        <section class="pp-about" style="margin-top: 30px; padding: 0 10px;">
+        <section class="pp-about">
             <div class="pp-section-title">Sobre mim</div>
             {% if professor.professor_bio %}
             <p class="pp-about-text">{{ professor.professor_bio }}</p>
             {% endif %}
             {% if especialidades %}
-            <div class="pp-chips" style="margin-top: 10px;">
+            <div class="pp-chips">
                 {% for esp in especialidades %}
                 <span class="pp-chip">{{ esp }}</span>
                 {% endfor %}

@@ -68,9 +68,8 @@
     }
 
     // =========================================================
-    // MODAL "VER MINHA PÁGINA" -- carrega o iframe só na primeira
-    // vez que o modal abre (evita baixar a página em segundo plano
-    // sem necessidade).
+    // MODAL "VER MINHA PÁGINA" -- recarrega o iframe toda vez que o
+    // modal abre, pra sempre refletir o que acabou de ser salvo.
     // =========================================================
     function initVerPaginaModal() {
         var modal = document.getElementById('ppVerPaginaModal');

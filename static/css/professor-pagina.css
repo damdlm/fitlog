@@ -483,6 +483,15 @@
     box-shadow: 0 8px 22px rgba(240, 75, 69, .18);
 }
 
+.pp-rating-info {
+    position: relative;
+    z-index: 3;
+    margin-top: 15px;
+    text-align: center;
+    font-size: .75rem;
+    color: #ccc;
+}
+
 /* REDES SOCIAIS */
 .pp-social {
     position: relative;

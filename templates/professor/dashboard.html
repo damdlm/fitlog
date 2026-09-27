@@ -3,6 +3,10 @@
 {% block page_icon %}<i class="bi bi-speedometer2" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Painel do Professor{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ static_v('css/editar-pagina-publica.css') }}">
+{% endblock %}
+
 {% block content %}
 <style>
     .dash-hero {
@@ -156,15 +160,18 @@
     </div>
     <div class="d-flex gap-2">
         {% if current_user.professor_slug %}
-        <a href="{{ url_for('professor.pagina_publica', slug=current_user.professor_slug) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+                data-bs-toggle="modal" data-bs-target="#ppVerPaginaModal">
             <i class="bi bi-eye"></i> Ver
-        </a>
+        </button>
         {% endif %}
         <a href="{{ url_for('professor.editar_pagina_publica') }}" class="btn btn-sm btn-primary">
             <i class="bi bi-pencil"></i> Editar página
         </a>
     </div>
 </div>
+
+{% include "professor/_modal_ver_pagina.html" %}
 
 <!-- Indicadores principais -->
 <div class="row g-3 mb-4">
@@ -381,4 +388,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+<script src="{{ static_v('js/professor-pagina.js') }}"></script>
 {% endblock %}
