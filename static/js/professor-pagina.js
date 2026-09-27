@@ -67,9 +67,27 @@
         });
     }
 
+    // =========================================================
+    // MODAL "VER MINHA PÁGINA" -- carrega o iframe só na primeira
+    // vez que o modal abre (evita baixar a página em segundo plano
+    // sem necessidade).
+    // =========================================================
+    function initVerPaginaModal() {
+        var modal = document.getElementById('ppVerPaginaModal');
+        var frame = document.getElementById('ppVerPaginaFrame');
+        if (!modal || !frame) return;
+
+        modal.addEventListener('show.bs.modal', function () {
+            if (!frame.src && frame.dataset.src) {
+                frame.src = frame.dataset.src;
+            }
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         initShareButton();
         initFotoPreview();
         initContadores();
+        initVerPaginaModal();
     });
 })();

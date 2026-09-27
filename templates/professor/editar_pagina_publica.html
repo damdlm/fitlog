@@ -17,10 +17,10 @@
                 <i class="bi bi-person-badge"></i> Minha Página Pública
             </h4>
             {% if current_user.professor_slug %}
-            <a href="{{ url_for('professor.pagina_publica', slug=current_user.professor_slug) }}"
-               target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm">
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#ppVerPaginaModal">
                 <i class="bi bi-eye"></i> Ver minha página
-            </a>
+            </button>
             {% endif %}
         </div>
 
@@ -124,6 +124,29 @@
 
     </div>
 </div>
+
+{% if current_user.professor_slug %}
+<!-- Modal "Ver minha página" -- carrega a página pública num iframe,
+     sem sair da tela de edição nem abrir aba nova. O src real só é
+     definido via JS quando o modal abre (data-src), pra não carregar
+     a página em segundo plano sem necessidade. -->
+<div class="modal fade" id="ppVerPaginaModal" tabindex="-1" aria-labelledby="ppVerPaginaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ppVerPaginaModalLabel">Sua página pública</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="ppVerPaginaFrame"
+                        data-src="{{ url_for('professor.pagina_publica', slug=current_user.professor_slug) }}"
+                        title="Prévia da sua página pública"
+                        loading="lazy"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}

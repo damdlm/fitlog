@@ -181,3 +181,17 @@
         padding: 20px 18px 18px;
     }
 }
+
+/* Modal "Ver minha página" -- iframe ocupa o corpo do modal inteiro */
+#ppVerPaginaFrame {
+    display: block;
+    width: 100%;
+    height: 78vh;
+    border: 0;
+}
+
+@media (max-width: 575.98px) {
+    #ppVerPaginaFrame {
+        height: 100vh;
+    }
+}
