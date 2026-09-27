@@ -52,11 +52,19 @@
    lado do sino em vez de ficar no canto (mesma categoria de bug do
    comentário acima sobre a borda, "já aconteceu 2x"). Por isso o
    seletor aqui é composto (3 classes = especificidade maior, vence
-   independente da ordem de carregamento dos arquivos). */
+   independente da ordem de carregamento dos arquivos).
+
+   ATENÇÃO OFFSET: elemento position:absolute é posicionado a partir
+   do padding-box do ancestro, não da borda visual. .notif-bell-btn
+   tem "border: 2px solid" (o anel laranja) e .btn-avatar (avatar) não
+   tem -- por isso o mesmo top/right "-3px" que funciona limpo no
+   avatar nasce 2px mais pra dentro no sino, quase em cima do anel.
+   Offset maior aqui (-6px) compensa a borda e deixa o badge fora do
+   anel, igual ao avatar. */
 .notif-bell-btn.btn-avatar .notif-bell-badge {
     position: absolute;
-    top: -3px;
-    right: -3px;
+    top: -6px;
+    right: -6px;
     z-index: 2;
     display: inline-flex;
     align-items: center;
