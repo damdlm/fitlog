@@ -16,8 +16,8 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 12px;
-    padding: 32px 24px 24px;
+    gap: 10px;
+    padding: 28px 24px 20px;
     background: linear-gradient(180deg, #FFF8F1 0%, #FFFFFF 100%);
 }
 
@@ -46,33 +46,40 @@
 }
 
 .mp-profile-info {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     width: 100%;
 }
 
 .mp-profile-info h3 {
-    margin: 0 0 4px;
+    margin: 0 0 2px;
     font-weight: 700;
 }
 
 .mp-profile-meta {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 6px 14px;
+    gap: 2px;
+}
+
+.mp-meta-line {
+    text-align: center;
+}
+
+.mp-meta-line a,
+.mp-meta-line span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 0.88rem;
     color: #6c757d;
 }
 
-.mp-profile-meta a {
+.mp-meta-line a {
     color: var(--primary-color, #F28C33);
     text-decoration: none;
     font-weight: 600;
 }
-.mp-profile-meta a:hover {
+.mp-meta-line a:hover {
     text-decoration: underline;
 }
 
@@ -83,7 +90,7 @@
    contagem de avaliações.
    ----------------------------------------------------- */
 .mp-rating-summary {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;

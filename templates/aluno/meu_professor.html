@@ -54,18 +54,22 @@
 
                     <div class="mp-profile-meta">
                         {% if professor.professor_slug %}
-                        <a href="{{ url_for('professor.pagina_publica', slug=professor.professor_slug) }}" target="_blank" rel="noopener">
-                            <i class="bi bi-box-arrow-up-right"></i> Ver página pública
-                        </a>
+                        <div class="mp-meta-line">
+                            <a href="{{ url_for('professor.pagina_publica', slug=professor.professor_slug) }}" target="_blank" rel="noopener">
+                                <i class="bi bi-box-arrow-up-right"></i> Visitar Página
+                            </a>
+                        </div>
                         {% endif %}
-                        <span>
-                            <i class="bi bi-calendar-check"></i> Vinculado desde
-                            {% if vinculo and vinculo.data_associacao %}
-                                {{ vinculo.data_associacao.strftime('%d/%m/%Y') }}
-                            {% else %}
-                                data desconhecida
-                            {% endif %}
-                        </span>
+                        <div class="mp-meta-line">
+                            <span>
+                                <i class="bi bi-calendar-check"></i> Vinculado desde
+                                {% if vinculo and vinculo.data_associacao %}
+                                    {{ vinculo.data_associacao.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    data desconhecida
+                                {% endif %}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
