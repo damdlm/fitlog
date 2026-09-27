@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ nome_exibicao }} — FitLog</title>
+    <link rel="stylesheet" href="{{ static_v('css/professor-pagina.css') }}">
+    <style>
+        /* Sem a navbar/chrome do base.html aqui de propósito -- essa
+           página só existe pra ser embutida no iframe do modal "Ver
+           minha página" (ver ProfessorRoutes.pagina_publica, ?embed=1),
+           então é só o pôster puro, sem duplicar cabeçalho nenhum. */
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    {% include "professor/_poster.html" %}
+    <script src="{{ static_v('js/professor-pagina.js') }}"></script>
+</body>
+</html>

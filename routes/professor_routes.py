@@ -1257,19 +1257,34 @@ def pagina_publica(slug):
     login (é o link que ele compartilha com potenciais alunos), mesmo
     padrão de rota pública de main_routes.py/landing e contato_routes.py/
     contato_publico. Retorna 404 se o slug não existir ou pertencer a
-    uma conta inativa (nunca revela isso na mensagem)."""
+    uma conta inativa (nunca revela isso na mensagem).
+
+    ?embed=1 renderiza a versão enxuta (pagina_publica_embed.html),
+    sem a navbar/menu do base.html -- usada só dentro do iframe do
+    modal "Ver minha página" da tela de edição, pra não duplicar o
+    cabeçalho do site dentro do próprio preview."""
     professor = ProfessorPerfilService.get_por_slug(slug)
     if not professor:
         abort(404)
 
     resumo_avaliacoes = AvaliacaoProfessorService.resumo(professor.id)
     eh_dono = current_user.is_authenticated and current_user.id == professor.id
+    nome_exibicao = professor.nome_completo or professor.username
+    descricao_curta = professor.professor_tagline or f'Página de {nome_exibicao} no FitLog'
+    embed = request.args.get('embed') == '1'
 
-    return render_template(
-        'professor/pagina_publica.html',
+    contexto = dict(
         professor=professor,
+        nome_exibicao=nome_exibicao,
+        descricao_curta=descricao_curta,
         especialidades=ProfessorPerfilService.especialidades_selecionadas(professor),
         servicos=ProfessorPerfilService.servicos_destaque(professor),
         resumo_avaliacoes=resumo_avaliacoes,
         eh_dono=eh_dono,
+        embed=embed,
     )
+
+    if embed:
+        return render_template('professor/pagina_publica_embed.html', **contexto)
+
+    return render_template('professor/pagina_publica.html', **contexto)

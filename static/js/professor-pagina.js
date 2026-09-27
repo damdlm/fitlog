@@ -78,9 +78,18 @@
         if (!modal || !frame) return;
 
         modal.addEventListener('show.bs.modal', function () {
-            if (!frame.src && frame.dataset.src) {
-                frame.src = frame.dataset.src;
+            if (frame.dataset.src) {
+                // Recarrega a cada abertura (não só na primeira vez) --
+                // é assim que o professor confere se o que acabou de
+                // salvar realmente já está na página pública. O "_"
+                // evita que o navegador reaproveite uma versão antiga
+                // do iframe guardada em cache/back-forward-cache.
+                frame.src = frame.dataset.src + '&_=' + Date.now();
             }
+        });
+
+        modal.addEventListener('hidden.bs.modal', function () {
+            frame.src = 'about:blank';
         });
     }
 

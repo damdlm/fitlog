@@ -1,0 +1,175 @@
+{# Conteúdo do pôster da página pública do professor -- incluído tanto
+   por pagina_publica.html (visita normal/compartilhada, com a navbar
+   do site) quanto por pagina_publica_embed.html (dentro do iframe do
+   modal "Ver minha página", sem navbar). `embed` (bool) esconde os
+   botões de compartilhar/editar, que não fazem sentido dentro do
+   preview em miniatura. #}
+{% set partes_nome = nome_exibicao.split(' ') %}
+{% set primeiro_nome = partes_nome[0] %}
+{% set sobrenome = partes_nome[1:] | join(' ') %}
+
+<div class="pp-page">
+    <div class="pp-column">
+
+        <article class="pp-poster">
+
+            <!-- Decoração de fundo -->
+            <div class="pp-dots pp-dots-top"></div>
+            <div class="pp-dots pp-dots-bottom"></div>
+
+            <div class="pp-deco pp-deco-x pp-deco-x-top">
+                <span></span><span></span>
+            </div>
+
+            <div class="pp-deco pp-deco-plus pp-deco-plus-top">
+                <span></span><span></span>
+            </div>
+
+            <div class="pp-deco pp-deco-x pp-deco-x-left">
+                <span></span><span></span>
+            </div>
+
+            <div class="pp-deco pp-deco-x pp-deco-x-right">
+                <span></span><span></span>
+            </div>
+
+            <div class="pp-deco pp-deco-plus pp-deco-plus-left">
+                <span></span><span></span>
+            </div>
+
+            <div class="pp-deco pp-deco-plus pp-deco-plus-right">
+                <span></span><span></span>
+            </div>
+
+            <div class="pp-dot pp-dot-right-top"></div>
+            <div class="pp-dot pp-dot-left-bottom"></div>
+            <div class="pp-dot pp-dot-center-right"></div>
+
+            <!-- Pequenas barras laterais -->
+            <div class="pp-bars pp-bars-left" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+            </div>
+
+            <div class="pp-bars pp-bars-right" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+            </div>
+
+            <!-- Ações (escondidas no preview embutido do modal --
+                 compartilhar/editar não fazem sentido ali dentro) -->
+            {% if not embed %}
+            <div class="pp-actions">
+                <button type="button"
+                        id="ppShareBtn"
+                        class="pp-action"
+                        data-url="{{ canonical_url() }}"
+                        data-titulo="{{ nome_exibicao }} — FitLog"
+                        title="Compartilhar"
+                        aria-label="Compartilhar">
+                    <i class="bi bi-share-fill"></i>
+                </button>
+
+                {% if eh_dono %}
+                <a href="{{ url_for('professor.editar_pagina_publica') }}"
+                   class="pp-action"
+                   title="Editar dados"
+                   aria-label="Editar dados">
+                    <i class="bi bi-pencil-fill"></i>
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Foto -->
+            <div class="pp-photo-area">
+                <div class="pp-ring">
+                    <div class="pp-photo">
+                        {% if professor.professor_foto_url %}
+                            <img src="{{ professor.professor_foto_url }}" alt="Foto de {{ nome_exibicao }}">
+                        {% else %}
+                            <div class="pp-placeholder">
+                                <svg viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <circle cx="50" cy="28" r="20" fill="#4a4a4a"/>
+                                    <path d="M10 95c2-28 20-42 40-42s38 14 40 42z" fill="#4a4a4a"/>
+                                </svg>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Identidade -->
+            <div class="pp-eyebrow">Personal Trainer</div>
+
+            <div class="pp-name">
+                {% if sobrenome %}
+                    <span class="pp-name-first">{{ primeiro_nome | upper }}</span>
+                    <span class="pp-name-last">{{ sobrenome | upper }}</span>
+                {% else %}
+                    <span class="pp-name-last pp-name-only">{{ primeiro_nome | upper }}</span>
+                {% endif %}
+            </div>
+
+            {% if professor.professor_cref %}
+            <div class="pp-cref">CREF {{ professor.professor_cref }}</div>
+            {% endif %}
+
+            {% if professor.professor_tagline %}
+            <p class="pp-tagline">{{ professor.professor_tagline }}</p>
+            {% endif %}
+
+            <!-- Especialidades / serviços (reais, vindos do cadastro --
+                 ver ProfessorPerfilService.servicos_destaque) -->
+            <div class="pp-services">
+                {% for servico in servicos %}
+                <div class="pp-service">
+                    <span class="pp-service-title">{{ servico.titulo }}</span>
+                    <p>{{ servico.descricao }}</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Botão de Destaque / Registration Open idêntico ao modelo -->
+            <div class="pp-registration-area">
+                <div class="pp-rating">Registration Open</div>
+            </div>
+
+            <!-- Redes sociais e Avaliações se houver -->
+            {% if professor.professor_mostrar_avaliacoes and resumo_avaliacoes.total > 0 %}
+            <div class="pp-rating-info" style="margin-top: 15px; text-align: center; font-size: 0.75rem; color: #ccc;">
+                ★ {{ resumo_avaliacoes.media }} — {{ resumo_avaliacoes.total }} avaliaç{{ 'ão' if resumo_avaliacoes.total == 1 else 'ões' }} de alunos
+            </div>
+            {% endif %}
+
+            {% if professor.professor_instagram %}
+            <div class="pp-social">
+                <a href="https://instagram.com/{{ professor.professor_instagram }}"
+                   target="_blank"
+                   rel="noopener">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 2c-2.7 0-3 0-4.1.06-1.1.05-1.8.22-2.5.47a5 5 0 00-1.8 1.17 5 5 0 00-1.17 1.8c-.25.7-.42 1.4-.47 2.5C2 8.9 2 9.2 2 12s0 3 .06 4.1c.05 1.1.22 1.8.47 2.5a5 5 0 001.17 1.8 5 5 0 001.8 1.17c.7.25 1.4.42 2.5.47C9 22 9.2 22 12 22s3 0 4.1-.06c1.1-.05 1.8-.22 2.5-.47a5 5 0 001.8-1.17 5 5 0 001.17-1.8c.25-.7.42-1.4.47-2.5.06-1.1.06-1.4.06-4.1s0-3-.06-4.1c-.05-1.1-.22-1.8-.47-2.5a5 5 0 00-1.17-1.8 5 5 0 00-1.8-1.17c-.7-.25-1.4-.42-2.5-.47C15 2 14.7 2 12 2zm0 4.9a5.1 5.1 0 110 10.2 5.1 5.1 0 010-10.2zm0 1.8a3.3 3.3 0 100 6.6 3.3 3.3 0 000-6.6zm5.3-2a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"/>
+                    </svg>
+                    @{{ professor.professor_instagram }}
+                </a>
+            </div>
+            {% endif %}
+        </article>
+
+        <!-- Conteúdo extra abaixo do pôster (caso queira manter bio detalhada) -->
+        {% if professor.professor_bio or especialidades %}
+        <section class="pp-about" style="margin-top: 30px; padding: 0 10px;">
+            <div class="pp-section-title">Sobre mim</div>
+            {% if professor.professor_bio %}
+            <p class="pp-about-text">{{ professor.professor_bio }}</p>
+            {% endif %}
+            {% if especialidades %}
+            <div class="pp-chips" style="margin-top: 10px;">
+                {% for esp in especialidades %}
+                <span class="pp-chip">{{ esp }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </section>
+        {% endif %}
+
+    </div>
+</div>
