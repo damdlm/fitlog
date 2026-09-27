@@ -144,6 +144,16 @@ class RegistroService(BaseService):
             if not user_id:
                 return False
 
+            # treino_id chega como string quando vem direto de
+            # request.form/request.args (ex: routes/register_routes.py,
+            # routes/calendar_routes.py). A coluna treino_versao_id é
+            # Integer, então comparar sem converter faz o Postgres
+            # recusar a query com "operator does not exist: integer =
+            # character varying" -- a exceção cai no except abaixo e o
+            # front-end só vê "não foi possível salvar", sem indicar a
+            # causa real. Convertendo aqui cobre todos os chamadores.
+            treino_id = int(treino_id)
+
             if isinstance(data, str):
                 data = datetime.strptime(data, '%Y-%m-%d').date()
             data_meia_noite = datetime(data.year, data.month, data.day)
@@ -198,7 +208,12 @@ class RegistroService(BaseService):
             if not user_id:
                 logger.warning("Tentativa de buscar registros sem usuário logado")
                 return []
-            
+
+            # Ver comentário equivalente em excluir_por_treino_data: sem
+            # isso, treino_id string (vindo de request.form/args) quebra
+            # a comparação com a coluna Integer no Postgres.
+            treino_id = int(treino_id)
+
             # Garantir que data é date object
             if isinstance(data, str):
                 data = datetime.strptime(data, '%Y-%m-%d').date()
@@ -240,6 +255,12 @@ class RegistroService(BaseService):
                 user_id = BaseService.get_current_user_id()
             if not user_id:
                 return False
+
+            # Ver comentário equivalente em excluir_por_treino_data: sem
+            # isso, treino_id string (vindo de request.form) quebra a
+            # comparação com a coluna Integer no Postgres, o save falha
+            # silenciosamente e o front mostra "não foi possível salvar".
+            treino_id = int(treino_id)
 
             # Antes de apagar a sessão antiga (se existir), guarda o
             # tempo_treino que já estava salvo -- é o candidato a manter
