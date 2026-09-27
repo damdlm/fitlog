@@ -133,15 +133,29 @@ def meu_professor():
     professor = current_user.get_professor()
     resumo_avaliacoes = None
     minha_nota = None
+    solicitacoes_enviadas = []
     if professor:
         resumo_avaliacoes = AvaliacaoProfessorService.resumo(professor.id)
         minha_nota = AvaliacaoProfessorService.nota_do_aluno(current_user.id, professor.id)
+    else:
+        # Sem professor vinculado: mostra as solicitações que o aluno já
+        # enviou (pendentes ou recusadas), pra ele não ter a impressão de
+        # que nada aconteceu depois de solicitar vínculo com alguém.
+        # 'aprovado' fica de fora -- se existisse um registro aprovado e o
+        # aluno está aqui sem professor, é porque o vínculo foi desfeito
+        # depois (ver remover_vinculo), e reexibir aquele pedido antigo
+        # como se estivesse em aberto só confundiria.
+        solicitacoes_enviadas = SolicitacaoVinculo.query.filter(
+            SolicitacaoVinculo.aluno_id == current_user.id,
+            SolicitacaoVinculo.status.in_(['pendente', 'recusado'])
+        ).order_by(SolicitacaoVinculo.data_solicitacao.desc()).all()
 
     return render_template(
         'aluno/meu_professor.html',
         professor=professor,
         resumo_avaliacoes=resumo_avaliacoes,
         minha_nota=minha_nota,
+        solicitacoes_enviadas=solicitacoes_enviadas,
     )
 
 @aluno_bp.route('/avaliar-professor', methods=['POST'])
@@ -235,6 +249,35 @@ def enviar_solicitacao(professor_id):
     )
 
     flash(f'Solicitação enviada para {professor.nome_completo or professor.username}!', 'success')
+    return redirect(url_for('aluno.meu_professor'))
+
+@aluno_bp.route('/cancelar-solicitacao/<int:solicitacao_id>', methods=['POST'])
+@login_required
+def cancelar_solicitacao(solicitacao_id):
+    """Cancela uma solicitação de vínculo que o próprio aluno enviou e
+    que ainda está pendente (ver tela 'Meu Professor')."""
+    if not current_user.is_aluno():
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('main.index'))
+
+    solicitacao = SolicitacaoVinculo.query.get_or_404(solicitacao_id)
+
+    if solicitacao.aluno_id != current_user.id:
+        flash('Você não tem permissão para cancelar esta solicitação.', 'danger')
+        return redirect(url_for('aluno.meu_professor'))
+
+    if solicitacao.status != 'pendente':
+        flash('Esta solicitação já foi processada e não pode mais ser cancelada.', 'warning')
+        return redirect(url_for('aluno.meu_professor'))
+
+    # Mantém o registro (não apaga) para preservar o histórico/auditoria,
+    # no mesmo espírito de aprovar/recusar do lado do professor.
+    solicitacao.status = 'cancelado'
+    solicitacao.data_resposta = datetime.now(timezone.utc)
+    db.session.commit()
+
+    logger.info(f"Solicitação {solicitacao_id} cancelada pelo aluno {current_user.id}")
+    flash('Solicitação cancelada.', 'info')
     return redirect(url_for('aluno.meu_professor'))
 
 @aluno_bp.route('/remover-vinculo', methods=['POST'])
