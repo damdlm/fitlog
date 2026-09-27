@@ -134,9 +134,16 @@ def meu_professor():
     resumo_avaliacoes = None
     minha_nota = None
     solicitacoes_enviadas = []
+    vinculo = None
     if professor:
         resumo_avaliacoes = AvaliacaoProfessorService.resumo(professor.id)
         minha_nota = AvaliacaoProfessorService.nota_do_aluno(current_user.id, professor.id)
+        # current_user.professor_associado é uma lista (backref sem
+        # uselist=False em models.py), não o registro único -- por isso
+        # a data de vínculo não aparecia no template. Buscando direto:
+        vinculo = AlunoProfessor.query.filter_by(
+            aluno_id=current_user.id, professor_id=professor.id, ativo=True
+        ).first()
     else:
         # Sem professor vinculado: mostra as solicitações que o aluno já
         # enviou (pendentes ou recusadas), pra ele não ter a impressão de
@@ -155,6 +162,7 @@ def meu_professor():
         professor=professor,
         resumo_avaliacoes=resumo_avaliacoes,
         minha_nota=minha_nota,
+        vinculo=vinculo,
         solicitacoes_enviadas=solicitacoes_enviadas,
     )
 

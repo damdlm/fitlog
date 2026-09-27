@@ -13,16 +13,17 @@
    ----------------------------------------------------- */
 .mp-profile {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     align-items: center;
-    gap: 18px;
-    padding: 28px 24px;
+    text-align: center;
+    gap: 12px;
+    padding: 32px 24px 24px;
     background: linear-gradient(180deg, #FFF8F1 0%, #FFFFFF 100%);
 }
 
 .mp-avatar-photo {
-    width: 84px;
-    height: 84px;
+    width: 112px;
+    height: 112px;
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid #fff;
@@ -30,9 +31,9 @@
 }
 
 .mp-avatar-fallback {
-    width: 84px;
-    height: 84px;
-    min-width: 84px;
+    width: 112px;
+    height: 112px;
+    min-width: 112px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -40,13 +41,15 @@
     background: var(--gradient-primary, linear-gradient(135deg, #F28C33 0%, #FFB366 100%));
     color: #fff;
     font-weight: 700;
-    font-size: 1.8rem;
+    font-size: 2.2rem;
     box-shadow: 0 6px 18px rgba(242, 140, 51, 0.28);
 }
 
 .mp-profile-info {
-    flex: 1 1 220px;
-    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
 }
 
 .mp-profile-info h3 {
@@ -58,6 +61,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
     gap: 6px 14px;
     font-size: 0.88rem;
     color: #6c757d;
@@ -81,6 +85,7 @@
 .mp-rating-summary {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     flex-wrap: wrap;
 }
@@ -215,11 +220,6 @@
 
 @media (max-width: 575.98px) {
     .mp-profile {
-        flex-direction: column;
-        text-align: center;
-        padding: 24px 18px;
-    }
-    .mp-profile-meta {
-        justify-content: center;
+        padding: 26px 18px 20px;
     }
 }
