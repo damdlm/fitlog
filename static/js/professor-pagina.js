@@ -37,16 +37,50 @@
     function initFotoPreview() {
         var input = document.getElementById('ppFotoInput');
         var preview = document.getElementById('ppFotoPreview');
+        var botaoEnviar = document.getElementById('ppFotoEnviar');
+        var ajuda = document.getElementById('ppFotoAjuda');
         if (!input || !preview) return;
+
+        var TIPOS_OK = ['image/jpeg', 'image/png', 'image/webp'];
+        var TAMANHO_MAX = 4 * 1024 * 1024; // mesmo limite do backend (4MB)
+        var textoAjudaOriginal = ajuda ? ajuda.textContent : '';
+
+        function mostrarAjuda(texto, erro) {
+            if (!ajuda) return;
+            ajuda.textContent = texto;
+            ajuda.classList.toggle('epp-ajuda-erro', !!erro);
+        }
 
         input.addEventListener('change', function () {
             var arquivo = input.files && input.files[0];
-            if (!arquivo) return;
+            if (!arquivo) {
+                if (botaoEnviar) botaoEnviar.classList.add('d-none');
+                mostrarAjuda(textoAjudaOriginal, false);
+                return;
+            }
+
+            // Avisa na hora, em vez de só descobrir o erro depois do envio.
+            if (TIPOS_OK.indexOf(arquivo.type) === -1) {
+                input.value = '';
+                if (botaoEnviar) botaoEnviar.classList.add('d-none');
+                mostrarAjuda('Formato não aceito. Use JPG, PNG ou WEBP.', true);
+                return;
+            }
+            if (arquivo.size > TAMANHO_MAX) {
+                input.value = '';
+                if (botaoEnviar) botaoEnviar.classList.add('d-none');
+                mostrarAjuda('A imagem passa de 4MB. Escolha uma menor.', true);
+                return;
+            }
+
             var leitor = new FileReader();
             leitor.onload = function (e) {
                 preview.innerHTML = '<img src="' + e.target.result + '" alt="Prévia da foto">';
             };
             leitor.readAsDataURL(arquivo);
+
+            mostrarAjuda(arquivo.name, false);
+            if (botaoEnviar) botaoEnviar.classList.remove('d-none');
         });
     }
 

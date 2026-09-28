@@ -15,6 +15,11 @@
     margin-bottom: 6px;
 }
 
+.epp-header-clean {
+    justify-content: flex-end;
+    margin-bottom: 22px;
+}
+
 .epp-header h4 {
     display: flex;
     align-items: center;
@@ -23,11 +28,54 @@
     margin: 0;
 }
 
-.epp-subtitle {
-    color: #7a7a7a;
-    font-size: .92rem;
-    line-height: 1.55;
-    margin-bottom: 26px;
+.epp-btn-ver {
+    font-weight: 700;
+    padding: 7px 16px;
+    box-shadow: 0 6px 16px rgba(242, 140, 51, .25);
+    transition: opacity .15s ease;
+}
+
+.epp-btn-ver:hover,
+.epp-btn-ver:focus,
+.epp-btn-ver:active {
+    color: #fff;
+    opacity: .9;
+}
+
+/* Upload de foto: input nativo escondido (mas focável, pra teclado
+   e leitor de tela), com um botão de contorno laranja no lugar */
+.epp-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.epp-btn-escolher {
+    margin: 0;
+    font-weight: 700;
+    padding: 7px 16px;
+    color: #F28C33;
+    background: #fff;
+    border: 1.5px solid #F28C33;
+    cursor: pointer;
+    transition: background .15s ease;
+}
+
+.epp-btn-escolher:hover {
+    color: #F28C33;
+    background: rgba(242, 140, 51, .08);
+}
+
+.epp-file-input:focus-visible + div .epp-btn-escolher {
+    outline: 2px solid #F28C33;
+    outline-offset: 2px;
+}
+
+.epp-ajuda-erro {
+    color: #dc3545;
+    font-weight: 600;
 }
 
 .epp-card {

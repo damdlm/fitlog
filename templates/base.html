@@ -564,8 +564,11 @@
 
         /* Badge de notificação sobre o avatar (ex: solicitações pendentes).
            Mesma fórmula de static/css/notificacoes.css (.notif-bell-badge)
-           -- os dois badges (sino e avatar) precisam ficar padronizados. */
-        .btn-avatar .bottom-nav-badge {
+           -- os dois badges (sino e avatar) precisam ficar padronizados.
+           Fica fora do <button> (irmão dele, dentro de #userMenuDropdownWrapper)
+           por causa do overflow:hidden do ripple em page-transition.css --
+           mesmo motivo documentado em .notif-bell-badge. */
+        #userMenuDropdownWrapper .bottom-nav-badge {
             position: absolute;
             top: -3px;
             right: -3px;
@@ -1683,8 +1686,15 @@
                 <div class="nav-item dropdown" id="notificacoesDropdownWrapper">
                     <button class="btn btn-avatar dropdown-toggle notif-bell-btn" type="button" id="notificacoesDropdownToggle" data-bs-toggle="dropdown" aria-expanded="false" title="Notificações">
                         <i class="bi bi-bell" aria-hidden="true"></i>
-                        <span class="badge rounded-pill bg-danger notif-bell-badge" id="notifBellBadge" style="display: none;">0</span>
                     </button>
+                    <!-- O badge fica FORA do <button>, e não dentro dele: page-transition.css
+                         aplica "overflow: hidden" em todo <button> (pro efeito de ripple do
+                         clique ficar contido dentro do círculo), o que corta qualquer coisa
+                         posicionada pra fora da borda -- inclusive este badge. O wrapper
+                         #notificacoesDropdownWrapper tem exatamente o mesmo tamanho/posição
+                         do botão (herda position:relative de .dropdown do Bootstrap) mas SEM
+                         esse overflow:hidden, então o badge é ancorado nele em vez do botão. -->
+                    <span class="badge rounded-pill bg-danger notif-bell-badge" id="notifBellBadge" style="display: none;">0</span>
                     <ul class="dropdown-menu dropdown-menu-end notif-dropdown-menu" aria-labelledby="notificacoesDropdownToggle">
                         <li class="notif-dropdown-header">
                             <span>Notificações</span>
@@ -1701,13 +1711,15 @@
                     </ul>
                 </div>
 
-                <div class="nav-item dropdown">
+                <div class="nav-item dropdown" id="userMenuDropdownWrapper">
                     <button class="btn btn-avatar dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ current_user.username }}">
                         <span class="avatar-circle">{{ current_user.username[0]|upper }}</span>
-                        {% if current_user.is_professor() and not current_user.is_admin and current_user.solicitacoes_pendentes_count > 0 %}
-                            <span class="badge rounded-pill bg-danger bottom-nav-badge d-lg-none">{{ current_user.solicitacoes_pendentes_count }}</span>
-                        {% endif %}
                     </button>
+                    <!-- Mesmo motivo do badge do sino acima: fica fora do <button> pra não
+                         ser cortado pelo overflow:hidden do ripple em page-transition.css. -->
+                    {% if current_user.is_professor() and not current_user.is_admin and current_user.solicitacoes_pendentes_count > 0 %}
+                        <span class="badge rounded-pill bg-danger bottom-nav-badge d-lg-none">{{ current_user.solicitacoes_pendentes_count }}</span>
+                    {% endif %}
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><h6 class="dropdown-header">{{ current_user.username }}</h6></li>
                         <li>

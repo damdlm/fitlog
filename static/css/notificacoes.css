@@ -41,8 +41,8 @@
    no canto superior direito do sino, na frente do ícone (z-index
    acima + contorno branco pra não parecer "colado" no fundo do
    botão). Cresce em pílula só quando o número tem 2+ dígitos (ex:
-   "10", "99+"). Mesma fórmula usada em .btn-avatar .bottom-nav-badge
-   (badge de solicitações sobre o avatar) -- os dois precisam ficar
+   "10", "99+"). Mesma fórmula usada em #userMenuDropdownWrapper
+   .bottom-nav-badge (badge de solicitações sobre o avatar) -- os dois precisam ficar
    visualmente padronizados.
 
    ATENÇÃO ESPECIFICIDADE: o bootstrap.min.css tem uma regra
@@ -54,17 +54,15 @@
    seletor aqui é composto (3 classes = especificidade maior, vence
    independente da ordem de carregamento dos arquivos).
 
-   ATENÇÃO OFFSET: elemento position:absolute é posicionado a partir
-   do padding-box do ancestro, não da borda visual. .notif-bell-btn
-   tem "border: 2px solid" (o anel laranja) e .btn-avatar (avatar) não
-   tem -- por isso o mesmo top/right "-3px" que funciona limpo no
-   avatar nasce 2px mais pra dentro no sino, quase em cima do anel.
-   Offset maior aqui (-6px) compensa a borda e deixa o badge fora do
-   anel, igual ao avatar. */
-.notif-bell-btn.btn-avatar .notif-bell-badge {
+   ATENÇÃO OVERFLOW: page-transition.css aplica "overflow: hidden" em
+   todo <button> (efeito ripple do clique). Por isso o badge NÃO fica
+   mais dentro do <button> no HTML -- é irmão dele, dentro de
+   #notificacoesDropdownWrapper (mesmo tamanho/posição do botão, sem
+   esse overflow:hidden). O seletor abaixo reflete essa estrutura. */
+#notificacoesDropdownWrapper .notif-bell-badge {
     position: absolute;
-    top: -6px;
-    right: -6px;
+    top: -3px;
+    right: -3px;
     z-index: 2;
     display: inline-flex;
     align-items: center;

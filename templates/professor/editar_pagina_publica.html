@@ -12,22 +12,15 @@
 <div class="row justify-content-center">
     <div class="col-lg-8">
 
-        <div class="epp-header">
-            <h4 style="color: #F28C33;">
-                <i class="bi bi-person-badge"></i> Minha Página Pública
-            </h4>
+        <div class="epp-header epp-header-clean">
             {% if current_user.professor_slug %}
-            <button type="button" class="btn btn-outline-secondary btn-sm"
+            <button type="button" class="btn btn-sm epp-btn-ver"
+                    style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;"
                     data-bs-toggle="modal" data-bs-target="#ppVerPaginaModal">
                 <i class="bi bi-eye"></i> Ver minha página
             </button>
             {% endif %}
         </div>
-
-        <p class="epp-subtitle">
-            Essa é a página que você pode compartilhar com potenciais alunos -- com sua foto, sua
-            história, seus serviços e sua nota de avaliação (se você escolher mostrar).
-        </p>
 
         <!-- FOTO -->
         <div class="card epp-card mb-3">
@@ -44,11 +37,16 @@
                             {% endif %}
                         </div>
                         <div>
-                            <input type="file" name="foto" id="ppFotoInput" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mb-2">
-                            <button type="submit" class="btn btn-sm epp-submit">
-                                <i class="bi bi-upload"></i> Enviar foto
-                            </button>
-                            <div class="form-text">JPG, PNG ou WEBP -- até 4MB.</div>
+                            <input type="file" name="foto" id="ppFotoInput" accept="image/jpeg,image/png,image/webp" class="epp-file-input">
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <label for="ppFotoInput" class="btn btn-sm epp-btn-escolher">
+                                    <i class="bi bi-image"></i> Escolher foto
+                                </label>
+                                <button type="submit" class="btn btn-sm epp-submit d-none" id="ppFotoEnviar">
+                                    <i class="bi bi-upload"></i> Enviar foto
+                                </button>
+                            </div>
+                            <div class="form-text" id="ppFotoAjuda">JPG, PNG ou WEBP -- até 4MB.</div>
                         </div>
                     </div>
                 </form>
