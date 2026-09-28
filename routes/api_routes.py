@@ -8,6 +8,7 @@ from services.estatistica_service import EstatisticaService
 from models import TreinoVersao
 from utils.decorators import acesso_premium_required
 from utils.exercise_utils import buscar_musculo_no_catalogo, remover_acentos
+from services.geolocalizacao_service import GeolocalizacaoService, ZOOM_MINIMO_PONTOS_INDIVIDUAIS
 import json
 import hashlib
 from pathlib import Path
@@ -581,3 +582,45 @@ def api_debug_rotas():
             })
     
     return jsonify(rotas)
+
+@api_bp.route("/professores/mapa")
+@login_required
+def api_professores_mapa():
+    """Professores visíveis na área do mapa que o aluno está vendo.
+    Zoom afastado -> agrupa em clusters (contagem + centro); zoom
+    próximo (>= ZOOM_MINIMO_PONTOS_INDIVIDUAIS) -> pontos individuais.
+    Coordenadas sempre arredondadas a ~1km (privacidade -- LGPD)."""
+    try:
+        sul = float(request.args["sul"])
+        oeste = float(request.args["oeste"])
+        norte = float(request.args["norte"])
+        leste = float(request.args["leste"])
+        zoom = int(float(request.args["zoom"]))
+    except (KeyError, ValueError):
+        return jsonify(erro="Parâmetros inválidos"), 400
+
+    if not (-90 <= sul < norte <= 90 and -180 <= oeste < leste <= 180):
+        return jsonify(erro="Área inválida"), 400
+    zoom = max(1, min(zoom, 19))
+
+    def aproximar(valor):
+        return round(valor, 2)
+
+    if zoom < ZOOM_MINIMO_PONTOS_INDIVIDUAIS:
+        itens = [
+            {"lat": aproximar(c["lat"]), "lng": aproximar(c["lng"]), "total": c["total"]}
+            for c in GeolocalizacaoService.clusters_na_area(sul, oeste, norte, leste, zoom)
+        ]
+        return jsonify(modo="clusters", itens=itens)
+
+    pontos = {}
+    for professor in GeolocalizacaoService.professores_na_area(sul, oeste, norte, leste):
+        chave = (aproximar(professor.professor_latitude), aproximar(professor.professor_longitude))
+        pontos.setdefault(chave, []).append({
+            "id": professor.id,
+            "nome": professor.nome_completo or professor.username,
+            "slug": professor.professor_slug,
+        })
+
+    itens = [{"lat": lat, "lng": lng, "professores": lista} for (lat, lng), lista in pontos.items()]
+    return jsonify(modo="pontos", itens=itens)
