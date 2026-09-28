@@ -8,7 +8,7 @@
     .dash-hero {
         background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
         border-radius: 18px;
-        padding: 28px 32px;
+        padding: 18px 24px;
         color: white;
         position: relative;
         overflow: hidden;
@@ -27,12 +27,12 @@
     .dash-hero-greeting {
         font-size: 0.95rem;
         color: rgba(255,255,255,0.6);
-        margin-bottom: 2px;
+        margin-bottom: 10px;
     }
-    .dash-hero-name {
-        font-size: 1.6rem;
+    .dash-hero-greeting .dash-hero-name {
+        font-size: 1.15rem;
         font-weight: 700;
-        margin-bottom: 12px;
+        color: white;
     }
     .dash-streak-pill {
         display: inline-flex;
@@ -124,8 +124,7 @@
 
 <!-- Cabeçalho com saudação -->
 <div class="dash-hero">
-    <div class="dash-hero-greeting">{{ saudacao }}</div>
-    <div class="dash-hero-name">{{ current_user.nome_completo or current_user.username }} 👋</div>
+    <div class="dash-hero-greeting">{{ saudacao }}, <span class="dash-hero-name">{{ current_user.nome_completo or current_user.username }}</span> 👋</div>
     <span class="dash-streak-pill">
         <i class="bi bi-fire"></i>
         {{ dias_treinados_semana }} de 7 dias treinados nesta semana
@@ -141,7 +140,9 @@
                     <i class="bi bi-bar-chart-line me-1" style="color: #F28C33;"></i>
                     Constância da semana
                 </h6>
-                <canvas id="graficoSemana" height="180"></canvas>
+                <div style="position: relative; height: 150px;">
+                    <canvas id="graficoSemana"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -289,6 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             onClick: function(event, elements) {
                 if (!elements.length) return;
