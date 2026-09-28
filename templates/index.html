@@ -112,7 +112,8 @@
         border-radius: 999px;
     }
 
-    .dash-filter-pill {
+    .dash-filter-pill,
+    .dash-mode-pill {
         border: none;
         background: transparent;
         color: var(--ink-soft);
@@ -123,15 +124,32 @@
         transition: all 0.15s ease;
     }
 
-    .dash-filter-pill:hover {
+    .dash-filter-pill:hover,
+    .dash-mode-pill:hover {
         color: var(--primary-color);
         background: rgba(242, 140, 51, 0.08);
     }
 
-    .dash-filter-pill.active {
+    .dash-filter-pill.active,
+    .dash-mode-pill.active {
         background: var(--gradient-primary);
         color: #fff;
         box-shadow: 0 2px 8px rgba(242, 140, 51, 0.35);
+    }
+
+    .dash-chart-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 0.75rem;
+    }
+    .dash-chart-hint {
+        font-size: 0.78rem;
+        color: var(--ink-soft);
+        margin: 0;
+        flex-basis: 100%;
     }
 
     /* Gráfico: altura controlada pelo container, não pelo atributo
@@ -345,6 +363,13 @@
                 </div>
             </div>
             <div class="card-body position-relative">
+                <div class="dash-chart-toolbar">
+                    <div class="dash-filter-group" role="group" aria-label="Agrupar gráfico">
+                        <button type="button" class="dash-mode-pill active" data-modo="semana" onclick="trocarModoGrafico('semana', this)">Por semana</button>
+                        <button type="button" class="dash-mode-pill" data-modo="treino" onclick="trocarModoGrafico('treino', this)">Por treino</button>
+                    </div>
+                    <p class="dash-chart-hint" id="chartHint"></p>
+                </div>
                 <div id="chartEmptyState" class="dash-empty-state d-none">
                     <i class="bi bi-graph-up dash-empty-state-icon"></i>
                     <p>Ainda não há treinos registrados para mostrar aqui.</p>
@@ -533,6 +558,21 @@
 
     // ---------- Gráfico (mantido) ----------
     let chart;
+    let modoGrafico = 'semana';   // 'semana' | 'treino' (rodada completa A+B+C+D)
+    let treinoGrafico = 'todos';  // 'todos' ou id do treino individual
+    let detalhesGrafico = [];     // volume por treino (A, B, C...) de cada ponto
+
+    const DICAS_MODO = {
+        semana: 'Volume (peso × repetições × séries) somado por semana, nos últimos 30 dias.',
+        treino: 'Cada ponto é uma rodada completa do treino (ex.: A+B+C+D). Treino não feito na rodada conta como 0.'
+    };
+
+    function trocarModoGrafico(modo, botao) {
+        modoGrafico = modo;
+        document.querySelectorAll('.dash-mode-pill').forEach(b => b.classList.remove('active'));
+        if (botao) botao.classList.add('active');
+        atualizarGrafico(treinoGrafico, null);
+    }
 
     // Esconde o tooltip ao clicar em qualquer outra parte da tela
     // (necessário principalmente no toque em dispositivos móveis, onde
@@ -548,10 +588,18 @@
     });
 
     function atualizarGrafico(treinoId, botao) {
-        document.querySelectorAll('.dash-filter-pill').forEach(b => b.classList.remove('active'));
-        if (botao) botao.classList.add('active');
+        treinoGrafico = String(treinoId);
+        // Sem botão clicado (troca de modo): o filtro de treino já ativo continua.
+        if (botao) {
+            document.querySelectorAll('.dash-filter-pill').forEach(b => b.classList.remove('active'));
+            botao.classList.add('active');
+        }
+        const hint = document.getElementById('chartHint');
+        if (hint) hint.textContent = DICAS_MODO[modoGrafico] || '';
 
-        const url = treinoId === 'todos' ? '/api/progresso' : `/api/progresso?treino=${treinoId}`;
+        const params = new URLSearchParams({ modo: modoGrafico });
+        if (treinoGrafico !== 'todos') params.set('treino', treinoGrafico);
+        const url = `/api/progresso?${params.toString()}`;
 
         fetch(url)
             .then(r => r.json())
@@ -582,6 +630,7 @@
                 gradienteCarga.addColorStop(1, 'rgba(45, 45, 45, 0)');
 
                 const isMobile = window.innerWidth < 576;
+                detalhesGrafico = data.detalhes || [];
 
                 chart = new Chart(canvas, {
                     type: 'line',
@@ -593,7 +642,7 @@
                             borderColor: '#F28C33',
                             backgroundColor: gradienteVolume,
                             borderWidth: 3,
-                            pointRadius: isMobile ? 0 : 3,
+                            pointRadius: 4,
                             pointHoverRadius: 7,
                             pointBackgroundColor: '#F28C33',
                             pointBorderColor: '#ffffff',
@@ -606,7 +655,7 @@
                             borderColor: '#2D2D2D',
                             backgroundColor: gradienteCarga,
                             borderWidth: 3,
-                            pointRadius: isMobile ? 0 : 3,
+                            pointRadius: 4,
                             pointHoverRadius: 7,
                             pointBackgroundColor: '#2D2D2D',
                             pointBorderColor: '#ffffff',
@@ -629,6 +678,18 @@
                                 padding: 10,
                                 cornerRadius: 10,
                                 callbacks: {
+                                    title: function(items) {
+                                        if (!items.length) return '';
+                                        const i = items[0].dataIndex;
+                                        return modoGrafico === 'treino'
+                                            ? `Rodada ${i + 1} · ${items[0].label}`
+                                            : `Semana ${items[0].label}`;
+                                    },
+                                    afterBody: function(items) {
+                                        if (!items.length) return [];
+                                        const det = detalhesGrafico[items[0].dataIndex] || [];
+                                        return det.map(d => `${d.codigo}: ${Math.round(d.volume * 100) / 100} kg`);
+                                    },
                                     label: function(context) {
                                         let label = context.dataset.label || '';
                                         if (label) label += ': ';

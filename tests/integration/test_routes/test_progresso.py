@@ -157,3 +157,99 @@ def test_progresso_todos_ignora_versoes_encerradas(client, app):
     # Só o registro da versão corrente (50*10=500) -- os 999 da versão
     # encerrada não podem entrar, mesmo estando dentro da janela de 30 dias.
     assert sum(data['volumes']) == 500.0
+
+def _montar_versao_abcd(app, username):
+    """Aluno com versão ativa ABCD; retorna (user_id, {codigo: treino_id}, funcao registrar)."""
+    with app.app_context():
+        u = User(username=username, email=f'{username}@t.com', tipo_usuario='aluno')
+        u.set_password('x' * 12)
+        db.session.add(u)
+        db.session.flush()
+        BillingService.iniciar_trial(u)
+        db.session.commit()
+
+        m = Musculo(nome=f'm_{username}', nome_exibicao='M')
+        db.session.add(m)
+        db.session.commit()
+        ex = ExercicioUsuario(usuario_id=u.id, nome='Ex', musculo_id=m.id)
+        db.session.add(ex)
+        db.session.commit()
+
+        versao = VersaoGlobal(
+            numero_versao=1, descricao='v1', divisao='ABCD',
+            data_inicio=datetime.now(timezone.utc).date(), user_id=u.id
+        )
+        db.session.add(versao)
+        db.session.commit()
+
+        treinos = {}
+        for i, cod in enumerate('ABCD'):
+            t = TreinoVersao(versao_id=versao.id, codigo=cod, nome_treino=f'Treino {cod}',
+                             descricao_treino='d', ordem=i)
+            db.session.add(t)
+            db.session.commit()
+            treinos[cod] = t.id
+        return u.id, versao.id, ex.id, treinos
+
+
+def _registrar(app, user_id, versao_id, ex_id, treino_id, dias_atras, carga, reps, series=1):
+    with app.app_context():
+        r = RegistroTreino(
+            treino_versao_id=treino_id, versao_id=versao_id, periodo='Julho/2026', semana=1,
+            exercicio_usuario_id=ex_id,
+            data_registro=datetime.now(timezone.utc) - timedelta(days=dias_atras), user_id=user_id
+        )
+        db.session.add(r)
+        db.session.commit()
+        for i in range(series):
+            db.session.add(HistoricoTreino(registro_id=r.id, carga=carga, repeticoes=reps, ordem=i))
+        db.session.commit()
+
+
+def test_progresso_modo_treino_rodadas_e_filtro_individual(client, app):
+    uid, vid, ex, t = _montar_versao_abcd(app, 'rodadas_pt')
+    # A, B, D e depois volta pro A
+    _registrar(app, uid, vid, ex, t['A'], 20, 10, 10, series=3)   # 300
+    _registrar(app, uid, vid, ex, t['B'], 18, 20, 10, series=2)   # 400
+    _registrar(app, uid, vid, ex, t['D'], 16, 30, 10, series=1)   # 300
+    _registrar(app, uid, vid, ex, t['A'], 10, 10, 10, series=4)   # 400 (nova rodada)
+
+    with app.app_context():
+        user = User.query.get(uid)
+    _login(client, user)
+
+    data = client.get('/api/progresso?modo=treino').get_json()
+    assert data['volumes'] == [1000.0, 400.0]
+    assert [d['volume'] for d in data['detalhes'][0]] == [300.0, 400.0, 0.0, 300.0]  # C zerado
+
+    # filtro individual do treino A: mantém o corte das rodadas pela versão inteira
+    data = client.get(f"/api/progresso?modo=treino&treino={t['A']}").get_json()
+    assert data['volumes'] == [300.0, 400.0]
+    data = client.get(f"/api/progresso?modo=treino&treino={t['C']}").get_json()
+    assert data['volumes'] == [0.0, 0.0]
+
+
+def test_progresso_modo_semana_soma_total_da_janela(client, app):
+    uid, vid, ex, t = _montar_versao_abcd(app, 'semanas_pt')
+    _registrar(app, uid, vid, ex, t['A'], 1, 10, 10, series=3)   # 300
+    _registrar(app, uid, vid, ex, t['B'], 2, 20, 10, series=1)   # 200
+    _registrar(app, uid, vid, ex, t['A'], 45, 999, 1)            # fora da janela
+
+    with app.app_context():
+        user = User.query.get(uid)
+    _login(client, user)
+
+    data = client.get('/api/progresso?modo=semana').get_json()
+    assert sum(data['volumes']) == 500.0
+    assert len(data['semanas']) == len(data['volumes']) >= 4
+
+
+def test_progresso_modo_invalido_de_treino_retorna_vazio(client, app):
+    uid, vid, ex, t = _montar_versao_abcd(app, 'invalido_pt')
+    _registrar(app, uid, vid, ex, t['A'], 1, 10, 10)
+    with app.app_context():
+        user = User.query.get(uid)
+    _login(client, user)
+    for treino in ('abc', '999999'):
+        data = client.get(f'/api/progresso?modo=semana&treino={treino}').get_json()
+        assert data['semanas'] == []

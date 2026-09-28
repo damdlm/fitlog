@@ -5,6 +5,7 @@ from services.exercicio_service import ExercicioService
 from services.versao_service import VersaoService
 from services.registro_service import RegistroService
 from services.estatistica_service import EstatisticaService
+from models import TreinoVersao
 from utils.decorators import acesso_premium_required
 from utils.exercise_utils import buscar_musculo_no_catalogo, remover_acentos
 import json
@@ -30,6 +31,10 @@ def api_progresso():
     dias sem registro preenchidos em 0 para o gráfico ficar contínuo.
     """
     treino = request.args.get("treino")
+    modo = request.args.get("modo")
+
+    if modo in ("semana", "treino"):
+        return _api_progresso_agregado(treino, modo)
 
     versao_id = None
     filtrar_por_versao_corrente = not treino or treino == 'todos'
@@ -81,6 +86,39 @@ def api_progresso():
         "volumes": volumes,
         "cargas_medias": cargas_medias
     })
+
+
+def _api_progresso_agregado(treino, modo):
+    """
+    Gráfico do dashboard agregado (modo='semana' ou 'treino'): volume
+    total (peso x repetições x séries) dos últimos 30 dias, somando por
+    semana do calendário ou por rodada completa do treino (A+B+C+D).
+    Ver EstatisticaService.agregar_progresso. O filtro por treino
+    individual continua valendo (só o volume daquele treino).
+    """
+    vazio = {"semanas": [], "volumes": [], "cargas_medias": [], "detalhes": []}
+
+    treino_id = None
+    if treino and treino != 'todos':
+        try:
+            treino_id = int(treino)
+        except (TypeError, ValueError):
+            return jsonify(vazio)
+        treino_versao = TreinoVersao.query.filter_by(id=treino_id).first()
+        if not treino_versao:
+            return jsonify(vazio)
+        versao_id = treino_versao.versao_id
+    else:
+        versao_ativa = VersaoService.get_ativa()
+        versao_id = versao_ativa.id if versao_ativa else None
+
+    if versao_id is None:
+        return jsonify(vazio)
+
+    base = EstatisticaService.get_sessoes_ultimos_30_dias(versao_id)
+    return jsonify(EstatisticaService.agregar_progresso(
+        base['sessoes'], base['treinos'], modo, treino_id=treino_id
+    ))
 
 
 @api_bp.route("/kpis")

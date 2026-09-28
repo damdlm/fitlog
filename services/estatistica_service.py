@@ -1,10 +1,10 @@
 """Serviço para cálculos estatísticos"""
 
 from collections import Counter
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 from sqlalchemy.orm import joinedload
-from models import db, Musculo, ExercicioCustomizado, ExercicioSistema, RegistroTreino, HistoricoTreino
+from models import db, Musculo, ExercicioCustomizado, ExercicioSistema, RegistroTreino, HistoricoTreino, TreinoVersao
 from sqlalchemy import func, and_
 from .base_service import BaseService, CacheService
 import logging
@@ -464,6 +464,159 @@ class EstatisticaService(BaseService):
         except Exception as e:
             BaseService.handle_error(e, "Erro ao calcular progresso dos últimos 30 dias")
             return []
+
+    @staticmethod
+    def get_sessoes_ultimos_30_dias(versao_id, user_id=None):
+        """
+        Sessões de treino dos últimos 30 dias corridos de uma versão, uma
+        linha por (dia, treino): volume (carga x repetições somado em todas
+        as séries), soma das cargas e nº de séries. Base do gráfico
+        agregado "por semana" / "por treino" do dashboard.
+
+        Devolve {'sessoes': [...], 'treinos': [...]}, onde 'treinos' são
+        todos os treinos (A, B, C...) da versão, em ordem -- necessário
+        pra mostrar o treino que não foi feito como 0, em vez de sumir.
+        """
+        try:
+            user_id = user_id or BaseService.get_current_user_id()
+            if not user_id or not versao_id:
+                return {'sessoes': [], 'treinos': []}
+
+            cache_key = f"estatistica:{user_id}:sessoes_30d:{versao_id}"
+            cache_hit = CacheService.get(cache_key)
+            if cache_hit is not None:
+                return cache_hit
+
+            hoje = datetime.now(timezone.utc).date()
+            inicio_janela = datetime.combine(hoje - timedelta(days=29), time.min)
+
+            dia = func.date(RegistroTreino.data_registro)
+            linhas = db.session.query(
+                dia.label('dia'),
+                RegistroTreino.treino_versao_id.label('treino_id'),
+                func.min(RegistroTreino.data_registro).label('inicio'),
+                func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes).label('volume'),
+                func.sum(HistoricoTreino.carga).label('soma_carga'),
+                func.count(HistoricoTreino.id).label('n_series'),
+            ).select_from(RegistroTreino)\
+             .join(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
+             .filter(RegistroTreino.user_id == user_id)\
+             .filter(RegistroTreino.versao_id == versao_id)\
+             .filter(RegistroTreino.data_registro >= inicio_janela)\
+             .group_by(dia, RegistroTreino.treino_versao_id).all()
+
+            sessoes = []
+            for l in linhas:
+                d = l.dia if isinstance(l.dia, date) else datetime.strptime(str(l.dia), "%Y-%m-%d").date()
+                sessoes.append({
+                    'dia': d,
+                    'inicio': l.inicio,
+                    'treino_id': l.treino_id,
+                    'volume': float(l.volume or 0),
+                    'soma_carga': float(l.soma_carga or 0),
+                    'n_series': int(l.n_series or 0),
+                })
+
+            treinos = [
+                {'id': t.id, 'codigo': t.codigo}
+                for t in TreinoVersao.query.filter_by(versao_id=versao_id)
+                .order_by(TreinoVersao.ordem, TreinoVersao.codigo).all()
+            ]
+
+            resultado = {'sessoes': sessoes, 'treinos': treinos}
+            CacheService.set(cache_key, resultado, ttl_seconds=ESTATISTICA_CACHE_TTL_SEGUNDOS)
+            return resultado
+        except Exception as e:
+            BaseService.handle_error(e, "Erro ao calcular sessões dos últimos 30 dias")
+            return {'sessoes': [], 'treinos': []}
+
+    @staticmethod
+    def agregar_progresso(sessoes, treinos, modo, treino_id=None, hoje=None):
+        """
+        Agrega as sessões (ver get_sessoes_ultimos_30_dias) num gráfico de
+        volume total (peso x repetições x séries) por:
+
+        - modo='semana': semana do calendário (segunda a domingo) dentro
+          dos últimos 30 dias. Semana sem treino aparece com 0 (exceto pedaço de semana
+          nas pontas da janela, se vazio). Soma só
+          os treinos feitos naquela semana (ex: A, B e D numa semana; A,
+          C e D na seguinte).
+        - modo='treino': "rodada" completa do treino (A+B+C+D). Uma nova
+          rodada começa quando um treino já feito na rodada atual é
+          repetido (fez A, B, D e voltou pro A -> o 2º A abre a rodada
+          seguinte). Treino não feito na rodada entra como 0.
+
+        treino_id (opcional): só o volume daquele treino em cada ponto
+        (a divisão em rodadas continua sendo pela versão inteira).
+        Função pura (sem banco) -- fácil de testar.
+        """
+        hoje = hoje or datetime.now(timezone.utc).date()
+        inicio = hoje - timedelta(days=29)
+
+        def fmt(d):
+            return d.strftime("%d/%m")
+
+        def faixa(a, b):
+            return fmt(a) if a == b else f"{fmt(a)}–{fmt(b)}"
+
+        def somar(grupo):
+            """(volume, carga_media, detalhes) de uma lista de sessões."""
+            por_treino = {}
+            for s in grupo:
+                por_treino[s['treino_id']] = por_treino.get(s['treino_id'], 0.0) + s['volume']
+            alvo = [s for s in grupo if treino_id is None or s['treino_id'] == treino_id]
+            volume = sum(s['volume'] for s in alvo)
+            n = sum(s['n_series'] for s in alvo)
+            carga_media = (sum(s['soma_carga'] for s in alvo) / n) if n else 0.0
+            detalhes = []
+            if treino_id is None:
+                detalhes = [
+                    {'codigo': t['codigo'], 'volume': round(por_treino.get(t['id'], 0.0), 2)}
+                    for t in treinos
+                ]
+            return round(volume, 2), round(carga_media, 2), detalhes
+
+        pontos = []  # (rotulo, grupo de sessões)
+        sessoes = [s for s in sessoes if inicio <= s['dia'] <= hoje]
+
+        if modo == 'semana':
+            seg = inicio - timedelta(days=inicio.weekday())
+            while seg <= hoje:
+                fim = seg + timedelta(days=6)
+                grupo = [s for s in sessoes if seg <= s['dia'] <= fim]
+                de, ate = max(seg, inicio), min(fim, hoje)
+                # Semana das pontas cortada pela janela (menos de 7 dias) e
+                # sem nenhum treino: não é uma semana "sem treinar", é só
+                # um pedaço -- entra como ponto zerado e derruba a linha.
+                parcial_vazia = (ate - de).days < 6 and not grupo
+                if not parcial_vazia:
+                    pontos.append((faixa(de, ate), grupo))
+                seg += timedelta(days=7)
+        else:  # 'treino'
+            rodadas, atual, feitos = [], [], set()
+            for s in sorted(sessoes, key=lambda x: (x['inicio'], x['treino_id'])):
+                if s['treino_id'] in feitos:
+                    rodadas.append(atual)
+                    atual, feitos = [], set()
+                atual.append(s)
+                feitos.add(s['treino_id'])
+            if atual:
+                rodadas.append(atual)
+            for r in rodadas:
+                dias = [s['dia'] for s in r]
+                pontos.append((faixa(min(dias), max(dias)), r))
+
+        if not sessoes:
+            return {'semanas': [], 'volumes': [], 'cargas_medias': [], 'detalhes': []}
+
+        rotulos, volumes, cargas, detalhes = [], [], [], []
+        for rotulo, grupo in pontos:
+            v, c, d = somar(grupo)
+            rotulos.append(rotulo)
+            volumes.append(v)
+            cargas.append(c)
+            detalhes.append(d)
+        return {'semanas': rotulos, 'volumes': volumes, 'cargas_medias': cargas, 'detalhes': detalhes}
 
     @staticmethod
     def get_atividade_geral(user_id=None, dias=30):
