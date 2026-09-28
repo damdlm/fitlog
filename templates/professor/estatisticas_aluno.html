@@ -83,6 +83,43 @@
         opacity: 0.85;
     }
 
+    /* Mobile: os 3 cards (Volume Total / Total de Exercícios / Total de
+       Registros) ficam lado a lado, compactos e centralizados. Fontes,
+       ícone e padding usam clamp() com vw pra acompanhar a largura da
+       tela (de ~320px até 767px); a partir de 768px volta ao layout
+       original, sem mudança. */
+    @media (max-width: 767.98px) {
+        .est-stats-row .est-stat {
+            padding: clamp(8px, 2.6vw, 14px) clamp(4px, 1.4vw, 8px);
+            border-radius: 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .est-stats-row .est-stat:hover {
+            transform: none;
+        }
+        .est-stats-row .est-stat-icon {
+            width: clamp(26px, 8vw, 34px);
+            height: clamp(26px, 8vw, 34px);
+            border-radius: 9px;
+            font-size: clamp(0.85rem, 3.6vw, 1.1rem);
+            margin-bottom: clamp(6px, 2vw, 10px);
+        }
+        .est-stats-row .est-stat-value {
+            font-size: clamp(0.9rem, 4.6vw, 1.45rem);
+            white-space: nowrap;
+            margin-bottom: 3px;
+        }
+        .est-stats-row .est-stat-label {
+            font-size: clamp(0.6rem, 2.7vw, 0.75rem);
+            line-height: 1.15;
+            overflow-wrap: anywhere;
+        }
+    }
+
     .est-card {
         border-radius: 16px;
         border: 1px solid rgba(0,0,0,0.06);
@@ -190,22 +227,22 @@
 </div>
 
 <!-- Cards de Resumo -->
-<div class="row mb-4 g-3">
-    <div class="col-md-4">
+<div class="row mb-4 g-2 g-md-3 est-stats-row">
+    <div class="col-4">
         <div class="est-stat" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
             <div class="est-stat-icon"><i class="bi bi-bar-chart"></i></div>
             <div class="est-stat-value">{{ musculo_stats.values()|sum(attribute='volume_total')|int }}kg</div>
             <div class="est-stat-label">Volume Total</div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-4">
         <div class="est-stat" style="background: #2D2D2D; color: white;">
             <div class="est-stat-icon"><i class="bi bi-activity"></i></div>
             <div class="est-stat-value">{{ musculo_stats.values()|sum(attribute='qtd_exercicios') }}</div>
             <div class="est-stat-label">Total de Exercícios</div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-4">
         <div class="est-stat" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%); color: white;">
             <div class="est-stat-icon"><i class="bi bi-calendar-check"></i></div>
             <div class="est-stat-value">{{ musculo_stats.values()|sum(attribute='qtd_registros') }}</div>
@@ -336,5 +373,26 @@
             }
         }
     });
+</script>
+<script>
+    // Cards de resumo (mobile): se um número grande (ex: volume total com 6-7
+    // dígitos) não couber no card, reduz a fonte até caber, sem quebrar linha.
+    (function () {
+        function ajustarValores() {
+            document.querySelectorAll('.est-stats-row .est-stat-value').forEach(function (el) {
+                el.style.fontSize = '';
+                var card = el.closest('.est-stat');
+                var cs = getComputedStyle(card);
+                var disponivel = card.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+                var tam = parseFloat(getComputedStyle(el).fontSize);
+                while (el.scrollWidth > disponivel && tam > 10) {
+                    tam -= 0.5;
+                    el.style.fontSize = tam + 'px';
+                }
+            });
+        }
+        window.addEventListener('load', ajustarValores);
+        window.addEventListener('resize', ajustarValores);
+    })();
 </script>
 {% endblock %}
