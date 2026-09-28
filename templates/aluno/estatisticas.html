@@ -208,48 +208,98 @@
         max-width: 220px;
     }
 
-    /* ===== KPIs com comparação de período ===== */
-    .est-kpi-row {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        margin-top: 18px;
+    /* ===== KPIs (30 dias x período anterior) -- mesmo estilo de card
+       colorido usado no topo da página que o professor vê do aluno
+       (.est-stat/.est-stats-row), com o selo de tendência sobre o card. */
+    .est-stat {
+        border-radius: 16px;
+        padding: 20px;
+        height: 100%;
+        position: relative;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
     }
-    @media (max-width: 575.98px) {
-        .est-kpi-row { grid-template-columns: 1fr; }
+    .est-stat:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 24px rgba(0,0,0,0.12);
     }
-    .est-kpi-card {
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.14);
-        border-radius: 14px;
-        padding: 14px 16px;
-    }
-    .est-kpi-label {
-        font-size: 0.76rem;
-        color: rgba(255,255,255,0.6);
-        margin-bottom: 4px;
-    }
-    .est-kpi-valor {
-        font-size: 1.35rem;
-        font-weight: 700;
-        color: white;
+    .est-stat-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
         display: flex;
-        align-items: baseline;
-        gap: 8px;
-        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.18);
+        font-size: 1.2rem;
+        margin-bottom: 14px;
+    }
+    .est-stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 2px;
+    }
+    .est-stat-label {
+        font-size: 0.82rem;
+        opacity: 0.85;
     }
     .est-kpi-trend {
-        font-size: 0.76rem;
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        font-size: 0.72rem;
         font-weight: 700;
         border-radius: 999px;
         padding: 2px 8px;
         display: inline-flex;
         align-items: center;
         gap: 2px;
+        background: rgba(255,255,255,0.22);
+        color: white;
     }
-    .est-kpi-trend.up { background: rgba(40, 167, 69, 0.22); color: #6fe38a; }
-    .est-kpi-trend.down { background: rgba(220, 53, 69, 0.22); color: #ff8a94; }
-    .est-kpi-trend.flat { background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.7); }
+    .est-kpi-trend.down { background: rgba(0,0,0,0.22); }
+    .est-kpi-trend.flat { background: rgba(255,255,255,0.16); }
+
+    /* Mobile: os 3 cards ficam lado a lado, compactos e centralizados,
+       igual à página do professor (clamp() acompanha a largura da tela
+       de ~320px até 767px; a partir de 768px volta ao layout normal). */
+    @media (max-width: 767.98px) {
+        .est-stats-row .est-stat {
+            padding: clamp(8px, 2.6vw, 14px) clamp(4px, 1.4vw, 8px);
+            border-radius: 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .est-stats-row .est-stat:hover {
+            transform: none;
+        }
+        .est-stats-row .est-stat-icon {
+            width: clamp(26px, 8vw, 34px);
+            height: clamp(26px, 8vw, 34px);
+            border-radius: 9px;
+            font-size: clamp(0.85rem, 3.6vw, 1.1rem);
+            margin-bottom: clamp(6px, 2vw, 10px);
+        }
+        .est-stats-row .est-stat-value {
+            font-size: clamp(0.9rem, 4.6vw, 1.45rem);
+            white-space: nowrap;
+            margin-bottom: 3px;
+        }
+        .est-stats-row .est-stat-label {
+            font-size: clamp(0.6rem, 2.7vw, 0.75rem);
+            line-height: 1.15;
+            overflow-wrap: anywhere;
+        }
+        .est-stats-row .est-kpi-trend {
+            top: 4px;
+            right: 4px;
+            font-size: clamp(0.5rem, 2vw, 0.65rem);
+            padding: 1px 5px;
+        }
+    }
 
     /* ===== Volume/Ranking por Músculo ===== */
     .est-musculo-filtro {
@@ -357,20 +407,32 @@
             <i class="bi bi-share-fill"></i> Compartilhar
         </button>
     </div>
+</div>
 
-    <!-- KPIs com comparação ao período anterior -->
-    <div class="est-kpi-row" id="kpiRow">
-        <div class="est-kpi-card">
-            <div class="est-kpi-label">Volume (30 dias)</div>
-            <div class="est-kpi-valor"><span id="kpiVolume">—</span><span id="kpiVolumeTrend"></span></div>
+<!-- Cards de Resumo (30 dias x período anterior) -->
+<div class="row mb-4 g-2 g-md-3 est-stats-row" id="kpiRow">
+    <div class="col-4">
+        <div class="est-stat" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
+            <span class="est-kpi-trend flat" id="kpiVolumeTrend"></span>
+            <div class="est-stat-icon"><i class="bi bi-bar-chart"></i></div>
+            <div class="est-stat-value" id="kpiVolume">—</div>
+            <div class="est-stat-label">Volume (30 dias)</div>
         </div>
-        <div class="est-kpi-card">
-            <div class="est-kpi-label">Treinos realizados</div>
-            <div class="est-kpi-valor"><span id="kpiTreinos">—</span><span id="kpiTreinosTrend"></span></div>
+    </div>
+    <div class="col-4">
+        <div class="est-stat" style="background: #2D2D2D; color: white;">
+            <span class="est-kpi-trend flat" id="kpiTreinosTrend"></span>
+            <div class="est-stat-icon"><i class="bi bi-calendar-check"></i></div>
+            <div class="est-stat-value" id="kpiTreinos">—</div>
+            <div class="est-stat-label">Treinos realizados</div>
         </div>
-        <div class="est-kpi-card">
-            <div class="est-kpi-label">Séries totais</div>
-            <div class="est-kpi-valor"><span id="kpiSeries">—</span><span id="kpiSeriesTrend"></span></div>
+    </div>
+    <div class="col-4">
+        <div class="est-stat" style="background: linear-gradient(135deg, #FFB366 0%, #F28C33 100%); color: white;">
+            <span class="est-kpi-trend flat" id="kpiSeriesTrend"></span>
+            <div class="est-stat-icon"><i class="bi bi-activity"></i></div>
+            <div class="est-stat-value" id="kpiSeries">—</div>
+            <div class="est-stat-label">Séries totais</div>
         </div>
     </div>
 </div>
@@ -553,24 +615,44 @@
     const muscleData = {{ musculo_stats|tojson }};
 
     // ===== KPIs com comparação ao período anterior =====
-    function formatarTrend(valor) {
-        if (valor === null || valor === undefined) return '';
+    function formatarTrend(el, valor) {
+        if (valor === null || valor === undefined) { el.style.display = 'none'; return; }
         const seta = valor > 0 ? '▲' : (valor < 0 ? '▼' : '—');
-        const classe = valor > 0 ? 'up' : (valor < 0 ? 'down' : 'flat');
-        return `<span class="est-kpi-trend ${classe}">${seta} ${Math.abs(valor)}%</span>`;
+        el.classList.remove('down', 'flat');
+        if (valor < 0) el.classList.add('down');
+        else if (valor === 0) el.classList.add('flat');
+        el.textContent = `${seta} ${Math.abs(valor)}%`;
     }
 
     fetch('/api/kpis?dias=30')
         .then(r => r.json())
         .then(k => {
             document.getElementById('kpiVolume').textContent = Math.round(k.volume_total) + 'kg';
-            document.getElementById('kpiVolumeTrend').innerHTML = formatarTrend(k.volume_variacao);
+            formatarTrend(document.getElementById('kpiVolumeTrend'), k.volume_variacao);
             document.getElementById('kpiTreinos').textContent = k.treinos_realizados;
-            document.getElementById('kpiTreinosTrend').innerHTML = formatarTrend(k.treinos_variacao);
+            formatarTrend(document.getElementById('kpiTreinosTrend'), k.treinos_variacao);
             document.getElementById('kpiSeries').textContent = k.total_series;
-            document.getElementById('kpiSeriesTrend').innerHTML = formatarTrend(k.series_variacao);
+            formatarTrend(document.getElementById('kpiSeriesTrend'), k.series_variacao);
+            ajustarValoresKpi();
         })
         .catch(() => {});
+
+    // Mesmo ajuste do professor: se o número não couber no card (mobile),
+    // reduz a fonte até caber, sem quebrar linha.
+    function ajustarValoresKpi() {
+        document.querySelectorAll('.est-stats-row .est-stat-value').forEach(function (el) {
+            el.style.fontSize = '';
+            const card = el.closest('.est-stat');
+            const cs = getComputedStyle(card);
+            const disponivel = card.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+            let tam = parseFloat(getComputedStyle(el).fontSize);
+            while (el.scrollWidth > disponivel && tam > 10) {
+                tam -= 0.5;
+                el.style.fontSize = tam + 'px';
+            }
+        });
+    }
+    window.addEventListener('resize', ajustarValoresKpi);
 
     // ===== Volume/Ranking por Músculo (com filtro de período) =====
     let calMuscleChart = null;
