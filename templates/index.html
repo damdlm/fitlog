@@ -139,17 +139,16 @@
 
     .dash-chart-toolbar {
         display: flex;
-        justify-content: space-between;
+        flex-direction: column;
         align-items: center;
-        flex-wrap: wrap;
         gap: 8px;
-        margin-bottom: 0.75rem;
+        margin-top: 0.75rem;
     }
     .dash-chart-hint {
         font-size: 0.78rem;
         color: var(--ink-soft);
+        text-align: center;
         margin: 0;
-        flex-basis: 100%;
     }
 
     /* Gráfico: altura controlada pelo container, não pelo atributo
@@ -363,13 +362,6 @@
                 </div>
             </div>
             <div class="card-body position-relative">
-                <div class="dash-chart-toolbar">
-                    <div class="dash-filter-group" role="group" aria-label="Agrupar gráfico">
-                        <button type="button" class="dash-mode-pill active" data-modo="semana" onclick="trocarModoGrafico('semana', this)">Por semana</button>
-                        <button type="button" class="dash-mode-pill" data-modo="treino" onclick="trocarModoGrafico('treino', this)">Por treino</button>
-                    </div>
-                    <p class="dash-chart-hint" id="chartHint"></p>
-                </div>
                 <div id="chartEmptyState" class="dash-empty-state d-none">
                     <i class="bi bi-graph-up dash-empty-state-icon"></i>
                     <p>Ainda não há treinos registrados para mostrar aqui.</p>
@@ -379,6 +371,13 @@
                 </div>
                 <div class="dash-chart-wrap">
                     <canvas id="progressChart"></canvas>
+                </div>
+                <div class="dash-chart-toolbar">
+                    <div class="dash-filter-group" role="group" aria-label="Agrupar gráfico">
+                        <button type="button" class="dash-mode-pill active" data-modo="semana" onclick="trocarModoGrafico('semana', this)">Por semana</button>
+                        <button type="button" class="dash-mode-pill" data-modo="treino" onclick="trocarModoGrafico('treino', this)">Por treino</button>
+                    </div>
+                    <p class="dash-chart-hint" id="chartHint"></p>
                 </div>
             </div>
         </div>
