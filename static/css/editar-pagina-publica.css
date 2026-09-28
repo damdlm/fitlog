@@ -230,38 +230,32 @@
     }
 }
 
-/* Modal "Ver minha página" -- sem cabeçalho: X flutuante por cima */
-.epp-preview-content {
-    border: none;
-    border-radius: 16px;
-    overflow: hidden;
+/* Preview/avatar da foto de perfil (círculo com anel gradiente) */
+.pp-photo-preview-wrap {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
 }
 
-.epp-preview-close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 5;
-    width: 32px;
-    height: 32px;
+.pp-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 50%;
-    background-color: rgba(0, 0, 0, .55);
-    opacity: 1;
-    background-size: 14px;
+    overflow: hidden;
+    flex-shrink: 0;
+    font-weight: 800;
+    text-transform: uppercase;
+    border: 3px solid transparent;
+    background:
+        linear-gradient(#fff, #fff) padding-box,
+        linear-gradient(135deg, #FFC93C 0%, #F28C33 55%, #F2543D 100%) border-box;
 }
 
-#ppVerPaginaFrame {
-    display: block;
+.pp-avatar img {
     width: 100%;
-    height: 78vh;
-    border: 0;
-}
-
-@media (max-width: 575.98px) {
-    .epp-preview-content {
-        border-radius: 0;
-    }
-    #ppVerPaginaFrame {
-        height: 100vh;
-    }
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }

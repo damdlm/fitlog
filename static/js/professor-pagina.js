@@ -101,35 +101,9 @@
         });
     }
 
-    // =========================================================
-    // MODAL "VER MINHA PÁGINA" -- recarrega o iframe toda vez que o
-    // modal abre, pra sempre refletir o que acabou de ser salvo.
-    // =========================================================
-    function initVerPaginaModal() {
-        var modal = document.getElementById('ppVerPaginaModal');
-        var frame = document.getElementById('ppVerPaginaFrame');
-        if (!modal || !frame) return;
-
-        modal.addEventListener('show.bs.modal', function () {
-            if (frame.dataset.src) {
-                // Recarrega a cada abertura (não só na primeira vez) --
-                // é assim que o professor confere se o que acabou de
-                // salvar realmente já está na página pública. O "_"
-                // evita que o navegador reaproveite uma versão antiga
-                // do iframe guardada em cache/back-forward-cache.
-                frame.src = frame.dataset.src + '&_=' + Date.now();
-            }
-        });
-
-        modal.addEventListener('hidden.bs.modal', function () {
-            frame.src = 'about:blank';
-        });
-    }
-
     document.addEventListener('DOMContentLoaded', function () {
         initShareButton();
         initFotoPreview();
         initContadores();
-        initVerPaginaModal();
     });
 })();

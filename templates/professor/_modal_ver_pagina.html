@@ -1,28 +1,70 @@
-{# Modal "Ver minha página" -- reaproveitado por qualquer tela que
-   tenha um botão/link "Ver"/"Ver minha página" (hoje:
-   editar_pagina_publica.html e dashboard.html). Cada uma dessas telas
-   só precisa de um botão com data-bs-toggle="modal"
-   data-bs-target="#ppVerPaginaModal" + incluir este partial uma vez
-   + carregar static_v('css/editar-pagina-publica.css') e
-   static_v('js/professor-pagina.js').
+{# Modal "Ver minha página" -- AUTOSSUFICIENTE (marcação + CSS + JS aqui
+   dentro). Qualquer tela só precisa de um botão com
+   data-bs-toggle="modal" data-bs-target="#ppVerPaginaModal" e de um
+   {% include "professor/_modal_ver_pagina.html" %}. Hoje é usado por
+   editar_pagina_publica.html e dashboard.html.
 
    Carrega a versão "embed" da página pública (?embed=1, sem a navbar
    do site) num iframe, sem sair da tela nem abrir aba nova. Sem
-   cabeçalho de título: só um X flutuante por cima, pra não duplicar
-   nenhum texto -- o próprio pôster já deixa claro o que é. O src real
-   só é definido via JS quando o modal abre (data-src). #}
+   cabeçalho de título: só um X flutuante por cima. #}
 {% if current_user.professor_slug %}
 <div class="modal fade" id="ppVerPaginaModal" tabindex="-1" aria-label="Sua página pública" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-scrollable modal-lg modal-fullscreen-sm-down epp-preview-dialog">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg modal-fullscreen-sm-down">
         <div class="modal-content epp-preview-content">
             <button type="button" class="btn-close epp-preview-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             <div class="modal-body p-0">
                 <iframe id="ppVerPaginaFrame"
                         data-src="{{ url_for('professor.pagina_publica', slug=current_user.professor_slug, embed=1) }}"
-                        title="Prévia da sua página pública"
-                        loading="lazy"></iframe>
+                        title="Prévia da sua página pública"></iframe>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .epp-preview-content {
+        border: none;
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .epp-preview-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 5;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, .55);
+        opacity: 1;
+        background-size: 14px;
+    }
+    #ppVerPaginaFrame {
+        display: block;
+        width: 100%;
+        height: 78vh;
+        border: 0;
+    }
+    @media (max-width: 575.98px) {
+        .epp-preview-content { border-radius: 0; }
+        #ppVerPaginaFrame { height: 100vh; }
+    }
+</style>
+
+<script>
+(function () {
+    var modal = document.getElementById('ppVerPaginaModal');
+    var frame = document.getElementById('ppVerPaginaFrame');
+    if (!modal || !frame) return;
+
+    // Recarrega a cada abertura, pra sempre mostrar o que acabou de ser
+    // salvo. O "_" evita que o navegador reaproveite uma versão antiga.
+    modal.addEventListener('show.bs.modal', function () {
+        frame.src = frame.dataset.src + '&_=' + Date.now();
+    });
+    modal.addEventListener('hidden.bs.modal', function () {
+        frame.src = 'about:blank';
+    });
+})();
+</script>
 {% endif %}

@@ -3,10 +3,6 @@
 {% block page_icon %}<i class="bi bi-speedometer2" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Painel do Professor{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{{ static_v('css/editar-pagina-publica.css') }}">
-{% endblock %}
-
 {% block content %}
 <style>
     .dash-hero {
@@ -388,5 +384,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-<script src="{{ static_v('js/professor-pagina.js') }}"></script>
 {% endblock %}
