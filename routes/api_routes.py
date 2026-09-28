@@ -94,11 +94,12 @@ def _api_progresso_agregado(treino, modo):
     total (peso x repetições x séries) dos últimos 30 dias, somando por
     semana do calendário ou por rodada completa do treino (A+B+C+D).
     Ver EstatisticaService.agregar_progresso. O filtro por treino
-    individual continua valendo (só o volume daquele treino).
+    individual continua valendo (só o volume daquele treino, pela letra,
+    somando todas as versões da janela).
     """
     vazio = {"semanas": [], "volumes": [], "cargas_medias": [], "detalhes": []}
 
-    treino_id = None
+    codigo = None
     if treino and treino != 'todos':
         try:
             treino_id = int(treino)
@@ -107,19 +108,15 @@ def _api_progresso_agregado(treino, modo):
         treino_versao = TreinoVersao.query.filter_by(id=treino_id).first()
         if not treino_versao:
             return jsonify(vazio)
-        versao_id = treino_versao.versao_id
-    else:
-        versao_ativa = VersaoService.get_ativa()
-        versao_id = versao_ativa.id if versao_ativa else None
+        codigo = treino_versao.codigo
 
-    if versao_id is None:
-        return jsonify(vazio)
-
-    base = EstatisticaService.get_sessoes_ultimos_30_dias(versao_id)
+    versao_ativa = VersaoService.get_ativa()
+    base = EstatisticaService.get_sessoes_ultimos_30_dias(
+        versao_ativa.id if versao_ativa else None
+    )
     return jsonify(EstatisticaService.agregar_progresso(
-        base['sessoes'], base['treinos'], modo, treino_id=treino_id
+        base['sessoes'], base['treinos'], modo, treino=codigo
     ))
-
 
 @api_bp.route("/kpis")
 @login_required

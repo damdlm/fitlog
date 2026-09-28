@@ -466,64 +466,76 @@ class EstatisticaService(BaseService):
             return []
 
     @staticmethod
-    def get_sessoes_ultimos_30_dias(versao_id, user_id=None):
+    def get_sessoes_ultimos_30_dias(versao_id=None, user_id=None):
         """
-        Sessões de treino dos últimos 30 dias corridos de uma versão, uma
-        linha por (dia, treino): volume (carga x repetições somado em todas
-        as séries), soma das cargas e nº de séries. Base do gráfico
+        Sessões de treino dos últimos 30 dias corridos, uma linha por
+        (dia, treino): volume (carga x repetições somado em todas as
+        séries), soma das cargas e nº de séries. Base do gráfico
         agregado "por semana" / "por treino" do dashboard.
 
+        Junta TODAS as versões que tiveram treino na janela e identifica
+        o treino pela letra (A, B, C...), não pelo id: quando a versão
+        troca ou expira no meio dos 30 dias, os treinos da versão
+        anterior continuam contando -- o A da versão 1 e o A da versão 2
+        são o mesmo "A" do ponto de vista de quem treina.
+
         Devolve {'sessoes': [...], 'treinos': [...]}, onde 'treinos' são
-        todos os treinos (A, B, C...) da versão, em ordem -- necessário
-        pra mostrar o treino que não foi feito como 0, em vez de sumir.
+        as letras da versão ativa (versao_id, se informado) mais qualquer
+        letra treinada na janela, em ordem -- necessário pra mostrar o
+        treino que não foi feito como 0, em vez de sumir.
         """
         try:
             user_id = user_id or BaseService.get_current_user_id()
-            if not user_id or not versao_id:
+            if not user_id:
                 return {'sessoes': [], 'treinos': []}
 
-            cache_key = f"estatistica:{user_id}:sessoes_30d:{versao_id}"
+            hoje = EstatisticaService.hoje_brasil()
+            cache_key = f"estatistica:{user_id}:sessoes_30d:{versao_id or 0}:{hoje.isoformat()}"
             cache_hit = CacheService.get(cache_key)
             if cache_hit is not None:
                 return cache_hit
 
-            hoje = datetime.now(timezone.utc).date()
             inicio_janela = datetime.combine(hoje - timedelta(days=29), time.min)
 
             dia = func.date(RegistroTreino.data_registro)
             linhas = db.session.query(
                 dia.label('dia'),
-                RegistroTreino.treino_versao_id.label('treino_id'),
+                TreinoVersao.codigo.label('codigo'),
                 func.min(RegistroTreino.data_registro).label('inicio'),
                 func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes).label('volume'),
                 func.sum(HistoricoTreino.carga).label('soma_carga'),
                 func.count(HistoricoTreino.id).label('n_series'),
             ).select_from(RegistroTreino)\
              .join(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
+             .join(TreinoVersao, TreinoVersao.id == RegistroTreino.treino_versao_id)\
              .filter(RegistroTreino.user_id == user_id)\
-             .filter(RegistroTreino.versao_id == versao_id)\
              .filter(RegistroTreino.data_registro >= inicio_janela)\
-             .group_by(dia, RegistroTreino.treino_versao_id).all()
+             .group_by(dia, TreinoVersao.codigo).all()
 
             sessoes = []
             for l in linhas:
-                d = l.dia if isinstance(l.dia, date) else datetime.strptime(str(l.dia), "%Y-%m-%d").date()
+                d = l.dia if isinstance(l.dia, date) else datetime.strptime(str(l.dia)[:10], "%Y-%m-%d").date()
+                inicio = l.inicio if isinstance(l.inicio, datetime) else datetime.combine(d, time.min)
                 sessoes.append({
                     'dia': d,
-                    'inicio': l.inicio,
-                    'treino_id': l.treino_id,
+                    'inicio': inicio,
+                    'treino': l.codigo,
                     'volume': float(l.volume or 0),
                     'soma_carga': float(l.soma_carga or 0),
                     'n_series': int(l.n_series or 0),
                 })
 
-            treinos = [
-                {'id': t.id, 'codigo': t.codigo}
-                for t in TreinoVersao.query.filter_by(versao_id=versao_id)
-                .order_by(TreinoVersao.ordem, TreinoVersao.codigo).all()
-            ]
+            codigos = []
+            if versao_id:
+                codigos = [
+                    t.codigo for t in TreinoVersao.query.filter_by(versao_id=versao_id)
+                    .order_by(TreinoVersao.ordem, TreinoVersao.codigo).all()
+                ]
+            for c in sorted({s['treino'] for s in sessoes}):
+                if c not in codigos:
+                    codigos.append(c)
 
-            resultado = {'sessoes': sessoes, 'treinos': treinos}
+            resultado = {'sessoes': sessoes, 'treinos': [{'codigo': c} for c in codigos]}
             CacheService.set(cache_key, resultado, ttl_seconds=ESTATISTICA_CACHE_TTL_SEGUNDOS)
             return resultado
         except Exception as e:
@@ -531,7 +543,13 @@ class EstatisticaService(BaseService):
             return {'sessoes': [], 'treinos': []}
 
     @staticmethod
-    def agregar_progresso(sessoes, treinos, modo, treino_id=None, hoje=None):
+    def hoje_brasil():
+        """Data de hoje no fuso do Brasil (os treinos são lançados com a
+        data local do aluno; usar UTC adianta o "hoje" em 1 dia à noite)."""
+        return datetime.now(_FUSO_BRASIL).date()
+
+    @staticmethod
+    def agregar_progresso(sessoes, treinos, modo, treino=None, hoje=None):
         """
         Agrega as sessões (ver get_sessoes_ultimos_30_dias) num gráfico de
         volume total (peso x repetições x séries) por:
@@ -546,11 +564,12 @@ class EstatisticaService(BaseService):
           repetido (fez A, B, D e voltou pro A -> o 2º A abre a rodada
           seguinte). Treino não feito na rodada entra como 0.
 
-        treino_id (opcional): só o volume daquele treino em cada ponto
-        (a divisão em rodadas continua sendo pela versão inteira).
+        treino (opcional, letra: 'A', 'B'...): só o volume daquele treino
+        em cada ponto (a divisão em rodadas continua sendo por todos os
+        treinos).
         Função pura (sem banco) -- fácil de testar.
         """
-        hoje = hoje or datetime.now(timezone.utc).date()
+        hoje = hoje or EstatisticaService.hoje_brasil()
         inicio = hoje - timedelta(days=29)
 
         def fmt(d):
@@ -563,15 +582,15 @@ class EstatisticaService(BaseService):
             """(volume, carga_media, detalhes) de uma lista de sessões."""
             por_treino = {}
             for s in grupo:
-                por_treino[s['treino_id']] = por_treino.get(s['treino_id'], 0.0) + s['volume']
-            alvo = [s for s in grupo if treino_id is None or s['treino_id'] == treino_id]
+                por_treino[s['treino']] = por_treino.get(s['treino'], 0.0) + s['volume']
+            alvo = [s for s in grupo if treino is None or s['treino'] == treino]
             volume = sum(s['volume'] for s in alvo)
             n = sum(s['n_series'] for s in alvo)
             carga_media = (sum(s['soma_carga'] for s in alvo) / n) if n else 0.0
             detalhes = []
-            if treino_id is None:
+            if treino is None:
                 detalhes = [
-                    {'codigo': t['codigo'], 'volume': round(por_treino.get(t['id'], 0.0), 2)}
+                    {'codigo': t['codigo'], 'volume': round(por_treino.get(t['codigo'], 0.0), 2)}
                     for t in treinos
                 ]
             return round(volume, 2), round(carga_media, 2), detalhes
@@ -594,12 +613,12 @@ class EstatisticaService(BaseService):
                 seg += timedelta(days=7)
         else:  # 'treino'
             rodadas, atual, feitos = [], [], set()
-            for s in sorted(sessoes, key=lambda x: (x['inicio'], x['treino_id'])):
-                if s['treino_id'] in feitos:
+            for s in sorted(sessoes, key=lambda x: (x['inicio'], x['treino'])):
+                if s['treino'] in feitos:
                     rodadas.append(atual)
                     atual, feitos = [], set()
                 atual.append(s)
-                feitos.add(s['treino_id'])
+                feitos.add(s['treino'])
             if atual:
                 rodadas.append(atual)
             for r in rodadas:

@@ -253,3 +253,35 @@ def test_progresso_modo_invalido_de_treino_retorna_vazio(client, app):
     for treino in ('abc', '999999'):
         data = client.get(f'/api/progresso?modo=semana&treino={treino}').get_json()
         assert data['semanas'] == []
+
+
+def test_progresso_agregado_inclui_versao_encerrada_dentro_dos_30_dias(client, app):
+    """Troca de versão no meio da janela: treinos da versão anterior continuam contando."""
+    uid, vid2, ex, t2 = _montar_versao_abcd(app, 'troca_versao_pt')
+    with app.app_context():
+        hoje = datetime.now(timezone.utc).date()
+        v1 = VersaoGlobal(numero_versao=0, descricao='v0', divisao='AB', user_id=uid,
+                          data_inicio=hoje - timedelta(days=60), data_fim=hoje - timedelta(days=10))
+        db.session.add(v1)
+        db.session.commit()
+        t1 = {}
+        for i, cod in enumerate('AB'):
+            x = TreinoVersao(versao_id=v1.id, codigo=cod, nome_treino=cod, descricao_treino='d', ordem=i)
+            db.session.add(x)
+            db.session.commit()
+            t1[cod] = x.id
+        v1_id = v1.id
+
+    _registrar(app, uid, v1_id, ex, t1['A'], 25, 10, 10)   # 100  (versão encerrada)
+    _registrar(app, uid, v1_id, ex, t1['B'], 23, 10, 10)   # 100  (versão encerrada)
+    _registrar(app, uid, vid2, ex, t2['A'], 5, 10, 10)     # 100  (versão ativa)
+    with app.app_context():
+        user = User.query.get(uid)
+    _login(client, user)
+
+    assert sum(client.get('/api/progresso?modo=semana').get_json()['volumes']) == 300.0
+    data = client.get('/api/progresso?modo=treino').get_json()
+    assert data['volumes'] == [200.0, 100.0]  # rodada 1 = A+B (v1); o A da v2 abre a rodada 2
+    # filtro pelo A da versão ativa traz também o A da versão anterior
+    data = client.get(f"/api/progresso?modo=treino&treino={t2['A']}").get_json()
+    assert data['volumes'] == [100.0, 100.0]

@@ -4,17 +4,15 @@ from datetime import date, datetime, timedelta
 from services.estatistica_service import EstatisticaService
 
 HOJE = date(2026, 9, 28)  # segunda-feira
-TREINOS = [
-    {'id': 1, 'codigo': 'A'}, {'id': 2, 'codigo': 'B'},
-    {'id': 3, 'codigo': 'C'}, {'id': 4, 'codigo': 'D'},
-]
+TREINOS = [{'codigo': c} for c in 'ABCD']
+_LETRA = {1: 'A', 2: 'B', 3: 'C', 4: 'D'}
 
 
 def _s(dias_atras, treino_id, volume, n_series=3, hora=8):
     d = HOJE - timedelta(days=dias_atras)
     return {
         'dia': d, 'inicio': datetime(d.year, d.month, d.day, hora),
-        'treino_id': treino_id, 'volume': float(volume),
+        'treino': _LETRA[treino_id], 'volume': float(volume),
         'soma_carga': float(volume) / 10, 'n_series': n_series,
     }
 
@@ -35,9 +33,9 @@ def test_por_treino_rodada_reinicia_quando_treino_repete():
 def test_por_treino_filtro_individual_traz_zero_na_rodada_sem_o_treino():
     sessoes = [_s(20, 1, 100), _s(18, 2, 200), _s(10, 2, 250), _s(8, 1, 120)]
     # rodadas: [A,B] | [B, A]  -> C individual: 0 em todas
-    r = EstatisticaService.agregar_progresso(sessoes, TREINOS, 'treino', treino_id=3, hoje=HOJE)
+    r = EstatisticaService.agregar_progresso(sessoes, TREINOS, 'treino', treino='C', hoje=HOJE)
     assert r['volumes'] == [0.0, 0.0]
-    r = EstatisticaService.agregar_progresso(sessoes, TREINOS, 'treino', treino_id=2, hoje=HOJE)
+    r = EstatisticaService.agregar_progresso(sessoes, TREINOS, 'treino', treino='B', hoje=HOJE)
     assert r['volumes'] == [200.0, 250.0]
     assert r['detalhes'] == [[], []]
 
@@ -78,3 +76,27 @@ def test_carga_media_e_media_das_series_do_ponto():
     sessoes = [_s(1, 1, 100, n_series=2), _s(1, 2, 300, n_series=2)]
     r = EstatisticaService.agregar_progresso(sessoes, TREINOS, 'treino', hoje=HOJE)
     assert r['cargas_medias'] == [round((10 + 30) / 4, 2)]
+
+
+def test_treino_com_mesma_letra_de_versoes_diferentes_conta_como_o_mesmo():
+    # v1 (A, B) encerrada e v2 (A) ativa: os dois "A" são o mesmo treino,
+    # então o 2º A abre a rodada 2 e nada some do gráfico
+    sessoes = [_s(20, 1, 100), _s(18, 2, 200), _s(5, 1, 150)]
+    r = EstatisticaService.agregar_progresso(sessoes, TREINOS, 'treino', hoje=HOJE)
+    assert r['volumes'] == [300.0, 150.0]
+    r = EstatisticaService.agregar_progresso(sessoes, TREINOS, 'semana', hoje=HOJE)
+    assert sum(r['volumes']) == 450.0
+
+
+def test_hoje_brasil_nao_adianta_o_dia_a_noite(monkeypatch):
+    from datetime import timezone
+    import services.estatistica_service as mod
+
+    class _Agora(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            base = datetime(2026, 9, 29, 1, 30, tzinfo=timezone.utc)  # 22h30 de 28/09 no Brasil
+            return base.astimezone(tz) if tz else base
+
+    monkeypatch.setattr(mod, 'datetime', _Agora)
+    assert EstatisticaService.hoje_brasil() == date(2026, 9, 28)
