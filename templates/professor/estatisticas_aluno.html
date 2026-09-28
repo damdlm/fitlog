@@ -2,19 +2,22 @@
 
 {% block content %}
 <style>
+    /* Hero compacto: cabe título + destaque + voltar numa faixa baixa,
+       em vez do bloco alto de antes. padding/fonte usam clamp() pra
+       encolher ainda mais em telas pequenas sem precisar de media query. */
     .est-hero {
         background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
-        border-radius: 18px;
-        padding: 24px 32px;
+        border-radius: 14px;
+        padding: clamp(10px, 2.6vw, 16px) clamp(14px, 3.4vw, 22px);
         color: white;
         position: relative;
         overflow: hidden;
-        margin-bottom: 24px;
+        margin-bottom: 14px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 10px;
     }
     .est-hero::before {
         content: '';
@@ -27,28 +30,101 @@
         background: radial-gradient(circle, rgba(242,140,51,0.35) 0%, rgba(242,140,51,0) 70%);
     }
     .est-hero-title {
-        font-size: 0.95rem;
-        color: rgba(255,255,255,0.6);
-        margin-bottom: 2px;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: rgba(255,255,255,0.55);
+        margin-bottom: 1px;
     }
     .est-hero-destaque {
-        font-size: 1.4rem;
+        font-size: clamp(1rem, 3.6vw, 1.25rem);
         font-weight: 700;
         margin-bottom: 0;
+        line-height: 1.3;
     }
     .est-hero-destaque .highlight {
         color: #FFB366;
     }
+    /* Botão Voltar: antes era um outline fino que quase sumia no fundo
+       escuro -- agora é uma pílula sólida (vidro fosco), com estado de
+       hover/active mais claro, pra ficar claramente clicável. */
     .est-hero-voltar {
         position: relative;
         z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         color: white;
-        border-color: rgba(255,255,255,0.3);
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 999px;
+        padding: 6px 14px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        white-space: nowrap;
+        transition: background .15s ease, border-color .15s ease, transform .15s ease;
     }
-    .est-hero-voltar:hover {
+    .est-hero-voltar:hover,
+    .est-hero-voltar:focus-visible {
         color: white;
-        background: rgba(255,255,255,0.1);
-        border-color: rgba(255,255,255,0.5);
+        background: rgba(255,255,255,0.24);
+        border-color: rgba(255,255,255,0.4);
+    }
+    .est-hero-voltar:active {
+        transform: scale(0.97);
+    }
+
+    /* Filtro de período: card branco compacto logo abaixo do hero. Os 3
+       controles (data inicial, data final, botão) ficam numa linha só
+       que quebra para 2 colunas no mobile só se precisar. */
+    .est-filtro-periodo {
+        background: #fff;
+        border: 1px solid #EEF0F3;
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .est-filtro-periodo .est-filtro-campo {
+        flex: 1 1 130px;
+        min-width: 130px;
+    }
+    .est-filtro-periodo label {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #6B7280;
+        margin-bottom: 3px;
+    }
+    .est-filtro-periodo input[type="date"] {
+        width: 100%;
+        border: 1px solid #E5E7EB;
+        border-radius: 9px;
+        padding: 7px 10px;
+        font-size: 0.85rem;
+        color: #2D2D2D;
+    }
+    .est-filtro-periodo input[type="date"]:focus {
+        outline: none;
+        border-color: #F28C33;
+        box-shadow: 0 0 0 3px rgba(242,140,51,0.15);
+    }
+    .est-filtro-periodo button {
+        flex: 0 0 auto;
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+        color: #fff;
+        border: none;
+        border-radius: 9px;
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .est-filtro-periodo button:active {
+        transform: scale(0.97);
     }
 
     .est-stat {
@@ -215,16 +291,35 @@
         <p class="est-hero-destaque">
             {{ aluno.nome_completo or aluno.username }}
             {% if musculo_destaque %}
-                <span class="fw-normal" style="font-size: 1rem; color: rgba(255,255,255,0.7);">
+                <span class="fw-normal" style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">
                     · mais treina <span class="highlight">{{ musculo_destaque }}</span> 💪
                 </span>
             {% endif %}
         </p>
     </div>
-    <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-light btn-sm est-hero-voltar">
+    <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" class="est-hero-voltar">
         <i class="bi bi-arrow-left"></i> Voltar
     </a>
 </div>
+
+<!-- Filtro de período: carrega com o mês corrente e todos os valores
+     abaixo (cards, gráfico, ranking por músculo) já vêm filtrados por
+     ele -- ver data_inicio_sel/data_fim_sel em professor_routes.py. -->
+<form method="get" class="est-filtro-periodo" id="estFiltroPeriodo">
+    <div class="est-filtro-campo">
+        <label for="estFiltroInicio">Data inicial</label>
+        <input type="date" id="estFiltroInicio" name="inicio"
+               value="{{ data_inicio_sel.isoformat() }}"
+               max="{{ data_fim_sel.isoformat() }}">
+    </div>
+    <div class="est-filtro-campo">
+        <label for="estFiltroFim">Data final</label>
+        <input type="date" id="estFiltroFim" name="fim"
+               value="{{ data_fim_sel.isoformat() }}"
+               min="{{ data_inicio_sel.isoformat() }}">
+    </div>
+    <button type="submit"><i class="bi bi-funnel"></i> Filtrar</button>
+</form>
 
 <!-- Cards de Resumo -->
 <div class="row mb-4 g-2 g-md-3 est-stats-row">
@@ -393,6 +488,25 @@
         }
         window.addEventListener('load', ajustarValores);
         window.addEventListener('resize', ajustarValores);
+    })();
+
+    // Filtro de período: envia sozinho ao trocar a data (sem precisar
+    // clicar em "Filtrar"), e mantém inicio <= fim no próprio seletor
+    // nativo do navegador. O botão continua funcionando sem JS.
+    (function () {
+        var form = document.getElementById('estFiltroPeriodo');
+        var inicio = document.getElementById('estFiltroInicio');
+        var fim = document.getElementById('estFiltroFim');
+        if (!form || !inicio || !fim) return;
+
+        inicio.addEventListener('change', function () {
+            fim.min = inicio.value;
+            form.submit();
+        });
+        fim.addEventListener('change', function () {
+            inicio.max = fim.value;
+            form.submit();
+        });
     })();
 </script>
 {% endblock %}

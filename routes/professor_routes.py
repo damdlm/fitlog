@@ -14,7 +14,7 @@ from services.professor_perfil_service import ProfessorPerfilService, ESPECIALID
 from services.avaliacao_professor_service import AvaliacaoProfessorService
 from utils.decorators import professor_acesso_alunos_required, professor_acesso_tela_required
 from extensions import limiter
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
@@ -591,11 +591,44 @@ def estatisticas_aluno(aluno_id):
     if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
         flash('Você não tem permissão para ver as estatísticas deste aluno.', 'danger')
         return redirect(url_for('professor.listar_alunos'))
-    
-    musculo_stats = EstatisticaService.calcular_por_musculo(user_id=aluno.id)
-    
+
+    # --- Filtro de período (padrão: mês corrente em America/Sao_Paulo) ---
+    # Datas vêm de <input type="date"> (?inicio=&fim=), mesmo formato usado
+    # em /api/musculo-stats. data_registro é DateTime "naive" gravado à
+    # meia-noite do dia escolhido (ver RegistroService.buscar_por_data),
+    # então os limites aqui também são naive -- comparar com um datetime
+    # ciente de timezone quebraria a query no Postgres (produção).
+    hoje = datetime.now(ZoneInfo('America/Sao_Paulo')).date()
+    primeiro_dia_mes = hoje.replace(day=1)
+    proximo_mes = (primeiro_dia_mes.replace(day=28) + timedelta(days=4)).replace(day=1)
+    ultimo_dia_mes = proximo_mes - timedelta(days=1)
+
+    def _parse_data(valor, padrao):
+        try:
+            return datetime.strptime(valor, '%Y-%m-%d').date() if valor else padrao
+        except ValueError:
+            return padrao
+
+    data_inicio_sel = _parse_data(request.args.get('inicio'), primeiro_dia_mes)
+    data_fim_sel = _parse_data(request.args.get('fim'), ultimo_dia_mes)
+    if data_inicio_sel > data_fim_sel:
+        data_inicio_sel, data_fim_sel = data_fim_sel, data_inicio_sel
+
+    data_inicio = datetime(data_inicio_sel.year, data_inicio_sel.month, data_inicio_sel.day)
+    # fim é inclusivo (o dia inteiro selecionado no filtro) -- mesma
+    # convenção de routes/api_routes.py:api_musculo_stats.
+    data_fim = datetime(data_fim_sel.year, data_fim_sel.month, data_fim_sel.day) \
+        + timedelta(days=1) - timedelta(seconds=1)
+
+    musculo_stats = EstatisticaService.calcular_por_musculo(
+        user_id=aluno.id, data_inicio=data_inicio, data_fim=data_fim)
+
     treinos = TreinoService.get_all(user_id=aluno.id)
-    registros = RegistroTreino.query.filter_by(user_id=aluno.id).all()
+    registros = RegistroTreino.query.filter(
+        RegistroTreino.user_id == aluno.id,
+        RegistroTreino.data_registro >= data_inicio,
+        RegistroTreino.data_registro <= data_fim,
+    ).all()
 
     treino_stats = {}
     for t in treinos:
@@ -636,7 +669,9 @@ def estatisticas_aluno(aluno_id):
                          musculo_stats=musculo_stats,
                          treino_stats=treino_stats,
                          musculo_destaque=musculo_destaque,
-                         volume_maximo_musculo=volume_maximo_musculo)
+                         volume_maximo_musculo=volume_maximo_musculo,
+                         data_inicio_sel=data_inicio_sel,
+                         data_fim_sel=data_fim_sel)
 
 
 @professor_bp.route('/aluno/<int:aluno_id>/calendario')
