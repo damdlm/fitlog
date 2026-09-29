@@ -285,3 +285,25 @@ def test_progresso_agregado_inclui_versao_encerrada_dentro_dos_30_dias(client, a
     # filtro pelo A da versão ativa traz também o A da versão anterior
     data = client.get(f"/api/progresso?modo=treino&treino={t2['A']}").get_json()
     assert data['volumes'] == [100.0, 100.0]
+
+def test_progresso_diario_treino_id_vira_inteiro_antes_da_query(client, app):
+    """Regressão Sentry d67731792dda: GET /api/progresso?treino=92 (sem
+    modo=) tem que converter o parâmetro pra int antes de filtrar por
+    RegistroTreino.treino_versao_id (coluna Integer) -- em Postgres,
+    comparar Integer com o texto vindo da URL quebra com
+    'operator does not exist: integer = character varying' (SQLite não
+    reclama, por isso o bug não aparecia nos testes locais)."""
+    uid, vid, ex, t = _montar_versao_abcd(app, 'diario_int_pt')
+    _registrar(app, uid, vid, ex, t['A'], 1, 10, 10, series=3)
+    with app.app_context():
+        user = User.query.get(uid)
+    _login(client, user)
+
+    resp = client.get(f"/api/progresso?treino={t['A']}")
+    assert resp.status_code == 200
+    assert sum(resp.get_json()['volumes']) == 300.0
+
+    # treino não numérico: resposta vazia graciosa, sem 500
+    resp = client.get('/api/progresso?treino=abc')
+    assert resp.status_code == 200
+    assert resp.get_json()['semanas'] == []

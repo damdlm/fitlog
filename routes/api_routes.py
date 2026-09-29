@@ -37,9 +37,21 @@ def api_progresso():
     if modo in ("semana", "treino"):
         return _api_progresso_agregado(treino, modo)
 
+    vazio = {"semanas": [], "volumes": [], "cargas_medias": []}
+
+    treino_id = None
+    if treino and treino != 'todos':
+        try:
+            treino_id = int(treino)
+        except (TypeError, ValueError):
+            # treino_versao_id é inteiro no banco -- um valor não numérico
+            # aqui geraria "operator does not exist: integer = character
+            # varying" no Postgres (SQLite não reclama, por isso passou
+            # despercebido em testes locais; ver Sentry d67731792dda).
+            return jsonify(vazio)
+
     versao_id = None
-    filtrar_por_versao_corrente = not treino or treino == 'todos'
-    if filtrar_por_versao_corrente:
+    if treino_id is None:
         # Sem filtro de treino específico: restringe à versão corrente do
         # usuário, senão o gráfico soma o histórico de versões já
         # encerradas junto com a atual (ver EstatisticaService.
@@ -50,17 +62,17 @@ def api_progresso():
             # Sem versão ativa no momento -- não há "corrente" pra
             # mostrar (evita voltar a somar o histórico de versões já
             # encerradas, que é justamente o bug sendo corrigido aqui).
-            return jsonify({"semanas": [], "volumes": [], "cargas_medias": []})
+            return jsonify(vazio)
 
     dados = EstatisticaService.get_progresso_ultimos_30_dias(
-        treino if treino != 'todos' else None, versao_id=versao_id
+        treino_id, versao_id=versao_id
     )
 
     if not dados:
         # Sem nenhum registro nos últimos 30 dias: mantém a resposta vazia
         # para o front-end mostrar o estado "ainda não há treinos" (em vez
         # de um gráfico com uma linha zerada).
-        return jsonify({"semanas": [], "volumes": [], "cargas_medias": []})
+        return jsonify(vazio)
 
     # dia -> (volume_total, carga_media), vindo do banco (chave pode ser
     # date ou string dependendo do driver/backend do SQLAlchemy)
