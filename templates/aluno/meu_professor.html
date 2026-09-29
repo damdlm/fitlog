@@ -55,9 +55,9 @@
                     <div class="mp-profile-meta">
                         {% if professor.professor_slug %}
                         <div class="mp-meta-line">
-                            <a href="{{ url_for('professor.pagina_publica', slug=professor.professor_slug) }}">
+                            <button type="button" class="mp-visitar-btn" data-bs-toggle="modal" data-bs-target="#ppVerPaginaModal">
                                 <i class="bi bi-arrow-right-circle"></i> Visitar Página
-                            </a>
+                            </button>
                         </div>
                         {% endif %}
                         <div class="mp-meta-line">
@@ -180,4 +180,9 @@
         {% endif %}
     </div>
 </div>
+
+{% if professor.professor_slug %}
+{% set professor_slug = professor.professor_slug %}
+{% include "professor/_modal_ver_pagina.html" %}
+{% endif %}
 {% endblock %}
