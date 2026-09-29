@@ -7,6 +7,13 @@
     padding: 0 16px 48px;
 }
 
+.pp-page,
+.pp-page *,
+.pp-page *::before,
+.pp-page *::after {
+    box-sizing: border-box;
+}
+
 .pp-column {
     width: 100%;
     max-width: 672px;
@@ -28,7 +35,7 @@
 
     position: relative;
     width: 100%;
-    min-height: 960px;
+    min-height: 600px;
     overflow: hidden;
     padding: 42px 44px 34px;
     background:
@@ -196,13 +203,40 @@
 }
 
 .pp-dot-center-right {
-    top: 505px;
+    bottom: 143px;
     right: 58px;
 }
 
 .pp-dot-left-bottom {
     bottom: 143px;
     left: 110px;
+}
+
+/* Triângulo cheio (ao lado da 1ª linha do nome) e círculo vazado (ao
+   lado da 2ª linha) -- existiam no modelo mas nunca tinham sido
+   implementados. Posição calculada a partir da altura do anel + nome
+   em cada breakpoint (ver overrides nas media queries mais abaixo). */
+.pp-deco-triangle {
+    position: absolute;
+    z-index: 2;
+    top: 435px;
+    left: 24px;
+    width: 0;
+    height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-left: 13px solid #ffb066;
+}
+
+.pp-deco-circle-outline {
+    position: absolute;
+    z-index: 2;
+    top: 485px;
+    right: 26px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, .5);
 }
 
 /* BARRAS LATERAIS */
@@ -443,6 +477,7 @@
 
 .pp-service-title {
     display: inline-block;
+    max-width: 100%;
     padding: 6px 11px;
     background: linear-gradient(90deg, #ffd21a 0%, #ffb321 45%, #ff6540 100%);
     color: #17100a;
@@ -587,6 +622,7 @@
         height: 250px !important;
         min-width: 250px !important;
         min-height: 250px !important;
+        flex: 0 0 250px !important;
     }
     .pp-name-first {
         font-size: 2.15rem;
@@ -596,6 +632,13 @@
     }
     .pp-tagline {
         font-size: .84rem;
+    }
+
+    .pp-deco-triangle {
+        top: 352px;
+    }
+    .pp-deco-circle-outline {
+        top: 393px;
     }
 
     .pp-services {
@@ -627,12 +670,30 @@
         height: 205px !important;
         min-width: 205px !important;
         min-height: 205px !important;
+        flex: 0 0 205px !important;
     }
     .pp-name-first {
         font-size: 1.8rem;
     }
     .pp-name-last {
         font-size: 2.15rem;
+    }
+    .pp-deco-triangle {
+        top: 308px;
+    }
+    .pp-deco-circle-outline {
+        top: 340px;
+    }
+    .pp-service {
+        padding: 11px 4px 10px;
+    }
+    .pp-service-title {
+        font-size: .52rem;
+        padding: 4px 6px;
+        letter-spacing: .1px;
+    }
+    .pp-service p {
+        font-size: .6rem;
     }
     .pp-bars-left,
     .pp-bars-right,
