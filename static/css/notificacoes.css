@@ -65,8 +65,8 @@
    limpo igual ao avatar (que não tem esse problema por não ter anel). */
 #notificacoesDropdownWrapper .notif-bell-badge {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: -1px;
+    right: -1px;
     z-index: 2;
     display: inline-flex;
     align-items: center;
