@@ -37,32 +37,36 @@
     display: none; /* remove a setinha padrão do dropdown do Bootstrap */
 }
 
-/* Badge de contagem (nº de não lidas) -- círculo compacto encostado
-   no canto superior direito do sino, na frente do ícone (z-index
-   acima + contorno branco pra não parecer "colado" no fundo do
-   botão). Cresce em pílula só quando o número tem 2+ dígitos (ex:
-   "10", "99+"). Mesma fórmula usada em #userMenuDropdownWrapper
-   .bottom-nav-badge (badge de solicitações sobre o avatar) -- os dois precisam ficar
-   visualmente padronizados.
+/* Badge de contagem (nº de não lidas) -- círculo compacto no canto
+   superior direito do sino, na frente do ícone (z-index acima +
+   contorno branco). Cresce em pílula só quando o número tem 2+
+   dígitos (ex: "10", "99+"). Tamanho, fonte e cor iguais aos de
+   #userMenuDropdownWrapper .bottom-nav-badge (badge de solicitações
+   sobre o avatar) -- só o offset (top/right) difere, ver abaixo.
 
    ATENÇÃO ESPECIFICIDADE: o bootstrap.min.css tem uma regra
-   ".btn .badge{position:relative;top:-1px}" (2 classes). Um seletor
-   ".notif-bell-badge" sozinho (1 classe) empata/perde pra ela e o
-   badge volta a ser position:relative -- vira item de flex normal ao
-   lado do sino em vez de ficar no canto (mesma categoria de bug do
-   comentário acima sobre a borda, "já aconteceu 2x"). Por isso o
-   seletor aqui é composto (3 classes = especificidade maior, vence
-   independente da ordem de carregamento dos arquivos).
+   ".btn .badge{position:relative;top:-1px}" (2 classes) que vence um
+   seletor ".notif-bell-badge" sozinho (1 classe) e quebra o
+   position:absolute. Por isso o seletor usa o id do wrapper
+   (#notificacoesDropdownWrapper), que sozinho já tem especificidade
+   maior que ".btn .badge" e vence independente da ordem dos arquivos.
 
    ATENÇÃO OVERFLOW: page-transition.css aplica "overflow: hidden" em
    todo <button> (efeito ripple do clique). Por isso o badge NÃO fica
    mais dentro do <button> no HTML -- é irmão dele, dentro de
    #notificacoesDropdownWrapper (mesmo tamanho/posição do botão, sem
-   esse overflow:hidden). O seletor abaixo reflete essa estrutura. */
+   esse overflow:hidden).
+
+   ATENÇÃO OFFSET: o sino tem um anel (border) de 2px que o avatar não
+   tem. Um offset negativo (badge todo pra fora) deixa o anel cortando
+   o badge ao meio -- risca por trás mas não totalmente escondida,
+   como uma mordida. Um offset positivo pequeno (badge um pouco pra
+   DENTRO do círculo) cobre esse trecho do anel por completo, ficando
+   limpo igual ao avatar (que não tem esse problema por não ter anel). */
 #notificacoesDropdownWrapper .notif-bell-badge {
     position: absolute;
-    top: -3px;
-    right: -3px;
+    top: 2px;
+    right: 2px;
     z-index: 2;
     display: inline-flex;
     align-items: center;
