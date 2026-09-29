@@ -71,48 +71,60 @@ class GeolocalizacaoService(BaseService):
         return None
 
     @classmethod
-    def geocodificar_cep(cls, cep: Optional[str]) -> Optional[Coordenadas]:
-        """Retorna (lat, lng) ou None. Cacheado por CACHE_TTL_SEGUNDOS."""
+    def geocodificar_cep(cls, cep: Optional[str]) -> Optional[dict]:
+        """Retorna {"lat", "lng", "cidade", "uf"} ou None. Cacheado por
+        CACHE_TTL_SEGUNDOS -- cidade/UF vêm da mesma chamada à BrasilAPI
+        que resolve as coordenadas, sem custo extra de rede."""
         cep = cls.normalizar_cep(cep)
         if not cep:
             return None
 
         chave_cache = f"{CACHE_PREFIXO}{cep}"
         em_cache = CacheService.get(chave_cache)
-        if em_cache is not None:
-            return tuple(em_cache) if em_cache != "nao_encontrado" else None
+        if em_cache == "nao_encontrado":
+            return None
+        if isinstance(em_cache, dict):
+            return em_cache
+        # else: sem cache, ou formato antigo (só lat/lng, de antes da
+        # cidade/UF existirem) -- recalcula e já grava no formato novo.
 
         resultado = None
         try:
             coords, endereco = cls._brasilapi(cep)
-            if coords:
-                resultado = coords
-            elif endereco:
+            cidade = (endereco or {}).get("city")
+            uf = (endereco or {}).get("state")
+            if not coords and endereco:
                 # Fallback 1: rua + cidade; fallback 2: só a cidade
                 rua = endereco.get("street")
-                base = {"city": endereco.get("city"), "state": endereco.get("state")}
-                resultado = (rua and cls._nominatim({**base, "street": rua})) or cls._nominatim(base)
+                base = {"city": cidade, "state": uf}
+                coords = (rua and cls._nominatim({**base, "street": rua})) or cls._nominatim(base)
+            if coords:
+                resultado = {"lat": coords[0], "lng": coords[1], "cidade": cidade, "uf": uf}
         except requests.RequestException:
             logger.warning("Falha ao geocodificar CEP %s", cep)
             return None  # erro transitório: não grava no cache, tenta de novo depois
 
-        CacheService.set(chave_cache, list(resultado) if resultado else "nao_encontrado", CACHE_TTL_SEGUNDOS)
+        CacheService.set(chave_cache, resultado if resultado else "nao_encontrado", CACHE_TTL_SEGUNDOS)
         return resultado
 
     @classmethod
     def atualizar_geolocalizacao_professor(cls, professor: User) -> bool:
-        """Geocodifica professor.endereco_cep e grava lat/lng. Chame sempre
-        que o CEP do professor mudar (ver routes/professor_routes.py:
-        salvar_pagina_publica ou a rota que edita o cadastro). Retorna True
-        se o professor ficou com coordenadas."""
-        coords = cls.geocodificar_cep(professor.endereco_cep)
-        if coords:
-            professor.professor_latitude, professor.professor_longitude = coords
+        """Geocodifica professor.endereco_cep e grava lat/lng + cidade/UF.
+        Chame sempre que o CEP do professor mudar (ver
+        services/professor_perfil_service.py:atualizar_perfil). Retorna
+        True se o professor ficou com coordenadas."""
+        resultado = cls.geocodificar_cep(professor.endereco_cep)
+        if resultado:
+            professor.professor_latitude = resultado["lat"]
+            professor.professor_longitude = resultado["lng"]
+            professor.professor_cidade = resultado["cidade"]
+            professor.professor_uf = resultado["uf"]
             professor.professor_geo_atualizado_em = datetime.now(timezone.utc)
         else:
             professor.professor_latitude = professor.professor_longitude = None
+            professor.professor_cidade = professor.professor_uf = None
         db.session.commit()
-        return coords is not None
+        return resultado is not None
 
     @classmethod
     def geocodificar_pendentes(cls, limite: int = 50) -> int:
@@ -174,5 +186,43 @@ class GeolocalizacaoService(BaseService):
         return (
             User.query.filter(*cls._filtro_area(sul, oeste, norte, leste))
             .limit(LIMITE_PROFESSORES_POR_RESPOSTA)
+            .all()
+        )
+
+    # ------------------------------------------------------------
+    # Busca textual por cidade (reservado para uma busca no mapa que
+    # não dependa de bounding box -- ex: campo "Digite sua cidade").
+    # Ainda sem rota/UI própria; os métodos abaixo já ficam prontos.
+    # ------------------------------------------------------------
+
+    @classmethod
+    def buscar_por_cidade(cls, cidade: str, uf: Optional[str] = None, limite: int = 100):
+        """Professores visíveis no mapa numa cidade (case-insensitive).
+        Cidade sozinha é ambígua no Brasil (várias cidades repetem nome
+        em UFs diferentes) -- passe uf sempre que o front souber."""
+        filtros = [
+            User.tipo_usuario == "professor",
+            User.ativo.is_(True),
+            User.professor_visivel_no_mapa.is_(True),
+            func.lower(User.professor_cidade) == cidade.strip().lower(),
+        ]
+        if uf:
+            filtros.append(func.upper(User.professor_uf) == uf.strip().upper())
+        return User.query.filter(*filtros).limit(limite).all()
+
+    @classmethod
+    def cidades_com_professores(cls):
+        """Lista (cidade, uf, total) para popular um autocomplete de
+        busca por cidade, ordenada pelas cidades com mais professores."""
+        return (
+            db.session.query(User.professor_cidade, User.professor_uf, func.count(User.id))
+            .filter(
+                User.tipo_usuario == "professor",
+                User.ativo.is_(True),
+                User.professor_visivel_no_mapa.is_(True),
+                User.professor_cidade.isnot(None),
+            )
+            .group_by(User.professor_cidade, User.professor_uf)
+            .order_by(func.count(User.id).desc())
             .all()
         )

@@ -121,6 +121,12 @@ class User(UserMixin, db.Model):
     professor_latitude = db.Column(db.Float, nullable=True)
     professor_longitude = db.Column(db.Float, nullable=True)
     professor_geo_atualizado_em = db.Column(db.DateTime(timezone=True), nullable=True)
+    # Cidade/UF do endereco_cep, capturados junto com a geocodificação
+    # (mesma chamada à BrasilAPI) -- guardados à parte das coordenadas
+    # pra permitir busca textual por cidade no mapa (ex: "Jaraguá do Sul"),
+    # sem depender de bounding box.
+    professor_cidade = db.Column(db.String(120), nullable=True)
+    professor_uf = db.Column(db.String(2), nullable=True)
     # Opt-in -- o professor só aparece no mapa se marcar isto (padrão False).
     professor_visivel_no_mapa = db.Column(db.Boolean, nullable=False, default=False)
 

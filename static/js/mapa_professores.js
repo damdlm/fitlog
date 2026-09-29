@@ -61,9 +61,12 @@
             var linkPerfil = prof.slug
                 ? ' &middot; <a href="/professor/pagina/' + encodeURIComponent(prof.slug) + '" target="_blank">ver perfil</a>'
                 : '';
+            var cidadeUf = prof.cidade
+                ? '<br><small class="text-muted">' + escapar(prof.cidade) + (prof.uf ? '/' + escapar(prof.uf) : '') + '</small>'
+                : '';
             return (
                 '<div class="mb-2">' +
-                '<b>' + escapar(prof.nome) + '</b>' + linkPerfil + '<br>' +
+                '<b>' + escapar(prof.nome) + '</b>' + linkPerfil + cidadeUf + '<br>' +
                 '<form method="post" action="' + urlSolicitacao(prof.id) + '" class="mt-1">' +
                 '<input type="hidden" name="csrf_token" value="' + csrfToken + '">' +
                 '<button type="submit" class="btn btn-sm btn-primary">' +

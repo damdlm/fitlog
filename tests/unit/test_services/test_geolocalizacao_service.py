@@ -72,7 +72,11 @@ class TestGeocodificarCep:
 
         def get_falso(*a, **k):
             chamadas["total"] += 1
-            corpo = {"location": {"coordinates": {"latitude": "-26.48", "longitude": "-49.07"}}}
+            corpo = {
+                "city": "Jaraguá do Sul",
+                "state": "SC",
+                "location": {"coordinates": {"latitude": "-26.48", "longitude": "-49.07"}},
+            }
             return _RespostaFalsa(200, corpo)
 
         monkeypatch.setattr("services.geolocalizacao_service.requests.get", get_falso)
@@ -81,6 +85,18 @@ class TestGeocodificarCep:
             primeira = GeolocalizacaoService.geocodificar_cep("89251-000")
             segunda = GeolocalizacaoService.geocodificar_cep("89251-000")
 
-        assert primeira == (-26.48, -49.07)
-        assert segunda == (-26.48, -49.07)
+        esperado = {"lat": -26.48, "lng": -49.07, "cidade": "Jaraguá do Sul", "uf": "SC"}
+        assert primeira == esperado
+        assert segunda == esperado
         assert chamadas["total"] == 1
+
+    def test_cep_nao_encontrado_fica_em_cache_como_negativo(self, app, monkeypatch):
+        monkeypatch.setattr(
+            "services.geolocalizacao_service.requests.get",
+            lambda *a, **k: _RespostaFalsa(404, {}),
+        )
+
+        with app.app_context():
+            resultado = GeolocalizacaoService.geocodificar_cep("00000000")
+
+        assert resultado is None

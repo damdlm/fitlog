@@ -632,6 +632,8 @@ def api_professores_mapa():
             "id": professor.id,
             "nome": professor.nome_completo or professor.username,
             "slug": professor.professor_slug,
+            "cidade": professor.professor_cidade,
+            "uf": professor.professor_uf,
         })
 
     itens = [{"lat": lat, "lng": lng, "professores": lista} for (lat, lng), lista in pontos.items()]
