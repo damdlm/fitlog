@@ -1263,52 +1263,12 @@
         background: rgba(255,255,255,0.08);
         color: #fff;
     }
-
-    /* ===== Atalho leve pro volume por músculo (link, sem gráfico) ===== */
-    .cal-musculo-shortcut {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        background: var(--surface);
-        border-radius: 16px;
-        box-shadow: var(--shadow-elev);
-        padding: 14px 18px;
-        margin-top: 14px;
-        text-decoration: none;
-        transition: transform 0.15s ease;
-    }
-    .cal-musculo-shortcut:hover {
-        transform: translateY(-1px);
-    }
-    .cal-musculo-shortcut-texto {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        color: var(--text-primary);
-        font-weight: 600;
-        font-size: 0.88rem;
-    }
-    .cal-musculo-shortcut-icone {
-        width: 34px;
-        height: 34px;
-        border-radius: 10px;
-        background: rgba(242, 140, 51, 0.12);
-        color: var(--fl-accent);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-    .cal-musculo-shortcut-seta {
-        color: var(--text-muted);
-    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="calendar-page" id="calendarPage" data-theme="light">
-<div class="row mb-4">
+<div class="row mb-4{{ '' if aluno else ' d-none d-md-flex' }}">
     <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
         <h2 class="d-none d-md-block mb-0">
             <i class="bi bi-calendar-check me-2" style="color: #F28C33;"></i>
@@ -1383,17 +1343,6 @@
         <div id="calendar"></div>
     </div>
 </div>
-
-<!-- Atalho leve pro Volume por Músculo -- zero custo extra de carregamento
-     nesta página (sem Chart.js, sem fetch adicional). A análise pesada
-     (gráfico + ranking + comparação de período) mora só em Estatísticas. -->
-<a href="{{ url_for('aluno.estatisticas') }}#volumeMusculo" class="cal-musculo-shortcut">
-    <span class="cal-musculo-shortcut-texto">
-        <span class="cal-musculo-shortcut-icone"><i class="bi bi-bar-chart-steps"></i></span>
-        Ver volume e ranking por músculo
-    </span>
-    <i class="bi bi-chevron-right cal-musculo-shortcut-seta"></i>
-</a>
 
 <!-- Modal de Detalhes do Evento -->
 <div class="modal fade" id="eventoModal" tabindex="-1">
