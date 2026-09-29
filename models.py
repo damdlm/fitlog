@@ -114,6 +114,17 @@ class User(UserMixin, db.Model):
     aparecer_no_ranking = db.Column(db.Boolean, nullable=False, default=True)
 
     # =====================================================
+    # MAPA DE PROFESSORES (busca do aluno por região)
+    # =====================================================
+    # Calculado a partir de endereco_cep (services/geolocalizacao_service.py)
+    # sempre que o CEP muda. Nulo até a primeira geocodificação bem-sucedida.
+    professor_latitude = db.Column(db.Float, nullable=True)
+    professor_longitude = db.Column(db.Float, nullable=True)
+    professor_geo_atualizado_em = db.Column(db.DateTime(timezone=True), nullable=True)
+    # Opt-in -- o professor só aparece no mapa se marcar isto (padrão False).
+    professor_visivel_no_mapa = db.Column(db.Boolean, nullable=False, default=False)
+
+    # =====================================================
     # PÁGINA PÚBLICA DO PROFESSOR (só usado quando tipo_usuario='professor')
     # =====================================================
     # URL amigável e estável (ex: /professor/pagina/marcos-camargo) --

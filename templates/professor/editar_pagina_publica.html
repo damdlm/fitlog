@@ -104,6 +104,21 @@
                         </div>
                     </div>
 
+                    <div class="epp-field">
+                        <label for="ppCep" class="form-label">CEP</label>
+                        <input type="text" class="form-control" id="ppCep" name="endereco_cep" maxlength="9"
+                               value="{{ current_user.endereco_cep or '' }}" placeholder="00000-000">
+                        <div class="form-text">Usado só para te posicionar no mapa de busca do aluno.</div>
+                    </div>
+
+                    <div class="epp-field epp-toggle">
+                        <input class="form-check-input" type="checkbox" role="switch" name="visivel_no_mapa"
+                               id="ppVisivelMapa" {{ 'checked' if current_user.professor_visivel_no_mapa else '' }}>
+                        <label for="ppVisivelMapa">
+                            Aparecer no mapa de busca de professores
+                        </label>
+                    </div>
+
                     <div class="epp-field epp-toggle">
                         <input class="form-check-input" type="checkbox" role="switch" name="mostrar_avaliacoes"
                                id="ppMostrarAvaliacoes" {{ 'checked' if current_user.professor_mostrar_avaliacoes else '' }}>

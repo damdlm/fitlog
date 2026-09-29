@@ -9,3 +9,4 @@ from . import cadastro_treinos
 from . import versao
 from . import stats
 from . import ranking
+from . import mapa

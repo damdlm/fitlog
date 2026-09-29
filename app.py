@@ -537,6 +537,18 @@ def create_app(config_class=None):
             print(f"{removidos} snapshot(s) antigo(s) removido(s).")
 
     # =============================================================
+    # COMANDO CLI (mapa de professores)
+    # =============================================================
+    @app.cli.command("geocodificar-professores")
+    def geocodificar_professores():
+        """Geocodifica professores visíveis no mapa com CEP mas ainda
+        sem coordenadas (CEP inválido ou API fora do ar na hora do
+        cadastro). Rodar a cada ~30min via Railway Cron."""
+        from services.geolocalizacao_service import GeolocalizacaoService
+        total = GeolocalizacaoService.geocodificar_pendentes()
+        print(f"{total} professor(es) geocodificado(s).")
+
+    # =============================================================
     # CONTEXT
     # =============================================================
     from utils.format_utils import (

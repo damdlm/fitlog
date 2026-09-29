@@ -98,6 +98,9 @@ class ProfessorPerfilService(BaseService):
         if 'instagram.com/' in instagram:
             instagram = instagram.split('instagram.com/')[-1].split('/')[0].split('?')[0]
 
+        cep_bruto = (form.get('endereco_cep') or '').strip()
+        visivel_no_mapa = 'visivel_no_mapa' in form
+
         if len(tagline) > TAGLINE_TAMANHO_MAXIMO:
             return False, f'A frase de impacto pode ter no máximo {TAGLINE_TAMANHO_MAXIMO} caracteres.'
         if len(bio) > BIO_TAMANHO_MAXIMO:
@@ -118,8 +121,19 @@ class ProfessorPerfilService(BaseService):
             # Checkbox desmarcado não vem no POST -- ausência = False
             # (mesmo padrão de auth_routes.update_profile).
             professor.professor_mostrar_avaliacoes = 'mostrar_avaliacoes' in form
+
+            from services.geolocalizacao_service import GeolocalizacaoService
+            cep_normalizado = GeolocalizacaoService.normalizar_cep(cep_bruto)
+            cep_mudou = cep_normalizado != professor.endereco_cep
+            professor.endereco_cep = cep_normalizado
+            professor.professor_visivel_no_mapa = visivel_no_mapa
+
             ProfessorPerfilService.garantir_slug(professor)
             db.session.commit()
+
+            if cep_mudou and cep_normalizado:
+                GeolocalizacaoService.atualizar_geolocalizacao_professor(professor)
+
             return True, 'Página atualizada com sucesso!'
         except Exception:
             db.session.rollback()
