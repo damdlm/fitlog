@@ -43,13 +43,18 @@
         return urlSolicitacaoBase.replace(/\/0(?:$|\?)/, '/' + professorId);
     }
 
+    function classeCluster(total) {
+        // Mesmos limiares do _defaultIconCreateFunction do plugin oficial
+        if (total < 10) { return 'marker-cluster-small'; }
+        if (total < 100) { return 'marker-cluster-medium'; }
+        return 'marker-cluster-large';
+    }
+
     function criarBolha(item) {
-        var tamanho = Math.min(30 + String(item.total).length * 8 + Math.log2(item.total) * 4, 64);
         var icone = L.divIcon({
-            html: '<div class="bolha-prof" style="width:' + tamanho + 'px;height:' + tamanho + 'px">' +
-                  item.total + '</div>',
-            className: '',
-            iconSize: [tamanho, tamanho]
+            html: '<div><span>' + item.total + '</span></div>',
+            className: 'marker-cluster ' + classeCluster(item.total),
+            iconSize: [40, 40]
         });
         return L.marker([item.lat, item.lng], { icon: icone }).on('click', function () {
             mapa.setView([item.lat, item.lng], Math.min(mapa.getZoom() + 2, 18));
