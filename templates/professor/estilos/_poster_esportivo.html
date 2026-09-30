@@ -1,0 +1,130 @@
+{# Poster público — Estilo 5: Esportivo
+   Baseado no layout enviado pelo projeto. O conteúdo dinâmico permanece igual;
+   somente a identidade visual é específica deste estilo.
+#}
+{% set partes_nome = nome_exibicao.split(' ') %}
+{% set primeiro_nome = partes_nome[0] %}
+{% set sobrenome = partes_nome[1:] | join(' ') %}
+
+<div class="pp-page pp-page-estilo-5">
+    <div class="pp-column">
+        <article class="pp-poster pp-poster-estilo-5">
+
+            <div class="pp-sport-texture" aria-hidden="true"></div>
+            <div class="pp-sport-brush pp-sport-brush-left" aria-hidden="true"></div>
+            <div class="pp-sport-brush pp-sport-brush-right" aria-hidden="true"></div>
+
+            {% if not embed %}
+            <div class="pp-actions">
+                <button type="button"
+                        id="ppShareBtn"
+                        class="pp-action"
+                        data-url="{{ canonical_url() }}"
+                        data-titulo="{{ nome_exibicao }} — FitLog"
+                        title="Compartilhar"
+                        aria-label="Compartilhar">
+                    <i class="bi bi-share-fill"></i>
+                </button>
+
+                {% if eh_dono %}
+                <a href="{{ url_for('professor.editar_pagina_publica') }}"
+                   class="pp-action"
+                   title="Editar dados"
+                   aria-label="Editar dados">
+                    <i class="bi bi-pencil-fill"></i>
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="pp-photo-area">
+                <div class="pp-ring">
+                    <div class="pp-photo">
+                        {% if professor.professor_foto_url %}
+                            <img src="{{ professor.professor_foto_url }}" alt="Foto de {{ nome_exibicao }}">
+                        {% else %}
+                            <div class="pp-placeholder">
+                                <svg viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <circle cx="50" cy="28" r="20" fill="#4a4a4a"/>
+                                    <path d="M10 95c2-28 20-42 40-42s38 14 40 42z" fill="#4a4a4a"/>
+                                </svg>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="pp-eyebrow">Personal Trainer</div>
+
+            <div class="pp-name">
+                {% if sobrenome %}
+                    <span class="pp-name-first">{{ primeiro_nome | upper }}</span>
+                    <span class="pp-name-last">{{ sobrenome | upper }}</span>
+                {% else %}
+                    <span class="pp-name-last">{{ primeiro_nome | upper }}</span>
+                {% endif %}
+            </div>
+
+            {% if professor.professor_cref %}
+            <div class="pp-cref">CREF {{ professor.professor_cref }}</div>
+            {% endif %}
+
+            {% if professor.professor_tagline %}
+            <p class="pp-tagline">{{ professor.professor_tagline }}</p>
+            {% endif %}
+
+            <div class="pp-services">
+                {% for servico in servicos %}
+                <div class="pp-service">
+                    <span class="pp-service-title">{{ servico.titulo }}</span>
+                    <p>{{ servico.descricao }}</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if professor.professor_mostrar_avaliacoes and resumo_avaliacoes.total > 0 %}
+            {% set media = resumo_avaliacoes.media %}
+            <div class="pp-rating-info"
+                 role="img"
+                 aria-label="Nota média {{ media }} de 5, com {{ resumo_avaliacoes.total }} avaliação{{ 'ões' if resumo_avaliacoes.total != 1 else '' }} de alunos">
+                <span class="pp-rating-stars" aria-hidden="true">
+                    {% for i in range(1, 6) %}
+                    <span class="pp-star {{ 'pp-star-full' if media >= i - 0.25 else ('pp-star-half' if media >= i - 0.75 else 'pp-star-empty') }}">★</span>
+                    {% endfor %}
+                </span>
+                <span class="pp-rating-score" aria-hidden="true">{{ '%.1f'|format(media)|replace('.', ',') }}</span>
+                <span class="pp-rating-count" aria-hidden="true">{{ resumo_avaliacoes.total }} avaliação{{ 'ões' if resumo_avaliacoes.total != 1 else '' }}</span>
+            </div>
+            {% endif %}
+
+            {% if professor.professor_instagram %}
+            <div class="pp-social">
+                <a href="https://instagram.com/{{ professor.professor_instagram }}"
+                   target="_blank"
+                   rel="noopener">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 2c-2.7 0-3 0-4.1.06-1.1.05-1.8.22-2.5.47a5 5 0 00-1.8 1.17 5 5 0 00-1.17 1.8c-.25.7-.42 1.4-.47 2.5C2 8.9 2 9.2 2 12s0 3 .06 4.1c.05 1.1.22 1.8.47 2.5a5 5 0 001.17 1.8 5 5 0 001.8 1.17c.7.25 1.4.42 2.5.47C9 22 9.2 22 12 22s3 0 4.1-.06c1.1-.05 1.8-.22 2.5-.47a5 5 0 001.8-1.17 5 5 0 001.17-1.8c.25-.7.42-1.4.47-2.5.06-1.1.06-1.4.06-4.1s0-3-.06-4.1c-.05-1.1-.22-1.4-.47-2.5a5 5 0 00-1.17-1.8 5 5 0 00-1.8-1.17c-.7-.25-1.4-.42-2.5-.47C15 2 14.7 2 12 2zm0 4.9a5.1 5.1 0 110 10.2 5.1 5.1 0 010-10.2zm0 1.8a3.3 3.3 0 100 6.6 3.3 3.3 0 000-6.6zm5.3-2a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"/>
+                    </svg>
+                    @{{ professor.professor_instagram }}
+                </a>
+            </div>
+            {% endif %}
+        </article>
+
+        {% if professor.professor_bio or especialidades %}
+        <section class="pp-about pp-about-estilo-5">
+            <div class="pp-section-title">Sobre mim</div>
+            {% if professor.professor_bio %}
+            <p class="pp-about-text">{{ professor.professor_bio }}</p>
+            {% endif %}
+            {% if especialidades %}
+            <div class="pp-chips">
+                {% for esp in especialidades %}
+                <span class="pp-chip">{{ esp }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </section>
+        {% endif %}
+    </div>
+</div>

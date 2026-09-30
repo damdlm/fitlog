@@ -121,5 +121,40 @@ def test_arquivos_de_cada_estilo_existem():
     import os
     raiz = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
     for estilo in ESTILOS_PAGINA.values():
+        if estilo.get('base'):
+            assert os.path.isfile(os.path.join(raiz, 'static', estilo['base'])), estilo['base']
         assert os.path.isfile(os.path.join(raiz, 'static', estilo['css'])), estilo['css']
         assert os.path.isfile(os.path.join(raiz, 'templates', estilo['template'])), estilo['template']
+
+
+@pytest.mark.parametrize('chave', list(ESTILOS_PAGINA))
+def test_cada_estilo_renderiza_com_seu_css_html_e_base(app, client, professor, chave):
+    """Todos os estilos registrados renderizam a página pública (normal e
+    embed) com o CSS do estilo, o CSS base quando o estilo declara um, e
+    nunca carregam o CSS de outro estilo."""
+    uid, slug = professor
+    _login(client)
+    assert 'Página atualizada com sucesso!'.encode() in _salvar(client, estilo_pagina=chave).data
+    info = ESTILOS_PAGINA[chave]
+
+    for url in (f'/professor/pagina/{slug}', f'/professor/pagina/{slug}?embed=1'):
+        resp = client.get(url)
+        assert resp.status_code == 200, (chave, url)
+        assert info['css'].encode() in resp.data
+        if info.get('base'):
+            assert info['base'].encode() in resp.data
+            # a base precisa vir ANTES do CSS do estilo
+            assert resp.data.index(info['base'].encode()) < resp.data.index(info['css'].encode())
+        for outra, outra_info in ESTILOS_PAGINA.items():
+            if outra != chave:
+                assert outra_info['css'].encode() not in resp.data, (chave, outra)
+        assert b'FELIPE' in resp.data and b'LUIS' in resp.data
+
+
+def test_estilos_moderno_e_esportivo_tem_marcadores_proprios(app, client, professor):
+    _, slug = professor
+    _login(client)
+    _salvar(client, estilo_pagina='moderno')
+    assert b'pp-poster-estilo-2' in client.get(f'/professor/pagina/{slug}').data
+    _salvar(client, estilo_pagina='esportivo')
+    assert b'pp-poster-estilo-5' in client.get(f'/professor/pagina/{slug}').data

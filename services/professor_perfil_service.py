@@ -52,6 +52,23 @@ ESTILOS_PAGINA = {
         'css': 'css/professor-estilos/textura.css',
         'template': 'professor/estilos/_poster_textura.html',
     },
+    # Moderno e Esportivo só definem a identidade visual (cores,
+    # fundos, decoração): o layout vem do CSS estrutural em 'base',
+    # carregado antes do CSS do estilo.
+    'moderno': {
+        'rotulo': 'Moderno',
+        'descricao': 'Cartão claro e limpo, com detalhes em laranja.',
+        'base': 'css/professor-estilos/base.css',
+        'css': 'css/professor-estilos/moderno.css',
+        'template': 'professor/estilos/_poster_moderno.html',
+    },
+    'esportivo': {
+        'rotulo': 'Esportivo',
+        'descricao': 'Escuro e intenso, com pinceladas laranja.',
+        'base': 'css/professor-estilos/base.css',
+        'css': 'css/professor-estilos/esportivo.css',
+        'template': 'professor/estilos/_poster_esportivo.html',
+    },
 }
 
 # Descrição curta de cada especialidade, usada nas 3 caixas de destaque

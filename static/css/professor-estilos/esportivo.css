@@ -1,0 +1,247 @@
+/*
+ * FitLog — Página pública — Estilo 05
+ * Esportivo
+ *
+ * Este arquivo é específico do estilo 5.
+ * Deve ser carregado depois do CSS estrutural/base da página pública.
+ */
+
+.pp-page-estilo-5 {
+    --pp5-orange: #ff7900;
+    --pp5-orange-2: #ff9a1f;
+    --pp5-black: #030506;
+    --pp5-dark: #080d11;
+    --pp5-dark-2: #10171c;
+    --pp5-white: #ffffff;
+    --pp5-muted: rgba(255,255,255,.70);
+    background: #020304;
+}
+
+.pp-poster-estilo-5 {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    min-height: 100%;
+    color: #fff;
+    background:
+        radial-gradient(circle at 73% 12%, rgba(255,121,0,.17), transparent 24%),
+        radial-gradient(circle at 20% 72%, rgba(255,121,0,.07), transparent 30%),
+        linear-gradient(145deg, #020405 0%, #0a1014 48%, #030506 100%);
+    border: 1px solid rgba(255,255,255,.11);
+    border-radius: 18px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.34);
+}
+
+/* Textura pontilhada/granulada, semelhante ao fundo esportivo do exemplo 05. */
+.pp-sport-texture {
+    position: absolute;
+    z-index: -2;
+    inset: 0;
+    opacity: .20;
+    pointer-events: none;
+    background-image:
+        radial-gradient(circle, rgba(255,255,255,.42) 0 1px, transparent 1.3px),
+        radial-gradient(circle, rgba(255,255,255,.22) 0 .8px, transparent 1.2px);
+    background-size: 19px 19px, 31px 31px;
+    background-position: 0 0, 8px 11px;
+    mix-blend-mode: overlay;
+}
+
+/* Pinceladas diagonais laranja. */
+.pp-sport-brush {
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    width: 285px;
+    height: 145px;
+    opacity: .95;
+    background:
+        linear-gradient(153deg,
+            transparent 0 13%,
+            var(--pp5-orange) 13% 18%,
+            transparent 18% 27%,
+            rgba(255,121,0,.78) 27% 32%,
+            transparent 32% 43%,
+            var(--pp5-orange) 43% 48%,
+            transparent 48% 59%,
+            rgba(255,154,31,.78) 59% 64%,
+            transparent 64%);
+    filter: drop-shadow(0 0 5px rgba(255,121,0,.10));
+}
+
+.pp-sport-brush-left {
+    left: -115px;
+    top: 120px;
+    transform: rotate(-12deg);
+}
+
+.pp-sport-brush-right {
+    right: -105px;
+    top: 75px;
+    transform: rotate(-8deg) scaleX(-1);
+}
+
+.pp-poster-estilo-5 .pp-actions {
+    z-index: 5;
+}
+
+.pp-poster-estilo-5 .pp-action {
+    color: #fff;
+    background: rgba(0,0,0,.42);
+    border: 1px solid rgba(255,121,0,.45);
+    box-shadow: 0 5px 18px rgba(0,0,0,.22);
+}
+
+.pp-poster-estilo-5 .pp-photo-area {
+    position: relative;
+    z-index: 3;
+}
+
+.pp-poster-estilo-5 .pp-ring {
+    padding: 5px;
+    background: #030506;
+    border: 3px solid var(--pp5-orange);
+    box-shadow:
+        0 0 0 2px rgba(255,121,0,.18),
+        0 0 30px rgba(255,121,0,.22);
+}
+
+.pp-poster-estilo-5 .pp-photo {
+    overflow: hidden;
+    border-radius: 50%;
+    background: #11181d;
+}
+
+.pp-poster-estilo-5 .pp-photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pp-poster-estilo-5 .pp-eyebrow {
+    color: var(--pp5-orange);
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    text-shadow: 0 2px 10px rgba(0,0,0,.55);
+}
+
+.pp-poster-estilo-5 .pp-name {
+    color: #fff;
+    font-weight: 950;
+    letter-spacing: -.045em;
+    line-height: .94;
+    text-transform: uppercase;
+    text-shadow: 0 3px 16px rgba(0,0,0,.48);
+}
+
+.pp-poster-estilo-5 .pp-name-first {
+    color: #fff;
+}
+
+.pp-poster-estilo-5 .pp-name-last {
+    color: var(--pp5-orange);
+}
+
+.pp-poster-estilo-5 .pp-cref {
+    color: rgba(255,255,255,.68);
+    font-size: .70rem;
+    letter-spacing: .08em;
+}
+
+.pp-poster-estilo-5 .pp-tagline {
+    color: rgba(255,255,255,.91);
+    line-height: 1.42;
+    text-shadow: 0 2px 8px rgba(0,0,0,.58);
+}
+
+.pp-poster-estilo-5 .pp-services {
+    position: relative;
+    z-index: 3;
+}
+
+.pp-poster-estilo-5 .pp-service {
+    min-height: 76px;
+    background: rgba(3,7,9,.74);
+    border: 1px solid rgba(255,121,0,.76);
+    border-radius: 10px;
+    box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.025),
+        0 6px 18px rgba(0,0,0,.18);
+    transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+}
+
+.pp-poster-estilo-5 .pp-service:hover {
+    transform: translateY(-2px);
+    background: rgba(255,121,0,.11);
+    box-shadow: 0 10px 25px rgba(255,121,0,.12);
+}
+
+.pp-poster-estilo-5 .pp-service-title {
+    color: #fff;
+    font-weight: 800;
+}
+
+.pp-poster-estilo-5 .pp-service p {
+    color: rgba(255,255,255,.64);
+}
+
+.pp-poster-estilo-5 .pp-rating-info {
+    background: rgba(255,255,255,.065);
+    border: 1px solid rgba(255,255,255,.17);
+    border-radius: 12px;
+    color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.pp-poster-estilo-5 .pp-rating-score,
+.pp-poster-estilo-5 .pp-star-full,
+.pp-poster-estilo-5 .pp-star-half {
+    color: var(--pp5-orange);
+}
+
+.pp-poster-estilo-5 .pp-star-empty {
+    color: rgba(255,255,255,.24);
+}
+
+.pp-poster-estilo-5 .pp-social a {
+    color: var(--pp5-orange);
+}
+
+.pp-about-estilo-5 {
+    color: #fff;
+    background:
+        linear-gradient(145deg, #05080a, #0b1217);
+    border: 1px solid rgba(255,121,0,.30);
+    border-radius: 15px;
+    box-shadow: 0 12px 34px rgba(0,0,0,.27);
+}
+
+.pp-about-estilo-5 .pp-section-title {
+    color: #fff;
+}
+
+.pp-about-estilo-5 .pp-about-text {
+    color: rgba(255,255,255,.76);
+}
+
+.pp-about-estilo-5 .pp-chip {
+    color: #fff;
+    background: rgba(255,121,0,.08);
+    border: 1px solid rgba(255,121,0,.66);
+}
+
+@media (max-width: 575.98px) {
+    .pp-poster-estilo-5 {
+        border-radius: 13px;
+    }
+
+    .pp-sport-brush {
+        opacity: .72;
+        transform: scale(.82) rotate(-8deg);
+    }
+}
