@@ -75,11 +75,27 @@
        mesma classe usada em versoes.html/exercicios.html. */
     .mapa-mobile-header {
         display: none;
+        align-items: center;
+        gap: 8px;
         padding: 10px 12px;
+    }
+    .mapa-mobile-header .btn-voltar {
+        flex: 0 0 auto;
+    }
+    .mapa-busca-cidade {
+        flex: 1 1 auto;
+        min-width: 0;
     }
     #msg {
         min-height: 1.4em;
         font-size: .85rem;
+    }
+    #mapa-busca-erro {
+        display: none;
+        color: #dc3545;
+        font-size: .78rem;
+        margin-top: 4px;
+        padding: 0 12px;
     }
 
     @media (min-width: 992px) {
@@ -102,36 +118,48 @@
 
     @media (max-width: 991.98px) {
         .mapa-mobile-header {
-            display: block;
+            display: flex;
         }
         /* Cancela o margin do <main class="container my-4"> (base.html)
-           e o gutter lateral do .container do Bootstrap (12px = metade
-           de --bs-gutter-x, mesmo valor já usado em auth-login.css)
-           pra a página ficar de fato encostada nas bordas da tela. */
+           e o gutter lateral do .container do Bootstrap -- controle
+           total do espaçamento é feito abaixo, no .mapa-conteudo-inner,
+           pra sobrar uma bordinha cinza (fundo da página) igual dos
+           dois lados e embaixo do mapa. */
         .mapa-page {
             margin: -1.5rem -12px;
+        }
+        .mapa-conteudo-inner {
+            padding: 0 12px 12px;
         }
         #msg {
             display: none;
         }
         #mapa {
-            border-radius: 0;
+            border-radius: 8px;
             /* 70px do navbar sticky (mesma referência de base.html /
                auth-login.css) + 78px reservados pra barra inferior
-               (body.has-bottom-nav) + 52px do botão "Voltar" acima
-               (btn-sm ~32px + 10px de padding em cima/embaixo). */
-            height: calc(100vh - 70px - 78px - 52px);
-            height: calc(100dvh - 70px - 78px - 52px);
+               (body.has-bottom-nav) + 52px do cabeçalho acima (botão
+               Voltar/busca, ~32px + 10px de padding em cima/embaixo)
+               + 12px da bordinha cinza que sobra embaixo do mapa. */
+            height: calc(100vh - 70px - 78px - 52px - 12px);
+            height: calc(100dvh - 70px - 78px - 52px - 12px);
         }
     }
 </style>
 
 <div class="mapa-page">
     <div class="mapa-mobile-header d-lg-none">
-        <a href="{{ url_for('aluno.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+        <a href="{{ url_for('aluno.dashboard') }}" class="btn btn-sm btn-outline-secondary btn-voltar">
             <i class="bi bi-arrow-left"></i> Voltar
         </a>
+        <form id="mapaBuscaCidadeForm" class="input-group input-group-sm mapa-busca-cidade" autocomplete="off">
+            <input type="text" id="mapaBuscaCidadeInput" class="form-control" placeholder="Buscar cidade...">
+            <button type="submit" class="btn btn-outline-secondary" aria-label="Buscar cidade">
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
     </div>
+    <div id="mapa-busca-erro"></div>
 
     <div class="mapa-conteudo-inner">
         <div class="mapa-card">
@@ -156,7 +184,7 @@
     window.FITLOG_MAPA_CSRF_TOKEN = "{{ csrf_token() }}";
     window.FITLOG_MAPA_URL_SOLICITACAO = "{{ url_for('aluno.enviar_solicitacao', professor_id=0) }}";
 </script>
-<script src="{{ url_for('static', filename='js/mapa_professores.js') }}?v=5"></script>
+<script src="{{ url_for('static', filename='js/mapa_professores.js') }}?v=6"></script>
 
 {% set pp_modal_force = true %}
 {% include "professor/_modal_ver_pagina.html" %}

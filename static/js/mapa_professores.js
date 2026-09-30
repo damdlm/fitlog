@@ -129,4 +129,37 @@
         temporizador = setTimeout(carregar, esperaMs);
     });
     carregar();
+
+    // Busca por cidade -- geocodifica texto livre via nosso backend
+    // (o CSP do app só libera connect-src 'self', então não dá pra
+    // chamar o Nominatim direto do navegador) e foca o mapa lá, mesmo
+    // sem nenhum professor cadastrado na região.
+    var formBusca = document.getElementById('mapaBuscaCidadeForm');
+    var inputBusca = document.getElementById('mapaBuscaCidadeInput');
+    var erroBusca = document.getElementById('mapa-busca-erro');
+    var ZOOM_CIDADE = 12;
+
+    if (formBusca) {
+        formBusca.addEventListener('submit', function (ev) {
+            ev.preventDefault();
+            var texto = inputBusca.value.trim();
+            if (!texto) { return; }
+
+            erroBusca.style.display = 'none';
+            fetch('/api/professores/mapa/buscar-local?q=' + encodeURIComponent(texto))
+                .then(function (resposta) { return resposta.json().then(function (j) { return { ok: resposta.ok, j: j }; }); })
+                .then(function (res) {
+                    if (!res.ok) {
+                        erroBusca.textContent = res.j.erro || 'Local não encontrado';
+                        erroBusca.style.display = 'block';
+                        return;
+                    }
+                    mapa.setView([res.j.lat, res.j.lng], ZOOM_CIDADE);
+                })
+                .catch(function () {
+                    erroBusca.textContent = 'Erro de conexão';
+                    erroBusca.style.display = 'block';
+                });
+        });
+    }
 })();

@@ -671,3 +671,20 @@ def api_professores_mapa():
         for (lat, lng), lista in pontos.items()
     ]
     return jsonify(itens=itens)
+
+
+@api_bp.route("/professores/mapa/buscar-local")
+@login_required
+def api_mapa_buscar_local():
+    """Geocodifica o texto digitado na busca por cidade do mapa (ver
+    static/js/mapa_professores.js) -- não filtra por professor nenhum,
+    é só "onde fica essa cidade" pro mapa focar ali, mesmo sem
+    professor cadastrado na região."""
+    texto = (request.args.get("q") or "").strip()
+    if not texto:
+        return jsonify(erro="Digite uma cidade"), 400
+
+    resultado = GeolocalizacaoService.buscar_local(texto)
+    if not resultado:
+        return jsonify(erro="Local não encontrado"), 404
+    return jsonify(resultado)

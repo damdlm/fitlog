@@ -25,6 +25,7 @@ TIMEOUT_SEGUNDOS = 4  # nunca deixar o cadastro/edição do perfil travado
 USER_AGENT = {"User-Agent": "FitLog/1.0 (contato@fitlog.vip)"}  # exigido pelo Nominatim
 CACHE_TTL_SEGUNDOS = 60 * 60 * 24 * 30  # 30 dias -- coordenadas de um CEP não mudam
 CACHE_PREFIXO = "geocep:"
+CACHE_TTL_LOCAL_SEGUNDOS = 60 * 60 * 24 * 7  # 7 dias -- busca livre (nome de cidade)
 
 ZOOM_MINIMO_PONTOS_INDIVIDUAIS = 11  # abaixo disso, o mapa mostra clusters
 LIMITE_PROFESSORES_POR_RESPOSTA = 300
@@ -69,6 +70,48 @@ class GeolocalizacaoService(BaseService):
             item = resposta.json()[0]
             return float(item["lat"]), float(item["lon"])
         return None
+
+    @classmethod
+    def buscar_local(cls, texto: str) -> Optional[dict]:
+        """Geocodifica um texto livre (nome de cidade, sem CEP) pro campo
+        de busca do mapa -- retorna {"lat", "lng", "nome"} ou None.
+        Diferente de geocodificar_cep: não precisa existir professor
+        nenhum lá, é só "onde fica essa cidade" pro mapa focar.
+        Cacheado por menos tempo que o CEP (aqui o texto digitado varia
+        muito mais: "sao paulo", "São Paulo, SP" etc. são chaves de
+        cache diferentes, então não vale a pena guardar por 30 dias)."""
+        texto = (texto or "").strip()
+        if not texto or len(texto) > 120:
+            return None
+
+        chave_cache = f"geolocal:{texto.lower()}"
+        em_cache = CacheService.get(chave_cache)
+        if em_cache == "nao_encontrado":
+            return None
+        if isinstance(em_cache, dict):
+            return em_cache
+
+        resultado = None
+        try:
+            resposta = requests.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={"q": texto, "country": "Brazil", "format": "json", "limit": 1},
+                headers=USER_AGENT,
+                timeout=TIMEOUT_SEGUNDOS,
+            )
+            if resposta.status_code == 200 and resposta.json():
+                item = resposta.json()[0]
+                resultado = {
+                    "lat": float(item["lat"]),
+                    "lng": float(item["lon"]),
+                    "nome": item.get("display_name", texto).split(",")[0],
+                }
+        except requests.RequestException:
+            logger.warning("Falha ao buscar local '%s'", texto)
+            return None  # erro transitório: não grava no cache
+
+        CacheService.set(chave_cache, resultado if resultado else "nao_encontrado", CACHE_TTL_LOCAL_SEGUNDOS)
+        return resultado
 
     @classmethod
     def geocodificar_cep(cls, cep: Optional[str]) -> Optional[dict]:
