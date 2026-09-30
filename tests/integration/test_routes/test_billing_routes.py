@@ -890,3 +890,106 @@ class TestTelaAssinaturaDesativada:
         resp = client.get('/aluno/dashboard')
         assert resp.status_code == 200
         assert b'Minha Assinatura' in resp.data
+
+
+# ---------------------------------------------------------------------
+# Link da notificação "Seu plano expirou" / "Assinatura cancelada" /
+# "Hora de fazer upgrade" -- bug real reportado pelo usuário: o campo
+# `url` dessas notificações era gravado como '/minha-assinatura', sem
+# o prefixo '/billing' do blueprint (routes/__init__.py registra
+# billing_bp em '/billing'), e o clique caía em 404. Estes testes
+# reproduzem o fluxo completo: gera a notificação de verdade, pega a
+# URL exatamente como o front-end faz (`item.href = n.url`, ver
+# static/js/modules/notificacoes.js) e clica nela.
+# ---------------------------------------------------------------------
+class TestLinkDasNotificacoesDeBilling:
+    def test_clicar_na_notificacao_de_plano_vencido_nao_da_404(self, client, app):
+        with app.app_context():
+            aluno = _criar_usuario('clica_notif_vencido')
+            assinatura = Assinatura(
+                usuario_id=aluno.id, status='past_due',
+                vencido_em=datetime.now(timezone.utc) - timedelta(days=1),
+            )
+            db.session.add(assinatura)
+            db.session.commit()
+
+            total = BillingService.notificar_vencimentos_pendentes()
+            assert total == 1
+            from models import Notificacao
+            notificacao = Notificacao.query.filter_by(destinatario_id=aluno.id).first()
+            url_da_notificacao = notificacao.url
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        # exatamente o que acontece quando a pessoa clica na notificação
+        resp = client.get(url_da_notificacao)
+        assert resp.status_code == 200, (
+            f'clicar na notificação de plano vencido levou a {resp.status_code} '
+            f'em {url_da_notificacao} -- deveria abrir a tela de assinatura'
+        )
+        assert 'Minha Assinatura'.encode('utf-8') in resp.data or b'assinatura' in resp.data.lower()
+
+    def test_clicar_na_notificacao_de_assinatura_cancelada_nao_da_404(self, client, app, monkeypatch):
+        class _RespostaFake:
+            def __init__(self, json_data, status_code=200):
+                self._json = json_data
+                self.status_code = status_code
+                self.text = str(json_data)
+
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return self._json
+
+        monkeypatch.setattr('services.billing_service.requests.get',
+                             lambda *a, **k: _RespostaFake({'nextDueDate': '2026-11-15'}))
+        monkeypatch.setattr('services.billing_service.requests.delete',
+                             lambda *a, **k: _RespostaFake({}))
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            aluno = _criar_usuario('clica_notif_cancelada')
+            assinatura = BillingService.iniciar_trial(aluno)
+            assinatura.status = 'active'
+            assinatura.gateway_subscription_id = 'sub_clica_notif'
+            db.session.commit()
+
+            BillingService.cancelar_assinatura(aluno)
+            from models import Notificacao
+            notificacao = Notificacao.query.filter_by(destinatario_id=aluno.id).first()
+            assert notificacao is not None
+            url_da_notificacao = notificacao.url
+            aluno_ref = User.query.get(aluno.id)
+
+        _login(client, aluno_ref)
+        resp = client.get(url_da_notificacao)
+        assert resp.status_code == 200, (
+            f'clicar na notificação de assinatura cancelada levou a {resp.status_code} '
+            f'em {url_da_notificacao}'
+        )
+
+    def test_clicar_na_notificacao_de_upgrade_de_tier_nao_da_404(self, client, app):
+        with app.app_context():
+            _criar_planos()
+            professor = _criar_usuario('clica_notif_upgrade', tipo_usuario='professor')
+            assinatura = Assinatura(usuario_id=professor.id, status='active',
+                                     plano_id=Plano.query.filter_by(codigo='professor_pro').first().id)
+            db.session.add(assinatura)
+            db.session.commit()
+            _vincular_alunos(professor, 10)  # passa da faixa do Pró
+            db.session.commit()
+
+            total = BillingService.notificar_professores_tier_desatualizado()
+            assert total == 1
+            from models import Notificacao
+            notificacao = Notificacao.query.filter_by(destinatario_id=professor.id).first()
+            url_da_notificacao = notificacao.url
+            professor_ref = User.query.get(professor.id)
+
+        _login(client, professor_ref)
+        resp = client.get(url_da_notificacao)
+        assert resp.status_code == 200, (
+            f'clicar na notificação de upgrade de plano levou a {resp.status_code} '
+            f'em {url_da_notificacao}'
+        )

@@ -983,7 +983,10 @@ class TestNotificarVencimentosPendentes:
                 'Seu plano expirou, faça uma nova assinatura para '
                 'aproveitar todos os recursos do FitLog.'
             )
-            assert notificacao.url == '/minha-assinatura'
+            # bug real: url gravada sem o prefixo /billing do blueprint
+            # (routes/__init__.py registra billing_bp em '/billing'), o
+            # que fazia o link da notificação cair em 404 ao clicar.
+            assert notificacao.url == '/billing/minha-assinatura'
             db.session.refresh(assinatura)
             assert assinatura.ultima_notificacao_vencimento_dias == 1
 
@@ -1058,6 +1061,9 @@ class TestNotificarVencimentosPendentes:
             notificacao = Notificacao.query.filter_by(destinatario_id=aluno.id).first()
             assert notificacao is not None
             assert notificacao.tipo == 'plano_vencido'
+            # bug real: faltava o prefixo /billing do blueprint, e o link
+            # da notificação caía em 404 ao clicar.
+            assert notificacao.url == '/billing/minha-assinatura'
 
     def test_confirmacao_de_pagamento_limpa_vencido_em(self, app):
         with app.app_context():
@@ -1792,6 +1798,9 @@ class TestCancelarAssinatura:
             assert notificacao is not None
             assert notificacao.tipo == 'assinatura_cancelada'
             assert '15/11/2026' in notificacao.mensagem
+            # bug real: faltava o prefixo /billing do blueprint, e o link
+            # da notificação caía em 404 ao clicar.
+            assert notificacao.url == '/billing/minha-assinatura'
 
     def test_cancelamento_sem_confirmar_prazo_notifica_encerramento_imediato(self, app, monkeypatch):
         monkeypatch.setattr(
@@ -1843,6 +1852,9 @@ class TestNotificarProfessoresTierDesatualizado:
             assert notificacao is not None
             assert notificacao.tipo == 'tier_desatualizado'
             assert 'Premium' in notificacao.mensagem
+            # bug real: faltava o prefixo /billing do blueprint, e o link
+            # da notificação caía em 404 ao clicar.
+            assert notificacao.url == '/billing/minha-assinatura'
             db.session.refresh(assinatura)
             assert assinatura.tier_desatualizado_notificado_em is not None
 
