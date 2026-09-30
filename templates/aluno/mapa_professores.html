@@ -43,12 +43,102 @@
     .marker-cluster-large div {
         background-color: rgba(241, 128, 23, 0.6);
     }
+
+    /* --- Layout da página ---
+       #mapa fica sempre no mesmo lugar do DOM, nunca dentro de um
+       ancestral que vire display:none -- o Leaflet mede a largura/
+       altura do container na hora que inicializa
+       (static/js/mapa_professores.js), e se estiver escondido nesse
+       momento o mapa nasce com tamanho zero e fica quebrado mesmo
+       depois de reaparecer. Por isso o cabeçalho mobile (título +
+       voltar) e o cabeçalho desktop (título + "Buscar por nome" +
+       texto) são blocos SEPARADOS, cada um escondido por vez via
+       d-none/d-lg-*, e o .mapa-card que envolve #msg/#mapa nunca
+       desaparece -- só perde padding/borda/sombra no mobile. */
+    .mapa-mobile-header {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+    }
+    .mapa-voltar-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        flex: 0 0 auto;
+        border-radius: 8px;
+        border: 1px solid rgba(0, 0, 0, .12);
+        color: #495057;
+        font-size: 1.15rem;
+    }
+    .mapa-mobile-header h1 {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin: 0;
+        color: #212529;
+    }
+    #msg {
+        min-height: 1.4em;
+        font-size: .85rem;
+    }
+
+    @media (min-width: 992px) {
+        .mapa-conteudo-inner {
+            max-width: 83.333%;
+            margin: 0 auto;
+        }
+        .mapa-card {
+            border: 1px solid rgba(0, 0, 0, .125);
+            border-radius: .5rem;
+            background: #fff;
+            padding: 1rem;
+        }
+        #mapa {
+            height: 65vh;
+            min-height: 420px;
+            border-radius: 8px;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .mapa-mobile-header {
+            display: flex;
+        }
+        /* Cancela o margin do <main class="container my-4"> (base.html)
+           e o gutter lateral do .container do Bootstrap (12px = metade
+           de --bs-gutter-x, mesmo valor já usado em auth-login.css)
+           pra a página ficar de fato encostada nas bordas da tela. */
+        .mapa-page {
+            margin: -1.5rem -12px;
+        }
+        #msg {
+            display: none;
+        }
+        #mapa {
+            border-radius: 0;
+            /* 70px do navbar sticky (mesma referência de base.html /
+               auth-login.css) + 78px reservados pra barra inferior
+               (body.has-bottom-nav) + 56px do nosso cabeçalho acima
+               (botão 36px + 10px de padding em cima/embaixo). */
+            height: calc(100vh - 70px - 78px - 56px);
+            height: calc(100dvh - 70px - 78px - 56px);
+        }
+    }
 </style>
 
-<div class="row justify-content-center">
-    <div class="col-md-10">
-        <div class="card">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+<div class="mapa-page">
+    <div class="mapa-mobile-header d-lg-none">
+        <a href="{{ url_for('aluno.dashboard') }}" class="mapa-voltar-btn" aria-label="Voltar">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1>Buscar Professores</h1>
+    </div>
+
+    <div class="mapa-conteudo-inner">
+        <div class="mapa-card">
+            <div class="d-none d-lg-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                 <h4 class="mb-0" style="color: #F28C33;">
                     <i class="bi bi-geo-alt"></i> Professores no mapa
                 </h4>
@@ -56,11 +146,10 @@
                     <i class="bi bi-search"></i> Buscar por nome
                 </a>
             </div>
-            <div class="card-body">
-                <p class="text-muted mb-2">Dê zoom na sua região para ver os professores disponíveis.</p>
-                <div id="msg" class="mb-2" style="min-height: 1.4em; font-size: .9em;"></div>
-                <div id="mapa" style="height: 65vh; min-height: 420px; border-radius: 8px;"></div>
-            </div>
+            <p class="d-none d-lg-block text-muted mb-2">Dê zoom na sua região para ver os professores disponíveis.</p>
+
+            <div id="msg" class="mb-2"></div>
+            <div id="mapa"></div>
         </div>
     </div>
 </div>
@@ -70,8 +159,5 @@
     window.FITLOG_MAPA_CSRF_TOKEN = "{{ csrf_token() }}";
     window.FITLOG_MAPA_URL_SOLICITACAO = "{{ url_for('aluno.enviar_solicitacao', professor_id=0) }}";
 </script>
-<script src="{{ url_for('static', filename='js/mapa_professores.js') }}?v=4"></script>
-
-{% set pp_modal_force = true %}
-{% include "professor/_modal_ver_pagina.html" %}
+<script src="{{ url_for('static', filename='js/mapa_professores.js') }}?v=3"></script>
 {% endblock %}
