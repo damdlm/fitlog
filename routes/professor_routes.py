@@ -121,13 +121,16 @@ def novo_aluno():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
-    if request.method == 'POST':
-        if not current_user.is_admin:
-            pode, mensagem = BillingService.pode_cadastrar_aluno(current_user)
-            if not pode:
-                flash(mensagem, 'warning')
-                return redirect(url_for('professor.novo_aluno'))
+    # Valida o limite do plano já ao abrir o formulário (GET), não só ao
+    # gravar (POST) -- evita o professor preencher tudo pra só então ser
+    # barrado. Mantido também no POST como proteção contra acesso direto.
+    if not current_user.is_admin:
+        pode, mensagem = BillingService.pode_cadastrar_aluno(current_user)
+        if not pode:
+            flash(mensagem, 'warning')
+            return redirect(url_for('professor.listar_alunos'))
 
+    if request.method == 'POST':
         username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
