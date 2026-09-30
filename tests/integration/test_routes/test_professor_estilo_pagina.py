@@ -114,7 +114,16 @@ def test_tela_de_edicao_lista_todos_os_estilos(app, client, professor):
     for chave, estilo in ESTILOS_PAGINA.items():
         assert f'value="{chave}"'.encode() in resp.data
         assert estilo['rotulo'].encode() in resp.data
-    assert b'name="estilo_pagina"' in resp.data
+    assert b'<select' in resp.data and b'name="estilo_pagina"' in resp.data
+
+
+def test_tela_de_edicao_marca_o_estilo_salvo_como_selecionado(app, client, professor):
+    _login(client)
+    _salvar(client, estilo_pagina='esportivo')
+    html = client.get('/professor/pagina/editar').get_data(as_text=True)
+    import re
+    selecionadas = re.findall(r'<option value="(\w+)"[^>]*?selected', html, re.S)
+    assert selecionadas == ['esportivo']
 
 
 def test_arquivos_de_cada_estilo_existem():

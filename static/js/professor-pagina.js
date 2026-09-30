@@ -101,9 +101,26 @@
         });
     }
 
+    // =========================================================
+    // ESTILO DA PÁGINA (mostra a descrição do estilo escolhido)
+    // =========================================================
+    function initEstiloPagina() {
+        var select = document.getElementById('ppEstiloPagina');
+        var descricao = document.getElementById('ppEstiloDescricao');
+        if (!select || !descricao) return;
+
+        function atualizar() {
+            var opcao = select.options[select.selectedIndex];
+            descricao.textContent = opcao ? (opcao.dataset.descricao || '') : '';
+        }
+        select.addEventListener('change', atualizar);
+        atualizar();
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         initShareButton();
         initFotoPreview();
         initContadores();
+        initEstiloPagina();
     });
 })();

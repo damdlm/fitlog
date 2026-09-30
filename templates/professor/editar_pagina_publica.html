@@ -59,26 +59,16 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                     <div class="epp-field">
-                        <label class="form-label">Estilo da página</label>
-                        <div class="epp-estilos">
+                        <label for="ppEstiloPagina" class="form-label">Estilo da página</label>
+                        <select class="form-select" id="ppEstiloPagina" name="estilo_pagina">
                             {% for chave, estilo in estilos_pagina.items() %}
-                            <div class="epp-estilo-option">
-                                <input type="radio" name="estilo_pagina" id="ppEstilo{{ chave }}"
-                                       value="{{ chave }}"
-                                       {{ 'checked' if chave == estilo_pagina_atual else '' }}>
-                                <label for="ppEstilo{{ chave }}">
-                                    <span class="epp-estilo-thumb epp-estilo-thumb-{{ chave }}" aria-hidden="true">
-                                        <span class="epp-estilo-thumb-ring"></span>
-                                        <span class="epp-estilo-thumb-linha"></span>
-                                        <span class="epp-estilo-thumb-linha epp-estilo-thumb-linha-curta"></span>
-                                    </span>
-                                    <span class="epp-estilo-nome">{{ estilo.rotulo }}</span>
-                                    <span class="epp-estilo-desc">{{ estilo.descricao }}</span>
-                                </label>
-                            </div>
+                            <option value="{{ chave }}"
+                                    data-descricao="{{ estilo.descricao }}"
+                                    {{ 'selected' if chave == estilo_pagina_atual else '' }}>{{ estilo.rotulo }}</option>
                             {% endfor %}
-                        </div>
-                        <div class="form-text">Use "Ver minha página" para conferir o estilo marcado antes de salvar.</div>
+                        </select>
+                        <div class="form-text" id="ppEstiloDescricao"></div>
+                        <div class="form-text">Use "Ver minha página" para conferir o estilo escolhido antes de salvar.</div>
                     </div>
 
                     <div class="epp-field">
