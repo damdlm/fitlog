@@ -63,20 +63,25 @@
 
     function criarPino(item) {
         var html = item.professores.map(function (prof) {
-            var linkPerfil = prof.slug
-                ? ' &middot; <button type="button" class="btn btn-link p-0 align-baseline" style="font-size:inherit;" data-bs-toggle="modal" data-bs-target="#ppVerPaginaModal" data-professor-slug="' + escapar(prof.slug) + '">ver perfil</button>'
+            var botaoPerfil = prof.slug
+                ? '<button type="button" class="btn btn-sm btn-outline-primary" ' +
+                  'data-bs-toggle="modal" data-bs-target="#ppVerPaginaModal" ' +
+                  'data-professor-slug="' + escapar(prof.slug) + '">' +
+                  '<i class="bi bi-eye"></i> Ver perfil</button>'
                 : '';
             var cidadeUf = prof.cidade
                 ? '<br><small class="text-muted">' + escapar(prof.cidade) + (prof.uf ? '/' + escapar(prof.uf) : '') + '</small>'
                 : '';
             return (
                 '<div class="mb-2">' +
-                '<b>' + escapar(prof.nome) + '</b>' + linkPerfil + cidadeUf + '<br>' +
-                '<form method="post" action="' + urlSolicitacao(prof.id) + '" class="mt-1">' +
+                '<b>' + escapar(prof.nome) + '</b>' + cidadeUf +
+                '<div class="d-flex flex-wrap gap-2 mt-2">' +
+                botaoPerfil +
+                '<form method="post" action="' + urlSolicitacao(prof.id) + '">' +
                 '<input type="hidden" name="csrf_token" value="' + csrfToken + '">' +
                 '<button type="submit" class="btn btn-sm btn-primary">' +
                 '<i class="bi bi-person-plus"></i> Solicitar vínculo</button>' +
-                '</form></div>'
+                '</form></div></div>'
             );
         }).join('');
         return L.marker([item.lat, item.lng]).bindPopup(html);
