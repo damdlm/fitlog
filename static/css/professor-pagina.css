@@ -25,9 +25,12 @@
    ========================================================= */
 
 .pp-poster {
-    --yellow: #ffd21a;
-    --orange: #ff8a28;
-    --red: #f04b45;
+    /* Paleta do app (mesmos valores de --primary-orange / --light-orange /
+       --dark-bg do style.css, que não é carregado na página embutida) */
+    --orange: #F28C33;
+    --orange-light: #FFB366;
+    --app-dark: #2D2D2D;
+    --primary-gradient: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
     --black: #080808;
     --black-2: #121212;
     --muted: #9b9b9b;
@@ -41,8 +44,8 @@
     background:
         radial-gradient(
             ellipse 430px 330px at 50% 28%,
-            rgba(255, 128, 37, .13) 0%,
-            rgba(255, 128, 37, .035) 48%,
+            rgba(242, 140, 51, .13) 0%,
+            rgba(242, 140, 51, .035) 48%,
             transparent 74%
         ),
         linear-gradient(
@@ -109,7 +112,7 @@
     width: 11px;
     height: 14px;
     border-radius: 1px;
-    background: linear-gradient(180deg, #ffdc18 0%, #ffb027 50%, #f05a40 100%);
+    background: var(--orange);
 }
 
 /* AÇÕES */
@@ -126,21 +129,21 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, .08);
-    color: rgba(255, 255, 255, .78);
+    border: none;
+    border-radius: 15px;
+    background: var(--primary-gradient);
+    color: #fff;
     text-decoration: none;
-    font-size: .84rem;
-    transition: background .18s ease, color .18s ease, transform .18s ease;
+    font-size: .86rem;
+    transition: all .3s;
 }
 
 .pp-action:hover {
-    background: rgba(255, 255, 255, .16);
-    color: #fff;
+    background: var(--app-dark);
+    color: var(--orange);
     transform: translateY(-1px);
 }
 
@@ -165,28 +168,7 @@
     box-sizing: border-box;
     padding: 15px !important;
     border-radius: 50%;
-    background: conic-gradient(
-        from 205deg,
-        #ffd51b 0deg,
-        #ffc21e 70deg,
-        #ff9429 145deg,
-        #f04b45 235deg,
-        #ff7e31 300deg,
-        #ffd21a 360deg
-    );
-    box-shadow:
-        0 17px 40px rgba(0, 0, 0, .65),
-        0 0 55px rgba(255, 112, 38, .18),
-        inset 0 0 0 1px rgba(255, 255, 255, .16);
-}
-
-.pp-ring::before {
-    content: "";
-    position: absolute;
-    inset: -6px;
-    border: 1px solid rgba(255, 255, 255, .11);
-    border-radius: 50%;
-    pointer-events: none;
+    background: var(--orange);
 }
 
 .pp-photo {
@@ -195,7 +177,6 @@
     height: 100% !important;
     overflow: hidden;
     border-radius: 50%;
-    border: 7px solid #101010;
     background: #000;
 }
 
@@ -238,7 +219,7 @@
     position: relative;
     z-index: 3;
     margin-top: 28px;
-    color: #ff9427;
+    color: var(--orange);
     text-align: center;
     font-size: .76rem;
     line-height: 1;
@@ -271,10 +252,7 @@
 .pp-name-last {
     margin-top: 4px;
     font-size: 3.55rem;
-    background: linear-gradient(90deg, #ffd21a 0%, #ffae20 42%, #ff6140 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--orange);
 }
 
 .pp-cref {
@@ -326,7 +304,7 @@
     display: inline-block;
     max-width: 100%;
     padding: 6px 11px;
-    background: linear-gradient(90deg, #ffd21a 0%, #ffb321 45%, #ff6540 100%);
+    background: var(--orange);
     color: #17100a;
     font-size: .66rem;
     line-height: 1;
@@ -362,11 +340,11 @@
 }
 
 .pp-star-full {
-    color: #ffb020;
+    color: var(--orange);
 }
 
 .pp-star-half {
-    background: linear-gradient(90deg, #ffb020 50%, #3a3a3a 50%);
+    background: linear-gradient(90deg, var(--orange) 50%, #3a3a3a 50%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -419,7 +397,7 @@
 .pp-social svg {
     width: 17px;
     height: 17px;
-    fill: #ff9627;
+    fill: var(--orange);
 }
 
 /* =========================================================
@@ -464,8 +442,8 @@
     padding: 6px 14px;
     border-radius: 999px;
     background: rgba(255, 255, 255, .06);
-    border: 1px solid rgba(255, 148, 39, .45);
-    color: #ffb066;
+    border: 1px solid rgba(242, 140, 51, .45);
+    color: #FFB366;
     font-size: .75rem;
     font-weight: 700;
     letter-spacing: .2px;

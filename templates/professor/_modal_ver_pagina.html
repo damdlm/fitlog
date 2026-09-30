@@ -47,12 +47,27 @@
         top: 10px;
         right: 10px;
         z-index: 5;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background-color: rgba(0, 0, 0, .55);
+        width: 34px;
+        height: 34px;
+        border-radius: 15px;
+        background-color: #F28C33;
+        background-image: none;
         opacity: 1;
-        background-size: 14px;
+        transition: all .3s;
+    }
+    .epp-preview-close::before {
+        content: "\00d7";
+        display: block;
+        color: #fff;
+        font-size: 1.5rem;
+        font-weight: 600;
+        line-height: 30px;
+    }
+    .epp-preview-close:hover {
+        background-color: #2D2D2D;
+    }
+    .epp-preview-close:hover::before {
+        color: #F28C33;
     }
     #ppVerPaginaFrame {
         display: block;
