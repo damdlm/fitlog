@@ -599,8 +599,15 @@ def api_debug_rotas():
 @login_required
 def api_professores_mapa():
     """Professores visíveis na área do mapa que o aluno está vendo.
-    Zoom afastado -> agrupa em clusters (contagem + centro); zoom
-    próximo (>= ZOOM_MINIMO_PONTOS_INDIVIDUAIS) -> pontos individuais.
+    Zoom afastado -> agrupa em células de grade; zoom próximo (>=
+    ZOOM_MINIMO_PONTOS_INDIVIDUAIS) -> sempre pontos individuais.
+    Em qualquer um dos dois modos, cada item da resposta já vem
+    marcado com "tipo": "ponto" (pino azul, clicável, abre o modal de
+    solicitar vínculo) ou "tipo": "cluster" (bolha de contagem, clique
+    só aproxima o zoom) -- uma célula da grade com um único professor
+    vira "ponto" mesmo com o zoom afastado, em vez de virar bolha, pra
+    não obrigar o aluno a ficar dando zoom repetido só pra conseguir
+    clicar num professor isolado.
     Coordenadas sempre arredondadas a ~1km (privacidade -- LGPD)."""
     try:
         sul = float(request.args["sul"])
@@ -618,23 +625,49 @@ def api_professores_mapa():
     def aproximar(valor):
         return round(valor, 2)
 
-    if zoom < ZOOM_MINIMO_PONTOS_INDIVIDUAIS:
-        itens = [
-            {"lat": aproximar(c["lat"]), "lng": aproximar(c["lng"]), "total": c["total"]}
-            for c in GeolocalizacaoService.clusters_na_area(sul, oeste, norte, leste, zoom)
-        ]
-        return jsonify(modo="clusters", itens=itens)
-
-    pontos = {}
-    for professor in GeolocalizacaoService.professores_na_area(sul, oeste, norte, leste):
-        chave = (aproximar(professor.professor_latitude), aproximar(professor.professor_longitude))
-        pontos.setdefault(chave, []).append({
+    def professor_para_json(professor):
+        return {
             "id": professor.id,
             "nome": professor.nome_completo or professor.username,
             "slug": professor.professor_slug,
             "cidade": professor.professor_cidade,
             "uf": professor.professor_uf,
-        })
+        }
 
-    itens = [{"lat": lat, "lng": lng, "professores": lista} for (lat, lng), lista in pontos.items()]
-    return jsonify(modo="pontos", itens=itens)
+    if zoom < ZOOM_MINIMO_PONTOS_INDIVIDUAIS:
+        celulas = GeolocalizacaoService.clusters_na_area(sul, oeste, norte, leste, zoom)
+
+        ids_solo = [c["id_se_unico"] for c in celulas if c["total"] == 1]
+        professores_solo = {
+            p.id: p for p in GeolocalizacaoService.professores_por_id(ids_solo)
+        }
+
+        itens = []
+        for c in celulas:
+            professor = professores_solo.get(c["id_se_unico"]) if c["total"] == 1 else None
+            if professor:
+                itens.append({
+                    "tipo": "ponto",
+                    "lat": aproximar(professor.professor_latitude),
+                    "lng": aproximar(professor.professor_longitude),
+                    "professores": [professor_para_json(professor)],
+                })
+            else:
+                itens.append({
+                    "tipo": "cluster",
+                    "lat": aproximar(c["lat"]),
+                    "lng": aproximar(c["lng"]),
+                    "total": c["total"],
+                })
+        return jsonify(itens=itens)
+
+    pontos = {}
+    for professor in GeolocalizacaoService.professores_na_area(sul, oeste, norte, leste):
+        chave = (aproximar(professor.professor_latitude), aproximar(professor.professor_longitude))
+        pontos.setdefault(chave, []).append(professor_para_json(professor))
+
+    itens = [
+        {"tipo": "ponto", "lat": lat, "lng": lng, "professores": lista}
+        for (lat, lng), lista in pontos.items()
+    ]
+    return jsonify(itens=itens)

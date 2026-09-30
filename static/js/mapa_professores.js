@@ -102,7 +102,7 @@
 
                 var total = 0;
                 dados.itens.forEach(function (item) {
-                    if (dados.modo === 'clusters') {
+                    if (item.tipo === 'cluster') {
                         total += item.total;
                         criarBolha(item).addTo(camada);
                     } else {

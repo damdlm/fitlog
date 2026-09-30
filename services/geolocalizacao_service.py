@@ -163,7 +163,10 @@ class GeolocalizacaoService(BaseService):
     def clusters_na_area(cls, sul, oeste, norte, leste, zoom):
         """Agrupa em células de grade (tamanho decresce com o zoom) --
         usado quando o zoom está afastado, pra não devolver milhares de
-        pontos de uma vez."""
+        pontos de uma vez. Inclui o id de um dos professores da célula
+        (min) -- quando total==1, esse id é o do único professor ali, e
+        a rota usa isso pra mostrar o pino azul clicável em vez de uma
+        bolha de cluster (ver routes/api_routes.py:api_professores_mapa)."""
         passo = 360.0 / (2 ** zoom) / 4.0
         celula_lat = func.floor(User.professor_latitude / passo)
         celula_lng = func.floor(User.professor_longitude / passo)
@@ -173,13 +176,23 @@ class GeolocalizacaoService(BaseService):
                 func.count(User.id),
                 func.avg(User.professor_latitude),
                 func.avg(User.professor_longitude),
+                func.min(User.id),
             )
             .filter(*cls._filtro_area(sul, oeste, norte, leste))
             .group_by(celula_lat, celula_lng)
             .limit(LIMITE_CLUSTERS_POR_RESPOSTA)
             .all()
         )
-        return [{"total": total, "lat": lat, "lng": lng} for total, lat, lng in linhas]
+        return [
+            {"total": total, "lat": lat, "lng": lng, "id_se_unico": id_min}
+            for total, lat, lng, id_min in linhas
+        ]
+
+    @classmethod
+    def professores_por_id(cls, ids):
+        if not ids:
+            return []
+        return User.query.filter(User.id.in_(ids)).all()
 
     @classmethod
     def professores_na_area(cls, sul, oeste, norte, leste):
