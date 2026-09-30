@@ -156,8 +156,19 @@ def visualizar_tabela():
     layout de referência. O cabeçalho mostra "Nª Semana / Mês" acima de
     cada par Carga/Rep.
     """
-    versao_id = request.args.get('versao_id', '').strip()
     versoes = VersaoService.get_all()
+
+    # Sem `versao_id` na querystring (primeiro acesso à página), carrega
+    # sempre a versão ativa. "todas" é o valor explícito da opção
+    # "Todas as versões" do filtro; qualquer outro valor é um id de versão.
+    versao_id = request.args.get('versao_id')
+    if versao_id is None:
+        versao_ativa = VersaoService.get_ativa()
+        versao_id = str(versao_ativa.id) if versao_ativa else ''
+    else:
+        versao_id = versao_id.strip()
+        if versao_id == 'todas':
+            versao_id = ''
 
     data_inicio = datetime.now(timezone.utc) - timedelta(days=DIAS_HISTORICO_TABELA_PROGRESSO)
     registros = RegistroService.get_all(load_series=True, data_inicio=data_inicio)
@@ -213,4 +224,4 @@ def visualizar_tabela():
                          grupos_treino=grupos_treino,
                          semanas_visiveis_padrao=3,
                          versoes=versoes,
-                         versao_selecionada=versao_id)
+                         versao_selecionada=versao_id or 'todas')

@@ -304,7 +304,7 @@
 <div class="prog-header">
     <form method="get" class="prog-filtro">
         <select name="versao_id" onchange="this.form.submit()">
-            <option value="">Todas as versões</option>
+            <option value="todas" {{ 'selected' if versao_selecionada == 'todas' }}>Todas as versões</option>
             {% for v in versoes %}
             <option value="{{ v.id }}" {{ 'selected' if versao_selecionada == v.id|string }}>
                 Versão {{ v.numero_versao }} — {{ v.descricao }}{{ ' (ativa)' if not v.data_fim }}
