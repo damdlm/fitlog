@@ -86,159 +86,6 @@
     bottom: 0;
 }
 
-/* =========================================================
-   FORMAS GEOMÉTRICAS (X e +)
-   ========================================================= */
-
-.pp-deco {
-    position: absolute;
-    z-index: 1;
-    pointer-events: none;
-}
-
-.pp-deco-x {
-    width: 54px;
-    height: 54px;
-}
-
-.pp-deco-x span {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 100%;
-    height: 2px;
-    background: #f7f7f7;
-    transform-origin: center;
-}
-
-.pp-deco-x span:first-child {
-    transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.pp-deco-x span:last-child {
-    transform: translate(-50%, -50%) rotate(-45deg);
-}
-
-.pp-deco-x-top {
-    top: 69px;
-    left: 48px;
-    width: 40px;
-    height: 40px;
-}
-
-.pp-deco-x-left {
-    top: 360px;
-    left: -16px;
-    width: 84px;
-    height: 84px;
-}
-
-.pp-deco-x-right {
-    top: 28px;
-    right: -16px;
-    width: 91px;
-    height: 91px;
-}
-
-.pp-deco-plus {
-    width: 29px;
-    height: 29px;
-}
-
-.pp-deco-plus span {
-    position: absolute;
-    background: #f7f7f7;
-    border-radius: 1px;
-}
-
-.pp-deco-plus span:first-child {
-    top: 50%;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    transform: translateY(-50%);
-}
-
-.pp-deco-plus span:last-child {
-    top: 0;
-    left: 50%;
-    width: 2px;
-    height: 100%;
-    transform: translateX(-50%);
-}
-
-.pp-deco-plus-top {
-    top: 35px;
-    right: 109px;
-}
-
-.pp-deco-plus-left {
-    /* Ancorado no topo (perto do anel), não na base do pôster --
-       com "bottom" ele colidia com o nome/frase quando o texto real
-       do professor deixa o pôster mais alto que o mockup original. */
-    top: 130px;
-    left: 18px;
-    transform: scale(.78);
-}
-
-.pp-deco-plus-right {
-    top: 260px;
-    right: 20px;
-    transform: scale(.65);
-}
-
-/* PONTOS ISOLADOS */
-.pp-dot {
-    position: absolute;
-    z-index: 1;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #fff;
-}
-
-.pp-dot-right-top {
-    top: 124px;
-    right: 105px;
-}
-
-.pp-dot-center-right {
-    bottom: 143px;
-    right: 58px;
-}
-
-.pp-dot-left-bottom {
-    bottom: 143px;
-    left: 110px;
-}
-
-/* Triângulo cheio (ao lado da 1ª linha do nome) e círculo vazado (ao
-   lado da 2ª linha) -- existiam no modelo mas nunca tinham sido
-   implementados. Posição calculada a partir da altura do anel + nome
-   em cada breakpoint (ver overrides nas media queries mais abaixo). */
-.pp-deco-triangle {
-    position: absolute;
-    z-index: 2;
-    top: 435px;
-    left: 24px;
-    width: 0;
-    height: 0;
-    border-top: 8px solid transparent;
-    border-bottom: 8px solid transparent;
-    border-left: 13px solid #ffb066;
-}
-
-.pp-deco-circle-outline {
-    position: absolute;
-    z-index: 2;
-    top: 485px;
-    right: 26px;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, .5);
-}
-
 /* BARRAS LATERAIS */
 .pp-bars {
     position: absolute;
@@ -634,12 +481,6 @@
         font-size: .84rem;
     }
 
-    .pp-deco-triangle {
-        top: 352px;
-    }
-    .pp-deco-circle-outline {
-        top: 393px;
-    }
 
     .pp-services {
         margin-top: 24px;
@@ -678,12 +519,6 @@
     .pp-name-last {
         font-size: 2.15rem;
     }
-    .pp-deco-triangle {
-        top: 308px;
-    }
-    .pp-deco-circle-outline {
-        top: 340px;
-    }
     .pp-service {
         padding: 11px 4px 10px;
     }
@@ -696,8 +531,7 @@
         font-size: .6rem;
     }
     .pp-bars-left,
-    .pp-bars-right,
-    .pp-deco-x-left {
+    .pp-bars-right {
         display: none;
     }
 }
