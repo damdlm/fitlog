@@ -9,7 +9,7 @@ from flask_login import current_user, login_required
 
 from extensions import limiter
 from models import db, Plano
-from services.billing_service import BillingService, AssinaturaAtualizadaError, AssinaturaJaAtivaError, DadosCobrancaIncompletosError, NadaParaCancelarError
+from services.billing_service import BillingService, AssinaturaAtualizadaError, AssinaturaJaAtivaError, AssinaturaGatewaySumiuError, DadosCobrancaIncompletosError, NadaParaCancelarError
 from services.configuracao_service import ConfiguracaoService
 from utils.decorators import tela_assinatura_ativa_required
 
@@ -263,6 +263,13 @@ def assinar():
         # pró-rata: o valor novo só entra na fatura seguinte (decisão do
         # usuário, tanto pra upgrade quanto downgrade voluntários).
         flash(f'Plano atualizado para {e.plano.nome} -- o novo valor entra a partir da sua próxima fatura, nenhuma cobrança foi feita agora.', 'success')
+        return redirect(url_for('billing.minha_assinatura'))
+    except AssinaturaGatewaySumiuError:
+        # A assinatura antiga sumiu do gateway de pagamento (não existe
+        # mais no Asaas) -- já limpamos a referência local, então
+        # tentar de novo agora vai criar um checkout novo do zero, em
+        # vez de repetir o mesmo erro.
+        flash('Não encontramos sua assinatura anterior no sistema de pagamento. Clique em assinar novamente para gerar um novo checkout.', 'warning')
         return redirect(url_for('billing.minha_assinatura'))
     except AssinaturaJaAtivaError:
         # Duplo clique, aba duplicada, ou usuário não percebeu que já

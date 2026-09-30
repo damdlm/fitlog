@@ -129,6 +129,12 @@ class HistoricoMetricasService:
             }
         except Exception:
             logger.exception("HistoricoMetricas: falha ao consultar último snapshot do Railway")
+            # Ver comentário equivalente em
+            # MonitoringService.get_business_metrics: sem isso, uma
+            # falha aqui deixa a transação do db.session "abortada" pro
+            # resto da coleta (get_all_metrics roda vários coletores em
+            # sequência, na mesma sessão).
+            db.session.rollback()
             return {"disponivel": False, "erro": "falha ao consultar snapshot"}
 
     @staticmethod

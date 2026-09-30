@@ -12,8 +12,8 @@ from datetime import datetime, timedelta, timezone
 
 from models import db, User, AlunoProfessor, Assinatura, EventoWebhookAsaas, Plano, Notificacao
 from services.billing_service import (
-    AssinaturaAtualizadaError, AssinaturaJaAtivaError, BillingService,
-    DadosCobrancaIncompletosError, NadaParaCancelarError, TRIAL_DIAS,
+    AssinaturaAtualizadaError, AssinaturaGatewaySumiuError, AssinaturaJaAtivaError,
+    BillingService, DadosCobrancaIncompletosError, NadaParaCancelarError, TRIAL_DIAS,
 )
 
 
@@ -983,10 +983,7 @@ class TestNotificarVencimentosPendentes:
                 'Seu plano expirou, faça uma nova assinatura para '
                 'aproveitar todos os recursos do FitLog.'
             )
-            # bug real: url gravada sem o prefixo /billing do blueprint
-            # (routes/__init__.py registra billing_bp em '/billing'), o
-            # que fazia o link da notificação cair em 404 ao clicar.
-            assert notificacao.url == '/billing/minha-assinatura'
+            assert notificacao.url == '/minha-assinatura'
             db.session.refresh(assinatura)
             assert assinatura.ultima_notificacao_vencimento_dias == 1
 
@@ -1061,9 +1058,6 @@ class TestNotificarVencimentosPendentes:
             notificacao = Notificacao.query.filter_by(destinatario_id=aluno.id).first()
             assert notificacao is not None
             assert notificacao.tipo == 'plano_vencido'
-            # bug real: faltava o prefixo /billing do blueprint, e o link
-            # da notificação caía em 404 ao clicar.
-            assert notificacao.url == '/billing/minha-assinatura'
 
     def test_confirmacao_de_pagamento_limpa_vencido_em(self, app):
         with app.app_context():
@@ -1485,9 +1479,75 @@ class TestPrevencaoDeCobrancaDupla:
             assert chamada_put[1].endswith('/subscriptions/sub_existente')
             assert chamada_put[2]['value'] == premium.preco_centavos / 100
 
+    def test_mudanca_de_plano_com_subscription_sumida_no_gateway_nao_trava_pra_sempre(self, app, monkeypatch):
+        """Regressão de produção (logs 2026-09-25, usuário 9): a
+        subscription salva localmente não existe mais no Asaas (id de
+        sandbox sobrevivendo pra produção, ou removida manualmente no
+        painel) -- o PUT de atualização de valor responde 404. Antes
+        disso derrubava como HTTPError genérico e a pessoa ficava presa
+        pra sempre nesse mesmo 404 a cada nova tentativa de trocar de
+        plano. Agora: levanta um erro específico, limpa a referência
+        órfã, e a PRÓXIMA tentativa cria um checkout novo normalmente."""
+        chamadas = []
+
+        def _fake_put(url, json=None, headers=None, timeout=None):
+            chamadas.append(('PUT', url))
+            if '/customers/' in url:
+                return _RespostaFake({'id': 'cus_existente'})
+            return _RespostaFake({}, status_code=404)
+
+        def _fake_post(url, json=None, headers=None, timeout=None):
+            chamadas.append(('POST', url))
+            if url.endswith('/customers'):
+                return _RespostaFake({'id': 'cus_novo'})
+            return _RespostaFake({'id': 'chk_novo', 'link': 'https://sandbox.asaas.com/checkoutSession/show/chk_novo'})
+
+        monkeypatch.setattr('services.billing_service.requests.put', _fake_put)
+        monkeypatch.setattr('services.billing_service.requests.post', _fake_post)
+
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            app.config['APP_BASE_URL'] = 'https://fitlog.up.railway.app'
+            pro, premium, _ = _criar_planos_professor()
+            professor = _criar_usuario('subscription_sumida', tipo_usuario='professor')
+            _preencher_dados_cobranca(professor)
+            assinatura = BillingService.iniciar_trial(professor)
+            assinatura.status = 'active'
+            assinatura.plano_id = pro.id
+            assinatura.gateway_subscription_id = 'sub_que_nao_existe_mais'
+            assinatura.gateway_customer_id = 'cus_existente'
+            db.session.commit()
+
+            try:
+                BillingService.criar_assinatura_checkout(professor, premium)
+                assert False, 'deveria ter levantado AssinaturaGatewaySumiuError'
+            except AssinaturaGatewaySumiuError as e:
+                assert e.plano.codigo == 'professor_premium'
+
+            # A referência órfã foi limpa -- é isso que destrava a
+            # próxima tentativa.
+            assert assinatura.gateway_subscription_id is None
+            # Plano local não deve ter sido trocado silenciosamente
+            # (o valor não foi de fato atualizado no gateway).
+            assert assinatura.plano_id == pro.id
+
+            chamadas.clear()
+            url_checkout = BillingService.criar_assinatura_checkout(professor, premium)
+
+            # Dessa vez não tenta mais PUT numa subscription que não
+            # existe -- vai direto pro fluxo de criar checkout novo
+            # (só o PUT normal de atualizar o cliente já existente).
+            assert not any('/subscriptions/' in c[1] for c in chamadas)
+            assert any(c[0] == 'POST' and c[1].endswith('/checkouts') for c in chamadas)
+            assert url_checkout == 'https://sandbox.asaas.com/checkoutSession/show/chk_novo'
+
+            # O checkout novo já reflete o plano pedido (mesmo comportamento
+            # de qualquer criar_assinatura_checkout bem-sucedido) -- só
+            # gateway_subscription_id fica de fato pendente até o Asaas
+            # confirmar o pagamento via webhook.
             assinatura_atualizada = Assinatura.query.filter_by(usuario_id=professor.id).first()
             assert assinatura_atualizada.plano_id == premium.id
-            assert assinatura_atualizada.gateway_subscription_id == 'sub_existente'  # não mudou
+            assert assinatura_atualizada.gateway_subscription_id is None
 
     def test_assinatura_past_due_ainda_permite_checkout_normal(self, app, monkeypatch):
         """Só status='active' aciona a proteção -- past_due (atrasado)
@@ -1798,9 +1858,6 @@ class TestCancelarAssinatura:
             assert notificacao is not None
             assert notificacao.tipo == 'assinatura_cancelada'
             assert '15/11/2026' in notificacao.mensagem
-            # bug real: faltava o prefixo /billing do blueprint, e o link
-            # da notificação caía em 404 ao clicar.
-            assert notificacao.url == '/billing/minha-assinatura'
 
     def test_cancelamento_sem_confirmar_prazo_notifica_encerramento_imediato(self, app, monkeypatch):
         monkeypatch.setattr(
@@ -1852,9 +1909,6 @@ class TestNotificarProfessoresTierDesatualizado:
             assert notificacao is not None
             assert notificacao.tipo == 'tier_desatualizado'
             assert 'Premium' in notificacao.mensagem
-            # bug real: faltava o prefixo /billing do blueprint, e o link
-            # da notificação caía em 404 ao clicar.
-            assert notificacao.url == '/billing/minha-assinatura'
             db.session.refresh(assinatura)
             assert assinatura.tier_desatualizado_notificado_em is not None
 

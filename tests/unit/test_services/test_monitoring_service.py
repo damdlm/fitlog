@@ -248,3 +248,38 @@ class TestGetAllMetrics:
         assert resultado['cache']['disponivel'] is False
         assert resultado['negocio']['disponivel'] is True
         assert resultado['banco']['disponivel'] is True
+
+    def test_falha_em_negocio_nao_deixa_sessao_abortada_pro_fitbot(self, app, db, monkeypatch):
+        """Regressão de produção (logs do cron fitlog-cron-monitoramento-
+        snapshot, 2026-09-26): get_business_metrics rodava ANTES de
+        get_fitbot_metrics em get_all_metrics, na mesma db.session. Sem
+        rollback no except de get_business_metrics, uma falha ali (ex:
+        coluna que ainda não existia em produção) deixava a transação
+        "abortada" -- em Postgres, toda query seguinte na mesma sessão
+        quebra com InFailedSqlTransaction, mesmo sendo sobre algo
+        completamente diferente (foi exatamente o que aconteceu: o
+        FitBot, chamado logo depois, quebrou em cascata por causa disso,
+        não por problema próprio). SQLite não reproduz esse
+        comportamento estrito de transação, então o teste verifica
+        diretamente que o rollback acontece -- é ele quem evita a
+        cascata em produção."""
+        from sqlalchemy.orm import Query
+
+        chamadas_rollback = []
+        rollback_original = db.session.rollback
+
+        def _rollback_espiao():
+            chamadas_rollback.append(True)
+            return rollback_original()
+
+        def _count_que_quebra(*a, **k):
+            raise RuntimeError('simulando coluna ausente / conexão perdida')
+
+        monkeypatch.setattr(db.session, 'rollback', _rollback_espiao)
+        monkeypatch.setattr(Query, 'count', _count_que_quebra)
+
+        with app.app_context():
+            resultado = MonitoringService.get_business_metrics()
+
+        assert resultado['disponivel'] is False
+        assert chamadas_rollback, 'get_business_metrics precisa chamar db.session.rollback() ao falhar'

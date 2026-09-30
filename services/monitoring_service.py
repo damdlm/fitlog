@@ -376,6 +376,18 @@ class MonitoringService:
             }
         except Exception:
             logger.exception("Erro ao coletar métricas de negócio")
+            # Sem isso, uma falha aqui (ex: coluna que ainda não existe
+            # em produção, timeout de conexão) deixa a transação do
+            # db.session "abortada" -- em Postgres, qualquer query
+            # seguinte na MESMA sessão quebra com InFailedSqlTransaction,
+            # mesmo sendo sobre algo completamente diferente. Como
+            # get_all_metrics roda os coletores em sequência na mesma
+            # sessão, sem isso uma fonte indisponível derrubava o painel
+            # inteiro (viu-se em produção: negócio falhou e o FitBot,
+            # chamado logo depois, quebrou em cascata por causa disso,
+            # não por problema próprio) -- exatamente o que o docstring
+            # do módulo promete não acontecer.
+            db.session.rollback()
             return {"disponivel": False, "erro": "falha ao consultar métricas de negócio"}
 
     # =========================================================

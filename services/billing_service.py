@@ -175,6 +175,21 @@ class AssinaturaAtualizadaError(Exception):
         super().__init__(f'Assinatura atualizada para o plano {plano.codigo}, sem checkout novo')
 
 
+class AssinaturaGatewaySumiuError(Exception):
+    """Levantada por atualizar_valor_assinatura quando o Asaas responde
+    404 pra subscription salva (ex: id de sandbox sobrevivendo depois
+    da virada pra produção, ou removida manualmente no painel) -- a
+    mesma situação que _obter_ou_criar_cliente_asaas já trata pro
+    cliente, mas aqui não dá pra "recriar" uma assinatura recorrente:
+    quem chama precisa pedir pro usuário tentar de novo, dessa vez
+    criando um checkout novo do zero (gateway_subscription_id já foi
+    limpo, então a próxima tentativa não cai mais nesse mesmo caminho).
+    """
+    def __init__(self, plano):
+        self.plano = plano
+        super().__init__('Assinatura não encontrada mais no gateway de pagamento')
+
+
 class BillingService:
 
     @staticmethod
@@ -507,7 +522,7 @@ class BillingService:
                     f'Você já tem alunos suficientes para o plano {plano_necessario.nome}. '
                     'Faça upgrade para continuar cadastrando novos alunos no FitLog.'
                 ),
-                url='/billing/minha-assinatura',
+                url='/minha-assinatura',
             )
             assinatura.tier_desatualizado_notificado_em = agora
             db.session.commit()
@@ -970,7 +985,19 @@ class BillingService:
         avulso (sem assinatura recorrente no Asaas, ver
         criar_pagamento_pix_ativacao), então não há "assinatura no
         gateway" pra atualizar de valor nesse caso; a troca de plano
-        via Pix só passa a valer no próximo pagamento confirmado."""
+        via Pix só passa a valer no próximo pagamento confirmado.
+
+        Levanta AssinaturaGatewaySumiuError se o Asaas responder 404
+        pra essa subscription -- mesma causa (e mesmo tratamento) do
+        404 já coberto em _obter_ou_criar_cliente_asaas pro cliente,
+        mas aqui, em vez de recriar (uma assinatura recorrente nova
+        precisa passar pelo checkout hospedado de novo, não dá pra só
+        recriar via API), limpamos a referência local -- órfã, apontando
+        pra algo que não existe mais no gateway -- e devolvemos o
+        controle pra quem chamou tentar de novo com um checkout novo.
+        Antes disso não havia tratamento nenhum: o usuário ficava preso
+        pra sempre nesse mesmo 404, toda vez que tentasse trocar de
+        plano (Sentry/logs de produção, usuário 9, 2026-09-25)."""
         resp = requests.put(
             f'{BillingService._base_url()}/subscriptions/{assinatura.gateway_subscription_id}',
             json={
@@ -982,6 +1009,16 @@ class BillingService:
             headers=BillingService._headers(),
             timeout=REQUEST_TIMEOUT_SECONDS,
         )
+        if resp.status_code == 404:
+            logger.warning(
+                'Assinatura %s (usuario=%s) tinha gateway_subscription_id=%s que o '
+                'Asaas não reconhece mais (404) -- limpando referência local pra '
+                'próxima tentativa criar um checkout novo em vez de repetir o 404.',
+                assinatura.id, assinatura.usuario_id, assinatura.gateway_subscription_id,
+            )
+            assinatura.gateway_subscription_id = None
+            db.session.commit()
+            raise AssinaturaGatewaySumiuError(plano)
         BillingService._checar_resposta(resp, 'atualizar valor da assinatura')
 
         assinatura.plano_id = plano.id
@@ -1070,7 +1107,7 @@ class BillingService:
             tipo='assinatura_cancelada',
             titulo='Assinatura cancelada',
             mensagem=mensagem,
-            url='/billing/minha-assinatura',
+            url='/minha-assinatura',
         )
 
     @staticmethod
@@ -1661,7 +1698,7 @@ class BillingService:
                     'Seu plano expirou, faça uma nova assinatura para '
                     'aproveitar todos os recursos do FitLog.'
                 ),
-                url='/billing/minha-assinatura',
+                url='/minha-assinatura',
             )
             assinatura.ultima_notificacao_vencimento_dias = dias
             db.session.commit()
@@ -1704,7 +1741,7 @@ class BillingService:
                     'Seu plano expirou, faça uma nova assinatura para '
                     'aproveitar todos os recursos do FitLog.'
                 ),
-                url='/billing/minha-assinatura',
+                url='/minha-assinatura',
             )
 
     @staticmethod

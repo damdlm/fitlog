@@ -86,4 +86,10 @@ class FitBotUsoService:
             }
         except Exception:
             logger.exception("FitBotUso: falha ao agregar métricas")
+            # Ver comentário equivalente em
+            # MonitoringService.get_business_metrics: sem isso, uma
+            # falha aqui deixa a transação do db.session "abortada" pro
+            # resto da requisição/execução (Postgres recusa qualquer
+            # query seguinte na mesma sessão até um rollback).
+            db.session.rollback()
             return {"disponivel": False, "erro": "falha ao consultar uso do FitBot"}
