@@ -230,7 +230,7 @@
 .pp-name-first,
 .pp-name-last,
 .pp-service-title,
-.pp-rating {
+.pp-rating-info {
     font-family: 'Montserrat', 'Segoe UI', sans-serif;
 }
 
@@ -342,36 +342,55 @@
     line-height: 1.45;
 }
 
-/* BOTÃO INFERIOR (REGISTRATION OPEN) */
-.pp-registration-area {
-    display: flex;
-    justify-content: center;
-    margin-top: 23px;
-}
-
-.pp-rating {
-    position: relative;
-    z-index: 3;
-    width: fit-content;
-    max-width: 100%;
-    padding: 10px 22px;
-    background: linear-gradient(90deg, #ffd21a 0%, #ffb020 43%, #f15a40 100%);
-    color: #17100a;
-    font-size: .75rem;
-    font-weight: 900;
-    letter-spacing: .35px;
-    text-align: center;
-    text-transform: uppercase;
-    box-shadow: 0 8px 22px rgba(240, 75, 69, .18);
-}
-
+/* AVALIAÇÃO DOS ALUNOS
+   Estrelas (cheia / meia / vazia) + nota em destaque + total discreto. */
 .pp-rating-info {
     position: relative;
     z-index: 3;
-    margin-top: 15px;
-    text-align: center;
-    font-size: .75rem;
-    color: #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    margin-top: 26px;
+}
+
+.pp-rating-stars {
+    display: inline-flex;
+    gap: 2px;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.pp-star-full {
+    color: #ffb020;
+}
+
+.pp-star-half {
+    background: linear-gradient(90deg, #ffb020 50%, #3a3a3a 50%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+.pp-star-empty {
+    color: #3a3a3a;
+}
+
+.pp-rating-score {
+    color: #fff;
+    font-size: .95rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.pp-rating-count {
+    padding-left: 9px;
+    border-left: 1px solid #3a3a3a;
+    color: #999;
+    font-size: .7rem;
+    font-weight: 600;
+    line-height: 1;
 }
 
 /* REDES SOCIAIS */
