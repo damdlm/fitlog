@@ -192,10 +192,6 @@ def buscar_professores():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
     
-    if current_user.get_professor():
-        flash('Você já está vinculado a um professor.', 'info')
-        return redirect(url_for('aluno.meu_professor'))
-    
     termo = request.args.get('busca', '')
     professores = []
     if termo:

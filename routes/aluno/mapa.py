@@ -1,7 +1,7 @@
 """Página do mapa de professores, para o aluno buscar por região --
 alternativa visual a /aluno/buscar-professores (busca por nome), que já
-existe em routes/aluno/main.py. Mesma regra de acesso daquela rota: só
-faz sentido para quem ainda não tem professor vinculado.
+existe em routes/aluno/main.py. Acessível mesmo pra quem já tem um
+professor vinculado (pode querer trocar ou conhecer outros).
 
 Este módulo é importado em routes/aluno/__init__.py (mesmo padrão dos
 demais arquivos da pasta -- main, exercicio, stats, ranking...) e
@@ -24,9 +24,5 @@ def mapa_professores():
     if not current_user.is_aluno():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
-
-    if current_user.get_professor():
-        flash('Você já está vinculado a um professor.', 'info')
-        return redirect(url_for('aluno.meu_professor'))
 
     return render_template('aluno/mapa_professores.html')
