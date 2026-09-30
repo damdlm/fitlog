@@ -100,6 +100,15 @@
             ? frame.dataset.srcTemplate.replace('__SLUG__', encodeURIComponent(slugDinamico))
             : frame.dataset.src;
         if (!url) return;
+        // Na tela "Editar minha página" mostra o estilo marcado no
+        // seletor, mesmo antes de salvar (a rota só aceita ?estilo=
+        // do próprio dono; pra qualquer outro, vale o estilo salvo).
+        var estiloMarcado = slugDinamico
+            ? null
+            : document.querySelector('input[name="estilo_pagina"]:checked');
+        if (estiloMarcado) {
+            url += '&estilo=' + encodeURIComponent(estiloMarcado.value);
+        }
         frame.src = url + '&_=' + Date.now();
     });
     modal.addEventListener('hidden.bs.modal', function () {

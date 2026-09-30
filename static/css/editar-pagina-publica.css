@@ -259,3 +259,145 @@
     object-fit: cover;
     display: block;
 }
+
+/* Seletor de estilo da página pública */
+.epp-estilos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+}
+
+.epp-estilo-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.epp-estilo-option label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    height: 100%;
+    margin: 0;
+    padding: 10px;
+    border: 2px solid #e3e3e3;
+    border-radius: 15px;
+    background: #fff;
+    cursor: pointer;
+    transition: all .3s;
+}
+
+.epp-estilo-option label:hover {
+    border-color: #FFB366;
+}
+
+.epp-estilo-option input:checked + label {
+    border-color: #F28C33;
+    box-shadow: 0 0 0 3px rgba(242, 140, 51, .18);
+}
+
+.epp-estilo-option input:focus-visible + label {
+    outline: 2px solid #F28C33;
+    outline-offset: 2px;
+}
+
+.epp-estilo-nome {
+    color: #2D2D2D;
+    font-size: .9rem;
+    font-weight: 800;
+}
+
+.epp-estilo-desc {
+    color: #777;
+    font-size: .74rem;
+    line-height: 1.35;
+}
+
+/* Miniatura desenhada em CSS (não depende de imagem) */
+.epp-estilo-thumb {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    height: 104px;
+    overflow: hidden;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #1c1c1c 0%, #070707 100%);
+}
+
+.epp-estilo-thumb-ring {
+    width: 38px;
+    height: 38px;
+    border: 3px solid #F28C33;
+    border-radius: 50%;
+    background: #2a2a2a;
+    box-shadow: inset 0 0 0 2px #101010;
+}
+
+.epp-estilo-thumb-linha {
+    width: 46px;
+    height: 5px;
+    border-radius: 3px;
+    background: #fff;
+}
+
+.epp-estilo-thumb-linha-curta {
+    width: 34px;
+    background: #F28C33;
+}
+
+.epp-estilo-thumb::before,
+.epp-estilo-thumb::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+}
+
+/* Diagonal: pontilhado nos cantos */
+.epp-estilo-thumb-diagonal::before,
+.epp-estilo-thumb-diagonal::after {
+    width: 56px;
+    height: 56px;
+    background-image:
+        radial-gradient(circle, #5a5a5a 1.2px, transparent 1.5px),
+        radial-gradient(circle, #5a5a5a 1.2px, transparent 1.5px);
+    background-size: 10px 10px;
+    background-position: 0 0, 5px 5px;
+}
+
+.epp-estilo-thumb-diagonal::before {
+    top: 0;
+    left: 0;
+    -webkit-mask-image: linear-gradient(135deg, #000, transparent 75%);
+    mask-image: linear-gradient(135deg, #000, transparent 75%);
+}
+
+.epp-estilo-thumb-diagonal::after {
+    right: 0;
+    bottom: 0;
+    -webkit-mask-image: linear-gradient(315deg, #000, transparent 75%);
+    mask-image: linear-gradient(315deg, #000, transparent 75%);
+}
+
+/* Textura: pontos de fundo + faixas diagonais laranja */
+.epp-estilo-thumb-textura::before {
+    inset: 0;
+    opacity: .5;
+    background-image: radial-gradient(circle, rgba(255, 255, 255, .28) 1px, transparent 1.3px);
+    background-size: 9px 9px;
+}
+
+.epp-estilo-thumb-textura::after {
+    top: -8px;
+    right: -34px;
+    width: 100px;
+    height: 34px;
+    transform: rotate(-28deg);
+    background: repeating-linear-gradient(
+        -28deg,
+        rgba(242, 140, 51, .95) 0 3px,
+        rgba(242, 140, 51, 0) 3px 8px
+    );
+}

@@ -30,6 +30,30 @@ BIO_TAMANHO_MAXIMO = 1000
 CREF_TAMANHO_MAXIMO = 30
 INSTAGRAM_TAMANHO_MAXIMO = 120
 
+# Estilos visuais da página pública -- o professor escolhe um na tela
+# "Editar minha página". Cada estilo tem o próprio CSS e o próprio
+# partial de HTML (os dois usam as mesmas classes .pp-*, por isso a
+# página carrega SÓ o CSS do estilo escolhido). Os caminhos vêm daqui,
+# nunca do formulário: o valor recebido só é aceito se for uma chave
+# deste dicionário. Pra criar um estilo novo: adicionar o CSS em
+# static/css/professor-estilos/, o partial em
+# templates/professor/estilos/ e uma entrada abaixo.
+ESTILO_PAGINA_PADRAO = 'diagonal'
+ESTILOS_PAGINA = {
+    'diagonal': {
+        'rotulo': 'Diagonal',
+        'descricao': 'Escuro e limpo, com pontilhado diagonal nos cantos.',
+        'css': 'css/professor-estilos/diagonal.css',
+        'template': 'professor/estilos/_poster_diagonal.html',
+    },
+    'textura': {
+        'rotulo': 'Textura',
+        'descricao': 'Fundo texturizado com faixas diagonais laranja.',
+        'css': 'css/professor-estilos/textura.css',
+        'template': 'professor/estilos/_poster_textura.html',
+    },
+}
+
 # Descrição curta de cada especialidade, usada nas 3 caixas de destaque
 # da página pública (ver ProfessorPerfilService.servicos_destaque).
 _DESCRICOES_ESPECIALIDADES = {
@@ -112,6 +136,13 @@ class ProfessorPerfilService(BaseService):
 
         especialidades = [e for e in form.getlist('especialidades') if e in ESPECIALIDADES_VALIDAS]
 
+        # Estilo da página: campo ausente = mantém o atual (formulários
+        # antigos/outras telas não zeram a escolha); presente mas fora
+        # do registro = erro.
+        estilo_pagina = form.get('estilo_pagina')
+        if estilo_pagina is not None and estilo_pagina not in ESTILOS_PAGINA:
+            return False, 'Estilo de página inválido.'
+
         try:
             professor.professor_tagline = tagline or None
             professor.professor_bio = bio or None
@@ -121,6 +152,8 @@ class ProfessorPerfilService(BaseService):
             # Checkbox desmarcado não vem no POST -- ausência = False
             # (mesmo padrão de auth_routes.update_profile).
             professor.professor_mostrar_avaliacoes = 'mostrar_avaliacoes' in form
+            if estilo_pagina is not None:
+                professor.professor_estilo_pagina = estilo_pagina
 
             from services.geolocalizacao_service import GeolocalizacaoService
             cep_normalizado = GeolocalizacaoService.normalizar_cep(cep_bruto)
@@ -191,6 +224,16 @@ class ProfessorPerfilService(BaseService):
             StorageService.delete_object(chave_antiga)
 
         return True, 'Foto atualizada com sucesso!'
+
+    @staticmethod
+    def resolver_estilo(chave: str | None) -> tuple[str, dict]:
+        """Devolve (chave, info) do estilo pedido; se a chave for
+        vazia ou desconhecida (ex.: estilo removido depois de alguém
+        já ter escolhido), cai no estilo padrão em vez de quebrar a
+        página pública."""
+        if chave not in ESTILOS_PAGINA:
+            chave = ESTILO_PAGINA_PADRAO
+        return chave, ESTILOS_PAGINA[chave]
 
     @staticmethod
     def especialidades_selecionadas(professor: User) -> list[str]:

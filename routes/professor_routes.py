@@ -10,7 +10,9 @@ from services.musculo_service import MusculoService
 from services.billing_service import BillingService
 from services.dashboard_service import DashboardService
 from services.notificacao_service import NotificacaoService
-from services.professor_perfil_service import ProfessorPerfilService, ESPECIALIDADES_VALIDAS
+from services.professor_perfil_service import (
+    ProfessorPerfilService, ESPECIALIDADES_VALIDAS, ESTILOS_PAGINA,
+)
 from services.avaliacao_professor_service import AvaliacaoProfessorService
 from utils.decorators import professor_acesso_alunos_required, professor_acesso_tela_required
 from extensions import limiter
@@ -130,7 +132,7 @@ def novo_aluno():
             flash(mensagem, 'warning')
             return redirect(url_for('professor.listar_alunos'))
 
-    if request.method == 'POST':
+    if request.method == 'POST':  
         username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
@@ -1254,6 +1256,10 @@ def editar_pagina_publica():
         'professor/editar_pagina_publica.html',
         especialidades_disponiveis=ESPECIALIDADES_VALIDAS,
         especialidades_selecionadas=set(current_user.professor_especialidades or []),
+        estilos_pagina=ESTILOS_PAGINA,
+        estilo_pagina_atual=ProfessorPerfilService.resolver_estilo(
+            current_user.professor_estilo_pagina
+        )[0],
     )
 
 
@@ -1311,6 +1317,14 @@ def pagina_publica(slug):
     descricao_curta = professor.professor_tagline or f'Página de {nome_exibicao} no FitLog'
     embed = request.args.get('embed') == '1'
 
+    # ?estilo=<chave> só vale pro próprio dono (prévia do estilo ainda
+    # não salvo, no modal "Ver minha página"); pra qualquer outra
+    # pessoa, ou com chave desconhecida, vale o estilo salvo.
+    estilo_pedido = request.args.get('estilo') if eh_dono else None
+    estilo_chave, estilo_info = ProfessorPerfilService.resolver_estilo(
+        estilo_pedido if estilo_pedido in ESTILOS_PAGINA else professor.professor_estilo_pagina
+    )
+
     contexto = dict(
         professor=professor,
         nome_exibicao=nome_exibicao,
@@ -1320,6 +1334,8 @@ def pagina_publica(slug):
         resumo_avaliacoes=resumo_avaliacoes,
         eh_dono=eh_dono,
         embed=embed,
+        estilo_pagina=estilo_chave,
+        estilo_info=estilo_info,
     )
 
     if embed:

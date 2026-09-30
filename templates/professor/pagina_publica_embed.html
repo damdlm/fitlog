@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ nome_exibicao }} — FitLog</title>
-    <link rel="stylesheet" href="{{ static_v('css/professor-pagina.css') }}">
+    <link rel="stylesheet" href="{{ static_v(estilo_info.css) }}">
     <style>
         /* Sem a navbar/chrome do base.html aqui de propósito -- essa
            página só existe pra ser embutida no iframe do modal "Ver
@@ -17,6 +17,6 @@
     </style>
 </head>
 <body>
-    {% include "professor/_poster.html" %}
+    {% include estilo_info.template %}
 </body>
 </html>

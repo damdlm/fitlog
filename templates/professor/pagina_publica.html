@@ -10,11 +10,11 @@
 {% block og_image %}{{ canonical_url(professor.professor_foto_url) if professor.professor_foto_url else canonical_url('/static/images/og-fitlog.jpg') }}{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ static_v('css/professor-pagina.css') }}">
+<link rel="stylesheet" href="{{ static_v(estilo_info.css) }}">
 {% endblock %}
 
 {% block content %}
-{% include "professor/_poster.html" %}
+{% include estilo_info.template %}
 {% endblock %}
 
 {% block scripts %}

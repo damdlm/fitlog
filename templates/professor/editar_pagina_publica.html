@@ -59,6 +59,29 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                     <div class="epp-field">
+                        <label class="form-label">Estilo da página</label>
+                        <div class="epp-estilos">
+                            {% for chave, estilo in estilos_pagina.items() %}
+                            <div class="epp-estilo-option">
+                                <input type="radio" name="estilo_pagina" id="ppEstilo{{ chave }}"
+                                       value="{{ chave }}"
+                                       {{ 'checked' if chave == estilo_pagina_atual else '' }}>
+                                <label for="ppEstilo{{ chave }}">
+                                    <span class="epp-estilo-thumb epp-estilo-thumb-{{ chave }}" aria-hidden="true">
+                                        <span class="epp-estilo-thumb-ring"></span>
+                                        <span class="epp-estilo-thumb-linha"></span>
+                                        <span class="epp-estilo-thumb-linha epp-estilo-thumb-linha-curta"></span>
+                                    </span>
+                                    <span class="epp-estilo-nome">{{ estilo.rotulo }}</span>
+                                    <span class="epp-estilo-desc">{{ estilo.descricao }}</span>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="form-text">Use "Ver minha página" para conferir o estilo marcado antes de salvar.</div>
+                    </div>
+
+                    <div class="epp-field">
                         <label for="ppTagline" class="form-label">Frase de impacto</label>
                         <input type="text" class="form-control" id="ppTagline" name="tagline" maxlength="200"
                                data-contador-max="200" data-contador-alvo="ppTaglineContador"

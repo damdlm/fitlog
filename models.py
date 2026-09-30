@@ -156,6 +156,12 @@ class User(UserMixin, db.Model):
     # na página pública -- o professor pode preencher tudo e ainda
     # assim ocultar só esse bloco. Default True.
     professor_mostrar_avaliacoes = db.Column(db.Boolean, nullable=False, default=True)
+    # Estilo visual da página pública (chave de ESTILOS_PAGINA em
+    # services/professor_perfil_service.py). server_default garante o
+    # valor pros professores que já existiam antes da migration.
+    professor_estilo_pagina = db.Column(
+        db.String(30), nullable=False, default='diagonal', server_default='diagonal'
+    )
 
     # Relacionamentos
     versoes = db.relationship('VersaoGlobal', backref='usuario', lazy=True, cascade='all, delete-orphan')
