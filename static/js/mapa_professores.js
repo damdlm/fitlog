@@ -64,7 +64,7 @@
     function criarPino(item) {
         var html = item.professores.map(function (prof) {
             var linkPerfil = prof.slug
-                ? ' &middot; <a href="/professor/pagina/' + encodeURIComponent(prof.slug) + '" target="_blank">ver perfil</a>'
+                ? ' &middot; <button type="button" class="btn btn-link p-0 align-baseline" style="font-size:inherit;" data-bs-toggle="modal" data-bs-target="#ppVerPaginaModal" data-professor-slug="' + escapar(prof.slug) + '">ver perfil</button>'
                 : '';
             var cidadeUf = prof.cidade
                 ? '<br><small class="text-muted">' + escapar(prof.cidade) + (prof.uf ? '/' + escapar(prof.uf) : '') + '</small>'

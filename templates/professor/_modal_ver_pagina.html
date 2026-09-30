@@ -1,24 +1,35 @@
 {# Modal "Ver página" -- AUTOSSUFICIENTE (marcação + CSS + JS aqui
    dentro). Qualquer tela só precisa de um botão com
    data-bs-toggle="modal" data-bs-target="#ppVerPaginaModal" e de um
-   {% include "professor/_modal_ver_pagina.html" %}. Por padrão usa
-   current_user.professor_slug (professor vendo a própria página, em
-   dashboard.html e editar_pagina_publica.html); passe professor_slug
-   explicitamente pra mostrar a página de outro professor (aluno
-   vendo a página do seu professor, em aluno/meu_professor.html).
+   {% include "professor/_modal_ver_pagina.html" %}.
+
+   Dois jeitos de indicar QUAL professor mostrar:
+   1) Slug fixo, conhecido em quem inclui o partial: por padrão usa
+      current_user.professor_slug (professor vendo a própria página,
+      em dashboard.html/editar_pagina_publica.html); passe
+      professor_slug pra mostrar a de outro professor conhecido de
+      antemão (aluno vendo o professor vinculado, em
+      aluno/meu_professor.html).
+   2) Slug dinâmico, só conhecido no momento do clique (várias
+      pessoas diferentes na mesma tela: mapa de professores, lista de
+      busca etc.): passe pp_modal_force=true ao incluir o partial
+      (só pra garantir que o modal é renderizado mesmo sem slug
+      nenhum de antemão) e, em cada botão/gatilho,
+      data-professor-slug="<slug>" no lugar de um href.
 
    Carrega a versão "embed" da página pública (?embed=1, sem a navbar
    do site) num iframe, sem sair da tela nem abrir aba nova. Sem
    cabeçalho de título: só um X flutuante por cima. #}
 {% set pp_modal_slug = professor_slug if professor_slug is defined and professor_slug else current_user.professor_slug %}
-{% if pp_modal_slug %}
+{% if pp_modal_slug or (pp_modal_force is defined and pp_modal_force) %}
 <div class="modal fade" id="ppVerPaginaModal" tabindex="-1" aria-label="Página pública" aria-hidden="true">
     <div class="modal-dialog modal-dialog-scrollable modal-lg modal-fullscreen-sm-down">
         <div class="modal-content epp-preview-content">
             <button type="button" class="btn-close btn-close-white epp-preview-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             <div class="modal-body p-0">
                 <iframe id="ppVerPaginaFrame"
-                        data-src="{{ url_for('professor.pagina_publica', slug=pp_modal_slug, embed=1) }}"
+                        {% if pp_modal_slug %}data-src="{{ url_for('professor.pagina_publica', slug=pp_modal_slug, embed=1) }}"{% endif %}
+                        data-src-template="{{ url_for('professor.pagina_publica', slug='__SLUG__', embed=1) }}"
                         title="Prévia da página pública"></iframe>
             </div>
         </div>
@@ -63,8 +74,18 @@
 
     // Recarrega a cada abertura, pra sempre mostrar o que acabou de ser
     // salvo. O "_" evita que o navegador reaproveite uma versão antiga.
-    modal.addEventListener('show.bs.modal', function () {
-        frame.src = frame.dataset.src + '&_=' + Date.now();
+    // Se quem abriu o modal (event.relatedTarget) tiver
+    // data-professor-slug, monta a URL pra ESSE professor (caso do
+    // mapa/busca, onde cada gatilho é um professor diferente);
+    // senão usa o slug fixo definido no carregamento da página.
+    modal.addEventListener('show.bs.modal', function (event) {
+        var trigger = event.relatedTarget;
+        var slugDinamico = trigger && trigger.getAttribute('data-professor-slug');
+        var url = slugDinamico
+            ? frame.dataset.srcTemplate.replace('__SLUG__', encodeURIComponent(slugDinamico))
+            : frame.dataset.src;
+        if (!url) return;
+        frame.src = url + '&_=' + Date.now();
     });
     modal.addEventListener('hidden.bs.modal', function () {
         frame.src = 'about:blank';
