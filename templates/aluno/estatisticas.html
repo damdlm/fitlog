@@ -143,6 +143,32 @@
         padding: 40px 20px;
         color: #999;
     }
+
+    .est-chart-toolbar {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        margin-top: 0.75rem;
+    }
+    .est-chart-hint {
+        font-size: 0.78rem;
+        color: #8a8a8a;
+        text-align: center;
+        margin: 0;
+    }
+    .est-chart-wrap {
+        position: relative;
+        width: 100%;
+        height: 300px;
+    }
+    @media (max-width: 991.98px) {
+        .est-chart-wrap { height: 230px; }
+    }
+    @media (max-width: 575.98px) {
+        .est-chart-wrap { height: 190px; }
+        #evolucaoCard { padding-left: 0.5rem; padding-right: 0.5rem; }
+    }
     .est-empty i {
         font-size: 2.4rem;
         color: #e0a877;
@@ -529,11 +555,20 @@
             {% endfor %}
         </div>
     </div>
-    <div class="card-body">
-        <canvas id="evolucaoChart" height="280"></canvas>
+    <div class="card-body" id="evolucaoCard">
+        <div class="est-chart-wrap">
+            <canvas id="evolucaoChart"></canvas>
+        </div>
         <div class="est-empty" id="evolucaoVazio" style="display: none;">
             <i class="bi bi-graph-up"></i>
             Ainda não há registros suficientes pra montar esse gráfico.
+        </div>
+        <div class="est-chart-toolbar" id="toolbarEvolucao">
+            <div class="est-pill-group" id="filtrosModoEvolucao">
+                <button type="button" class="est-pill active" data-modo="semana">Por semana</button>
+                <button type="button" class="est-pill" data-modo="treino">Por treino</button>
+            </div>
+            <p class="est-chart-hint" id="evolucaoHint"></p>
         </div>
     </div>
 </div>
@@ -870,11 +905,49 @@
     }
 
     let evolucaoChart;
+    let modoEvolucao = 'semana';   // 'semana' | 'treino' (rodada completa A+B+C+D)
+    let treinoEvolucao = 'todos';  // 'todos' ou id do treino individual
+    let codigoTreinoEvolucao = null; // letra do treino quando filtrado (pra cor da barra)
 
-    function carregarEvolucao(treinoCodigo) {
-        const url = treinoCodigo === 'todos' ? '/api/progresso' : `/api/progresso?treino=${treinoCodigo}`;
+    // Mesma paleta usada em todo o app pra identificar cada treino;
+    // cicla se a divisão tiver mais letras que cores definidas.
+    const CORES_TREINO = ['#5B8FF9', '#FFC53D', '#FF6B6B', '#51CF66', '#9775FA', '#FF922B'];
+    function corDoTreino(codigo, indiceFallback) {
+        const indice = CORES_TREINO_POR_LETRA[codigo];
+        return CORES_TREINO[(indice !== undefined ? indice : indiceFallback) % CORES_TREINO.length];
+    }
+    // Mapa letra -> índice de cor, construído a partir da ordem dos
+    // próprios botões de filtro (A, B, C... na ordem da divisão).
+    const CORES_TREINO_POR_LETRA = {};
+    document.querySelectorAll('#filtrosEvolucao .est-pill[data-treino]').forEach((botao, i) => {
+        if (botao.dataset.treino !== 'todos') CORES_TREINO_POR_LETRA[botao.textContent.trim()] = i - 1;
+    });
 
-        fetch(url)
+    const DICAS_MODO_EVOLUCAO = {
+        semana: 'Volume (peso × repetições × séries) somado por semana, nos últimos 30 dias.',
+        treino: 'Cada ponto é uma rodada completa do treino (ex.: A+B+C+D). Treino não feito na rodada conta como 0.'
+    };
+
+    function trocarModoEvolucao(modo, botao) {
+        modoEvolucao = modo;
+        document.querySelectorAll('#filtrosModoEvolucao .est-pill').forEach(b => b.classList.remove('active'));
+        if (botao) botao.classList.add('active');
+        carregarEvolucao(treinoEvolucao, codigoTreinoEvolucao, null);
+    }
+
+    function carregarEvolucao(treinoId, codigoTreino, botaoTreino) {
+        treinoEvolucao = treinoId;
+        codigoTreinoEvolucao = codigoTreino;
+        if (botaoTreino) {
+            document.querySelectorAll('#filtrosEvolucao .est-pill').forEach(p => p.classList.remove('active'));
+            botaoTreino.classList.add('active');
+        }
+        document.getElementById('evolucaoHint').textContent = DICAS_MODO_EVOLUCAO[modoEvolucao] || '';
+
+        const params = new URLSearchParams({ modo: modoEvolucao });
+        if (treinoId !== 'todos') params.set('treino', treinoId);
+
+        fetch(`/api/progresso?${params.toString()}`)
             .then(r => r.json())
             .then(data => {
                 if (evolucaoChart) evolucaoChart.destroy();
@@ -885,47 +958,72 @@
                 document.getElementById('evolucaoVazio').style.display = semDados ? 'block' : 'none';
                 if (semDados) return;
 
-                // Preenchimento em gradiente (mais suave que uma cor chapada),
-                // some perto da base do gráfico.
-                const ctx = canvas.getContext('2d');
-                const gradiente = ctx.createLinearGradient(0, 0, 0, 280);
-                gradiente.addColorStop(0, 'rgba(242, 140, 51, 0.32)');
-                gradiente.addColorStop(1, 'rgba(242, 140, 51, 0)');
+                const isMobile = window.innerWidth < 576;
+
+                // "Todos": uma barra por treino (A, B, C...), lado a lado em
+                // cada ponto -- vem pronto em data.detalhes. Um treino
+                // específico filtrado: uma única barra, na cor dele.
+                let datasetsBarras;
+                if (treinoEvolucao === 'todos' && data.detalhes && data.detalhes.length && data.detalhes[0].length) {
+                    const letras = data.detalhes[0].map(d => d.codigo);
+                    datasetsBarras = letras.map((letra, i) => ({
+                        type: 'bar',
+                        label: `Treino ${letra}`,
+                        data: data.detalhes.map(ponto => (ponto.find(d => d.codigo === letra) || {}).volume || 0),
+                        backgroundColor: corDoTreino(letra, i),
+                        borderRadius: 4,
+                        maxBarThickness: 28,
+                        yAxisID: 'y'
+                    }));
+                } else {
+                    datasetsBarras = [{
+                        type: 'bar',
+                        label: codigoTreino ? `Treino ${codigoTreino}` : 'Volume Total (kg)',
+                        data: data.volumes,
+                        backgroundColor: codigoTreino ? corDoTreino(codigoTreino, 0) : '#F28C33',
+                        borderRadius: 4,
+                        maxBarThickness: 36,
+                        yAxisID: 'y'
+                    }];
+                }
 
                 evolucaoChart = new Chart(canvas, {
-                    type: 'line',
+                    type: 'bar',
                     data: {
                         labels: data.semanas,
-                        datasets: [{
-                            label: 'Volume Total (kg)',
-                            data: data.volumes,
-                            borderColor: '#F28C33',
-                            backgroundColor: gradiente,
-                            borderWidth: 2.5,
-                            pointRadius: 0,
-                            pointHitRadius: 12,
-                            pointHoverRadius: 5,
-                            pointHoverBackgroundColor: '#F28C33',
-                            pointHoverBorderColor: '#fff',
-                            pointHoverBorderWidth: 2,
-                            tension: 0.35,
-                            fill: true
-                        }]
+                        datasets: [
+                            ...datasetsBarras,
+                            {
+                                type: 'line',
+                                label: 'Carga Média (kg)',
+                                data: data.cargas_medias,
+                                borderColor: '#1a1a1a',
+                                backgroundColor: '#1a1a1a',
+                                borderWidth: 2,
+                                pointRadius: 3,
+                                pointHoverRadius: 5,
+                                tension: 0.3,
+                                yAxisID: 'y1'
+                            }
+                        ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: { display: false },
+                            legend: {
+                                position: 'bottom',
+                                labels: { boxWidth: 12, font: { size: 11 }, color: '#8a8a8a' }
+                            },
                             tooltip: {
                                 backgroundColor: '#1a1a1a',
                                 padding: 10,
                                 cornerRadius: 8,
-                                displayColors: false,
                                 callbacks: {
                                     label: function (context) {
-                                        return `${context.formattedValue} kg`;
+                                        const sufixo = context.dataset.yAxisID === 'y1' ? ' kg (carga média)' : ' kg';
+                                        return `${context.dataset.label}: ${context.formattedValue}${sufixo}`;
                                     }
                                 }
                             }
@@ -937,11 +1035,23 @@
                             },
                             y: {
                                 beginAtZero: true,
+                                title: { display: !isMobile, text: 'Volume Total (kg)' },
                                 grid: { color: 'rgba(0,0,0,0.05)' },
                                 ticks: {
                                     color: '#8a8a8a',
                                     font: { size: 11 },
-                                    callback: value => `${value}kg`
+                                    maxTicksLimit: isMobile ? 5 : 8
+                                }
+                            },
+                            y1: {
+                                beginAtZero: true,
+                                position: 'right',
+                                title: { display: !isMobile, text: 'Carga Média (kg)' },
+                                grid: { drawOnChartArea: false },
+                                ticks: {
+                                    color: '#8a8a8a',
+                                    font: { size: 11 },
+                                    maxTicksLimit: isMobile ? 5 : 8
                                 }
                             }
                         }
@@ -953,13 +1063,17 @@
     document.getElementById('filtrosEvolucao').addEventListener('click', function(evento) {
         const botao = evento.target.closest('.est-pill');
         if (!botao) return;
-
-        this.querySelectorAll('.est-pill').forEach(p => p.classList.remove('active'));
-        botao.classList.add('active');
-        carregarEvolucao(botao.dataset.treino);
+        const codigo = botao.dataset.treino === 'todos' ? null : botao.textContent.trim();
+        carregarEvolucao(botao.dataset.treino, codigo, botao);
     });
 
-    carregarEvolucao('todos');
+    document.getElementById('filtrosModoEvolucao').addEventListener('click', function(evento) {
+        const botao = evento.target.closest('.est-pill');
+        if (!botao) return;
+        trocarModoEvolucao(botao.dataset.modo, botao);
+    });
+
+    carregarEvolucao('todos', null, null);
 
     // ===== Atividade (últimos 30 dias) =====
     let dadosAtividade = null;
