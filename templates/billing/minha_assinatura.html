@@ -20,6 +20,7 @@
         <i class="bi bi-qr-code"></i>
         <span>
             Ativado via <strong>Pix</strong>{% if assinatura.periodo_atual_fim %} até <strong>{{ assinatura.periodo_atual_fim.strftime('%d/%m/%Y') }}</strong>{% endif %}.
+            {% if assinatura.cancelado_em %}<br><small class="text-warning">Cancelamento agendado -- seu acesso continua até o fim do período pago.</small>{% endif %}
             <br><small class="text-muted">Sem débito automático -- pague um novo Pix aqui pra renovar.</small>
         </span>
     </div>
@@ -185,12 +186,12 @@
             <span id="professor-btn-texto">{% if assinatura and assinatura.status == 'active' %}Confirmar plano{% else %}Assinar agora{% endif %}</span>
         </button>
     </form>
-    {% if assinatura and assinatura.status in ('active', 'past_due') %}
+    {% if assinatura and assinatura.status in ('active', 'past_due') and not assinatura.cancelado_em %}
     <form method="POST" action="{{ url_for('billing.cancelar') }}" class="mt-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-link text-muted p-0" style="font-size: 0.85rem;"
                 data-confirm-title="Cancelar sua assinatura?"
-                data-confirm-text="Você perde o acesso imediatamente e não será cobrado de novo."
+                data-confirm-text="Seu acesso continua até o fim do período já pago e você não será cobrado de novo."
                 data-confirm-icon="bi-exclamation-triangle-fill"
                 data-confirm-label="Sim, cancelar">
             Cancelar assinatura
@@ -262,12 +263,12 @@
             <span id="aluno-btn-texto">{% if assinatura and assinatura.status == 'active' %}Gerenciar assinatura{% else %}Assinar agora{% endif %}</span>
         </button>
     </form>
-    {% if assinatura and assinatura.status in ('active', 'past_due') %}
+    {% if assinatura and assinatura.status in ('active', 'past_due') and not assinatura.cancelado_em %}
     <form method="POST" action="{{ url_for('billing.cancelar') }}" class="mt-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-link text-muted p-0" style="font-size: 0.85rem;"
                 data-confirm-title="Cancelar sua assinatura?"
-                data-confirm-text="Você perde o acesso imediatamente e não será cobrado de novo."
+                data-confirm-text="Seu acesso continua até o fim do período já pago e você não será cobrado de novo."
                 data-confirm-icon="bi-exclamation-triangle-fill"
                 data-confirm-label="Sim, cancelar">
             Cancelar assinatura

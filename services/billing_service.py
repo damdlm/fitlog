@@ -1051,33 +1051,59 @@ class BillingService:
         Levanta NadaParaCancelarError se não houver nada pra
         cancelar."""
         assinatura = usuario.assinatura
-        if assinatura is None or not assinatura.gateway_subscription_id:
+        agora = datetime.now(timezone.utc)
+        eh_pix = assinatura is not None and assinatura.forma_pagamento == 'pix'
+        if assinatura is None:
+            raise NadaParaCancelarError()
+        # Pix é pagamento avulso: não tem assinatura recorrente no Asaas
+        # (gateway_subscription_id vazio), mas o período pago ainda
+        # precisa poder ser cancelado -- senão o botão não faz nada.
+        if not assinatura.gateway_subscription_id and not (eh_pix and assinatura.status == 'active'):
             raise NadaParaCancelarError()
 
-        proximo_vencimento = None
-        resp_get = requests.get(
-            f'{BillingService._base_url()}/subscriptions/{assinatura.gateway_subscription_id}',
-            headers=BillingService._headers(),
-            timeout=REQUEST_TIMEOUT_SECONDS,
-        )
-        if resp_get.status_code == 200:
-            data_str = resp_get.json().get('nextDueDate')
-            if data_str:
-                proximo_vencimento = datetime.strptime(data_str, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+        # Fim do período JÁ PAGO. No Pix a fonte de verdade é o nosso
+        # periodo_atual_fim (gravado quando o Pix confirmou) -- o Asaas
+        # não conhece "próximo vencimento" de um pagamento avulso, e
+        # perguntar a ele era justamente o que fazia o acesso ser
+        # revogado na hora (nextDueDate vinha vazio/404).
+        proximo_vencimento = BillingService._periodo_pago_vigente(assinatura, agora) if eh_pix else None
 
-        resp = requests.delete(
-            f'{BillingService._base_url()}/subscriptions/{assinatura.gateway_subscription_id}',
-            headers=BillingService._headers(),
-            timeout=REQUEST_TIMEOUT_SECONDS,
-        )
-        # 404 significa que a assinatura já não existe mais no Asaas
-        # (ex: já foi removida numa tentativa anterior que falhou antes
-        # de atualizarmos o banco local) -- trata como sucesso, já que
-        # o resultado desejado (nenhuma cobrança futura) já é realidade.
-        if resp.status_code != 404:
-            BillingService._checar_resposta(resp, 'cancelar assinatura')
+        if assinatura.gateway_subscription_id:
+            if proximo_vencimento is None:
+                resp_get = requests.get(
+                    f'{BillingService._base_url()}/subscriptions/{assinatura.gateway_subscription_id}',
+                    headers=BillingService._headers(),
+                    timeout=REQUEST_TIMEOUT_SECONDS,
+                )
+                if resp_get.status_code == 200:
+                    data_str = resp_get.json().get('nextDueDate')
+                    if data_str:
+                        proximo_vencimento = datetime.strptime(data_str, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+                else:
+                    logger.warning(
+                        'Cancelar assinatura %s (usuario=%s): GET da subscription %s no Asaas respondeu %s '
+                        '-- não deu pra ler o nextDueDate',
+                        assinatura.id, usuario.id, assinatura.gateway_subscription_id, resp_get.status_code,
+                    )
 
-        assinatura.cancelado_em = datetime.now(timezone.utc)
+            resp = requests.delete(
+                f'{BillingService._base_url()}/subscriptions/{assinatura.gateway_subscription_id}',
+                headers=BillingService._headers(),
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+            # 404 significa que a assinatura já não existe mais no Asaas
+            # (ex: já foi removida numa tentativa anterior que falhou antes
+            # de atualizarmos o banco local) -- trata como sucesso, já que
+            # o resultado desejado (nenhuma cobrança futura) já é realidade.
+            if resp.status_code != 404:
+                BillingService._checar_resposta(resp, 'cancelar assinatura')
+
+        # Último recurso antes de revogar na hora: se já existe um
+        # período pago vigente gravado localmente, é até ele que vai o acesso.
+        if proximo_vencimento is None:
+            proximo_vencimento = BillingService._periodo_pago_vigente(assinatura, agora)
+
+        assinatura.cancelado_em = agora
         if proximo_vencimento is None:
             assinatura.status = 'canceled'
         else:
@@ -1088,9 +1114,9 @@ class BillingService:
             # periodo_atual_fim passar.
         db.session.commit()
         logger.info(
-            'Assinatura %s (usuario=%s) cancelada pelo usuário -- acesso mantido até %s',
+            'Assinatura %s (usuario=%s) cancelada pelo usuário -- acesso até %s',
             assinatura.id, usuario.id,
-            proximo_vencimento or 'agora (não foi possível confirmar o próximo vencimento no Asaas)',
+            proximo_vencimento or 'agora -- acesso REVOGADO (sem período pago vigente e sem nextDueDate no Asaas)',
         )
 
         from services.notificacao_service import NotificacaoService
@@ -1109,6 +1135,12 @@ class BillingService:
             mensagem=mensagem,
             url='/billing/minha-assinatura',
         )
+
+    @staticmethod
+    def _periodo_pago_vigente(assinatura: Assinatura, agora: datetime):
+        """periodo_atual_fim (aware) se ainda está no futuro, senão None."""
+        fim = Assinatura._aware(assinatura.periodo_atual_fim)
+        return fim if fim is not None and fim > agora else None
 
     @staticmethod
     def finalizar_cancelamentos_agendados() -> int:
@@ -1333,6 +1365,10 @@ class BillingService:
             # subscription). Cartão não usa periodo_atual_fim -- quem
             # garante a renovação dele é o próprio Asaas.
             if assinatura.forma_pagamento == 'pix':
+                if (payment or {}).get('id') != assinatura.gateway_ultimo_pagamento_confirmado_id:
+                    # Um Pix NOVO foi pago: quem cancelou e voltou a pagar
+                    # quer continuar -- limpa o cancelamento agendado.
+                    assinatura.cancelado_em = None
                 assinatura.periodo_atual_fim = _proximo_vencimento_mensal(agora)
                 if assinatura.gateway_subscription_id:
                     # Sobrou uma assinatura recorrente de CARTÃO de uma
@@ -1781,6 +1817,7 @@ class BillingService:
         vencidas = Assinatura.query.filter(
             Assinatura.status == 'active',
             Assinatura.forma_pagamento == 'pix',
+            Assinatura.cancelado_em.is_(None),  # cancelamento agendado vira 'canceled' em finalizar_cancelamentos_agendados, sem carência
             Assinatura.periodo_atual_fim.isnot(None),
             Assinatura.periodo_atual_fim <= agora,
         ).all()

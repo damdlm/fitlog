@@ -1719,6 +1719,113 @@ class TestPixConfirmadoCancelaCartaoAntigo:
             assert chamadas_delete == []
 
 
+class TestCancelarAssinaturaPix:
+    """Pix é pagamento avulso: o acesso pago até periodo_atual_fim tem
+    que sobreviver ao cancelamento, mesmo quando o Asaas não consegue
+    informar o nextDueDate (404/vazio) ou nem existe subscription."""
+
+    def _assinatura_pix(self, username, dias_restantes=20, subscription_id=None):
+        aluno = _criar_usuario(username)
+        assinatura = BillingService.iniciar_trial(aluno)
+        assinatura.status = 'active'
+        assinatura.forma_pagamento = 'pix'
+        assinatura.gateway_subscription_id = subscription_id
+        assinatura.periodo_atual_fim = datetime.now(timezone.utc) + timedelta(days=dias_restantes)
+        db.session.commit()
+        return aluno
+
+    def test_pix_sem_subscription_cancela_mas_mantem_acesso_ate_o_fim_do_periodo(self, app):
+        with app.app_context():
+            aluno = self._assinatura_pix('cancelar_pix_puro')
+            fim = Assinatura.query.filter_by(usuario_id=aluno.id).first().periodo_atual_fim
+
+            BillingService.cancelar_assinatura(aluno)
+
+            a = Assinatura.query.filter_by(usuario_id=aluno.id).first()
+            assert a.status == 'active'
+            assert a.cancelado_em is not None
+            assert Assinatura._aware(a.periodo_atual_fim) == Assinatura._aware(fim)
+            assert BillingService.usuario_tem_acesso_premium(aluno) is True
+
+    def test_pix_com_subscription_orfa_nao_depende_do_nextduedate_do_asaas(self, app, monkeypatch):
+        """Caso real (usuário 9, 30/09): subscription antiga no banco, GET
+        no Asaas sem nextDueDate -- antes revogava o acesso na hora."""
+        chamadas = []
+        monkeypatch.setattr(
+            'services.billing_service.requests.get',
+            lambda *a, **k: (chamadas.append('get'), _RespostaFake({}, status_code=404))[1],
+        )
+        monkeypatch.setattr(
+            'services.billing_service.requests.delete',
+            lambda *a, **k: _RespostaFake({}, status_code=404),
+        )
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            aluno = self._assinatura_pix('cancelar_pix_orfa', subscription_id='sub_orfa')
+
+            BillingService.cancelar_assinatura(aluno)
+
+            a = Assinatura.query.filter_by(usuario_id=aluno.id).first()
+            assert a.status == 'active'
+            assert a.cancelado_em is not None
+            assert chamadas == []  # no Pix não precisa perguntar o vencimento ao Asaas
+            assert BillingService.usuario_tem_acesso_premium(aluno) is True
+
+    def test_cartao_sem_nextduedate_usa_periodo_ja_gravado_em_vez_de_revogar(self, app, monkeypatch):
+        monkeypatch.setattr(
+            'services.billing_service.requests.get',
+            lambda *a, **k: _RespostaFake({}, status_code=404),
+        )
+        monkeypatch.setattr(
+            'services.billing_service.requests.delete',
+            lambda *a, **k: _RespostaFake({}, status_code=200),
+        )
+        with app.app_context():
+            app.config['ASAAS_API_KEY'] = 'chave-de-teste'
+            aluno = self._assinatura_pix('cancelar_cartao_fallback', subscription_id='sub_cartao')
+            Assinatura.query.filter_by(usuario_id=aluno.id).first().forma_pagamento = 'cartao'
+            db.session.commit()
+
+            BillingService.cancelar_assinatura(aluno)
+
+            assert Assinatura.query.filter_by(usuario_id=aluno.id).first().status == 'active'
+
+    def test_pix_sem_periodo_vigente_e_sem_subscription_nao_tem_o_que_cancelar(self, app):
+        with app.app_context():
+            aluno = self._assinatura_pix('cancelar_pix_vencido', dias_restantes=-1)
+            Assinatura.query.filter_by(usuario_id=aluno.id).first().status = 'past_due'
+            db.session.commit()
+            try:
+                BillingService.cancelar_assinatura(aluno)
+                assert False, 'deveria ter levantado NadaParaCancelarError'
+            except NadaParaCancelarError:
+                pass
+
+    def test_cron_nao_abre_carencia_para_pix_com_cancelamento_agendado(self, app):
+        with app.app_context():
+            aluno = self._assinatura_pix('cancelar_pix_cron', dias_restantes=-1)
+            a = Assinatura.query.filter_by(usuario_id=aluno.id).first()
+            a.cancelado_em = datetime.now(timezone.utc) - timedelta(days=5)
+            db.session.commit()
+
+            assert BillingService.expirar_pix_vencidos() == 0
+            assert BillingService.finalizar_cancelamentos_agendados() == 1
+            assert Assinatura.query.filter_by(usuario_id=aluno.id).first().status == 'canceled'
+
+    def test_novo_pix_pago_limpa_o_cancelamento_agendado(self, app):
+        with app.app_context():
+            aluno = self._assinatura_pix('cancelar_pix_repagou')
+            a = Assinatura.query.filter_by(usuario_id=aluno.id).first()
+            a.cancelado_em = datetime.now(timezone.utc)
+            a.gateway_ultimo_pagamento_confirmado_id = 'pay_antigo'
+            db.session.commit()
+
+            BillingService._aplicar_evento(a, 'PAYMENT_CONFIRMED', {'id': 'pay_novo'})
+
+            assert a.cancelado_em is None
+            assert a.status == 'active'
+
+
 # ---------------------------------------------------------------------
 # Cancelamento de assinatura
 # ---------------------------------------------------------------------
