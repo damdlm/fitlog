@@ -184,7 +184,7 @@
     window.FITLOG_MAPA_CSRF_TOKEN = "{{ csrf_token() }}";
     window.FITLOG_MAPA_URL_SOLICITACAO = "{{ url_for('aluno.enviar_solicitacao', professor_id=0) }}";
 </script>
-<script src="{{ url_for('static', filename='js/mapa_professores.js') }}?v=6"></script>
+<script src="{{ url_for('static', filename='js/mapa_professores.js') }}?v=7"></script>
 
 {% set pp_modal_force = true %}
 {% include "professor/_modal_ver_pagina.html" %}

@@ -95,7 +95,12 @@ class GeolocalizacaoService(BaseService):
         try:
             resposta = requests.get(
                 "https://nominatim.openstreetmap.org/search",
-                params={"q": texto, "country": "Brazil", "format": "json", "limit": 1},
+                # "country" só é válido em busca ESTRUTURADA (sem "q") --
+                # combinado com "q" a API rejeita ou ignora o filtro
+                # (https://nominatim.org/release-docs/latest/api/Search/).
+                # O parâmetro certo pra restringir uma busca livre por
+                # país é "countrycodes" (código ISO 3166-1 alpha-2).
+                params={"q": texto, "countrycodes": "br", "format": "json", "limit": 1},
                 headers=USER_AGENT,
                 timeout=TIMEOUT_SEGUNDOS,
             )

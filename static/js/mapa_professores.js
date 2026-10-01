@@ -133,33 +133,57 @@
     // Busca por cidade -- geocodifica texto livre via nosso backend
     // (o CSP do app só libera connect-src 'self', então não dá pra
     // chamar o Nominatim direto do navegador) e foca o mapa lá, mesmo
-    // sem nenhum professor cadastrado na região.
+    // sem nenhum professor cadastrado na região. Dispara sozinha a
+    // partir de 4 letras (com debounce), sem precisar apertar Enter;
+    // o botão/Enter continuam funcionando pra buscas mais curtas.
     var formBusca = document.getElementById('mapaBuscaCidadeForm');
     var inputBusca = document.getElementById('mapaBuscaCidadeInput');
     var erroBusca = document.getElementById('mapa-busca-erro');
     var ZOOM_CIDADE = 12;
+    var MIN_CARACTERES_BUSCA_AUTOMATICA = 4;
+    var ESPERA_BUSCA_MS = 600; // pausa de digitação antes de buscar sozinho
+    var temporizadorBusca = null;
+    var idBuscaLocal = 0;
+    var ultimoTextoBuscado = '';
 
-    if (formBusca) {
-        formBusca.addEventListener('submit', function (ev) {
-            ev.preventDefault();
-            var texto = inputBusca.value.trim();
-            if (!texto) { return; }
+    function buscarLocal(texto) {
+        texto = texto.trim();
+        if (!texto || texto === ultimoTextoBuscado) { return; }
 
-            erroBusca.style.display = 'none';
-            fetch('/api/professores/mapa/buscar-local?q=' + encodeURIComponent(texto))
-                .then(function (resposta) { return resposta.json().then(function (j) { return { ok: resposta.ok, j: j }; }); })
-                .then(function (res) {
-                    if (!res.ok) {
-                        erroBusca.textContent = res.j.erro || 'Local não encontrado';
-                        erroBusca.style.display = 'block';
-                        return;
-                    }
-                    mapa.setView([res.j.lat, res.j.lng], ZOOM_CIDADE);
-                })
-                .catch(function () {
+        var id = ++idBuscaLocal;
+        erroBusca.style.display = 'none';
+        fetch('/api/professores/mapa/buscar-local?q=' + encodeURIComponent(texto))
+            .then(function (resposta) { return resposta.json().then(function (j) { return { ok: resposta.ok, j: j }; }); })
+            .then(function (res) {
+                if (id !== idBuscaLocal) { return; } // o usuário já digitou outra coisa
+                if (!res.ok) {
+                    erroBusca.textContent = res.j.erro || 'Local não encontrado';
+                    erroBusca.style.display = 'block';
+                    return;
+                }
+                ultimoTextoBuscado = texto;
+                mapa.setView([res.j.lat, res.j.lng], ZOOM_CIDADE);
+            })
+            .catch(function () {
+                if (id === idBuscaLocal) {
                     erroBusca.textContent = 'Erro de conexão';
                     erroBusca.style.display = 'block';
-                });
+                }
+            });
+    }
+
+    if (formBusca && inputBusca) {
+        formBusca.addEventListener('submit', function (ev) {
+            ev.preventDefault();
+            clearTimeout(temporizadorBusca);
+            buscarLocal(inputBusca.value);
+        });
+
+        inputBusca.addEventListener('input', function () {
+            clearTimeout(temporizadorBusca);
+            var texto = inputBusca.value.trim();
+            if (texto.length < MIN_CARACTERES_BUSCA_AUTOMATICA) { return; }
+            temporizadorBusca = setTimeout(function () { buscarLocal(texto); }, ESPERA_BUSCA_MS);
         });
     }
 })();
