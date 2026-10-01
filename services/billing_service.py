@@ -522,7 +522,7 @@ class BillingService:
                     f'Você já tem alunos suficientes para o plano {plano_necessario.nome}. '
                     'Faça upgrade para continuar cadastrando novos alunos no FitLog.'
                 ),
-                url='/minha-assinatura',
+                url='/billing/minha-assinatura',
             )
             assinatura.tier_desatualizado_notificado_em = agora
             db.session.commit()
@@ -1107,7 +1107,7 @@ class BillingService:
             tipo='assinatura_cancelada',
             titulo='Assinatura cancelada',
             mensagem=mensagem,
-            url='/minha-assinatura',
+            url='/billing/minha-assinatura',
         )
 
     @staticmethod
@@ -1698,7 +1698,7 @@ class BillingService:
                     'Seu plano expirou, faça uma nova assinatura para '
                     'aproveitar todos os recursos do FitLog.'
                 ),
-                url='/minha-assinatura',
+                url='/billing/minha-assinatura',
             )
             assinatura.ultima_notificacao_vencimento_dias = dias
             db.session.commit()
@@ -1741,7 +1741,7 @@ class BillingService:
                     'Seu plano expirou, faça uma nova assinatura para '
                     'aproveitar todos os recursos do FitLog.'
                 ),
-                url='/minha-assinatura',
+                url='/billing/minha-assinatura',
             )
 
     @staticmethod
