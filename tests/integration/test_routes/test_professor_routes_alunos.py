@@ -10,7 +10,7 @@ estatísticas e a API de busca.
 from datetime import date, datetime, timezone
 
 from models import (db, User, AlunoProfessor, SolicitacaoVinculo, VersaoGlobal,
-                     TreinoVersao, ExercicioUsuario, RegistroTreino)
+                     TreinoVersao, ExercicioUsuario, RegistroTreino, Plano)
 
 
 def _criar_usuario(username, tipo_usuario='aluno', is_admin=False, ativo=True):
@@ -406,3 +406,50 @@ class TestApiBuscarAlunos:
         data = resp.get_json()
         usernames = {a['username'] for a in data}
         assert 'pr_api_qualqueraluno' in usernames
+
+class TestNovoAlunoLimitePlano:
+    """O limite de alunos do plano é validado já ao abrir o formulário
+    (GET), e não só ao gravar (POST)."""
+
+    def _professor_com_alunos(self, username, quantidade):
+        db.session.add(Plano(codigo='professor_pro', nome='Plano Pro', tipo_usuario='professor',
+                              preco_centavos=2990, min_alunos=3, max_alunos=9, ativo=True))
+        db.session.commit()
+        prof = _criar_usuario(username, tipo_usuario='professor')
+        for i in range(quantidade):
+            aluno = _criar_usuario(f'{username}_aluno_{i}')
+            _associar(aluno.id, prof.id)
+        return prof.username
+
+    def test_get_com_plano_saturado_redireciona_para_minha_assinatura(self, client, app):
+        with app.app_context():
+            username = self._professor_com_alunos('pr_novo_limite_get', 2)
+
+        _login(client, username)
+        resp = client.get('/professor/aluno/novo', follow_redirects=False)
+
+        assert resp.status_code == 302
+        assert resp.headers['Location'].endswith('/billing/minha-assinatura')
+
+    def test_get_dentro_do_limite_abre_o_formulario(self, client, app):
+        with app.app_context():
+            username = self._professor_com_alunos('pr_novo_limite_ok', 1)
+
+        _login(client, username)
+        resp = client.get('/professor/aluno/novo', follow_redirects=False)
+
+        assert resp.status_code == 200
+
+    def test_post_com_plano_saturado_nao_cria_aluno(self, client, app):
+        with app.app_context():
+            username = self._professor_com_alunos('pr_novo_limite_post', 2)
+
+        _login(client, username)
+        resp = client.post('/professor/aluno/novo', data={
+            'username': 'pr_novo_barrado', 'email': 'barrado@teste.com',
+            'password': '123456', 'nome_completo': 'Barrado',
+        }, follow_redirects=False)
+
+        assert resp.status_code == 302
+        with app.app_context():
+            assert User.query.filter_by(username='pr_novo_barrado').first() is None

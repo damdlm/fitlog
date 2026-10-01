@@ -166,6 +166,60 @@ class TestVisualizarTabelaProgresso:
         assert b'ExercicioDaV1Unico' in resp.data
         assert b'ExercicioDaV2Unico' not in resp.data
 
+    def _usuario_com_duas_versoes(self, username):
+        """v1 encerrada (data_fim preenchida) e v2 ativa, cada uma com um
+        exercício de nome único."""
+        u = _criar_usuario(username, tipo_usuario='professor')
+        ex_v1 = _criar_exercicio(u.id, 'ExercicioDaV1Unico')
+        ex_v2 = _criar_exercicio(u.id, 'ExercicioDaV2Unico')
+
+        versao1, treino1 = _criar_versao_com_treino(u.id, numero_versao=1, codigo='A')
+        versao1.data_fim = date(2026, 2, 1)
+        db.session.add(VersaoExercicio(treino_versao_id=treino1.id, exercicio_usuario_id=ex_v1.id, ordem=0))
+        db.session.commit()
+
+        versao2, treino2 = _criar_versao_com_treino(u.id, numero_versao=2, codigo='A')
+        db.session.add(VersaoExercicio(treino_versao_id=treino2.id, exercicio_usuario_id=ex_v2.id, ordem=0))
+        db.session.commit()
+        return u
+
+    def test_sem_filtro_carrega_a_versao_ativa(self, client, app):
+        with app.app_context():
+            self._usuario_com_duas_versoes('tab_prog_padrao_ativa')
+
+        _login(client, 'tab_prog_padrao_ativa')
+        resp = client.get('/estatisticas/visualizar/tabela')
+
+        assert resp.status_code == 200
+        assert b'ExercicioDaV2Unico' in resp.data
+        assert b'ExercicioDaV1Unico' not in resp.data
+
+    def test_opcao_todas_as_versoes_continua_disponivel(self, client, app):
+        with app.app_context():
+            self._usuario_com_duas_versoes('tab_prog_todas')
+
+        _login(client, 'tab_prog_todas')
+        resp = client.get('/estatisticas/visualizar/tabela?versao_id=todas')
+
+        assert resp.status_code == 200
+        assert b'ExercicioDaV1Unico' in resp.data
+        assert b'ExercicioDaV2Unico' in resp.data
+
+    def test_sem_versao_ativa_mostra_todas(self, client, app):
+        with app.app_context():
+            u = self._usuario_com_duas_versoes('tab_prog_sem_ativa')
+            # encerra também a v2 -> nenhuma versão ativa
+            for v in VersaoGlobal.query.filter_by(user_id=u.id).all():
+                v.data_fim = date(2026, 3, 1)
+            db.session.commit()
+
+        _login(client, 'tab_prog_sem_ativa')
+        resp = client.get('/estatisticas/visualizar/tabela')
+
+        assert resp.status_code == 200
+        assert b'ExercicioDaV1Unico' in resp.data
+        assert b'ExercicioDaV2Unico' in resp.data
+
     def test_exige_login(self, client):
         resp = client.get('/estatisticas/visualizar/tabela', follow_redirects=False)
         assert resp.status_code in (302, 401)

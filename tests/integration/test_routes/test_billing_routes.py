@@ -646,9 +646,28 @@ class TestGatingAcessoAosAlunos:
             professor_ref = User.query.get(professor.id)
 
         _login(client, professor_ref)
-        for path in ('/professor/dashboard', '/professor/alunos', '/professor/aluno/novo', '/professor/solicitacoes'):
+        for path in ('/professor/dashboard', '/professor/alunos', '/professor/solicitacoes'):
             resp = client.get(path)
             assert resp.status_code == 200, f'não deveria bloquear em {path}'
+
+        # Com 2 alunos o plano gratuito está saturado: cadastrar o 3º exige
+        # upgrade, e o limite é validado já ao abrir "Novo aluno" (GET),
+        # não só ao gravar.
+        resp = client.get('/professor/aluno/novo', follow_redirects=False)
+        assert resp.status_code == 302
+        assert resp.headers['Location'].endswith('/billing/minha-assinatura')
+
+    def test_professor_com_1_aluno_abre_novo_aluno_normalmente(self, client, app):
+        with app.app_context():
+            _criar_planos()
+            professor = _criar_usuario('prof_1aluno_novo_aluno', tipo_usuario='professor')
+            _vincular_alunos(professor, 1)
+            db.session.commit()
+            professor_ref = User.query.get(professor.id)
+
+        _login(client, professor_ref)
+        resp = client.get('/professor/aluno/novo')
+        assert resp.status_code == 200
 
     def test_admin_desmarcou_tela_do_professor_libera_mesmo_bloqueado(self, client, app):
         """O gate das 4 telas agregadas é configurável (ver
