@@ -150,6 +150,23 @@ class TestMinhaAssinaturaTela:
         resp = client.get('/billing/minha-assinatura')
         assert resp.status_code == 200
 
+    def test_plano_fit_do_professor_mostra_todos_os_recursos_em_vez_de_none(self, client, app):
+        """Regressão: o Plano Fit não tem faixa de alunos (min/max nulos) e
+        o card exibia "até None alunos"."""
+        with app.app_context():
+            _criar_planos()
+            professor = _criar_usuario('minha_assinatura_prof_fit_texto', tipo_usuario='professor')
+            db.session.commit()
+            professor_ref = User.query.get(professor.id)
+
+        _login(client, professor_ref)
+        resp = client.get('/billing/minha-assinatura')
+        html = resp.data.decode('utf-8')
+
+        assert resp.status_code == 200
+        assert 'Acessar todos os recursos da aplicação.' in html
+        assert 'até None' not in html
+
     def test_formulario_de_assinar_inclui_csrf_token(self, client, app):
         """Regressão: o <form> desta tela precisa do campo hidden
         csrf_token -- a suíte roda com WTF_CSRF_ENABLED=False (ver

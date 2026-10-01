@@ -159,7 +159,8 @@
                            {% if plano.id == plano_oferecido.id %}checked{% endif %}>
                     <div class="nome">{{ plano.nome }}</div>
                     <div class="faixa">
-                        {% if plano.min_alunos is none %}até {{ plano.max_alunos }} alunos
+                        {% if plano.min_alunos is none and plano.max_alunos is none %}Acessar todos os recursos da aplicação.
+                        {% elif plano.min_alunos is none %}até {{ plano.max_alunos }} alunos
                         {% elif plano.max_alunos is none %}{{ plano.min_alunos }}+ alunos
                         {% else %}{{ plano.min_alunos }}–{{ plano.max_alunos }} alunos{% endif %}
                     </div>
