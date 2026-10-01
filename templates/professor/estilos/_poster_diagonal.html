@@ -4,6 +4,7 @@
    modal "Ver minha página", sem navbar). `embed` (bool) esconde os
    botões de compartilhar/editar, que não fazem sentido dentro do
    preview em miniatura. #}
+{% from "professor/estilos/_macros.html" import marca %}
 {% set partes_nome = nome_exibicao.split(' ') %}
 {% set primeiro_nome = partes_nome[0] %}
 {% set sobrenome = partes_nome[1:] | join(' ') %}
@@ -25,6 +26,8 @@
             <div class="pp-bars pp-bars-right" aria-hidden="true">
                 <span></span><span></span><span></span><span></span>
             </div>
+
+            {{ marca(embed) }}
 
             <!-- Ações (escondidas no preview embutido do modal --
                  compartilhar/editar não fazem sentido ali dentro) -->
@@ -128,24 +131,23 @@
                 </a>
             </div>
             {% endif %}
-        </article>
 
-        <!-- Conteúdo extra abaixo do pôster (caso queira manter bio detalhada) -->
-        {% if professor.professor_bio or especialidades %}
-        <section class="pp-about">
-            <div class="pp-section-title">Sobre mim</div>
-            {% if professor.professor_bio %}
-            <p class="pp-about-text">{{ professor.professor_bio }}</p>
+            {% if professor.professor_bio or especialidades %}
+            <section class="pp-about">
+                <div class="pp-section-title">Sobre mim</div>
+                {% if professor.professor_bio %}
+                <p class="pp-about-text">{{ professor.professor_bio }}</p>
+                {% endif %}
+                {% if especialidades %}
+                <div class="pp-chips">
+                    {% for esp in especialidades %}
+                    <span class="pp-chip">{{ esp }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </section>
             {% endif %}
-            {% if especialidades %}
-            <div class="pp-chips">
-                {% for esp in especialidades %}
-                <span class="pp-chip">{{ esp }}</span>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </section>
-        {% endif %}
+        </article>
 
     </div>
 </div>

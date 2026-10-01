@@ -47,18 +47,18 @@
 }
 
 .pp-sport-brush-right {
-    top: 78px;
-    right: -64px;
-    width: 210px;
-    height: 112px;
+    top: 60px;
+    right: -50px;
+    width: 190px;
+    height: 101px;
     transform: rotate(-4deg);
 }
 
 .pp-sport-brush-left {
-    top: 268px;
-    left: -86px;
-    width: 160px;
-    height: 85px;
+    top: 150px;
+    left: -74px;
+    width: 150px;
+    height: 80px;
     transform: rotate(-14deg);
 }
 
@@ -74,12 +74,12 @@
 
 /* Anel de pincel: o SVG já traz o anel irregular, a foto fica no vazado */
 .pp-poster-estilo-5 .pp-ring {
-    padding: 19px;
+    padding: calc(var(--pp-ring-size) * .085);
     background: url('../../img/professor-estilos/anel-pincel.svg') center / 100% 100% no-repeat;
 }
 
 .pp-poster-estilo-5 .pp-photo {
-    border: 4px solid #050505;
+    border: 3px solid #050505;
     background: #111;
 }
 
@@ -98,7 +98,7 @@
 .pp-poster-estilo-5 .pp-name-first,
 .pp-poster-estilo-5 .pp-name-last {
     font-family: 'Permanent Marker', 'Montserrat', 'Segoe UI', sans-serif;
-    font-size: 3.1rem;
+    font-size: clamp(1.9rem, 9.4vw, 2.9rem);
     font-weight: 400;
     letter-spacing: .5px;
     text-shadow: 0 3px 0 rgba(0, 0, 0, .4);
@@ -191,19 +191,20 @@
     color: #dfe6ea;
 }
 
-/* Chips como pinceladas */
-.pp-about-estilo-5 .pp-chips {
-    gap: 2px 4px;
+/* Chips fora do cartão, como pinceladas */
+.pp-poster-estilo-5 .pp-chips-fora {
+    gap: 0 4px;
     margin-top: 12px;
 }
 
-.pp-about-estilo-5 .pp-chip {
-    padding: 13px 17px;
-    font-size: .72rem;
+.pp-poster-estilo-5 .pp-chip {
+    padding: 13px 8px;
     border: 0;
     border-radius: 0;
+    text-align: center;
     color: #131313;
     background: url('../../img/professor-estilos/pincelada-barra.svg') 0 0 / 100% 100% no-repeat;
+    font-size: .66rem;
     font-weight: 800;
 }
 
@@ -211,42 +212,24 @@
     .pp-poster-estilo-5 {
         border-radius: 14px;
     }
+}
 
-    .pp-poster-estilo-5 .pp-ring {
-        padding: 16px;
-    }
-
-    .pp-poster-estilo-5 .pp-name-first,
-    .pp-poster-estilo-5 .pp-name-last {
-        font-size: 2.65rem;
-    }
-
+@media (min-width: 561px) {
     .pp-sport-brush-right {
-        top: 70px;
-        right: -60px;
-        width: 180px;
-        height: 96px;
+        top: 76px;
+        right: -64px;
+        width: 250px;
+        height: 133px;
     }
 
     .pp-sport-brush-left {
-        top: 258px;
-        left: -78px;
-        width: 140px;
-        height: 74px;
+        top: 190px;
+        left: -92px;
+        width: 190px;
+        height: 101px;
     }
 
-    .pp-poster-estilo-5 .pp-rating-info {
-        padding: 19px 24px;
-    }
-}
-
-@media (max-width: 380px) {
-    .pp-poster-estilo-5 .pp-ring {
-        padding: 13px;
-    }
-
-    .pp-poster-estilo-5 .pp-name-first,
-    .pp-poster-estilo-5 .pp-name-last {
-        font-size: 1.85rem;
+    .pp-poster-estilo-5 .pp-chip {
+        font-size: .74rem;
     }
 }

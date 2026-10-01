@@ -181,7 +181,7 @@ def test_estilos_novos_mostram_icones_e_avaliacao_em_uma_linha(app, client, prof
     usuario.professor_estilo_pagina = chave
     db.session.commit()
     html = client.get(f'/professor/pagina/{slug}').get_data(as_text=True)
-    assert html.count('class="pp-service-icon"') == 3
+    assert html.count('class="pp-service-icon pp-service-icon-') == 3
     assert 'Foco em queima de gordura' not in html  # descrição não aparece nesses estilos
     assert 'pp-name-first' in html and 'pp-name-last' in html
 
@@ -219,3 +219,32 @@ def test_assets_dos_estilos_existem():
         css = open(os.path.join(pasta_css, nome), encoding='utf-8').read()
         for rel in re.findall(r"url\('(\.\./\.\./[^')]+)'\)", css):
             assert os.path.isfile(os.path.normpath(os.path.join(pasta_css, rel))), f'{nome}: {rel}'
+
+
+@pytest.mark.parametrize('chave', list(ESTILOS_PAGINA))
+def test_logo_do_fitlog_e_sobre_mim_dentro_do_poster(app, client, professor, chave):
+    """Todos os estilos (inclusive o Default): logo do FitLog no pôster e
+    "Sobre mim" DENTRO do mesmo cartão (antes do </article>)."""
+    uid, slug = professor
+    usuario = db.session.get(User, uid)
+    usuario.professor_bio = 'Bio de teste do professor.'
+    usuario.professor_especialidades = ['hipertrofia']
+    usuario.professor_estilo_pagina = chave
+    db.session.commit()
+
+    for url, em_embed in ((f'/professor/pagina/{slug}', False), (f'/professor/pagina/{slug}?embed=1', True)):
+        html = client.get(url).get_data(as_text=True)
+        assert 'class="pp-brand"' in html and 'images/logo-poster.png' in html, (chave, url)
+        # normal: a logo leva pra home; no preview (iframe) é só imagem
+        assert ('<a class="pp-brand"' in html) is (not em_embed), (chave, url)
+        assert 'professor-estilos/comum.css' in html
+        fim_poster = html.index('</article>')
+        assert html.index('Sobre mim') < fim_poster, chave
+        assert html.index('Bio de teste do professor.') < fim_poster, chave
+
+
+def test_diagonal_aparece_como_default_na_edicao(app, client, professor):
+    assert ESTILOS_PAGINA['diagonal']['rotulo'] == 'Default'
+    _login(client)
+    html = client.get('/professor/pagina/editar').get_data(as_text=True)
+    assert '>Default</option>' in html and '>Diagonal</option>' not in html

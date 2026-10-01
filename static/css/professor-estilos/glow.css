@@ -45,8 +45,8 @@
 .pp-glow-topo {
     top: 0;
     left: 0;
-    width: 260px;
-    height: 200px;
+    width: 230px;
+    height: 177px;
     background-image: url('../../img/professor-estilos/glow-ondas-topo.svg');
     background-position: 0 0;
     background-size: contain;
@@ -70,20 +70,20 @@
 }
 
 .pp-glow-pontos-esq {
-    top: 190px;
-    left: 14px;
+    top: 120px;
+    left: 10px;
 }
 
 .pp-glow-pontos-dir {
-    top: 340px;
-    right: 14px;
+    top: 210px;
+    right: 10px;
 }
 
 .pp-glow-folhas {
-    left: -6px;
-    bottom: 58px;
-    width: 64px;
-    height: 90px;
+    left: -8px;
+    bottom: 64px;
+    width: 78px;
+    height: 108px;
     background-image: url('../../img/professor-estilos/glow-folhas.svg');
     background-position: 0 100%;
     background-size: contain;
@@ -103,7 +103,7 @@
 
 /* Anel rosa fino, com arcos dourados por fora */
 .pp-poster-feminino .pp-ring {
-    padding: 4px;
+    padding: 3px;
     background: linear-gradient(135deg, var(--fem-rose-2) 0%, var(--fem-rose) 100%);
     box-shadow: 0 10px 28px rgba(140, 60, 85, .18);
 }
@@ -111,13 +111,13 @@
 .pp-poster-feminino .pp-ring::before {
     content: "";
     position: absolute;
-    inset: -16px;
+    inset: -12%;
     background: url('../../img/professor-estilos/glow-arcos-anel.svg') center / 100% 100% no-repeat;
     pointer-events: none;
 }
 
 .pp-poster-feminino .pp-photo {
-    border: 3px solid #fff7f5;
+    border: 2px solid #fff7f5;
     background: #f1e0e4;
 }
 
@@ -158,11 +158,13 @@
 
 .pp-poster-feminino .pp-service-title {
     color: var(--fem-ink);
+    font-weight: 600;
 }
 
 .pp-poster-feminino .pp-rating-info {
     color: var(--fem-ink);
     background: var(--fem-rose-soft);
+    width: 84%;
     border-radius: 20px;
 }
 
@@ -194,7 +196,7 @@
 .pp-about-feminino .pp-section-title {
     color: var(--fem-rose);
     font-family: 'Dancing Script', 'Segoe Script', cursive;
-    font-size: 1.9rem;
+    font-size: 1.6rem;
     font-weight: 700;
     line-height: 1.1;
 }
@@ -220,7 +222,15 @@
         height: 170px;
     }
 
-    .pp-poster-feminino .pp-ring::before {
-        inset: -12px;
-    }
+}
+
+/* Coração cheio com pulso branco (os demais ícones ficam só de contorno), como no mockup */
+.pp-poster-feminino .pp-service-icon-reabilitacao svg {
+    fill: currentColor;
+    stroke-width: 1.2;
+}
+
+.pp-poster-feminino .pp-service-icon-reabilitacao svg path:nth-child(2) {
+    stroke: #fff;
+    stroke-width: 1.8;
 }

@@ -1,0 +1,33 @@
+/* =========================================================
+   FITLOG — PÁGINA PÚBLICA — PARTES COMUNS A TODOS OS ESTILOS
+   Carregado antes de qualquer estilo. Hoje: a logo do FitLog no
+   canto superior esquerdo do pôster (a logo tem contorno branco,
+   então lê bem em fundo claro e escuro).
+   ========================================================= */
+
+.pp-brand {
+    position: absolute;
+    z-index: 9;
+    top: 12px;
+    left: 14px;
+    display: block;
+    line-height: 0;
+    text-decoration: none;
+}
+
+.pp-brand img {
+    display: block;
+    width: auto;
+    height: 40px;
+}
+
+@media (min-width: 561px) {
+    .pp-brand {
+        top: 16px;
+        left: 20px;
+    }
+
+    .pp-brand img {
+        height: 46px;
+    }
+}

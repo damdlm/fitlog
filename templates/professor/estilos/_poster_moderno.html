@@ -1,8 +1,9 @@
 {# Pôster público — estilo 2 (Moderno): card claro.
-   Layout igual aos mockups: nome em uma linha, frase entre aspas (via CSS),
-   cartões de especialidade com ícone + título e avaliação em uma linha.
+   Layout igual aos mockups: logo do FitLog no canto, nome em uma linha, frase
+   entre aspas (via CSS), cartões de especialidade com ícone + título,
+   avaliação em uma linha e "Sobre mim" DENTRO do mesmo cartão do pôster.
    Só a identidade visual muda entre os estilos (CSS próprio + base.css). #}
-{% from "professor/estilos/_macros.html" import icone_servico %}
+{% from "professor/estilos/_macros.html" import icone_servico, marca %}
 {% set partes_nome = nome_exibicao.split(' ') %}
 {% set primeiro_nome = partes_nome[0] %}
 {% set sobrenome = partes_nome[1:] | join(' ') %}
@@ -10,8 +11,9 @@
 <div class="pp-page pp-page-estilo-2">
     <div class="pp-column">
         <article class="pp-poster pp-poster-estilo-2">
-
             <div class="pp-style2-faixas" aria-hidden="true"></div>
+            {{ marca(embed) }}
+
             {% if not embed %}
             <div class="pp-actions">
                 <button type="button"
@@ -108,22 +110,22 @@
                 </a>
             </div>
             {% endif %}
-        </article>
 
-        {% if professor.professor_bio or especialidades %}
-        <section class="pp-about pp-about-estilo-2">
-            <div class="pp-section-title">Sobre mim</div>
-            {% if professor.professor_bio %}
-            <p class="pp-about-text">{{ professor.professor_bio }}</p>
+            {% if professor.professor_bio or especialidades %}
+            <section class="pp-about pp-about-estilo-2">
+                <div class="pp-section-title">Sobre mim</div>
+                {% if professor.professor_bio %}
+                <p class="pp-about-text">{{ professor.professor_bio }}</p>
+                {% endif %}
+                {% if especialidades %}
+                <div class="pp-chips">
+                    {% for esp in especialidades %}
+                    <span class="pp-chip">{{ esp }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </section>
             {% endif %}
-            {% if especialidades %}
-            <div class="pp-chips">
-                {% for esp in especialidades %}
-                <span class="pp-chip">{{ esp }}</span>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </section>
-        {% endif %}
+        </article>
     </div>
 </div>

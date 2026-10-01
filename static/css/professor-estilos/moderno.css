@@ -28,8 +28,8 @@
     z-index: -1;
     top: 0;
     left: 0;
-    width: 210px;
-    height: 220px;
+    width: 150px;
+    height: 158px;
     background: url('../../img/professor-estilos/moderno-faixas.svg') no-repeat 0 0 / contain;
     pointer-events: none;
 }
@@ -47,13 +47,13 @@
 
 /* Anel laranja com um respiro branco antes da foto */
 .pp-poster-estilo-2 .pp-ring {
-    padding: 6px;
+    padding: 5px;
     background: linear-gradient(135deg, var(--pp2-orange-2) 0%, var(--pp2-orange) 100%);
     box-shadow: 0 10px 26px rgba(255, 122, 0, .22);
 }
 
 .pp-poster-estilo-2 .pp-photo {
-    border: 3px solid #fff;
+    border: 2px solid #fff;
     background: #e9ecef;
 }
 
@@ -148,7 +148,23 @@
     }
 
     .pp-style2-faixas {
-        width: 170px;
-        height: 180px;
+        width: 150px;
+        height: 158px;
     }
+}
+
+/* Ícones cheios (chama e halter), como no mockup */
+.pp-poster-estilo-2 .pp-service-icon-emagrecimento svg,
+.pp-poster-estilo-2 .pp-service-icon-hipertrofia svg {
+    fill: currentColor;
+    stroke-width: 1.2;
+}
+
+.pp-poster-estilo-2 .pp-service-icon-emagrecimento svg path:nth-child(2) {
+    fill: #fff;
+    stroke: none;
+}
+
+.pp-poster-estilo-2 .pp-about-estilo-2 .pp-chip {
+    background: #fffaf6;
 }

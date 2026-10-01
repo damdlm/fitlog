@@ -37,17 +37,17 @@
 }
 
 .pp-textura-linhas-dir {
-    top: 70px;
+    top: 54px;
     right: 0;
-    width: 200px;
-    height: 236px;
+    width: 150px;
+    height: 177px;
 }
 
 .pp-textura-linhas-esq {
-    top: 300px;
+    top: 210px;
     left: 0;
-    width: 110px;
-    height: 130px;
+    width: 90px;
+    height: 106px;
     transform: scaleX(-1);
     opacity: .5;
 }
@@ -138,10 +138,11 @@
 
 .pp-about-textura {
     color: #fff;
-    background: linear-gradient(145deg, rgba(255, 255, 255, .075), rgba(255, 255, 255, .025)), #101010;
+    margin-bottom: 0;
+    padding-bottom: 26px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .075), rgba(255, 255, 255, .025)), rgba(14, 14, 14, .85);
     border: 1px solid rgba(255, 255, 255, .12);
-    border-radius: 14px;
-    box-shadow: 0 14px 34px rgba(0, 0, 0, .25);
+    border-radius: 12px;
 }
 
 .pp-about-textura .pp-section-title {
@@ -152,11 +153,19 @@
     color: #e3e3e3;
 }
 
-.pp-about-textura .pp-chip {
+.pp-poster-textura .pp-chips-fora {
+    gap: 8px;
+    margin-top: -14px;
+    padding: 0 2px;
+}
+
+.pp-poster-textura .pp-chip {
+    text-align: center;
     color: #ffb066;
-    background: transparent;
+    background: #0d0d0d;
     border: 2px solid var(--pt-orange);
-    padding: 8px 16px;
+    padding: 8px 4px;
+    font-size: .66rem;
 }
 
 @media (max-width: 560px) {
@@ -168,4 +177,15 @@
         width: 150px;
         height: 177px;
     }
+}
+
+/* Ícone da chama cheio, como no mockup */
+.pp-poster-textura .pp-service-icon-emagrecimento svg {
+    fill: currentColor;
+    stroke-width: 1.2;
+}
+
+.pp-poster-textura .pp-service-icon-emagrecimento svg path:nth-child(2) {
+    fill: #0e0e0e;
+    stroke: none;
 }

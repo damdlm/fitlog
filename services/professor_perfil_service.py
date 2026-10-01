@@ -38,10 +38,12 @@ INSTAGRAM_TAMANHO_MAXIMO = 120
 # deste dicionário. Pra criar um estilo novo: adicionar o CSS em
 # static/css/professor-estilos/, o partial em
 # templates/professor/estilos/ e uma entrada abaixo.
+# A chave interna continua 'diagonal' (já gravada no banco); o nome
+# exibido ao professor é "Default".
 ESTILO_PAGINA_PADRAO = 'diagonal'
 ESTILOS_PAGINA = {
     'diagonal': {
-        'rotulo': 'Diagonal',
+        'rotulo': 'Default',
         'descricao': 'Escuro e limpo, com pontilhado diagonal nos cantos.',
         'css': 'css/professor-estilos/diagonal.css',
         'template': 'professor/estilos/_poster_diagonal.html',

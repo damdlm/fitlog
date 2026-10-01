@@ -40,6 +40,8 @@
     width: 100%;
     min-height: 600px;
     overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 22px;
     padding: 42px 44px 34px;
     background:
         radial-gradient(
@@ -412,11 +414,12 @@
    ========================================================= */
 .pp-about {
     position: relative;
-    margin-top: 22px;
+    z-index: 3;
+    margin-top: 24px;
     padding: 22px 24px 26px;
+    border: 1px solid rgba(255, 255, 255, .07);
     border-radius: 18px;
     background: linear-gradient(180deg, #171717 0%, #0d0d0d 100%);
-    box-shadow: 0 14px 34px rgba(0, 0, 0, .18);
 }
 
 .pp-section-title {
@@ -456,15 +459,14 @@
 
 /* RESPONSIVIDADE PARA CELULAR */
 @media (max-width: 560px) {
-    /* Pôster de ponta a ponta na tela (sem faixa branca nas laterais) */
+    /* Mesma margem lateral e cantos arredondados dos outros estilos */
     .pp-page {
-        padding: 0 0 40px;
+        padding: 0 10px 36px;
     }
 
     .pp-poster {
-        padding: 27px 19px 27px;
-        border-radius: 0;
-        box-shadow: none;
+        padding: 44px 16px 18px;
+        border-radius: 16px;
     }
     .pp-ring {
         width: 250px !important;
@@ -499,8 +501,8 @@
     }
 
     .pp-about {
-        margin: 22px 16px 0;
-        padding: 20px 18px 22px;
+        margin: 20px 0 0;
+        padding: 18px 16px 20px;
         border-radius: 14px;
     }
 }

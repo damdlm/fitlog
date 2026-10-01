@@ -3,7 +3,7 @@
    especialidade/serviço -- a cor vem do CSS do estilo. Chave
    desconhecida cai num ícone neutro, nunca quebra a página. #}
 {% macro icone_servico(chave) -%}
-<span class="pp-service-icon" aria-hidden="true">
+<span class="pp-service-icon pp-service-icon-{{ chave }}" aria-hidden="true">
 <svg viewBox="0 0 24 24" focusable="false">
 {%- if chave == 'emagrecimento' -%}
     <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4.1 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
@@ -34,4 +34,15 @@
 {%- endif -%}
 </svg>
 </span>
+{%- endmacro %}
+
+{# marca(embed): logo do FitLog no canto superior esquerdo. Na página
+   normal leva pra home; dentro do preview (iframe do modal) é só imagem,
+   pra não navegar o iframe. #}
+{% macro marca(embed) -%}
+{%- if embed -%}
+<span class="pp-brand"><img src="{{ url_for('static', filename='images/logo-poster.png') }}" alt="FitLog" width="73" height="48"></span>
+{%- else -%}
+<a class="pp-brand" href="{{ url_for('main.index') }}" aria-label="FitLog — página inicial"><img src="{{ url_for('static', filename='images/logo-poster.png') }}" alt="FitLog" width="73" height="48"></a>
+{%- endif -%}
 {%- endmacro %}

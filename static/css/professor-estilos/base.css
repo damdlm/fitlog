@@ -2,12 +2,15 @@
    FITLOG — PÁGINA PÚBLICA DO PROFESSOR
    BASE ESTRUTURAL (layout, tamanhos, tipografia)
 
-   Só estrutura: NENHUMA cor, fundo ou sombra de tema aqui. Os estilos
-   que dizem "deve ser carregado depois do CSS estrutural" (Moderno e
-   Esportivo) carregam este arquivo primeiro e depois o CSS deles, que
-   só define a identidade visual (cores, fundos, bordas, decoração).
-   Ver ESTILOS_PAGINA em services/professor_perfil_service.py (campo
-   'base'). Diagonal e Textura são arquivos completos e não usam este.
+   Só estrutura: NENHUMA cor, fundo ou sombra de tema aqui. Textura,
+   Moderno, Esportivo e Glow carregam este arquivo primeiro e depois o
+   CSS deles, que só define a identidade visual (cores, fundos, bordas,
+   decoração). Ver ESTILOS_PAGINA em services/professor_perfil_service.py
+   (campo 'base'). O Default (Diagonal) é um arquivo completo e não usa
+   este.
+
+   Proporções tiradas dos mockups: anel da foto ~1/3 da largura do card,
+   nome/frase/cartões compactos e "Sobre mim" DENTRO do mesmo cartão.
    ========================================================= */
 
 /* Fontes hospedadas no projeto: a CSP do app (font-src 'self') não
@@ -35,7 +38,7 @@
 
 .pp-page {
     width: 100%;
-    padding: 0 16px 48px;
+    padding: 0 10px 36px;
     font-family: 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
@@ -48,26 +51,25 @@
 
 .pp-column {
     width: 100%;
-    max-width: 672px;
+    max-width: 560px;
     margin: 0 auto;
 }
 
-/* PÔSTER */
+/* PÔSTER (inclui o "Sobre mim") */
 .pp-poster {
     position: relative;
     width: 100%;
-    min-height: 600px;
     overflow: hidden;
-    padding: 40px 40px 34px;
+    padding: 44px 14px 16px;
     isolation: isolate;
 }
 
-/* AÇÕES (compartilhar / editar) */
+/* AÇÕES (compartilhar / editar) -- a logo do FitLog fica à esquerda */
 .pp-actions {
     position: absolute;
     z-index: 8;
-    top: 18px;
-    right: 20px;
+    top: 14px;
+    right: 14px;
     display: flex;
     gap: 5px;
 }
@@ -76,13 +78,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     padding: 0;
     border: none;
-    border-radius: 12px;
+    border-radius: 11px;
     text-decoration: none;
-    font-size: .86rem;
+    font-size: .8rem;
     cursor: pointer;
     transition: all .25s ease;
 }
@@ -99,17 +101,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 14px auto 0;
+    margin: 4px auto 0;
 }
 
 .pp-ring {
+    --pp-ring-size: clamp(132px, 37vw, 172px);
     position: relative;
-    width: 300px !important;
-    height: 300px !important;
-    min-width: 300px !important;
-    min-height: 300px !important;
-    flex: 0 0 300px;
-    padding: 10px;
+    width: var(--pp-ring-size) !important;
+    height: var(--pp-ring-size) !important;
+    min-width: var(--pp-ring-size) !important;
+    min-height: var(--pp-ring-size) !important;
+    flex: 0 0 var(--pp-ring-size);
+    padding: 5px;
     border-radius: 50%;
 }
 
@@ -139,8 +142,8 @@
 .pp-placeholder svg {
     position: absolute;
     left: 50%;
-    bottom: -8px;
-    width: 150px;
+    bottom: -6px;
+    width: 76%;
     transform: translateX(-50%);
 }
 
@@ -156,12 +159,12 @@
 .pp-eyebrow {
     position: relative;
     z-index: 3;
-    margin-top: 28px;
+    margin-top: 14px;
     text-align: center;
-    font-size: .76rem;
+    font-size: .62rem;
     line-height: 1;
     font-weight: 800;
-    letter-spacing: 2.5px;
+    letter-spacing: .28em;
     text-transform: uppercase;
 }
 
@@ -172,40 +175,40 @@
     flex-wrap: wrap;
     align-items: baseline;
     justify-content: center;
-    gap: 0 .65rem;
-    margin-top: 9px;
+    gap: 0 .55rem;
+    margin-top: 6px;
     text-align: center;
-    line-height: 1.08;
+    line-height: 1.1;
 }
 
 .pp-name-first,
 .pp-name-last {
     display: block;
-    font-size: 2.55rem;
+    font-size: clamp(1.55rem, 8vw, 2.5rem);
     font-weight: 800;
-    letter-spacing: -.5px;
+    letter-spacing: -.4px;
     text-transform: uppercase;
 }
 
 .pp-cref {
     position: relative;
     z-index: 3;
-    margin-top: 12px;
+    margin-top: 7px;
     text-align: center;
-    font-size: .73rem;
+    font-size: .66rem;
     font-weight: 700;
-    letter-spacing: .8px;
+    letter-spacing: .6px;
 }
 
 .pp-tagline {
     position: relative;
     z-index: 3;
-    width: min(100%, 455px);
-    margin: 14px auto 0;
+    width: min(100%, 420px);
+    margin: 9px auto 0;
     text-align: center;
-    font-size: .92rem;
+    font-size: .82rem;
     font-weight: 500;
-    line-height: 1.45;
+    line-height: 1.4;
 }
 
 .pp-tagline::before {
@@ -221,9 +224,9 @@
     position: relative;
     z-index: 3;
     display: flex;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
-    margin-top: 28px;
+    margin-top: 16px;
 }
 
 .pp-service {
@@ -233,16 +236,16 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 11px;
-    min-height: 94px;
-    padding: 14px 6px;
+    gap: 6px;
+    min-height: 66px;
+    padding: 9px 3px;
     text-align: center;
 }
 
 .pp-service-icon {
     display: block;
-    width: 34px;
-    height: 34px;
+    width: 27px;
+    height: 27px;
 }
 
 .pp-service-icon svg {
@@ -259,31 +262,31 @@
 .pp-service-title {
     display: block;
     max-width: 100%;
-    font-size: .6rem;
+    font-size: .54rem;
     line-height: 1.15;
     font-weight: 800;
-    letter-spacing: .1px;
+    letter-spacing: 0;
     text-transform: uppercase;
     overflow-wrap: break-word;
 }
 
-/* AVALIAÇÃO DOS ALUNOS (pílula centralizada) */
+/* AVALIAÇÃO DOS ALUNOS (linha única, largura total) */
 .pp-rating-info {
     position: relative;
     z-index: 3;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 9px;
+    gap: 7px;
     width: 100%;
-    margin: 20px auto 0;
-    padding: 11px 16px;
+    margin: 12px auto 0;
+    padding: 9px 12px;
 }
 
 .pp-rating-stars {
     display: inline-flex;
-    gap: 2px;
-    font-size: 1rem;
+    gap: 1px;
+    font-size: .95rem;
     line-height: 1;
 }
 
@@ -302,7 +305,7 @@
 }
 
 .pp-rating-count {
-    font-size: .72rem;
+    font-size: .7rem;
     font-weight: 600;
     line-height: 1;
     opacity: .85;
@@ -318,36 +321,37 @@
     z-index: 3;
     display: flex;
     justify-content: center;
-    margin-top: 22px;
+    margin-top: 12px;
 }
 
 .pp-social a {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    font-size: .72rem;
+    gap: 6px;
+    font-size: .68rem;
     font-weight: 700;
     text-decoration: none;
 }
 
 .pp-social svg {
-    width: 17px;
-    height: 17px;
+    width: 15px;
+    height: 15px;
     fill: currentColor;
 }
 
-/* SOBRE MIM */
+/* SOBRE MIM (cartão dentro do pôster) */
 .pp-about {
     position: relative;
-    margin-top: 22px;
-    padding: 22px 24px 26px;
+    z-index: 3;
+    margin-top: 14px;
+    padding: 13px 13px 15px;
 }
 
 .pp-section-title {
     position: relative;
     z-index: 2;
-    margin-bottom: 12px;
-    font-size: 1.05rem;
+    margin-bottom: 8px;
+    font-size: .95rem;
     font-weight: 800;
 }
 
@@ -355,91 +359,76 @@
     position: relative;
     z-index: 2;
     margin: 0;
-    font-size: .88rem;
-    line-height: 1.58;
+    font-size: .76rem;
+    line-height: 1.5;
     white-space: pre-line;
 }
 
 .pp-chips {
     position: relative;
-    z-index: 2;
+    z-index: 4;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 16px;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+/* chips fora do cartão "Sobre mim" (Textura e Esportivo) */
+.pp-chips-fora {
+    justify-content: center;
+    margin-top: 10px;
 }
 
 .pp-chip {
     display: inline-block;
-    padding: 6px 13px;
+    flex: 1 1 calc(33.333% - 4px);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 5px 3px;
     border-radius: 999px;
-    font-size: .74rem;
+    text-align: center;
+    font-size: .6rem;
     font-weight: 700;
 }
 
-/* RESPONSIVIDADE */
-@media (max-width: 560px) {
+/* TELAS MAIORES (página aberta no desktop) */
+@media (min-width: 561px) {
     .pp-page {
-        padding: 0 12px 40px;
+        padding: 0 16px 48px;
     }
 
     .pp-poster {
-        padding: 27px 18px;
+        padding: 50px 34px 24px;
     }
 
-    .pp-ring {
-        width: 250px !important;
-        height: 250px !important;
-        min-width: 250px !important;
-        min-height: 250px !important;
-        flex: 0 0 250px !important;
+    .pp-actions {
+        top: 18px;
+        right: 20px;
     }
 
-    .pp-name-first,
-    .pp-name-last {
-        font-size: 2.1rem;
+    .pp-photo-area {
+        margin-top: 6px;
+    }
+
+    .pp-eyebrow {
+        margin-top: 18px;
+        font-size: .7rem;
     }
 
     .pp-tagline {
-        font-size: .88rem;
+        font-size: .92rem;
     }
 
     .pp-services {
-        gap: 7px;
-        margin-top: 24px;
+        gap: 12px;
+        margin-top: 20px;
     }
 
     .pp-service {
-        min-height: 88px;
-        padding: 12px 4px;
-    }
-
-    .pp-service-title {
-        font-size: .56rem;
-        letter-spacing: 0;
-    }
-
-    .pp-about {
-        padding: 20px 18px 22px;
-    }
-}
-
-@media (max-width: 380px) {
-    .pp-ring {
-        width: 205px !important;
-        height: 205px !important;
-        min-width: 205px !important;
-        min-height: 205px !important;
-        flex: 0 0 205px !important;
-    }
-
-    .pp-name-first,
-    .pp-name-last {
-        font-size: 1.75rem;
-    }
-
-    .pp-service {
-        padding: 10px 3px;
+        min-height: 80px;
+        gap: 8px;
     }
 
     .pp-service-icon {
@@ -448,7 +437,53 @@
     }
 
     .pp-service-title {
-        font-size: .5rem;
-        letter-spacing: 0;
+        font-size: .6rem;
+    }
+
+    .pp-rating-info {
+        margin-top: 14px;
+        padding: 11px 16px;
+    }
+
+    .pp-about {
+        margin-top: 18px;
+        padding: 18px 20px 20px;
+    }
+
+    .pp-section-title {
+        font-size: 1.05rem;
+    }
+
+    .pp-about-text {
+        font-size: .86rem;
+    }
+
+    .pp-chip {
+        padding: 6px 14px;
+        font-size: .72rem;
+    }
+}
+
+@media (max-width: 380px) {
+    .pp-poster {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .pp-service-icon {
+        width: 22px;
+        height: 22px;
+    }
+
+    .pp-service-title {
+        font-size: .48rem;
+    }
+
+    .pp-rating-count {
+        font-size: .6rem;
+    }
+
+    .pp-chip {
+        font-size: .56rem;
     }
 }
