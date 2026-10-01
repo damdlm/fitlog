@@ -85,6 +85,54 @@
     .mapa-busca-cidade {
         flex: 1 1 auto;
         min-width: 0;
+        position: relative;
+    }
+    #mapaBuscaResultados {
+        display: none;
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        background: #fff;
+        border: 1px solid rgba(0, 0, 0, .15);
+        border-radius: .375rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+        max-height: 260px;
+        overflow-y: auto;
+        z-index: 1100;
+    }
+    .mapa-busca-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 8px 12px;
+        border: none;
+        background: none;
+        text-align: left;
+        font-size: .88rem;
+        color: #212529;
+    }
+    .mapa-busca-item:hover,
+    .mapa-busca-item:focus {
+        background: #f8f9fa;
+    }
+    .mapa-busca-dot {
+        flex: 0 0 auto;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+    }
+    .mapa-busca-dot--com {
+        background: #6ecc39;
+    }
+    .mapa-busca-dot--sem {
+        background: #adb5bd;
+    }
+    .mapa-busca-vazio {
+        padding: 10px 12px;
+        font-size: .85rem;
+        color: #6c757d;
     }
     #msg {
         min-height: 1.4em;
@@ -157,6 +205,7 @@
             <button type="submit" class="btn btn-outline-secondary" aria-label="Buscar cidade">
                 <i class="bi bi-search"></i>
             </button>
+            <div id="mapaBuscaResultados"></div>
         </form>
     </div>
     <div id="mapa-busca-erro"></div>
@@ -184,7 +233,7 @@
     window.FITLOG_MAPA_CSRF_TOKEN = "{{ csrf_token() }}";
     window.FITLOG_MAPA_URL_SOLICITACAO = "{{ url_for('aluno.enviar_solicitacao', professor_id=0) }}";
 </script>
-<script src="{{ url_for('static', filename='js/mapa_professores.js') }}?v=7"></script>
+<script src="{{ url_for('static', filename='js/mapa_professores.js') }}?v=8"></script>
 
 {% set pp_modal_force = true %}
 {% include "professor/_modal_ver_pagina.html" %}

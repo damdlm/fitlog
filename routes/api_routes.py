@@ -673,18 +673,15 @@ def api_professores_mapa():
     return jsonify(itens=itens)
 
 
-@api_bp.route("/professores/mapa/buscar-local")
+@api_bp.route("/professores/mapa/buscar-cidade")
 @login_required
-def api_mapa_buscar_local():
-    """Geocodifica o texto digitado na busca por cidade do mapa (ver
-    static/js/mapa_professores.js) -- não filtra por professor nenhum,
-    é só "onde fica essa cidade" pro mapa focar ali, mesmo sem
-    professor cadastrado na região."""
+def api_mapa_buscar_cidade():
+    """Sugestões de cidade pro campo de busca do mapa (ver
+    static/js/mapa_professores.js) -- lista local dos municípios do
+    IBGE (GeolocalizacaoService.buscar_cidades), não depende de
+    nenhum professor cadastrado pra "existir" uma cidade; cada
+    sugestão já vem marcada com tem_professor pra UI mostrar."""
     texto = (request.args.get("q") or "").strip()
-    if not texto:
-        return jsonify(erro="Digite uma cidade"), 400
-
-    resultado = GeolocalizacaoService.buscar_local(texto)
-    if not resultado:
-        return jsonify(erro="Local não encontrado"), 404
-    return jsonify(resultado)
+    if len(texto) < 2:
+        return jsonify(cidades=[])
+    return jsonify(cidades=GeolocalizacaoService.buscar_cidades(texto))

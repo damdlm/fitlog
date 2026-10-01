@@ -130,60 +130,99 @@
     });
     carregar();
 
-    // Busca por cidade -- geocodifica texto livre via nosso backend
-    // (o CSP do app só libera connect-src 'self', então não dá pra
-    // chamar o Nominatim direto do navegador) e foca o mapa lá, mesmo
-    // sem nenhum professor cadastrado na região. Dispara sozinha a
-    // partir de 4 letras (com debounce), sem precisar apertar Enter;
-    // o botão/Enter continuam funcionando pra buscas mais curtas.
+    // Busca por cidade -- lista local dos municípios do IBGE
+    // (routes/api_routes.py:api_mapa_buscar_cidade), não um serviço
+    // externo: mais rápido, sem rate-limit, e cada sugestão já vem
+    // marcada se tem professor visível no mapa ali ou não. Dispara
+    // sozinha a partir de 4 letras (com debounce), sem precisar
+    // apertar Enter; Enter escolhe a primeira sugestão da lista.
     var formBusca = document.getElementById('mapaBuscaCidadeForm');
     var inputBusca = document.getElementById('mapaBuscaCidadeInput');
+    var resultadosBusca = document.getElementById('mapaBuscaResultados');
     var erroBusca = document.getElementById('mapa-busca-erro');
     var ZOOM_CIDADE = 12;
-    var MIN_CARACTERES_BUSCA_AUTOMATICA = 4;
-    var ESPERA_BUSCA_MS = 600; // pausa de digitação antes de buscar sozinho
+    var MIN_CARACTERES_BUSCA = 4;
+    var ESPERA_BUSCA_MS = 300;
     var temporizadorBusca = null;
-    var idBuscaLocal = 0;
-    var ultimoTextoBuscado = '';
+    var idBuscaCidade = 0;
+    var ultimasSugestoes = [];
 
-    function buscarLocal(texto) {
+    function fecharResultadosBusca() {
+        resultadosBusca.innerHTML = '';
+        resultadosBusca.style.display = 'none';
+        ultimasSugestoes = [];
+    }
+
+    function escolherCidade(cidade) {
+        mapa.setView([cidade.lat, cidade.lng], ZOOM_CIDADE);
+        inputBusca.value = cidade.nome + '/' + cidade.uf;
+        fecharResultadosBusca();
+    }
+
+    function renderizarSugestoes(cidades) {
+        ultimasSugestoes = cidades;
+        if (!cidades.length) {
+            resultadosBusca.innerHTML = '<div class="mapa-busca-vazio">Nenhuma cidade encontrada</div>';
+            resultadosBusca.style.display = 'block';
+            return;
+        }
+        resultadosBusca.innerHTML = cidades.map(function (cidade, i) {
+            var pontoClasse = cidade.tem_professor ? 'mapa-busca-dot--com' : 'mapa-busca-dot--sem';
+            var titulo = cidade.tem_professor ? 'Tem professor' : 'Sem professor ainda';
+            return (
+                '<button type="button" class="mapa-busca-item" data-indice="' + i + '">' +
+                '<span class="mapa-busca-dot ' + pontoClasse + '" title="' + titulo + '"></span>' +
+                escapar(cidade.nome) + '/' + escapar(cidade.uf) +
+                '</button>'
+            );
+        }).join('');
+        resultadosBusca.style.display = 'block';
+    }
+
+    function buscarCidade(texto) {
         texto = texto.trim();
-        if (!texto || texto === ultimoTextoBuscado) { return; }
+        if (!texto) { fecharResultadosBusca(); return; }
 
-        var id = ++idBuscaLocal;
+        var id = ++idBuscaCidade;
         erroBusca.style.display = 'none';
-        fetch('/api/professores/mapa/buscar-local?q=' + encodeURIComponent(texto))
-            .then(function (resposta) { return resposta.json().then(function (j) { return { ok: resposta.ok, j: j }; }); })
-            .then(function (res) {
-                if (id !== idBuscaLocal) { return; } // o usuário já digitou outra coisa
-                if (!res.ok) {
-                    erroBusca.textContent = res.j.erro || 'Local não encontrado';
-                    erroBusca.style.display = 'block';
-                    return;
-                }
-                ultimoTextoBuscado = texto;
-                mapa.setView([res.j.lat, res.j.lng], ZOOM_CIDADE);
+        fetch('/api/professores/mapa/buscar-cidade?q=' + encodeURIComponent(texto))
+            .then(function (resposta) { return resposta.json(); })
+            .then(function (dados) {
+                if (id !== idBuscaCidade) { return; } // o usuário já digitou outra coisa
+                renderizarSugestoes(dados.cidades || []);
             })
             .catch(function () {
-                if (id === idBuscaLocal) {
+                if (id === idBuscaCidade) {
                     erroBusca.textContent = 'Erro de conexão';
                     erroBusca.style.display = 'block';
                 }
             });
     }
 
-    if (formBusca && inputBusca) {
+    if (formBusca && inputBusca && resultadosBusca) {
         formBusca.addEventListener('submit', function (ev) {
             ev.preventDefault();
-            clearTimeout(temporizadorBusca);
-            buscarLocal(inputBusca.value);
+            if (ultimasSugestoes.length) { escolherCidade(ultimasSugestoes[0]); }
         });
 
         inputBusca.addEventListener('input', function () {
             clearTimeout(temporizadorBusca);
             var texto = inputBusca.value.trim();
-            if (texto.length < MIN_CARACTERES_BUSCA_AUTOMATICA) { return; }
-            temporizadorBusca = setTimeout(function () { buscarLocal(texto); }, ESPERA_BUSCA_MS);
+            if (texto.length < MIN_CARACTERES_BUSCA) { fecharResultadosBusca(); return; }
+            temporizadorBusca = setTimeout(function () { buscarCidade(texto); }, ESPERA_BUSCA_MS);
+        });
+
+        resultadosBusca.addEventListener('click', function (ev) {
+            var botao = ev.target.closest('.mapa-busca-item');
+            if (!botao) { return; }
+            var cidade = ultimasSugestoes[Number(botao.dataset.indice)];
+            if (cidade) { escolherCidade(cidade); }
+        });
+
+        document.addEventListener('click', function (ev) {
+            if (!formBusca.contains(ev.target) && !resultadosBusca.contains(ev.target)) {
+                fecharResultadosBusca();
+            }
         });
     }
 })();

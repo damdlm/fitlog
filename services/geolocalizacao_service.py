@@ -7,10 +7,13 @@ A geocodificação roda uma única vez por CEP (cacheada via CacheService, o
 mesmo wrapper Redis/SimpleCache usado no resto do projeto -- ver
 services/base_service.py) e só é refeita quando o professor troca o CEP.
 """
+import json
 import logging
 import re
 import time
+import unicodedata
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional, Tuple
 
 import requests
@@ -25,7 +28,6 @@ TIMEOUT_SEGUNDOS = 4  # nunca deixar o cadastro/edição do perfil travado
 USER_AGENT = {"User-Agent": "FitLog/1.0 (contato@fitlog.vip)"}  # exigido pelo Nominatim
 CACHE_TTL_SEGUNDOS = 60 * 60 * 24 * 30  # 30 dias -- coordenadas de um CEP não mudam
 CACHE_PREFIXO = "geocep:"
-CACHE_TTL_LOCAL_SEGUNDOS = 60 * 60 * 24 * 7  # 7 dias -- busca livre (nome de cidade)
 
 ZOOM_MINIMO_PONTOS_INDIVIDUAIS = 11  # abaixo disso, o mapa mostra clusters
 LIMITE_PROFESSORES_POR_RESPOSTA = 300
@@ -71,52 +73,65 @@ class GeolocalizacaoService(BaseService):
             return float(item["lat"]), float(item["lon"])
         return None
 
+    # ------------------------------------------------------------
+    # Busca de cidade pro campo de busca do mapa -- lista local dos
+    # 5.571 municípios do IBGE (data/municipios_br.json, com
+    # coordenadas de github.com/kelvins/municipios-brasileiros),
+    # em vez de bater no Nominatim a cada letra digitada. Mais rápido,
+    # sem depender de rede/rate-limit externo, e já cruza com
+    # User.professor_cidade/uf pra dizer se tem professor ali ou não.
+    # ------------------------------------------------------------
+
+    _cidades_br_cache = None
+
     @classmethod
-    def buscar_local(cls, texto: str) -> Optional[dict]:
-        """Geocodifica um texto livre (nome de cidade, sem CEP) pro campo
-        de busca do mapa -- retorna {"lat", "lng", "nome"} ou None.
-        Diferente de geocodificar_cep: não precisa existir professor
-        nenhum lá, é só "onde fica essa cidade" pro mapa focar.
-        Cacheado por menos tempo que o CEP (aqui o texto digitado varia
-        muito mais: "sao paulo", "São Paulo, SP" etc. são chaves de
-        cache diferentes, então não vale a pena guardar por 30 dias)."""
-        texto = (texto or "").strip()
-        if not texto or len(texto) > 120:
-            return None
+    def _cidades_br(cls) -> list:
+        """Carrega data/municipios_br.json uma vez por processo (são só
+        ~570KB -- não precisa de banco nem do CacheService pra isso)."""
+        if cls._cidades_br_cache is None:
+            caminho = Path(__file__).resolve().parent.parent / "data" / "municipios_br.json"
+            with open(caminho, encoding="utf-8") as f:
+                cls._cidades_br_cache = json.load(f)
+        return cls._cidades_br_cache
 
-        chave_cache = f"geolocal:{texto.lower()}"
-        em_cache = CacheService.get(chave_cache)
-        if em_cache == "nao_encontrado":
-            return None
-        if isinstance(em_cache, dict):
-            return em_cache
+    @staticmethod
+    def _normalizar_busca(texto: str) -> str:
+        """Minúsculas e sem acento, igual ao campo "busca" pré-calculado
+        em cada cidade do dataset -- "sao paulo" bate com "São Paulo"."""
+        texto = unicodedata.normalize("NFKD", texto or "")
+        return "".join(c for c in texto if not unicodedata.combining(c)).lower().strip()
 
-        resultado = None
-        try:
-            resposta = requests.get(
-                "https://nominatim.openstreetmap.org/search",
-                # "country" só é válido em busca ESTRUTURADA (sem "q") --
-                # combinado com "q" a API rejeita ou ignora o filtro
-                # (https://nominatim.org/release-docs/latest/api/Search/).
-                # O parâmetro certo pra restringir uma busca livre por
-                # país é "countrycodes" (código ISO 3166-1 alpha-2).
-                params={"q": texto, "countrycodes": "br", "format": "json", "limit": 1},
-                headers=USER_AGENT,
-                timeout=TIMEOUT_SEGUNDOS,
-            )
-            if resposta.status_code == 200 and resposta.json():
-                item = resposta.json()[0]
-                resultado = {
-                    "lat": float(item["lat"]),
-                    "lng": float(item["lon"]),
-                    "nome": item.get("display_name", texto).split(",")[0],
-                }
-        except requests.RequestException:
-            logger.warning("Falha ao buscar local '%s'", texto)
-            return None  # erro transitório: não grava no cache
+    @classmethod
+    def buscar_cidades(cls, prefixo: str, limite: int = 8) -> list:
+        """Cidades cujo nome começa com o texto digitado (acento/caixa
+        insensível), cada uma marcada com tem_professor. Não exige CEP
+        nem professor nenhum cadastrado -- é só "onde fica essa
+        cidade", igual um município vazio no mapa pode ser mostrado."""
+        prefixo = cls._normalizar_busca(prefixo)
+        if not prefixo:
+            return []
 
-        CacheService.set(chave_cache, resultado if resultado else "nao_encontrado", CACHE_TTL_LOCAL_SEGUNDOS)
-        return resultado
+        candidatas = [c for c in cls._cidades_br() if c["busca"].startswith(prefixo)]
+        # Sem dado de população no dataset -- capital do estado primeiro
+        # como uma aproximação simples de relevância, depois alfabética.
+        candidatas.sort(key=lambda c: (not c["capital"], c["nome"]))
+        candidatas = candidatas[:limite]
+
+        # Reaproveita cidades_com_professores() (já existe mais abaixo
+        # nesta classe) em vez de duplicar a consulta ao banco.
+        com_professor = {
+            (nome.lower(), uf) for nome, uf, _total in cls.cidades_com_professores() if nome and uf
+        }
+        return [
+            {
+                "nome": c["nome"],
+                "uf": c["uf"],
+                "lat": c["lat"],
+                "lng": c["lng"],
+                "tem_professor": (c["nome"].lower(), c["uf"]) in com_professor,
+            }
+            for c in candidatas
+        ]
 
     @classmethod
     def geocodificar_cep(cls, cep: Optional[str]) -> Optional[dict]:
