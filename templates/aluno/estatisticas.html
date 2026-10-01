@@ -1031,7 +1031,18 @@
                         scales: {
                             x: {
                                 grid: { display: false },
-                                ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8, color: '#8a8a8a', font: { size: 11 } }
+                                ticks: {
+                                    maxRotation: 0, autoSkip: true, maxTicksLimit: 8, color: '#8a8a8a', font: { size: 11 },
+                                    // "02/09–06/09" vira duas linhas (data
+                                    // inicial em cima, final embaixo) -- uma
+                                    // linha só ficava apertada com o filtro
+                                    // de 4 treinos. Semana de um dia só
+                                    // (sem travessão) continua numa linha.
+                                    callback: function (valor, indice) {
+                                        const rotulo = this.getLabelForValue(valor);
+                                        return rotulo.split('–');
+                                    }
+                                }
                             },
                             y: {
                                 beginAtZero: true,
