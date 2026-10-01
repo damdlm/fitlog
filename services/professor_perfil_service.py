@@ -69,6 +69,13 @@ ESTILOS_PAGINA = {
         'css': 'css/professor-estilos/esportivo.css',
         'template': 'professor/estilos/_poster_esportivo.html',
     },
+    'glow': {
+        'rotulo': 'Glow',
+        'descricao': 'Cartão claro em rosa e champanhe, com brilhos suaves.',
+        'base': 'css/professor-estilos/base.css',
+        'css': 'css/professor-estilos/glow.css',
+        'template': 'professor/estilos/_poster_glow.html',
+    },
 }
 
 # Descrição curta de cada especialidade, usada nas 3 caixas de destaque

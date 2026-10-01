@@ -167,3 +167,5 @@ def test_estilos_moderno_e_esportivo_tem_marcadores_proprios(app, client, profes
     assert b'pp-poster-estilo-2' in client.get(f'/professor/pagina/{slug}').data
     _salvar(client, estilo_pagina='esportivo')
     assert b'pp-poster-estilo-5' in client.get(f'/professor/pagina/{slug}').data
+    _salvar(client, estilo_pagina='glow')
+    assert b'pp-poster-feminino' in client.get(f'/professor/pagina/{slug}').data
