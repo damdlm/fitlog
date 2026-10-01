@@ -10,9 +10,33 @@
    'base'). Diagonal e Textura são arquivos completos e não usam este.
    ========================================================= */
 
+/* Fontes hospedadas no projeto: a CSP do app (font-src 'self') não
+   libera o Google Fonts. Licença OFL. */
+@font-face {
+    font-family: 'Montserrat';
+    font-weight: 700;
+    font-display: swap;
+    src: url('../../fonts/professor/montserrat-latin-700-normal.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    font-weight: 800;
+    font-display: swap;
+    src: url('../../fonts/professor/montserrat-latin-800-normal.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    font-weight: 900;
+    font-display: swap;
+    src: url('../../fonts/professor/montserrat-latin-900-normal.woff2') format('woff2');
+}
+
 .pp-page {
     width: 100%;
     padding: 0 16px 48px;
+    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .pp-page,
@@ -144,26 +168,23 @@
 .pp-name {
     position: relative;
     z-index: 3;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0 .65rem;
     margin-top: 9px;
     text-align: center;
-    line-height: .91;
+    line-height: 1.08;
 }
 
 .pp-name-first,
 .pp-name-last {
     display: block;
-    font-weight: 950;
-    letter-spacing: -1px;
+    font-size: 2.55rem;
+    font-weight: 800;
+    letter-spacing: -.5px;
     text-transform: uppercase;
-}
-
-.pp-name-first {
-    font-size: 3.05rem;
-}
-
-.pp-name-last {
-    margin-top: 4px;
-    font-size: 3.55rem;
 }
 
 .pp-cref {
@@ -180,11 +201,19 @@
     position: relative;
     z-index: 3;
     width: min(100%, 455px);
-    margin: 12px auto 0;
+    margin: 14px auto 0;
     text-align: center;
-    font-size: .88rem;
+    font-size: .92rem;
     font-weight: 500;
-    line-height: 1.48;
+    line-height: 1.45;
+}
+
+.pp-tagline::before {
+    content: "\201C";
+}
+
+.pp-tagline::after {
+    content: "\201D";
 }
 
 /* ESPECIALIDADES (cartões lado a lado) */
@@ -200,24 +229,42 @@
 .pp-service {
     flex: 1;
     min-width: 0;
-    padding: 14px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    min-height: 94px;
+    padding: 14px 6px;
     text-align: center;
 }
 
-.pp-service-title {
-    display: inline-block;
-    max-width: 100%;
-    font-size: .66rem;
-    line-height: 1.15;
-    font-weight: 900;
-    letter-spacing: .45px;
-    text-transform: uppercase;
+.pp-service-icon {
+    display: block;
+    width: 34px;
+    height: 34px;
 }
 
-.pp-service p {
-    margin: 8px 0 0;
-    font-size: .66rem;
-    line-height: 1.45;
+.pp-service-icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.pp-service-title {
+    display: block;
+    max-width: 100%;
+    font-size: .6rem;
+    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: .1px;
+    text-transform: uppercase;
+    overflow-wrap: break-word;
 }
 
 /* AVALIAÇÃO DOS ALUNOS (pílula centralizada) */
@@ -228,10 +275,9 @@
     align-items: center;
     justify-content: center;
     gap: 9px;
-    width: fit-content;
-    max-width: 100%;
-    margin: 22px auto 0;
-    padding: 10px 18px;
+    width: 100%;
+    margin: 20px auto 0;
+    padding: 11px 16px;
 }
 
 .pp-rating-stars {
@@ -256,12 +302,14 @@
 }
 
 .pp-rating-count {
-    padding-left: 9px;
-    border-left: 1px solid rgba(128, 128, 128, .45);
-    font-size: .7rem;
+    font-size: .72rem;
     font-weight: 600;
     line-height: 1;
-    opacity: .75;
+    opacity: .85;
+}
+
+.pp-rating-count::before {
+    content: "\2014\00a0";
 }
 
 /* REDES */
@@ -347,16 +395,13 @@
         flex: 0 0 250px !important;
     }
 
-    .pp-name-first {
-        font-size: 2.15rem;
-    }
-
+    .pp-name-first,
     .pp-name-last {
-        font-size: 2.55rem;
+        font-size: 2.1rem;
     }
 
     .pp-tagline {
-        font-size: .84rem;
+        font-size: .88rem;
     }
 
     .pp-services {
@@ -365,15 +410,13 @@
     }
 
     .pp-service {
-        padding: 12px 6px;
+        min-height: 88px;
+        padding: 12px 4px;
     }
 
     .pp-service-title {
-        font-size: .62rem;
-    }
-
-    .pp-service p {
-        font-size: .64rem;
+        font-size: .56rem;
+        letter-spacing: 0;
     }
 
     .pp-about {
@@ -390,24 +433,22 @@
         flex: 0 0 205px !important;
     }
 
-    .pp-name-first {
-        font-size: 1.8rem;
-    }
-
+    .pp-name-first,
     .pp-name-last {
-        font-size: 2.15rem;
+        font-size: 1.75rem;
     }
 
     .pp-service {
-        padding: 10px 4px;
+        padding: 10px 3px;
+    }
+
+    .pp-service-icon {
+        width: 28px;
+        height: 28px;
     }
 
     .pp-service-title {
-        font-size: .52rem;
-        letter-spacing: .1px;
-    }
-
-    .pp-service p {
-        font-size: .6rem;
+        font-size: .5rem;
+        letter-spacing: 0;
     }
 }

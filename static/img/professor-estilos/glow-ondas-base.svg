@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 150" preserveAspectRatio="none">
+<path d="M0 150V66C46 88 92 130 150 150Z" fill="#f2c0ca" opacity=".95"/>
+<path d="M0 150V104C30 114 62 136 88 150Z" fill="#d98aa0" opacity=".8"/>
+<path d="M400 150V46C344 68 296 118 238 150Z" fill="#f4cbd3" opacity=".95"/>
+<path d="M400 150V98C372 108 336 132 306 150Z" fill="#dd97aa" opacity=".85"/>
+<path d="M400 74C370 90 346 112 330 138" stroke="#d9a45f" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".85"/>
+</svg>

@@ -58,7 +58,7 @@ def test_salvar_estilo_textura_reflete_na_pagina_publica(app, client, professor)
     assert b'professor-estilos/textura.css' in publico.data
     assert b'professor-estilos/diagonal.css' not in publico.data
     # o partial do estilo Textura tem as faixas diagonais exclusivas dele
-    assert b'pp-diagonal-a' in publico.data
+    assert b'pp-textura-linhas' in publico.data
 
 
 def test_estilo_invalido_e_rejeitado_e_nao_altera(app, client, professor):
@@ -169,3 +169,53 @@ def test_estilos_moderno_e_esportivo_tem_marcadores_proprios(app, client, profes
     assert b'pp-poster-estilo-5' in client.get(f'/professor/pagina/{slug}').data
     _salvar(client, estilo_pagina='glow')
     assert b'pp-poster-feminino' in client.get(f'/professor/pagina/{slug}').data
+
+
+@pytest.mark.parametrize('chave', [c for c in ESTILOS_PAGINA if c != 'diagonal'])
+def test_estilos_novos_mostram_icones_e_avaliacao_em_uma_linha(app, client, professor, chave):
+    """Estilos no formato dos mockups: cartão com ícone + título (sem a
+    descrição), nome em uma linha e texto de avaliação 'de alunos'."""
+    uid, slug = professor
+    usuario = db.session.get(User, uid)
+    usuario.professor_especialidades = ['emagrecimento', 'hipertrofia', 'reabilitacao']
+    usuario.professor_estilo_pagina = chave
+    db.session.commit()
+    html = client.get(f'/professor/pagina/{slug}').get_data(as_text=True)
+    assert html.count('class="pp-service-icon"') == 3
+    assert 'Foco em queima de gordura' not in html  # descrição não aparece nesses estilos
+    assert 'pp-name-first' in html and 'pp-name-last' in html
+
+
+def test_servicos_destaque_traz_a_chave_de_cada_servico(app, professor):
+    uid, _ = professor
+    usuario = db.session.get(User, uid)
+    usuario.professor_especialidades = ['hipertrofia']
+    db.session.commit()
+    servicos = ProfessorPerfilService.servicos_destaque(usuario)
+    assert [s['chave'] for s in servicos] == ['hipertrofia', 'presencial', 'online']
+    assert all(s['titulo'] and s['descricao'] for s in servicos)
+
+
+def test_icones_de_todas_as_chaves_renderizam_svg(app):
+    from flask import render_template_string
+    chaves = ['emagrecimento', 'hipertrofia', 'reabilitacao', 'terceira_idade',
+              'presencial', 'online', 'avaliacao', 'chave_desconhecida']
+    with app.test_request_context():
+        for chave in chaves:
+            html = render_template_string(
+                '{% from "professor/estilos/_macros.html" import icone_servico %}{{ icone_servico(k) }}',
+                k=chave,
+            )
+            assert '<svg' in html and 'pp-service-icon' in html, chave
+
+
+def test_assets_dos_estilos_existem():
+    import os, re
+    raiz = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    pasta_css = os.path.join(raiz, 'static', 'css', 'professor-estilos')
+    for nome in os.listdir(pasta_css):
+        if not nome.endswith('.css'):
+            continue
+        css = open(os.path.join(pasta_css, nome), encoding='utf-8').read()
+        for rel in re.findall(r"url\('(\.\./\.\./[^')]+)'\)", css):
+            assert os.path.isfile(os.path.normpath(os.path.join(pasta_css, rel))), f'{nome}: {rel}'

@@ -48,13 +48,14 @@ ESTILOS_PAGINA = {
     },
     'textura': {
         'rotulo': 'Textura',
-        'descricao': 'Fundo texturizado com faixas diagonais laranja.',
+        'descricao': 'Fundo escuro com textura riscada e linhas laranja.',
+        'base': 'css/professor-estilos/base.css',
         'css': 'css/professor-estilos/textura.css',
         'template': 'professor/estilos/_poster_textura.html',
     },
-    # Moderno e Esportivo só definem a identidade visual (cores,
-    # fundos, decoração): o layout vem do CSS estrutural em 'base',
-    # carregado antes do CSS do estilo.
+    # Textura, Moderno, Esportivo e Glow só definem a identidade visual
+    # (cores, fundos, decoração): o layout vem do CSS estrutural em
+    # 'base', carregado antes do CSS do estilo.
     'moderno': {
         'rotulo': 'Moderno',
         'descricao': 'Cartão claro e limpo, com detalhes em laranja.',
@@ -90,9 +91,9 @@ _DESCRICOES_ESPECIALIDADES = {
 # Itens genéricos usados só pra completar as 3 caixas quando o
 # professor marcou menos de 3 especialidades (ou nenhuma).
 _SERVICOS_GENERICOS_PADRAO = [
-    {'titulo': 'Presencial', 'descricao': 'Acompanhamento na academia, treino a treino.'},
-    {'titulo': 'Online', 'descricao': 'Consultoria à distância, com suporte por mensagem.'},
-    {'titulo': 'Avaliação', 'descricao': 'Medidas e composição corporal pro seu ponto de partida.'},
+    {'chave': 'presencial', 'titulo': 'Presencial', 'descricao': 'Acompanhamento na academia, treino a treino.'},
+    {'chave': 'online', 'titulo': 'Online', 'descricao': 'Consultoria à distância, com suporte por mensagem.'},
+    {'chave': 'avaliacao', 'titulo': 'Avaliação', 'descricao': 'Medidas e composição corporal pro seu ponto de partida.'},
 ]
 
 
@@ -268,14 +269,14 @@ class ProfessorPerfilService(BaseService):
 
     @staticmethod
     def servicos_destaque(professor: User) -> list[dict]:
-        """As 3 caixas de destaque (título + descrição) da página
+        """As 3 caixas de destaque (chave + título + descrição) da página
         pública. Usa as especialidades reais que o professor marcou
         (na ordem fixa do vocabulário) e só completa com os itens
         genéricos (Presencial/Online/Avaliação) se sobrar espaço --
         quem marcou 3 ou mais especialidades vê só conteúdo real."""
         selecionadas = set(professor.professor_especialidades or [])
         servicos = [
-            {'titulo': label, 'descricao': _DESCRICOES_ESPECIALIDADES[chave]}
+            {'chave': chave, 'titulo': label, 'descricao': _DESCRICOES_ESPECIALIDADES[chave]}
             for chave, label in ESPECIALIDADES_VALIDAS.items()
             if chave in selecionadas
         ]

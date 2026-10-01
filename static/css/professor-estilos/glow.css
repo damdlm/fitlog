@@ -1,64 +1,226 @@
-/*
- * FitLog — Tema Feminino
- * Carregar depois do CSS estrutural da página pública.
- */
-.pp-page-feminino{
-  --fem-rose:#c65b76;--fem-rose-dark:#8d3f57;--fem-rose-soft:#f8e8ed;
-  --fem-champagne:#e9c79e;--fem-ink:#2c2428;--fem-muted:#74686d;
-  --fem-line:#eadde1;background:#f7f4f5;
+/* =========================================================
+   FITLOG — PÁGINA PÚBLICA — ESTILO GLOW
+   Rosa e champanhe, ondas suaves, folhas e brilho dourado.
+   Só identidade visual. O layout vem do base.css (carregado antes).
+   ========================================================= */
+
+/* Fonte manuscrita hospedada no projeto (CSP não libera Google Fonts) */
+@font-face {
+    font-family: 'Dancing Script';
+    font-weight: 700;
+    font-display: swap;
+    src: url('../../fonts/professor/dancing-script-latin-700-normal.woff2') format('woff2');
 }
-.pp-poster-feminino{
-  position:relative;isolation:isolate;overflow:hidden;min-height:100%;
-  color:var(--fem-ink);
-  background:radial-gradient(circle at 86% 9%,rgba(233,199,158,.20),transparent 22%),
-             radial-gradient(circle at 8% 62%,rgba(198,91,118,.065),transparent 27%),
-             linear-gradient(180deg,#fff 0%,#fdfafb 100%);
-  border:1px solid var(--fem-line);border-radius:24px;
-  box-shadow:0 18px 48px rgba(73,42,53,.11);
+
+.pp-page-feminino {
+    --fem-rose: #a63f60;
+    --fem-rose-2: #c45878;
+    --fem-rose-soft: #f9dde3;
+    --fem-gold: #d9a45f;
+    --fem-ink: #1f2a37;
+    --fem-muted: #5f6b77;
+    --fem-line: #efd3da;
+    background: #f8f1f1;
 }
-.pp-fem-glow{position:absolute;z-index:-1;pointer-events:none;border-radius:50%}
-.pp-fem-glow-top{width:210px;height:210px;top:-125px;right:-85px;
-  background:radial-gradient(circle,rgba(233,199,158,.38),transparent 70%)}
-.pp-fem-glow-bottom{width:240px;height:240px;left:-135px;bottom:-120px;
-  background:radial-gradient(circle,rgba(198,91,118,.15),transparent 70%)}
-.pp-fem-ribbon{position:absolute;z-index:-1;right:-55px;top:105px;width:220px;height:62px;
-  border-top:2px solid rgba(198,91,118,.28);border-bottom:2px solid rgba(233,199,158,.42);
-  transform:rotate(-19deg) skewX(-20deg);opacity:.85}
-.pp-poster-feminino .pp-actions{z-index:5}
-.pp-poster-feminino .pp-action{color:var(--fem-rose-dark);background:rgba(255,255,255,.88);
-  border:1px solid var(--fem-line);box-shadow:0 6px 16px rgba(90,50,63,.08)}
-.pp-poster-feminino .pp-photo-area{position:relative;z-index:3}
-.pp-poster-feminino .pp-ring{padding:5px;background:#fff;
-  border:3px solid var(--fem-rose);
-  box-shadow:0 0 0 4px rgba(198,91,118,.07),0 10px 28px rgba(112,54,73,.16)}
-.pp-poster-feminino .pp-photo{overflow:hidden;border-radius:50%;background:#f1e8eb}
-.pp-poster-feminino .pp-photo img{display:block;width:100%;height:100%;object-fit:cover}
-.pp-poster-feminino .pp-eyebrow{color:var(--fem-rose);font-size:.68rem;font-weight:800;
-  letter-spacing:.25em;text-transform:uppercase}
-.pp-poster-feminino .pp-name{color:var(--fem-ink);font-weight:900;
-  letter-spacing:-.045em;line-height:.96;text-transform:uppercase}
-.pp-poster-feminino .pp-name-first{color:var(--fem-ink)}
-.pp-poster-feminino .pp-name-last{color:var(--fem-rose)}
-.pp-poster-feminino .pp-cref{color:var(--fem-muted);font-size:.70rem;letter-spacing:.08em}
-.pp-poster-feminino .pp-tagline{max-width:390px;color:#5f5359;line-height:1.48}
-.pp-poster-feminino .pp-services{position:relative;z-index:3}
-.pp-poster-feminino .pp-service{min-height:76px;background:rgba(255,255,255,.92);
-  border:1px solid var(--fem-line);border-radius:14px;
-  box-shadow:0 7px 20px rgba(80,46,58,.065);transition:.2s}
-.pp-poster-feminino .pp-service:hover{transform:translateY(-2px);
-  border-color:rgba(198,91,118,.40);box-shadow:0 11px 27px rgba(80,46,58,.10)}
-.pp-poster-feminino .pp-service-title{color:var(--fem-rose-dark);font-weight:800}
-.pp-poster-feminino .pp-service p{color:var(--fem-muted)}
-.pp-poster-feminino .pp-rating-info{background:linear-gradient(90deg,rgba(248,232,237,.96),rgba(255,248,242,.96));
-  border:1px solid #ecd8df;border-radius:13px;color:var(--fem-ink)}
-.pp-poster-feminino .pp-rating-score,.pp-poster-feminino .pp-star-full,
-.pp-poster-feminino .pp-star-half{color:var(--fem-rose)}
-.pp-poster-feminino .pp-star-empty{color:#d8cdd1}
-.pp-poster-feminino .pp-social a{color:var(--fem-rose-dark)}
-.pp-about-feminino{position:relative;overflow:hidden;background:linear-gradient(135deg,#fff,#fdf7f9);
-  border:1px solid var(--fem-line);border-radius:17px;box-shadow:0 11px 30px rgba(73,42,53,.075)}
-.pp-about-feminino .pp-section-title{color:var(--fem-ink)}
-.pp-about-feminino .pp-about-text{color:#62565c}
-.pp-about-feminino .pp-chip{color:var(--fem-rose-dark);background:#fff8fa;
-  border:1px solid rgba(198,91,118,.32)}
-@media(max-width:575.98px){.pp-poster-feminino{border-radius:15px}.pp-fem-ribbon{right:-100px;opacity:.55}}
+
+.pp-poster-feminino {
+    color: var(--fem-ink);
+    background: linear-gradient(180deg, #fdf5f3 0%, #fbeeee 100%);
+    border: 1px solid #f0dadd;
+    border-radius: 26px;
+    box-shadow: 0 18px 48px rgba(110, 50, 70, .12);
+}
+
+/* Ondas, pontos e folhas (SVG) */
+.pp-glow-topo,
+.pp-glow-base,
+.pp-glow-pontos,
+.pp-glow-folhas {
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    background-repeat: no-repeat;
+}
+
+.pp-glow-topo {
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 200px;
+    background-image: url('../../img/professor-estilos/glow-ondas-topo.svg');
+    background-position: 0 0;
+    background-size: contain;
+}
+
+.pp-glow-base {
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 112px;
+    background-image: url('../../img/professor-estilos/glow-ondas-base.svg');
+    background-position: 0 100%;
+    background-size: 100% 100%;
+}
+
+.pp-glow-pontos {
+    width: 40px;
+    height: 104px;
+    background-image: url('../../img/professor-estilos/glow-pontos.svg');
+    background-size: contain;
+}
+
+.pp-glow-pontos-esq {
+    top: 190px;
+    left: 14px;
+}
+
+.pp-glow-pontos-dir {
+    top: 340px;
+    right: 14px;
+}
+
+.pp-glow-folhas {
+    left: -6px;
+    bottom: 58px;
+    width: 64px;
+    height: 90px;
+    background-image: url('../../img/professor-estilos/glow-folhas.svg');
+    background-position: 0 100%;
+    background-size: contain;
+}
+
+.pp-poster-feminino .pp-action {
+    color: var(--fem-rose);
+    background: rgba(255, 255, 255, .9);
+    border: 1px solid var(--fem-line);
+    box-shadow: 0 6px 16px rgba(110, 50, 70, .10);
+}
+
+.pp-poster-feminino .pp-action:hover {
+    color: #fff;
+    background: var(--fem-rose);
+}
+
+/* Anel rosa fino, com arcos dourados por fora */
+.pp-poster-feminino .pp-ring {
+    padding: 4px;
+    background: linear-gradient(135deg, var(--fem-rose-2) 0%, var(--fem-rose) 100%);
+    box-shadow: 0 10px 28px rgba(140, 60, 85, .18);
+}
+
+.pp-poster-feminino .pp-ring::before {
+    content: "";
+    position: absolute;
+    inset: -16px;
+    background: url('../../img/professor-estilos/glow-arcos-anel.svg') center / 100% 100% no-repeat;
+    pointer-events: none;
+}
+
+.pp-poster-feminino .pp-photo {
+    border: 3px solid #fff7f5;
+    background: #f1e0e4;
+}
+
+.pp-poster-feminino .pp-eyebrow {
+    color: var(--fem-rose);
+    letter-spacing: .34em;
+    font-weight: 900;
+}
+
+.pp-poster-feminino .pp-name-first {
+    color: var(--fem-ink);
+}
+
+.pp-poster-feminino .pp-name-last {
+    color: var(--fem-rose);
+}
+
+.pp-poster-feminino .pp-cref {
+    color: #2b3642;
+}
+
+.pp-poster-feminino .pp-tagline {
+    color: #36424e;
+}
+
+.pp-poster-feminino .pp-service {
+    color: var(--fem-rose);
+    background: rgba(255, 255, 255, .6);
+    border: 1px solid var(--fem-line);
+    border-radius: 16px;
+    transition: transform .2s ease, border-color .2s ease;
+}
+
+.pp-poster-feminino .pp-service:hover {
+    transform: translateY(-2px);
+    border-color: rgba(166, 63, 96, .4);
+}
+
+.pp-poster-feminino .pp-service-title {
+    color: var(--fem-ink);
+}
+
+.pp-poster-feminino .pp-rating-info {
+    color: var(--fem-ink);
+    background: var(--fem-rose-soft);
+    border-radius: 20px;
+}
+
+.pp-poster-feminino .pp-star-full,
+.pp-poster-feminino .pp-star-half {
+    color: #e3912f;
+}
+
+.pp-poster-feminino .pp-star-empty {
+    color: #e6cfd5;
+}
+
+.pp-poster-feminino .pp-rating-score {
+    color: var(--fem-ink);
+}
+
+.pp-poster-feminino .pp-social a {
+    color: var(--fem-rose);
+}
+
+.pp-about-feminino {
+    background: rgba(255, 255, 255, .72);
+    border: 1px solid var(--fem-line);
+    border-radius: 18px;
+    box-shadow: 0 11px 30px rgba(110, 50, 70, .08);
+}
+
+/* "Sobre mim" em letra manuscrita */
+.pp-about-feminino .pp-section-title {
+    color: var(--fem-rose);
+    font-family: 'Dancing Script', 'Segoe Script', cursive;
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.pp-about-feminino .pp-about-text {
+    color: #3b4650;
+}
+
+.pp-about-feminino .pp-chip {
+    color: #8f3552;
+    background: #fbeaee;
+    border: 1px solid #dba7b5;
+    padding: 7px 16px;
+}
+
+@media (max-width: 560px) {
+    .pp-poster-feminino {
+        border-radius: 18px;
+    }
+
+    .pp-glow-topo {
+        width: 220px;
+        height: 170px;
+    }
+
+    .pp-poster-feminino .pp-ring::before {
+        inset: -12px;
+    }
+}
