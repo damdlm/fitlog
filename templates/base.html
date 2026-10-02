@@ -1740,6 +1740,13 @@
                         </li>
                         {% endif %}
                         {% if current_user.is_professor() and not current_user.is_admin %}
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('professor.editar_pagina_publica') }}">
+                                <i class="bi bi-person-badge"></i> Minha Página
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.is_professor() and not current_user.is_admin %}
                         <li class="d-lg-none">
                             <a class="dropdown-item" href="{{ url_for('professor.dashboard') }}">
                                 <i class="bi bi-speedometer2"></i> Painel
