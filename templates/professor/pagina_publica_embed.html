@@ -16,6 +16,20 @@
             margin: 0;
             padding: 0;
         }
+
+        /* Espaço no topo igual ao das laterais. Todos os estilos de
+           pôster usam a mesma margem lateral em .pp-page (10px até
+           560px de largura, 16px a partir de 561px) mas com padding-top
+           zerado, então aqui o pôster encostava no topo do iframe.
+           Este bloco vem depois dos CSS dos estilos, por isso vence. */
+        .pp-page {
+            padding-top: 10px;
+        }
+        @media (min-width: 561px) {
+            .pp-page {
+                padding-top: 16px;
+            }
+        }
     </style>
 </head>
 <body>
