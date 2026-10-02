@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block page_icon %}<i class="bi bi-pencil-square" style="color: #F28C33;"></i>{% endblock %}
+{% block page_icon %}<i class="bi bi-person-badge" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Minha Página{% endblock %}
 
 {% block extra_css %}
@@ -8,100 +8,108 @@
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
+{% set tem_foto = current_user.professor_foto_url %}
+{% set link_publico = canonical_url(url_for('professor.pagina_publica', slug=current_user.professor_slug)) if current_user.professor_slug else None %}
 
-        <div class="epp-header epp-header-clean">
-            {% if current_user.professor_slug %}
-            <button type="button" class="btn btn-sm epp-btn-ver"
-                    style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;"
-                    data-bs-toggle="modal" data-bs-target="#ppVerPaginaModal">
-                <i class="bi bi-eye"></i> Ver minha página
-            </button>
+<div class="row justify-content-center">
+    <div class="col-xl-8 col-lg-10">
+
+        <!-- TOPO: link público + ver página -->
+        <div class="epp-topo">
+            <div class="epp-topo-texto">
+                <h1 class="epp-topo-titulo">Sua página de divulgação</h1>
+                <p class="epp-topo-sub">É o cartão de visita que os alunos veem no mapa e no link que você compartilha.</p>
+            </div>
+            {% if link_publico %}
+            <div class="epp-topo-acoes">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="eppCopiarLink"
+                        data-url="{{ link_publico }}">
+                    <i class="bi bi-link-45deg"></i> Copiar link
+                </button>
+                <button type="button" class="btn btn-primary btn-sm"
+                        data-bs-toggle="modal" data-bs-target="#ppVerPaginaModal">
+                    <i class="bi bi-eye"></i> Ver minha página
+                </button>
+            </div>
             {% endif %}
         </div>
 
         <!-- FOTO -->
-        <div class="card epp-card mb-3">
+        <section class="card epp-card mb-4">
             <div class="card-body">
-                <h6 class="epp-card-title"><i class="bi bi-camera"></i>Foto de perfil</h6>
-                <form action="{{ url_for('professor.upload_foto_pagina_publica') }}" method="post" enctype="multipart/form-data">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="pp-photo-preview-wrap">
-                        <div class="pp-avatar" id="ppFotoPreview" style="width: 84px; height: 84px; font-size: 28px; color: #F28C33;">
-                            {% if current_user.professor_foto_url %}
-                                <img src="{{ current_user.professor_foto_url }}" alt="Foto atual"
-                                     style="object-position: {{ current_user.professor_foto_posicao_css }}">
-                            {% else %}
-                                {{ current_user.professor_iniciais }}
-                            {% endif %}
-                        </div>
-                        <div>
+                <div class="epp-secao-cabecalho">
+                    <span class="epp-secao-icone"><i class="bi bi-camera"></i></span>
+                    <div>
+                        <h2 class="epp-secao-titulo">Foto de perfil</h2>
+                        <p class="epp-secao-sub">Uma boa foto passa confiança logo de cara.</p>
+                    </div>
+                </div>
+
+                <div class="epp-foto">
+                    <div class="epp-foto-circulo"
+                         id="{{ 'ppPosicaoCirculo' if tem_foto else 'ppFotoPreview' }}"
+                         {% if tem_foto %}tabindex="0" role="slider" aria-label="Posição da foto"{% endif %}>
+                        {% if tem_foto %}
+                            <img src="{{ current_user.professor_foto_url }}" alt="Foto atual" id="ppPosicaoImg"
+                                 draggable="false"
+                                 style="object-position: {{ current_user.professor_foto_posicao_css }}">
+                        {% else %}
+                            <span class="epp-foto-iniciais">{{ current_user.professor_iniciais }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="epp-foto-acoes">
+                        <form action="{{ url_for('professor.upload_foto_pagina_publica') }}" method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="file" name="foto" id="ppFotoInput" accept="image/jpeg,image/png,image/webp" class="epp-file-input">
-                            <div class="d-flex flex-wrap gap-2 mb-2">
-                                <label for="ppFotoInput" class="btn btn-sm epp-btn-escolher">
-                                    <i class="bi bi-image"></i> Escolher foto
+                            <div class="d-flex flex-wrap gap-2 mb-1">
+                                <label for="ppFotoInput" class="btn btn-outline-primary btn-sm mb-0">
+                                    <i class="bi bi-image"></i> {{ 'Trocar foto' if tem_foto else 'Escolher foto' }}
                                 </label>
-                                <button type="submit" class="btn btn-sm epp-submit d-none" id="ppFotoEnviar">
+                                <button type="submit" class="btn btn-primary btn-sm d-none" id="ppFotoEnviar">
                                     <i class="bi bi-upload"></i> Enviar foto
                                 </button>
                             </div>
-                            <div class="form-text" id="ppFotoAjuda">JPG, PNG ou WEBP -- até 4MB.</div>
-                        </div>
+                            <div class="form-text" id="ppFotoAjuda">JPG, PNG ou WEBP, até 4MB.</div>
+                        </form>
+
+                        {% if tem_foto %}
+                        <form action="{{ url_for('professor.salvar_posicao_foto_pagina_publica') }}" method="post"
+                              class="epp-posicao" id="ppPosicaoForm">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="foto_pos_x" id="ppFotoPosX" value="{{ current_user.professor_foto_pos_x }}">
+                            <input type="hidden" name="foto_pos_y" id="ppFotoPosY" value="{{ current_user.professor_foto_pos_y }}">
+                            <div class="epp-posicao-dica">
+                                <i class="bi bi-arrows-move"></i>
+                                Arraste a foto para enquadrar o rosto no círculo.
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-check-lg"></i> Salvar posição
+                                </button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="ppPosicaoCentralizar">
+                                    <i class="bi bi-bullseye"></i> Centralizar
+                                </button>
+                            </div>
+                        </form>
+                        {% endif %}
                     </div>
-                </form>
-
-                {% if current_user.professor_foto_url %}
-                <!-- POSIÇÃO DA FOTO -->
-                <form action="{{ url_for('professor.salvar_posicao_foto_pagina_publica') }}" method="post"
-                      class="epp-posicao" id="ppPosicaoForm"
-                      data-pos-x="{{ current_user.professor_foto_pos_x }}"
-                      data-pos-y="{{ current_user.professor_foto_pos_y }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="foto_pos_x" id="ppFotoPosX" value="{{ current_user.professor_foto_pos_x }}">
-                    <input type="hidden" name="foto_pos_y" id="ppFotoPosY" value="{{ current_user.professor_foto_pos_y }}">
-
-                    <div class="epp-posicao-titulo">Posição da foto</div>
-                    <div class="form-text mb-2">Arraste a foto para enquadrar o rosto dentro do círculo.</div>
-
-                    <div class="epp-posicao-area">
-                        <div class="epp-posicao-circulo" id="ppPosicaoCirculo" tabindex="0"
-                             role="slider" aria-label="Posição da foto">
-                            <img src="{{ current_user.professor_foto_url }}" alt="Ajustar posição da foto"
-                                 id="ppPosicaoImg" draggable="false"
-                                 style="object-position: {{ current_user.professor_foto_posicao_css }}">
-                        </div>
-                        <div class="d-flex flex-wrap gap-2">
-                            <button type="submit" class="btn btn-sm epp-submit">
-                                <i class="bi bi-check-lg"></i> Salvar posição
-                            </button>
-                            <button type="button" class="btn btn-sm epp-btn-escolher" id="ppPosicaoCentralizar">
-                                <i class="bi bi-bullseye"></i> Centralizar
-                            </button>
-                        </div>
-                    </div>
-                </form>
-                {% endif %}
+                </div>
             </div>
-        </div>
+        </section>
 
-        <!-- DADOS -->
-        <div class="card epp-card mb-4">
-            <div class="card-body">
-                <form action="{{ url_for('professor.salvar_pagina_publica') }}" method="post">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <form action="{{ url_for('professor.salvar_pagina_publica') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                    <div class="epp-field">
-                        <label for="ppEstiloPagina" class="form-label">Estilo da página</label>
-                        <select class="form-select" id="ppEstiloPagina" name="estilo_pagina">
-                            {% for chave, estilo in estilos_pagina.items() %}
-                            <option value="{{ chave }}"
-                                    data-descricao="{{ estilo.descricao }}"
-                                    {{ 'selected' if chave == estilo_pagina_atual else '' }}>{{ estilo.rotulo }}</option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text" id="ppEstiloDescricao"></div>
-                        <div class="form-text">Use "Ver minha página" para conferir o estilo escolhido antes de salvar.</div>
+            <!-- SOBRE VOCÊ -->
+            <section class="card epp-card mb-4">
+                <div class="card-body">
+                    <div class="epp-secao-cabecalho">
+                        <span class="epp-secao-icone"><i class="bi bi-person-lines-fill"></i></span>
+                        <div>
+                            <h2 class="epp-secao-titulo">Sobre você</h2>
+                            <p class="epp-secao-sub">Apresente seu trabalho em poucas linhas.</p>
+                        </div>
                     </div>
 
                     <div class="epp-field">
@@ -113,10 +121,20 @@
                         <div class="pp-char-counter" id="ppTaglineContador"></div>
                     </div>
 
-                    <div class="epp-field">
-                        <label for="ppCref" class="form-label">CREF</label>
-                        <input type="text" class="form-control" id="ppCref" name="cref" maxlength="30"
-                               value="{{ current_user.professor_cref or '' }}" placeholder="Ex: 123456-G/SC">
+                    <div class="row g-3 epp-field">
+                        <div class="col-md-6">
+                            <label for="ppCref" class="form-label">CREF</label>
+                            <input type="text" class="form-control" id="ppCref" name="cref" maxlength="30"
+                                   value="{{ current_user.professor_cref or '' }}" placeholder="Ex: 123456-G/SC">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="ppInstagram" class="form-label">Instagram</label>
+                            <div class="input-group">
+                                <span class="input-group-text">@</span>
+                                <input type="text" class="form-control" id="ppInstagram" name="instagram" maxlength="120"
+                                       value="{{ current_user.professor_instagram or '' }}" placeholder="seu.usuario">
+                            </div>
+                        </div>
                     </div>
 
                     <div class="epp-field">
@@ -126,34 +144,87 @@
                                   placeholder="Sua história, sua formação em Educação Física e sua experiência.">{{ current_user.professor_bio or '' }}</textarea>
                         <div class="pp-char-counter" id="ppBioContador"></div>
                     </div>
+                </div>
+            </section>
 
-                    <div class="epp-field">
-                        <label class="form-label">Especialidades</label>
+            <!-- ESPECIALIDADES -->
+            <section class="card epp-card mb-4">
+                <div class="card-body">
+                    <div class="epp-secao-cabecalho">
+                        <span class="epp-secao-icone"><i class="bi bi-stars"></i></span>
+                        <div class="flex-grow-1">
+                            <h2 class="epp-secao-titulo">Especialidades</h2>
+                            <p class="epp-secao-sub">
+                                Clique para marcar e ver o que cada uma significa.
+                            </p>
+                        </div>
+                        <span class="epp-contador-esp" id="ppEspContador" aria-live="polite"></span>
+                    </div>
+
+                    {% for titulo_grupo, itens in especialidades_grupos %}
+                    <div class="epp-grupo">
+                        <div class="epp-grupo-titulo">{{ titulo_grupo }}</div>
                         <div class="epp-chip-group">
-                            {% for chave, rotulo in especialidades_disponiveis.items() %}
+                            {% for chave, rotulo, descricao in itens %}
                             <div class="epp-chip-option">
                                 <input type="checkbox" name="especialidades"
                                        value="{{ chave }}" id="ppEsp{{ chave }}"
                                        {{ 'checked' if chave in especialidades_selecionadas else '' }}>
-                                <label for="ppEsp{{ chave }}">{{ rotulo }}</label>
+                                <label for="ppEsp{{ chave }}" data-descricao="{{ descricao }}">{{ rotulo }}</label>
                             </div>
                             {% endfor %}
                         </div>
                     </div>
+                    {% endfor %}
+
+                    <div class="form-text mt-3">
+                        Todas as marcadas aparecem como etiquetas na sua página. As três primeiras
+                        (na ordem desta lista) ganham uma caixa de destaque.
+                    </div>
+                </div>
+            </section>
+
+            <!-- APARÊNCIA -->
+            <section class="card epp-card mb-4">
+                <div class="card-body">
+                    <div class="epp-secao-cabecalho">
+                        <span class="epp-secao-icone"><i class="bi bi-palette"></i></span>
+                        <div>
+                            <h2 class="epp-secao-titulo">Aparência</h2>
+                            <p class="epp-secao-sub">Escolha o visual da sua página.</p>
+                        </div>
+                    </div>
 
                     <div class="epp-field">
-                        <label for="ppInstagram" class="form-label">Instagram</label>
-                        <div class="input-group">
-                            <span class="input-group-text">@</span>
-                            <input type="text" class="form-control" id="ppInstagram" name="instagram" maxlength="120"
-                                   value="{{ current_user.professor_instagram or '' }}" placeholder="seu.usuario">
+                        <label for="ppEstiloPagina" class="form-label">Estilo da página</label>
+                        <select class="form-select" id="ppEstiloPagina" name="estilo_pagina">
+                            {% for chave, estilo in estilos_pagina.items() %}
+                            <option value="{{ chave }}"
+                                    data-descricao="{{ estilo.descricao }}"
+                                    {{ 'selected' if chave == estilo_pagina_atual else '' }}>{{ estilo.rotulo }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text" id="ppEstiloDescricao"></div>
+                        <div class="form-text">Use "Ver minha página" para conferir o estilo antes de salvar.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- LOCALIZAÇÃO E VISIBILIDADE -->
+            <section class="card epp-card mb-4">
+                <div class="card-body">
+                    <div class="epp-secao-cabecalho">
+                        <span class="epp-secao-icone"><i class="bi bi-geo-alt"></i></span>
+                        <div>
+                            <h2 class="epp-secao-titulo">Localização e visibilidade</h2>
+                            <p class="epp-secao-sub">Decida onde e como você aparece.</p>
                         </div>
                     </div>
 
                     <div class="epp-field">
                         <label for="ppCep" class="form-label">CEP</label>
-                        <input type="text" class="form-control" id="ppCep" name="endereco_cep" maxlength="9"
-                               value="{{ current_user.endereco_cep or '' }}" placeholder="00000-000">
+                        <input type="text" class="form-control epp-input-cep" id="ppCep" name="endereco_cep" maxlength="9"
+                               value="{{ current_user.endereco_cep or '' }}" placeholder="00000-000" inputmode="numeric">
                         <div class="form-text">Usado só para te posicionar no mapa de busca do aluno.</div>
                     </div>
 
@@ -172,13 +243,15 @@
                             Mostrar minha nota de avaliação (estrelas) na página pública
                         </label>
                     </div>
+                </div>
+            </section>
 
-                    <button type="submit" class="btn epp-submit">
-                        <i class="bi bi-check-lg"></i> Salvar
-                    </button>
-                </form>
+            <div class="epp-acoes-form">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> Salvar alterações
+                </button>
             </div>
-        </div>
+        </form>
 
     </div>
 </div>

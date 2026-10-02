@@ -1,104 +1,96 @@
 /* =========================================================
-   TELA "EDITAR MINHA PÁGINA"
+   TELA "MINHA PÁGINA"
    templates/professor/editar_pagina_publica.html
-   Antes era só Bootstrap padrão (card branco, checkbox cru,
-   botão azul genérico) -- aqui puxa pra mesma identidade
-   visual (laranja/gradiente) da página pública em si.
+   Usa os botões e campos globais do app (.btn-primary,
+   .btn-outline-primary, .form-control -- ver style.css); aqui
+   ficam só o layout em seções, a foto e os chips de especialidade.
    ========================================================= */
 
-.epp-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 6px;
+:root {
+    --epp-laranja: #F28C33;
+    --epp-laranja-claro: #FFB366;
+    --epp-gradiente: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
+    --epp-borda: #eceef1;
+    --epp-fundo-suave: #faf7f2;
 }
 
-.epp-header-clean {
-    justify-content: flex-end;
+/* ---------- Topo ---------- */
+.epp-topo {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
     margin-bottom: 22px;
 }
 
-.epp-header h4 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.epp-topo-titulo {
+    margin: 0 0 4px;
+    font-size: 1.35rem;
     font-weight: 800;
+    color: #222;
+}
+
+.epp-topo-sub {
     margin: 0;
+    font-size: .9rem;
+    color: #6c757d;
+    max-width: 520px;
 }
 
-.epp-btn-ver {
-    font-weight: 700;
-    padding: 7px 16px;
-    box-shadow: 0 6px 16px rgba(242, 140, 51, .25);
-    transition: opacity .15s ease;
+.epp-topo-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
-.epp-btn-ver:hover,
-.epp-btn-ver:focus,
-.epp-btn-ver:active {
-    color: #fff;
-    opacity: .9;
-}
-
-/* Upload de foto: input nativo escondido (mas focável, pra teclado
-   e leitor de tela), com um botão de contorno laranja no lugar */
-.epp-file-input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-    overflow: hidden;
-}
-
-.epp-btn-escolher {
-    margin: 0;
-    font-weight: 700;
-    padding: 7px 16px;
-    color: #F28C33;
-    background: #fff;
-    border: 1.5px solid #F28C33;
-    cursor: pointer;
-    transition: background .15s ease;
-}
-
-.epp-btn-escolher:hover {
-    color: #F28C33;
-    background: rgba(242, 140, 51, .08);
-}
-
-.epp-file-input:focus-visible + div .epp-btn-escolher {
-    outline: 2px solid #F28C33;
-    outline-offset: 2px;
-}
-
-.epp-ajuda-erro {
-    color: #dc3545;
-    font-weight: 600;
-}
-
+/* ---------- Cards / seções ---------- */
 .epp-card {
-    border: none;
-    border-radius: 16px;
-    box-shadow: 0 8px 26px rgba(0, 0, 0, .07);
+    border-radius: 20px;
+}
+
+/* O .card global sobe 5px no hover -- em tela de formulário só atrapalha */
+.epp-card:hover {
+    transform: none;
+    box-shadow: var(--card-shadow);
 }
 
 .epp-card .card-body {
-    padding: 26px 26px 24px;
+    padding: 26px;
 }
 
-.epp-card-title {
+.epp-secao-cabecalho {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-weight: 800;
-    color: #222;
-    margin-bottom: 18px;
+    gap: 14px;
+    margin-bottom: 22px;
 }
 
-.epp-card-title i {
-    color: #F28C33;
+.epp-secao-icone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    font-size: 1.15rem;
+    color: #fff;
+    background: var(--epp-gradiente);
+    box-shadow: 0 6px 16px rgba(242, 140, 51, .25);
+}
+
+.epp-secao-titulo {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #222;
+}
+
+.epp-secao-sub {
+    margin: 2px 0 0;
+    font-size: .84rem;
+    color: #7a7f87;
 }
 
 .epp-field {
@@ -109,24 +101,15 @@
     margin-bottom: 0;
 }
 
-.epp-field label {
+.epp-field .form-label {
     font-weight: 700;
     font-size: .88rem;
     color: #333;
     margin-bottom: 6px;
 }
 
-.epp-field .form-control,
-.epp-field .form-select,
-.epp-field .input-group-text {
-    border-radius: 10px;
-    border-color: #e6e6e6;
-}
-
-.epp-field .form-control:focus,
-.epp-field .form-select:focus {
-    border-color: #F28C33;
-    box-shadow: 0 0 0 .2rem rgba(242, 140, 51, .15);
+.epp-input-cep {
+    max-width: 200px;
 }
 
 .pp-char-counter {
@@ -136,11 +119,141 @@
     margin-top: 4px;
 }
 
-/* Especialidades como chips clicáveis em vez de checkbox cru */
+.epp-ajuda-erro {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* ---------- Foto ---------- */
+/* Input nativo escondido (mas focável, para teclado e leitor de tela) */
+.epp-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.epp-file-input:focus-visible + div label {
+    outline: 3px solid rgba(242, 140, 51, .45);
+    outline-offset: 2px;
+}
+
+.epp-foto {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: wrap;
+}
+
+.epp-foto-circulo {
+    position: relative;
+    width: 176px;
+    height: 176px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #2D2D2D;
+    border: 4px solid #fff;
+    box-shadow: 0 0 0 3px var(--epp-laranja), 0 10px 26px rgba(242, 140, 51, .28);
+}
+
+.epp-foto-circulo[role="slider"] {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+
+.epp-foto-circulo.epp-arrastando {
+    cursor: grabbing;
+}
+
+.epp-foto-circulo.epp-pendente {
+    cursor: default;
+}
+
+.epp-foto-circulo:focus-visible {
+    outline: 3px solid rgba(242, 140, 51, .5);
+    outline-offset: 5px;
+}
+
+.epp-foto-circulo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 50%;
+    pointer-events: none;
+}
+
+.epp-foto-iniciais {
+    font-size: 2.6rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--epp-laranja-claro);
+}
+
+.epp-foto-acoes {
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+.epp-posicao {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--epp-borda);
+}
+
+.epp-posicao-dica {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: .84rem;
+    color: #6c757d;
+}
+
+.epp-posicao-dica i {
+    color: var(--epp-laranja);
+}
+
+/* ---------- Especialidades ---------- */
+.epp-contador-esp {
+    align-self: flex-start;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: .76rem;
+    font-weight: 700;
+    color: #b5651d;
+    background: rgba(242, 140, 51, .12);
+    white-space: nowrap;
+}
+
+.epp-contador-esp:empty {
+    display: none;
+}
+
+.epp-grupo + .epp-grupo {
+    margin-top: 18px;
+}
+
+.epp-grupo-titulo {
+    margin-bottom: 10px;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #9a9fa6;
+}
+
 .epp-chip-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
 }
 
 .epp-chip-option {
@@ -149,169 +262,146 @@
 
 .epp-chip-option input {
     position: absolute;
-    opacity: 0;
+    inset: 0;
     width: 100%;
     height: 100%;
     margin: 0;
+    opacity: 0;
     cursor: pointer;
+    z-index: 1;
 }
 
 .epp-chip-option label {
     display: inline-flex;
     align-items: center;
-    padding: 9px 16px;
-    border-radius: 999px;
-    border: 1.5px solid #e6e6e6;
-    color: #555;
-    font-weight: 600;
-    font-size: .86rem;
-    cursor: pointer;
-    transition: all .15s ease;
+    gap: 6px;
     margin: 0;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 2px solid var(--epp-borda);
+    background: #fff;
+    color: #4a4f57;
+    font-weight: 600;
+    font-size: .85rem;
+    line-height: 1.2;
+    transition: border-color .2s, background .2s, color .2s, box-shadow .2s;
+}
+
+.epp-chip-option:hover label {
+    border-color: var(--epp-laranja-claro);
+    background: #fff8f1;
 }
 
 .epp-chip-option input:checked + label {
     border-color: transparent;
     color: #fff;
-    background: linear-gradient(135deg, #FFC93C 0%, #F28C33 55%, #F2543D 100%);
+    background: var(--epp-gradiente);
+    box-shadow: 0 4px 12px rgba(242, 140, 51, .28);
+}
+
+.epp-chip-option input:checked + label::before {
+    content: "\2713";
+    font-weight: 800;
 }
 
 .epp-chip-option input:focus-visible + label {
-    outline: 2px solid #F28C33;
+    outline: 3px solid rgba(242, 140, 51, .45);
     outline-offset: 2px;
 }
 
+/* Tooltip da descrição da especialidade (Bootstrap Tooltip) */
+.epp-tooltip .tooltip-inner {
+    max-width: 260px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: .8rem;
+    line-height: 1.4;
+    text-align: left;
+    background: #2D2D2D;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .22);
+}
+
+.epp-tooltip .tooltip-inner strong {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--epp-laranja-claro);
+}
+
+/* ---------- Interruptores ---------- */
 .epp-toggle {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 14px 16px;
-    background: #faf7f2;
-    border-radius: 12px;
+    background: var(--epp-fundo-suave);
+    border-radius: 14px;
 }
 
 .epp-toggle label {
     margin: 0;
     font-size: .88rem;
     color: #444;
+    cursor: pointer;
 }
 
 .epp-toggle .form-check-input {
     width: 2.4em;
     height: 1.3em;
+    margin: 0;
     flex-shrink: 0;
     cursor: pointer;
 }
 
 .epp-toggle .form-check-input:checked {
-    background-color: #F28C33;
-    border-color: #F28C33;
+    background-color: var(--epp-laranja);
+    border-color: var(--epp-laranja);
 }
 
-.epp-submit {
-    border: none;
-    border-radius: 12px;
-    padding: 11px 28px;
-    font-weight: 800;
-    color: #fff;
-    background: linear-gradient(135deg, #FFC93C 0%, #F28C33 55%, #F2543D 100%);
-    box-shadow: 0 8px 20px rgba(242, 140, 51, .3);
-    transition: opacity .15s ease;
+/* ---------- Ação principal ---------- */
+.epp-acoes-form {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
 }
 
-.epp-submit:hover,
-.epp-submit:focus,
-.epp-submit:active {
-    color: #fff;
-    opacity: .92;
-}
-
-@media (max-width: 560px) {
+@media (max-width: 575.98px) {
     .epp-card .card-body {
-        padding: 20px 18px 18px;
+        padding: 20px 18px;
+    }
+
+    .epp-topo-acoes {
+        width: 100%;
+    }
+
+    .epp-topo-acoes .btn {
+        flex: 1 1 0;
+    }
+
+    .epp-foto {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .epp-foto-circulo {
+        align-self: center;
+    }
+
+    .epp-foto-acoes .d-flex {
+        justify-content: center;
+    }
+
+    .epp-posicao-dica {
+        justify-content: center;
+    }
+
+    .epp-acoes-form .btn {
+        width: 100%;
     }
 }
 
-/* Preview/avatar da foto de perfil (círculo com anel gradiente) */
-.pp-photo-preview-wrap {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    flex-wrap: wrap;
-}
-
-.pp-avatar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    overflow: hidden;
-    flex-shrink: 0;
-    font-weight: 800;
-    text-transform: uppercase;
-    border: 3px solid transparent;
-    background:
-        linear-gradient(#fff, #fff) padding-box,
-        linear-gradient(135deg, #FFC93C 0%, #F28C33 55%, #F2543D 100%) border-box;
-}
-
-.pp-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-/* ---------- Posição da foto ---------- */
-.pp-avatar img {
-    object-position: 50% 50%;
-}
-
-.epp-posicao {
-    margin-top: 1.25rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.epp-posicao-titulo {
-    font-weight: 700;
-    font-size: 0.95rem;
-}
-
-.epp-posicao-area {
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-    flex-wrap: wrap;
-}
-
-.epp-posicao-circulo {
-    width: 180px;
-    height: 180px;
-    border-radius: 50%;
-    overflow: hidden;
-    flex-shrink: 0;
-    cursor: grab;
-    touch-action: none;
-    user-select: none;
-    border: 3px solid #F28C33;
-    box-shadow: 0 6px 18px rgba(242, 140, 51, 0.28);
-    background: #222;
-}
-
-.epp-posicao-circulo.epp-arrastando {
-    cursor: grabbing;
-}
-
-.epp-posicao-circulo:focus-visible {
-    outline: 3px solid rgba(242, 140, 51, 0.5);
-    outline-offset: 2px;
-}
-
-.epp-posicao-circulo img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    pointer-events: none;
+@media (prefers-reduced-motion: reduce) {
+    .epp-chip-option label {
+        transition: none;
+    }
 }

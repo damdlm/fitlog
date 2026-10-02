@@ -36,10 +36,26 @@
     // =========================================================
     function initFotoPreview() {
         var input = document.getElementById('ppFotoInput');
-        var preview = document.getElementById('ppFotoPreview');
+        // Com foto salva o círculo é o da posição; sem foto, é o de iniciais.
+        var preview = document.getElementById('ppPosicaoCirculo') ||
+                      document.getElementById('ppFotoPreview');
         var botaoEnviar = document.getElementById('ppFotoEnviar');
         var ajuda = document.getElementById('ppFotoAjuda');
+        var imgPosicao = document.getElementById('ppPosicaoImg');
+        var formPosicao = document.getElementById('ppPosicaoForm');
         if (!input || !preview) return;
+
+        var srcOriginal = imgPosicao ? imgPosicao.getAttribute('src') : null;
+        var posicaoOriginal = imgPosicao ? imgPosicao.style.objectPosition : '';
+
+        // Volta o círculo para a foto já salva (arquivo removido/inválido).
+        function restaurarFotoSalva() {
+            if (!imgPosicao) return;
+            imgPosicao.setAttribute('src', srcOriginal);
+            imgPosicao.style.objectPosition = posicaoOriginal;
+            preview.classList.remove('epp-pendente');
+            if (formPosicao) formPosicao.classList.remove('d-none');
+        }
 
         var TIPOS_OK = ['image/jpeg', 'image/png', 'image/webp'];
         var TAMANHO_MAX = 4 * 1024 * 1024; // mesmo limite do backend (4MB)
@@ -55,6 +71,7 @@
             var arquivo = input.files && input.files[0];
             if (!arquivo) {
                 if (botaoEnviar) botaoEnviar.classList.add('d-none');
+                restaurarFotoSalva();
                 mostrarAjuda(textoAjudaOriginal, false);
                 return;
             }
@@ -63,19 +80,30 @@
             if (TIPOS_OK.indexOf(arquivo.type) === -1) {
                 input.value = '';
                 if (botaoEnviar) botaoEnviar.classList.add('d-none');
+                restaurarFotoSalva();
                 mostrarAjuda('Formato não aceito. Use JPG, PNG ou WEBP.', true);
                 return;
             }
             if (arquivo.size > TAMANHO_MAX) {
                 input.value = '';
                 if (botaoEnviar) botaoEnviar.classList.add('d-none');
+                restaurarFotoSalva();
                 mostrarAjuda('A imagem passa de 4MB. Escolha uma menor.', true);
                 return;
             }
 
             var leitor = new FileReader();
             leitor.onload = function (e) {
-                preview.innerHTML = '<img src="' + e.target.result + '" alt="Prévia da foto">';
+                if (imgPosicao) {
+                    // Prévia da foto nova, centralizada; a posição só pode
+                    // ser ajustada depois do envio.
+                    imgPosicao.setAttribute('src', e.target.result);
+                    imgPosicao.style.objectPosition = '50% 50%';
+                    preview.classList.add('epp-pendente');
+                    if (formPosicao) formPosicao.classList.add('d-none');
+                } else {
+                    preview.innerHTML = '<img src="' + e.target.result + '" alt="Prévia da foto">';
+                }
             };
             leitor.readAsDataURL(arquivo);
 
@@ -165,6 +193,7 @@
         var inicio = null;
 
         circulo.addEventListener('pointerdown', function (e) {
+            if (circulo.classList.contains('epp-pendente')) return;
             arrastando = true;
             inicio = { px: e.clientX, py: e.clientY, x: x, y: y, sobra: sobra() };
             circulo.classList.add('epp-arrastando');
@@ -196,6 +225,7 @@
 
         // Teclado: setas ajustam de 2 em 2 pontos percentuais.
         circulo.addEventListener('keydown', function (e) {
+            if (circulo.classList.contains('epp-pendente')) return;
             var passo = 2;
             var s = sobra();
             if (e.key === 'ArrowLeft' && s.x > 0) x += passo;
@@ -218,11 +248,95 @@
         aplicar();
     }
 
+    // =========================================================
+    // ESPECIALIDADES (tooltip com a descrição ao clicar + contador)
+    // =========================================================
+    function initEspecialidades() {
+        var checkboxes = document.querySelectorAll('.epp-chip-option input[type="checkbox"]');
+        if (!checkboxes.length) return;
+
+        var contador = document.getElementById('ppEspContador');
+        var temBootstrap = window.bootstrap && window.bootstrap.Tooltip;
+        var tooltips = [];
+        var aberto = null;
+        var timer = null;
+
+        function atualizarContador() {
+            if (!contador) return;
+            var total = document.querySelectorAll('.epp-chip-option input:checked').length;
+            contador.textContent = total === 0
+                ? ''
+                : total + (total === 1 ? ' selecionada' : ' selecionadas');
+        }
+
+        function esconderAberto() {
+            clearTimeout(timer);
+            if (aberto) {
+                aberto.hide();
+                aberto = null;
+            }
+        }
+
+        checkboxes.forEach(function (checkbox) {
+            var rotulo = checkbox.parentNode.querySelector('label');
+            var tooltip = null;
+            if (temBootstrap && rotulo) {
+                // Manual: abre ao clicar (também por teclado, via "change")
+                // e fecha sozinho, em vez do hover padrão do Bootstrap.
+                tooltip = new window.bootstrap.Tooltip(rotulo, {
+                    title: rotulo.dataset.descricao || '',
+                    trigger: 'manual',
+                    placement: 'top',
+                    customClass: 'epp-tooltip',
+                    container: 'body'
+                });
+                tooltips.push(tooltip);
+            }
+
+            checkbox.addEventListener('change', function () {
+                atualizarContador();
+                if (!tooltip) return;
+                esconderAberto();
+                tooltip.show();
+                aberto = tooltip;
+                timer = setTimeout(esconderAberto, 4500);
+            });
+        });
+
+        // Clique fora de qualquer especialidade fecha o tooltip.
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.epp-chip-option')) esconderAberto();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') esconderAberto();
+        });
+
+        atualizarContador();
+    }
+
+    // =========================================================
+    // COPIAR LINK DA PÁGINA PÚBLICA
+    // =========================================================
+    function initCopiarLink() {
+        var btn = document.getElementById('eppCopiarLink');
+        if (!btn) return;
+        btn.addEventListener('click', async function () {
+            try {
+                await FitLogUtils.copyToClipboard(btn.dataset.url);
+                FitLogUtils.showToast('Link copiado!', 'success');
+            } catch (err) {
+                FitLogUtils.showToast('Não foi possível copiar o link.', 'danger');
+            }
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         initShareButton();
         initFotoPreview();
         initContadores();
         initEstiloPagina();
         initPosicaoFoto();
+        initEspecialidades();
+        initCopiarLink();
     });
 })();

@@ -11,7 +11,7 @@ from services.billing_service import BillingService
 from services.dashboard_service import DashboardService
 from services.notificacao_service import NotificacaoService
 from services.professor_perfil_service import (
-    ProfessorPerfilService, ESPECIALIDADES_VALIDAS, ESTILOS_PAGINA,
+    ProfessorPerfilService, ESPECIALIDADES_GRUPOS, ESTILOS_PAGINA,
 )
 from services.avaliacao_professor_service import AvaliacaoProfessorService
 from utils.decorators import professor_acesso_alunos_required, professor_acesso_tela_required
@@ -1254,7 +1254,7 @@ def editar_pagina_publica():
 
     return render_template(
         'professor/editar_pagina_publica.html',
-        especialidades_disponiveis=ESPECIALIDADES_VALIDAS,
+        especialidades_grupos=ESPECIALIDADES_GRUPOS,
         especialidades_selecionadas=set(current_user.professor_especialidades or []),
         estilos_pagina=ESTILOS_PAGINA,
         estilo_pagina_atual=ProfessorPerfilService.resolver_estilo(
