@@ -334,6 +334,41 @@
             0 0 35px rgba(242, 140, 51, 0.10);
     }
 
+.admin-hero-dot-center {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: center-dot-pulse 4s ease-in-out infinite;
+}
+
+.admin-hero-dot-center {
+    width: 28px;
+    height: 28px;
+
+    background:
+        radial-gradient(
+            circle at 35% 30%,
+            rgba(255, 255, 255, 0.75) 0%,
+            rgba(180, 220, 255, 0.7) 5%,
+            rgba(70, 150, 230, 1) 30%,
+            rgba(35, 100, 190, 1) 65%,
+            rgba(15, 55, 120, 1) 100%
+        );
+
+    border: 1px solid rgba(255, 255, 255, 0.65);
+
+    box-shadow:
+        inset -3px -4px 6px rgba(0, 30, 80, 0.30),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.20),
+        0 0 6px rgba(70, 150, 230, 0.30),
+        0 0 16px rgba(70, 150, 230, 0.15);
+}
+
+.admin-hero-atom {
+    animation: fl-spin-atom 10s linear infinite;
+}
+
+
     .admin-hero-dot:nth-child(1) { top: 0; left: 50%; transform: translateX(-50%); animation-delay: 0s; }
     .admin-hero-dot:nth-child(2) { bottom: 0; left: 50%; transform: translateX(-50%); animation-delay: -0.9s; }
     .admin-hero-dot:nth-child(3) { top: 50%; left: 0; transform: translateY(-50%); animation-delay: -1.8s; }
@@ -370,6 +405,7 @@
         <div class="admin-hero-dot"></div>
         <div class="admin-hero-dot"></div>
         <div class="admin-hero-dot"></div>
+        <div class="admin-hero-dot admin-hero-dot-center"></div>
     </div>
  <!--   <h2>Painel administrativo</h2>
     <p>Use o menu para acessar Contas e Cobrança, Financeiro e Monitoramento.</p> -->
