@@ -76,27 +76,75 @@
     .mapa-mobile-header {
         display: none;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         padding: 10px 12px;
     }
-    .mapa-mobile-header .btn-voltar {
+    /* Botão Voltar circular, no mesmo estilo dos ícones redondos do
+       navbar (FitBot, sino, avatar) -- ver templates/base.html. */
+    .mapa-btn-voltar {
         flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 1px solid rgba(0, 0, 0, .08);
+        background: #fff;
+        color: #495057;
+        font-size: 1.05rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+        transition: background-color .15s ease, color .15s ease;
+    }
+    .mapa-btn-voltar:hover,
+    .mapa-btn-voltar:active {
+        background: #fff4e9;
+        color: #F28C33;
     }
     .mapa-busca-cidade {
         flex: 1 1 auto;
         min-width: 0;
         position: relative;
     }
+    .mapa-busca-cidade .bi-search {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #adb5bd;
+        font-size: .9rem;
+        pointer-events: none;
+    }
+    #mapaBuscaCidadeInput {
+        width: 100%;
+        height: 38px;
+        padding: 0 14px 0 38px;
+        border: 1px solid rgba(0, 0, 0, .1);
+        border-radius: 999px;
+        background: #f5f6f8;
+        font-size: .9rem;
+        color: #212529;
+        outline: none;
+        transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+    }
+    #mapaBuscaCidadeInput:focus {
+        background: #fff;
+        border-color: #F28C33;
+        box-shadow: 0 0 0 3px rgba(242, 140, 51, .15);
+    }
+    #mapaBuscaCidadeInput::placeholder {
+        color: #adb5bd;
+    }
     #mapaBuscaResultados {
         display: none;
         position: absolute;
-        top: calc(100% + 4px);
+        top: calc(100% + 6px);
         left: 0;
         right: 0;
         background: #fff;
-        border: 1px solid rgba(0, 0, 0, .15);
-        border-radius: .375rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+        border: 1px solid rgba(0, 0, 0, .08);
+        border-radius: 14px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, .12);
         max-height: 260px;
         overflow-y: auto;
         z-index: 1100;
@@ -104,24 +152,31 @@
     .mapa-busca-item {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         width: 100%;
-        padding: 8px 12px;
+        padding: 10px 14px;
         border: none;
         background: none;
         text-align: left;
         font-size: .88rem;
         color: #212529;
     }
+    .mapa-busca-item:first-child {
+        border-radius: 14px 14px 0 0;
+    }
+    .mapa-busca-item:last-child {
+        border-radius: 0 0 14px 14px;
+    }
     .mapa-busca-item:hover,
     .mapa-busca-item:focus {
-        background: #f8f9fa;
+        background: #fff4e9;
     }
     .mapa-busca-dot {
         flex: 0 0 auto;
-        width: 9px;
-        height: 9px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, .03);
     }
     .mapa-busca-dot--com {
         background: #6ecc39;
@@ -197,14 +252,12 @@
 
 <div class="mapa-page">
     <div class="mapa-mobile-header d-lg-none">
-        <a href="{{ url_for('aluno.dashboard') }}" class="btn btn-sm btn-outline-secondary btn-voltar">
-            <i class="bi bi-arrow-left"></i> Voltar
+        <a href="{{ url_for('aluno.dashboard') }}" class="mapa-btn-voltar" aria-label="Voltar">
+            <i class="bi bi-arrow-left"></i>
         </a>
-        <form id="mapaBuscaCidadeForm" class="input-group input-group-sm mapa-busca-cidade" autocomplete="off">
-            <input type="text" id="mapaBuscaCidadeInput" class="form-control" placeholder="Buscar cidade...">
-            <button type="submit" class="btn btn-outline-secondary" aria-label="Buscar cidade">
-                <i class="bi bi-search"></i>
-            </button>
+        <form id="mapaBuscaCidadeForm" class="mapa-busca-cidade" autocomplete="off">
+            <i class="bi bi-search"></i>
+            <input type="search" id="mapaBuscaCidadeInput" placeholder="Buscar cidade...">
             <div id="mapaBuscaResultados"></div>
         </form>
     </div>
