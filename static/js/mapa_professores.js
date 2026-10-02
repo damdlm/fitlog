@@ -55,7 +55,8 @@
 
     function htmlAvatar(prof) {
         if (prof.foto) {
-            return '<img class="mapa-prof__avatar" src="' + escapar(prof.foto) + '" alt="" loading="lazy">';
+            return '<img class="mapa-prof__avatar" src="' + escapar(prof.foto) + '" alt="" loading="lazy"' +
+                (prof.foto_posicao ? ' style="object-position: ' + escapar(prof.foto_posicao) + '"' : '') + '>';
         }
         return '<span class="mapa-prof__avatar mapa-prof__avatar--iniciais" aria-hidden="true">' +
                escapar(prof.iniciais || '?') + '</span>';

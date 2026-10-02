@@ -117,10 +117,112 @@
         atualizar();
     }
 
+    // =========================================================
+    // POSIÇÃO DA FOTO (arrastar dentro do círculo)
+    // =========================================================
+    // A foto usa object-fit: cover, então só "sobra" imagem no eixo
+    // maior; arrastar move o enquadramento (object-position, em %).
+    // Arrastar a foto para a direita revela a parte esquerda, ou seja,
+    // o percentual diminui -- por isso o sinal negativo abaixo.
+    function initPosicaoFoto() {
+        var circulo = document.getElementById('ppPosicaoCirculo');
+        var img = document.getElementById('ppPosicaoImg');
+        var inputX = document.getElementById('ppFotoPosX');
+        var inputY = document.getElementById('ppFotoPosY');
+        var botaoCentralizar = document.getElementById('ppPosicaoCentralizar');
+        if (!circulo || !img || !inputX || !inputY) return;
+
+        var x = parseFloat(inputX.value);
+        var y = parseFloat(inputY.value);
+        if (isNaN(x)) x = 50;
+        if (isNaN(y)) y = 50;
+
+        function limitar(v) { return Math.max(0, Math.min(100, v)); }
+
+        function aplicar() {
+            x = limitar(x);
+            y = limitar(y);
+            img.style.objectPosition = x + '% ' + y + '%';
+            inputX.value = Math.round(x);
+            inputY.value = Math.round(y);
+            circulo.setAttribute('aria-valuetext', Math.round(x) + '% horizontal, ' + Math.round(y) + '% vertical');
+        }
+
+        // Quanto da imagem ultrapassa o círculo em cada eixo (px).
+        function sobra() {
+            var caixaL = circulo.clientWidth;
+            var caixaA = circulo.clientHeight;
+            var nl = img.naturalWidth || caixaL;
+            var na = img.naturalHeight || caixaA;
+            var escala = Math.max(caixaL / nl, caixaA / na);
+            return {
+                x: Math.max(0, nl * escala - caixaL),
+                y: Math.max(0, na * escala - caixaA)
+            };
+        }
+
+        var arrastando = false;
+        var inicio = null;
+
+        circulo.addEventListener('pointerdown', function (e) {
+            arrastando = true;
+            inicio = { px: e.clientX, py: e.clientY, x: x, y: y, sobra: sobra() };
+            circulo.classList.add('epp-arrastando');
+            if (circulo.setPointerCapture) circulo.setPointerCapture(e.pointerId);
+            e.preventDefault();
+        });
+
+        circulo.addEventListener('pointermove', function (e) {
+            if (!arrastando || !inicio) return;
+            var dx = e.clientX - inicio.px;
+            var dy = e.clientY - inicio.py;
+            if (inicio.sobra.x > 0) x = inicio.x - (dx / inicio.sobra.x) * 100;
+            if (inicio.sobra.y > 0) y = inicio.y - (dy / inicio.sobra.y) * 100;
+            aplicar();
+        });
+
+        function soltar(e) {
+            if (!arrastando) return;
+            arrastando = false;
+            inicio = null;
+            circulo.classList.remove('epp-arrastando');
+            if (e && circulo.releasePointerCapture && circulo.hasPointerCapture &&
+                circulo.hasPointerCapture(e.pointerId)) {
+                circulo.releasePointerCapture(e.pointerId);
+            }
+        }
+        circulo.addEventListener('pointerup', soltar);
+        circulo.addEventListener('pointercancel', soltar);
+
+        // Teclado: setas ajustam de 2 em 2 pontos percentuais.
+        circulo.addEventListener('keydown', function (e) {
+            var passo = 2;
+            var s = sobra();
+            if (e.key === 'ArrowLeft' && s.x > 0) x += passo;
+            else if (e.key === 'ArrowRight' && s.x > 0) x -= passo;
+            else if (e.key === 'ArrowUp' && s.y > 0) y += passo;
+            else if (e.key === 'ArrowDown' && s.y > 0) y -= passo;
+            else return;
+            e.preventDefault();
+            aplicar();
+        });
+
+        if (botaoCentralizar) {
+            botaoCentralizar.addEventListener('click', function () {
+                x = 50;
+                y = 50;
+                aplicar();
+            });
+        }
+
+        aplicar();
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         initShareButton();
         initFotoPreview();
         initContadores();
         initEstiloPagina();
+        initPosicaoFoto();
     });
 })();

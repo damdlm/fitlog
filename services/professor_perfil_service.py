@@ -259,6 +259,9 @@ class ProfessorPerfilService(BaseService):
 
         try:
             professor.professor_foto_chave = chave_nova
+            # Foto nova começa centralizada.
+            professor.professor_foto_pos_x = 50
+            professor.professor_foto_pos_y = 50
             ProfessorPerfilService.garantir_slug(professor)
             db.session.commit()
         except Exception:
@@ -271,6 +274,33 @@ class ProfessorPerfilService(BaseService):
             StorageService.delete_object(chave_antiga)
 
         return True, 'Foto atualizada com sucesso!'
+
+    @staticmethod
+    def salvar_posicao_foto(professor: User, x_bruto, y_bruto) -> tuple[bool, str]:
+        """Salva a posição (0-100, em %) da foto dentro do círculo da
+        página pública. Valores fora da faixa ou não numéricos são
+        rejeitados."""
+        if not professor.is_professor():
+            return False, 'Apenas professores têm página pública.'
+        if not professor.professor_foto_chave:
+            return False, 'Envie uma foto antes de ajustar a posição.'
+        try:
+            x = int(round(float(x_bruto)))
+            y = int(round(float(y_bruto)))
+        except (TypeError, ValueError):
+            return False, 'Posição inválida.'
+        if not (0 <= x <= 100 and 0 <= y <= 100):
+            return False, 'Posição inválida.'
+
+        try:
+            professor.professor_foto_pos_x = x
+            professor.professor_foto_pos_y = y
+            db.session.commit()
+            return True, 'Posição da foto atualizada!'
+        except Exception:
+            db.session.rollback()
+            logger.exception('Erro ao salvar posição da foto do professor %s', professor.id)
+            return False, 'Erro ao salvar. Tente novamente.'
 
     @staticmethod
     def resolver_estilo(chave: str | None) -> tuple[str, dict]:

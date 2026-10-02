@@ -14,7 +14,7 @@
         <div class="card mp-card mb-3">
             <div class="mp-profile">
                 {% if professor.professor_foto_url %}
-                    <img src="{{ professor.professor_foto_url }}" alt="Foto do professor" class="mp-avatar-photo">
+                    <img src="{{ professor.professor_foto_url }}" alt="Foto do professor" class="mp-avatar-photo" style="object-position: {{ professor.professor_foto_posicao_css }}">
                 {% else %}
                     {% set nome_exibicao = professor.nome_completo or professor.username %}
                     {% set partes = nome_exibicao.split() %}

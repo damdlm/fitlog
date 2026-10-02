@@ -654,6 +654,7 @@ def api_professores_mapa():
             "cidade": professor.professor_cidade,
             "uf": professor.professor_uf,
             "foto": professor.professor_foto_url,
+            "foto_posicao": professor.professor_foto_posicao_css,
             "iniciais": professor.professor_iniciais,
         }
 

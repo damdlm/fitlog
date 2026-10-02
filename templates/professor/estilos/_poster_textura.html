@@ -43,7 +43,7 @@
                 <div class="pp-ring">
                     <div class="pp-photo">
                         {% if professor.professor_foto_url %}
-                            <img src="{{ professor.professor_foto_url }}" alt="Foto de {{ nome_exibicao }}">
+                            <img src="{{ professor.professor_foto_url }}" alt="Foto de {{ nome_exibicao }}" style="--pp-foto-pos: {{ professor.professor_foto_posicao_css }}">
                         {% else %}
                             <div class="pp-placeholder">
                                 <svg viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

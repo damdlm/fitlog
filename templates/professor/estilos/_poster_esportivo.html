@@ -1,4 +1,4 @@
-{# Pôster público — estilo 5 (Esportivo), reproduzindo o mockup 05.
+{# Pôster público — estilo 5 (Esportivo).
    Layout igual aos mockups: logo do FitLog no canto, nome em uma linha, frase
    entre aspas (via CSS), cartões de especialidade com ícone + título,
    avaliação em uma linha e "Sobre mim" DENTRO do mesmo cartão do pôster.
@@ -49,7 +49,7 @@
                 <div class="pp-ring">
                     <div class="pp-photo">
                         {% if professor.professor_foto_url %}
-                            <img src="{{ professor.professor_foto_url }}" alt="Foto de {{ nome_exibicao }}">
+                            <img src="{{ professor.professor_foto_url }}" alt="Foto de {{ nome_exibicao }}" style="--pp-foto-pos: {{ professor.professor_foto_posicao_css }}">
                         {% else %}
                             <div class="pp-placeholder">
                                 <svg viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

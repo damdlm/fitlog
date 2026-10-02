@@ -129,7 +129,7 @@
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
-    object-position: center center !important;
+    object-position: var(--pp-foto-pos, center center) !important;
 }
 
 .pp-placeholder {

@@ -152,6 +152,11 @@ class User(UserMixin, db.Model):
     # timestamp), então a URL pode ser cacheada como imutável no
     # navegador (ver app.py:professores_media).
     professor_foto_chave = db.Column(db.String(255), nullable=True)
+    # Posição da foto dentro do círculo da página pública (0-100, em %,
+    # mesma convenção do CSS object-position). 50/50 = centralizada.
+    # Voltam pra 50 a cada upload de foto nova.
+    professor_foto_pos_x = db.Column(db.Integer, nullable=False, default=50, server_default='50')
+    professor_foto_pos_y = db.Column(db.Integer, nullable=False, default=50, server_default='50')
     # Controla se o bloco de avaliação (nota média + estrelas) aparece
     # na página pública -- o professor pode preencher tudo e ainda
     # assim ocultar só esse bloco. Default True.
@@ -175,6 +180,13 @@ class User(UserMixin, db.Model):
             return None
         from flask import url_for
         return url_for('professores_media', caminho=self.professor_foto_chave)
+
+    @property
+    def professor_foto_posicao_css(self):
+        """Valor pronto pro CSS object-position (ex: "50% 20%")."""
+        x = 50 if self.professor_foto_pos_x is None else self.professor_foto_pos_x
+        y = 50 if self.professor_foto_pos_y is None else self.professor_foto_pos_y
+        return f'{x}% {y}%'
 
     @property
     def professor_iniciais(self):

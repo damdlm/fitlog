@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block page_icon %}<i class="bi bi-pencil-square" style="color: #F28C33;"></i>{% endblock %}
-{% block page_title %}Editar Minha Página{% endblock %}
+{% block page_title %}Minha Página{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ static_v('css/editar-pagina-publica.css') }}">
@@ -30,7 +30,8 @@
                     <div class="pp-photo-preview-wrap">
                         <div class="pp-avatar" id="ppFotoPreview" style="width: 84px; height: 84px; font-size: 28px; color: #F28C33;">
                             {% if current_user.professor_foto_url %}
-                                <img src="{{ current_user.professor_foto_url }}" alt="Foto atual">
+                                <img src="{{ current_user.professor_foto_url }}" alt="Foto atual"
+                                     style="object-position: {{ current_user.professor_foto_posicao_css }}">
                             {% else %}
                                 {{ current_user.professor_iniciais }}
                             {% endif %}
@@ -49,6 +50,38 @@
                         </div>
                     </div>
                 </form>
+
+                {% if current_user.professor_foto_url %}
+                <!-- POSIÇÃO DA FOTO -->
+                <form action="{{ url_for('professor.salvar_posicao_foto_pagina_publica') }}" method="post"
+                      class="epp-posicao" id="ppPosicaoForm"
+                      data-pos-x="{{ current_user.professor_foto_pos_x }}"
+                      data-pos-y="{{ current_user.professor_foto_pos_y }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="foto_pos_x" id="ppFotoPosX" value="{{ current_user.professor_foto_pos_x }}">
+                    <input type="hidden" name="foto_pos_y" id="ppFotoPosY" value="{{ current_user.professor_foto_pos_y }}">
+
+                    <div class="epp-posicao-titulo">Posição da foto</div>
+                    <div class="form-text mb-2">Arraste a foto para enquadrar o rosto dentro do círculo.</div>
+
+                    <div class="epp-posicao-area">
+                        <div class="epp-posicao-circulo" id="ppPosicaoCirculo" tabindex="0"
+                             role="slider" aria-label="Posição da foto">
+                            <img src="{{ current_user.professor_foto_url }}" alt="Ajustar posição da foto"
+                                 id="ppPosicaoImg" draggable="false"
+                                 style="object-position: {{ current_user.professor_foto_posicao_css }}">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-sm epp-submit">
+                                <i class="bi bi-check-lg"></i> Salvar posição
+                            </button>
+                            <button type="button" class="btn btn-sm epp-btn-escolher" id="ppPosicaoCentralizar">
+                                <i class="bi bi-bullseye"></i> Centralizar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                {% endif %}
             </div>
         </div>
 

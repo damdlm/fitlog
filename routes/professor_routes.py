@@ -1295,6 +1295,22 @@ def upload_foto_pagina_publica():
     return redirect(url_for('professor.editar_pagina_publica'))
 
 
+@professor_bp.route('/pagina/foto/posicao', methods=['POST'])
+@login_required
+@limiter.limit("60 per hour", key_func=_chave_por_professor)
+def salvar_posicao_foto_pagina_publica():
+    """Salva o enquadramento (posição X/Y em %) da foto de perfil."""
+    if not current_user.is_professor() and not current_user.is_admin:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('main.index'))
+
+    ok, mensagem = ProfessorPerfilService.salvar_posicao_foto(
+        current_user, request.form.get('foto_pos_x'), request.form.get('foto_pos_y')
+    )
+    flash(mensagem, 'success' if ok else 'danger')
+    return redirect(url_for('professor.editar_pagina_publica'))
+
+
 @professor_bp.route('/pagina/<slug>')
 def pagina_publica(slug):
     """Página pública de divulgação do professor -- acessível SEM
