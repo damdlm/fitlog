@@ -1,4 +1,4 @@
-{# Pôster público — estilo 5 (Esportivo).
+{# Pôster público — estilo 5 (Esportivo), reproduzindo o mockup 05.
    Layout igual aos mockups: logo do FitLog no canto, nome em uma linha, frase
    entre aspas (via CSS), cartões de especialidade com ícone + título,
    avaliação em uma linha e "Sobre mim" DENTRO do mesmo cartão do pôster.
@@ -11,6 +11,12 @@
 <div class="pp-page pp-page-estilo-5">
     <div class="pp-column">
         <article class="pp-poster pp-poster-estilo-5">
+            <svg class="pp-sport-defs" aria-hidden="true" focusable="false">
+                <filter id="pp-rough-sport" x="-4%" y="-14%" width="108%" height="128%">
+                    <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3" result="t"/>
+                    <feDisplacementMap in="SourceGraphic" in2="t" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+                </filter>
+            </svg>
             <div class="pp-sport-grunge" aria-hidden="true"></div>
             <div class="pp-sport-brush pp-sport-brush-right" aria-hidden="true"></div>
             <div class="pp-sport-brush pp-sport-brush-left" aria-hidden="true"></div>

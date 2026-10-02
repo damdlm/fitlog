@@ -1,32 +1,77 @@
 /* =========================================================
    FITLOG — PÁGINA PÚBLICA — ESTILO ESPORTIVO
-   Preto riscado, pinceladas laranja e nome em letra de pincel.
-   Só identidade visual. O layout vem do base.css (carregado antes).
+   Reproduz o mockup 05 ponto a ponto:
+   - a arte (pinceladas, anel, barra de avaliação e chips) é a do
+     próprio mockup, recortada em WebP com fundo transparente;
+   - todas as medidas são proporcionais à largura do cartão
+     (1 unidade "u" = 1/287 da largura, que é a largura do cartão no
+     mockup), então o cartão fica igual ao mockup em qualquer tela.
+   Só identidade visual. Carregado depois do base.css.
    ========================================================= */
 
-/* Fonte hospedada no projeto (a CSP do app não libera o Google Fonts) */
+/* Letra de pincel do nome (itálico pesado). Hospedada no projeto:
+   a CSP do app não libera o Google Fonts. */
 @font-face {
-    font-family: 'Permanent Marker';
-    font-weight: 400;
+    font-family: 'Barlow Condensed';
+    font-style: italic;
+    font-weight: 900;
     font-display: swap;
-    src: url('../../fonts/professor/permanent-marker-latin-400-normal.woff2') format('woff2');
+    src: url('../../fonts/professor/barlow-condensed-latin-900-italic.woff2') format('woff2');
+}
+
+/* Inter (variável): mesma família do mockup, hospedada no projeto */
+@font-face {
+    font-family: 'Inter';
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('../../fonts/professor/inter-latin-wght-normal.woff2') format('woff2');
 }
 
 .pp-page-estilo-5 {
-    --pp5-orange: #ff7a00;
-    --pp5-orange-2: #ff9a1f;
     background: #020304;
 }
 
+/* O container define a unidade u (cqw). Sem suporte a container
+   queries, cai numa aproximação baseada na largura da janela. */
+.pp-page-estilo-5 .pp-column {
+    max-width: 480px;
+    container-type: inline-size;
+}
+
 .pp-poster-estilo-5 {
+    --u: calc(min(100vw - 20px, 480px) / 287);
+    --laranja: #ff7a00;
+}
+
+@supports (width: 1cqw) {
+    .pp-poster-estilo-5 {
+        --u: calc(100cqw / 287);
+    }
+}
+
+.pp-poster-estilo-5 {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0 calc(var(--u) * 14) calc(var(--u) * 8);
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
     color: #fff;
     background:
-        radial-gradient(circle at 12% 98%, rgba(255, 122, 0, .17), transparent 30%),
-        radial-gradient(circle at 100% 72%, rgba(255, 122, 0, .10), transparent 28%),
-        linear-gradient(180deg, #0b0b0b 0%, #050505 100%);
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 18px;
-    box-shadow: 0 18px 50px rgba(0, 0, 0, .4);
+        radial-gradient(circle at 4% 78%, rgba(255, 122, 0, .13), transparent 30%),
+        radial-gradient(circle at 62% 99%, rgba(255, 122, 0, .20), transparent 26%),
+        radial-gradient(circle at 96% 30%, rgba(255, 122, 0, .12), transparent 28%),
+        linear-gradient(180deg, #0a0a0a 0%, #050505 100%);
+    border: 0;
+    border-radius: calc(var(--u) * 12);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .45);
+}
+
+/* Filtro SVG que dá a borda rugosa de pincel ao nome (definido no HTML) */
+.pp-sport-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
 }
 
 .pp-sport-grunge {
@@ -34,202 +79,283 @@
     z-index: -2;
     inset: 0;
     background: url('../../img/professor-estilos/grunge.svg') 0 0 / 400px 400px;
-    opacity: .5;
+    opacity: .32;
     pointer-events: none;
 }
 
-/* Pinceladas laranja */
+/* ---------- Arte do mockup (WebP com transparência) ---------- */
 .pp-sport-brush {
     position: absolute;
     z-index: -1;
-    background: url('../../img/professor-estilos/pincelada-diagonal.svg') no-repeat center / contain;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
     pointer-events: none;
 }
 
 .pp-sport-brush-right {
-    top: 60px;
-    right: -50px;
-    width: 190px;
-    height: 101px;
-    transform: rotate(-4deg);
+    top: calc(var(--u) * 30);
+    right: 0;
+    width: calc(var(--u) * 84);
+    height: calc(var(--u) * 78);
+    background-image: url('../../img/professor-estilos/esportivo-pincelada-dir.webp');
 }
 
 .pp-sport-brush-left {
-    top: 150px;
-    left: -74px;
-    width: 150px;
-    height: 80px;
-    transform: rotate(-14deg);
+    top: calc(var(--u) * 52);
+    left: 0;
+    width: calc(var(--u) * 67);
+    height: calc(var(--u) * 136);
+    background-image: url('../../img/professor-estilos/esportivo-pincelada-esq.webp');
 }
 
 .pp-poster-estilo-5 .pp-action {
     color: #fff;
-    background: rgba(0, 0, 0, .55);
-    border: 1px solid rgba(255, 122, 0, .5);
+    background: rgba(0, 0, 0, .6);
+    border: 1px solid rgba(255, 122, 0, .55);
 }
 
 .pp-poster-estilo-5 .pp-action:hover {
-    color: var(--pp5-orange);
+    color: var(--laranja);
 }
 
-/* Anel de pincel: o SVG já traz o anel irregular, a foto fica no vazado */
+/* ---------- Foto + anel (arte do mockup) ---------- */
+.pp-poster-estilo-5 .pp-photo-area {
+    width: 100%;
+    height: calc(var(--u) * 124);
+    margin: calc(var(--u) * 21) 0 0;
+}
+
 .pp-poster-estilo-5 .pp-ring {
-    padding: calc(var(--pp-ring-size) * .085);
-    background: url('../../img/professor-estilos/anel-pincel.svg') center / 100% 100% no-repeat;
+    --pp-ring-size: calc(var(--u) * 124);
+    padding: calc(var(--u) * 15);
+    background: url('../../img/professor-estilos/esportivo-anel.webp') center / 100% 100% no-repeat;
+    transform: translateX(calc(var(--u) * 1.5));
 }
 
 .pp-poster-estilo-5 .pp-photo {
-    border: 3px solid #050505;
+    border: 0;
     background: #111;
+    box-shadow: 0 0 0 calc(var(--u) * 2.4) #060606;
+}
+
+/* ---------- Textos ---------- */
+.pp-poster-estilo-5 .pp-eyebrow,
+.pp-poster-estilo-5 .pp-service-title,
+.pp-poster-estilo-5 .pp-rating-info {
+    font-family: inherit;
 }
 
 .pp-poster-estilo-5 .pp-eyebrow {
-    color: var(--pp5-orange-2);
-    letter-spacing: .24em;
-    font-weight: 900;
+    margin: 0;
+    font-size: calc(var(--u) * 9.6);
+    line-height: calc(var(--u) * 10);
+    font-weight: 800;
+    letter-spacing: .13em;
+    color: #f7a21b;
 }
 
-/* Nome em letra de pincel (Permanent Marker), em uma linha */
 .pp-poster-estilo-5 .pp-name {
-    margin-top: 10px;
-    transform: rotate(-3deg);
+    margin: calc(var(--u) * -3) 0 calc(var(--u) * 6);
+    gap: 0 calc(var(--u) * 10);
+    line-height: calc(var(--u) * 40);
+    transform: rotate(-6deg);
+    filter: url(#pp-rough-sport);
 }
 
 .pp-poster-estilo-5 .pp-name-first,
 .pp-poster-estilo-5 .pp-name-last {
-    font-family: 'Permanent Marker', 'Montserrat', 'Segoe UI', sans-serif;
-    font-size: clamp(1.9rem, 9.4vw, 2.9rem);
-    font-weight: 400;
-    letter-spacing: .5px;
-    text-shadow: 0 3px 0 rgba(0, 0, 0, .4);
+    font-family: 'Barlow Condensed', 'Montserrat', 'Segoe UI', sans-serif;
+    font-style: italic;
+    font-size: calc(var(--u) * 42);
+    line-height: calc(var(--u) * 40);
+    font-weight: 900;
+    letter-spacing: calc(var(--u) * .3);
+    transform: skewX(-8deg);
 }
 
 .pp-poster-estilo-5 .pp-name-first {
-    color: #fff;
+    color: #f4f4f4;
 }
 
 .pp-poster-estilo-5 .pp-name-last {
-    color: var(--pp5-orange);
+    color: #ff8a1c;
 }
 
 .pp-poster-estilo-5 .pp-cref {
-    color: #e0e0e0;
+    margin: 0;
+    font-size: calc(var(--u) * 8);
+    line-height: calc(var(--u) * 10);
+    font-weight: 600;
+    letter-spacing: .05em;
+    color: #d9d9d9;
 }
 
 .pp-poster-estilo-5 .pp-tagline {
+    width: calc(var(--u) * 196);
+    margin: calc(var(--u) * 4.5) auto 0;
+    font-size: calc(var(--u) * 9.5);
+    line-height: calc(var(--u) * 14);
+    font-weight: 500;
     color: #fff;
+}
+
+/* ---------- Cartões de especialidade ---------- */
+.pp-poster-estilo-5 .pp-services {
+    gap: calc(var(--u) * 9);
+    margin: calc(var(--u) * 5.5) 0 0;
 }
 
 .pp-poster-estilo-5 .pp-service {
-    color: var(--pp5-orange-2);
-    background: rgba(8, 8, 8, .8);
-    border: 1.5px solid var(--pp5-orange);
-    border-radius: 12px;
+    min-height: calc(var(--u) * 47);
+    gap: calc(var(--u) * 3);
+    padding: 0;
+    color: #ff8a1c;
+    background: rgba(10, 10, 10, .62);
+    border: calc(var(--u) * 1.1) solid #ff8a1c;
+    border-radius: calc(var(--u) * 7);
+    box-shadow: inset 0 0 calc(var(--u) * 12) rgba(255, 122, 0, .10);
+}
+
+.pp-poster-estilo-5 .pp-service-icon {
+    width: calc(var(--u) * 24);
+    height: calc(var(--u) * 24);
 }
 
 .pp-poster-estilo-5 .pp-service-title {
+    font-size: calc(var(--u) * 7.2);
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: .02em;
     color: #fff;
 }
 
-/* Avaliação sobre uma pincelada laranja, texto escuro */
+/* Ícones cheios (chama e halter), como no mockup */
+.pp-poster-estilo-5 .pp-service-icon-emagrecimento svg,
+.pp-poster-estilo-5 .pp-service-icon-hipertrofia svg {
+    fill: currentColor;
+    stroke-width: 1.2;
+}
+
+.pp-poster-estilo-5 .pp-service-icon-emagrecimento svg path:nth-child(2) {
+    fill: #0b0b0b;
+    stroke: none;
+}
+
+/* ---------- Avaliação sobre a pincelada do mockup ---------- */
 .pp-poster-estilo-5 .pp-rating-info {
-    width: 100%;
-    margin-top: 24px;
-    padding: 21px 30px;
-    gap: 8px;
-    color: #121212;
-    background: url('../../img/professor-estilos/pincelada-barra.svg') 0 0 / 100% 100% no-repeat;
+    width: calc(var(--u) * 238);
+    height: calc(var(--u) * 47);
+    margin: calc(var(--u) * 6) 0 0 calc(var(--u) * 7);
+    padding: 0 calc(var(--u) * 28);
+    gap: calc(var(--u) * 6);
+    color: #1b1208;
+    background: url('../../img/professor-estilos/esportivo-barra.webp') 0 0 / 100% 100% no-repeat;
+}
+
+.pp-poster-estilo-5 .pp-rating-stars {
+    font-size: calc(var(--u) * 12);
+    gap: calc(var(--u) * 1);
 }
 
 .pp-poster-estilo-5 .pp-star-full,
 .pp-poster-estilo-5 .pp-star-half {
-    color: #121212;
+    color: #1b1208;
 }
 
 .pp-poster-estilo-5 .pp-star-empty {
-    color: rgba(18, 18, 18, .3);
+    color: rgba(27, 18, 8, .28);
 }
 
 .pp-poster-estilo-5 .pp-rating-score {
-    color: #121212;
-    font-weight: 900;
-}
-
-.pp-poster-estilo-5 .pp-rating-stars {
-    font-size: .9rem;
+    font-size: calc(var(--u) * 12);
+    font-weight: 800;
+    color: #1b1208;
 }
 
 .pp-poster-estilo-5 .pp-rating-count {
-    color: #121212;
+    font-size: calc(var(--u) * 7.4);
+    font-weight: 600;
     opacity: 1;
-    font-weight: 700;
     white-space: nowrap;
-    font-size: .66rem;
+    color: #1b1208;
+}
+
+/* O Instagram vai para o fim do cartão (o mockup não tem essa linha) */
+.pp-poster-estilo-5 .pp-social {
+    order: 99;
+    margin-top: calc(var(--u) * 8);
 }
 
 .pp-poster-estilo-5 .pp-social a {
+    font-size: calc(var(--u) * 8.4);
     color: #f1f1f1;
 }
 
 .pp-poster-estilo-5 .pp-social svg {
-    fill: var(--pp5-orange-2);
+    width: calc(var(--u) * 11);
+    height: calc(var(--u) * 11);
+    fill: #ff9a1f;
 }
 
+/* ---------- Sobre mim ---------- */
 .pp-about-estilo-5 {
+    margin: calc(var(--u) * 7) calc(var(--u) * -3) 0;
+    padding: calc(var(--u) * 5) calc(var(--u) * 14) calc(var(--u) * 8.5) calc(var(--u) * 15);
     color: #fff;
-    background: linear-gradient(145deg, #07121b, #0b1a24);
+    background: linear-gradient(145deg, rgba(8, 24, 36, .92), rgba(11, 30, 43, .92));
     border: 1px solid rgba(255, 255, 255, .10);
-    border-radius: 14px;
-    box-shadow: 0 12px 34px rgba(0, 0, 0, .3);
+    border-radius: calc(var(--u) * 10);
+    box-shadow: none;
 }
 
 .pp-about-estilo-5 .pp-section-title {
+    margin: 0 0 calc(var(--u) * 5);
+    font-size: calc(var(--u) * 12.5);
+    line-height: calc(var(--u) * 18);
+    font-weight: 800;
     color: #fff;
 }
 
 .pp-about-estilo-5 .pp-about-text {
-    color: #dfe6ea;
+    font-size: calc(var(--u) * 8.4);
+    line-height: calc(var(--u) * 11.5);
+    color: #e6e9ec;
 }
 
-/* Chips fora do cartão, como pinceladas */
+/* ---------- Chips: cada um sobre uma pincelada do mockup ---------- */
 .pp-poster-estilo-5 .pp-chips-fora {
-    gap: 0 4px;
-    margin-top: 12px;
+    flex-wrap: nowrap;
+    gap: 0;
+    margin: calc(var(--u) * 7) calc(var(--u) * -3) 0;
 }
 
 .pp-poster-estilo-5 .pp-chip {
-    padding: 13px 8px;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: calc(var(--u) * 32);
+    padding: 0 calc(var(--u) * 10);
     border: 0;
     border-radius: 0;
-    text-align: center;
-    color: #131313;
-    background: url('../../img/professor-estilos/pincelada-barra.svg') 0 0 / 100% 100% no-repeat;
-    font-size: .66rem;
-    font-weight: 800;
+    color: #231a10;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    font-size: calc(var(--u) * 8.4);
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-@media (max-width: 560px) {
-    .pp-poster-estilo-5 {
-        border-radius: 14px;
-    }
+.pp-poster-estilo-5 .pp-chip:nth-child(3n + 1) {
+    background-image: url('../../img/professor-estilos/esportivo-chip-1.webp');
 }
 
-@media (min-width: 561px) {
-    .pp-sport-brush-right {
-        top: 76px;
-        right: -64px;
-        width: 250px;
-        height: 133px;
-    }
+.pp-poster-estilo-5 .pp-chip:nth-child(3n + 2) {
+    background-image: url('../../img/professor-estilos/esportivo-chip-2.webp');
+}
 
-    .pp-sport-brush-left {
-        top: 190px;
-        left: -92px;
-        width: 190px;
-        height: 101px;
-    }
-
-    .pp-poster-estilo-5 .pp-chip {
-        font-size: .74rem;
-    }
+.pp-poster-estilo-5 .pp-chip:nth-child(3n) {
+    background-image: url('../../img/professor-estilos/esportivo-chip-3.webp');
 }
