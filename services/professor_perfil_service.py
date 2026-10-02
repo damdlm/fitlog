@@ -51,18 +51,19 @@ INSTAGRAM_TAMANHO_MAXIMO = 120
 # deste dicionário. Pra criar um estilo novo: adicionar o CSS em
 # static/css/professor-estilos/, o partial em
 # templates/professor/estilos/ e uma entrada abaixo.
-# A chave interna continua 'diagonal' (já gravada no banco); o nome
-# exibido ao professor é "Default".
+# As chaves internas ('diagonal', 'textura', 'moderno', 'esportivo', 'glow')
+# já estão gravadas no banco e NÃO mudam; só o nome exibido ao professor
+# (rotulo) é trocado. 'diagonal' = Dedicação, o estilo padrão.
 ESTILO_PAGINA_PADRAO = 'diagonal'
 ESTILOS_PAGINA = {
     'diagonal': {
-        'rotulo': 'Default',
+        'rotulo': 'Dedicação',
         'descricao': 'Escuro e limpo, com pontilhado diagonal nos cantos.',
         'css': 'css/professor-estilos/diagonal.css',
         'template': 'professor/estilos/_poster_diagonal.html',
     },
     'textura': {
-        'rotulo': 'Textura',
+        'rotulo': 'Disciplina',
         'descricao': 'Fundo escuro com textura riscada e linhas laranja.',
         'base': 'css/professor-estilos/base.css',
         'css': 'css/professor-estilos/textura.css',
@@ -72,21 +73,21 @@ ESTILOS_PAGINA = {
     # (cores, fundos, decoração): o layout vem do CSS estrutural em
     # 'base', carregado antes do CSS do estilo.
     'moderno': {
-        'rotulo': 'Moderno',
+        'rotulo': 'Equilíbrio',
         'descricao': 'Cartão claro e limpo, com detalhes em laranja.',
         'base': 'css/professor-estilos/base.css',
         'css': 'css/professor-estilos/moderno.css',
         'template': 'professor/estilos/_poster_moderno.html',
     },
     'esportivo': {
-        'rotulo': 'Esportivo',
+        'rotulo': 'Superação',
         'descricao': 'Escuro e intenso, com pinceladas laranja.',
         'base': 'css/professor-estilos/base.css',
         'css': 'css/professor-estilos/esportivo.css',
         'template': 'professor/estilos/_poster_esportivo.html',
     },
     'glow': {
-        'rotulo': 'Glow',
+        'rotulo': 'Vitalidade',
         'descricao': 'Cartão claro em rosa e champanhe, com brilhos suaves.',
         'base': 'css/professor-estilos/base.css',
         'css': 'css/professor-estilos/glow.css',

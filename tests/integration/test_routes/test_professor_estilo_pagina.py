@@ -223,7 +223,7 @@ def test_assets_dos_estilos_existem():
 
 @pytest.mark.parametrize('chave', list(ESTILOS_PAGINA))
 def test_logo_do_fitlog_e_sobre_mim_dentro_do_poster(app, client, professor, chave):
-    """Todos os estilos (inclusive o Default): logo do FitLog no pôster e
+    """Todos os estilos (inclusive o padrão, Dedicação): logo do FitLog no pôster e
     "Sobre mim" DENTRO do mesmo cartão (antes do </article>)."""
     uid, slug = professor
     usuario = db.session.get(User, uid)
@@ -243,8 +243,23 @@ def test_logo_do_fitlog_e_sobre_mim_dentro_do_poster(app, client, professor, cha
         assert html.index('Bio de teste do professor.') < fim_poster, chave
 
 
-def test_diagonal_aparece_como_default_na_edicao(app, client, professor):
-    assert ESTILOS_PAGINA['diagonal']['rotulo'] == 'Default'
+NOMES_DOS_ESTILOS = {
+    'diagonal': 'Dedicação',
+    'textura': 'Disciplina',
+    'moderno': 'Equilíbrio',
+    'esportivo': 'Superação',
+    'glow': 'Vitalidade',
+}
+
+
+def test_nomes_dos_estilos_na_tela_de_edicao(app, client, professor):
+    """O professor vê os nomes dos temas (Dedicação, Disciplina, Equilíbrio,
+    Superação e Vitalidade); as chaves internas gravadas no banco não mudam."""
+    assert {c: e['rotulo'] for c, e in ESTILOS_PAGINA.items()} == NOMES_DOS_ESTILOS
+    assert ESTILO_PAGINA_PADRAO == 'diagonal'
     _login(client)
     html = client.get('/professor/pagina/editar').get_data(as_text=True)
-    assert '>Default</option>' in html and '>Diagonal</option>' not in html
+    for chave, nome in NOMES_DOS_ESTILOS.items():
+        assert f'value="{chave}"' in html and f'>{nome}</option>' in html, chave
+    for antigo in ('Default', 'Diagonal', 'Textura', 'Moderno', 'Esportivo', 'Glow'):
+        assert f'>{antigo}</option>' not in html, antigo
