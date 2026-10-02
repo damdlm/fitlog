@@ -149,3 +149,14 @@ class TestRodapeSolicitarVinculo:
         html = resp.get_data(as_text=True)
         assert 'id="ppVerPaginaModal"' in html
         assert 'id="ppSolicitarForm"' not in html
+
+    def test_botao_de_fechar_do_modal_e_acessivel(self, app, client):
+        """Botão de fechar redondo com ícone SVG, rótulo e dismiss do Bootstrap."""
+        _criar_usuario('alunofechar', 'aluno')
+        _login(client, 'alunofechar')
+
+        html = client.get('/aluno/mapa').get_data(as_text=True)
+
+        assert 'class="epp-preview-close"' in html
+        assert 'data-bs-dismiss="modal" aria-label="Fechar"' in html
+        assert 'btn-close' not in html.split('epp-preview-close')[1].split('</button>')[0]

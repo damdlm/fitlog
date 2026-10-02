@@ -28,14 +28,18 @@
 
    Carrega a versão "embed" da página pública (?embed=1, sem a navbar
    do site) num iframe, sem sair da tela nem abrir aba nova. Sem
-   cabeçalho de título: só um X flutuante por cima. #}
+   cabeçalho de título: só um botão X flutuante (círculo "vidro") por cima. #}
 {% set pp_modal_slug = professor_slug if professor_slug is defined and professor_slug else current_user.professor_slug %}
 {% if pp_modal_slug or (pp_modal_force is defined and pp_modal_force) %}
 {% set pp_modal_com_rodape = pp_modal_solicitar_url is defined and pp_modal_solicitar_url %}
 <div class="modal fade{{ ' epp-com-rodape' if pp_modal_com_rodape }}" id="ppVerPaginaModal" tabindex="-1" aria-label="Página pública" aria-hidden="true">
     <div class="modal-dialog modal-dialog-scrollable modal-lg modal-fullscreen-sm-down">
         <div class="modal-content epp-preview-content">
-            <button type="button" class="btn-close btn-close-white epp-preview-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            <button type="button" class="epp-preview-close" data-bs-dismiss="modal" aria-label="Fechar">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+                    <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+                </svg>
+            </button>
             <div class="modal-body p-0">
                 <iframe id="ppVerPaginaFrame"
                         {% if pp_modal_slug %}data-src="{{ url_for('professor.pagina_publica', slug=pp_modal_slug, embed=1) }}"{% endif %}
@@ -68,32 +72,52 @@
         border-radius: 16px;
         overflow: hidden;
     }
+    /* Botão de fechar: círculo translúcido com efeito "vidro" -- legível
+       sobre qualquer estilo de página (claro ou escuro) -- e X em SVG. */
     .epp-preview-close {
         position: absolute;
-        top: 10px;
-        right: 10px;
+        top: 12px;
+        right: 12px;
         z-index: 5;
-        width: 34px;
-        height: 34px;
-        border-radius: 15px;
-        background-color: #F28C33;
-        background-image: none;
-        opacity: 1;
-        transition: all .3s;
-    }
-    .epp-preview-close::before {
-        content: "\00d7";
-        display: block;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        border: 1px solid rgba(255, 255, 255, .28);
+        border-radius: 50%;
+        background: rgba(25, 25, 25, .55);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
         color: #fff;
-        font-size: 1.5rem;
-        font-weight: 600;
-        line-height: 30px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
+        cursor: pointer;
+        transition: background-color .2s ease, color .2s ease,
+                    transform .2s ease, box-shadow .2s ease;
+    }
+    .epp-preview-close svg {
+        transition: transform .25s ease;
     }
     .epp-preview-close:hover {
-        background-color: #2D2D2D;
+        background: #F28C33;
+        border-color: #F28C33;
+        box-shadow: 0 6px 18px rgba(242, 140, 51, .45);
     }
-    .epp-preview-close:hover::before {
-        color: #F28C33;
+    .epp-preview-close:hover svg {
+        transform: rotate(90deg);
+    }
+    .epp-preview-close:active {
+        transform: scale(.92);
+    }
+    .epp-preview-close:focus-visible {
+        outline: 3px solid rgba(242, 140, 51, .55);
+        outline-offset: 2px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .epp-preview-close,
+        .epp-preview-close svg { transition: none; }
+        .epp-preview-close:hover svg { transform: none; }
     }
     #ppVerPaginaFrame {
         display: block;
@@ -159,6 +183,11 @@
     }
     @media (max-width: 575.98px) {
         .epp-preview-content { border-radius: 0; }
+        .epp-preview-close {
+            top: calc(12px + env(safe-area-inset-top, 0px));
+            width: 42px;
+            height: 42px;
+        }
         #ppVerPaginaFrame { height: 100vh; }
         .epp-com-rodape #ppVerPaginaFrame {
             height: calc(100vh - 72px - env(safe-area-inset-bottom, 0px));
