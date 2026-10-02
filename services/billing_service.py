@@ -28,6 +28,7 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 from flask import current_app
+from sqlalchemy.exc import IntegrityError
 
 from models import db, AlunoProfessor, Assinatura, EventoWebhookAsaas, PagamentoRecebido, Plano, User
 from services.analytics_service import AnalyticsService
@@ -1335,7 +1336,20 @@ class BillingService:
             )
 
         db.session.add(EventoWebhookAsaas(event_id=event_id, tipo_evento=tipo_evento))
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            # O mesmo evento chegou em paralelo e a outra requisição ganhou
+            # a corrida: o SELECT de idempotência acima não via nada, mas o
+            # INSERT bate na unique de event_id. O rollback desfaz também as
+            # alterações na Assinatura feitas por esta requisição (tudo vai
+            # na mesma transação), então nada é aplicado duas vezes. Sem este
+            # tratamento o Asaas recebia 500 e reenviava à toa.
+            db.session.rollback()
+            if EventoWebhookAsaas.query.filter_by(event_id=event_id).first():
+                logger.info('Webhook Asaas %s processado em paralelo por outra requisição, ignorando', event_id)
+                return True
+            raise
 
         if deve_registrar_conversao:
             plano = assinatura.plano
