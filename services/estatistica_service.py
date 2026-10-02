@@ -579,7 +579,11 @@ class EstatisticaService(BaseService):
             return fmt(a) if a == b else f"{fmt(a)}–{fmt(b)}"
 
         def somar(grupo):
-            """(volume, carga_media, detalhes) de uma lista de sessões."""
+            """(volume, carga_media, detalhes, sessoes_por_treino) de uma
+            lista de sessões. sessoes_por_treino traz, pra CADA treino que
+            apareceu no grupo (independente do filtro `treino`), o
+            suficiente pro modal de detalhe abrir ao clicar numa barra:
+            volume, carga média, nº de séries e os dias em que foi feito."""
             por_treino = {}
             for s in grupo:
                 por_treino[s['treino']] = por_treino.get(s['treino'], 0.0) + s['volume']
@@ -593,7 +597,19 @@ class EstatisticaService(BaseService):
                     {'codigo': t['codigo'], 'volume': round(por_treino.get(t['codigo'], 0.0), 2)}
                     for t in treinos
                 ]
-            return round(volume, 2), round(carga_media, 2), detalhes
+
+            sessoes_por_treino = {}
+            for codigo in {s['treino'] for s in grupo}:
+                do_treino = [s for s in grupo if s['treino'] == codigo]
+                n_t = sum(s['n_series'] for s in do_treino)
+                sessoes_por_treino[codigo] = {
+                    'volume': round(sum(s['volume'] for s in do_treino), 2),
+                    'carga_media': round((sum(s['soma_carga'] for s in do_treino) / n_t) if n_t else 0.0, 2),
+                    'n_series': n_t,
+                    'dias': sorted({s['dia'].isoformat() for s in do_treino}),
+                }
+
+            return round(volume, 2), round(carga_media, 2), detalhes, sessoes_por_treino
 
         pontos = []  # (rotulo, grupo de sessões)
         sessoes = [s for s in sessoes if inicio <= s['dia'] <= hoje]
@@ -626,16 +642,20 @@ class EstatisticaService(BaseService):
                 pontos.append((faixa(min(dias), max(dias)), r))
 
         if not sessoes:
-            return {'semanas': [], 'volumes': [], 'cargas_medias': [], 'detalhes': []}
+            return {'semanas': [], 'volumes': [], 'cargas_medias': [], 'detalhes': [], 'sessoes_por_treino': []}
 
-        rotulos, volumes, cargas, detalhes = [], [], [], []
+        rotulos, volumes, cargas, detalhes, sessoes_por_treino = [], [], [], [], []
         for rotulo, grupo in pontos:
-            v, c, d = somar(grupo)
+            v, c, d, spt = somar(grupo)
             rotulos.append(rotulo)
             volumes.append(v)
             cargas.append(c)
             detalhes.append(d)
-        return {'semanas': rotulos, 'volumes': volumes, 'cargas_medias': cargas, 'detalhes': detalhes}
+            sessoes_por_treino.append(spt)
+        return {
+            'semanas': rotulos, 'volumes': volumes, 'cargas_medias': cargas,
+            'detalhes': detalhes, 'sessoes_por_treino': sessoes_por_treino,
+        }
 
     @staticmethod
     def get_atividade_geral(user_id=None, dias=30):

@@ -504,6 +504,39 @@
     </div>
 </div>
 
+<!-- Modal de detalhe: abre ao clicar numa barra do gráfico de evolução -->
+<div class="modal fade" id="modalDetalheTreino" tabindex="-1" aria-labelledby="modalDetalheTreinoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDetalheTreinoLabel">Treino</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3" id="modalDetalhePeriodo"></p>
+                <div class="row g-3 text-center mb-3">
+                    <div class="col-4">
+                        <div class="fw-bold fs-5" id="modalDetalheVolume">—</div>
+                        <div class="text-muted" style="font-size: 0.78rem;">Volume (kg)</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold fs-5" id="modalDetalheCarga">—</div>
+                        <div class="text-muted" style="font-size: 0.78rem;">Carga média (kg)</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold fs-5" id="modalDetalheSeries">—</div>
+                        <div class="text-muted" style="font-size: 0.78rem;">Séries</div>
+                    </div>
+                </div>
+                <p class="mb-0" style="font-size: 0.85rem;">
+                    <i class="bi bi-calendar3 me-1" style="color: #F28C33;"></i>
+                    Treinado em <span id="modalDetalheDias" class="fw-semibold"></span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Volume/Ranking por Músculo -->
 <div class="card est-card mb-3" id="volumeMusculo">
     <div class="card-header bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 pb-0">
@@ -905,6 +938,32 @@
     }
 
     let evolucaoChart;
+    let dadosEvolucaoAtual = null; // último fetch, pro modal de detalhe
+    let modalDetalheTreino = null;
+
+    const MESES_ABREV = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    function formatarDiaExtenso(iso) {
+        const [ano, mes, dia] = iso.split('-').map(Number);
+        return `${dia} de ${MESES_ABREV[mes - 1]}`;
+    }
+
+    function abrirModalDetalheTreino(codigo, indicePonto) {
+        if (!dadosEvolucaoAtual) return;
+        const spt = (dadosEvolucaoAtual.sessoes_por_treino || [])[indicePonto] || {};
+        const info = spt[codigo];
+        if (!info) return;
+
+        document.getElementById('modalDetalheTreinoLabel').textContent = `Treino ${codigo}`;
+        document.getElementById('modalDetalhePeriodo').textContent =
+            `Semana de ${dadosEvolucaoAtual.semanas[indicePonto].replace('–', ' a ')}`;
+        document.getElementById('modalDetalheVolume').textContent = info.volume;
+        document.getElementById('modalDetalheCarga').textContent = info.carga_media;
+        document.getElementById('modalDetalheSeries').textContent = info.n_series;
+        document.getElementById('modalDetalheDias').textContent = info.dias.map(formatarDiaExtenso).join(', ');
+
+        if (!modalDetalheTreino) modalDetalheTreino = new bootstrap.Modal(document.getElementById('modalDetalheTreino'));
+        modalDetalheTreino.show();
+    }
     let modoEvolucao = 'semana';   // 'semana' | 'treino' (rodada completa A+B+C+D)
     let treinoEvolucao = 'todos';  // 'todos' ou id do treino individual
     let codigoTreinoEvolucao = null; // letra do treino quando filtrado (pra cor da barra)
@@ -951,6 +1010,7 @@
             .then(r => r.json())
             .then(data => {
                 if (evolucaoChart) evolucaoChart.destroy();
+                dadosEvolucaoAtual = data;
 
                 const canvas = document.getElementById('evolucaoChart');
                 const semDados = !data.semanas || data.semanas.length === 0 || data.volumes.every(v => v === 0);
@@ -969,6 +1029,7 @@
                     datasetsBarras = letras.map((letra, i) => ({
                         type: 'bar',
                         label: `Treino ${letra}`,
+                        codigo: letra,
                         data: data.detalhes.map(ponto => (ponto.find(d => d.codigo === letra) || {}).volume || 0),
                         backgroundColor: corDoTreino(letra, i),
                         borderRadius: 4,
@@ -979,6 +1040,7 @@
                     datasetsBarras = [{
                         type: 'bar',
                         label: codigoTreino ? `Treino ${codigoTreino}` : 'Volume Total (kg)',
+                        codigo: codigoTreino,
                         data: data.volumes,
                         backgroundColor: codigoTreino ? corDoTreino(codigoTreino, 0) : '#F28C33',
                         borderRadius: 4,
@@ -1011,6 +1073,23 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
+                        // Clique numa barra abre o modal de detalhe daquele
+                        // treino naquele período. Usa intersect:true aqui
+                        // (ao contrário do hover acima) pra identificar
+                        // exatamente a barra clicada, não a mais próxima.
+                        onClick: function (event, _elementos, chart) {
+                            const achados = chart.getElementsAtEventForMode(
+                                event, 'nearest', { intersect: true, axis: 'xy' }, true
+                            );
+                            if (!achados.length) return;
+                            const { datasetIndex, index } = achados[0];
+                            const dataset = chart.data.datasets[datasetIndex];
+                            if (dataset.type !== 'bar' || !dataset.codigo) return;
+                            abrirModalDetalheTreino(dataset.codigo, index);
+                        },
+                        onHover: function (event, elementos) {
+                            event.native.target.style.cursor = elementos.length ? 'pointer' : 'default';
+                        },
                         plugins: {
                             legend: {
                                 position: 'bottom',
@@ -1046,7 +1125,9 @@
                             },
                             y: {
                                 beginAtZero: true,
-                                title: { display: !isMobile, text: 'Volume Total (kg)' },
+                                // Sem título no eixo -- a legenda embaixo já
+                                // diz o que cada cor/linha representa, e o
+                                // título repetia a mesma informação.
                                 grid: { color: 'rgba(0,0,0,0.05)' },
                                 ticks: {
                                     color: '#8a8a8a',
@@ -1057,7 +1138,6 @@
                             y1: {
                                 beginAtZero: true,
                                 position: 'right',
-                                title: { display: !isMobile, text: 'Carga Média (kg)' },
                                 grid: { drawOnChartArea: false },
                                 ticks: {
                                     color: '#8a8a8a',

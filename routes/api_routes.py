@@ -110,7 +110,7 @@ def _api_progresso_agregado(treino, modo):
     individual continua valendo (só o volume daquele treino, pela letra,
     somando todas as versões da janela).
     """
-    vazio = {"semanas": [], "volumes": [], "cargas_medias": [], "detalhes": []}
+    vazio = {"semanas": [], "volumes": [], "cargas_medias": [], "detalhes": [], "sessoes_por_treino": []}
 
     codigo = None
     if treino and treino != 'todos':

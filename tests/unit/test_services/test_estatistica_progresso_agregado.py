@@ -100,3 +100,31 @@ def test_hoje_brasil_nao_adianta_o_dia_a_noite(monkeypatch):
 
     monkeypatch.setattr(mod, 'datetime', _Agora)
     assert EstatisticaService.hoje_brasil() == date(2026, 9, 28)
+
+def test_sessoes_por_treino_traz_detalhe_pro_modal_ao_clicar_na_barra():
+    """sessoes_por_treino alimenta o modal que abre ao clicar numa barra
+    do gráfico: pra cada treino que apareceu naquele ponto, precisa de
+    volume, carga média, nº de séries e os dias em que foi feito --
+    mesmo filtrando por um treino específico, pois o front pode mostrar
+    o modal de qualquer uma das barras renderizadas."""
+    sessoes = [_s(20, 1, 100, n_series=2), _s(18, 2, 200, n_series=2)]
+    r = EstatisticaService.agregar_progresso(sessoes, TREINOS, 'treino', hoje=HOJE)
+    spt = r['sessoes_por_treino'][0]
+    assert spt['A'] == {
+        'volume': 100.0, 'carga_media': 5.0, 'n_series': 2,
+        'dias': [(HOJE - timedelta(days=20)).isoformat()],
+    }
+    assert spt['B']['volume'] == 200.0
+    assert spt['B']['n_series'] == 2
+
+    # mesmo com filtro de um treino só, sessoes_por_treino continua
+    # trazendo todos os treinos daquele ponto (não só o filtrado)
+    r_filtrado = EstatisticaService.agregar_progresso(sessoes, TREINOS, 'treino', treino='A', hoje=HOJE)
+    assert set(r_filtrado['sessoes_por_treino'][0].keys()) == {'A', 'B'}
+
+
+def test_sessoes_por_treino_junta_dias_diferentes_do_mesmo_treino():
+    sessoes = [_s(20, 1, 100), _s(18, 1, 100)]  # A feito 2x na mesma rodada (?) -- junta os dias
+    r = EstatisticaService.agregar_progresso(sessoes, TREINOS, 'semana', hoje=HOJE)
+    ponto = next(p for p in r['sessoes_por_treino'] if p)
+    assert len(ponto['A']['dias']) == 2
