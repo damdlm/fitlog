@@ -158,6 +158,20 @@ def create_app(config_class=None):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # IP real do cliente atrás do proxy do Railway. Sem isso request.remote_addr
+    # é o IP interno do proxy (100.64.0.x) e todo rate limit "por IP" (login,
+    # reset de senha, contato público) agrupa gente diferente no mesmo balde.
+    # Desligado por padrão (TRUSTED_PROXY_COUNT ausente/0 = comportamento
+    # atual): defina a variável com o NÚMERO de proxies confiáveis à frente do
+    # app -- valor maior que o real permite forjar o IP via X-Forwarded-For.
+    try:
+        proxies_confiaveis = int(os.environ.get("TRUSTED_PROXY_COUNT", "0") or 0)
+    except ValueError:
+        proxies_confiaveis = 0
+    if proxies_confiaveis > 0:
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=proxies_confiaveis, x_proto=0, x_host=0, x_port=0, x_prefix=0)
+
     # Mesmo critério usado em _criar_admin_inicial() e no init_db()
     # abaixo, além dos headers de segurança mais adiante -- um único
     # cálculo, reaproveitado, para não divergir entre os pontos que
@@ -890,6 +904,12 @@ def create_app(config_class=None):
             "Cache-Control": "public, max-age=31536000, immutable",
             "Accept-Ranges": "bytes",
         }
+        # Só imagens de verdade são servidas inline. Qualquer outro tipo
+        # (inclusive objetos antigos gravados com Content-Type de HTML)
+        # vira download, nunca é interpretado pelo navegador no domínio.
+        if content_type.split(";")[0].strip().lower() not in ("image/jpeg", "image/png", "image/webp"):
+            content_type = "application/octet-stream"
+            headers["Content-Disposition"] = "attachment"
         if obj["content_length"] is not None:
             headers["Content-Length"] = str(obj["content_length"])
         if obj["content_range"]:

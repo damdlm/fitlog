@@ -5,6 +5,7 @@ import re
 
 import requests
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
+from flask_limiter.util import get_remote_address
 from flask_login import current_user, login_required
 
 from extensions import limiter
@@ -17,8 +18,18 @@ billing_bp = Blueprint('billing', __name__)
 logger = logging.getLogger(__name__)
 
 
+def _chave_rate_limit_webhook():
+    """Separa o orçamento de quem tem o token certo (Asaas) do de quem não
+    tem. Antes a chave era o IP -- que, atrás do proxy do Railway, é o do
+    próprio proxy -- então requisições anônimas com token errado podiam
+    esgotar os 120/min e fazer o Asaas receber 429 em eventos reais."""
+    if BillingService._validar_token_webhook(request.headers.get('asaas-access-token', '')):
+        return 'asaas-webhook-autenticado'
+    return f'asaas-webhook-anonimo:{get_remote_address()}'
+
+
 @billing_bp.route('/webhook/asaas', methods=['POST'])
-@limiter.limit("120 per minute")
+@limiter.limit("120 per minute", key_func=_chave_rate_limit_webhook)
 def webhook_asaas():
     """Recebe eventos do Asaas. NUNCA exige login nem CSRF (ver
     csrf.exempt aplicado a esta view em routes/__init__.py) -- quem

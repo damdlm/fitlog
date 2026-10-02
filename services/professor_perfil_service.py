@@ -25,6 +25,19 @@ ESPECIALIDADES_VALIDAS = {
 EXTENSOES_FOTO_PERMITIDAS = {'.jpg', '.jpeg', '.png', '.webp'}
 FOTO_TAMANHO_MAXIMO_BYTES = 4 * 1024 * 1024  # 4MB
 
+
+def _detectar_imagem(cabecalho: bytes):
+    """Identifica o formato REAL pelos primeiros bytes (magic bytes), em vez
+    de confiar na extensão/Content-Type enviados pelo cliente -- que um
+    atacante controla. Devolve (extensão canônica, content-type) ou None."""
+    if cabecalho.startswith(b'\xff\xd8\xff'):
+        return '.jpg', 'image/jpeg'
+    if cabecalho.startswith(b'\x89PNG\r\n\x1a\n'):
+        return '.png', 'image/png'
+    if cabecalho[:4] == b'RIFF' and cabecalho[8:12] == b'WEBP':
+        return '.webp', 'image/webp'
+    return None
+
 TAGLINE_TAMANHO_MAXIMO = 200
 BIO_TAMANHO_MAXIMO = 1000
 CREF_TAMANHO_MAXIMO = 30
@@ -223,7 +236,14 @@ class ProfessorPerfilService(BaseService):
         if tamanho > FOTO_TAMANHO_MAXIMO_BYTES:
             return False, 'Arquivo muito grande -- o limite é 4MB.'
 
-        content_type = arquivo.mimetype or 'application/octet-stream'
+        # O conteúdo manda, não o nome nem o Content-Type do cliente: um
+        # HTML renomeado para .jpg era gravado com "text/html" e servido
+        # na mesma origem do site (XSS armazenado).
+        formato = _detectar_imagem(arquivo.read(12))
+        arquivo.seek(0)
+        if formato is None:
+            return False, 'Arquivo inválido -- envie uma imagem JPG, PNG ou WEBP de verdade.'
+        ext, content_type = formato
         chave_antiga = professor.professor_foto_chave
         chave_nova = f'professores/{professor.id}-{int(time.time())}{ext}'
 
