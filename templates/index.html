@@ -325,7 +325,7 @@
                 rgba(145, 52, 8, 1) 100%
             );
         animation: fl-pulse-dot 2.1s ease-in-out infinite alternate;
-        border: 1px solid rgba(255, 255, 255, 0.65);
+        border: 1px solid rgb(255, 255, 255);
         box-shadow:
             inset -2px -3px 5px rgba(100, 35, 0, 0.25),
             inset 2px 2px 4px rgba(255, 255, 255, 0.22),
@@ -333,58 +333,6 @@
             0 0 18px rgba(242, 140, 51, 0.22),
             0 0 35px rgba(242, 140, 51, 0.10);
     }
-
-
-.admin-hero-dot-center {
-    top: 50%;
-    left: 50%;
-    width: 28px;
-    height: 28px;
-
-    transform: translate(-50%, -50%);
-    transform-style: preserve-3d;
-
-    animation: center-dot-rotate 6s ease-in-out infinite;
-}
-
-.admin-hero-dot-center {
-    width: 28px;
-    height: 28px;
-
-@keyframes center-dot-rotate {
-    0% {
-        transform: translate(-50%, -50%) rotateY(0deg) scaleX(1);
-    }
-
-    50% {
-        transform: translate(-50%, -50%) rotateY(180deg) scaleX(0.65);
-    }
-
-    100% {
-        transform: translate(-50%, -50%) rotateY(360deg) scaleX(1);
-    }
-}
-
-
-
-    background:
-        radial-gradient(
-            circle at 35% 30%,
-            rgba(216, 214, 214, 0.75) 0%,
-            rgba(169, 170, 172, 0.7) 5%,
-            rgb(114, 115, 116) 30%,
-            rgb(73, 74, 75) 65%,
-            rgb(49, 49, 49) 100%
-        );
-
-    border: 1px solid rgb(255, 255, 255);
-
-    box-shadow:
-        inset -3px -4px 6px rgba(36, 36, 36, 0.3),
-        inset 2px 2px 4px rgba(78, 78, 78, 0.2),
-        0 0 6px rgba(183, 184, 184, 0.3),
-        0 0 16px rgba(112, 112, 112, 0.15);
-}
 
 .admin-hero-atom {
     animation: fl-spin-atom 10s linear infinite;
@@ -427,7 +375,6 @@
         <div class="admin-hero-dot"></div>
         <div class="admin-hero-dot"></div>
         <div class="admin-hero-dot"></div>
-        <div class="admin-hero-dot admin-hero-dot-center"></div>
     </div>
  <!--   <h2>Painel administrativo</h2>
     <p>Use o menu para acessar Contas e Cobrança, Financeiro e Monitoramento.</p> -->
