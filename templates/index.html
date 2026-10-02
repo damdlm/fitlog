@@ -299,21 +299,24 @@
     /* Reaproveita a animação de transição entre páginas (.fl-atom/
        .fl-dot-orbit, ver page-transition.css), só que maior e parada
        na tela em vez de aparecer só durante a troca de página. */
-    /* Camada externa: recebe a interação/parallax sem interferir na rotação orbital */
+    /* Camada externa: recebe somente o parallax/interação */
     .admin-hero-atom-parallax {
-        width: 130px;
-        height: 130px;
-        position: relative;
+        width: 170px;
+        height: 170px;
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative;
         perspective: 700px;
         transform-style: preserve-3d;
+        transform: perspective(700px) rotateX(0deg) rotateY(0deg);
         will-change: transform;
-        touch-action: pan-y;
+        transition: transform 0.12s ease-out;
+        touch-action: none;
+        -webkit-tap-highlight-color: transparent;
     }
 
-    /* Camada interna: continua responsável pela rotação dos 4 dots */
+    /* O atom continua responsável apenas pela órbita dos dots */
     .admin-hero-atom {
         width: 130px;
         height: 130px;
@@ -347,7 +350,6 @@
     }    
 
 
-
     .admin-hero-dot:nth-child(1) { top: 0; left: 50%; transform: translateX(-50%); animation-delay: 0s; }
     .admin-hero-dot:nth-child(2) { bottom: 0; left: 50%; transform: translateX(-50%); animation-delay: -0.9s; }
     .admin-hero-dot:nth-child(3) { top: 50%; left: 0; transform: translateY(-50%); animation-delay: -1.8s; }
@@ -365,10 +367,13 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-        .admin-hero-atom-parallax,
         .admin-hero-atom,
         .admin-hero-dot {
             animation: none;
+        }
+
+        .admin-hero-atom-parallax {
+            transform: none !important;
             transition: none;
         }
     }
@@ -381,12 +386,12 @@
 
 {% if current_user.is_admin %}
 <div class="admin-hero">
-    <div class="admin-hero-atom-parallax" aria-hidden="true">
-        <div class="admin-hero-atom">
-            <div class="admin-hero-dot"></div>
-            <div class="admin-hero-dot"></div>
-            <div class="admin-hero-dot"></div>
-            <div class="admin-hero-dot"></div>
+    <div class="admin-hero-atom-parallax" id="adminHeroAtomParallax">
+        <div class="admin-hero-atom" aria-hidden="true">
+        <div class="admin-hero-dot"></div>
+        <div class="admin-hero-dot"></div>
+        <div class="admin-hero-dot"></div>
+        <div class="admin-hero-dot"></div>
         </div>
     </div>
  <!--   <h2>Painel administrativo</h2>
@@ -496,7 +501,200 @@
         </div>
     </div>
 </div>
+
 {% endif %}
+
+<script>
+(function () {
+    const parallax = document.getElementById('adminHeroAtomParallax');
+
+    if (!parallax) return;
+
+    const prefersReducedMotion =
+        window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) return;
+
+    // Limites pequenos para manter o efeito elegante.
+    const MAX_TILT_X = 8; // esquerda/direita
+    const MAX_TILT_Y = 7; // cima/baixo
+
+    // Valores desejados e valores atuais.
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+
+    let pointerActive = false;
+    let gyroActive = false;
+    let orientationListening = false;
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function setTarget(x, y) {
+        targetX = clamp(x, -MAX_TILT_X, MAX_TILT_X);
+        targetY = clamp(y, -MAX_TILT_Y, MAX_TILT_Y);
+    }
+
+    function resetTarget() {
+        setTarget(0, 0);
+    }
+
+    function render() {
+        // Interpolação suave: evita o movimento "duro" ou travado.
+        currentX += (targetX - currentX) * 0.075;
+        currentY += (targetY - currentY) * 0.075;
+
+        if (Math.abs(targetX - currentX) < 0.001 &&
+            Math.abs(targetY - currentY) < 0.001) {
+            currentX = targetX;
+            currentY = targetY;
+        }
+
+        parallax.style.transform =
+            'perspective(700px) rotateX(' + currentY + 'deg) rotateY(' + currentX + 'deg)';
+
+        requestAnimationFrame(render);
+    }
+
+    // -----------------------------
+    // Mouse / pointer
+    // -----------------------------
+    function handlePointerMove(event) {
+        const rect = parallax.getBoundingClientRect();
+
+        const nx = (event.clientX - rect.left) / rect.width;
+        const ny = (event.clientY - rect.top) / rect.height;
+
+        // Movimento invertido no eixo Y para dar sensação de inclinação física.
+        setTarget(
+            (nx - 0.5) * MAX_TILT_X * 2,
+            -(ny - 0.5) * MAX_TILT_Y * 2
+        );
+
+        pointerActive = true;
+    }
+
+    parallax.addEventListener('pointermove', handlePointerMove, { passive: true });
+
+    parallax.addEventListener('pointerenter', function () {
+        pointerActive = true;
+    }, { passive: true });
+
+    parallax.addEventListener('pointerleave', function () {
+        pointerActive = false;
+
+        if (!gyroActive) {
+            resetTarget();
+        }
+    }, { passive: true });
+
+    // Touch/drag funciona mesmo em dispositivos que não possuem giroscópio.
+    parallax.addEventListener('pointerdown', function (event) {
+        pointerActive = true;
+        handlePointerMove(event);
+    }, { passive: true });
+
+    parallax.addEventListener('pointerup', function () {
+        pointerActive = false;
+
+        if (!gyroActive) {
+            resetTarget();
+        }
+    }, { passive: true });
+
+    // -----------------------------
+    // Giroscópio / Device Orientation
+    // -----------------------------
+    function handleOrientation(event) {
+        if (event.gamma == null || event.beta == null) return;
+
+        gyroActive = true;
+
+        // gamma: inclinação esquerda/direita (-90..90)
+        // beta: inclinação frente/trás (-180..180)
+        const gamma = clamp(event.gamma, -30, 30);
+        const beta = clamp(event.beta, -30, 30);
+
+        // Reduzimos a sensibilidade para o movimento ficar discreto.
+        const gyroX = gamma * 0.20;
+        const gyroY = (beta - 15) * 0.13;
+
+        // Se o usuário estiver tocando/arrastando, o toque tem prioridade.
+        if (!pointerActive) {
+            setTarget(gyroX, -gyroY);
+        }
+    }
+
+    function startOrientation() {
+        if (orientationListening) return;
+
+        if (!('DeviceOrientationEvent' in window)) {
+            return;
+        }
+
+        window.addEventListener('deviceorientation', handleOrientation, true);
+        orientationListening = true;
+    }
+
+    async function requestOrientationPermission() {
+        try {
+            // iOS 13+ exige permissão explícita.
+            if (
+                typeof DeviceOrientationEvent !== 'undefined' &&
+                typeof DeviceOrientationEvent.requestPermission === 'function'
+            ) {
+                const permission =
+                    await DeviceOrientationEvent.requestPermission();
+
+                if (permission === 'granted') {
+                    startOrientation();
+                }
+
+                return;
+            }
+
+            // Android e navegadores que não exigem permissão.
+            startOrientation();
+        } catch (error) {
+            // Se o sensor não estiver disponível/autorizado,
+            // mouse/touch continuam funcionando normalmente.
+        }
+    }
+
+    // A solicitação de permissão é disparada por uma interação real
+    // do usuário, requisito do iOS.
+    parallax.addEventListener(
+        'pointerdown',
+        requestOrientationPermission,
+        { passive: true, once: true }
+    );
+
+    // Em navegadores que já liberam orientação automaticamente,
+    // tenta iniciar sem bloquear a interação.
+    if (
+        'DeviceOrientationEvent' in window &&
+        typeof DeviceOrientationEvent.requestPermission !== 'function'
+    ) {
+        startOrientation();
+    }
+
+    // Volta lentamente ao centro quando a orientação não estiver mais disponível.
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            pointerActive = false;
+            gyroActive = false;
+            resetTarget();
+        }
+    });
+
+    render();
+})();
+</script>
+
 {% endblock %}
 
 {% block scripts %}
@@ -810,113 +1008,4 @@
     atualizarGrafico('todos');
 </script>
 {% endif %}
-
-<script>
-(() => {
-    const atomParallax = document.querySelector('.admin-hero-atom-parallax');
-    if (!atomParallax) return;
-
-    let targetX = 0;
-    let targetY = 0;
-    let currentX = 0;
-    let currentY = 0;
-    let animationFrame = null;
-    let gyroEnabled = false;
-
-    const MAX_ROTATION = 10;
-    const SMOOTHING = 0.08;
-
-    function animateParallax() {
-        currentX += (targetX - currentX) * SMOOTHING;
-        currentY += (targetY - currentY) * SMOOTHING;
-
-        atomParallax.style.transform =
-            `perspective(700px) rotateX(${currentY}deg) rotateY(${currentX}deg)`;
-
-        animationFrame = requestAnimationFrame(animateParallax);
-    }
-
-    function resetParallax() {
-        if (gyroEnabled) return;
-        targetX = 0;
-        targetY = 0;
-    }
-
-    // Mouse / touch: o objeto inclina suavemente na direção do ponteiro.
-    atomParallax.addEventListener('pointermove', (event) => {
-        if (event.pointerType === 'touch') return;
-
-        const rect = atomParallax.getBoundingClientRect();
-        const x = (event.clientX - rect.left) / rect.width;
-        const y = (event.clientY - rect.top) / rect.height;
-
-        targetX = (x - 0.5) * MAX_ROTATION;
-        targetY = -(y - 0.5) * MAX_ROTATION;
-    });
-
-    atomParallax.addEventListener('pointerleave', resetParallax);
-
-    // Em telas touch, o usuário pode arrastar o dedo sobre o objeto.
-    atomParallax.addEventListener('pointerdown', (event) => {
-        if (event.pointerType !== 'touch') return;
-        atomParallax.setPointerCapture?.(event.pointerId);
-    });
-
-    atomParallax.addEventListener('pointermove', (event) => {
-        if (event.pointerType !== 'touch') return;
-
-        const rect = atomParallax.getBoundingClientRect();
-        const x = (event.clientX - rect.left) / rect.width;
-        const y = (event.clientY - rect.top) / rect.height;
-
-        targetX = Math.max(-MAX_ROTATION, Math.min(MAX_ROTATION, (x - 0.5) * MAX_ROTATION * 1.4));
-        targetY = Math.max(-MAX_ROTATION, Math.min(MAX_ROTATION, -(y - 0.5) * MAX_ROTATION * 1.4));
-    });
-
-    atomParallax.addEventListener('pointerup', resetParallax);
-    atomParallax.addEventListener('pointercancel', resetParallax);
-
-    function handleDeviceOrientation(event) {
-        if (event.gamma == null || event.beta == null) return;
-
-        const gamma = Math.max(-30, Math.min(30, event.gamma));
-        const beta = Math.max(-30, Math.min(30, event.beta));
-
-        targetX = gamma * 0.25;
-        targetY = -(beta - 45) * 0.12;
-    }
-
-    async function enableGyroscope() {
-        if (gyroEnabled || !window.DeviceOrientationEvent) return;
-
-        try {
-            // iOS/Safari exige permissão explícita para o sensor.
-            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                const permission = await DeviceOrientationEvent.requestPermission();
-                if (permission !== 'granted') return;
-            }
-
-            window.addEventListener('deviceorientation', handleDeviceOrientation, true);
-            gyroEnabled = true;
-        } catch (error) {
-            console.warn('Não foi possível ativar o giroscópio:', error);
-        }
-    }
-
-    // Em dispositivos que permitem o sensor sem solicitação, tenta ativá-lo.
-    if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission !== 'function') {
-        enableGyroscope();
-    }
-
-    // Para iPhone/iPad, a permissão é solicitada somente após uma interação.
-    atomParallax.addEventListener('pointerdown', enableGyroscope, { once: true });
-
-    animateParallax();
-
-    window.addEventListener('pagehide', () => {
-        if (animationFrame) cancelAnimationFrame(animationFrame);
-        window.removeEventListener('deviceorientation', handleDeviceOrientation, true);
-    });
-})();
-</script>
 {% endblock %}
