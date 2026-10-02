@@ -337,13 +337,34 @@
 .admin-hero-dot-center {
     top: 50%;
     left: 50%;
+    width: 28px;
+    height: 28px;
+
     transform: translate(-50%, -50%);
-    animation: center-dot-pulse 4s ease-in-out infinite;
+    transform-style: preserve-3d;
+
+    animation: center-dot-rotate 6s ease-in-out infinite;
 }
 
 .admin-hero-dot-center {
     width: 28px;
     height: 28px;
+
+@keyframes center-dot-rotate {
+    0% {
+        transform: translate(-50%, -50%) rotateY(0deg) scaleX(1);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) rotateY(180deg) scaleX(0.65);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) rotateY(360deg) scaleX(1);
+    }
+}
+
+
 
     background:
         radial-gradient(
