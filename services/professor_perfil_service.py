@@ -12,14 +12,46 @@ from .base_service import BaseService
 
 logger = logging.getLogger(__name__)
 
-# Vocabulário fixo de especialidades (checkboxes na tela de edição) --
+# Vocabulário fixo de especialidades (chips na tela "Minha Página") --
 # valores livres não são aceitos, pra manter a página pública
-# consistente entre professores.
+# consistente entre professores. Cada item é (chave, rótulo, descrição):
+# a descrição aparece no tooltip ao clicar na especialidade e também
+# nas caixas de destaque da página pública, então precisa ser curta.
+# As chaves já gravadas no banco (emagrecimento, hipertrofia,
+# reabilitacao, terceira_idade) NÃO podem mudar. A ordem daqui define
+# quais especialidades entram nas 3 caixas de destaque (as 3 primeiras
+# marcadas), por isso as mais procuradas vêm primeiro.
+ESPECIALIDADES_GRUPOS = [
+    ('Objetivos', [
+        ('emagrecimento', 'Emagrecimento', 'Foco em queima de gordura e composição corporal.'),
+        ('hipertrofia', 'Hipertrofia', 'Treino direcionado para ganho de massa muscular.'),
+        ('definicao', 'Definição muscular', 'Redução de gordura preservando a massa muscular.'),
+        ('forca', 'Força', 'Ganho de força com progressão de cargas e técnica segura.'),
+        ('condicionamento_fisico', 'Condicionamento físico', 'Mais fôlego, energia e disposição para o dia a dia.'),
+        ('saude_bem_estar', 'Saúde e bem-estar', 'Hábitos ativos e treino para mais qualidade de vida.'),
+    ]),
+    ('Modalidades', [
+        ('funcional', 'Treino funcional', 'Movimentos do dia a dia para coordenação, equilíbrio e agilidade.'),
+        ('calistenia', 'Calistenia', 'Treino com o peso do corpo para força e controle motor.'),
+        ('corrida', 'Corrida', 'Plano para começar a correr ou melhorar ritmo e resistência.'),
+        ('performance_esportiva', 'Performance esportiva', 'Preparação física para render mais no seu esporte.'),
+        ('treino_em_casa', 'Treino em casa', 'Rotinas eficientes com pouco ou nenhum equipamento.'),
+        ('mobilidade_flexibilidade', 'Mobilidade e flexibilidade', 'Amplitude de movimento e alongamento para se mover melhor.'),
+        ('postura', 'Postura', 'Exercícios para melhorar a postura e aliviar tensões do dia a dia.'),
+    ]),
+    ('Públicos e cuidados', [
+        ('reabilitacao', 'Reabilitação', 'Fortalecimento seguro no pós-lesão, junto ao seu tratamento.'),
+        ('terceira_idade', 'Terceira idade', 'Treino adaptado, com foco em mobilidade e autonomia.'),
+        ('gestantes', 'Gestantes e pós-parto', 'Treino seguro durante a gravidez e na volta após o parto.'),
+        ('criancas_adolescentes', 'Crianças e adolescentes', 'Atividade física lúdica e adequada a cada fase do crescimento.'),
+        ('pcd', 'Pessoas com deficiência', 'Treino adaptado às necessidades e possibilidades de cada aluno.'),
+    ]),
+]
+
 ESPECIALIDADES_VALIDAS = {
-    'emagrecimento': 'Emagrecimento',
-    'hipertrofia': 'Hipertrofia',
-    'reabilitacao': 'Reabilitação',
-    'terceira_idade': 'Terceira idade',
+    chave: rotulo
+    for _, itens in ESPECIALIDADES_GRUPOS
+    for chave, rotulo, _descricao in itens
 }
 
 EXTENSOES_FOTO_PERMITIDAS = {'.jpg', '.jpeg', '.png', '.webp'}
@@ -96,12 +128,12 @@ ESTILOS_PAGINA = {
 }
 
 # Descrição curta de cada especialidade, usada nas 3 caixas de destaque
-# da página pública (ver ProfessorPerfilService.servicos_destaque).
+# da página pública (ver ProfessorPerfilService.servicos_destaque) e no
+# tooltip da tela "Minha Página". Vem de ESPECIALIDADES_GRUPOS.
 _DESCRICOES_ESPECIALIDADES = {
-    'emagrecimento': 'Foco em queima de gordura e composição corporal.',
-    'hipertrofia': 'Treino direcionado para ganho de massa muscular.',
-    'reabilitacao': 'Fortalecimento seguro no pós-lesão, junto ao seu tratamento.',
-    'terceira_idade': 'Treino adaptado, com foco em mobilidade e autonomia.',
+    chave: descricao
+    for _, itens in ESPECIALIDADES_GRUPOS
+    for chave, _rotulo, descricao in itens
 }
 
 # Itens genéricos usados só pra completar as 3 caixas quando o
