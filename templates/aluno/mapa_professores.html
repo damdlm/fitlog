@@ -376,11 +376,11 @@
 <script src="{{ url_for('static', filename='js/mapa_professores.js') }}?v=9"></script>
 
 {# O modal da página do professor recebe o botão "Solicitar vínculo" no
-   rodapé. Só mostra pra aluno sem professor (mesma regra de
-   aluno.enviar_solicitacao); quem já tem professor só vê "Visualizar". #}
+   rodapé. Ele aparece sempre; se o aluno já tem professor, a validação
+   acontece no clique (aviso dentro do modal, sem enviar nada) -- a regra
+   de verdade continua em aluno.enviar_solicitacao. #}
 {% set pp_modal_force = true %}
-{% if not current_user.get_professor() %}
 {% set pp_modal_solicitar_url = url_for('aluno.enviar_solicitacao', professor_id=0) %}
-{% endif %}
+{% set pp_modal_ja_tem_professor = current_user.get_professor() is not none %}
 {% include "professor/_modal_ver_pagina.html" %}
 {% endblock %}

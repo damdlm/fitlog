@@ -23,6 +23,8 @@
    data-professor-slug, data-professor-id="<id>". O botão fica FORA do
    iframe de propósito: um POST de dentro dele redirecionaria a tela
    inteira pra dentro do iframe.
+   Opcional: pp_modal_ja_tem_professor = true faz o clique mostrar um
+   aviso no próprio rodapé em vez de enviar o pedido.
 
    Carrega a versão "embed" da página pública (?embed=1, sem a navbar
    do site) num iframe, sem sair da tela nem abrir aba nova. Sem
@@ -42,8 +44,13 @@
             </div>
             {% if pp_modal_com_rodape %}
             <div class="modal-footer epp-preview-footer">
+                <div id="ppSolicitarAviso" class="epp-solicitar-aviso" role="alert" hidden>
+                    <i class="bi bi-info-circle-fill"></i>
+                    <span>Você já tem um professor vinculado. Para solicitar outro, remova o vínculo atual primeiro.</span>
+                </div>
                 <form id="ppSolicitarForm" method="post" action="" class="w-100"
-                      data-action-template="{{ pp_modal_solicitar_url }}">
+                      data-action-template="{{ pp_modal_solicitar_url }}"
+                      data-ja-tem-professor="{{ '1' if pp_modal_ja_tem_professor is defined and pp_modal_ja_tem_professor else '0' }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" id="ppSolicitarBtn" class="epp-solicitar-btn">
                         <i class="bi bi-person-plus"></i> Solicitar vínculo
@@ -102,6 +109,25 @@
         border-top: 1px solid rgba(0, 0, 0, .08);
         background: #fff;
     }
+    .epp-solicitar-aviso {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        width: 100%;
+        margin: 0 0 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #fff4e9;
+        color: #9a4f0a;
+        font-size: .82rem;
+        line-height: 1.35;
+        text-align: left;
+    }
+    .epp-solicitar-aviso .bi {
+        flex: 0 0 auto;
+        margin-top: 1px;
+        color: #F28C33;
+    }
     .epp-solicitar-btn {
         display: block;
         width: 100%;
@@ -155,6 +181,7 @@
     // senão usa o slug fixo definido no carregamento da página.
     var formSolicitar = document.getElementById('ppSolicitarForm');
     var btnSolicitar = document.getElementById('ppSolicitarBtn');
+    var avisoSolicitar = document.getElementById('ppSolicitarAviso');
 
     modal.addEventListener('show.bs.modal', function (event) {
         var trigger = event.relatedTarget;
@@ -173,6 +200,7 @@
                 formSolicitar.hidden = true;
             }
             btnSolicitar.disabled = false;
+            avisoSolicitar.hidden = true;
         }
         var url = slugDinamico
             ? frame.dataset.srcTemplate.replace('__SLUG__', encodeURIComponent(slugDinamico))
@@ -192,9 +220,16 @@
     modal.addEventListener('hidden.bs.modal', function () {
         frame.src = 'about:blank';
     });
-    // Evita pedido duplicado por duplo toque enquanto a requisição segue.
     if (formSolicitar) {
-        formSolicitar.addEventListener('submit', function () {
+        formSolicitar.addEventListener('submit', function (event) {
+            // Aluno que já tem professor: valida no clique, sem enviar.
+            // (O servidor valida de novo -- aluno.enviar_solicitacao.)
+            if (formSolicitar.dataset.jaTemProfessor === '1') {
+                event.preventDefault();
+                avisoSolicitar.hidden = false;
+                return;
+            }
+            // Evita pedido duplicado por duplo toque enquanto a requisição segue.
             btnSolicitar.disabled = true;
         });
     }

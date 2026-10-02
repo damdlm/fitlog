@@ -1,9 +1,9 @@
 """Mapa de professores (/aluno/mapa): o popup do pino só tem "Visualizar"
 e o "Solicitar vínculo" fica no rodapé do modal da página do professor.
 
-Cobre: payload da API (foto/iniciais pro avatar), presença do rodapé só
-pra aluno sem professor e ausência dele nas outras telas que reaproveitam
-o mesmo modal."""
+Cobre: payload da API (foto/iniciais pro avatar), presença do rodapé
+(aluno com professor vê o botão e recebe o aviso no clique) e ausência dele
+nas outras telas que reaproveitam o mesmo modal."""
 from datetime import datetime, timezone
 
 import pytest
@@ -78,7 +78,16 @@ class TestRodapeSolicitarVinculo:
         assert 'Solicitar vínculo' in html
         assert 'name="csrf_token"' in html
 
-    def test_aluno_com_professor_nao_ve_o_botao(self, app, client, professor_no_mapa):
+    def test_aluno_sem_professor_envia_direto(self, app, client):
+        _criar_usuario('alunolivre2', 'aluno')
+        _login(client, 'alunolivre2')
+
+        html = client.get('/aluno/mapa').get_data(as_text=True)
+
+        assert 'data-ja-tem-professor="0"' in html
+
+    def test_aluno_com_professor_ve_o_botao_e_o_aviso_vem_no_clique(
+            self, app, client, professor_no_mapa):
         aluno = _criar_usuario('alunovinculado', 'aluno')
         db.session.add(AlunoProfessor(
             aluno_id=aluno.id, professor_id=professor_no_mapa.id, ativo=True,
@@ -88,8 +97,31 @@ class TestRodapeSolicitarVinculo:
 
         html = client.get('/aluno/mapa').get_data(as_text=True)
 
-        assert 'id="ppVerPaginaModal"' in html  # ainda pode visualizar
-        assert 'id="ppSolicitarForm"' not in html
+        # O botão continua lá; a validação acontece no clique (JS).
+        assert 'id="ppSolicitarForm"' in html
+        assert 'data-ja-tem-professor="1"' in html
+        assert 'id="ppSolicitarAviso"' in html
+        assert 'Você já tem um professor vinculado' in html
+
+    def test_servidor_continua_barrando_aluno_com_professor(
+            self, app, client, professor_no_mapa):
+        """Proteção contra POST direto, sem passar pelo aviso do modal."""
+        outro = _criar_usuario('profoutro', 'professor', 'Outro Prof')
+        aluno = _criar_usuario('alunobarrado', 'aluno')
+        db.session.add(AlunoProfessor(
+            aluno_id=aluno.id, professor_id=professor_no_mapa.id, ativo=True,
+        ))
+        db.session.commit()
+        _login(client, 'alunobarrado')
+
+        resp = client.post(
+            f'/aluno/enviar-solicitacao/{outro.id}', follow_redirects=True,
+        )
+
+        assert resp.status_code == 200
+        assert 'Você já tem um professor vinculado' in resp.get_data(as_text=True)
+        from models import SolicitacaoVinculo
+        assert SolicitacaoVinculo.query.filter_by(aluno_id=aluno.id).count() == 0
 
     def test_popup_do_mapa_nao_tem_mais_solicitar_vinculo(self, app, client):
         """O JS do mapa não monta mais formulário de solicitação."""

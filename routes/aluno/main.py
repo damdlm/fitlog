@@ -214,7 +214,7 @@ def enviar_solicitacao(professor_id):
         return redirect(url_for('main.index'))
     
     if current_user.get_professor():
-        flash('Você já tem um professor.', 'warning')
+        flash('Você já tem um professor vinculado. Para solicitar outro, remova o vínculo atual primeiro.', 'warning')
         return redirect(url_for('aluno.meu_professor'))
     
     professor = User.query.get_or_404(professor_id)
