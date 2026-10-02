@@ -1,8 +1,9 @@
 /**
  * Mapa de professores do FitLog (/aluno/mapa).
  * Busca por área visível (bounding box) e agrupa em bolhas quando o
- * zoom está afastado. O popup de cada professor usa o mesmo endpoint
- * aluno.enviar_solicitacao já usado em buscar_professores.html.
+ * zoom está afastado. O popup de cada professor só tem "Visualizar"
+ * (abre o modal da página do professor); o pedido de vínculo
+ * (aluno.enviar_solicitacao) fica no rodapé desse modal.
  */
 (function () {
     'use strict';
@@ -10,11 +11,6 @@
     var limitesBrasil = [[-34.0, -74.5], [5.5, -32.0]];
     var limitesNavegacao = [[-40, -80], [10, -26]];
     var esperaMs = 250;
-
-    // window.FITLOG_MAPA_URL_SOLICITACAO vem do template com professor_id=0;
-    // trocamos o "0" final pelo id real de cada professor.
-    var urlSolicitacaoBase = window.FITLOG_MAPA_URL_SOLICITACAO || '';
-    var csrfToken = window.FITLOG_MAPA_CSRF_TOKEN || '';
 
     var mapa = L.map('mapa', {
         minZoom: 4,
@@ -39,10 +35,6 @@
         return div.innerHTML;
     }
 
-    function urlSolicitacao(professorId) {
-        return urlSolicitacaoBase.replace(/\/0(?:$|\?)/, '/' + professorId);
-    }
-
     function classeCluster(total) {
         // Mesmos limiares do _defaultIconCreateFunction do plugin oficial
         if (total < 10) { return 'marker-cluster-small'; }
@@ -61,30 +53,43 @@
         });
     }
 
+    function htmlAvatar(prof) {
+        if (prof.foto) {
+            return '<img class="mapa-prof__avatar" src="' + escapar(prof.foto) + '" alt="" loading="lazy">';
+        }
+        return '<span class="mapa-prof__avatar mapa-prof__avatar--iniciais" aria-hidden="true">' +
+               escapar(prof.iniciais || '?') + '</span>';
+    }
+
     function criarPino(item) {
         var html = item.professores.map(function (prof) {
-            var botaoPerfil = prof.slug
-                ? '<button type="button" class="btn btn-sm btn-outline-primary" ' +
+            var local = prof.cidade
+                ? '<div class="mapa-prof__local"><i class="bi bi-geo-alt-fill"></i> ' +
+                  escapar(prof.cidade) + (prof.uf ? '/' + escapar(prof.uf) : '') + '</div>'
+                : '';
+            // O pedido de vínculo não fica mais aqui: vive no rodapé do
+            // modal que este botão abre (templates/professor/_modal_ver_pagina.html),
+            // que descobre qual professor é pelos data-professor-* abaixo.
+            var botao = prof.slug
+                ? '<button type="button" class="mapa-prof__btn" ' +
                   'data-bs-toggle="modal" data-bs-target="#ppVerPaginaModal" ' +
-                  'data-professor-slug="' + escapar(prof.slug) + '">' +
-                  '<i class="bi bi-eye"></i> Ver perfil</button>'
-                : '';
-            var cidadeUf = prof.cidade
-                ? '<br><small class="text-muted">' + escapar(prof.cidade) + (prof.uf ? '/' + escapar(prof.uf) : '') + '</small>'
-                : '';
+                  'data-professor-slug="' + escapar(prof.slug) + '" ' +
+                  'data-professor-id="' + escapar(String(prof.id)) + '">' +
+                  '<i class="bi bi-eye"></i> Visualizar</button>'
+                : '<span class="mapa-prof__indisponivel">Perfil ainda indisponível</span>';
             return (
-                '<div class="mb-2">' +
-                '<b>' + escapar(prof.nome) + '</b>' + cidadeUf +
-                '<div class="d-flex flex-wrap gap-2 mt-2">' +
-                botaoPerfil +
-                '<form method="post" action="' + urlSolicitacao(prof.id) + '">' +
-                '<input type="hidden" name="csrf_token" value="' + csrfToken + '">' +
-                '<button type="submit" class="btn btn-sm btn-primary">' +
-                '<i class="bi bi-person-plus"></i> Solicitar vínculo</button>' +
-                '</form></div></div>'
+                '<div class="mapa-prof">' +
+                htmlAvatar(prof) +
+                '<div class="mapa-prof__nome">' + escapar(prof.nome) + '</div>' +
+                local + botao +
+                '</div>'
             );
         }).join('');
-        return L.marker([item.lat, item.lng]).bindPopup(html);
+        return L.marker([item.lat, item.lng]).bindPopup(html, {
+            minWidth: 200,
+            maxWidth: 260,
+            className: 'mapa-popup'
+        });
     }
 
     function carregar() {

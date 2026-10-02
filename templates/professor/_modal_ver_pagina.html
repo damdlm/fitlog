@@ -17,12 +17,20 @@
       nenhum de antemão) e, em cada botão/gatilho,
       data-professor-slug="<slug>" no lugar de um href.
 
+   Rodapé opcional "Solicitar vínculo" (só no mapa do aluno): defina
+   pp_modal_solicitar_url = url_for('aluno.enviar_solicitacao',
+   professor_id=0) antes do include e, em cada gatilho, além do
+   data-professor-slug, data-professor-id="<id>". O botão fica FORA do
+   iframe de propósito: um POST de dentro dele redirecionaria a tela
+   inteira pra dentro do iframe.
+
    Carrega a versão "embed" da página pública (?embed=1, sem a navbar
    do site) num iframe, sem sair da tela nem abrir aba nova. Sem
    cabeçalho de título: só um X flutuante por cima. #}
 {% set pp_modal_slug = professor_slug if professor_slug is defined and professor_slug else current_user.professor_slug %}
 {% if pp_modal_slug or (pp_modal_force is defined and pp_modal_force) %}
-<div class="modal fade" id="ppVerPaginaModal" tabindex="-1" aria-label="Página pública" aria-hidden="true">
+{% set pp_modal_com_rodape = pp_modal_solicitar_url is defined and pp_modal_solicitar_url %}
+<div class="modal fade{{ ' epp-com-rodape' if pp_modal_com_rodape }}" id="ppVerPaginaModal" tabindex="-1" aria-label="Página pública" aria-hidden="true">
     <div class="modal-dialog modal-dialog-scrollable modal-lg modal-fullscreen-sm-down">
         <div class="modal-content epp-preview-content">
             <button type="button" class="btn-close btn-close-white epp-preview-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
@@ -32,6 +40,17 @@
                         data-src-template="{{ url_for('professor.pagina_publica', slug='__SLUG__', embed=1) }}"
                         title="Prévia da página pública"></iframe>
             </div>
+            {% if pp_modal_com_rodape %}
+            <div class="modal-footer epp-preview-footer">
+                <form id="ppSolicitarForm" method="post" action="" class="w-100"
+                      data-action-template="{{ pp_modal_solicitar_url }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" id="ppSolicitarBtn" class="epp-solicitar-btn">
+                        <i class="bi bi-person-plus"></i> Solicitar vínculo
+                    </button>
+                </form>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -75,9 +94,50 @@
         height: 78vh;
         border: 0;
     }
+    /* Rodapé fixo com o "Solicitar vínculo" (só quando o modal é
+       incluído com pp_modal_solicitar_url, ex.: mapa do aluno). */
+    .epp-preview-footer {
+        justify-content: center;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid rgba(0, 0, 0, .08);
+        background: #fff;
+    }
+    .epp-solicitar-btn {
+        display: block;
+        width: 100%;
+        padding: 11px 16px;
+        border: none;
+        border-radius: 999px;
+        background: #F28C33;
+        color: #fff;
+        font-size: .95rem;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(242, 140, 51, .3);
+        transition: background-color .15s ease, transform .15s ease;
+    }
+    .epp-solicitar-btn:hover,
+    .epp-solicitar-btn:focus-visible {
+        background: #e07b22;
+    }
+    .epp-solicitar-btn:active {
+        transform: scale(.98);
+    }
+    .epp-solicitar-btn:disabled {
+        opacity: .7;
+        cursor: wait;
+    }
+    /* O rodapé ocupa ~72px: tira isso da altura do iframe pra não criar
+       uma segunda barra de rolagem dentro do modal. */
+    .epp-com-rodape #ppVerPaginaFrame {
+        height: calc(78vh - 72px);
+    }
     @media (max-width: 575.98px) {
         .epp-preview-content { border-radius: 0; }
         #ppVerPaginaFrame { height: 100vh; }
+        .epp-com-rodape #ppVerPaginaFrame {
+            height: calc(100vh - 72px - env(safe-area-inset-bottom, 0px));
+            height: calc(100dvh - 72px - env(safe-area-inset-bottom, 0px));
+        }
     }
 </style>
 
@@ -93,9 +153,27 @@
     // data-professor-slug, monta a URL pra ESSE professor (caso do
     // mapa/busca, onde cada gatilho é um professor diferente);
     // senão usa o slug fixo definido no carregamento da página.
+    var formSolicitar = document.getElementById('ppSolicitarForm');
+    var btnSolicitar = document.getElementById('ppSolicitarBtn');
+
     modal.addEventListener('show.bs.modal', function (event) {
         var trigger = event.relatedTarget;
         var slugDinamico = trigger && trigger.getAttribute('data-professor-slug');
+
+        // Rodapé "Solicitar vínculo": aponta o formulário pro professor
+        // do gatilho (a URL-modelo termina em /0, trocado pelo id real).
+        // Sem data-professor-id não há a quem solicitar, então esconde.
+        if (formSolicitar) {
+            var professorId = trigger && trigger.getAttribute('data-professor-id');
+            if (professorId && /^\d+$/.test(professorId)) {
+                formSolicitar.action = formSolicitar.dataset.actionTemplate
+                    .replace(/\/0(?=$|\?)/, '/' + professorId);
+                formSolicitar.hidden = false;
+            } else {
+                formSolicitar.hidden = true;
+            }
+            btnSolicitar.disabled = false;
+        }
         var url = slugDinamico
             ? frame.dataset.srcTemplate.replace('__SLUG__', encodeURIComponent(slugDinamico))
             : frame.dataset.src;
@@ -114,6 +192,12 @@
     modal.addEventListener('hidden.bs.modal', function () {
         frame.src = 'about:blank';
     });
+    // Evita pedido duplicado por duplo toque enquanto a requisição segue.
+    if (formSolicitar) {
+        formSolicitar.addEventListener('submit', function () {
+            btnSolicitar.disabled = true;
+        });
+    }
 })();
 </script>
 {% endif %}

@@ -653,6 +653,8 @@ def api_professores_mapa():
             "slug": professor.professor_slug,
             "cidade": professor.professor_cidade,
             "uf": professor.professor_uf,
+            "foto": professor.professor_foto_url,
+            "iniciais": professor.professor_iniciais,
         }
 
     if zoom < ZOOM_MINIMO_PONTOS_INDIVIDUAIS:

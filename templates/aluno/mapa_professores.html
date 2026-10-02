@@ -47,13 +47,108 @@
         background-color: rgba(241, 128, 23, 0.6);
     }
 
-    /* Bordinha laranja da marca (--primary-color) no mapa e no quadro
-       (popup) que abre ao clicar num professor. */
+    /* Bordinha laranja da marca (--primary-color) no mapa. */
     #mapa {
         border: 2px solid #F28C33;
     }
-    .leaflet-popup-content-wrapper {
-        border: 2px solid #F28C33;
+
+    /* Popup que abre ao clicar no pino de um professor: tudo centralizado
+       (avatar, nome, cidade e um único botão "Visualizar"). O pedido de
+       vínculo fica no rodapé do modal que o botão abre. */
+    .mapa-popup .leaflet-popup-content-wrapper {
+        border-radius: 20px;
+        padding: 0;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+    }
+    .mapa-popup .leaflet-popup-content {
+        margin: 0;
+        width: auto !important;
+        min-width: 200px;
+    }
+    .mapa-popup .leaflet-popup-tip {
+        box-shadow: 0 6px 14px rgba(0, 0, 0, .12);
+    }
+    .mapa-popup a.leaflet-popup-close-button {
+        top: 8px;
+        right: 8px;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        font-size: 18px;
+        line-height: 24px;
+        color: #adb5bd;
+    }
+    .mapa-popup a.leaflet-popup-close-button:hover {
+        color: #F28C33;
+    }
+    .mapa-prof {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 22px 20px 18px;
+    }
+    /* Mais de um professor no mesmo pino: separa os cartões. */
+    .mapa-prof + .mapa-prof {
+        border-top: 1px solid rgba(0, 0, 0, .07);
+    }
+    .mapa-prof__avatar {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 10px;
+        border-radius: 50%;
+        object-fit: cover;
+        box-shadow: 0 0 0 3px #fff, 0 0 0 5px #F28C33;
+    }
+    .mapa-prof__avatar--iniciais {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff4e9;
+        color: #F28C33;
+        font-size: 1.35rem;
+        font-weight: 700;
+        letter-spacing: .5px;
+    }
+    .mapa-prof__nome {
+        font-size: 1rem;
+        font-weight: 700;
+        line-height: 1.25;
+        color: #212529;
+        overflow-wrap: anywhere;
+    }
+    .mapa-prof__local {
+        margin-top: 4px;
+        font-size: .8rem;
+        color: #6c757d;
+    }
+    .mapa-prof__local .bi {
+        color: #F28C33;
+    }
+    .mapa-prof__btn {
+        margin-top: 14px;
+        width: 100%;
+        padding: 9px 16px;
+        border: none;
+        border-radius: 999px;
+        background: #F28C33;
+        color: #fff;
+        font-size: .9rem;
+        font-weight: 600;
+        box-shadow: 0 4px 10px rgba(242, 140, 51, .3);
+        transition: background-color .15s ease, transform .15s ease;
+    }
+    .mapa-prof__btn:hover,
+    .mapa-prof__btn:focus-visible {
+        background: #e07b22;
+    }
+    .mapa-prof__btn:active {
+        transform: scale(.98);
+    }
+    .mapa-prof__indisponivel {
+        margin-top: 14px;
+        font-size: .8rem;
+        color: #adb5bd;
     }
 
     /* --- Layout da página ---
@@ -278,12 +373,14 @@
 </div>
 
 <script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
-<script>
-    window.FITLOG_MAPA_CSRF_TOKEN = "{{ csrf_token() }}";
-    window.FITLOG_MAPA_URL_SOLICITACAO = "{{ url_for('aluno.enviar_solicitacao', professor_id=0) }}";
-</script>
-<script src="{{ url_for('static', filename='js/mapa_professores.js') }}?v=8"></script>
+<script src="{{ url_for('static', filename='js/mapa_professores.js') }}?v=9"></script>
 
+{# O modal da página do professor recebe o botão "Solicitar vínculo" no
+   rodapé. Só mostra pra aluno sem professor (mesma regra de
+   aluno.enviar_solicitacao); quem já tem professor só vê "Visualizar". #}
 {% set pp_modal_force = true %}
+{% if not current_user.get_professor() %}
+{% set pp_modal_solicitar_url = url_for('aluno.enviar_solicitacao', professor_id=0) %}
+{% endif %}
 {% include "professor/_modal_ver_pagina.html" %}
 {% endblock %}
