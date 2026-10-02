@@ -334,6 +334,35 @@
             0 0 35px rgba(242, 140, 51, 0.10);
     }
 
+.admin-hero-dot:nth-child(1) {
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: dot-top-glow 4s ease-in-out infinite;
+}
+
+.admin-hero-dot:nth-child(2) {
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: dot-bottom-glow 4s ease-in-out infinite;
+}
+
+.admin-hero-dot:nth-child(3) {
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    animation: dot-left-glow 4s ease-in-out infinite;
+}
+
+.admin-hero-dot:nth-child(4) {
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    animation: dot-right-glow 4s ease-in-out infinite;
+}
+
+
 .admin-hero-dot-center {
     top: 50%;
     left: 50%;
