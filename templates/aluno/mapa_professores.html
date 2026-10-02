@@ -232,20 +232,16 @@
             margin: -1.5rem -12px;
         }
         .mapa-conteudo-inner {
-            padding: 0 12px 4px;
+            padding: 0 12px 0;
         }
         #msg {
             display: none;
         }
         #mapa {
             border-radius: 8px;
-            /* 70px do navbar sticky (mesma referência de base.html /
-               auth-login.css) + 78px reservados pra barra inferior
-               (body.has-bottom-nav) + 52px do cabeçalho acima (botão
-               Voltar/busca, ~32px + 10px de padding em cima/embaixo)
-               + 12px da bordinha cinza que sobra embaixo do mapa. */
-            height: calc(100vh - 70px - 78px - 52px - 12px);
-            height: calc(100dvh - 70px - 78px - 52px - 12px);
+            /* Altura ajustada para reduzir o espaço entre o mapa e a navegação inferior. */
+            height: calc(100vh - 70px - 78px - 52px);
+            height: calc(100dvh - 70px - 78px - 52px);
         }
     }
 </style>
