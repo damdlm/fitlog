@@ -4,7 +4,7 @@ from collections import Counter
 from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 from sqlalchemy.orm import joinedload
-from models import db, Musculo, ExercicioCustomizado, ExercicioSistema, RegistroTreino, HistoricoTreino, TreinoVersao
+from models import db, Musculo, ExercicioCustomizado, ExercicioSistema, ExercicioUsuario, RegistroTreino, HistoricoTreino, TreinoVersao
 from sqlalchemy import func, and_
 from .base_service import BaseService, CacheService
 import logging
@@ -547,6 +547,65 @@ class EstatisticaService(BaseService):
         """Data de hoje no fuso do Brasil (os treinos são lançados com a
         data local do aluno; usar UTC adianta o "hoje" em 1 dia à noite)."""
         return datetime.now(_FUSO_BRASIL).date()
+
+    @staticmethod
+    def get_exercicios_por_treino_e_dias(codigo, dias, user_id=None):
+        """
+        Exercícios feitos num treino (pela letra -- A, B, C...) nos dias
+        informados, com volume somado, nº de séries e a carga máxima
+        usada em cada exercício. Base do detalhamento que abre no modal
+        ao clicar numa barra do gráfico "Evolução do Volume": o ponto já
+        diz volume/carga média/dias (ver agregar_progresso), isso aqui
+        completa com O QUE foi treinado.
+
+        dias: lista de strings 'AAAA-MM-DD' (ou date) -- geralmente vem
+        de sessoes_por_treino[...]['dias'], então cobre só os dias que
+        realmente contaram pro ponto clicado.
+        """
+        try:
+            user_id = user_id or BaseService.get_current_user_id()
+            if not user_id or not codigo or not dias:
+                return []
+
+            dias_obj = []
+            for d in dias:
+                if isinstance(d, date):
+                    dias_obj.append(d)
+                else:
+                    dias_obj.append(datetime.strptime(str(d)[:10], "%Y-%m-%d").date())
+            if not dias_obj:
+                return []
+
+            nome_exercicio = func.coalesce(ExercicioUsuario.nome, ExercicioSistema.nome)
+            linhas = db.session.query(
+                nome_exercicio.label('nome'),
+                func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes).label('volume'),
+                func.count(HistoricoTreino.id).label('n_series'),
+                func.max(HistoricoTreino.carga).label('carga_max'),
+            ).select_from(RegistroTreino) \
+             .join(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id) \
+             .join(TreinoVersao, TreinoVersao.id == RegistroTreino.treino_versao_id) \
+             .outerjoin(ExercicioUsuario, ExercicioUsuario.id == RegistroTreino.exercicio_usuario_id) \
+             .outerjoin(ExercicioSistema, ExercicioSistema.id == RegistroTreino.exercicio_base_id) \
+             .filter(RegistroTreino.user_id == user_id) \
+             .filter(TreinoVersao.codigo == codigo) \
+             .filter(func.date(RegistroTreino.data_registro).in_(dias_obj)) \
+             .group_by(nome_exercicio) \
+             .order_by(func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes).desc()) \
+             .all()
+
+            return [
+                {
+                    'nome': l.nome or 'Exercício removido',
+                    'volume': round(float(l.volume or 0), 2),
+                    'n_series': int(l.n_series or 0),
+                    'carga_max': round(float(l.carga_max or 0), 2),
+                }
+                for l in linhas
+            ]
+        except Exception as e:
+            BaseService.handle_error(e, "Erro ao buscar exercícios do treino")
+            return []
 
     @staticmethod
     def agregar_progresso(sessoes, treinos, modo, treino=None, hoje=None):

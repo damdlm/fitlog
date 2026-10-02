@@ -131,6 +131,27 @@ def _api_progresso_agregado(treino, modo):
         base['sessoes'], base['treinos'], modo, treino=codigo
     ))
 
+
+@api_bp.route("/progresso/exercicios")
+@login_required
+def api_progresso_exercicios():
+    """
+    Exercícios feitos num treino (pela letra) nos dias informados --
+    alimenta o modal que abre ao clicar numa barra do gráfico
+    "Evolução do Volume" (ver EstatisticaService.
+    get_exercicios_por_treino_e_dias). `dias` vem direto do
+    sessoes_por_treino que /api/progresso já devolveu pro ponto clicado.
+    """
+    codigo = (request.args.get("codigo") or "").strip()
+    dias_param = request.args.get("dias") or ""
+    dias = [d for d in dias_param.split(",") if d]
+
+    if not codigo or not dias:
+        return jsonify([])
+
+    return jsonify(EstatisticaService.get_exercicios_por_treino_e_dias(codigo, dias))
+
+
 @api_bp.route("/kpis")
 @login_required
 @acesso_premium_required('estatisticas')

@@ -528,9 +528,18 @@
                         <div class="text-muted" style="font-size: 0.78rem;">Séries</div>
                     </div>
                 </div>
-                <p class="mb-0" style="font-size: 0.85rem;">
+                <p class="mb-3" style="font-size: 0.85rem;">
                     <i class="bi bi-calendar3 me-1" style="color: #F28C33;"></i>
                     Treinado em <span id="modalDetalheDias" class="fw-semibold"></span>
+                </p>
+                <hr class="my-3">
+                <h6 class="fw-bold mb-2" style="font-size: 0.9rem;">Exercícios</h6>
+                <div id="modalDetalheExerciciosCarregando" class="text-muted text-center py-2" style="font-size: 0.85rem;">
+                    Carregando...
+                </div>
+                <ul id="modalDetalheExercicios" class="list-unstyled mb-0" style="display: none;"></ul>
+                <p id="modalDetalheExerciciosVazio" class="text-muted mb-0" style="font-size: 0.85rem; display: none;">
+                    Nenhum exercício encontrado pra esse período.
                 </p>
             </div>
         </div>
@@ -941,6 +950,12 @@
     let dadosEvolucaoAtual = null; // último fetch, pro modal de detalhe
     let modalDetalheTreino = null;
 
+    function escapeHtml(texto) {
+        const div = document.createElement('div');
+        div.textContent = texto;
+        return div.innerHTML;
+    }
+
     const MESES_ABREV = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
     function formatarDiaExtenso(iso) {
         const [ano, mes, dia] = iso.split('-').map(Number);
@@ -961,8 +976,39 @@
         document.getElementById('modalDetalheSeries').textContent = info.n_series;
         document.getElementById('modalDetalheDias').textContent = info.dias.map(formatarDiaExtenso).join(', ');
 
+        const carregando = document.getElementById('modalDetalheExerciciosCarregando');
+        const lista = document.getElementById('modalDetalheExercicios');
+        const vazio = document.getElementById('modalDetalheExerciciosVazio');
+        carregando.style.display = 'block';
+        lista.style.display = 'none';
+        vazio.style.display = 'none';
+        lista.innerHTML = '';
+
         if (!modalDetalheTreino) modalDetalheTreino = new bootstrap.Modal(document.getElementById('modalDetalheTreino'));
         modalDetalheTreino.show();
+
+        const params = new URLSearchParams({ codigo: codigo, dias: info.dias.join(',') });
+        fetch(`/api/progresso/exercicios?${params.toString()}`)
+            .then(r => r.json())
+            .then(exercicios => {
+                carregando.style.display = 'none';
+                if (!exercicios.length) {
+                    vazio.style.display = 'block';
+                    return;
+                }
+                lista.innerHTML = exercicios.map(ex => `
+                    <li class="est-treino-metric">
+                        <span>${escapeHtml(ex.nome)}</span>
+                        <span class="text-muted">${ex.n_series}x · ${ex.carga_max}kg máx · ${ex.volume}kg</span>
+                    </li>
+                `).join('');
+                lista.style.display = 'block';
+            })
+            .catch(() => {
+                carregando.style.display = 'none';
+                vazio.textContent = 'Não foi possível carregar os exercícios.';
+                vazio.style.display = 'block';
+            });
     }
     let modoEvolucao = 'semana';   // 'semana' | 'treino' (rodada completa A+B+C+D)
     let treinoEvolucao = 'todos';  // 'todos' ou id do treino individual

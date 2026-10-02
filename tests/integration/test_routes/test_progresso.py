@@ -307,3 +307,66 @@ def test_progresso_diario_treino_id_vira_inteiro_antes_da_query(client, app):
     resp = client.get('/api/progresso?treino=abc')
     assert resp.status_code == 200
     assert resp.get_json()['semanas'] == []
+
+def test_api_exercicios_do_treino_agrupa_por_exercicio(client, app):
+    """GET /api/progresso/exercicios -- detalhe que abre no modal ao
+    clicar numa barra: volume, nº de séries e carga máxima por
+    exercício, só dos dias informados."""
+    uid, vid, ex1, t = _montar_versao_abcd(app, 'modal_exercicios_pt')
+    with app.app_context():
+        m = Musculo(nome='m2_modal', nome_exibicao='M2')
+        db.session.add(m)
+        db.session.commit()
+        ex2 = ExercicioUsuario(usuario_id=uid, nome='Remada', musculo_id=m.id)
+        db.session.add(ex2)
+        db.session.commit()
+        ex2_id = ex2.id
+
+    # Treino A, 2 dias diferentes: Supino (ex1, nome 'Ex') nos dois dias,
+    # Remada (ex2) só num deles.
+    _registrar(app, uid, vid, ex1, t['A'], 5, 50, 10, series=3)   # dia 1: Ex
+    _registrar(app, uid, vid, ex1, t['A'], 3, 60, 8, series=2)    # dia 2: Ex
+    _registrar(app, uid, vid, ex2_id, t['A'], 3, 40, 10, series=2)  # dia 2: Remada
+
+    with app.app_context():
+        user = User.query.get(uid)
+        dia1 = (datetime.now(timezone.utc) - timedelta(days=5)).date().isoformat()
+        dia2 = (datetime.now(timezone.utc) - timedelta(days=3)).date().isoformat()
+    _login(client, user)
+
+    resp = client.get(f'/api/progresso/exercicios?codigo=A&dias={dia1},{dia2}')
+    assert resp.status_code == 200
+    dados = {d['nome']: d for d in resp.get_json()}
+
+    assert dados['Ex']['n_series'] == 5  # 3 + 2
+    assert dados['Ex']['volume'] == 50 * 10 * 3 + 60 * 8 * 2
+    assert dados['Ex']['carga_max'] == 60
+    assert dados['Remada']['n_series'] == 2
+    assert dados['Remada']['volume'] == 40 * 10 * 2
+
+
+def test_api_exercicios_do_treino_filtra_so_os_dias_pedidos(client, app):
+    uid, vid, ex1, t = _montar_versao_abcd(app, 'modal_dias_pt')
+    _registrar(app, uid, vid, ex1, t['A'], 5, 50, 10, series=3)
+    _registrar(app, uid, vid, ex1, t['A'], 25, 50, 10, series=7)  # fora do período pedido
+
+    with app.app_context():
+        user = User.query.get(uid)
+        dia1 = (datetime.now(timezone.utc) - timedelta(days=5)).date().isoformat()
+    _login(client, user)
+
+    resp = client.get(f'/api/progresso/exercicios?codigo=A&dias={dia1}')
+    dados = resp.get_json()
+    assert len(dados) == 1
+    assert dados[0]['n_series'] == 3  # só o dia pedido, não os 7 de 25 dias atrás
+
+
+def test_api_exercicios_sem_codigo_ou_dias_retorna_vazio(client, app):
+    uid, vid, ex1, t = _montar_versao_abcd(app, 'modal_vazio_pt')
+    with app.app_context():
+        user = User.query.get(uid)
+    _login(client, user)
+
+    assert client.get('/api/progresso/exercicios?codigo=A').get_json() == []
+    assert client.get('/api/progresso/exercicios?dias=2026-09-01').get_json() == []
+    assert client.get('/api/progresso/exercicios').get_json() == []
