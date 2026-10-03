@@ -67,16 +67,5 @@ tzdata==2025.2
 # =========================
 gunicorn==22.0.0
 
-# =========================
-# TESTES
-# =========================
-pytest==9.0.3
-pytest-cov==4.1.0
-factory-boy==3.3.0
-
-# =========================
-# DEV TOOLS (opcional)
-# =========================
-black==26.3.1
-flake8==7.0.0
-mypy==1.8.0
+# Testes e ferramentas de desenvolvimento ficam em requirements-dev.txt
+# (não vão para o build de produção do Railway).

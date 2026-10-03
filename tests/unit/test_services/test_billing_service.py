@@ -10,6 +10,8 @@ processamento idempotente de webhook do Asaas.
 """
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from models import db, User, AlunoProfessor, Assinatura, EventoWebhookAsaas, Plano, Notificacao
 from services.billing_service import (
     AssinaturaAtualizadaError, AssinaturaGatewaySumiuError, AssinaturaJaAtivaError,
@@ -1831,6 +1833,19 @@ class TestCancelarAssinaturaPix:
 # ---------------------------------------------------------------------
 
 class TestCancelarAssinatura:
+    @pytest.fixture(autouse=True)
+    def _asaas_get_sem_nextduedate(self, monkeypatch):
+        """cancelar_assinatura consulta o nextDueDate (GET) antes do DELETE.
+        Sem este stub, os testes que só simulavam o DELETE faziam uma
+        chamada HTTP REAL ao Asaas (falhando sem rede e instáveis no CI).
+        O 404 reproduz "Asaas não informou o vencimento", que é o cenário
+        em que o acesso é revogado na hora -- o que estes testes esperam.
+        Testes que precisam de outro retorno sobrescrevem o stub."""
+        monkeypatch.setattr(
+            'services.billing_service.requests.get',
+            lambda *a, **k: _RespostaFake({}, status_code=404),
+        )
+
     def test_sem_assinatura_levanta_erro_especifico(self, app):
         with app.app_context():
             aluno = _criar_usuario('cancelar_sem_assinatura')

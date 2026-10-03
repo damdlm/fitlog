@@ -36,6 +36,12 @@
 
 ## Testes
 
+Instale as dependências de desenvolvimento (testes, flake8, black, mypy),
+que ficam separadas das de produção:
+```bash
+pip install -r requirements-dev.txt
+```
+
 Execute os testes antes de commitar (cobertura já é medida automaticamente
 via `pytest.ini`):
 ```bash
