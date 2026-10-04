@@ -53,9 +53,13 @@ class TestRaizPublicaEDashboard:
         assert 'progressChart' not in html
         assert 'chart.umd' not in html
         assert 'Acompanhe sua evolução' not in html
+        # o card "Acesso rápido" também foi removido da página inicial
+        assert 'Acesso rápido' not in html
+        # (a regra CSS .dash-quick-tile fica no base.html, compartilhada
+        # com outras telas -- por isso se checa o elemento, não o nome)
+        assert 'class="dash-quick-tile"' not in html
         # o resto do dashboard continua lá
         assert 'Dicas de treino' in html
-        assert 'Acesso rápido' in html
 
     def test_landing_linka_contato_publico_mas_nao_o_chat_privado(self, client):
         # routes/contato_routes.py: '/contato/' (o chat) continua
