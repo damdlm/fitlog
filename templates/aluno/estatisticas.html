@@ -102,17 +102,6 @@
         font-size: 0.85rem;
         margin-bottom: 10px;
     }
-    .est-treino-metric {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.85rem;
-        padding: 5px 0;
-        border-bottom: 1px dashed rgba(0,0,0,0.06);
-    }
-    .est-treino-metric:last-child {
-        border-bottom: none;
-    }
-
     .est-pill-group {
         display: flex;
         flex-wrap: wrap;
@@ -500,48 +489,6 @@
         <div class="est-empty" id="rmVazio">
             <i class="bi bi-graph-up-arrow"></i>
             Registre pelo menos duas sessões desse exercício pra ver a evolução.
-        </div>
-    </div>
-</div>
-
-<!-- Modal de detalhe: abre ao clicar numa barra do gráfico de evolução -->
-<div class="modal fade" id="modalDetalheTreino" tabindex="-1" aria-labelledby="modalDetalheTreinoLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalDetalheTreinoLabel">Treino</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted mb-3" id="modalDetalhePeriodo"></p>
-                <div class="row g-3 text-center mb-3">
-                    <div class="col-4">
-                        <div class="fw-bold fs-5" id="modalDetalheVolume">—</div>
-                        <div class="text-muted" style="font-size: 0.78rem;">Volume (kg)</div>
-                    </div>
-                    <div class="col-4">
-                        <div class="fw-bold fs-5" id="modalDetalheCarga">—</div>
-                        <div class="text-muted" style="font-size: 0.78rem;">Carga média (kg)</div>
-                    </div>
-                    <div class="col-4">
-                        <div class="fw-bold fs-5" id="modalDetalheSeries">—</div>
-                        <div class="text-muted" style="font-size: 0.78rem;">Séries</div>
-                    </div>
-                </div>
-                <p class="mb-3" style="font-size: 0.85rem;">
-                    <i class="bi bi-calendar3 me-1" style="color: #F28C33;"></i>
-                    Treinado em <span id="modalDetalheDias" class="fw-semibold"></span>
-                </p>
-                <hr class="my-3">
-                <h6 class="fw-bold mb-2" style="font-size: 0.9rem;">Exercícios</h6>
-                <div id="modalDetalheExerciciosCarregando" class="text-muted text-center py-2" style="font-size: 0.85rem;">
-                    Carregando...
-                </div>
-                <ul id="modalDetalheExercicios" class="list-unstyled mb-0" style="display: none;"></ul>
-                <p id="modalDetalheExerciciosVazio" class="text-muted mb-0" style="font-size: 0.85rem; display: none;">
-                    Nenhum exercício encontrado pra esse período.
-                </p>
-            </div>
         </div>
     </div>
 </div>
@@ -947,69 +894,6 @@
     }
 
     let evolucaoChart;
-    let dadosEvolucaoAtual = null; // último fetch, pro modal de detalhe
-    let modalDetalheTreino = null;
-
-    function escapeHtml(texto) {
-        const div = document.createElement('div');
-        div.textContent = texto;
-        return div.innerHTML;
-    }
-
-    const MESES_ABREV = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-    function formatarDiaExtenso(iso) {
-        const [ano, mes, dia] = iso.split('-').map(Number);
-        return `${dia} de ${MESES_ABREV[mes - 1]}`;
-    }
-
-    function abrirModalDetalheTreino(codigo, indicePonto) {
-        if (!dadosEvolucaoAtual) return;
-        const spt = (dadosEvolucaoAtual.sessoes_por_treino || [])[indicePonto] || {};
-        const info = spt[codigo];
-        if (!info) return;
-
-        document.getElementById('modalDetalheTreinoLabel').textContent = `Treino ${codigo}`;
-        document.getElementById('modalDetalhePeriodo').textContent =
-            `Semana de ${dadosEvolucaoAtual.semanas[indicePonto].replace('–', ' a ')}`;
-        document.getElementById('modalDetalheVolume').textContent = info.volume;
-        document.getElementById('modalDetalheCarga').textContent = info.carga_media;
-        document.getElementById('modalDetalheSeries').textContent = info.n_series;
-        document.getElementById('modalDetalheDias').textContent = info.dias.map(formatarDiaExtenso).join(', ');
-
-        const carregando = document.getElementById('modalDetalheExerciciosCarregando');
-        const lista = document.getElementById('modalDetalheExercicios');
-        const vazio = document.getElementById('modalDetalheExerciciosVazio');
-        carregando.style.display = 'block';
-        lista.style.display = 'none';
-        vazio.style.display = 'none';
-        lista.innerHTML = '';
-
-        if (!modalDetalheTreino) modalDetalheTreino = new bootstrap.Modal(document.getElementById('modalDetalheTreino'));
-        modalDetalheTreino.show();
-
-        const params = new URLSearchParams({ codigo: codigo, dias: info.dias.join(',') });
-        fetch(`/api/progresso/exercicios?${params.toString()}`)
-            .then(r => r.json())
-            .then(exercicios => {
-                carregando.style.display = 'none';
-                if (!exercicios.length) {
-                    vazio.style.display = 'block';
-                    return;
-                }
-                lista.innerHTML = exercicios.map(ex => `
-                    <li class="est-treino-metric">
-                        <span>${escapeHtml(ex.nome)}</span>
-                        <span class="text-muted">${ex.n_series}x · ${ex.carga_max}kg máx · ${ex.volume}kg</span>
-                    </li>
-                `).join('');
-                lista.style.display = 'block';
-            })
-            .catch(() => {
-                carregando.style.display = 'none';
-                vazio.textContent = 'Não foi possível carregar os exercícios.';
-                vazio.style.display = 'block';
-            });
-    }
     let modoEvolucao = 'semana';   // 'semana' | 'treino' (rodada completa A+B+C+D)
     let treinoEvolucao = 'todos';  // 'todos' ou id do treino individual
     let codigoTreinoEvolucao = null; // letra do treino quando filtrado (pra cor da barra)
@@ -1056,7 +940,6 @@
             .then(r => r.json())
             .then(data => {
                 if (evolucaoChart) evolucaoChart.destroy();
-                dadosEvolucaoAtual = data;
 
                 const canvas = document.getElementById('evolucaoChart');
                 const semDados = !data.semanas || data.semanas.length === 0 || data.volumes.every(v => v === 0);
@@ -1119,23 +1002,6 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
-                        // Clique numa barra abre o modal de detalhe daquele
-                        // treino naquele período. Usa intersect:true aqui
-                        // (ao contrário do hover acima) pra identificar
-                        // exatamente a barra clicada, não a mais próxima.
-                        onClick: function (event, _elementos, chart) {
-                            const achados = chart.getElementsAtEventForMode(
-                                event, 'nearest', { intersect: true, axis: 'xy' }, true
-                            );
-                            if (!achados.length) return;
-                            const { datasetIndex, index } = achados[0];
-                            const dataset = chart.data.datasets[datasetIndex];
-                            if (dataset.type !== 'bar' || !dataset.codigo) return;
-                            abrirModalDetalheTreino(dataset.codigo, index);
-                        },
-                        onHover: function (event, elementos) {
-                            event.native.target.style.cursor = elementos.length ? 'pointer' : 'default';
-                        },
                         plugins: {
                             legend: {
                                 position: 'bottom',
