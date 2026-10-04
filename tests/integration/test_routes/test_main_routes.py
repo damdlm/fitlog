@@ -40,6 +40,23 @@ class TestRaizPublicaEDashboard:
         assert resp.status_code == 200
         assert b'landing-hero' not in resp.data
 
+    def test_dashboard_nao_tem_mais_o_grafico_de_evolucao(self, client, app):
+        # O gráfico "Acompanhe sua evolução" foi movido para a página do
+        # calendário (ver templates/calendar/calendario.html). A página
+        # inicial não carrega mais nem o canvas nem a biblioteca Chart.js.
+        with app.app_context():
+            _criar_usuario('main_sem_grafico')
+        _login(client, 'main_sem_grafico')
+
+        html = client.get('/').get_data(as_text=True)
+
+        assert 'progressChart' not in html
+        assert 'chart.umd' not in html
+        assert 'Acompanhe sua evolução' not in html
+        # o resto do dashboard continua lá
+        assert 'Dicas de treino' in html
+        assert 'Acesso rápido' in html
+
     def test_landing_linka_contato_publico_mas_nao_o_chat_privado(self, client):
         # routes/contato_routes.py: '/contato/' (o chat) continua
         # @login_required, mas '/contato/publico' foi criado

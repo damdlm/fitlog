@@ -1263,6 +1263,191 @@
         background: rgba(255,255,255,0.08);
         color: #fff;
     }
+
+    /* ------------------------------------------------------------------
+       Gráfico "Acompanhe sua evolução" (movido da página inicial).
+       Fica logo abaixo do calendário, com a mesma largura máxima dele, e
+       acompanha o tema claro/escuro da página (variáveis --surface,
+       --text-primary etc. definidas em .calendar-page lá em cima).
+       As classes dash-* foram trazidas da página inicial como estavam;
+       o prefixo .calendar-page é necessário porque a regra
+       ".calendar-page .card" (transparente, sem borda) teria prioridade.
+       ------------------------------------------------------------------ */
+    .evolucao-wrap {
+        max-width: 1100px;
+        margin: 24px auto 0;
+    }
+
+    .calendar-page .dash-card {
+        border: 1px solid var(--border-subtle);
+        border-radius: 24px;
+        background: var(--surface);
+        box-shadow: var(--shadow-elev);
+        overflow: hidden;
+        transition: background-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .calendar-page .dash-card:hover {
+        box-shadow: var(--shadow-elev);
+    }
+
+    .calendar-page .dash-card-header {
+        background: transparent;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 1rem 1.25rem;
+    }
+
+    .calendar-page .dash-card-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        background: rgba(242, 140, 51, 0.12);
+        color: var(--primary-color);
+        font-size: 0.95rem;
+        margin-right: 8px;
+    }
+
+    .calendar-page .dash-filter-group {
+        display: flex;
+        gap: 4px;
+        background: var(--surface-alt);
+        padding: 4px;
+        border-radius: 999px;
+    }
+
+    .calendar-page .dash-filter-pill,
+    .calendar-page .dash-mode-pill {
+        border: none;
+        background: transparent;
+        color: var(--ink-soft);
+        font-weight: 600;
+        font-size: 0.82rem;
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        transition: all 0.15s ease;
+    }
+
+    .calendar-page .dash-filter-pill:hover,
+    .calendar-page .dash-mode-pill:hover {
+        color: var(--primary-color);
+        background: rgba(242, 140, 51, 0.08);
+    }
+
+    .calendar-page .dash-filter-pill.active,
+    .calendar-page .dash-mode-pill.active {
+        background: var(--gradient-primary);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(242, 140, 51, 0.35);
+    }
+
+    .calendar-page .dash-chart-toolbar {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        margin-top: 0.75rem;
+    }
+    .calendar-page .dash-chart-hint {
+        font-size: 0.78rem;
+        color: var(--ink-soft);
+        text-align: center;
+        margin: 0;
+    }
+
+    /* Altura controlada pelo container, não pelo atributo height do
+       <canvas>, para se ajustar bem em telas de celular. */
+    .calendar-page .dash-chart-wrap {
+        position: relative;
+        width: 100%;
+        height: 300px;
+    }
+    @media (max-width: 991.98px) {
+        .calendar-page .dash-chart-wrap {
+            height: 230px;
+        }
+    }
+    @media (max-width: 576px) {
+        .calendar-page .dash-chart-wrap {
+            height: 190px;
+        }
+        .calendar-page #chartCard {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+        .evolucao-wrap {
+            margin-top: 16px;
+        }
+    }
+
+    .calendar-page .dash-empty-state {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 2rem;
+        background: var(--surface);
+        z-index: 2;
+    }
+    .calendar-page .dash-empty-state-icon {
+        font-size: 2.5rem;
+        color: rgba(242, 140, 51, 0.35);
+        margin-bottom: 0.75rem;
+    }
+    .calendar-page .dash-empty-state p {
+        color: var(--ink-soft);
+        max-width: 280px;
+    }
+
+    .calendar-page .btn-treino-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--gradient-primary);
+        color: #fff !important;
+        font-weight: 600;
+        font-size: 0.88rem;
+        padding: 0.55rem 1.1rem;
+        border-radius: 999px;
+        box-shadow: 0 6px 16px rgba(242, 140, 51, 0.3);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .calendar-page .btn-treino-cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(242, 140, 51, 0.38);
+        color: #fff !important;
+    }
+
+    /* Tema escuro do calendário */
+    .calendar-page[data-theme="dark"] .dash-card-header h5 {
+        color: var(--text-primary);
+    }
+    .calendar-page[data-theme="dark"] .dash-filter-group {
+        background: var(--surface-raised);
+    }
+    .calendar-page[data-theme="dark"] .dash-filter-pill,
+    .calendar-page[data-theme="dark"] .dash-mode-pill,
+    .calendar-page[data-theme="dark"] .dash-chart-hint,
+    .calendar-page[data-theme="dark"] .dash-empty-state p {
+        color: var(--text-muted);
+    }
+    .calendar-page[data-theme="dark"] .dash-filter-pill:hover,
+    .calendar-page[data-theme="dark"] .dash-mode-pill:hover {
+        color: var(--primary-color);
+    }
+    .calendar-page[data-theme="dark"] .dash-filter-pill.active,
+    .calendar-page[data-theme="dark"] .dash-mode-pill.active {
+        color: #fff;
+    }
 </style>
 {% endblock %}
 
@@ -1343,6 +1528,50 @@
         <div id="calendar"></div>
     </div>
 </div>
+
+
+{# Gráfico "Acompanhe sua evolução" -- movido da página inicial para cá,
+   logo abaixo do calendário. Fica de fora quando um professor vê o
+   calendário de um aluno (/api/progresso devolve os dados de quem está
+   logado, não os do aluno) e para o admin (que também nunca viu o
+   gráfico na página inicial). #}
+{% if not aluno and not current_user.is_admin %}
+<div class="evolucao-wrap" id="evolucaoWrap">
+    <div class="card dash-card">
+        <div class="dash-card-header">
+            <h5 class="mb-0 d-flex align-items-center">
+                <span class="dash-card-icon"><i class="bi bi-graph-up"></i></span>
+                Acompanhe sua evolução
+            </h5>
+            <div class="dash-filter-group">
+                <button type="button" class="dash-filter-pill active" data-treino="todos" onclick="atualizarGrafico('todos', this)">Todos</button>
+                {% for t in treinos_grafico %}
+                <button type="button" class="dash-filter-pill" data-treino="{{ t.id }}" onclick="atualizarGrafico('{{ t.id }}', this)">{{ t.codigo }}</button>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="card-body position-relative" id="chartCard">
+            <div id="chartEmptyState" class="dash-empty-state d-none">
+                <i class="bi bi-graph-up dash-empty-state-icon"></i>
+                <p>Ainda não há treinos registrados para mostrar aqui.</p>
+                <a href="{{ url_for('register.registrar_treino') }}" class="nav-link btn-treino-cta">
+                    <i class="bi bi-plus-circle-fill"></i> Registrar primeiro treino
+                </a>
+            </div>
+            <div class="dash-chart-wrap">
+                <canvas id="progressChart"></canvas>
+            </div>
+            <div class="dash-chart-toolbar">
+                <div class="dash-filter-group" role="group" aria-label="Agrupar gráfico">
+                    <button type="button" class="dash-mode-pill active" data-modo="semana" onclick="trocarModoGrafico('semana', this)">Por semana</button>
+                    <button type="button" class="dash-mode-pill" data-modo="treino" onclick="trocarModoGrafico('treino', this)">Por treino</button>
+                </div>
+                <p class="dash-chart-hint" id="chartHint"></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Modal de Detalhes do Evento -->
 <div class="modal fade" id="eventoModal" tabindex="-1">
@@ -2319,6 +2548,299 @@
         });
     }
 </script>
+{% if not aluno and not current_user.is_admin %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<script>
+    // Fallback pro cdnjs (já liberado no CSP) se o jsdelivr falhar por
+    // qualquer motivo nesse dispositivo/rede (bloqueador, DNS, etc).
+    // document.write aqui é intencional: como essa tag NÃO é async/defer,
+    // o navegador já está bloqueado esperando esse <script> terminar antes
+    // de seguir pro resto da página -- document.write insere e executa o
+    // fallback na hora, de forma síncrona, então o código de baixo que usa
+    // "new Chart(...)" continua podendo contar com Chart já definido.
+    if (typeof Chart === 'undefined') {
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"><\/script>');
+    }
+</script>
+<script>
+    // ---------- Gráfico "Acompanhe sua evolução" ----------
+    // Movido da página inicial. Mesma lógica de antes (API /api/progresso,
+    // filtro por treino, modo semana/treino); a única diferença é que as
+    // cores seguem o tema claro/escuro do calendário.
+    let chart;
+    let modoGrafico = 'semana';   // 'semana' | 'treino' (rodada completa A+B+C+D)
+    let treinoGrafico = 'todos';  // 'todos' ou id do treino individual
+    let detalhesGrafico = [];     // volume por treino (A, B, C...) de cada ponto
+    let ultimosDadosGrafico = null; // última resposta da API (redesenhar ao trocar o tema sem refazer a requisição)
+    let temaRenderizado = null;     // tema ('light' | 'dark') com que o gráfico atual foi desenhado
+
+    const DICAS_MODO = {
+        semana: 'Volume (peso × repetições × séries) somado por semana, nos últimos 30 dias.',
+        treino: 'Cada ponto é uma rodada completa do treino (ex.: A+B+C+D). Treino não feito na rodada conta como 0.'
+    };
+
+    function temaAtualDaPagina() {
+        const pagina = document.getElementById('calendarPage');
+        return pagina && pagina.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    }
+
+    // Cores do gráfico por tema. O claro mantém exatamente as cores que o
+    // gráfico já tinha na página inicial.
+    function coresDoGrafico(tema) {
+        if (tema === 'dark') {
+            return {
+                texto: '#91919c',
+                grade: 'rgba(255, 255, 255, 0.07)',
+                linhaCarga: '#E5E5EA',
+                gradienteCarga: 'rgba(229, 229, 234, 0.22)',
+                bordaPonto: '#1a1a21',
+                tooltipFundo: '#0f0f14',
+                tooltipBorda: 'rgba(255, 255, 255, 0.12)',
+                tooltipBordaLargura: 1
+            };
+        }
+        return {
+            texto: '#666666',
+            grade: 'rgba(0, 0, 0, 0.05)',
+            linhaCarga: '#2D2D2D',
+            gradienteCarga: 'rgba(45, 45, 45, 0.22)',
+            bordaPonto: '#ffffff',
+            tooltipFundo: '#2D2D2D',
+            tooltipBorda: 'transparent',
+            tooltipBordaLargura: 0
+        };
+    }
+
+    function trocarModoGrafico(modo, botao) {
+        modoGrafico = modo;
+        document.querySelectorAll('.dash-mode-pill').forEach(b => b.classList.remove('active'));
+        if (botao) botao.classList.add('active');
+        atualizarGrafico(treinoGrafico, null);
+    }
+
+    // Esconde o tooltip ao clicar em qualquer outra parte da tela
+    // (necessário principalmente no toque em dispositivos móveis, onde
+    // o tooltip fica "preso" até um novo toque no gráfico).
+    document.addEventListener('click', function(evento) {
+        if (!chart) return;
+        const canvas = document.getElementById('progressChart');
+        if (canvas && !canvas.contains(evento.target)) {
+            chart.setActiveElements([]);
+            chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+            chart.update();
+        }
+    });
+
+    function renderizarGrafico(data) {
+        const vazio = !data.semanas || data.semanas.length === 0;
+        const emptyState = document.getElementById('chartEmptyState');
+        const canvas = document.getElementById('progressChart');
+
+        emptyState.classList.toggle('d-none', !vazio);
+        canvas.classList.toggle('d-none', vazio);
+
+        if (vazio) {
+            if (chart) chart.destroy();
+            chart = null;
+            return;
+        }
+
+        if (chart) chart.destroy();
+
+        temaRenderizado = temaAtualDaPagina();
+        const cores = coresDoGrafico(temaRenderizado);
+
+        const ctx = canvas.getContext('2d');
+        const alturaGrafico = canvas.clientHeight || 300;
+
+        const gradienteVolume = ctx.createLinearGradient(0, 0, 0, alturaGrafico);
+        gradienteVolume.addColorStop(0, 'rgba(242, 140, 51, 0.32)');
+        gradienteVolume.addColorStop(1, 'rgba(242, 140, 51, 0)');
+
+        const gradienteCarga = ctx.createLinearGradient(0, 0, 0, alturaGrafico);
+        gradienteCarga.addColorStop(0, cores.gradienteCarga);
+        gradienteCarga.addColorStop(1, 'rgba(45, 45, 45, 0)');
+
+        const isMobile = window.innerWidth < 576;
+        detalhesGrafico = data.detalhes || [];
+
+        chart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: data.semanas,
+                datasets: [{
+                    label: 'Volume Total (kg)',
+                    data: data.volumes,
+                    borderColor: '#F28C33',
+                    backgroundColor: gradienteVolume,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#F28C33',
+                    pointBorderColor: cores.bordaPonto,
+                    pointBorderWidth: 2,
+                    tension: 0.35,
+                    fill: true
+                }, {
+                    label: 'Carga Média (kg)',
+                    data: data.cargas_medias,
+                    borderColor: cores.linhaCarga,
+                    backgroundColor: gradienteCarga,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: cores.linhaCarga,
+                    pointBorderColor: cores.bordaPonto,
+                    pointBorderWidth: 2,
+                    tension: 0.35,
+                    fill: true,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: cores.texto }
+                    },
+                    tooltip: {
+                        backgroundColor: cores.tooltipFundo,
+                        borderColor: cores.tooltipBorda,
+                        borderWidth: cores.tooltipBordaLargura,
+                        padding: 10,
+                        cornerRadius: 10,
+                        callbacks: {
+                            title: function(items) {
+                                if (!items.length) return '';
+                                const i = items[0].dataIndex;
+                                return modoGrafico === 'treino'
+                                    ? `Rodada ${i + 1} · ${items[0].label}`
+                                    : `Semana ${items[0].label}`;
+                            },
+                            afterBody: function(items) {
+                                if (!items.length) return [];
+                                const det = detalhesGrafico[items[0].dataIndex] || [];
+                                return det.map(d => `${d.codigo}: ${Math.round(d.volume * 100) / 100} kg`);
+                            },
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) label += ': ';
+                                const valor = Math.round((context.raw + Number.EPSILON) * 1000) / 1000;
+                                label += valor + ' kg';
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: !isMobile,
+                            text: 'Volume (kg)',
+                            color: cores.texto
+                        },
+                        grid: {
+                            color: cores.grade
+                        },
+                        ticks: {
+                            color: cores.texto,
+                            font: { size: 11 },
+                            maxTicksLimit: isMobile ? 5 : 8
+                        }
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        title: {
+                            display: !isMobile,
+                            text: 'Carga Média (kg)',
+                            color: cores.texto
+                        },
+                        ticks: {
+                            color: cores.texto,
+                            font: { size: 11 },
+                            maxTicksLimit: isMobile ? 5 : 8
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            color: cores.texto,
+                            font: { size: 11 },
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: isMobile ? 6 : 10
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function atualizarGrafico(treinoId, botao) {
+        treinoGrafico = String(treinoId);
+        // Sem botão clicado (troca de modo): o filtro de treino já ativo continua.
+        if (botao) {
+            document.querySelectorAll('.dash-filter-pill').forEach(b => b.classList.remove('active'));
+            botao.classList.add('active');
+        }
+        const hint = document.getElementById('chartHint');
+        if (hint) hint.textContent = DICAS_MODO[modoGrafico] || '';
+
+        const params = new URLSearchParams({ modo: modoGrafico });
+        if (treinoGrafico !== 'todos') params.set('treino', treinoGrafico);
+        const url = `/api/progresso?${params.toString()}`;
+
+        fetch(url)
+            .then(r => {
+                // 403 = a tela "Estatísticas" está bloqueada para o plano do
+                // usuário (ver acesso_premium_required('estatisticas') em
+                // /api/progresso). Esconde o card em vez de mostrar um
+                // "Ainda não há treinos" que não seria verdade.
+                if (r.status === 403) {
+                    const wrap = document.getElementById('evolucaoWrap');
+                    if (wrap) wrap.classList.add('d-none');
+                    return null;
+                }
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(data => {
+                if (!data) return;
+                ultimosDadosGrafico = data;
+                renderizarGrafico(data);
+            })
+            .catch(error => {
+                console.error('Erro ao carregar gráfico:', error);
+                FitLogUtils.showToast('Erro ao carregar dados do gráfico', 'danger');
+            });
+    }
+
+    // Redesenha com as cores do novo tema quando o usuário alterna
+    // claro/escuro no calendário (sem refazer a requisição à API).
+    (function () {
+        const pagina = document.getElementById('calendarPage');
+        if (!pagina || typeof MutationObserver === 'undefined') return;
+        new MutationObserver(function () {
+            if (ultimosDadosGrafico && temaAtualDaPagina() !== temaRenderizado) {
+                renderizarGrafico(ultimosDadosGrafico);
+            }
+        }).observe(pagina, { attributes: true, attributeFilter: ['data-theme'] });
+    })();
+
+    // Carregar gráfico inicial
+    atualizarGrafico('todos');
+</script>
+{% endif %}
 <script src="{{ static_v('js/fitlog-share.js') }}"></script>
 
 {% endblock %}

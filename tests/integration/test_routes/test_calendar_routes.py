@@ -12,6 +12,15 @@ from models import (
 )
 
 
+def _hoje_local():
+    """Data de hoje no fuso do servidor -- a MESMA que utils.date_utils.
+    validar_data usa para rejeitar datas futuras (datetime.now().date()).
+    Com datetime.now(timezone.utc).date() os testes quebravam nas horas em
+    que o dia local ainda não virou mas o UTC já virou (ex.: 21h-24h em
+    Brasília): a data de "hoje" em UTC era "amanhã" para o servidor."""
+    return datetime.now().date()
+
+
 def _login(client, user):
     with client.session_transaction() as sess:
         sess['_user_id'] = str(user.id)
@@ -44,7 +53,7 @@ def _criar_treino(user, codigo='A'):
     # treinos diferentes no mesmo teste).
     numero_versao = VersaoGlobal.query.filter_by(user_id=user.id).count() + 1
     versao = VersaoGlobal(numero_versao=numero_versao, descricao=f'V{numero_versao}', divisao='ABC',
-                           data_inicio=datetime.now(timezone.utc).date(), user_id=user.id)
+                           data_inicio=_hoje_local(), user_id=user.id)
     db.session.add(versao)
     db.session.commit()
     treino = TreinoVersao(versao_id=versao.id, codigo=codigo, nome_treino=f'Treino {codigo}', descricao_treino='desc')
@@ -249,6 +258,55 @@ class TestCalendarioPagina:
         resp = client.get('/calendar/calendario', follow_redirects=False)
         assert resp.status_code in (302, 401)
 
+    def test_exibe_grafico_de_evolucao_abaixo_do_calendario(self, client, app):
+        """O gráfico "Acompanhe sua evolução" foi movido da página inicial
+        para cá, logo abaixo do calendário, com os filtros (A, B, C...)
+        dos treinos da versão ativa."""
+        with app.app_context():
+            u = _criar_usuario('cal_grafico_1')
+            treino, _ = _criar_treino(u, 'A')
+            user_id, treino_id = u.id, treino.id
+        _login(client, User.query.get(user_id))
+
+        html = client.get('/calendar/calendario').get_data(as_text=True)
+
+        assert 'Acompanhe sua evolução' in html
+        assert 'id="progressChart"' in html
+        assert html.index('id="calendar"') < html.index('id="progressChart"')
+        assert f'data-treino="{treino_id}"' in html
+
+    def test_admin_nao_ve_o_grafico_de_evolucao(self, client, app):
+        # Mesma regra da página inicial, onde o admin nunca viu o gráfico.
+        with app.app_context():
+            u = _criar_usuario('cal_grafico_admin')
+            u.is_admin = True
+            db.session.commit()
+            user_id = u.id
+        _login(client, User.query.get(user_id))
+
+        resp = client.get('/calendar/calendario')
+
+        assert resp.status_code == 200
+        assert 'id="progressChart"' not in resp.get_data(as_text=True)
+
+    def test_professor_vendo_calendario_do_aluno_nao_ve_o_grafico(self, client, app):
+        # /api/progresso devolve os dados de quem está logado (o professor),
+        # não os do aluno -- mostrar o gráfico ali seria enganoso.
+        with app.app_context():
+            professor = _criar_usuario('prof_cal_grafico', tipo='professor')
+            aluno = _criar_usuario('aluno_cal_grafico')
+            db.session.add(AlunoProfessor(aluno_id=aluno.id, professor_id=professor.id, ativo=True))
+            db.session.commit()
+            professor_id, aluno_id = professor.id, aluno.id
+        _login(client, User.query.get(professor_id))
+
+        resp = client.get(f'/professor/aluno/{aluno_id}/calendario')
+        html = resp.get_data(as_text=True)
+
+        assert resp.status_code == 200
+        assert 'id="calendar"' in html
+        assert 'id="progressChart"' not in html
+
 
 class TestApiEventoDetalhe:
 
@@ -400,7 +458,7 @@ class TestApiEventoDadosEdicao:
             user_id = u.id
         _login(client, User.query.get(user_id))
 
-        hoje = datetime.now(timezone.utc).date().isoformat()
+        hoje = _hoje_local().isoformat()
         resp = client.get(f'/calendar/api/evento/dados-edicao?data={hoje}&treino=999999')
         assert resp.status_code == 404
 
@@ -410,12 +468,12 @@ class TestApiEventoDadosEdicao:
             ex = _criar_exercicio(u)
             treino, versao = _criar_treino(u)
             self._criar_versao_exercicio(treino, ex)
-            hoje_meia_noite = datetime.combine(datetime.now(timezone.utc).date(), datetime.min.time())
+            hoje_meia_noite = datetime.combine(_hoje_local(), datetime.min.time())
             _criar_registro(u, treino, versao, ex, hoje_meia_noite, carga=75, repeticoes=6)
             user_id, treino_id = u.id, treino.id
         _login(client, User.query.get(user_id))
 
-        data_str = datetime.now(timezone.utc).date().isoformat()
+        data_str = _hoje_local().isoformat()
         resp = client.get(f'/calendar/api/evento/dados-edicao?data={data_str}&treino={treino_id}')
 
         assert resp.status_code == 200
@@ -435,7 +493,7 @@ class TestApiEventoDadosEdicao:
             user_id, treino_id = u.id, treino.id
         _login(client, User.query.get(user_id))
 
-        data_str = datetime.now(timezone.utc).date().isoformat()
+        data_str = _hoje_local().isoformat()
         resp = client.get(f'/calendar/api/evento/dados-edicao?data={data_str}&treino={treino_id}')
 
         assert resp.status_code == 200

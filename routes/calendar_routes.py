@@ -21,13 +21,20 @@ COR_TREINO = '#F28C33'
 def calendario():
     """Página do calendário de treinos"""
     treinos = TreinoService.get_all()
-    
+
+    # Treinos da versão ativa -- alimentam os filtros (A, B, C...) do
+    # gráfico "Acompanhe sua evolução", que antes ficava na página
+    # inicial. `treinos` acima traz todas as versões (inclusive as
+    # encerradas), o que não serve para filtrar o gráfico.
+    treinos_grafico = TreinoService.get_da_versao_ativa()
+
     # 👇 PASSAR A DATA ATUAL PARA O TEMPLATE
     data_atual = datetime.now(timezone.utc)
-    
+
     return render_template(
-        "calendar/calendario.html", 
+        "calendar/calendario.html",
         treinos=treinos,
+        treinos_grafico=treinos_grafico,
         data_atual=data_atual  # 👈 ADICIONADO
     )
 

@@ -50,25 +50,6 @@
         font-size: 1rem;
     }
 
-    .btn-treino-cta {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        background: var(--gradient-primary);
-        color: #fff !important;
-        font-weight: 600;
-        font-size: 0.88rem;
-        padding: 0.55rem 1.1rem;
-        border-radius: 999px;
-        box-shadow: 0 6px 16px rgba(242, 140, 51, 0.3);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .btn-treino-cta:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 22px rgba(242, 140, 51, 0.38);
-        color: #fff !important;
-    }
-
     .dash-card-icon {
         display: inline-flex;
         align-items: center;
@@ -102,100 +83,6 @@
         flex-wrap: wrap;
         gap: 10px;
         padding: 1rem 1.25rem;
-    }
-
-    .dash-filter-group {
-        display: flex;
-        gap: 4px;
-        background: var(--surface-alt);
-        padding: 4px;
-        border-radius: 999px;
-    }
-
-    .dash-filter-pill,
-    .dash-mode-pill {
-        border: none;
-        background: transparent;
-        color: var(--ink-soft);
-        font-weight: 600;
-        font-size: 0.82rem;
-        padding: 0.35rem 0.85rem;
-        border-radius: 999px;
-        transition: all 0.15s ease;
-    }
-
-    .dash-filter-pill:hover,
-    .dash-mode-pill:hover {
-        color: var(--primary-color);
-        background: rgba(242, 140, 51, 0.08);
-    }
-
-    .dash-filter-pill.active,
-    .dash-mode-pill.active {
-        background: var(--gradient-primary);
-        color: #fff;
-        box-shadow: 0 2px 8px rgba(242, 140, 51, 0.35);
-    }
-
-    .dash-chart-toolbar {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        margin-top: 0.75rem;
-    }
-    .dash-chart-hint {
-        font-size: 0.78rem;
-        color: var(--ink-soft);
-        text-align: center;
-        margin: 0;
-    }
-
-    /* Gráfico: altura controlada pelo container, não pelo atributo
-       height do <canvas>, para se ajustar bem em telas de celular e
-       deixar o card de Dicas de treino visível sem precisar rolar tanto. */
-    .dash-chart-wrap {
-        position: relative;
-        width: 100%;
-        height: 300px;
-    }
-    @media (max-width: 991.98px) {
-        .dash-chart-wrap {
-            height: 230px;
-        }
-    }
-    @media (max-width: 576px) {
-        .dash-chart-wrap {
-            height: 190px;
-        }
-        #chartCard {
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
-        }
-    }
-
-    .dash-empty-state {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        padding: 2rem;
-        background: #fff;
-        z-index: 2;
-    }
-
-    .dash-empty-state-icon {
-        font-size: 2.5rem;
-        color: rgba(242, 140, 51, 0.35);
-        margin-bottom: 0.75rem;
-    }
-
-    .dash-empty-state p {
-        color: var(--ink-soft);
-        max-width: 280px;
     }
 
     /* --- Estilo do slide de dicas (lateral) --- */
@@ -418,44 +305,8 @@
 </div>
 
 <div class="row g-4">
-    <div class="col-lg-8">
-        <div class="card dash-card">
-            <div class="dash-card-header">
-                <h5 class="mb-0 d-flex align-items-center">
-                    <span class="dash-card-icon"><i class="bi bi-graph-up"></i></span>
-                    Acompanhe sua evolução
-                </h5>
-                <div class="dash-filter-group">
-                    <button type="button" class="dash-filter-pill active" data-treino="todos" onclick="atualizarGrafico('todos', this)">Todos</button>
-                    {% for t in treinos %}
-                    <button type="button" class="dash-filter-pill" data-treino="{{ t.id }}" onclick="atualizarGrafico('{{ t.id }}', this)">{{ t.codigo }}</button>
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="card-body position-relative" id="chartCard">
-                <div id="chartEmptyState" class="dash-empty-state d-none">
-                    <i class="bi bi-graph-up dash-empty-state-icon"></i>
-                    <p>Ainda não há treinos registrados para mostrar aqui.</p>
-                    <a href="{{ url_for('register.registrar_treino') }}" class="nav-link btn-treino-cta">
-                        <i class="bi bi-plus-circle-fill"></i> Registrar primeiro treino
-                    </a>
-                </div>
-                <div class="dash-chart-wrap">
-                    <canvas id="progressChart"></canvas>
-                </div>
-                <div class="dash-chart-toolbar">
-                    <div class="dash-filter-group" role="group" aria-label="Agrupar gráfico">
-                        <button type="button" class="dash-mode-pill active" data-modo="semana" onclick="trocarModoGrafico('semana', this)">Por semana</button>
-                        <button type="button" class="dash-mode-pill" data-modo="treino" onclick="trocarModoGrafico('treino', this)">Por treino</button>
-                    </div>
-                    <p class="dash-chart-hint" id="chartHint"></p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-4">
-        <div class="card dash-card">
+    <div class="col-md-6">
+        <div class="card dash-card h-100">
             <div class="dash-card-header">
                 <h5 class="mb-0 d-flex align-items-center">
                     <span class="dash-card-icon"><i class="bi bi-lightbulb"></i></span>
@@ -478,9 +329,11 @@
                 </div>
             </div>
         </div>
+    </div>
 
+    <div class="col-md-6">
         <!-- Acesso Rápido -->
-        <div class="card dash-card mt-4">
+        <div class="card dash-card h-100">
             <div class="dash-card-header">
                 <h5 class="mb-0 d-flex align-items-center">
                     <span class="dash-card-icon"><i class="bi bi-lightning-charge"></i></span>
@@ -706,19 +559,6 @@
 
 {% block scripts %}
 {% if not current_user.is_admin %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
-<script>
-    // Fallback pro cdnjs (já liberado no CSP) se o jsdelivr falhar por
-    // qualquer motivo nesse dispositivo/rede (bloqueador, DNS, etc).
-    // document.write aqui é intencional: como essa tag NÃO é async/defer,
-    // o navegador já está bloqueado esperando esse <script> terminar antes
-    // de seguir pro resto da página -- document.write insere e executa o
-    // fallback na hora, de forma síncrona, então o código de baixo que usa
-    // "new Chart(...)" continua podendo contar com Chart já definido.
-    if (typeof Chart === 'undefined') {
-        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"><\/script>');
-    }
-</script>
 <script>
     // ---------- Dicas em slide lateral (aleatório) ----------
     const dicas = [
@@ -817,202 +657,6 @@
 
     // Troca a cada 5 segundos
     setInterval(proximaDica, 7000);
-
-    // ---------- Gráfico (mantido) ----------
-    let chart;
-    let modoGrafico = 'semana';   // 'semana' | 'treino' (rodada completa A+B+C+D)
-    let treinoGrafico = 'todos';  // 'todos' ou id do treino individual
-    let detalhesGrafico = [];     // volume por treino (A, B, C...) de cada ponto
-
-    const DICAS_MODO = {
-        semana: 'Volume (peso × repetições × séries) somado por semana, nos últimos 30 dias.',
-        treino: 'Cada ponto é uma rodada completa do treino (ex.: A+B+C+D). Treino não feito na rodada conta como 0.'
-    };
-
-    function trocarModoGrafico(modo, botao) {
-        modoGrafico = modo;
-        document.querySelectorAll('.dash-mode-pill').forEach(b => b.classList.remove('active'));
-        if (botao) botao.classList.add('active');
-        atualizarGrafico(treinoGrafico, null);
-    }
-
-    // Esconde o tooltip ao clicar em qualquer outra parte da tela
-    // (necessário principalmente no toque em dispositivos móveis, onde
-    // o tooltip fica "preso" até um novo toque no gráfico).
-    document.addEventListener('click', function(evento) {
-        if (!chart) return;
-        const canvas = document.getElementById('progressChart');
-        if (canvas && !canvas.contains(evento.target)) {
-            chart.setActiveElements([]);
-            chart.tooltip.setActiveElements([], { x: 0, y: 0 });
-            chart.update();
-        }
-    });
-
-    function atualizarGrafico(treinoId, botao) {
-        treinoGrafico = String(treinoId);
-        // Sem botão clicado (troca de modo): o filtro de treino já ativo continua.
-        if (botao) {
-            document.querySelectorAll('.dash-filter-pill').forEach(b => b.classList.remove('active'));
-            botao.classList.add('active');
-        }
-        const hint = document.getElementById('chartHint');
-        if (hint) hint.textContent = DICAS_MODO[modoGrafico] || '';
-
-        const params = new URLSearchParams({ modo: modoGrafico });
-        if (treinoGrafico !== 'todos') params.set('treino', treinoGrafico);
-        const url = `/api/progresso?${params.toString()}`;
-
-        fetch(url)
-            .then(r => r.json())
-            .then(data => {
-                const vazio = !data.semanas || data.semanas.length === 0;
-                const emptyState = document.getElementById('chartEmptyState');
-                const canvas = document.getElementById('progressChart');
-
-                emptyState.classList.toggle('d-none', !vazio);
-                canvas.classList.toggle('d-none', vazio);
-
-                if (vazio) {
-                    if (chart) chart.destroy();
-                    return;
-                }
-
-                if (chart) chart.destroy();
-
-                const ctx = canvas.getContext('2d');
-                const alturaGrafico = canvas.clientHeight || 300;
-
-                const gradienteVolume = ctx.createLinearGradient(0, 0, 0, alturaGrafico);
-                gradienteVolume.addColorStop(0, 'rgba(242, 140, 51, 0.32)');
-                gradienteVolume.addColorStop(1, 'rgba(242, 140, 51, 0)');
-
-                const gradienteCarga = ctx.createLinearGradient(0, 0, 0, alturaGrafico);
-                gradienteCarga.addColorStop(0, 'rgba(45, 45, 45, 0.22)');
-                gradienteCarga.addColorStop(1, 'rgba(45, 45, 45, 0)');
-
-                const isMobile = window.innerWidth < 576;
-                detalhesGrafico = data.detalhes || [];
-
-                chart = new Chart(canvas, {
-                    type: 'line',
-                    data: {
-                        labels: data.semanas,
-                        datasets: [{
-                            label: 'Volume Total (kg)',
-                            data: data.volumes,
-                            borderColor: '#F28C33',
-                            backgroundColor: gradienteVolume,
-                            borderWidth: 3,
-                            pointRadius: 4,
-                            pointHoverRadius: 7,
-                            pointBackgroundColor: '#F28C33',
-                            pointBorderColor: '#ffffff',
-                            pointBorderWidth: 2,
-                            tension: 0.35,
-                            fill: true
-                        }, {
-                            label: 'Carga Média (kg)',
-                            data: data.cargas_medias,
-                            borderColor: '#2D2D2D',
-                            backgroundColor: gradienteCarga,
-                            borderWidth: 3,
-                            pointRadius: 4,
-                            pointHoverRadius: 7,
-                            pointBackgroundColor: '#2D2D2D',
-                            pointBorderColor: '#ffffff',
-                            pointBorderWidth: 2,
-                            tension: 0.35,
-                            fill: true,
-                            yAxisID: 'y1'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
-                        plugins: {
-                            tooltip: {
-                                backgroundColor: '#2D2D2D',
-                                padding: 10,
-                                cornerRadius: 10,
-                                callbacks: {
-                                    title: function(items) {
-                                        if (!items.length) return '';
-                                        const i = items[0].dataIndex;
-                                        return modoGrafico === 'treino'
-                                            ? `Rodada ${i + 1} · ${items[0].label}`
-                                            : `Semana ${items[0].label}`;
-                                    },
-                                    afterBody: function(items) {
-                                        if (!items.length) return [];
-                                        const det = detalhesGrafico[items[0].dataIndex] || [];
-                                        return det.map(d => `${d.codigo}: ${Math.round(d.volume * 100) / 100} kg`);
-                                    },
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) label += ': ';
-                                        const valor = Math.round((context.raw + Number.EPSILON) * 1000) / 1000;
-                                        label += valor + ' kg';
-                                        return label;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: !isMobile,
-                                    text: 'Volume (kg)'
-                                },
-                                grid: {
-                                    color: 'rgba(0, 0, 0, 0.05)'
-                                },
-                                ticks: {
-                                    font: { size: 11 },
-                                    maxTicksLimit: isMobile ? 5 : 8
-                                }
-                            },
-                            y1: {
-                                beginAtZero: true,
-                                position: 'right',
-                                grid: {
-                                    drawOnChartArea: false
-                                },
-                                title: {
-                                    display: !isMobile,
-                                    text: 'Carga Média (kg)'
-                                },
-                                ticks: {
-                                    font: { size: 11 },
-                                    maxTicksLimit: isMobile ? 5 : 8
-                                }
-                            },
-                            x: {
-                                grid: { display: false },
-                                ticks: {
-                                    font: { size: 11 },
-                                    maxRotation: 0,
-                                    autoSkip: true,
-                                    maxTicksLimit: isMobile ? 6 : 10
-                                }
-                            }
-                        }
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('Erro ao carregar gráfico:', error);
-                FitLogUtils.showToast('Erro ao carregar dados do gráfico', 'danger');
-            });
-    }
-
-    // Carregar gráfico inicial
-    atualizarGrafico('todos');
 </script>
 {% endif %}
 {% endblock %}
