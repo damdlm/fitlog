@@ -998,9 +998,31 @@
                             }
                         ]
                     },
+                    // Rótulos dos eixos escritos NA HORIZONTAL, acima dos valores
+                    // (o título nativo do Chart.js gira 90° e fica ao lado dos
+                    // números). Esquerda = volume (barras), direita = carga média
+                    // (linha). O espaço no topo vem do layout.padding.top abaixo.
+                    plugins: [{
+                        id: 'rotulosEixos',
+                        afterDraw: function (chart) {
+                            const ctx = chart.ctx;
+                            ctx.save();
+                            ctx.font = `11px ${Chart.defaults.font.family}`;
+                            ctx.fillStyle = '#8a8a8a';
+                            ctx.textBaseline = 'top';
+                            ctx.textAlign = 'left';
+                            ctx.fillText('Volume', 0, 0);
+                            ctx.fillText('Total (kg)', 0, 13);
+                            ctx.textAlign = 'right';
+                            ctx.fillText('Carga', chart.width, 0);
+                            ctx.fillText('Média (kg)', chart.width, 13);
+                            ctx.restore();
+                        }
+                    }],
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        layout: { padding: { top: 34 } },
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
                             legend: {
@@ -1037,9 +1059,7 @@
                             },
                             y: {
                                 beginAtZero: true,
-                                // Sem título no eixo -- a legenda embaixo já
-                                // diz o que cada cor/linha representa, e o
-                                // título repetia a mesma informação.
+                                // Rótulo do eixo: plugin 'rotulosEixos' acima.
                                 grid: { color: 'rgba(0,0,0,0.05)' },
                                 ticks: {
                                     color: '#8a8a8a',
