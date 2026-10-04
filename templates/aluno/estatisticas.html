@@ -894,6 +894,17 @@
     }
 
     let evolucaoChart;
+
+    // Tocar/clicar fora do gráfico fecha o tooltip. O Chart.js só escuta
+    // eventos do próprio canvas, então no celular o tooltip ficava preso
+    // na tela depois do toque. Um único listener no documento (não um por
+    // gráfico criado).
+    document.addEventListener('pointerdown', function (e) {
+        if (!evolucaoChart || e.target === evolucaoChart.canvas) return;
+        evolucaoChart.setActiveElements([]);
+        evolucaoChart.tooltip.setActiveElements([], { x: 0, y: 0 });
+        evolucaoChart.update('none');
+    });
     let modoEvolucao = 'semana';   // 'semana' | 'treino' (rodada completa A+B+C+D)
     let treinoEvolucao = 'todos';  // 'todos' ou id do treino individual
     let codigoTreinoEvolucao = null; // letra do treino quando filtrado (pra cor da barra)
@@ -939,7 +950,7 @@
         fetch(`/api/progresso?${params.toString()}`)
             .then(r => r.json())
             .then(data => {
-                if (evolucaoChart) evolucaoChart.destroy();
+                if (evolucaoChart) { evolucaoChart.destroy(); evolucaoChart = null; }
 
                 const canvas = document.getElementById('evolucaoChart');
                 const semDados = !data.semanas || data.semanas.length === 0 || data.volumes.every(v => v === 0);
