@@ -63,33 +63,11 @@
         margin-right: 8px;
     }
 
-    .dash-card {
-        border: 1px solid rgba(45, 45, 45, 0.06);
-        border-radius: 16px;
-        box-shadow: 0 10px 30px rgba(45, 45, 45, 0.05);
-        overflow: hidden;
-        transition: box-shadow 0.25s ease;
-    }
-    .dash-card:hover {
-        box-shadow: 0 14px 36px rgba(45, 45, 45, 0.08);
-    }
-
-    .dash-card-header {
-        background: #fff;
-        border-bottom: 1px solid rgba(45, 45, 45, 0.06);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 10px;
-        padding: 1rem 1.25rem;
-    }
-
     /* --- Estilo do slide de dicas (lateral) --- */
     .dash-tip-slide {
         overflow: hidden;
         position: relative;
-        min-height: 60px;
+        min-height: 40px;
     }
 
     .tip-wrapper {
@@ -102,8 +80,9 @@
         width: 50%;
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 12px;
-        padding: 0.5rem 0;
+        padding: 0.15rem 0;
     }
 
     .item-icon {
@@ -122,6 +101,49 @@
     .tip-text {
         color: var(--ink);
         font-size: 1rem;
+    }
+
+    /* --- Página inicial (aluno/professor): átomo no centro, dicas no rodapé ---
+       O palco ocupa a altura da janela (menos navbar/margens); o átomo
+       (.admin-hero, agora usado por todos os usuários) cresce e se centraliza
+       no espaço livre, e as dicas ficam coladas no fim. No mobile desconta
+       também a barra de navegação fixa de baixo. */
+    .home-stage {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        z-index: 1;
+        min-height: calc(100vh - 120px);
+        min-height: calc(100dvh - 120px);
+    }
+    @media (max-width: 991.98px) {
+        .home-stage {
+            min-height: calc(100vh - 195px);
+            min-height: calc(100dvh - 195px);
+        }
+    }
+    .home-stage .admin-hero {
+        flex: 1 1 auto;
+        min-height: 36vh;
+    }
+
+    /* Dicas: sem card nem fundo -- só ícone + título e a frase logo abaixo. */
+    .home-tips {
+        margin-top: auto;
+        padding-top: 1rem;
+        text-align: center;
+        background: transparent;
+    }
+    .home-tips-title {
+        display: inline-flex;
+        align-items: center;
+        margin: 0 0 0.1rem;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--ink);
+    }
+    .home-tips-title .dash-card-icon {
+        margin-right: 8px;
     }
 
     /* --- Marca d'água --- */
@@ -279,7 +301,22 @@
 <!-- Marca d'água -->
 <div class="watermark"></div>
 
-{% if current_user.is_admin %}
+{# O átomo com os dots (antes só do admin) agora aparece para todos. Só quem
+   não é admin vê o título "Train · Log · Analyze" acima e as Dicas de treino
+   no rodapé; o admin continua com a tela só do átomo. #}
+<div{% if not current_user.is_admin %} class="home-stage"{% endif %}>
+{% if not current_user.is_admin %}
+<div class="dash-hero mb-4 d-none d-md-flex">
+    <div>
+        <div class="dash-eyebrow">Workout Journal</div>
+        <h2 class="dash-title">
+            <span class="dash-title-icon"><i class="bi bi-bar-chart-fill"></i></span>
+             Train · Log · Analyze
+        </h2>
+    </div>
+</div>
+{% endif %}
+
 <div class="admin-hero">
     <div class="admin-hero-atom-parallax" id="adminHeroAtomParallax">
         <div class="admin-hero-atom" aria-hidden="true">
@@ -292,47 +329,29 @@
  <!--   <h2>Painel administrativo</h2>
     <p>Use o menu para acessar Contas e Cobrança, Financeiro e Monitoramento.</p> -->
 </div>
-{% else %}
 
-<div class="dash-hero mb-4 d-none d-md-flex">
-    <div>
-        <div class="dash-eyebrow">Workout Journal</div>
-        <h2 class="dash-title">
-            <span class="dash-title-icon"><i class="bi bi-bar-chart-fill"></i></span>
-             Train · Log · Analyze
-        </h2>
-    </div>
-</div>
-
-<div class="row g-4">
-    <div class="col-12">
-        <div class="card dash-card">
-            <div class="dash-card-header">
-                <h5 class="mb-0 d-flex align-items-center">
-                    <span class="dash-card-icon"><i class="bi bi-lightbulb"></i></span>
-                    Dicas de treino
-                </h5>
+{% if not current_user.is_admin %}
+<section class="home-tips" aria-label="Dicas de treino">
+    <h5 class="home-tips-title">
+        <span class="dash-card-icon"><i class="bi bi-lightbulb"></i></span>
+        Dicas de treino
+    </h5>
+    <!-- Slide de dicas com efeito lateral -->
+    <div class="dash-tip-slide" id="tipSlide">
+        <div class="tip-wrapper" id="tipWrapper">
+            <div class="tip-slide-item">
+                <span class="item-icon"><i class="bi bi-check-lg"></i></span>
+                <span class="tip-text" id="tipText1">Carregando...</span>
             </div>
-            <div class="card-body py-2">
-                <!-- Slide de dicas com efeito lateral -->
-                <div class="dash-tip-slide" id="tipSlide">
-                    <div class="tip-wrapper" id="tipWrapper">
-                        <div class="tip-slide-item">
-                            <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                            <span class="tip-text" id="tipText1">Carregando...</span>
-                        </div>
-                        <div class="tip-slide-item">
-                            <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                            <span class="tip-text" id="tipText2">Carregando...</span>
-                        </div>
-                    </div>
-                </div>
+            <div class="tip-slide-item">
+                <span class="item-icon"><i class="bi bi-check-lg"></i></span>
+                <span class="tip-text" id="tipText2">Carregando...</span>
             </div>
         </div>
     </div>
-</div>
-
+</section>
 {% endif %}
+</div>
 
 <script>
 (function () {

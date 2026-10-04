@@ -61,6 +61,48 @@ class TestRaizPublicaEDashboard:
         # o resto do dashboard continua lá
         assert 'Dicas de treino' in html
 
+    def test_dashboard_mostra_animacao_dos_dots_para_todos_os_usuarios(self, client, app):
+        # O átomo com os dots (parallax) era só do admin; agora aparece
+        # para aluno/professor também.
+        with app.app_context():
+            _criar_usuario('main_dots_aluno')
+        _login(client, 'main_dots_aluno')
+
+        html = client.get('/').get_data(as_text=True)
+
+        assert 'id="adminHeroAtomParallax"' in html
+        assert html.count('class="admin-hero-dot"') == 4
+
+    def test_dicas_de_treino_ficam_no_rodape_sem_card(self, client, app):
+        # Dicas de treino viraram uma faixa de rodapé (sem card/fundo),
+        # abaixo do átomo, com a frase logo abaixo do título.
+        with app.app_context():
+            _criar_usuario('main_dicas_rodape')
+        _login(client, 'main_dicas_rodape')
+
+        html = client.get('/').get_data(as_text=True)
+
+        assert 'class="home-tips"' in html
+        assert 'class="card dash-card"' not in html
+        # rodapé = depois do átomo no HTML
+        assert html.index('id="adminHeroAtomParallax"') < html.index('class="home-tips"')
+        # título e frase dentro da mesma faixa, título primeiro
+        faixa = html[html.index('class="home-tips"'):]
+        assert faixa.index('Dicas de treino') < faixa.index('id="tipText1"')
+
+    def test_admin_continua_so_com_o_atomo_sem_dicas(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('main_dots_admin')
+            u.is_admin = True
+            db.session.commit()
+        _login(client, 'main_dots_admin')
+
+        html = client.get('/').get_data(as_text=True)
+
+        assert 'id="adminHeroAtomParallax"' in html
+        assert 'class="home-tips"' not in html
+        assert 'class="home-stage"' not in html
+
     def test_landing_linka_contato_publico_mas_nao_o_chat_privado(self, client):
         # routes/contato_routes.py: '/contato/' (o chat) continua
         # @login_required, mas '/contato/publico' foi criado
