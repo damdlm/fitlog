@@ -249,7 +249,22 @@
     function resetarReferenciaDeFrame() {
         ultimoFrame = performance.now();
     }
-    document.addEventListener('visibilitychange', resetarReferenciaDeFrame);
+
+    // CORREÇÃO (falso positivo de "UI travada"): resetar a referência só
+    // no evento de VOLTA dependia da ordem entre esse evento e o
+    // primeiro frame retomado -- no iPhone o frame chegava antes, o gap
+    // (= tempo que o app ficou em segundo plano, ex: 50s trocando de app
+    // ou descansando entre séries) virava "UI travada por 50519ms" e o
+    // relato já era enviado na hora. Agora o evento de SAÍDA (que sempre
+    // dispara ANTES de o app ser suspenso) só levanta esta bandeira; o
+    // primeiro frame depois dela descarta o gap em vez de medi-lo, não
+    // importa em que ordem os eventos de volta cheguem.
+    var ficouOculta = false;
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) ficouOculta = true;
+        resetarReferenciaDeFrame();
+    });
+    window.addEventListener('pagehide', function () { ficouOculta = true; });
     window.addEventListener('pageshow', resetarReferenciaDeFrame);
 
     // Mesmo com os resets acima, a ORDEM entre esses eventos e o
@@ -280,6 +295,13 @@
     function tick(agora) {
         var gap = agora - ultimoFrame;
         ultimoFrame = agora;
+
+        if (ficouOculta) {
+            // Primeiro frame depois de ter ficado em segundo plano: o gap
+            // é o tempo fora do app, não travamento -- descarta.
+            ficouOculta = false;
+            gap = 0;
+        }
 
         if (!document.hidden && gap > FREEZE_REPORT_MS) {
             var mensagem = 'UI travada por ' + Math.round(gap) + 'ms';
