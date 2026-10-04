@@ -913,8 +913,8 @@
     });
 
     const DICAS_MODO_EVOLUCAO = {
-        semana: 'Volume (peso × repetições × séries) somado por semana, nos últimos 30 dias.',
-        treino: 'Cada ponto é uma rodada completa do treino (ex.: A+B+C+D). Treino não feito na rodada conta como 0.'
+        semana: 'Barras: carga média de cada treino. Linha: volume total (peso × repetições × séries), somado por semana, nos últimos 30 dias.',
+        treino: 'Barras: carga média de cada treino. Linha: volume total. Cada ponto é uma rodada completa do treino (ex.: A+B+C+D); treino não feito na rodada conta como 0.'
     };
 
     function trocarModoEvolucao(modo, botao) {
@@ -949,8 +949,10 @@
 
                 const isMobile = window.innerWidth < 576;
 
+                // Barras = carga média; linha preta = volume total.
                 // "Todos": uma barra por treino (A, B, C...), lado a lado em
-                // cada ponto -- vem pronto em data.detalhes. Um treino
+                // cada ponto -- a carga média de cada um vem de
+                // data.sessoes_por_treino (mesma ordem dos pontos). Um treino
                 // específico filtrado: uma única barra, na cor dele.
                 let datasetsBarras;
                 if (treinoEvolucao === 'todos' && data.detalhes && data.detalhes.length && data.detalhes[0].length) {
@@ -959,7 +961,7 @@
                         type: 'bar',
                         label: `Treino ${letra}`,
                         codigo: letra,
-                        data: data.detalhes.map(ponto => (ponto.find(d => d.codigo === letra) || {}).volume || 0),
+                        data: (data.sessoes_por_treino || []).map(spt => ((spt || {})[letra] || {}).carga_media || 0),
                         backgroundColor: corDoTreino(letra, i),
                         borderRadius: 4,
                         maxBarThickness: 28,
@@ -968,9 +970,9 @@
                 } else {
                     datasetsBarras = [{
                         type: 'bar',
-                        label: codigoTreino ? `Treino ${codigoTreino}` : 'Volume Total (kg)',
+                        label: codigoTreino ? `Treino ${codigoTreino}` : 'Carga Média (kg)',
                         codigo: codigoTreino,
-                        data: data.volumes,
+                        data: data.cargas_medias,
                         backgroundColor: codigoTreino ? corDoTreino(codigoTreino, 0) : '#F28C33',
                         borderRadius: 4,
                         maxBarThickness: 36,
@@ -986,8 +988,8 @@
                             ...datasetsBarras,
                             {
                                 type: 'line',
-                                label: 'Carga Média (kg)',
-                                data: data.cargas_medias,
+                                label: 'Volume Total (kg)',
+                                data: data.volumes,
                                 borderColor: '#1a1a1a',
                                 backgroundColor: '#1a1a1a',
                                 borderWidth: 2,
@@ -1000,8 +1002,8 @@
                     },
                     // Rótulos dos eixos escritos NA HORIZONTAL, acima dos valores
                     // (o título nativo do Chart.js gira 90° e fica ao lado dos
-                    // números). Esquerda = volume (barras), direita = carga média
-                    // (linha). O espaço no topo vem do layout.padding.top abaixo.
+                    // números). Esquerda = carga média (barras), direita = volume
+                    // total (linha). O espaço no topo vem do layout.padding.top abaixo.
                     plugins: [{
                         id: 'rotulosEixos',
                         afterDraw: function (chart) {
@@ -1011,11 +1013,11 @@
                             ctx.fillStyle = '#8a8a8a';
                             ctx.textBaseline = 'top';
                             ctx.textAlign = 'left';
-                            ctx.fillText('Volume', 0, 0);
-                            ctx.fillText('Total (kg)', 0, 13);
+                            ctx.fillText('Carga', 0, 0);
+                            ctx.fillText('Média (kg)', 0, 13);
                             ctx.textAlign = 'right';
-                            ctx.fillText('Carga', chart.width, 0);
-                            ctx.fillText('Média (kg)', chart.width, 13);
+                            ctx.fillText('Volume', chart.width, 0);
+                            ctx.fillText('Total (kg)', chart.width, 13);
                             ctx.restore();
                         }
                     }],
@@ -1035,8 +1037,12 @@
                                 cornerRadius: 8,
                                 callbacks: {
                                     label: function (context) {
-                                        const sufixo = context.dataset.yAxisID === 'y1' ? ' kg (carga média)' : ' kg';
-                                        return `${context.dataset.label}: ${context.formattedValue}${sufixo}`;
+                                        // Séries com "(kg)" no nome (Volume Total, Carga
+                                        // Média) já dizem a unidade; as barras "Treino X"
+                                        // são sempre carga média.
+                                        const rotulo = context.dataset.label;
+                                        const sufixo = /\(kg\)$/.test(rotulo) ? '' : ' kg (carga média)';
+                                        return `${rotulo}: ${context.formattedValue}${sufixo}`;
                                     }
                                 }
                             }
