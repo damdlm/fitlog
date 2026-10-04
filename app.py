@@ -586,6 +586,9 @@ def create_app(config_class=None):
         formatar_data_para_input,
     )
 
+    from utils.format_utils import formatar_datahora_br
+    app.add_template_filter(formatar_datahora_br, 'datahora_br')
+
     @app.context_processor
     def utility_processor():
         from datetime import datetime

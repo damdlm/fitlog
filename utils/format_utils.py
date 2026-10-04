@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 FUSO_BRASIL = ZoneInfo("America/Sao_Paulo")
@@ -12,6 +12,20 @@ def _agora_brasil():
     real do usuário no Brasil (ex: 21h-23h59 em BR já é o dia seguinte em UTC).
     """
     return datetime.now(FUSO_BRASIL)
+
+
+def formatar_datahora_br(valor, formato='%d/%m/%Y %H:%M'):
+    """Formata um datetime guardado em UTC no horário de Brasília.
+
+    O banco e o servidor trabalham em UTC (ver `_agora_brasil`), então
+    imprimir `valor.strftime(...)` direto mostrava 3h a mais na tela.
+    Datetime sem fuso (naive) é tratado como UTC. Retorna '—' se vazio.
+    """
+    if not valor:
+        return '\u2014'
+    if valor.tzinfo is None:
+        valor = valor.replace(tzinfo=timezone.utc)
+    return valor.astimezone(FUSO_BRASIL).strftime(formato)
 
 
 def formatar_data(data_str):

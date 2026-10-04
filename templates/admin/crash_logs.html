@@ -90,8 +90,8 @@
                     {% for log in logs %}
                     <tr class="crash-toggle-btn" data-crash-toggle="detalhes-{{ log.id }}">
                         <td style="white-space: nowrap;">
-                            <span class="d-none d-lg-inline">{{ log.criado_em.strftime('%d/%m/%Y %H:%M') if log.criado_em else '—' }}</span>
-                            <span class="d-lg-none">{{ log.criado_em.strftime('%d/%m %H:%M') if log.criado_em else '—' }}</span>
+                            <span class="d-none d-lg-inline">{{ log.criado_em|datahora_br('%d/%m/%Y %H:%M') }}</span>
+                            <span class="d-lg-none">{{ log.criado_em|datahora_br('%d/%m %H:%M') }}</span>
                         </td>
                         <td>
                             {% if log.origem == 'frontend' %}
