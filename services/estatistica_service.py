@@ -137,12 +137,18 @@ class EstatisticaService(BaseService):
             return {}
 
     @staticmethod
-    def calcular_kpis_periodo(user_id=None, dias=30):
+    def calcular_kpis_periodo(user_id=None, dias=30, data_inicio=None, data_fim=None, todo_periodo=False):
         """
         KPIs do período com comparação ao período imediatamente anterior de
         mesmo tamanho (ex: últimos 30 dias vs. os 30 dias antes deles) --
         o padrão de "trend" usado por dashboards de treino sérios (Strava,
         Hevy Pro) em vez de só mostrar o número absoluto isolado.
+
+        O período pode ser dado de três formas:
+        - `dias=N` (padrão, últimos N dias corridos);
+        - `data_inicio` + `data_fim` (intervalo fechado, datetimes UTC);
+        - `todo_periodo=True` (histórico inteiro). Sem período anterior
+          para comparar, as variações voltam None.
         """
         try:
             user_id = user_id or BaseService.get_current_user_id()
@@ -150,50 +156,65 @@ class EstatisticaService(BaseService):
                 return None
 
             agora = datetime.now(timezone.utc)
-            inicio_atual = agora - timedelta(days=dias)
-            inicio_anterior = agora - timedelta(days=dias * 2)
+            if todo_periodo:
+                inicio_atual, fim_atual = None, agora
+                inicio_anterior = None
+            elif data_inicio and data_fim:
+                inicio_atual = data_inicio
+                # data_fim vem como "fim do dia" (23:59:59); o filtro é
+                # exclusivo no fim, então soma 1s pra incluir o último dia.
+                fim_atual = data_fim + timedelta(seconds=1)
+                inicio_anterior = inicio_atual - (fim_atual - inicio_atual)
+            else:
+                inicio_atual, fim_atual = agora - timedelta(days=dias), agora
+                inicio_anterior = agora - timedelta(days=dias * 2)
 
             def agregados(inicio, fim):
+                filtros = [
+                    RegistroTreino.user_id == user_id,
+                    RegistroTreino.data_registro < fim
+                ]
+                if inicio is not None:
+                    filtros.append(RegistroTreino.data_registro >= inicio)
                 row = db.session.query(
                     db.func.count(db.distinct(RegistroTreino.id)).label('treinos'),
                     db.func.count(HistoricoTreino.id).label('series'),
                     db.func.coalesce(db.func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume')
                 ).select_from(RegistroTreino)\
                  .outerjoin(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
-                 .filter(
-                     RegistroTreino.user_id == user_id,
-                     RegistroTreino.data_registro >= inicio,
-                     RegistroTreino.data_registro < fim
-                 ).first()
+                 .filter(*filtros).first()
                 return {
                     'treinos': row.treinos or 0,
                     'series': row.series or 0,
                     'volume': float(row.volume or 0)
                 }
 
-            atual = agregados(inicio_atual, agora)
-            anterior = agregados(inicio_anterior, inicio_atual)
+            atual = agregados(inicio_atual, fim_atual)
+            anterior = None if todo_periodo else agregados(inicio_anterior, inicio_atual)
 
             def variacao_pct(novo, velho):
                 if velho == 0:
                     return None if novo == 0 else 100.0
                 return round(((novo - velho) / velho) * 100, 1)
 
+            def variacao(chave):
+                return None if anterior is None else variacao_pct(atual[chave], anterior[chave])
+
             return {
-                'dias': dias,
+                'dias': None if (todo_periodo or (data_inicio and data_fim)) else dias,
                 'volume_total': atual['volume'],
-                'volume_variacao': variacao_pct(atual['volume'], anterior['volume']),
+                'volume_variacao': variacao('volume'),
                 'treinos_realizados': atual['treinos'],
-                'treinos_variacao': variacao_pct(atual['treinos'], anterior['treinos']),
+                'treinos_variacao': variacao('treinos'),
                 'total_series': atual['series'],
-                'series_variacao': variacao_pct(atual['series'], anterior['series']),
+                'series_variacao': variacao('series'),
             }
         except Exception as e:
             BaseService.handle_error(e, "Erro ao calcular KPIs do período")
             return None
 
     @staticmethod
-    def progressao_forca_exercicio(exercicio_tipo, exercicio_id, user_id=None):
+    def progressao_forca_exercicio(exercicio_tipo, exercicio_id, user_id=None, data_inicio=None, data_fim=None):
         """
         Progressão de 1RM estimado (fórmula de Epley: rm = carga * (1 +
         repeticoes/30), a mesma usada por calculadoras de força validadas
@@ -205,6 +226,9 @@ class EstatisticaService(BaseService):
         preparar_dados_tabela sobre por que a chave precisa do tipo junto
         (IDs de exercício personalizado e de sistema vêm de sequências
         independentes e podem coincidir em número).
+
+        `data_inicio`/`data_fim` (datetimes UTC, opcionais) limitam os
+        pontos ao período escolhido na tela; sem eles, histórico inteiro.
         """
         try:
             user_id = user_id or BaseService.get_current_user_id()
@@ -218,9 +242,15 @@ class EstatisticaService(BaseService):
             else:
                 return []
 
+            filtros = [RegistroTreino.user_id == user_id, filtro_exercicio]
+            if data_inicio is not None:
+                filtros.append(RegistroTreino.data_registro >= data_inicio)
+            if data_fim is not None:
+                filtros.append(RegistroTreino.data_registro <= data_fim)
+
             registros = db.session.query(RegistroTreino)\
                 .options(joinedload(RegistroTreino.series))\
-                .filter(RegistroTreino.user_id == user_id, filtro_exercicio)\
+                .filter(*filtros)\
                 .order_by(RegistroTreino.data_registro.asc())\
                 .all()
 
@@ -244,13 +274,20 @@ class EstatisticaService(BaseService):
             return []
 
     @staticmethod
-    def calcular_recordes_pessoais(user_id=None, dias_recentes=60, limite=6):
+    def calcular_recordes_pessoais(user_id=None, dias_recentes=60, limite=6,
+                                   data_inicio=None, data_fim=None, todo_periodo=False):
         """
         Recordes pessoais (PRs): para cada exercício já registrado pelo
         usuário, o maior 1RM estimado (Epley) de toda a história e a data
         em que foi batido. Retorna só os PRs batidos nos últimos
         `dias_recentes` dias, mais recentes primeiro -- é o "feed de
         conquistas", não a lista completa de melhores marcas.
+
+        Com `data_inicio`/`data_fim` (datetimes UTC) ou `todo_periodo=True`,
+        o período vem do filtro da tela em vez de `dias_recentes`. Um PR
+        do período é o melhor 1RM estimado DENTRO dele, desde que supere
+        tudo o que o aluno já tinha feito antes do início do período (no
+        padrão de 60 dias isso dá o mesmo resultado de antes).
 
         Varre o histórico completo em Python (mesmo espírito de
         preparar_dados_tabela): achar o máximo por grupo E a data em que
@@ -274,7 +311,21 @@ class EstatisticaService(BaseService):
                 .order_by(RegistroTreino.data_registro.asc())\
                 .all()
 
-            melhor_por_exercicio = {}
+            agora = datetime.now(timezone.utc)
+            if todo_periodo:
+                lim_ini, lim_fim = None, None
+            elif data_inicio or data_fim:
+                lim_ini, lim_fim = data_inicio, data_fim
+            else:
+                lim_ini, lim_fim = agora - timedelta(days=dias_recentes), None
+
+            def como_utc(dt):
+                if dt and dt.tzinfo is None:
+                    return dt.replace(tzinfo=timezone.utc)
+                return dt
+
+            melhor_antes = {}       # chave -> maior 1RM estimado anterior ao período
+            melhor_no_periodo = {}  # chave -> melhor série DENTRO do período
             for r in registros:
                 nome = None
                 if r.exercicio_usuario_id and r.exercicio:
@@ -285,14 +336,22 @@ class EstatisticaService(BaseService):
                     continue
 
                 chave = f"{'usuario' if r.exercicio_usuario_id else 'base'}_{r.exercicio_usuario_id or r.exercicio_base_id}"
+                data_registro = como_utc(r.data_registro)
+                if lim_fim is not None and data_registro and data_registro > lim_fim:
+                    continue
+                antes_do_periodo = lim_ini is not None and data_registro and data_registro < lim_ini
 
                 for s in r.series:
                     if not s.carga or not s.repeticoes:
                         continue
                     rm = float(s.carga) * (1 + s.repeticoes / 30.0)
-                    atual = melhor_por_exercicio.get(chave)
+                    if antes_do_periodo:
+                        if rm > melhor_antes.get(chave, 0):
+                            melhor_antes[chave] = rm
+                        continue
+                    atual = melhor_no_periodo.get(chave)
                     if atual is None or rm > atual['rm']:
-                        melhor_por_exercicio[chave] = {
+                        melhor_no_periodo[chave] = {
                             'nome': nome,
                             'rm': rm,
                             'data': r.data_registro,
@@ -300,14 +359,10 @@ class EstatisticaService(BaseService):
                             'reps': s.repeticoes
                         }
 
-            limite_data = datetime.now(timezone.utc) - timedelta(days=dias_recentes)
-            recentes = []
-            for v in melhor_por_exercicio.values():
-                data_registro = v['data']
-                if data_registro and data_registro.tzinfo is None:
-                    data_registro = data_registro.replace(tzinfo=timezone.utc)
-                if data_registro and data_registro >= limite_data:
-                    recentes.append(v)
+            recentes = [
+                v for chave, v in melhor_no_periodo.items()
+                if v['rm'] > melhor_antes.get(chave, 0)
+            ]
 
             recentes.sort(key=lambda v: v['data'], reverse=True)
             return recentes[:limite]
@@ -467,15 +522,26 @@ class EstatisticaService(BaseService):
 
     @staticmethod
     def get_sessoes_ultimos_30_dias(versao_id=None, user_id=None):
+        """Sessões dos últimos 30 dias corridos -- atalho de
+        get_sessoes_periodo (ver lá o formato do retorno)."""
+        hoje = EstatisticaService.hoje_brasil()
+        return EstatisticaService.get_sessoes_periodo(
+            versao_id=versao_id, user_id=user_id,
+            dia_inicio=hoje - timedelta(days=29), dia_fim=hoje
+        )
+
+    @staticmethod
+    def get_sessoes_periodo(versao_id=None, user_id=None, dia_inicio=None, dia_fim=None):
         """
-        Sessões de treino dos últimos 30 dias corridos, uma linha por
-        (dia, treino): volume (carga x repetições somado em todas as
+        Sessões de treino entre `dia_inicio` e `dia_fim` (datas locais, as
+        duas pontas inclusas; None = sem limite naquele lado), uma linha
+        por (dia, treino): volume (carga x repetições somado em todas as
         séries), soma das cargas e nº de séries. Base do gráfico
         agregado "por semana" / "por treino" do dashboard.
 
         Junta TODAS as versões que tiveram treino na janela e identifica
         o treino pela letra (A, B, C...), não pelo id: quando a versão
-        troca ou expira no meio dos 30 dias, os treinos da versão
+        troca ou expira no meio do período, os treinos da versão
         anterior continuam contando -- o A da versão 1 e o A da versão 2
         são o mesmo "A" do ponto de vista de quem treina.
 
@@ -490,15 +556,17 @@ class EstatisticaService(BaseService):
                 return {'sessoes': [], 'treinos': []}
 
             hoje = EstatisticaService.hoje_brasil()
-            cache_key = f"estatistica:{user_id}:sessoes_30d:{versao_id or 0}:{hoje.isoformat()}"
+            cache_key = (
+                f"estatistica:{user_id}:sessoes:{versao_id or 0}:"
+                f"{dia_inicio.isoformat() if dia_inicio else 'ini'}:"
+                f"{dia_fim.isoformat() if dia_fim else 'fim'}:{hoje.isoformat()}"
+            )
             cache_hit = CacheService.get(cache_key)
             if cache_hit is not None:
                 return cache_hit
 
-            inicio_janela = datetime.combine(hoje - timedelta(days=29), time.min)
-
             dia = func.date(RegistroTreino.data_registro)
-            linhas = db.session.query(
+            consulta = db.session.query(
                 dia.label('dia'),
                 TreinoVersao.codigo.label('codigo'),
                 func.min(RegistroTreino.data_registro).label('inicio'),
@@ -508,9 +576,12 @@ class EstatisticaService(BaseService):
             ).select_from(RegistroTreino)\
              .join(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
              .join(TreinoVersao, TreinoVersao.id == RegistroTreino.treino_versao_id)\
-             .filter(RegistroTreino.user_id == user_id)\
-             .filter(RegistroTreino.data_registro >= inicio_janela)\
-             .group_by(dia, TreinoVersao.codigo).all()
+             .filter(RegistroTreino.user_id == user_id)
+            if dia_inicio is not None:
+                consulta = consulta.filter(RegistroTreino.data_registro >= datetime.combine(dia_inicio, time.min))
+            if dia_fim is not None:
+                consulta = consulta.filter(RegistroTreino.data_registro < datetime.combine(dia_fim + timedelta(days=1), time.min))
+            linhas = consulta.group_by(dia, TreinoVersao.codigo).all()
 
             sessoes = []
             for l in linhas:
@@ -539,7 +610,7 @@ class EstatisticaService(BaseService):
             CacheService.set(cache_key, resultado, ttl_seconds=ESTATISTICA_CACHE_TTL_SEGUNDOS)
             return resultado
         except Exception as e:
-            BaseService.handle_error(e, "Erro ao calcular sessões dos últimos 30 dias")
+            BaseService.handle_error(e, "Erro ao calcular sessões do período")
             return {'sessoes': [], 'treinos': []}
 
     @staticmethod
@@ -608,7 +679,7 @@ class EstatisticaService(BaseService):
             return []
 
     @staticmethod
-    def agregar_progresso(sessoes, treinos, modo, treino=None, hoje=None):
+    def agregar_progresso(sessoes, treinos, modo, treino=None, hoje=None, inicio=None):
         """
         Agrega as sessões (ver get_sessoes_ultimos_30_dias) num gráfico de
         volume total (peso x repetições x séries) por:
@@ -626,10 +697,13 @@ class EstatisticaService(BaseService):
         treino (opcional, letra: 'A', 'B'...): só o volume daquele treino
         em cada ponto (a divisão em rodadas continua sendo por todos os
         treinos).
+        `hoje` é o último dia da janela e `inicio` o primeiro (padrão: 30
+        dias corridos terminando em `hoje`) -- o filtro de período da tela
+        passa os dois pra montar o gráfico de qualquer intervalo.
         Função pura (sem banco) -- fácil de testar.
         """
         hoje = hoje or EstatisticaService.hoje_brasil()
-        inicio = hoje - timedelta(days=29)
+        inicio = inicio or hoje - timedelta(days=29)
 
         def fmt(d):
             return d.strftime("%d/%m")
@@ -717,7 +791,7 @@ class EstatisticaService(BaseService):
         }
 
     @staticmethod
-    def get_atividade_geral(user_id=None, dias=30):
+    def get_atividade_geral(user_id=None, dias=30, data_inicio=None, data_fim=None, todo_periodo=False):
         """
         Números concretos de atividade nos últimos `dias` dias: quantos
         treinos foram realizados, quantas séries, quantas repetições no
@@ -731,6 +805,9 @@ class EstatisticaService(BaseService):
         no dia; com o cronômetro real disponível, isso não é mais
         necessário nem tão preciso.
 
+        Com `data_inicio`/`data_fim` (datetimes UTC) ou `todo_periodo=True`,
+        o período vem do filtro da tela em vez de `dias`.
+
         Usado no card "Atividade" da tela de estatísticas.
         """
         try:
@@ -738,17 +815,28 @@ class EstatisticaService(BaseService):
             if not user_id:
                 return None
 
-            cache_key = f"estatistica:{user_id}:atividade_geral:{dias}"
+            if todo_periodo:
+                chave_periodo = 'tudo'
+            elif data_inicio and data_fim:
+                chave_periodo = f"{data_inicio.isoformat()}_{data_fim.isoformat()}"
+            else:
+                chave_periodo = str(dias)
+            cache_key = f"estatistica:{user_id}:atividade_geral:{chave_periodo}"
             cache_hit = CacheService.get(cache_key)
             if cache_hit is not None:
                 return cache_hit
 
-            limite = datetime.now(timezone.utc) - timedelta(days=dias)
+            filtros = [RegistroTreino.user_id == user_id]
+            if todo_periodo:
+                pass
+            elif data_inicio and data_fim:
+                filtros.append(RegistroTreino.data_registro >= data_inicio)
+                filtros.append(RegistroTreino.data_registro <= data_fim)
+            else:
+                filtros.append(RegistroTreino.data_registro >= datetime.now(timezone.utc) - timedelta(days=dias))
 
-            registros = RegistroTreino.query.filter(
-                RegistroTreino.user_id == user_id,
-                RegistroTreino.data_registro >= limite
-            ).options(joinedload(RegistroTreino.series)).all()
+            registros = RegistroTreino.query.filter(*filtros)\
+                .options(joinedload(RegistroTreino.series)).all()
 
             sessoes = set()
             tempo_por_sessao = {}

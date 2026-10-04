@@ -325,21 +325,29 @@
         }
     }
 
-    /* ===== Volume/Ranking por Músculo ===== */
-    .est-musculo-filtro {
+    /* ===== Filtro de período (vale pra página inteira) ===== */
+    .est-periodo-bar {
+        margin-bottom: 14px;
+    }
+    .est-periodo-filtro {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
     }
-    .est-musculo-custom {
+    .est-periodo-custom {
         display: flex;
         align-items: center;
         gap: 8px;
-        margin: 10px 0 4px;
+        margin-top: 8px;
         flex-wrap: wrap;
     }
-    .est-musculo-custom .form-control {
+    .est-periodo-custom .form-control {
         max-width: 150px;
+    }
+    /* No celular as 5 opções cabem numa linha só. */
+    @media (max-width: 575.98px) {
+        .est-periodo-filtro { gap: 5px; }
+        .est-periodo-filtro .est-pill { padding: 5px 10px; font-size: 0.76rem; }
     }
 
     /* ===== Atividade ===== */
@@ -433,14 +441,31 @@
     </div>
 </div>
 
-<!-- Cards de Resumo (30 dias x período anterior) -->
+<!-- Filtro de período: vale pra todas as seções abaixo -->
+<div class="est-periodo-bar" id="barraPeriodo">
+    <div class="est-periodo-filtro" id="filtroPeriodoGlobal">
+        <button type="button" class="est-pill" data-dias="7">7 dias</button>
+        <button type="button" class="est-pill active" data-dias="30">30 dias</button>
+        <button type="button" class="est-pill" data-dias="90">90 dias</button>
+        <button type="button" class="est-pill" data-dias="tudo">Tudo</button>
+        <button type="button" class="est-pill" data-dias="custom">Personalizado</button>
+    </div>
+    <div class="est-periodo-custom" id="periodoCustom" style="display: none;">
+        <input type="date" class="form-control form-control-sm" id="periodoInicio">
+        <span class="text-muted" style="font-size: 0.82rem;">até</span>
+        <input type="date" class="form-control form-control-sm" id="periodoFim">
+        <button type="button" class="btn btn-sm btn-primary" id="periodoAplicar">Aplicar</button>
+    </div>
+</div>
+
+<!-- Cards de Resumo (período escolhido x período anterior de mesmo tamanho) -->
 <div class="row mb-4 g-2 g-md-3 est-stats-row" id="kpiRow">
     <div class="col-4">
         <div class="est-stat" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
             <span class="est-kpi-trend flat" id="kpiVolumeTrend"></span>
             <div class="est-stat-icon"><i class="bi bi-bar-chart"></i></div>
             <div class="est-stat-value" id="kpiVolume">—</div>
-            <div class="est-stat-label">Volume (30 dias)</div>
+            <div class="est-stat-label" id="kpiVolumeLabel">Volume (30 dias)</div>
         </div>
     </div>
     <div class="col-4">
@@ -466,14 +491,14 @@
     <div class="card-header bg-white border-0 pb-0">
         <h6 class="fw-bold mb-0">
             <i class="bi bi-trophy-fill me-1" style="color: #F28C33;"></i>Recordes Pessoais
-            <span class="fw-normal text-muted" style="font-size: 0.8rem;">(últimos 60 dias)</span>
+            <span class="fw-normal text-muted" style="font-size: 0.8rem;" id="recordesPeriodo">(últimos 30 dias)</span>
         </h6>
     </div>
     <div class="card-body">
         <div class="est-pr-scroll" id="prScroll"></div>
         <div class="est-empty" id="prVazio" style="display: none;">
             <i class="bi bi-trophy"></i>
-            Nenhum recorde novo nos últimos 60 dias. Bora bater um PR?
+            Nenhum recorde novo nesse período. Bora bater um PR?
         </div>
     </div>
 </div>
@@ -497,32 +522,19 @@
         <canvas id="rmChart" height="260" style="display: none;"></canvas>
         <div class="est-empty" id="rmVazio">
             <i class="bi bi-graph-up-arrow"></i>
-            Registre pelo menos duas sessões desse exercício pra ver a evolução.
+            Registre pelo menos duas sessões desse exercício nesse período pra ver a evolução.
         </div>
     </div>
 </div>
 
 <!-- Volume/Ranking por Músculo -->
 <div class="card est-card mb-3" id="volumeMusculo">
-    <div class="card-header bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 pb-0">
+    <div class="card-header bg-white border-0 pb-0">
         <h6 class="fw-bold mb-0">
             <i class="bi bi-bar-chart-steps me-1" style="color: #F28C33;"></i>Volume por Músculo
         </h6>
-        <div class="est-musculo-filtro" id="filtroPeriodoMusculo">
-            <button type="button" class="est-pill" data-dias="7">7 dias</button>
-            <button type="button" class="est-pill active" data-dias="30">30 dias</button>
-            <button type="button" class="est-pill" data-dias="90">90 dias</button>
-            <button type="button" class="est-pill" data-dias="">Tudo</button>
-            <button type="button" class="est-pill" data-dias="custom">Personalizado</button>
-        </div>
     </div>
     <div class="card-body">
-        <div class="est-musculo-custom" id="musculoPeriodoCustom" style="display: none;">
-            <input type="date" class="form-control form-control-sm" id="musculoPeriodoInicio">
-            <span class="text-muted" style="font-size: 0.82rem;">até</span>
-            <input type="date" class="form-control form-control-sm" id="musculoPeriodoFim">
-            <button type="button" class="btn btn-sm btn-primary" id="musculoPeriodoAplicar">Aplicar</button>
-        </div>
         <div class="row g-3">
             <div class="col-lg-6">
                 <canvas id="calMuscleChart" height="240"></canvas>
@@ -575,7 +587,7 @@
 <div class="card est-card mt-3">
     <div class="card-header bg-white border-0 pb-0">
         <h6 class="fw-bold mb-0">
-            <i class="bi bi-lightning-charge-fill me-1" style="color: #F28C33;"></i>Atividade <span class="fw-normal text-muted" style="font-size: 0.8rem;">(últimos 30 dias)</span>
+            <i class="bi bi-lightning-charge-fill me-1" style="color: #F28C33;"></i>Atividade <span class="fw-normal text-muted" style="font-size: 0.8rem;" id="atividadePeriodo">(últimos 30 dias)</span>
         </h6>
     </div>
     <div class="card-body">
@@ -621,7 +633,7 @@
         </div>
         <div class="est-empty" id="tempoTreinoVazio" style="display: none;">
             <i class="bi bi-stopwatch"></i>
-            Ainda não há treinos registrados nos últimos 30 dias.
+            Ainda não há treinos registrados nesse período.
         </div>
     </div>
 </div>
@@ -647,9 +659,53 @@
     // do filtro de período do quadro Volume/Ranking por Músculo acima.
     const muscleData = {{ musculo_stats|tojson }};
 
+    // ===== Filtro de período (vale pra página inteira) =====
+    // Cada seção lê periodoAtual.query (dias=N | tudo=1 | inicio=..&fim=..) e
+    // manda pra sua API. reqPeriodo sobe a cada troca de período: respostas
+    // que chegam atrasadas (do período anterior) são descartadas.
+    let periodoAtual = {
+        query: 'dias=30', frase: 'nos últimos 30 dias',
+        parenteses: '(últimos 30 dias)', rotuloKpi: '30 dias'
+    };
+    let reqPeriodo = 0;
+
+    function formatarDataBR(iso) { return iso.split('-').reverse().join('/'); }
+
+    function periodoDoBotao(dias) {
+        if (dias === 'tudo') {
+            return { query: 'tudo=1', frase: 'em todo o histórico', parenteses: '(todo o histórico)', rotuloKpi: 'total' };
+        }
+        return { query: `dias=${dias}`, frase: `nos últimos ${dias} dias`, parenteses: `(últimos ${dias} dias)`, rotuloKpi: `${dias} dias` };
+    }
+
+    function periodoPersonalizado(inicio, fim) {
+        const de = formatarDataBR(inicio), ate = formatarDataBR(fim);
+        return { query: `inicio=${inicio}&fim=${fim}`, frase: `de ${de} a ${ate}`, parenteses: `(${de} a ${ate})`, rotuloKpi: 'período' };
+    }
+
+    function atualizarRotulosPeriodo() {
+        document.getElementById('kpiVolumeLabel').textContent = `Volume (${periodoAtual.rotuloKpi})`;
+        document.getElementById('recordesPeriodo').textContent = periodoAtual.parenteses;
+        document.getElementById('atividadePeriodo').textContent = periodoAtual.parenteses;
+    }
+
+    function aplicarPeriodo(novo) {
+        periodoAtual = novo;
+        reqPeriodo++;
+        atualizarRotulosPeriodo();
+        carregarKpis();
+        carregarMusculoStats(periodoAtual.query);
+        carregarRecordes();
+        const seletor = document.getElementById('seletor1RM');
+        if (seletor) carregarProgressaoForca(seletor.value);
+        carregarEvolucao(treinoEvolucao, codigoTreinoEvolucao, null);
+        carregarAtividade();
+    }
+
     // ===== KPIs com comparação ao período anterior =====
     function formatarTrend(el, valor) {
         if (valor === null || valor === undefined) { el.style.display = 'none'; return; }
+        el.style.display = '';
         const seta = valor > 0 ? '▲' : (valor < 0 ? '▼' : '—');
         el.classList.remove('down', 'flat');
         if (valor < 0) el.classList.add('down');
@@ -657,9 +713,12 @@
         el.textContent = `${seta} ${Math.abs(valor)}%`;
     }
 
-    fetch('/api/kpis?dias=30')
+    function carregarKpis() {
+      const meu = reqPeriodo;
+      fetch(`/api/kpis?${periodoAtual.query}`)
         .then(r => r.json())
         .then(k => {
+            if (meu !== reqPeriodo) return;
             document.getElementById('kpiVolume').textContent = Math.round(k.volume_total) + 'kg';
             formatarTrend(document.getElementById('kpiVolumeTrend'), k.volume_variacao);
             document.getElementById('kpiTreinos').textContent = k.treinos_realizados;
@@ -669,6 +728,8 @@
             ajustarValoresKpi();
         })
         .catch(() => {});
+    }
+    carregarKpis();
 
     // Mesmo ajuste do professor: se o número não couber no card (mobile),
     // reduz a fonte até caber, sem quebrar linha.
@@ -770,48 +831,57 @@
     }
 
     function carregarMusculoStats(params) {
+        const meu = reqPeriodo;
         fetch('/api/musculo-stats' + (params ? `?${params}` : ''))
             .then(r => r.json())
             .then(data => {
+                if (meu !== reqPeriodo) return;
                 renderizarMuscleChart(data.musculos || {});
                 renderizarRankingMusculo(data.musculos || {}, data.volume_maximo || 0);
             });
     }
 
-    const filtroMusculo = document.getElementById('filtroPeriodoMusculo');
-    const musculoCustomBox = document.getElementById('musculoPeriodoCustom');
+    const filtroPeriodo = document.getElementById('filtroPeriodoGlobal');
+    const periodoCustomBox = document.getElementById('periodoCustom');
 
-    filtroMusculo.addEventListener('click', function (evento) {
+    filtroPeriodo.addEventListener('click', function (evento) {
         const botao = evento.target.closest('.est-pill');
         if (!botao) return;
 
-        filtroMusculo.querySelectorAll('.est-pill').forEach(p => p.classList.remove('active'));
+        filtroPeriodo.querySelectorAll('.est-pill').forEach(p => p.classList.remove('active'));
         botao.classList.add('active');
 
         if (botao.dataset.dias === 'custom') {
-            musculoCustomBox.style.display = 'flex';
+            periodoCustomBox.style.display = 'flex';
             return;
         }
-        musculoCustomBox.style.display = 'none';
-        carregarMusculoStats(botao.dataset.dias ? `dias=${botao.dataset.dias}` : '');
+        periodoCustomBox.style.display = 'none';
+        aplicarPeriodo(periodoDoBotao(botao.dataset.dias));
     });
 
-    document.getElementById('musculoPeriodoAplicar').addEventListener('click', function () {
-        const inicio = document.getElementById('musculoPeriodoInicio').value;
-        const fim = document.getElementById('musculoPeriodoFim').value;
+    document.getElementById('periodoAplicar').addEventListener('click', function () {
+        const inicio = document.getElementById('periodoInicio').value;
+        const fim = document.getElementById('periodoFim').value;
         if (!inicio || !fim) {
             if (window.FitLogUtils) FitLogUtils.showToast('Escolha as duas datas do período.', 'info');
             return;
         }
-        carregarMusculoStats(`inicio=${inicio}&fim=${fim}`);
+        if (inicio > fim) {
+            if (window.FitLogUtils) FitLogUtils.showToast('A data inicial não pode ser depois da final.', 'info');
+            return;
+        }
+        aplicarPeriodo(periodoPersonalizado(inicio, fim));
     });
 
     carregarMusculoStats('dias=30');
 
     // ===== Recordes Pessoais =====
-    fetch('/api/recordes-pessoais')
+    function carregarRecordes() {
+      const meu = reqPeriodo;
+      fetch(`/api/recordes-pessoais?${periodoAtual.query}`)
         .then(r => r.json())
         .then(recordes => {
+            if (meu !== reqPeriodo) return;
             const scroll = document.getElementById('prScroll');
             const vazio = document.getElementById('prVazio');
             if (!recordes.length) {
@@ -819,6 +889,8 @@
                 vazio.style.display = 'block';
                 return;
             }
+            scroll.style.display = '';
+            vazio.style.display = 'none';
             scroll.innerHTML = recordes.map(pr => `
                 <div class="est-pr-card">
                     <div class="est-pr-badge"><i class="bi bi-trophy-fill"></i> PR</div>
@@ -832,15 +904,19 @@
             document.getElementById('prScroll').style.display = 'none';
             document.getElementById('prVazio').style.display = 'block';
         });
+    }
+    carregarRecordes();
 
     // ===== Progressão de Força (1RM estimado) =====
     let rmChart;
 
     function carregarProgressaoForca(chaveExercicio) {
         if (!chaveExercicio) return;
-        fetch(`/api/progressao-forca?exercicio=${encodeURIComponent(chaveExercicio)}`)
+        const meu = reqPeriodo;
+        fetch(`/api/progressao-forca?exercicio=${encodeURIComponent(chaveExercicio)}&${periodoAtual.query}`)
             .then(r => r.json())
             .then(data => {
+                if (meu !== reqPeriodo) return;
                 if (rmChart) rmChart.destroy();
 
                 const canvas = document.getElementById('rmChart');
@@ -932,10 +1008,13 @@
         if (botao.dataset.treino !== 'todos') CORES_TREINO_POR_LETRA[botao.textContent.trim()] = i - 1;
     });
 
-    const DICAS_MODO_EVOLUCAO = {
-        semana: 'Barras: carga média de cada treino. Linha: volume total (peso × repetições × séries), somado por semana, nos últimos 30 dias.',
-        treino: 'Barras: carga média de cada treino. Linha: volume total. Cada ponto é uma rodada completa do treino (ex.: A+B+C+D); treino não feito na rodada conta como 0.'
-    };
+    function dicaEvolucao(modo) {
+        const base = 'Barras: carga média de cada treino. Linha: volume total';
+        if (modo === 'treino') {
+            return `${base} ${periodoAtual.frase}. Cada ponto é uma rodada completa do treino (ex.: A+B+C+D); treino não feito na rodada conta como 0.`;
+        }
+        return `${base} (peso × repetições × séries), somado por semana, ${periodoAtual.frase}.`;
+    }
 
     function trocarModoEvolucao(modo, botao) {
         modoEvolucao = modo;
@@ -951,14 +1030,17 @@
             document.querySelectorAll('#filtrosEvolucao .est-pill').forEach(p => p.classList.remove('active'));
             botaoTreino.classList.add('active');
         }
-        document.getElementById('evolucaoHint').textContent = DICAS_MODO_EVOLUCAO[modoEvolucao] || '';
+        document.getElementById('evolucaoHint').textContent = dicaEvolucao(modoEvolucao);
 
         const params = new URLSearchParams({ modo: modoEvolucao });
         if (treinoId !== 'todos') params.set('treino', treinoId);
+        new URLSearchParams(periodoAtual.query).forEach((valor, chave) => params.set(chave, valor));
 
+        const meu = reqPeriodo;
         fetch(`/api/progresso?${params.toString()}`)
             .then(r => r.json())
             .then(data => {
+                if (meu !== reqPeriodo) return;
                 if (evolucaoChart) { evolucaoChart.destroy(); evolucaoChart = null; }
 
                 const canvas = document.getElementById('evolucaoChart');
@@ -1124,11 +1206,14 @@
 
     carregarEvolucao('todos', null, null);
 
-    // ===== Atividade (últimos 30 dias) =====
+    // ===== Atividade (período escolhido) =====
     let dadosAtividade = null;
-    fetch('/api/atividade-geral')
+    function carregarAtividade() {
+      const meu = reqPeriodo;
+      fetch(`/api/atividade-geral?${periodoAtual.query}`)
         .then(r => r.json())
         .then(data => {
+            if (meu !== reqPeriodo) return;
             dadosAtividade = data;
             const conteudo = document.getElementById('tempoTreinoConteudo');
             const vazio = document.getElementById('tempoTreinoVazio');
@@ -1138,6 +1223,8 @@
                 vazio.style.display = 'block';
                 return;
             }
+            conteudo.style.display = '';
+            vazio.style.display = 'none';
 
             document.getElementById('atvTreinos').textContent = data.treinos_realizados;
             document.getElementById('atvSeries').textContent = data.total_series;
@@ -1165,6 +1252,8 @@
             document.getElementById('tempoTreinoConteudo').style.display = 'none';
             document.getElementById('tempoTreinoVazio').style.display = 'block';
         });
+    }
+    carregarAtividade();
 
     // ===== Compartilhar estatísticas =====
     const NOME_USUARIO_EXIBICAO = {{ (current_user.nome_completo or current_user.username)|tojson }};

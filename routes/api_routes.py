@@ -22,6 +22,56 @@ logger = logging.getLogger(__name__)
 # PROGRESSO E GRÁFICOS
 # ============================================================================
 
+def _periodo_da_requisicao():
+    """
+    Período escolhido no filtro global da tela de Estatísticas, vindo da
+    query string: `dias=N` (últimos N dias), `inicio=YYYY-MM-DD&fim=YYYY-MM-DD`
+    (intervalo fechado) ou `tudo=1` (histórico inteiro).
+
+    Devolve (periodo, erro):
+    - periodo=None: nenhum parâmetro de período -- cada endpoint mantém o
+      seu padrão de sempre (quem não manda nada não muda de comportamento);
+    - periodo = {'inicio': datetime|None, 'fim': datetime|None, 'dias': int|None,
+      'tudo': bool, 'dia_inicio': date|None, 'dia_fim': date|None}, com
+      início/fim em UTC (fim inclusivo: 23:59:59 do último dia) e os mesmos
+      limites como datas (dia_inicio/dia_fim) pros dados agrupados por dia;
+    - erro: resposta 400 pronta quando as datas são inválidas.
+    """
+    dias = request.args.get('dias', type=int)
+    inicio_str = request.args.get('inicio')
+    fim_str = request.args.get('fim')
+
+    if dias and dias > 0:
+        fim = datetime.now(timezone.utc)
+        hoje = EstatisticaService.hoje_brasil()
+        return {
+            'inicio': fim - timedelta(days=dias), 'fim': fim, 'dias': dias, 'tudo': False,
+            'dia_inicio': hoje - timedelta(days=dias - 1), 'dia_fim': hoje,
+        }, None
+
+    if inicio_str and fim_str:
+        try:
+            dia_inicio = datetime.strptime(inicio_str, "%Y-%m-%d").date()
+            dia_fim = datetime.strptime(fim_str, "%Y-%m-%d").date()
+        except ValueError:
+            return None, (jsonify({"error": "Datas inválidas, use o formato AAAA-MM-DD"}), 400)
+        if dia_inicio > dia_fim:
+            return None, (jsonify({"error": "A data inicial não pode ser depois da final"}), 400)
+        return {
+            'inicio': datetime.combine(dia_inicio, datetime.min.time()).replace(tzinfo=timezone.utc),
+            'fim': datetime.combine(dia_fim, datetime.min.time()).replace(tzinfo=timezone.utc)
+                   + timedelta(days=1) - timedelta(seconds=1),
+            'dias': None, 'tudo': False,
+            'dia_inicio': dia_inicio, 'dia_fim': dia_fim,
+        }, None
+
+    if request.args.get('tudo'):
+        return {'inicio': None, 'fim': None, 'dias': None, 'tudo': True,
+                'dia_inicio': None, 'dia_fim': None}, None
+
+    return None, None
+
+
 @api_bp.route("/progresso")
 @login_required
 @acesso_premium_required('estatisticas')
@@ -35,7 +85,10 @@ def api_progresso():
     modo = request.args.get("modo")
 
     if modo in ("semana", "treino"):
-        return _api_progresso_agregado(treino, modo)
+        periodo, erro = _periodo_da_requisicao()
+        if erro:
+            return erro
+        return _api_progresso_agregado(treino, modo, periodo)
 
     vazio = {"semanas": [], "volumes": [], "cargas_medias": []}
 
@@ -101,7 +154,7 @@ def api_progresso():
     })
 
 
-def _api_progresso_agregado(treino, modo):
+def _api_progresso_agregado(treino, modo, periodo=None):
     """
     Gráfico do dashboard agregado (modo='semana' ou 'treino'): volume
     total (peso x repetições x séries) dos últimos 30 dias, somando por
@@ -109,6 +162,9 @@ def _api_progresso_agregado(treino, modo):
     Ver EstatisticaService.agregar_progresso. O filtro por treino
     individual continua valendo (só o volume daquele treino, pela letra,
     somando todas as versões da janela).
+
+    `periodo` (ver _periodo_da_requisicao) troca a janela de 30 dias pelo
+    intervalo escolhido na tela; sem ele, continuam os últimos 30 dias.
     """
     vazio = {"semanas": [], "volumes": [], "cargas_medias": [], "detalhes": [], "sessoes_por_treino": []}
 
@@ -124,11 +180,28 @@ def _api_progresso_agregado(treino, modo):
         codigo = treino_versao.codigo
 
     versao_ativa = VersaoService.get_ativa()
-    base = EstatisticaService.get_sessoes_ultimos_30_dias(
-        versao_ativa.id if versao_ativa else None
+    versao_id = versao_ativa.id if versao_ativa else None
+
+    if periodo is None:
+        base = EstatisticaService.get_sessoes_ultimos_30_dias(versao_id)
+        return jsonify(EstatisticaService.agregar_progresso(
+            base['sessoes'], base['treinos'], modo, treino=codigo
+        ))
+
+    hoje = EstatisticaService.hoje_brasil()
+    # Período que termina no futuro (ex.: fim = fim do mês) é cortado em
+    # hoje -- senão o gráfico ganharia semanas vazias que ainda não existem.
+    dia_fim = min(periodo['dia_fim'], hoje) if periodo['dia_fim'] else hoje
+    base = EstatisticaService.get_sessoes_periodo(
+        versao_id=versao_id, dia_inicio=periodo['dia_inicio'], dia_fim=dia_fim
+    )
+    # "Tudo": o gráfico começa no primeiro treino registrado.
+    dia_inicio = periodo['dia_inicio'] or min(
+        (s['dia'] for s in base['sessoes']), default=dia_fim
     )
     return jsonify(EstatisticaService.agregar_progresso(
-        base['sessoes'], base['treinos'], modo, treino=codigo
+        base['sessoes'], base['treinos'], modo, treino=codigo,
+        hoje=dia_fim, inicio=dia_inicio
     ))
 
 
@@ -159,8 +232,20 @@ def api_kpis():
     """KPIs do período (volume, treinos, séries) com variação % vs. o
     período anterior de mesmo tamanho -- alimenta a faixa de destaque no
     topo das Estatísticas."""
+    periodo, erro = _periodo_da_requisicao()
+    if erro:
+        return erro
     dias = request.args.get('dias', type=int, default=30)
-    kpis = EstatisticaService.calcular_kpis_periodo(dias=dias)
+    if periodo is None:
+        kpis = EstatisticaService.calcular_kpis_periodo(dias=dias)
+    elif periodo['tudo']:
+        kpis = EstatisticaService.calcular_kpis_periodo(todo_periodo=True)
+    elif periodo['dias']:
+        kpis = EstatisticaService.calcular_kpis_periodo(dias=periodo['dias'])
+    else:
+        kpis = EstatisticaService.calcular_kpis_periodo(
+            data_inicio=periodo['inicio'], data_fim=periodo['fim']
+        )
     if not kpis:
         return jsonify({
             "dias": dias, "volume_total": 0, "volume_variacao": None,
@@ -225,7 +310,14 @@ def api_progressao_forca():
     if tipo not in ('usuario', 'base') or not id_str.isdigit():
         return jsonify({"error": "Parâmetro 'exercicio' inválido, use '<usuario|base>_<id>'"}), 400
 
-    pontos = EstatisticaService.progressao_forca_exercicio(tipo, int(id_str))
+    periodo, erro = _periodo_da_requisicao()
+    if erro:
+        return erro
+    pontos = EstatisticaService.progressao_forca_exercicio(
+        tipo, int(id_str),
+        data_inicio=periodo['inicio'] if periodo else None,
+        data_fim=periodo['fim'] if periodo else None
+    )
     return jsonify({
         "labels": [p['data'].strftime('%d/%m') for p in pontos],
         "valores": [p['rm_estimado'] for p in pontos]
@@ -237,7 +329,16 @@ def api_progressao_forca():
 @acesso_premium_required('estatisticas')
 def api_recordes_pessoais():
     """Feed dos PRs (recordes pessoais de 1RM estimado) batidos recentemente."""
-    recordes = EstatisticaService.calcular_recordes_pessoais()
+    periodo, erro = _periodo_da_requisicao()
+    if erro:
+        return erro
+    if periodo is None:
+        recordes = EstatisticaService.calcular_recordes_pessoais()
+    else:
+        recordes = EstatisticaService.calcular_recordes_pessoais(
+            data_inicio=periodo['inicio'], data_fim=periodo['fim'],
+            todo_periodo=periodo['tudo']
+        )
     return jsonify([{
         "nome": r['nome'],
         "carga": r['carga'],
@@ -256,7 +357,19 @@ def api_atividade_geral():
     realizados, séries, repetições, duração média e horário mais
     comum -- ver EstatisticaService.get_atividade_geral.
     """
-    dados = EstatisticaService.get_atividade_geral(dias=30)
+    periodo, erro = _periodo_da_requisicao()
+    if erro:
+        return erro
+    if periodo is None:
+        dados = EstatisticaService.get_atividade_geral(dias=30)
+    elif periodo['tudo']:
+        dados = EstatisticaService.get_atividade_geral(todo_periodo=True)
+    elif periodo['dias']:
+        dados = EstatisticaService.get_atividade_geral(dias=periodo['dias'])
+    else:
+        dados = EstatisticaService.get_atividade_geral(
+            data_inicio=periodo['inicio'], data_fim=periodo['fim']
+        )
     if not dados:
         return jsonify({
             "treinos_realizados": 0,
