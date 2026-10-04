@@ -12,6 +12,33 @@ import logging
 register_bp = Blueprint('register', __name__)
 logger = logging.getLogger(__name__)
 
+
+def _versao_finalizada_para(versao, data_obj):
+    """True se a versão já foi finalizada e `data_obj` cai NO dia da
+    finalização ou depois dele.
+
+    VersaoService.get_ativa_por_data compara `data_fim >= data`, então uma
+    versão finalizada hoje ainda "casa" com a data de hoje e a tela de
+    registro continuava oferecendo treinos/exercícios como se ela
+    estivesse ativa. Aqui o dia da finalização já conta como encerrado:
+    não dá pra COMEÇAR um registro novo a partir dele. Datas anteriores à
+    finalização continuam aceitas (lançamento retroativo dentro do
+    período da versão), e editar o que já foi registrado segue pelo
+    calendário, que não passa por esta checagem.
+    """
+    return (
+        versao is not None
+        and versao.data_fim is not None
+        and data_obj >= versao.data_fim
+    )
+
+
+def _msg_versao_finalizada(versao):
+    return (
+        f"A versão {versao.numero_versao} foi finalizada em "
+        f"{versao.data_fim.strftime('%d/%m/%Y')}"
+    )
+
 @register_bp.route("/registrar-treino", methods=["GET"])
 @login_required
 def registrar_treino():
@@ -42,7 +69,13 @@ def registrar_treino():
     # Buscar versão ativa na data
     versao_ativa = VersaoService.get_ativa_por_data(data_obj)
     
-    if not versao_ativa:
+    if _versao_finalizada_para(versao_ativa, data_obj):
+        erro_versao = _msg_versao_finalizada(versao_ativa)
+        logger.warning(
+            f"Tentativa de registro na versão finalizada {versao_ativa.id} para data {data_obj}"
+        )
+        versao_ativa = None
+    elif not versao_ativa:
         erro_versao = f"Não há versão ativa para {data_obj.strftime('%d/%m/%Y')}"
         logger.warning(f"Tentativa de registro sem versão ativa para data {data_obj}")
     else:
@@ -210,8 +243,8 @@ def salvar_registro():
         flash(f"Não há versão ativa para {data_obj.strftime('%d/%m/%Y')}", "danger")
         return _redirect_apos_salvar(sucesso=False, data_para_exibir=data_obj.isoformat())
     
-    if versao_ativa.data_fim and versao_ativa.data_fim < data_obj:
-        flash(f"A versão {versao_ativa.numero_versao} foi finalizada em {versao_ativa.data_fim.strftime('%d/%m/%Y')}", "danger")
+    if _versao_finalizada_para(versao_ativa, data_obj):
+        flash(f"{_msg_versao_finalizada(versao_ativa)}. Cadastre uma nova versão para registrar treinos.", "danger")
         return _redirect_apos_salvar(sucesso=False, data_para_exibir=data_obj.isoformat())
     
     # Verificar se o treino pertence à versão ativa
@@ -386,6 +419,12 @@ def api_treinos_por_data():
             return jsonify({
                 "success": False, 
                 "error": f"Não há versão ativa para {data_obj.strftime('%d/%m/%Y')}"
+            }), 404
+
+        if _versao_finalizada_para(versao_ativa, data_obj):
+            return jsonify({
+                "success": False,
+                "error": f"{_msg_versao_finalizada(versao_ativa)}. Cadastre uma nova versão para registrar treinos."
             }), 404
         
         # Buscar treinos disponíveis nesta versão
