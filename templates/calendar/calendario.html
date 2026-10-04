@@ -57,7 +57,7 @@
         display: flex;
         align-items: stretch;
         gap: 8px;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
         max-width: 640px;
     }
 
@@ -872,9 +872,18 @@
     }
     
     /* Posicionamento relativo para o container do calendário */
+    /* Sem min-height: esta classe também está no card do gráfico de
+       evolução, e uma altura mínima fixa deixava um vazio grande abaixo
+       do conteúdo (no calendário e no gráfico). */
     .position-relative {
         position: relative;
-        min-height: 500px;
+    }
+
+    /* O fundo branco do calendário é o próprio #calendar; o padding
+       vertical do card-body só empurrava o calendário para baixo. */
+    .calendar-page > .card > .card-body {
+        padding-top: 0;
+        padding-bottom: 0;
     }
 
     /* ==========================================================
@@ -888,10 +897,6 @@
         #calendar {
             padding: 10px 4px 16px;
             border-radius: 16px;
-        }
-
-        .position-relative {
-            min-height: 380px;
         }
 
         /* Toolbar compacta: setas + título numa linha, "Hoje" como pill */
@@ -1294,7 +1299,7 @@
        ------------------------------------------------------------------ */
     .evolucao-wrap {
         max-width: 1100px;
-        margin: 24px auto 0;
+        margin: 12px auto 0;
     }
 
     .calendar-page .dash-card {
@@ -1317,7 +1322,7 @@
         align-items: center;
         flex-wrap: wrap;
         gap: 10px;
-        padding: 1rem 1.25rem;
+        padding: 0.75rem 1.25rem;
     }
 
     .calendar-page .dash-card-icon {
@@ -1370,8 +1375,8 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 8px;
-        margin-top: 0.75rem;
+        gap: 4px;
+        margin-top: 4px;
     }
     .calendar-page .dash-chart-hint {
         font-size: 0.78rem;
@@ -1382,6 +1387,10 @@
 
     /* Altura controlada pelo container, não pelo atributo height do
        <canvas>, para se ajustar bem em telas de celular. */
+    .calendar-page #chartCard {
+        padding-top: 6px;
+        padding-bottom: 10px;
+    }
     .calendar-page .dash-chart-wrap {
         position: relative;
         width: 100%;
@@ -1401,7 +1410,7 @@
             padding-right: 0.5rem;
         }
         .evolucao-wrap {
-            margin-top: 16px;
+            margin-top: 10px;
         }
     }
 
@@ -2725,7 +2734,8 @@
                 },
                 plugins: {
                     legend: {
-                        labels: { color: cores.texto }
+                        // Legenda mais compacta (menos espaço entre ela e o gráfico)
+                        labels: { color: cores.texto, padding: 5, boxWidth: 14, boxHeight: 8, font: { size: 11 } }
                     },
                     tooltip: {
                         backgroundColor: cores.tooltipFundo,
