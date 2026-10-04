@@ -348,6 +348,20 @@ def create_app(config_class=None):
         endpoint = flask_request.endpoint or ''
         if endpoint == 'static' or endpoint.startswith('financeiro.'):
             return None
+        # Só uma NAVEGAÇÃO de página de verdade conta como "saiu da
+        # área". Chamadas em segundo plano (fetch/XHR) que rodam em
+        # toda tela -- como o sino de notificações (/api/notificacoes)
+        # -- NÃO podem derrubar o desbloqueio: antes elas apagavam a
+        # flag enquanto o admin ainda estava no painel e a próxima
+        # troca de período caía na tela de usuário e senha.
+        sec_fetch_mode = flask_request.headers.get('Sec-Fetch-Mode')
+        if sec_fetch_mode:
+            if sec_fetch_mode != 'navigate':
+                return None
+        elif (flask_request.path.startswith('/api/')
+              or 'text/html' not in flask_request.headers.get('Accept', '')):
+            # Navegadores sem Sec-Fetch-*: cai no Accept / prefixo /api/.
+            return None
         flask_session.pop('financeiro_desbloqueado', None)
         return None
 
