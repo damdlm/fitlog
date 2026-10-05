@@ -51,7 +51,9 @@
 
 .pp-column {
     width: 100%;
-    max-width: 560px;
+    /* 480px (e não 560): em formato 9:16 uma coluna mais larga fica alta
+       demais no computador e o espaço extra vira vazio. */
+    max-width: 480px;
     margin: 0 auto;
     /* Permite medir a largura do pôster (cqw) pra derivar a altura 9:16 */
     container-type: inline-size;
@@ -81,12 +83,35 @@
     }
 }
 
-/* O espaço extra do 9:16 fica entre o cabeçalho (foto, nome, frase) e o
-   bloco de especialidades/avaliação/redes/"Sobre mim", que desce pra base.
-   Seletor com 3 classes pra vencer o margin dos CSS de cada estilo. */
-.pp-page .pp-poster > .pp-services {
+/* DISTRIBUIÇÃO DO ESPAÇO EXTRA DO 9:16
+   Várias margens "auto" no mesmo contêiner flex dividem o espaço que
+   sobra em partes IGUAIS, então o vão não fica todo num lugar só:
+     A) foto -> nome            (.pp-eyebrow; o Esportivo fica de fora porque
+                                 o nome dele sobrepõe a foto de propósito)
+     B) frase -> especialidades (.pp-services)
+     C) redes -> "Sobre mim"    (.pp-about)
+   --pp-gap é o espaço MÍNIMO de cada ponto (quando não sobra nada, por
+   exemplo com "Sobre mim" longo). Seletores com 3+ classes para vencer
+   os margin dos CSS de cada estilo. */
+.pp-page {
+    --pp-gap: 14px;
+}
+
+.pp-page:not(.pp-page-estilo-5) .pp-poster > .pp-eyebrow,
+.pp-page .pp-poster > .pp-services,
+.pp-page .pp-poster > .pp-about {
     margin-top: auto;
-    padding-top: 14px;
+}
+
+.pp-page:not(.pp-page-estilo-5) .pp-poster > .pp-eyebrow,
+.pp-page .pp-poster > .pp-services {
+    padding-top: var(--pp-gap);
+}
+
+/* Espaço mínimo entre o item anterior (redes/avaliação/especialidades) e
+   o "Sobre mim". */
+.pp-page .pp-poster > :has(+ .pp-about) {
+    margin-bottom: var(--pp-gap);
 }
 
 /* AÇÕES (compartilhar / editar) -- a logo do FitLog fica à esquerda */

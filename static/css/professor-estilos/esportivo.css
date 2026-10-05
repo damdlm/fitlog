@@ -283,7 +283,10 @@
 /* O Instagram vai para o fim do cartão (o mockup não tem essa linha) */
 .pp-poster-estilo-5 .pp-social {
     order: 99;
-    margin-top: calc(var(--u) * 8);
+    /* D) ponto extra de distribuição do espaço 9:16 (a foto e o nome
+       ficam juntos, então o espaço vai pra baixo): ver base.css */
+    margin-top: auto;
+    padding-top: calc(var(--u) * 8);
 }
 
 .pp-poster-estilo-5 .pp-social a {
