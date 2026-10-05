@@ -42,6 +42,18 @@ class TestDashboardProfessor:
         # redirecionado para fora do painel (não é professor nem admin)
         assert b'professor/dashboard' not in resp.request.path.encode()
 
+    def test_painel_nao_mostra_a_secao_sua_pagina_publica(self, client, app):
+        # A seção "Sua página pública" foi removida do painel; a edição
+        # continua acessível pela rota própria (professor.editar_pagina_publica).
+        with app.app_context():
+            username = _criar_usuario('pd_sem_pp', tipo_usuario='professor').username
+
+        _login(client, username)
+        html = client.get('/professor/dashboard').get_data(as_text=True)
+
+        assert 'Sua página pública' not in html
+        assert 'ppVerPaginaModal' not in html
+
     def test_professor_acessa_o_proprio_painel(self, client, app):
         with app.app_context():
             username = _criar_usuario('pd_ok_1', tipo_usuario='professor').username
