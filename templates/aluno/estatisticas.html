@@ -344,10 +344,16 @@
     .est-periodo-custom .form-control {
         max-width: 150px;
     }
+    .est-evolucao-periodo {
+        margin-bottom: 10px;
+    }
     /* No celular as 5 opções cabem numa linha só. */
     @media (max-width: 575.98px) {
         .est-periodo-filtro { gap: 5px; }
         .est-periodo-filtro .est-pill { padding: 5px 10px; font-size: 0.76rem; }
+        /* O card do gráfico é mais estreito que a página: um pouco mais justo. */
+        .est-evolucao-periodo .est-periodo-filtro { gap: 4px; }
+        .est-evolucao-periodo .est-periodo-filtro .est-pill { padding: 4px 8px; font-size: 0.72rem; }
     }
 
     /* ===== Atividade ===== */
@@ -566,6 +572,22 @@
         </div>
     </div>
     <div class="card-body" id="evolucaoCard">
+        <!-- Período só deste gráfico (segue o filtro da página até você mexer aqui) -->
+        <div class="est-evolucao-periodo">
+            <div class="est-periodo-filtro" id="filtroPeriodoEvolucao">
+                <button type="button" class="est-pill" data-dias="7">7 dias</button>
+                <button type="button" class="est-pill active" data-dias="30">30 dias</button>
+                <button type="button" class="est-pill" data-dias="90">90 dias</button>
+                <button type="button" class="est-pill" data-dias="tudo">Tudo</button>
+                <button type="button" class="est-pill" data-dias="custom">Personalizado</button>
+            </div>
+            <div class="est-periodo-custom" id="periodoEvolucaoCustom" style="display: none;">
+                <input type="date" class="form-control form-control-sm" id="periodoEvolucaoInicio">
+                <span class="text-muted" style="font-size: 0.82rem;">até</span>
+                <input type="date" class="form-control form-control-sm" id="periodoEvolucaoFim">
+                <button type="button" class="btn btn-sm btn-primary" id="periodoEvolucaoAplicar">Aplicar</button>
+            </div>
+        </div>
         <div class="est-chart-wrap">
             <canvas id="evolucaoChart"></canvas>
         </div>
@@ -664,23 +686,27 @@
     // manda pra sua API. reqPeriodo sobe a cada troca de período: respostas
     // que chegam atrasadas (do período anterior) são descartadas.
     let periodoAtual = {
-        query: 'dias=30', frase: 'nos últimos 30 dias',
+        chave: '30', query: 'dias=30', frase: 'nos últimos 30 dias',
         parenteses: '(últimos 30 dias)', rotuloKpi: '30 dias'
     };
+    // O gráfico de evolução tem filtro próprio: começa igual ao da página,
+    // acompanha quando a página muda e pode ser trocado só nele.
+    let periodoEvolucao = periodoAtual;
     let reqPeriodo = 0;
+    let reqEvolucao = 0;
 
     function formatarDataBR(iso) { return iso.split('-').reverse().join('/'); }
 
     function periodoDoBotao(dias) {
         if (dias === 'tudo') {
-            return { query: 'tudo=1', frase: 'em todo o histórico', parenteses: '(todo o histórico)', rotuloKpi: 'total' };
+            return { chave: 'tudo', query: 'tudo=1', frase: 'em todo o histórico', parenteses: '(todo o histórico)', rotuloKpi: 'total' };
         }
-        return { query: `dias=${dias}`, frase: `nos últimos ${dias} dias`, parenteses: `(últimos ${dias} dias)`, rotuloKpi: `${dias} dias` };
+        return { chave: String(dias), query: `dias=${dias}`, frase: `nos últimos ${dias} dias`, parenteses: `(últimos ${dias} dias)`, rotuloKpi: `${dias} dias` };
     }
 
     function periodoPersonalizado(inicio, fim) {
         const de = formatarDataBR(inicio), ate = formatarDataBR(fim);
-        return { query: `inicio=${inicio}&fim=${fim}`, frase: `de ${de} a ${ate}`, parenteses: `(${de} a ${ate})`, rotuloKpi: 'período' };
+        return { chave: 'custom', inicio: inicio, fim: fim, query: `inicio=${inicio}&fim=${fim}`, frase: `de ${de} a ${ate}`, parenteses: `(${de} a ${ate})`, rotuloKpi: 'período' };
     }
 
     function atualizarRotulosPeriodo() {
@@ -698,8 +724,24 @@
         carregarRecordes();
         const seletor = document.getElementById('seletor1RM');
         if (seletor) carregarProgressaoForca(seletor.value);
+        periodoEvolucao = novo;
+        sincronizarFiltroEvolucao();
         carregarEvolucao(treinoEvolucao, codigoTreinoEvolucao, null);
         carregarAtividade();
+    }
+
+    // Marca no filtro do gráfico o botão do período que ele está usando
+    // (e preenche as datas quando o período é personalizado).
+    function sincronizarFiltroEvolucao() {
+        document.querySelectorAll('#filtroPeriodoEvolucao .est-pill').forEach(b => {
+            b.classList.toggle('active', b.dataset.dias === periodoEvolucao.chave);
+        });
+        const caixa = document.getElementById('periodoEvolucaoCustom');
+        caixa.style.display = periodoEvolucao.chave === 'custom' ? 'flex' : 'none';
+        if (periodoEvolucao.chave === 'custom') {
+            document.getElementById('periodoEvolucaoInicio').value = periodoEvolucao.inicio;
+            document.getElementById('periodoEvolucaoFim').value = periodoEvolucao.fim;
+        }
     }
 
     // ===== KPIs com comparação ao período anterior =====
@@ -1011,9 +1053,9 @@
     function dicaEvolucao(modo) {
         const base = 'Barras: carga média de cada treino. Linha: volume total';
         if (modo === 'treino') {
-            return `${base} ${periodoAtual.frase}. Cada ponto é uma rodada completa do treino (ex.: A+B+C+D); treino não feito na rodada conta como 0.`;
+            return `${base} ${periodoEvolucao.frase}. Cada ponto é uma rodada completa do treino (ex.: A+B+C+D); treino não feito na rodada conta como 0.`;
         }
-        return `${base} (peso × repetições × séries), somado por semana, ${periodoAtual.frase}.`;
+        return `${base} (peso × repetições × séries), somado por semana, ${periodoEvolucao.frase}.`;
     }
 
     function trocarModoEvolucao(modo, botao) {
@@ -1034,13 +1076,15 @@
 
         const params = new URLSearchParams({ modo: modoEvolucao });
         if (treinoId !== 'todos') params.set('treino', treinoId);
-        new URLSearchParams(periodoAtual.query).forEach((valor, chave) => params.set(chave, valor));
+        new URLSearchParams(periodoEvolucao.query).forEach((valor, chave) => params.set(chave, valor));
 
-        const meu = reqPeriodo;
+        // Contador próprio: trocar treino/modo/período rápido não deixa uma
+        // resposta antiga sobrescrever a mais nova.
+        const meu = ++reqEvolucao;
         fetch(`/api/progresso?${params.toString()}`)
             .then(r => r.json())
             .then(data => {
-                if (meu !== reqPeriodo) return;
+                if (meu !== reqEvolucao) return;
                 if (evolucaoChart) { evolucaoChart.destroy(); evolucaoChart = null; }
 
                 const canvas = document.getElementById('evolucaoChart');
@@ -1196,6 +1240,37 @@
         if (!botao) return;
         const codigo = botao.dataset.treino === 'todos' ? null : botao.textContent.trim();
         carregarEvolucao(botao.dataset.treino, codigo, botao);
+    });
+
+    const filtroPeriodoEvolucao = document.getElementById('filtroPeriodoEvolucao');
+    filtroPeriodoEvolucao.addEventListener('click', function (evento) {
+        const botao = evento.target.closest('.est-pill');
+        if (!botao) return;
+        filtroPeriodoEvolucao.querySelectorAll('.est-pill').forEach(p => p.classList.remove('active'));
+        botao.classList.add('active');
+
+        if (botao.dataset.dias === 'custom') {
+            document.getElementById('periodoEvolucaoCustom').style.display = 'flex';
+            return;
+        }
+        document.getElementById('periodoEvolucaoCustom').style.display = 'none';
+        periodoEvolucao = periodoDoBotao(botao.dataset.dias);
+        carregarEvolucao(treinoEvolucao, codigoTreinoEvolucao, null);
+    });
+
+    document.getElementById('periodoEvolucaoAplicar').addEventListener('click', function () {
+        const inicio = document.getElementById('periodoEvolucaoInicio').value;
+        const fim = document.getElementById('periodoEvolucaoFim').value;
+        if (!inicio || !fim) {
+            if (window.FitLogUtils) FitLogUtils.showToast('Escolha as duas datas do período.', 'info');
+            return;
+        }
+        if (inicio > fim) {
+            if (window.FitLogUtils) FitLogUtils.showToast('A data inicial não pode ser depois da final.', 'info');
+            return;
+        }
+        periodoEvolucao = periodoPersonalizado(inicio, fim);
+        carregarEvolucao(treinoEvolucao, codigoTreinoEvolucao, null);
     });
 
     document.getElementById('filtrosModoEvolucao').addEventListener('click', function(evento) {
