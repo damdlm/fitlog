@@ -133,6 +133,13 @@
         padding-top: 1rem;
         text-align: center;
         background: transparent;
+        /* Sem seleção/arrasto nativo de texto: o drag-and-drop do navegador
+           cancela o gesto (pointercancel) e fazia o átomo voltar a seguir
+           o ponteiro. pan-y mantém a rolagem vertical no celular. */
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-user-drag: none;
+        touch-action: pan-y;
     }
     .home-tips-title {
         display: inline-flex;
@@ -445,6 +452,22 @@
         gestoNasDicas = veioDasDicas(event);
     }, { passive: true });
 
+    // Impede o arrasto nativo do texto das dicas.
+    window.addEventListener('dragstart', function (event) {
+        if (veioDasDicas(event)) event.preventDefault();
+    });
+
+    // O gesto só termina quando o dedo/mouse é solto. NÃO termina em
+    // pointercancel: o navegador cancela o ponteiro ao iniciar rolagem ou
+    // arrasto de texto, e o gesto continua nas dicas.
+    function encerrarGestoNasDicas() {
+        gestoNasDicas = false;
+    }
+
+    ['pointerup', 'mouseup', 'touchend', 'dragend', 'blur'].forEach(function (nome) {
+        window.addEventListener(nome, encerrarGestoNasDicas, { passive: true });
+    });
+
     function handlePointerMove(event) {
         if (gestoNasDicas || veioDasDicas(event)) return;
 
@@ -465,7 +488,7 @@
     function soltarPonteiro() {
         pointerActive = false;
 
-        if (!gyroActive) {
+        if (!gyroActive && !gestoNasDicas) {
             resetTarget();
         }
     }
@@ -474,13 +497,9 @@
     document.documentElement.addEventListener('mouseleave', soltarPonteiro, { passive: true });
     window.addEventListener('blur', soltarPonteiro);
     window.addEventListener('pointerup', function (event) {
-        gestoNasDicas = false;
         if (event.pointerType === 'touch') soltarPonteiro();
     }, { passive: true });
-    window.addEventListener('pointercancel', function () {
-        gestoNasDicas = false;
-        soltarPonteiro();
-    }, { passive: true });
+    window.addEventListener('pointercancel', soltarPonteiro, { passive: true });
 
     // -----------------------------
     // Giroscópio / Device Orientation (celulares)
@@ -496,7 +515,7 @@
         const gyroY = clamp((event.beta - 15) / 45, -1, 1);
 
         // Se o usuário estiver tocando/arrastando, o toque tem prioridade.
-        if (!pointerActive) {
+        if (!pointerActive && !gestoNasDicas) {
             setTarget(gyroX, gyroY);
         }
     }
