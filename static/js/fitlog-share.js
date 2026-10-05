@@ -230,6 +230,157 @@
             y += raio * 2 + 18;
         });
         ctx.textAlign = 'left';
+        return y;
+    }
+
+    // ---------------------------------------------------------------
+    // EVOLUÇÃO -- mini gráfico "Acompanhe sua evolução" (só no calendário)
+    // Usa o espaço que sobra abaixo da grade do mês; se não couber
+    // (mês com 6 semanas + pouco espaço) simplesmente não desenha.
+    // ---------------------------------------------------------------
+    function formatarVariacao(primeiro, ultimo) {
+        if (!(primeiro > 0)) return null;
+        const pct = Math.round((ultimo / primeiro - 1) * 100);
+        return { pct: pct, texto: (pct > 0 ? '+' : '') + pct + '%' };
+    }
+
+    function desenharEvolucao(ctx, evo, topo) {
+        if (!evo || !evo.volumes || evo.volumes.length < 2) return;
+        const rodapeY = H - 96;
+        const disponivel = rodapeY - topo - 50;
+        // título+subtítulo (88) + rótulos do eixo (34) + legenda (34) + gráfico mínimo
+        const ALT_FIXA = 88 + 34 + 34;
+        if (disponivel < ALT_FIXA + 150) return;
+
+        const x0 = 64, larg = W - 128;
+        const n = evo.volumes.length;
+        const volumes = evo.volumes.map(Number);
+        const cargas = (evo.cargas || []).map(Number);
+        let y = topo + 16;
+
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.font = '700 40px Arial, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('Acompanhe sua evolução', x0, y + 38);
+
+        const variacao = formatarVariacao(volumes[0], volumes[n - 1]);
+        if (variacao) {
+            ctx.textAlign = 'right';
+            ctx.font = '700 44px Arial, sans-serif';
+            ctx.fillStyle = variacao.pct >= 0 ? LARANJA : '#e8e6e1';
+            ctx.fillText(variacao.texto, x0 + larg, y + 38);
+            ctx.textAlign = 'left';
+        }
+
+        ctx.font = '400 24px Arial, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.fillText(evo.subtitulo || '', x0, y + 72);
+
+        const topoPlot = y + 96;
+        const altPlot = Math.min(300, disponivel - ALT_FIXA);
+        const baseY = topoPlot + altPlot;
+        const px0 = x0 + 14, pw = larg - 28;
+        const xi = function (i) { return px0 + (n === 1 ? 0 : i * pw / (n - 1)); };
+
+        // grade horizontal
+        ctx.strokeStyle = 'rgba(255,255,255,0.09)';
+        ctx.lineWidth = 1;
+        for (let g = 0; g <= 3; g++) {
+            const gy = topoPlot + (altPlot * g) / 3;
+            ctx.beginPath();
+            ctx.moveTo(x0, gy);
+            ctx.lineTo(x0 + larg, gy);
+            ctx.stroke();
+        }
+
+        function yDe(valor, max) { return baseY - (max > 0 ? (valor / max) * (altPlot - 10) : 0); }
+
+        // carga média (linha tracejada, escala própria)
+        const maxCarga = Math.max.apply(null, cargas.concat([0]));
+        if (cargas.length === n && maxCarga > 0) {
+            ctx.setLineDash([14, 10]);
+            ctx.strokeStyle = '#e8e6e1';
+            ctx.lineWidth = 4;
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            cargas.forEach(function (v, i) {
+                if (i === 0) ctx.moveTo(xi(i), yDe(v, maxCarga)); else ctx.lineTo(xi(i), yDe(v, maxCarga));
+            });
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // volume total (área + linha)
+        const maxVol = Math.max.apply(null, volumes.concat([0]));
+        const area = ctx.createLinearGradient(0, topoPlot, 0, baseY);
+        area.addColorStop(0, 'rgba(242,140,51,0.38)');
+        area.addColorStop(1, 'rgba(242,140,51,0)');
+        ctx.beginPath();
+        volumes.forEach(function (v, i) {
+            if (i === 0) ctx.moveTo(xi(i), yDe(v, maxVol)); else ctx.lineTo(xi(i), yDe(v, maxVol));
+        });
+        ctx.lineTo(xi(n - 1), baseY);
+        ctx.lineTo(xi(0), baseY);
+        ctx.closePath();
+        ctx.fillStyle = area;
+        ctx.fill();
+
+        ctx.strokeStyle = LARANJA;
+        ctx.lineWidth = 6;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        volumes.forEach(function (v, i) {
+            if (i === 0) ctx.moveTo(xi(i), yDe(v, maxVol)); else ctx.lineTo(xi(i), yDe(v, maxVol));
+        });
+        ctx.stroke();
+
+        if (n <= 14) {
+            volumes.forEach(function (v, i) {
+                ctx.beginPath();
+                ctx.arc(xi(i), yDe(v, maxVol), 8, 0, Math.PI * 2);
+                ctx.fillStyle = LARANJA;
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#1f1f1f';
+                ctx.stroke();
+            });
+        }
+
+        // rótulos do eixo X: primeiro, do meio e último
+        const rotulos = evo.labels || [];
+        ctx.font = '400 22px Arial, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        const yRotulo = baseY + 30;
+        function rotulo(i, alinhamento) {
+            if (rotulos[i] == null) return;
+            ctx.textAlign = alinhamento;
+            ctx.fillText(String(rotulos[i]).slice(0, 14), alinhamento === 'left' ? px0 - 14 : (alinhamento === 'right' ? px0 + pw + 14 : xi(i)), yRotulo);
+        }
+        rotulo(0, 'left');
+        if (n >= 5) rotulo(Math.floor((n - 1) / 2), 'center');
+        rotulo(n - 1, 'right');
+        ctx.textAlign = 'left';
+
+        // legenda
+        const yLeg = yRotulo + 38;
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = LARANJA;
+        ctx.beginPath(); ctx.moveTo(x0, yLeg - 8); ctx.lineTo(x0 + 40, yLeg - 8); ctx.stroke();
+        ctx.font = '400 24px Arial, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.fillText('Volume total (kg)', x0 + 54, yLeg);
+        if (cargas.length === n && maxCarga > 0) {
+            const xl = x0 + 54 + ctx.measureText('Volume total (kg)').width + 40;
+            ctx.setLineDash([10, 8]);
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#e8e6e1';
+            ctx.beginPath(); ctx.moveTo(xl, yLeg - 8); ctx.lineTo(xl + 40, yLeg - 8); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillText('Carga média (kg)', xl + 54, yLeg);
+        }
+        ctx.lineCap = 'butt';
     }
 
     async function compartilharCalendario(dados) {
@@ -240,7 +391,8 @@
 
         desenharBackground(ctx);
         const topo = await desenharCabecalho(ctx, dados.nomeUsuario);
-        await desenharCalendario(ctx, dados, topo);
+        const fimCalendario = await desenharCalendario(ctx, dados, topo);
+        desenharEvolucao(ctx, dados.evolucao, fimCalendario);
         desenharRodape(ctx);
 
         abrirPreview(canvas, 'meu-calendario-fitlog.png');

@@ -2556,6 +2556,26 @@
             let mesAno = viewStart.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
             mesAno = mesAno.charAt(0).toUpperCase() + mesAno.slice(1);
 
+            // Resumo do gráfico "Acompanhe sua evolução" (o que está na tela:
+            // respeita o filtro de treino e o modo semana/treino). Fica de
+            // fora quando o gráfico não existe (professor vendo aluno, admin)
+            // ou ainda não tem pontos suficientes.
+            let evolucao = null;
+            if (typeof chart !== 'undefined' && chart && chart.data && chart.data.labels
+                    && chart.data.labels.length >= 2 && chart.data.datasets.length >= 2) {
+                const ativo = document.querySelector('#evolucaoWrap .dash-filter-pill.active');
+                const porTreino = (typeof modoGrafico !== 'undefined' && modoGrafico === 'treino');
+                const ultimos = 12;
+                const labels = chart.data.labels.slice(-ultimos);
+                evolucao = {
+                    labels: labels,
+                    volumes: chart.data.datasets[0].data.slice(-ultimos),
+                    cargas: chart.data.datasets[1].data.slice(-ultimos),
+                    subtitulo: 'Últimas ' + labels.length + (porTreino ? ' rodadas' : ' semanas')
+                        + ' · ' + (ativo ? ativo.textContent.trim() : 'Todos')
+                };
+            }
+
             const iconeOriginal = btnCompartilharCalendario.innerHTML;
             btnCompartilharCalendario.disabled = true;
             btnCompartilharCalendario.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
@@ -2566,7 +2586,8 @@
                 diasTreinados: statDiasEl.textContent.trim(),
                 sequencia: document.getElementById('statSequencia').textContent.trim(),
                 volumeKg: document.getElementById('statVolume').textContent.trim(),
-                semanas: montarSemanasDoMes(viewStart, viewEnd, datasComTreino)
+                semanas: montarSemanasDoMes(viewStart, viewEnd, datasComTreino),
+                evolucao: evolucao
             }).catch(function () {
                 if (window.FitLogUtils) FitLogUtils.showToast('Não consegui gerar a imagem. Tenta de novo.', 'danger');
             }).finally(function () {
