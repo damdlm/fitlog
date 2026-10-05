@@ -282,6 +282,90 @@
         margin-bottom: 10px;
         display: block;
     }
+
+    /* ===== Gráfico "Evolução do Volume" (mesmo visual da página Estatísticas) ===== */
+    .est-pill-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .est-pill {
+        border: 1px solid rgba(242, 140, 51, 0.3);
+        background: white;
+        color: var(--primary-color);
+        border-radius: 999px;
+        padding: 5px 14px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .est-pill:hover {
+        background: rgba(242, 140, 51, 0.08);
+    }
+    .est-pill.active {
+        background: var(--gradient-primary);
+        color: white;
+        border-color: transparent;
+    }
+    .est-chart-toolbar {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        margin-top: 0.75rem;
+    }
+    .est-chart-hint {
+        font-size: 0.78rem;
+        color: #8a8a8a;
+        text-align: center;
+        margin: 0;
+    }
+    .est-chart-wrap {
+        position: relative;
+        width: 100%;
+        height: 300px;
+    }
+    .est-periodo-filtro {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .est-periodo-custom {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+    }
+    .est-periodo-custom .form-control {
+        max-width: 150px;
+    }
+    .est-evolucao-periodo {
+        margin-bottom: 10px;
+    }
+    @media (max-width: 991.98px) {
+        .est-chart-wrap { height: 230px; }
+    }
+    @media (max-width: 575.98px) {
+        .est-chart-wrap { height: 190px; }
+        #evolucaoCard { padding-left: 0.5rem; padding-right: 0.5rem; }
+        .est-periodo-filtro { gap: 5px; }
+        .est-periodo-filtro .est-pill { padding: 5px 10px; font-size: 0.76rem; }
+        .est-evolucao-periodo .est-periodo-filtro { gap: 4px; }
+        .est-evolucao-periodo .est-periodo-filtro .est-pill { padding: 4px 8px; font-size: 0.72rem; }
+        .est-periodo-custom { flex-wrap: nowrap; gap: 6px; }
+        .est-periodo-custom .form-control {
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: none;
+            padding-left: 0.4rem;
+            padding-right: 0.4rem;
+            font-size: 0.78rem;
+        }
+        .est-periodo-custom span,
+        .est-periodo-custom .btn { flex: 0 0 auto; }
+    }
 </style>
 
 <!-- Cabeçalho -->
@@ -396,6 +480,54 @@
      atualizar a página inteira. -->
 <div id="estDesempenhoTreino">
     {% include "professor/_desempenho_treino.html" %}
+</div>
+
+<!-- Evolução do Volume: mesmo gráfico da página Estatísticas (barras = carga
+     média, linha = volume total), com os dados deste aluno via
+     professor.progresso_aluno. O período começa igual ao do filtro da página. -->
+<div class="card est-card mt-4">
+    <div class="card-header bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 pb-0">
+        <h6 class="fw-bold mb-0">
+            <i class="bi bi-graph-up me-1" style="color: #F28C33;"></i>Evolução do Volume
+        </h6>
+        <div class="est-pill-group" id="filtrosEvolucao">
+            <button type="button" class="est-pill active" data-treino="todos">Todos</button>
+            {% for t in treinos_evolucao %}
+            <button type="button" class="est-pill" data-treino="{{ t.id }}">{{ t.codigo }}</button>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="card-body" id="evolucaoCard">
+        <div class="est-evolucao-periodo">
+            <div class="est-periodo-filtro" id="filtroPeriodoEvolucao">
+                <button type="button" class="est-pill" data-dias="7">7 dias</button>
+                <button type="button" class="est-pill" data-dias="30">30 dias</button>
+                <button type="button" class="est-pill" data-dias="90">90 dias</button>
+                <button type="button" class="est-pill" data-dias="tudo">Tudo</button>
+                <button type="button" class="est-pill active" data-dias="custom">Personalizado</button>
+            </div>
+            <div class="est-periodo-custom" id="periodoEvolucaoCustom">
+                <input type="date" class="form-control form-control-sm" id="periodoEvolucaoInicio" value="{{ data_inicio_sel.isoformat() }}">
+                <span class="text-muted" style="font-size: 0.82rem;">até</span>
+                <input type="date" class="form-control form-control-sm" id="periodoEvolucaoFim" value="{{ data_fim_sel.isoformat() }}">
+                <button type="button" class="btn btn-sm btn-primary" id="periodoEvolucaoAplicar">Aplicar</button>
+            </div>
+        </div>
+        <div class="est-chart-wrap">
+            <canvas id="evolucaoChart"></canvas>
+        </div>
+        <div class="est-empty" id="evolucaoVazio" style="display: none;">
+            <i class="bi bi-graph-up"></i>
+            Ainda não há registros suficientes pra montar esse gráfico.
+        </div>
+        <div class="est-chart-toolbar" id="toolbarEvolucao">
+            <div class="est-pill-group" id="filtrosModoEvolucao">
+                <button type="button" class="est-pill active" data-modo="semana">Por semana</button>
+                <button type="button" class="est-pill" data-modo="treino">Por treino</button>
+            </div>
+            <p class="est-chart-hint" id="evolucaoHint"></p>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -521,6 +653,318 @@
             inicio.max = fim.value;
             form.submit();
         });
+    })();
+</script>
+<script>
+    // Gráfico "Evolução do Volume" do aluno -- mesmo gráfico da página
+    // Estatísticas, com os dados vindos de professor.progresso_aluno. O período
+    // começa igual ao do filtro da página (início/fim acima) e pode ser trocado
+    // só no gráfico: 7/30/90 dias, Tudo ou Personalizado.
+    (function () {
+        if (!document.getElementById('evolucaoChart')) return;
+        const URL_PROGRESSO = {{ url_for('professor.progresso_aluno', aluno_id=aluno.id)|tojson }};
+
+        function formatarDataBR(iso) { return iso.split('-').reverse().join('/'); }
+
+        function periodoDoBotao(dias) {
+            if (dias === 'tudo') {
+                return { chave: 'tudo', query: 'tudo=1', frase: 'em todo o histórico' };
+            }
+            return { chave: String(dias), query: `dias=${dias}`, frase: `nos últimos ${dias} dias` };
+        }
+
+        function periodoPersonalizado(inicio, fim) {
+            return { chave: 'custom', inicio: inicio, fim: fim, query: `inicio=${inicio}&fim=${fim}`,
+                     frase: `de ${formatarDataBR(inicio)} a ${formatarDataBR(fim)}` };
+        }
+
+        // Primeiro e último dia do mês corrente (AAAA-MM-DD), no fuso do aparelho
+        // (toISOString() converteria pra UTC e podia cair no dia errado).
+        function mesCorrenteISO() {
+            const hoje = new Date();
+            const ano = hoje.getFullYear(), mes = hoje.getMonth();
+            const dois = n => String(n).padStart(2, '0');
+            return { inicio: `${ano}-${dois(mes + 1)}-01`,
+                     fim: `${ano}-${dois(mes + 1)}-${dois(new Date(ano, mes + 1, 0).getDate())}` };
+        }
+
+        // Ao abrir o "Personalizado" sem datas, sugere o mês corrente inteiro.
+        function sugerirMesCorrente(idInicio, idFim) {
+            const campoInicio = document.getElementById(idInicio);
+            const campoFim = document.getElementById(idFim);
+            if (campoInicio.value || campoFim.value) return;
+            const mes = mesCorrenteISO();
+            campoInicio.value = mes.inicio;
+            campoFim.value = mes.fim;
+        }
+
+        // Período do gráfico: começa igual ao filtro da página.
+        let periodoEvolucao = periodoPersonalizado(
+            document.getElementById('periodoEvolucaoInicio').value,
+            document.getElementById('periodoEvolucaoFim').value);
+        let reqEvolucao = 0;
+
+        let evolucaoChart;
+
+        // Tocar/clicar fora do gráfico fecha o tooltip: tratado para todos os
+        // gráficos do app por static/js/modules/chart-tooltip-dismiss.js
+        // (carregado no base.html).
+        let modoEvolucao = 'semana';   // 'semana' | 'treino' (rodada completa A+B+C+D)
+        let treinoEvolucao = 'todos';  // 'todos' ou id do treino individual
+        let codigoTreinoEvolucao = null; // letra do treino quando filtrado (pra cor da barra)
+
+        // Mesma paleta usada em todo o app pra identificar cada treino;
+        // cicla se a divisão tiver mais letras que cores definidas.
+        const CORES_TREINO = ['#5B8FF9', '#FFC53D', '#FF6B6B', '#51CF66', '#9775FA', '#FF922B'];
+        function corDoTreino(codigo, indiceFallback) {
+            const indice = CORES_TREINO_POR_LETRA[codigo];
+            return CORES_TREINO[(indice !== undefined ? indice : indiceFallback) % CORES_TREINO.length];
+        }
+        // Mapa letra -> índice de cor, construído a partir da ordem dos
+        // próprios botões de filtro (A, B, C... na ordem da divisão).
+        const CORES_TREINO_POR_LETRA = {};
+        document.querySelectorAll('#filtrosEvolucao .est-pill[data-treino]').forEach((botao, i) => {
+            if (botao.dataset.treino !== 'todos') CORES_TREINO_POR_LETRA[botao.textContent.trim()] = i - 1;
+        });
+
+        function dicaEvolucao(modo) {
+            const base = 'Barras: carga média de cada treino. Linha: volume total';
+            if (modo === 'treino') {
+                return `${base} ${periodoEvolucao.frase}. Cada ponto é uma rodada completa do treino (ex.: A+B+C+D); treino não feito na rodada conta como 0.`;
+            }
+            return `${base} (peso × repetições × séries), somado por semana, ${periodoEvolucao.frase}.`;
+        }
+
+        function trocarModoEvolucao(modo, botao) {
+            modoEvolucao = modo;
+            document.querySelectorAll('#filtrosModoEvolucao .est-pill').forEach(b => b.classList.remove('active'));
+            if (botao) botao.classList.add('active');
+            carregarEvolucao(treinoEvolucao, codigoTreinoEvolucao, null);
+        }
+
+        function carregarEvolucao(treinoId, codigoTreino, botaoTreino) {
+            treinoEvolucao = treinoId;
+            codigoTreinoEvolucao = codigoTreino;
+            if (botaoTreino) {
+                document.querySelectorAll('#filtrosEvolucao .est-pill').forEach(p => p.classList.remove('active'));
+                botaoTreino.classList.add('active');
+            }
+            document.getElementById('evolucaoHint').textContent = dicaEvolucao(modoEvolucao);
+
+            const params = new URLSearchParams({ modo: modoEvolucao });
+            if (treinoId !== 'todos') params.set('treino', treinoId);
+            new URLSearchParams(periodoEvolucao.query).forEach((valor, chave) => params.set(chave, valor));
+
+            // Contador próprio: trocar treino/modo/período rápido não deixa uma
+            // resposta antiga sobrescrever a mais nova.
+            const meu = ++reqEvolucao;
+            fetch(`${URL_PROGRESSO}?${params.toString()}`, { credentials: 'same-origin' })
+                .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(data => {
+                    if (meu !== reqEvolucao) return;
+                    if (evolucaoChart) { evolucaoChart.destroy(); evolucaoChart = null; }
+
+                    const canvas = document.getElementById('evolucaoChart');
+                    const semDados = !data.semanas || data.semanas.length === 0 || data.volumes.every(v => v === 0);
+                    canvas.style.display = semDados ? 'none' : 'block';
+                    document.getElementById('evolucaoVazio').style.display = semDados ? 'block' : 'none';
+                    if (semDados) return;
+
+                    const isMobile = window.innerWidth < 576;
+
+                    // Barras = carga média; linha preta = volume total.
+                    // "Todos": uma barra por treino (A, B, C...), lado a lado em
+                    // cada ponto -- a carga média de cada um vem de
+                    // data.sessoes_por_treino (mesma ordem dos pontos). Um treino
+                    // específico filtrado: uma única barra, na cor dele.
+                    let datasetsBarras;
+                    if (treinoEvolucao === 'todos' && data.detalhes && data.detalhes.length && data.detalhes[0].length) {
+                        const letras = data.detalhes[0].map(d => d.codigo);
+                        datasetsBarras = letras.map((letra, i) => ({
+                            type: 'bar',
+                            label: `Treino ${letra}`,
+                            codigo: letra,
+                            data: (data.sessoes_por_treino || []).map(spt => ((spt || {})[letra] || {}).carga_media || 0),
+                            backgroundColor: corDoTreino(letra, i),
+                            borderRadius: 4,
+                            maxBarThickness: 28,
+                            yAxisID: 'y'
+                        }));
+                    } else {
+                        datasetsBarras = [{
+                            type: 'bar',
+                            label: codigoTreino ? `Treino ${codigoTreino}` : 'Carga Média (kg)',
+                            codigo: codigoTreino,
+                            data: data.cargas_medias,
+                            backgroundColor: codigoTreino ? corDoTreino(codigoTreino, 0) : '#F28C33',
+                            borderRadius: 4,
+                            maxBarThickness: 36,
+                            yAxisID: 'y'
+                        }];
+                    }
+
+                    evolucaoChart = new Chart(canvas, {
+                        type: 'bar',
+                        data: {
+                            labels: data.semanas,
+                            datasets: [
+                                ...datasetsBarras,
+                                {
+                                    type: 'line',
+                                    label: 'Volume Total (kg)',
+                                    data: data.volumes,
+                                    borderColor: '#1a1a1a',
+                                    backgroundColor: '#1a1a1a',
+                                    borderWidth: 2,
+                                    pointRadius: 3,
+                                    pointHoverRadius: 5,
+                                    tension: 0.3,
+                                    yAxisID: 'y1'
+                                }
+                            ]
+                        },
+                        // Rótulos dos eixos escritos NA HORIZONTAL, acima dos valores
+                        // (o título nativo do Chart.js gira 90° e fica ao lado dos
+                        // números). Esquerda = carga média (barras), direita = volume
+                        // total (linha). O espaço no topo vem do layout.padding.top abaixo
+                        // (quanto maior, mais alto os rótulos ficam em relação aos números).
+                        plugins: [{
+                            id: 'rotulosEixos',
+                            afterDraw: function (chart) {
+                                const ctx = chart.ctx;
+                                ctx.save();
+                                ctx.font = `11px ${Chart.defaults.font.family}`;
+                                ctx.fillStyle = '#8a8a8a';
+                                ctx.textBaseline = 'top';
+                                ctx.textAlign = 'left';
+                                ctx.fillText('Carga', 0, 0);
+                                ctx.fillText('Média (kg)', 0, 13);
+                                ctx.textAlign = 'right';
+                                ctx.fillText('Volume', chart.width, 0);
+                                ctx.fillText('Total (kg)', chart.width, 13);
+                                ctx.restore();
+                            }
+                        }],
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            layout: { padding: { top: 39 } },
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { boxWidth: 12, font: { size: 11 }, color: '#8a8a8a' }
+                                },
+                                tooltip: {
+                                    backgroundColor: '#1a1a1a',
+                                    padding: 10,
+                                    cornerRadius: 8,
+                                    callbacks: {
+                                        label: function (context) {
+                                            // Séries com "(kg)" no nome (Volume Total, Carga
+                                            // Média) já dizem a unidade; as barras "Treino X"
+                                            // são sempre carga média.
+                                            const rotulo = context.dataset.label;
+                                            const sufixo = /\(kg\)$/.test(rotulo) ? '' : ' kg (carga média)';
+                                            return `${rotulo}: ${context.formattedValue}${sufixo}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: { display: false },
+                                    ticks: {
+                                        maxRotation: 0, autoSkip: true, maxTicksLimit: 8, color: '#8a8a8a', font: { size: 11 },
+                                        // "02/09–06/09" vira duas linhas (data
+                                        // inicial em cima, final embaixo) -- uma
+                                        // linha só ficava apertada com o filtro
+                                        // de 4 treinos. Semana de um dia só
+                                        // (sem travessão) continua numa linha.
+                                        callback: function (valor, indice) {
+                                            const rotulo = this.getLabelForValue(valor);
+                                            return rotulo.split('–');
+                                        }
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    // Rótulo do eixo: plugin 'rotulosEixos' acima.
+                                    grid: { color: 'rgba(0,0,0,0.05)' },
+                                    ticks: {
+                                        color: '#8a8a8a',
+                                        font: { size: 11 },
+                                        maxTicksLimit: isMobile ? 5 : 8
+                                    }
+                                },
+                                y1: {
+                                    beginAtZero: true,
+                                    position: 'right',
+                                    grid: { drawOnChartArea: false },
+                                    ticks: {
+                                        color: '#8a8a8a',
+                                        font: { size: 11 },
+                                        maxTicksLimit: isMobile ? 5 : 8
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(() => {
+                    if (meu !== reqEvolucao) return;
+                    if (evolucaoChart) { evolucaoChart.destroy(); evolucaoChart = null; }
+                    document.getElementById('evolucaoChart').style.display = 'none';
+                    document.getElementById('evolucaoVazio').style.display = 'block';
+                });
+        }
+
+        document.getElementById('filtrosEvolucao').addEventListener('click', function(evento) {
+            const botao = evento.target.closest('.est-pill');
+            if (!botao) return;
+            const codigo = botao.dataset.treino === 'todos' ? null : botao.textContent.trim();
+            carregarEvolucao(botao.dataset.treino, codigo, botao);
+        });
+
+        const filtroPeriodoEvolucao = document.getElementById('filtroPeriodoEvolucao');
+        filtroPeriodoEvolucao.addEventListener('click', function (evento) {
+            const botao = evento.target.closest('.est-pill');
+            if (!botao) return;
+            filtroPeriodoEvolucao.querySelectorAll('.est-pill').forEach(p => p.classList.remove('active'));
+            botao.classList.add('active');
+
+            if (botao.dataset.dias === 'custom') {
+                sugerirMesCorrente('periodoEvolucaoInicio', 'periodoEvolucaoFim');
+                document.getElementById('periodoEvolucaoCustom').style.display = 'flex';
+                return;
+            }
+            document.getElementById('periodoEvolucaoCustom').style.display = 'none';
+            periodoEvolucao = periodoDoBotao(botao.dataset.dias);
+            carregarEvolucao(treinoEvolucao, codigoTreinoEvolucao, null);
+        });
+
+        document.getElementById('periodoEvolucaoAplicar').addEventListener('click', function () {
+            const inicio = document.getElementById('periodoEvolucaoInicio').value;
+            const fim = document.getElementById('periodoEvolucaoFim').value;
+            if (!inicio || !fim) {
+                if (window.FitLogUtils) FitLogUtils.showToast('Escolha as duas datas do período.', 'info');
+                return;
+            }
+            if (inicio > fim) {
+                if (window.FitLogUtils) FitLogUtils.showToast('A data inicial não pode ser depois da final.', 'info');
+                return;
+            }
+            periodoEvolucao = periodoPersonalizado(inicio, fim);
+            carregarEvolucao(treinoEvolucao, codigoTreinoEvolucao, null);
+        });
+
+        document.getElementById('filtrosModoEvolucao').addEventListener('click', function(evento) {
+            const botao = evento.target.closest('.est-pill');
+            if (!botao) return;
+            trocarModoEvolucao(botao.dataset.modo, botao);
+        });
+
+        carregarEvolucao('todos', null, null);
     })();
 </script>
 {% endblock %}

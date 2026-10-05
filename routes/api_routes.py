@@ -6,6 +6,7 @@ from services.versao_service import VersaoService
 from services.registro_service import RegistroService
 from services.estatistica_service import EstatisticaService
 from models import TreinoVersao
+from services.treino_service import TreinoService
 from utils.decorators import acesso_premium_required
 from utils.exercise_utils import buscar_musculo_no_catalogo, remover_acentos
 from services.geolocalizacao_service import GeolocalizacaoService, ZOOM_MINIMO_PONTOS_INDIVIDUAIS
@@ -154,7 +155,7 @@ def api_progresso():
     })
 
 
-def _api_progresso_agregado(treino, modo, periodo=None):
+def _api_progresso_agregado(treino, modo, periodo=None, user_id=None):
     """
     Gráfico do dashboard agregado (modo='semana' ou 'treino'): volume
     total (peso x repetições x séries) dos últimos 30 dias, somando por
@@ -165,6 +166,11 @@ def _api_progresso_agregado(treino, modo, periodo=None):
 
     `periodo` (ver _periodo_da_requisicao) troca a janela de 30 dias pelo
     intervalo escolhido na tela; sem ele, continuam os últimos 30 dias.
+
+    `user_id` (opcional) calcula para outro usuário -- usado pela tela de
+    estatísticas do aluno vista pelo professor (professor.progresso_aluno).
+    Sem ele, vale o usuário logado, como sempre. Com ele, o treino
+    filtrado precisa ser do próprio usuário (id alheio vira resposta vazia).
     """
     vazio = {"semanas": [], "volumes": [], "cargas_medias": [], "detalhes": [], "sessoes_por_treino": []}
 
@@ -174,16 +180,19 @@ def _api_progresso_agregado(treino, modo, periodo=None):
             treino_id = int(treino)
         except (TypeError, ValueError):
             return jsonify(vazio)
-        treino_versao = TreinoVersao.query.filter_by(id=treino_id).first()
+        if user_id is None:
+            treino_versao = TreinoVersao.query.filter_by(id=treino_id).first()
+        else:
+            treino_versao = TreinoService.get_by_id(treino_id, user_id=user_id)
         if not treino_versao:
             return jsonify(vazio)
         codigo = treino_versao.codigo
 
-    versao_ativa = VersaoService.get_ativa()
+    versao_ativa = VersaoService.get_ativa(user_id=user_id)
     versao_id = versao_ativa.id if versao_ativa else None
 
     if periodo is None:
-        base = EstatisticaService.get_sessoes_ultimos_30_dias(versao_id)
+        base = EstatisticaService.get_sessoes_ultimos_30_dias(versao_id, user_id=user_id)
         return jsonify(EstatisticaService.agregar_progresso(
             base['sessoes'], base['treinos'], modo, treino=codigo
         ))
@@ -193,7 +202,8 @@ def _api_progresso_agregado(treino, modo, periodo=None):
     # hoje -- senão o gráfico ganharia semanas vazias que ainda não existem.
     dia_fim = min(periodo['dia_fim'], hoje) if periodo['dia_fim'] else hoje
     base = EstatisticaService.get_sessoes_periodo(
-        versao_id=versao_id, dia_inicio=periodo['dia_inicio'], dia_fim=dia_fim
+        versao_id=versao_id, user_id=user_id,
+        dia_inicio=periodo['dia_inicio'], dia_fim=dia_fim
     )
     # "Tudo": o gráfico começa no primeiro treino registrado.
     dia_inicio = periodo['dia_inicio'] or min(

@@ -327,3 +327,107 @@ class TestFiltroVersaoDesempenhoPorTreino:
         html = self._get(client, aluno_id, f'?versao={ids[1]}')
 
         assert f'<input type="hidden" name="versao" value="{ids[1]}">' in html
+
+
+class TestEvolucaoDoVolumeDoAluno:
+    """Gráfico "Evolução do Volume" na tela de estatísticas do aluno
+    (mesmo gráfico da página Estatísticas; dados via
+    /professor/aluno/<id>/progresso, no formato de /api/progresso)."""
+
+    _montar = TestFiltroVersaoDesempenhoPorTreino._montar
+
+    def _json(self, client, aluno_id, qs=''):
+        resp = client.get(f'/professor/aluno/{aluno_id}/progresso{qs}')
+        return resp.status_code, resp.get_json()
+
+    def test_pagina_mostra_o_card_e_os_botoes_de_treino_da_versao_ativa(self, client, app):
+        with app.app_context():
+            username, aluno_id, ids = self._montar(app, 'ev1')
+            tv_ativo = TreinoVersao.query.filter_by(versao_id=ids[2]).first().id
+            tv_antigo = TreinoVersao.query.filter_by(versao_id=ids[1]).first().id
+        _login(client, username)
+
+        html = client.get(f'/professor/aluno/{aluno_id}/estatisticas?inicio=2026-01-01&fim=2026-01-31'
+                          ).get_data(as_text=True)
+
+        assert 'Evolução do Volume' in html
+        assert 'id="evolucaoChart"' in html
+        assert 'id="filtroPeriodoEvolucao"' in html and 'id="filtrosModoEvolucao"' in html
+        assert f'data-treino="{tv_ativo}"' in html
+        assert f'data-treino="{tv_antigo}"' not in html  # versão encerrada fica fora
+        assert f'/professor/aluno/{aluno_id}/progresso' in html
+        # período do gráfico começa igual ao do filtro da página
+        assert 'id="periodoEvolucaoInicio" value="2026-01-01"' in html
+        assert 'id="periodoEvolucaoFim" value="2026-01-31"' in html
+
+    def test_semana_na_versao_ativa_soma_so_o_que_o_aluno_treinou(self, client, app):
+        with app.app_context():
+            username, aluno_id, _ = self._montar(app, 'ev2')
+        _login(client, username)
+
+        status, dados = self._json(client, aluno_id, '?modo=semana&dias=30')
+
+        assert status == 200
+        assert set(dados) >= {'semanas', 'volumes', 'cargas_medias', 'detalhes', 'sessoes_por_treino'}
+        # os dois registros (versão 1 encerrada e versão 2 ativa) caem na
+        # janela e contam pela letra do treino: 2 x (50kg x 10)
+        assert sum(dados['volumes']) == 1000
+
+    def test_modo_treino_e_periodo_tudo(self, client, app):
+        with app.app_context():
+            username, aluno_id, _ = self._montar(app, 'ev3')
+        _login(client, username)
+
+        status, dados = self._json(client, aluno_id, '?modo=treino&tudo=1')
+
+        assert status == 200 and sum(dados['volumes']) == 1000
+
+    def test_filtra_por_treino_do_proprio_aluno(self, client, app):
+        with app.app_context():
+            username, aluno_id, ids = self._montar(app, 'ev4')
+            tv_ativo = TreinoVersao.query.filter_by(versao_id=ids[2]).first().id
+        _login(client, username)
+
+        status, dados = self._json(client, aluno_id, f'?modo=semana&dias=30&treino={tv_ativo}')
+
+        assert status == 200 and sum(dados['volumes']) == 500
+
+    def test_treino_de_outro_aluno_ou_invalido_volta_vazio(self, client, app):
+        with app.app_context():
+            username, aluno_id, _ = self._montar(app, 'ev5')
+            _, _, ids_outro = self._montar(app, 'ev5b')
+            tv_alheio = TreinoVersao.query.filter_by(versao_id=ids_outro[2]).first().id
+        _login(client, username)
+
+        for qs in (f'?treino={tv_alheio}', '?treino=abc', '?treino=999999'):
+            status, dados = self._json(client, aluno_id, qs + '&dias=30')
+            assert status == 200
+            assert dados['semanas'] == [] and dados['volumes'] == []
+
+    def test_periodo_invalido_devolve_400(self, client, app):
+        with app.app_context():
+            username, aluno_id, _ = self._montar(app, 'ev6')
+        _login(client, username)
+
+        status, _ = self._json(client, aluno_id, '?inicio=2026-13-40&fim=2026-01-01')
+        assert status == 400
+
+    def test_modo_ausente_ou_invalido_cai_em_semana(self, client, app):
+        with app.app_context():
+            username, aluno_id, _ = self._montar(app, 'ev7')
+        _login(client, username)
+
+        status, dados = self._json(client, aluno_id, '?modo=qualquer&dias=30')
+        assert status == 200 and sum(dados['volumes']) == 1000
+
+    def test_outro_professor_recebe_403_e_sem_login_redireciona(self, client, app):
+        with app.app_context():
+            _, aluno_id, _ = self._montar(app, 'ev8')
+            intruso = _criar_usuario('ev_prof_intruso', tipo_usuario='professor').username
+
+        assert client.get(f'/professor/aluno/{aluno_id}/progresso').status_code == 302
+
+        _login(client, intruso)
+        status, dados = self._json(client, aluno_id)
+        assert status == 403
+        assert 'semanas' not in dados

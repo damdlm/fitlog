@@ -6,6 +6,7 @@ from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
 from services.versao_service import VersaoService
 from services.estatistica_service import EstatisticaService
+from routes.api_routes import _api_progresso_agregado, _periodo_da_requisicao
 from services.musculo_service import MusculoService
 from services.billing_service import BillingService
 from services.dashboard_service import DashboardService
@@ -697,7 +698,9 @@ def estatisticas_aluno(aluno_id):
                     versoes=versoes,
                     versao_sel_id=versao_sel.id if versao_sel else None,
                     versao_todas=versao_todas,
-                    versao_ativa_id=versao_ativa.id if versao_ativa else None)
+                    versao_ativa_id=versao_ativa.id if versao_ativa else None,
+                    # botões de treino do gráfico "Evolução do Volume" (versão ativa)
+                    treinos_evolucao=TreinoService.get_da_versao_ativa(user_id=aluno.id))
 
     # Troca de versão no card "Desempenho por Treino": o front pede só o
     # trecho do card (?parcial=1) em vez de recarregar a página inteira.
@@ -705,6 +708,32 @@ def estatisticas_aluno(aluno_id):
         return render_template('professor/_desempenho_treino.html', **contexto)
 
     return render_template('professor/estatisticas_aluno.html', **contexto)
+
+
+@professor_bp.route('/aluno/<int:aluno_id>/progresso')
+@login_required
+@professor_acesso_alunos_required
+def progresso_aluno(aluno_id):
+    """Dados do gráfico "Evolução do Volume" de um aluno.
+
+    Mesmos parâmetros e mesmo formato de /api/progresso (modo=semana|treino,
+    treino=<id>|todos e o período: dias=N, inicio=&fim= ou tudo=1), mas
+    para o aluno informado -- /api/progresso só serve o usuário logado.
+    O treino filtrado precisa ser do próprio aluno."""
+    aluno = User.query.get_or_404(aluno_id)
+
+    if not (current_user.is_admin or (current_user.is_professor() and aluno.get_professor() and aluno.get_professor().id == current_user.id)):
+        return jsonify({'erro': 'Sem permissão para ver este aluno.'}), 403
+
+    modo = request.args.get('modo')
+    if modo not in ('semana', 'treino'):
+        modo = 'semana'
+
+    periodo, erro = _periodo_da_requisicao()
+    if erro:
+        return erro
+    return _api_progresso_agregado(request.args.get('treino'), modo, periodo,
+                                   user_id=aluno.id)
 
 
 @professor_bp.route('/aluno/<int:aluno_id>/calendario')
