@@ -430,7 +430,24 @@
     // metade da janela, então no centro o átomo fica neutro e nos
     // cantos da tela chega ao máximo.
     // -----------------------------
+    // As dicas de treino são independentes do átomo: tocar/arrastar sobre
+    // elas não move a animação. O flag cobre o arrasto de mouse que começa
+    // nas dicas e sai delas; o closest() cobre o toque (cujo alvo permanece
+    // nas dicas durante todo o gesto).
+    let gestoNasDicas = false;
+
+    function veioDasDicas(event) {
+        return !!(event.target && event.target.closest &&
+                  event.target.closest('.home-tips'));
+    }
+
+    window.addEventListener('pointerdown', function (event) {
+        gestoNasDicas = veioDasDicas(event);
+    }, { passive: true });
+
     function handlePointerMove(event) {
+        if (gestoNasDicas || veioDasDicas(event)) return;
+
         const rect = parallax.parentElement.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
@@ -457,9 +474,13 @@
     document.documentElement.addEventListener('mouseleave', soltarPonteiro, { passive: true });
     window.addEventListener('blur', soltarPonteiro);
     window.addEventListener('pointerup', function (event) {
+        gestoNasDicas = false;
         if (event.pointerType === 'touch') soltarPonteiro();
     }, { passive: true });
-    window.addEventListener('pointercancel', soltarPonteiro, { passive: true });
+    window.addEventListener('pointercancel', function () {
+        gestoNasDicas = false;
+        soltarPonteiro();
+    }, { passive: true });
 
     // -----------------------------
     // Giroscópio / Device Orientation (celulares)
