@@ -354,6 +354,35 @@
         /* O card do gráfico é mais estreito que a página: um pouco mais justo. */
         .est-evolucao-periodo .est-periodo-filtro { gap: 4px; }
         .est-evolucao-periodo .est-periodo-filtro .est-pill { padding: 4px 8px; font-size: 0.72rem; }
+
+        /* Período personalizado do gráfico: data + "até" + data + Aplicar numa
+           linha só. Os dois campos dividem o espaço que sobra (em vez dos
+           150px fixos), então acompanham a largura de qualquer celular. */
+        .est-evolucao-periodo .est-periodo-custom { flex-wrap: nowrap; gap: 6px; }
+        .est-evolucao-periodo .est-periodo-custom .form-control {
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: none;
+            padding-left: 0.45rem;
+            padding-right: 0.3rem;
+            font-size: 0.8rem;
+        }
+        .est-evolucao-periodo .est-periodo-custom span,
+        .est-evolucao-periodo .est-periodo-custom .btn { flex: 0 0 auto; }
+    }
+    /* Celulares bem estreitos (~320px): um pouco mais justo pra data caber inteira. */
+    @media (max-width: 359.98px) {
+        .est-evolucao-periodo .est-periodo-custom { gap: 4px; }
+        .est-evolucao-periodo .est-periodo-custom .form-control {
+            font-size: 0.72rem;
+            padding-left: 0.3rem;
+            padding-right: 0.15rem;
+        }
+        .est-evolucao-periodo .est-periodo-custom .form-control::-webkit-calendar-picker-indicator {
+            margin-left: 0;
+            padding: 0;
+        }
+        .est-evolucao-periodo .est-periodo-custom .btn { padding-left: 0.5rem; padding-right: 0.5rem; }
     }
 
     /* ===== Atividade ===== */
@@ -1149,7 +1178,8 @@
                     // Rótulos dos eixos escritos NA HORIZONTAL, acima dos valores
                     // (o título nativo do Chart.js gira 90° e fica ao lado dos
                     // números). Esquerda = carga média (barras), direita = volume
-                    // total (linha). O espaço no topo vem do layout.padding.top abaixo.
+                    // total (linha). O espaço no topo vem do layout.padding.top abaixo
+                    // (quanto maior, mais alto os rótulos ficam em relação aos números).
                     plugins: [{
                         id: 'rotulosEixos',
                         afterDraw: function (chart) {
@@ -1170,7 +1200,7 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        layout: { padding: { top: 34 } },
+                        layout: { padding: { top: 42 } },
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
                             legend: {
