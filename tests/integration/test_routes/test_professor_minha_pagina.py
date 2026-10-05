@@ -93,3 +93,48 @@ def test_destaque_usa_descricao_da_nova_especialidade(app, professor):
     destaque = ProfessorPerfilService.servicos_destaque(user)
     assert [d['chave'] for d in destaque[:2]] == ['corrida', 'gestantes']
     assert all(d['descricao'] for d in destaque)
+
+
+# ---------------------------------------------------------------------------
+# Editar minha página: ordem das seções, "Sobre mim" (300) e frase de impacto
+# ---------------------------------------------------------------------------
+
+def test_aparencia_vem_logo_apos_a_foto_de_perfil(app, client, professor):
+    _login(client)
+    html = client.get('/professor/pagina/editar').data.decode()
+    ordem = [html.index(f'epp-secao-titulo">{t}<') for t in (
+        'Foto de perfil', 'Aparência', 'Sobre você',
+        'Especialidades', 'Localização e visibilidade',
+    )]
+    assert ordem == sorted(ordem)
+
+
+def test_frase_de_impacto_tem_duas_linhas_visiveis(app, client, professor):
+    _login(client)
+    html = client.get('/professor/pagina/editar').data.decode()
+    assert '<textarea class="form-control epp-tagline" id="ppTagline"' in html
+    assert 'rows="2"' in html.split('id="ppTagline"')[1].split('>')[0]
+
+
+def test_sobre_mim_limitado_a_300_caracteres(app, client, professor):
+    _login(client)
+    html = client.get('/professor/pagina/editar').data.decode()
+    trecho = html.split('id="ppBio"')[1].split('>')[0]
+    assert 'maxlength="300"' in trecho and 'data-contador-max="300"' in trecho
+
+    # 300 passa; 301 é recusado pelo servidor (não só pelo navegador)
+    client.post('/professor/pagina/editar', data={'bio': 'a' * 300}, follow_redirects=True)
+    assert db.session.get(User, professor).professor_bio == 'a' * 300
+
+    client.post('/professor/pagina/editar', data={'bio': 'b' * 301}, follow_redirects=True)
+    assert db.session.get(User, professor).professor_bio == 'a' * 300
+
+
+def test_frase_de_impacto_colapsa_quebras_de_linha(app, client, professor):
+    _login(client)
+    client.post(
+        '/professor/pagina/editar',
+        data={'tagline': 'Treino  sob medida\r\npara  sua rotina'},
+        follow_redirects=True,
+    )
+    assert db.session.get(User, professor).professor_tagline == 'Treino sob medida para sua rotina'

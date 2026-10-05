@@ -71,7 +71,7 @@ def _detectar_imagem(cabecalho: bytes):
     return None
 
 TAGLINE_TAMANHO_MAXIMO = 200
-BIO_TAMANHO_MAXIMO = 1000
+BIO_TAMANHO_MAXIMO = 300
 CREF_TAMANHO_MAXIMO = 30
 INSTAGRAM_TAMANHO_MAXIMO = 120
 
@@ -187,7 +187,9 @@ class ProfessorPerfilService(BaseService):
         if not professor.is_professor():
             return False, 'Apenas professores têm página pública.'
 
-        tagline = (form.get('tagline') or '').strip()
+        # A frase de impacto é uma linha só (o campo tem 2 linhas visuais, mas
+        # sem quebra manual): colapsa quebras/espaços repetidos.
+        tagline = ' '.join((form.get('tagline') or '').split())
         bio = (form.get('bio') or '').strip()
         cref = (form.get('cref') or '').strip()
         instagram = (form.get('instagram') or '').strip().lstrip('@')

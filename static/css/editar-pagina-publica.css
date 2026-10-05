@@ -411,3 +411,9 @@
         transition: none;
     }
 }
+
+/* Frase de impacto: 2 linhas visíveis, sem redimensionar */
+.epp-tagline {
+    resize: none;
+    line-height: 1.4;
+}

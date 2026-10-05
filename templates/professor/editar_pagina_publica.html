@@ -101,6 +101,32 @@
         <form action="{{ url_for('professor.salvar_pagina_publica') }}" method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
+            <!-- APARÊNCIA -->
+            <section class="card epp-card mb-4">
+                <div class="card-body">
+                    <div class="epp-secao-cabecalho">
+                        <span class="epp-secao-icone"><i class="bi bi-palette"></i></span>
+                        <div>
+                            <h2 class="epp-secao-titulo">Aparência</h2>
+                            <p class="epp-secao-sub">Escolha o visual da sua página.</p>
+                        </div>
+                    </div>
+
+                    <div class="epp-field">
+                        <label for="ppEstiloPagina" class="form-label">Estilo da página</label>
+                        <select class="form-select" id="ppEstiloPagina" name="estilo_pagina">
+                            {% for chave, estilo in estilos_pagina.items() %}
+                            <option value="{{ chave }}"
+                                    data-descricao="{{ estilo.descricao }}"
+                                    {{ 'selected' if chave == estilo_pagina_atual else '' }}>{{ estilo.rotulo }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text" id="ppEstiloDescricao"></div>
+                        <div class="form-text">Use "Ver minha página" para conferir o estilo antes de salvar.</div>
+                    </div>
+                </div>
+            </section>
+
             <!-- SOBRE VOCÊ -->
             <section class="card epp-card mb-4">
                 <div class="card-body">
@@ -114,10 +140,9 @@
 
                     <div class="epp-field">
                         <label for="ppTagline" class="form-label">Frase de impacto</label>
-                        <input type="text" class="form-control" id="ppTagline" name="tagline" maxlength="200"
-                               data-contador-max="200" data-contador-alvo="ppTaglineContador"
-                               value="{{ current_user.professor_tagline or '' }}"
-                               placeholder="Ex: Transforme seu corpo com treinos sob medida para a sua rotina">
+                        <textarea class="form-control epp-tagline" id="ppTagline" name="tagline" rows="2" maxlength="200"
+                                  data-contador-max="200" data-contador-alvo="ppTaglineContador" data-sem-quebra
+                                  placeholder="Ex: Transforme seu corpo com treinos sob medida para a sua rotina">{{ current_user.professor_tagline or '' }}</textarea>
                         <div class="pp-char-counter" id="ppTaglineContador"></div>
                     </div>
 
@@ -139,8 +164,8 @@
 
                     <div class="epp-field">
                         <label for="ppBio" class="form-label">Sobre mim</label>
-                        <textarea class="form-control" id="ppBio" name="bio" rows="5" maxlength="1000"
-                                  data-contador-max="1000" data-contador-alvo="ppBioContador"
+                        <textarea class="form-control" id="ppBio" name="bio" rows="4" maxlength="300"
+                                  data-contador-max="300" data-contador-alvo="ppBioContador"
                                   placeholder="Sua história, sua formação em Educação Física e sua experiência.">{{ current_user.professor_bio or '' }}</textarea>
                         <div class="pp-char-counter" id="ppBioContador"></div>
                     </div>
@@ -180,32 +205,6 @@
                     <div class="form-text mt-3">
                         Todas as marcadas aparecem como etiquetas na sua página. As três primeiras
                         (na ordem desta lista) ganham uma caixa de destaque.
-                    </div>
-                </div>
-            </section>
-
-            <!-- APARÊNCIA -->
-            <section class="card epp-card mb-4">
-                <div class="card-body">
-                    <div class="epp-secao-cabecalho">
-                        <span class="epp-secao-icone"><i class="bi bi-palette"></i></span>
-                        <div>
-                            <h2 class="epp-secao-titulo">Aparência</h2>
-                            <p class="epp-secao-sub">Escolha o visual da sua página.</p>
-                        </div>
-                    </div>
-
-                    <div class="epp-field">
-                        <label for="ppEstiloPagina" class="form-label">Estilo da página</label>
-                        <select class="form-select" id="ppEstiloPagina" name="estilo_pagina">
-                            {% for chave, estilo in estilos_pagina.items() %}
-                            <option value="{{ chave }}"
-                                    data-descricao="{{ estilo.descricao }}"
-                                    {{ 'selected' if chave == estilo_pagina_atual else '' }}>{{ estilo.rotulo }}</option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text" id="ppEstiloDescricao"></div>
-                        <div class="form-text">Use "Ver minha página" para conferir o estilo antes de salvar.</div>
                     </div>
                 </div>
             </section>

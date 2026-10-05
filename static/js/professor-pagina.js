@@ -116,6 +116,18 @@
     // CONTADOR DE CARACTERES (bio/tagline)
     // =========================================================
     function initContadores() {
+        // Campos de 2 linhas visuais que não aceitam Enter (ex: frase de impacto)
+        document.querySelectorAll('[data-sem-quebra]').forEach(function (campo) {
+            campo.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') e.preventDefault();
+            });
+            campo.addEventListener('input', function () {
+                if (/[\r\n]/.test(campo.value)) {
+                    campo.value = campo.value.replace(/[\r\n]+/g, ' ');
+                }
+            });
+        });
+
         document.querySelectorAll('[data-contador-max]').forEach(function (campo) {
             var max = parseInt(campo.dataset.contadorMax, 10);
             var contador = document.getElementById(campo.dataset.contadorAlvo);
