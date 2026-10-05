@@ -306,6 +306,10 @@
      abaixo (cards, gráfico, ranking por músculo) já vêm filtrados por
      ele -- ver data_inicio_sel/data_fim_sel em professor_routes.py. -->
 <form method="get" class="est-filtro-periodo" id="estFiltroPeriodo">
+    {# mantém a versão escolhida em "Desempenho por Treino" ao mudar o período #}
+    {% if versao_todas or versao_sel_id %}
+    <input type="hidden" name="versao" value="{{ 'todas' if versao_todas else versao_sel_id }}">
+    {% endif %}
     <div class="est-filtro-campo">
         <label for="estFiltroInicio">Data inicial</label>
         <input type="date" id="estFiltroInicio" name="inicio"
@@ -387,64 +391,11 @@
     </div>
 </div>
 
-<!-- Desempenho por Treino -->
-<div class="card est-card">
-    <div class="card-header bg-white border-0 pb-0">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-            <h6 class="fw-bold mb-0">
-                <i class="bi bi-trophy me-1" style="color: #F28C33;"></i>Desempenho por Treino
-            </h6>
-            {% if versoes %}
-            <!-- Filtro de versão: carrega com a versão ativa do aluno; o
-                 período escolhido acima é mantido nos campos ocultos. -->
-            <form method="get" id="estFiltroVersao" class="d-flex align-items-center gap-2 mb-0">
-                <input type="hidden" name="inicio" value="{{ data_inicio_sel.isoformat() }}">
-                <input type="hidden" name="fim" value="{{ data_fim_sel.isoformat() }}">
-                <label for="estFiltroVersaoSel" class="small text-muted mb-0">Versão</label>
-                <select id="estFiltroVersaoSel" name="versao" class="form-select form-select-sm w-auto">
-                    {% for v in versoes %}
-                    <option value="{{ v.id }}" {% if not versao_todas and v.id == versao_sel_id %}selected{% endif %}>
-                        V{{ v.numero_versao }} · {{ v.descricao }}{% if v.id == versao_ativa_id %} (ativa){% endif %}
-                    </option>
-                    {% endfor %}
-                    <option value="todas" {% if versao_todas %}selected{% endif %}>Todas as versões</option>
-                </select>
-                <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Filtrar</button></noscript>
-            </form>
-            {% endif %}
-        </div>
-    </div>
-    <div class="card-body">
-        {% if treino_stats %}
-        <div class="row g-3">
-            {% for treino_id, stats in treino_stats.items() %}
-            <div class="col-md-4">
-                <div class="est-treino-card">
-                    <div class="est-treino-codigo">{{ stats.codigo }}</div>
-                    <div class="fw-bold mb-2">{{ stats.nome }}</div>
-                    <div class="est-treino-metric">
-                        <span class="text-muted">Exercícios</span>
-                        <strong>{{ stats.qtd_exercicios }}</strong>
-                    </div>
-                    <div class="est-treino-metric">
-                        <span class="text-muted">Registros</span>
-                        <strong>{{ stats.qtd_registros }}</strong>
-                    </div>
-                    <div class="est-treino-metric">
-                        <span class="text-muted">Volume Total</span>
-                        <strong style="color: var(--primary-color);">{{ stats.volume_total|int }}kg</strong>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="est-empty">
-            <i class="bi bi-clipboard-x"></i>
-            {% if versoes %}Esta versão não tem treinos cadastrados.{% else %}Este aluno ainda não tem treinos cadastrados.{% endif %}
-        </div>
-        {% endif %}
-    </div>
+<!-- Desempenho por Treino: o conteúdo vive em _desempenho_treino.html e é
+     recarregado sozinho (fetch com ?parcial=1) ao trocar a versão, sem
+     atualizar a página inteira. -->
+<div id="estDesempenhoTreino">
+    {% include "professor/_desempenho_treino.html" %}
 </div>
 {% endblock %}
 
@@ -513,10 +464,47 @@
     // Filtro de período: envia sozinho ao trocar a data (sem precisar
     // clicar em "Filtrar"), e mantém inicio <= fim no próprio seletor
     // nativo do navegador. O botão continua funcionando sem JS.
+    // Filtro de versão: ao trocar, busca só o HTML do card "Desempenho por
+    // Treino" (?parcial=1) e troca o conteúdo dele -- o resto da página
+    // (cards, gráfico, ranking) não é recarregado. A URL é atualizada com
+    // replaceState, então F5 mantém a versão escolhida. Se a requisição
+    // falhar, cai no envio normal do formulário (página inteira).
     (function () {
-        var f = document.getElementById('estFiltroVersao');
-        var s = document.getElementById('estFiltroVersaoSel');
-        if (f && s) s.addEventListener('change', function () { f.submit(); });
+        var caixa = document.getElementById('estDesempenhoTreino');
+        if (!caixa) return;
+        var pendente = null;
+
+        caixa.addEventListener('change', function (ev) {
+            var sel = ev.target;
+            var form = sel.closest ? sel.closest('#estFiltroVersao') : null;
+            if (!form || sel.id !== 'estFiltroVersaoSel') return;
+
+            var params = new URLSearchParams(new FormData(form));
+            var urlPagina = location.pathname + '?' + params.toString();
+            params.set('parcial', '1');
+
+            if (pendente) pendente.abort();
+            pendente = window.AbortController ? new AbortController() : null;
+            caixa.style.opacity = '0.5';
+            caixa.style.pointerEvents = 'none';
+
+            fetch(location.pathname + '?' + params.toString(), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+                signal: pendente ? pendente.signal : undefined
+            }).then(function (resp) {
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                return resp.text();
+            }).then(function (html) {
+                caixa.innerHTML = html;
+                caixa.style.opacity = '';
+                caixa.style.pointerEvents = '';
+                history.replaceState(null, '', urlPagina);
+            }).catch(function (erro) {
+                if (erro && erro.name === 'AbortError') return;
+                form.submit();
+            });
+        });
     })();
 
     (function () {

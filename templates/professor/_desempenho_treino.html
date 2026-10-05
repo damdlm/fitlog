@@ -1,0 +1,59 @@
+<!-- Desempenho por Treino -->
+<div class="card est-card">
+    <div class="card-header bg-white border-0 pb-0">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <h6 class="fw-bold mb-0">
+                <i class="bi bi-trophy me-1" style="color: #F28C33;"></i>Desempenho por Treino
+            </h6>
+            {% if versoes %}
+            <!-- Filtro de versão: carrega com a versão ativa do aluno; o
+                 período escolhido acima é mantido nos campos ocultos. -->
+            <form method="get" id="estFiltroVersao" class="d-flex align-items-center gap-2 mb-0">
+                <input type="hidden" name="inicio" value="{{ data_inicio_sel.isoformat() }}">
+                <input type="hidden" name="fim" value="{{ data_fim_sel.isoformat() }}">
+                <label for="estFiltroVersaoSel" class="small text-muted mb-0">Versão</label>
+                <select id="estFiltroVersaoSel" name="versao" class="form-select form-select-sm w-auto">
+                    {% for v in versoes %}
+                    <option value="{{ v.id }}" {% if not versao_todas and v.id == versao_sel_id %}selected{% endif %}>
+                        V{{ v.numero_versao }} · {{ v.descricao }}{% if v.id == versao_ativa_id %} (ativa){% endif %}
+                    </option>
+                    {% endfor %}
+                    <option value="todas" {% if versao_todas %}selected{% endif %}>Todas as versões</option>
+                </select>
+                <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Filtrar</button></noscript>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        {% if treino_stats %}
+        <div class="row g-3">
+            {% for treino_id, stats in treino_stats.items() %}
+            <div class="col-md-4">
+                <div class="est-treino-card">
+                    <div class="est-treino-codigo">{{ stats.codigo }}</div>
+                    <div class="fw-bold mb-2">{{ stats.nome }}</div>
+                    <div class="est-treino-metric">
+                        <span class="text-muted">Exercícios</span>
+                        <strong>{{ stats.qtd_exercicios }}</strong>
+                    </div>
+                    <div class="est-treino-metric">
+                        <span class="text-muted">Registros</span>
+                        <strong>{{ stats.qtd_registros }}</strong>
+                    </div>
+                    <div class="est-treino-metric">
+                        <span class="text-muted">Volume Total</span>
+                        <strong style="color: var(--primary-color);">{{ stats.volume_total|int }}kg</strong>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="est-empty">
+            <i class="bi bi-clipboard-x"></i>
+            {% if versoes %}Esta versão não tem treinos cadastrados.{% else %}Este aluno ainda não tem treinos cadastrados.{% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>

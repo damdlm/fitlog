@@ -687,18 +687,24 @@ def estatisticas_aluno(aluno_id):
 
     volume_maximo_musculo = max((v['volume_total'] for v in musculo_stats.values()), default=0)
     
-    return render_template('professor/estatisticas_aluno.html',
-                         aluno=aluno,
-                         musculo_stats=musculo_stats,
-                         treino_stats=treino_stats,
-                         musculo_destaque=musculo_destaque,
-                         volume_maximo_musculo=volume_maximo_musculo,
-                         data_inicio_sel=data_inicio_sel,
-                         data_fim_sel=data_fim_sel,
-                         versoes=versoes,
-                         versao_sel_id=versao_sel.id if versao_sel else None,
-                         versao_todas=versao_todas,
-                         versao_ativa_id=versao_ativa.id if versao_ativa else None)
+    contexto = dict(aluno=aluno,
+                    musculo_stats=musculo_stats,
+                    treino_stats=treino_stats,
+                    musculo_destaque=musculo_destaque,
+                    volume_maximo_musculo=volume_maximo_musculo,
+                    data_inicio_sel=data_inicio_sel,
+                    data_fim_sel=data_fim_sel,
+                    versoes=versoes,
+                    versao_sel_id=versao_sel.id if versao_sel else None,
+                    versao_todas=versao_todas,
+                    versao_ativa_id=versao_ativa.id if versao_ativa else None)
+
+    # Troca de versão no card "Desempenho por Treino": o front pede só o
+    # trecho do card (?parcial=1) em vez de recarregar a página inteira.
+    if request.args.get('parcial') == '1':
+        return render_template('professor/_desempenho_treino.html', **contexto)
+
+    return render_template('professor/estatisticas_aluno.html', **contexto)
 
 
 @professor_bp.route('/aluno/<int:aluno_id>/calendario')

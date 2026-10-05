@@ -305,3 +305,25 @@ class TestFiltroVersaoDesempenhoPorTreino:
 
         assert '<input type="hidden" name="inicio" value="2020-01-01">' in html
         assert '<input type="hidden" name="fim" value="2020-01-31">' in html
+
+    def test_parcial_devolve_so_o_card_sem_a_pagina_inteira(self, client, app):
+        # A troca de versão pede ?parcial=1 e substitui só o card.
+        with app.app_context():
+            username, aluno_id, ids = self._montar(app, 'par')
+        _login(client, username)
+
+        html = self._get(client, aluno_id, f'?versao={ids[1]}&parcial=1')
+
+        assert 'Treino Antigo' in html and 'Treino Atual' not in html
+        assert 'id="estFiltroVersaoSel"' in html
+        assert '<html' not in html and 'est-filtro-periodo' not in html
+        assert 'muscleChart' not in html
+
+    def test_filtro_de_periodo_preserva_a_versao_escolhida(self, client, app):
+        with app.app_context():
+            username, aluno_id, ids = self._montar(app, 'pv')
+        _login(client, username)
+
+        html = self._get(client, aluno_id, f'?versao={ids[1]}')
+
+        assert f'<input type="hidden" name="versao" value="{ids[1]}">' in html
