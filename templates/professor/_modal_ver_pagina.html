@@ -100,7 +100,8 @@
         overflow: hidden;
     }
     /* Botão de fechar: círculo translúcido com efeito "vidro" -- legível
-       sobre qualquer estilo de página (claro ou escuro) -- e X em SVG. */
+       sobre qualquer estilo de página (claro ou escuro) -- com borda e X
+       laranja (no hover o fundo fica laranja e o X, branco). */
     .epp-preview-close {
         position: absolute;
         top: 12px;
@@ -112,12 +113,12 @@
         width: 38px;
         height: 38px;
         padding: 0;
-        border: 1px solid rgba(255, 255, 255, .28);
+        border: 1.5px solid #F28C33;
         border-radius: 50%;
         background: rgba(25, 25, 25, .55);
         -webkit-backdrop-filter: blur(8px);
         backdrop-filter: blur(8px);
-        color: #fff;
+        color: #F28C33;
         box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
         cursor: pointer;
         transition: background-color .2s ease, color .2s ease,
@@ -129,6 +130,7 @@
     .epp-preview-close:hover {
         background: #F28C33;
         border-color: #F28C33;
+        color: #fff;
         box-shadow: 0 6px 18px rgba(242, 140, 51, .45);
     }
     .epp-preview-close:hover svg {
@@ -159,12 +161,12 @@
         width: 38px;
         height: 38px;
         padding: 0;
-        border: 1px solid rgba(255, 255, 255, .28);
+        border: 1.5px solid #F28C33;
         border-radius: 50%;
         background: rgba(25, 25, 25, .55);
         -webkit-backdrop-filter: blur(8px);
         backdrop-filter: blur(8px);
-        color: #fff;
+        color: #F28C33;
         font-size: .95rem;
         box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
         cursor: pointer;
@@ -175,6 +177,7 @@
     .epp-preview-share[aria-expanded="true"] {
         background: #F28C33;
         border-color: #F28C33;
+        color: #fff;
         box-shadow: 0 6px 18px rgba(242, 140, 51, .45);
     }
     .epp-preview-share:active { transform: scale(.92); }
@@ -432,13 +435,16 @@
         });
 
         document.addEventListener('click', fecharMenu);
+        // Esc com o menu aberto fecha SÓ o menu. Na fase de captura, pra
+        // rodar antes do Bootstrap, que fecharia o modal inteiro.
         modal.addEventListener('keydown', function (event) {
             if (event.key === 'Escape' && !shareMenu.hidden) {
                 event.stopPropagation();
+                event.preventDefault();
                 fecharMenu();
                 shareBtn.focus();
             }
-        });
+        }, true);
         modal.addEventListener('hidden.bs.modal', fecharMenu);
     }
 
