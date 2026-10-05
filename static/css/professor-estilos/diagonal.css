@@ -182,7 +182,11 @@
     letter-spacing: 0;
     overflow-wrap: normal;
     word-break: normal;
-    white-space: nowrap;
+    /* quebra só nos espaços (ex.: "DEFINIÇÃO / MUSCULAR"), nunca no meio
+       da palavra */
+    white-space: normal;
+    text-align: center;
+    text-wrap: balance;
 }
 
 /* ---------- Avaliação ---------- */
