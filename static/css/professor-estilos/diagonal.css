@@ -1,77 +1,63 @@
 /* =========================================================
-   FITLOG — PÁGINA PÚBLICA DO PROFESSOR (ESTILO REFERÊNCIA)
+   FITLOG — PÁGINA PÚBLICA — ESTILO DEDICAÇÃO (chave interna: diagonal)
+   Escuro e limpo, com pontilhado diagonal e barras laranja.
+   Só identidade visual: o layout (foto, nome, cartões de
+   especialidade, avaliação, "Sobre mim") vem do base.css,
+   carregado antes. Aqui ficam também os dois ajustes próprios
+   deste estilo: foto maior/mais alta e pôster na proporção 9:16.
    ========================================================= */
 
-.pp-page {
-    width: 100%;
-    padding: 0 16px 48px;
+.pp-page-diagonal {
+    --pd-orange: #F28C33;
+    --pd-orange-light: #FFB366;
+    --pd-line: rgba(255, 255, 255, .20);
 }
 
-.pp-page,
-.pp-page *,
-.pp-page *::before,
-.pp-page *::after {
-    box-sizing: border-box;
+/* Container de consulta: permite medir a LARGURA do pôster (cqw) e
+   derivar dela a altura mínima 9:16. */
+.pp-page-diagonal .pp-column {
+    container-type: inline-size;
 }
 
-.pp-column {
-    width: 100%;
-    max-width: 672px;
-    margin: 0 auto;
-}
+.pp-poster-diagonal {
+    /* Tamanho do anel da foto (as barras laterais acompanham) */
+    --pd-ring: clamp(150px, 52cqw, 300px);
 
-/* =========================================================
-   PÔSTER
-   ========================================================= */
-
-.pp-poster {
-    /* Paleta do app (mesmos valores de --primary-orange / --light-orange /
-       --dark-bg do style.css, que não é carregado na página embutida) */
-    --orange: #F28C33;
-    --orange-light: #FFB366;
-    --app-dark: #2D2D2D;
-    --primary-gradient: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
-    --black: #080808;
-    --black-2: #121212;
-    --muted: #9b9b9b;
-    --line: rgba(255, 255, 255, .20);
-
-    position: relative;
-    width: 100%;
-    min-height: 600px;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    /* Proporção 9:16 (largura x altura). min-height, e não
+       aspect-ratio, para o pôster crescer se o "Sobre mim" for longo
+       em vez de cortar o texto (o pôster tem overflow: hidden). */
+    min-height: calc(100cqw * 16 / 9);
+    padding-top: 40px;
+    color: #fff;
     border: 1px solid rgba(255, 255, 255, .08);
     border-radius: 22px;
-    padding: 42px 44px 34px;
     background:
         radial-gradient(
-            ellipse 430px 330px at 50% 28%,
+            ellipse 430px 330px at 50% 20%,
             rgba(242, 140, 51, .13) 0%,
             rgba(242, 140, 51, .035) 48%,
             transparent 74%
         ),
-        linear-gradient(
-            180deg,
-            #1c1c1c 0%,
-            #0b0b0b 57%,
-            #050505 100%
-        );
-    color: #fff;
-    isolation: isolate;
+        linear-gradient(180deg, #1c1c1c 0%, #0b0b0b 57%, #050505 100%);
     box-shadow: 0 20px 55px rgba(0, 0, 0, .25);
 }
 
-/* =========================================================
-   TEXTURA DE PONTOS
-   ========================================================= */
+/* Navegadores sem container query units: cai na proporção direta */
+@supports not (width: 1cqw) {
+    .pp-poster-diagonal {
+        min-height: 0;
+        aspect-ratio: 9 / 16;
+    }
+}
 
+/* ---------- Textura de pontos ---------- */
 .pp-dots {
     position: absolute;
     z-index: 0;
     width: 230px;
     height: 230px;
-    /* Malha diagonal: duas camadas de pontos deslocadas meia célula
-       (o vizinho mais próximo de cada ponto fica a 45 graus). */
     background-image:
         radial-gradient(circle, #474747 1.8px, transparent 2.2px),
         radial-gradient(circle, #474747 1.8px, transparent 2.2px);
@@ -80,7 +66,6 @@
     pointer-events: none;
 }
 
-/* Some em degradê na diagonal, em direção ao centro do pôster */
 .pp-dots-top {
     top: 0;
     left: 0;
@@ -95,445 +80,183 @@
     mask-image: linear-gradient(315deg, #000 0%, transparent 72%);
 }
 
-/* BARRAS LATERAIS */
+/* ---------- Barras laterais (na altura da base do anel) ---------- */
 .pp-bars {
     position: absolute;
     z-index: 1;
-    top: 195px;
+    top: calc(40px + var(--pd-ring) * .8);
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 6px;
 }
 
 .pp-bars-left {
-    left: 64px;
+    left: calc(50% - var(--pd-ring) / 2 - 22px);
 }
 
 .pp-bars-right {
-    right: 64px;
+    right: calc(50% - var(--pd-ring) / 2 - 22px);
 }
 
 .pp-bars span {
     display: block;
-    width: 11px;
-    height: 14px;
+    width: 10px;
+    height: 12px;
     border-radius: 1px;
-    background: var(--orange);
+    background: var(--pd-orange);
 }
 
-/* AÇÕES */
-.pp-actions {
-    position: absolute;
-    z-index: 8;
-    top: 18px;
-    right: 20px;
-    display: flex;
-    gap: 5px;
-}
-
-.pp-action {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    border: none;
-    border-radius: 15px;
-    background: var(--primary-gradient);
+/* ---------- Ações ---------- */
+.pp-poster-diagonal .pp-action {
     color: #fff;
-    text-decoration: none;
-    font-size: .86rem;
-    transition: all .3s;
+    background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
 }
 
-.pp-action:hover {
-    background: var(--app-dark);
-    color: var(--orange);
-    transform: translateY(-1px);
+.pp-poster-diagonal .pp-action:hover {
+    background: #2D2D2D;
+    color: var(--pd-orange);
 }
 
-/* FOTO E ANEL */
-.pp-photo-area {
-    position: relative;
-    z-index: 3;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 14px auto 0;
+/* ---------- Foto: mais alta e maior ---------- */
+.pp-poster-diagonal .pp-photo-area {
+    margin-top: 0;
 }
 
-.pp-ring {
-    position: relative;
-    width: 315px !important;
-    height: 315px !important;
-    min-width: 315px !important;
-    min-height: 315px !important;
-    flex: 0 0 315px;
-    box-sizing: border-box;
-    padding: 15px !important;
-    border-radius: 50%;
-    background: var(--orange);
+.pp-poster-diagonal .pp-ring {
+    --pp-ring-size: var(--pd-ring);
+    padding: 9px;
+    background: var(--pd-orange);
 }
 
-.pp-photo {
-    position: relative;
-    width: 100% !important;
-    height: 100% !important;
-    overflow: hidden;
-    border-radius: 50%;
-    border: 4px solid #101010;
+.pp-poster-diagonal .pp-photo {
+    border: 3px solid #101010;
     background: #000;
 }
 
-.pp-photo img {
-    display: block !important;
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    object-position: var(--pp-foto-pos, center center) !important;
+.pp-poster-diagonal .pp-placeholder svg {
+    width: 70%;
 }
 
-.pp-placeholder {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at 50% 28%, #3a3a3a 0%, #242424 52%, #141414 100%);
+/* ---------- Identidade ---------- */
+.pp-poster-diagonal .pp-eyebrow {
+    margin-top: 16px;
+    color: var(--pd-orange);
 }
 
-.pp-placeholder svg {
-    position: absolute;
-    left: 50%;
-    bottom: -8px;
-    width: 150px;
-    transform: translateX(-50%);
-}
-
-/* TIPOGRAFIA DO TÍTULO E NOME
-   Fonte geométrica bem pesada (Montserrat 800/900), carregada via
-   Google Fonts no <head> do base.html -- ver comentário no link
-   dessa fonte. Cai pro padrão do site (Segoe UI) se não carregar. */
-.pp-eyebrow,
-.pp-name-first,
-.pp-name-last,
-.pp-service-title,
-.pp-rating-info {
-    font-family: 'Montserrat', 'Segoe UI', sans-serif;
-}
-
-.pp-eyebrow {
-    position: relative;
-    z-index: 3;
-    margin-top: 28px;
-    color: var(--orange);
-    text-align: center;
-    font-size: .76rem;
-    line-height: 1;
-    font-weight: 800;
-    letter-spacing: 2.5px;
-    text-transform: uppercase;
-}
-
-.pp-name {
-    position: relative;
-    z-index: 3;
-    margin-top: 9px;
-    text-align: center;
-    line-height: .91;
-}
-
-.pp-name-first,
-.pp-name-last {
-    display: block;
-    font-weight: 950;
-    letter-spacing: -1px;
-    text-transform: uppercase;
-}
-
-.pp-name-first {
+.pp-poster-diagonal .pp-name-first {
     color: #fff;
-    font-size: 3.05rem;
 }
 
-.pp-name-last {
-    margin-top: 4px;
-    font-size: 3.55rem;
-    color: var(--orange);
+.pp-poster-diagonal .pp-name-last {
+    color: var(--pd-orange);
 }
 
-.pp-cref {
-    position: relative;
-    z-index: 3;
-    margin-top: 12px;
-    color: #999;
-    text-align: center;
-    font-size: .73rem;
-    font-weight: 700;
-    letter-spacing: .8px;
+.pp-poster-diagonal .pp-cref {
+    color: #9f9f9f;
 }
 
-.pp-tagline {
-    position: relative;
-    z-index: 3;
-    width: min(100%, 455px);
-    margin: 12px auto 0;
-    color: #d0d0d0;
-    text-align: center;
-    font-size: .88rem;
-    font-weight: 500;
-    line-height: 1.48;
+.pp-poster-diagonal .pp-tagline {
+    color: #dcdcdc;
 }
 
-/* TRÊS COLUNAS (CARDIO, NUTRITION, EXERCISE) */
-.pp-services {
-    position: relative;
-    z-index: 3;
-    display: flex;
-    width: 100%;
-    margin-top: 30px;
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
+/* ---------- Especialidades: ícone + título dentro do quadro ---------- */
+.pp-poster-diagonal .pp-services {
+    /* empurra o bloco de especialidades/avaliação/sobre para a base,
+       distribuindo o espaço extra do formato 9:16 */
+    margin-top: auto;
+    padding-top: 18px;
 }
 
-.pp-service {
-    flex: 1;
-    min-width: 0;
-    padding: 15px 10px 14px;
-    text-align: center;
+.pp-poster-diagonal .pp-service {
+    padding: 10px 4px;
+    color: var(--pd-orange);
+    background: rgba(255, 255, 255, .035);
+    border: 1px solid rgba(242, 140, 51, .55);
+    border-radius: 10px;
 }
 
-.pp-service + .pp-service {
-    border-left: 1px solid var(--line);
+.pp-poster-diagonal .pp-service-title {
+    color: #fff;
+    /* cabe "EMAGRECIMENTO" inteiro dentro do quadro */
+    font-size: clamp(.46rem, 2.35cqw, .6rem);
+    letter-spacing: 0;
+    overflow-wrap: normal;
+    word-break: normal;
+    white-space: nowrap;
 }
 
-.pp-service-title {
-    display: inline-block;
-    max-width: 100%;
-    padding: 6px 11px;
-    background: var(--orange);
-    color: #17100a;
-    font-size: .66rem;
-    line-height: 1;
-    font-weight: 900;
-    letter-spacing: .45px;
-    text-transform: uppercase;
+/* ---------- Avaliação ---------- */
+.pp-poster-diagonal .pp-rating-info {
+    color: #fff;
+    padding: 4px 0;
 }
 
-.pp-service p {
-    margin: 9px 0 0;
-    color: #999;
-    font-size: .66rem;
-    line-height: 1.45;
+.pp-poster-diagonal .pp-star-full,
+.pp-poster-diagonal .pp-star-half {
+    color: var(--pd-orange);
 }
 
-/* AVALIAÇÃO DOS ALUNOS
-   Estrelas (cheia / meia / vazia) + nota em destaque + total discreto. */
-.pp-rating-info {
-    position: relative;
-    z-index: 3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
-    margin-top: 26px;
-}
-
-.pp-rating-stars {
-    display: inline-flex;
-    gap: 2px;
-    font-size: 1rem;
-    line-height: 1;
-}
-
-.pp-star-full {
-    color: var(--orange);
-}
-
-.pp-star-half {
-    background: linear-gradient(90deg, var(--orange) 50%, #3a3a3a 50%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-}
-
-.pp-star-empty {
+.pp-poster-diagonal .pp-star-empty {
     color: #3a3a3a;
 }
 
-.pp-rating-score {
-    color: #fff;
-    font-size: .95rem;
-    font-weight: 800;
-    line-height: 1;
+.pp-poster-diagonal .pp-rating-count {
+    color: #b5b5b5;
 }
 
-.pp-rating-count {
-    padding-left: 9px;
-    border-left: 1px solid #3a3a3a;
-    color: #999;
-    font-size: .7rem;
-    font-weight: 600;
-    line-height: 1;
-}
-
-/* REDES SOCIAIS */
-.pp-social {
-    position: relative;
-    z-index: 3;
-    display: flex;
-    justify-content: center;
-    margin-top: 24px;
-}
-
-.pp-social a {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
+/* ---------- Redes ---------- */
+.pp-poster-diagonal .pp-social a {
     color: #d6d6d6;
-    font-size: .72rem;
-    font-weight: 700;
-    text-decoration: none;
 }
 
-.pp-social a:hover {
+.pp-poster-diagonal .pp-social a:hover {
     color: #fff;
 }
 
-.pp-social svg {
-    width: 17px;
-    height: 17px;
-    fill: var(--orange);
+.pp-poster-diagonal .pp-social svg {
+    fill: var(--pd-orange);
 }
 
-/* =========================================================
-   SOBRE MIM (fora do cartão do pôster, mas no mesmo tema escuro
-   -- antes esta seção não tinha NENHUM CSS e caía no fundo branco
-   padrão da página, com texto preto cru).
-   ========================================================= */
-.pp-about {
-    position: relative;
-    z-index: 3;
-    margin-top: 24px;
-    padding: 22px 24px 26px;
-    border: 1px solid rgba(255, 255, 255, .07);
-    border-radius: 18px;
+/* ---------- Sobre mim (dentro do pôster) ---------- */
+.pp-about-diagonal {
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .09);
+    border-radius: 12px;
     background: linear-gradient(180deg, #171717 0%, #0d0d0d 100%);
 }
 
-.pp-section-title {
+.pp-about-diagonal .pp-section-title {
     color: #fff;
-    font-weight: 900;
-    font-size: 1.05rem;
-    letter-spacing: .3px;
-    margin-bottom: 12px;
 }
 
-.pp-about-text {
+.pp-about-diagonal .pp-about-text {
     color: #d5d5d5;
-    font-size: .92rem;
-    line-height: 1.6;
-    margin: 0;
-    white-space: pre-line;
 }
 
-.pp-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 16px;
-}
-
-.pp-chip {
-    display: inline-block;
-    padding: 6px 14px;
-    border-radius: 999px;
+.pp-about-diagonal .pp-chip {
+    color: var(--pd-orange-light);
     background: rgba(255, 255, 255, .06);
     border: 1px solid rgba(242, 140, 51, .45);
-    color: #FFB366;
-    font-size: .75rem;
-    font-weight: 700;
-    letter-spacing: .2px;
 }
 
-/* RESPONSIVIDADE PARA CELULAR */
-@media (max-width: 560px) {
-    /* Mesma margem lateral e cantos arredondados dos outros estilos */
-    .pp-page {
-        padding: 0 10px 36px;
+@media (min-width: 561px) {
+    .pp-poster-diagonal {
+        padding-top: 46px;
     }
 
-    .pp-poster {
-        padding: 44px 16px 18px;
+    .pp-bars {
+        top: calc(46px + var(--pd-ring) * .8);
+    }
+}
+
+@media (max-width: 560px) {
+    .pp-poster-diagonal {
         border-radius: 16px;
     }
-    .pp-ring {
-        width: 250px !important;
-        height: 250px !important;
-        min-width: 250px !important;
-        min-height: 250px !important;
-        flex: 0 0 250px !important;
-    }
-    .pp-name-first {
-        font-size: 2.15rem;
-    }
-    .pp-name-last {
-        font-size: 2.55rem;
-    }
-    .pp-tagline {
-        font-size: .84rem;
-    }
-
-
-    .pp-services {
-        margin-top: 24px;
-    }
-    .pp-service {
-        padding: 13px 6px 12px;
-    }
-    .pp-service-title {
-        font-size: .62rem;
-        padding: 5px 9px;
-    }
-    .pp-service p {
-        font-size: .64rem;
-    }
-
-    .pp-about {
-        margin: 20px 0 0;
-        padding: 18px 16px 20px;
-        border-radius: 14px;
-    }
 }
 
-/* Telas bem pequenas (iPhone SE e afins) -- reduz mais um passo e some
-   com decorações que só serviriam pra poluir um espaço já apertado. */
+/* Telas bem pequenas: some com as barras para não poluir */
 @media (max-width: 380px) {
-    .pp-ring {
-        width: 205px !important;
-        height: 205px !important;
-        min-width: 205px !important;
-        min-height: 205px !important;
-        flex: 0 0 205px !important;
-    }
-    .pp-name-first {
-        font-size: 1.8rem;
-    }
-    .pp-name-last {
-        font-size: 2.15rem;
-    }
-    .pp-service {
-        padding: 11px 4px 10px;
-    }
-    .pp-service-title {
-        font-size: .52rem;
-        padding: 4px 6px;
-        letter-spacing: .1px;
-    }
-    .pp-service p {
-        font-size: .6rem;
-    }
     .pp-bars-left,
     .pp-bars-right {
         display: none;

@@ -4,15 +4,15 @@
    modal "Ver minha página", sem navbar). `embed` (bool) esconde os
    botões de compartilhar/editar, que não fazem sentido dentro do
    preview em miniatura. #}
-{% from "professor/estilos/_macros.html" import marca %}
+{% from "professor/estilos/_macros.html" import icone_servico, marca %}
 {% set partes_nome = nome_exibicao.split(' ') %}
 {% set primeiro_nome = partes_nome[0] %}
 {% set sobrenome = partes_nome[1:] | join(' ') %}
 
-<div class="pp-page">
+<div class="pp-page pp-page-diagonal">
     <div class="pp-column">
 
-        <article class="pp-poster">
+        <article class="pp-poster pp-poster-diagonal">
 
             <!-- Decoração de fundo -->
             <div class="pp-dots pp-dots-top"></div>
@@ -92,13 +92,13 @@
             <p class="pp-tagline">{{ professor.professor_tagline }}</p>
             {% endif %}
 
-            <!-- Especialidades / serviços (reais, vindos do cadastro --
-                 ver ProfessorPerfilService.servicos_destaque) -->
+            <!-- Especialidades / serviços: ícone + título (sem a descrição),
+                 igual aos demais estilos. Dados em ProfessorPerfilService.servicos_destaque -->
             <div class="pp-services">
                 {% for servico in servicos %}
                 <div class="pp-service">
+                    {{ icone_servico(servico.chave) }}
                     <span class="pp-service-title">{{ servico.titulo }}</span>
-                    <p>{{ servico.descricao }}</p>
                 </div>
                 {% endfor %}
             </div>
@@ -106,16 +106,17 @@
             <!-- Avaliações dos alunos (só aparece se o professor optou por mostrar) -->
             {% if professor.professor_mostrar_avaliacoes and resumo_avaliacoes.total > 0 %}
             {% set media = resumo_avaliacoes.media %}
+            {% set rotulo_avaliacoes = 'avaliação' if resumo_avaliacoes.total == 1 else 'avaliações' %}
             <div class="pp-rating-info"
                  role="img"
-                 aria-label="Nota média {{ media }} de 5, com {{ resumo_avaliacoes.total }} avaliaç{{ 'ão' if resumo_avaliacoes.total == 1 else 'ões' }} de alunos">
+                 aria-label="Nota média {{ media }} de 5, com {{ resumo_avaliacoes.total }} {{ rotulo_avaliacoes }} de alunos">
                 <span class="pp-rating-stars" aria-hidden="true">
                     {% for i in range(1, 6) %}
                     <span class="pp-star {{ 'pp-star-full' if media >= i - 0.25 else ('pp-star-half' if media >= i - 0.75 else 'pp-star-empty') }}">★</span>
                     {% endfor %}
                 </span>
                 <span class="pp-rating-score" aria-hidden="true">{{ '%.1f'|format(media)|replace('.', ',') }}</span>
-                <span class="pp-rating-count" aria-hidden="true">{{ resumo_avaliacoes.total }} avaliaç{{ 'ão' if resumo_avaliacoes.total == 1 else 'ões' }}</span>
+                <span class="pp-rating-count" aria-hidden="true">{{ resumo_avaliacoes.total }} {{ rotulo_avaliacoes }} de alunos</span>
             </div>
             {% endif %}
 
@@ -133,7 +134,7 @@
             {% endif %}
 
             {% if professor.professor_bio or especialidades %}
-            <section class="pp-about">
+            <section class="pp-about pp-about-diagonal">
                 <div class="pp-section-title">Sobre mim</div>
                 {% if professor.professor_bio %}
                 <p class="pp-about-text">{{ professor.professor_bio }}</p>

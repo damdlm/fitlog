@@ -91,6 +91,7 @@ ESTILOS_PAGINA = {
     'diagonal': {
         'rotulo': 'Dedicação',
         'descricao': 'Escuro e limpo, com pontilhado diagonal nos cantos.',
+        'base': 'css/professor-estilos/base.css',
         'css': 'css/professor-estilos/diagonal.css',
         'template': 'professor/estilos/_poster_diagonal.html',
     },
@@ -101,7 +102,7 @@ ESTILOS_PAGINA = {
         'css': 'css/professor-estilos/textura.css',
         'template': 'professor/estilos/_poster_textura.html',
     },
-    # Textura, Moderno, Esportivo e Glow só definem a identidade visual
+    # Dedicação, Textura, Moderno, Esportivo e Glow só definem a identidade visual
     # (cores, fundos, decoração): o layout vem do CSS estrutural em
     # 'base', carregado antes do CSS do estilo.
     'moderno': {
