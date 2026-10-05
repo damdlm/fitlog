@@ -355,11 +355,12 @@
         .est-evolucao-periodo .est-periodo-filtro { gap: 4px; }
         .est-evolucao-periodo .est-periodo-filtro .est-pill { padding: 4px 8px; font-size: 0.72rem; }
 
-        /* Período personalizado do gráfico: data + "até" + data + Aplicar numa
-           linha só. Os dois campos dividem o espaço que sobra (em vez dos
-           150px fixos), então acompanham a largura de qualquer celular. */
-        .est-evolucao-periodo .est-periodo-custom { flex-wrap: nowrap; gap: 6px; }
-        .est-evolucao-periodo .est-periodo-custom .form-control {
+        /* Período personalizado (filtro da página e do gráfico): data + "até"
+           + data + Aplicar numa linha só. Os dois campos dividem o espaço que
+           sobra (em vez dos 150px fixos), então acompanham a largura de
+           qualquer celular. */
+        .est-periodo-custom { flex-wrap: nowrap; gap: 6px; }
+        .est-periodo-custom .form-control {
             flex: 1 1 0;
             min-width: 0;
             max-width: none;
@@ -367,22 +368,22 @@
             padding-right: 0.3rem;
             font-size: 0.8rem;
         }
-        .est-evolucao-periodo .est-periodo-custom span,
-        .est-evolucao-periodo .est-periodo-custom .btn { flex: 0 0 auto; }
+        .est-periodo-custom span,
+        .est-periodo-custom .btn { flex: 0 0 auto; }
     }
     /* Celulares bem estreitos (~320px): um pouco mais justo pra data caber inteira. */
     @media (max-width: 359.98px) {
-        .est-evolucao-periodo .est-periodo-custom { gap: 4px; }
-        .est-evolucao-periodo .est-periodo-custom .form-control {
+        .est-periodo-custom { gap: 4px; }
+        .est-periodo-custom .form-control {
             font-size: 0.72rem;
             padding-left: 0.3rem;
             padding-right: 0.15rem;
         }
-        .est-evolucao-periodo .est-periodo-custom .form-control::-webkit-calendar-picker-indicator {
+        .est-periodo-custom .form-control::-webkit-calendar-picker-indicator {
             margin-left: 0;
             padding: 0;
         }
-        .est-evolucao-periodo .est-periodo-custom .btn { padding-left: 0.5rem; padding-right: 0.5rem; }
+        .est-periodo-custom .btn { padding-left: 0.5rem; padding-right: 0.5rem; }
     }
 
     /* ===== Atividade ===== */
@@ -738,6 +739,33 @@
         return { chave: 'custom', inicio: inicio, fim: fim, query: `inicio=${inicio}&fim=${fim}`, frase: `de ${de} a ${ate}`, parenteses: `(${de} a ${ate})`, rotuloKpi: 'período' };
     }
 
+    // Primeiro e último dia do mês corrente (AAAA-MM-DD), no fuso do aparelho.
+    // Não usa toISOString(): ele converte pra UTC e, perto da meia-noite,
+    // podia cair no dia (ou mês) errado.
+    function mesCorrenteISO() {
+        const hoje = new Date();
+        const ano = hoje.getFullYear();
+        const mes = hoje.getMonth();
+        const dois = n => String(n).padStart(2, '0');
+        const ultimoDia = new Date(ano, mes + 1, 0).getDate();
+        return {
+            inicio: `${ano}-${dois(mes + 1)}-01`,
+            fim: `${ano}-${dois(mes + 1)}-${dois(ultimoDia)}`
+        };
+    }
+
+    // Ao abrir o "Personalizado", sugere o mês corrente inteiro. Só preenche
+    // se os campos estiverem vazios, pra não apagar datas que a pessoa já
+    // escolheu ou aplicou antes.
+    function sugerirMesCorrente(idInicio, idFim) {
+        const campoInicio = document.getElementById(idInicio);
+        const campoFim = document.getElementById(idFim);
+        if (campoInicio.value || campoFim.value) return;
+        const mes = mesCorrenteISO();
+        campoInicio.value = mes.inicio;
+        campoFim.value = mes.fim;
+    }
+
     function atualizarRotulosPeriodo() {
         document.getElementById('kpiVolumeLabel').textContent = `Volume (${periodoAtual.rotuloKpi})`;
         document.getElementById('recordesPeriodo').textContent = periodoAtual.parenteses;
@@ -923,6 +951,7 @@
         botao.classList.add('active');
 
         if (botao.dataset.dias === 'custom') {
+            sugerirMesCorrente('periodoInicio', 'periodoFim');
             periodoCustomBox.style.display = 'flex';
             return;
         }
@@ -1200,7 +1229,7 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        layout: { padding: { top: 38 } },
+                        layout: { padding: { top: 39 } },
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
                             legend: {
@@ -1280,6 +1309,7 @@
         botao.classList.add('active');
 
         if (botao.dataset.dias === 'custom') {
+            sugerirMesCorrente('periodoEvolucaoInicio', 'periodoEvolucaoFim');
             document.getElementById('periodoEvolucaoCustom').style.display = 'flex';
             return;
         }
