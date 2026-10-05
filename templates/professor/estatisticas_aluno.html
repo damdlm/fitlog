@@ -390,9 +390,29 @@
 <!-- Desempenho por Treino -->
 <div class="card est-card">
     <div class="card-header bg-white border-0 pb-0">
-        <h6 class="fw-bold mb-0">
-            <i class="bi bi-trophy me-1" style="color: #F28C33;"></i>Desempenho por Treino
-        </h6>
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <h6 class="fw-bold mb-0">
+                <i class="bi bi-trophy me-1" style="color: #F28C33;"></i>Desempenho por Treino
+            </h6>
+            {% if versoes %}
+            <!-- Filtro de versão: carrega com a versão ativa do aluno; o
+                 período escolhido acima é mantido nos campos ocultos. -->
+            <form method="get" id="estFiltroVersao" class="d-flex align-items-center gap-2 mb-0">
+                <input type="hidden" name="inicio" value="{{ data_inicio_sel.isoformat() }}">
+                <input type="hidden" name="fim" value="{{ data_fim_sel.isoformat() }}">
+                <label for="estFiltroVersaoSel" class="small text-muted mb-0">Versão</label>
+                <select id="estFiltroVersaoSel" name="versao" class="form-select form-select-sm w-auto">
+                    {% for v in versoes %}
+                    <option value="{{ v.id }}" {% if not versao_todas and v.id == versao_sel_id %}selected{% endif %}>
+                        V{{ v.numero_versao }} · {{ v.descricao }}{% if v.id == versao_ativa_id %} (ativa){% endif %}
+                    </option>
+                    {% endfor %}
+                    <option value="todas" {% if versao_todas %}selected{% endif %}>Todas as versões</option>
+                </select>
+                <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Filtrar</button></noscript>
+            </form>
+            {% endif %}
+        </div>
     </div>
     <div class="card-body">
         {% if treino_stats %}
@@ -421,7 +441,7 @@
         {% else %}
         <div class="est-empty">
             <i class="bi bi-clipboard-x"></i>
-            Este aluno ainda não tem treinos cadastrados.
+            {% if versoes %}Esta versão não tem treinos cadastrados.{% else %}Este aluno ainda não tem treinos cadastrados.{% endif %}
         </div>
         {% endif %}
     </div>
@@ -493,6 +513,12 @@
     // Filtro de período: envia sozinho ao trocar a data (sem precisar
     // clicar em "Filtrar"), e mantém inicio <= fim no próprio seletor
     // nativo do navegador. O botão continua funcionando sem JS.
+    (function () {
+        var f = document.getElementById('estFiltroVersao');
+        var s = document.getElementById('estFiltroVersaoSel');
+        if (f && s) s.addEventListener('change', function () { f.submit(); });
+    })();
+
     (function () {
         var form = document.getElementById('estFiltroPeriodo');
         var inicio = document.getElementById('estFiltroInicio');

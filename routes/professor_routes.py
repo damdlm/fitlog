@@ -628,7 +628,25 @@ def estatisticas_aluno(aluno_id):
     musculo_stats = EstatisticaService.calcular_por_musculo(
         user_id=aluno.id, data_inicio=data_inicio, data_fim=data_fim)
 
+    # --- Filtro de versão (só da seção "Desempenho por Treino") ---
+    # Padrão: a versão ativa do aluno (sem data_fim). Se ele não tiver
+    # nenhuma ativa, cai na mais recente. ?versao=todas mostra todas; um
+    # id que não seja de uma versão do aluno é ignorado (volta ao padrão).
+    versoes = VersaoService.get_all(user_id=aluno.id)
+    versoes_por_id = {v.id: v for v in versoes}
+    versao_ativa = VersaoService.get_ativa(user_id=aluno.id)
+    versao_arg = request.args.get('versao', '')
+    versao_todas = versao_arg == 'todas'
+    versao_sel = None
+    if not versao_todas:
+        if versao_arg.isdigit() and int(versao_arg) in versoes_por_id:
+            versao_sel = versoes_por_id[int(versao_arg)]
+        else:
+            versao_sel = versao_ativa or (versoes[0] if versoes else None)
+
     treinos = TreinoService.get_all(user_id=aluno.id)
+    if versao_sel is not None:
+        treinos = [t for t in treinos if t.versao_id == versao_sel.id]
     registros = RegistroTreino.query.filter(
         RegistroTreino.user_id == aluno.id,
         RegistroTreino.data_registro >= data_inicio,
@@ -676,7 +694,11 @@ def estatisticas_aluno(aluno_id):
                          musculo_destaque=musculo_destaque,
                          volume_maximo_musculo=volume_maximo_musculo,
                          data_inicio_sel=data_inicio_sel,
-                         data_fim_sel=data_fim_sel)
+                         data_fim_sel=data_fim_sel,
+                         versoes=versoes,
+                         versao_sel_id=versao_sel.id if versao_sel else None,
+                         versao_todas=versao_todas,
+                         versao_ativa_id=versao_ativa.id if versao_ativa else None)
 
 
 @professor_bp.route('/aluno/<int:aluno_id>/calendario')

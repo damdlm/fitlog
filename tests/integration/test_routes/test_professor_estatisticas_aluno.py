@@ -203,3 +203,105 @@ class TestFiltroPeriodo:
         resp = client.get(f'/professor/aluno/{aluno_id}/estatisticas', follow_redirects=True)
         assert resp.status_code == 200
         assert 'não tem permissão'.encode('utf-8') in resp.data
+
+
+class TestFiltroVersaoDesempenhoPorTreino:
+    """Seção "Desempenho por Treino": filtro por versão do aluno, com a
+    versão ativa carregada por padrão."""
+
+    def _montar(self, app, sufixo):
+        prof = _criar_usuario(f'ver_prof_{sufixo}', tipo_usuario='professor')
+        aluno = _criar_usuario(f'ver_aluno_{sufixo}')
+        db.session.add(AlunoProfessor(aluno_id=aluno.id, professor_id=prof.id,
+                                       ativo=True, data_associacao=datetime.utcnow()))
+        musculo = Musculo.query.filter_by(nome='peito_teste').first()
+        if not musculo:
+            musculo = Musculo(nome='peito_teste', nome_exibicao='Peito')
+            db.session.add(musculo)
+        db.session.commit()
+        exercicio = ExercicioUsuario(usuario_id=aluno.id, nome='Supino', musculo_id=musculo.id)
+        db.session.add(exercicio)
+        db.session.commit()
+
+        hoje = datetime.combine(date.today(), datetime.min.time())
+        ids = {}
+        for numero, codigo, nome, fim in ((1, 'A', 'Treino Antigo', date(2020, 6, 1)),
+                                          (2, 'B', 'Treino Atual', None)):
+            v = VersaoGlobal(numero_versao=numero, descricao=f'Versao {numero}', divisao='A',
+                              data_inicio=date(2020, 1, 1), data_fim=fim, user_id=aluno.id)
+            db.session.add(v)
+            db.session.commit()
+            tv = TreinoVersao(versao_id=v.id, codigo=codigo, nome_treino=nome)
+            db.session.add(tv)
+            db.session.commit()
+            r = RegistroTreino(treino_versao_id=tv.id, versao_id=v.id, periodo='manha',
+                                semana=1, exercicio_usuario_id=exercicio.id,
+                                data_registro=hoje, user_id=aluno.id)
+            db.session.add(r)
+            db.session.commit()
+            db.session.add(HistoricoTreino(registro_id=r.id, carga=50, repeticoes=10, ordem=1))
+            db.session.commit()
+            ids[numero] = v.id
+        return prof.username, aluno.id, ids
+
+    def _get(self, client, aluno_id, qs=''):
+        return client.get(f'/professor/aluno/{aluno_id}/estatisticas{qs}').get_data(as_text=True)
+
+    def test_padrao_carrega_a_versao_ativa(self, client, app):
+        with app.app_context():
+            username, aluno_id, ids = self._montar(app, 'pad')
+        _login(client, username)
+
+        html = self._get(client, aluno_id)
+
+        assert 'Treino Atual' in html
+        assert 'Treino Antigo' not in html
+        # seletor marca a ativa como selecionada
+        assert f'<option value="{ids[2]}" selected>' in html
+        assert '(ativa)' in html
+
+    def test_escolher_outra_versao_mostra_so_os_treinos_dela(self, client, app):
+        with app.app_context():
+            username, aluno_id, ids = self._montar(app, 'out')
+        _login(client, username)
+
+        html = self._get(client, aluno_id, f'?versao={ids[1]}')
+
+        assert 'Treino Antigo' in html
+        assert 'Treino Atual' not in html
+
+    def test_todas_as_versoes(self, client, app):
+        with app.app_context():
+            username, aluno_id, _ = self._montar(app, 'tod')
+        _login(client, username)
+
+        html = self._get(client, aluno_id, '?versao=todas')
+
+        assert 'Treino Antigo' in html and 'Treino Atual' in html
+
+    def test_versao_invalida_ou_de_outro_aluno_volta_para_a_ativa(self, client, app):
+        with app.app_context():
+            username, aluno_id, _ = self._montar(app, 'inv')
+            outro = _criar_usuario('ver_outro_aluno')
+            v_outro = VersaoGlobal(numero_versao=1, descricao='Alheia', divisao='A',
+                                    data_inicio=date(2020, 1, 1), user_id=outro.id)
+            db.session.add(v_outro)
+            db.session.commit()
+            id_alheia = v_outro.id
+        _login(client, username)
+
+        for qs in ('?versao=abc', '?versao=999999', f'?versao={id_alheia}'):
+            html = self._get(client, aluno_id, qs)
+            assert 'Treino Atual' in html
+            assert 'Treino Antigo' not in html
+            assert 'Alheia' not in html
+
+    def test_filtro_de_versao_preserva_o_periodo(self, client, app):
+        with app.app_context():
+            username, aluno_id, _ = self._montar(app, 'per')
+        _login(client, username)
+
+        html = self._get(client, aluno_id, '?inicio=2020-01-01&fim=2020-01-31')
+
+        assert '<input type="hidden" name="inicio" value="2020-01-01">' in html
+        assert '<input type="hidden" name="fim" value="2020-01-31">' in html
