@@ -543,6 +543,114 @@
 })();
 </script>
 
+<script>
+(function () {
+    // Explosão aleatória dos dots: de tempos em tempos os dots se juntam
+    // perto do centro do átomo e, em seguida, são lançados para fora como
+    // numa explosão, voltando depois ao movimento normal.
+    //
+    // Só mexe nas propriedades "translate", "scale" e "filter" (via Web
+    // Animations API), por cima das animações CSS que já existem: o giro do
+    // átomo e o pulso dos dots (que usa "transform") seguem rodando o tempo
+    // todo, e ao terminar cada dot volta sozinho para a posição normal.
+    var atom = document.querySelector('.admin-hero-atom');
+    var dots = Array.prototype.slice.call(document.querySelectorAll('.admin-hero-dot'));
+
+    if (!atom || !dots.length || typeof dots[0].animate !== 'function') return;
+
+    // Mesmo critério do parallax: quem pede "reduzir movimento" não vê o efeito.
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var DURACAO = 2800;          // ms do efeito inteiro (juntar + explodir + voltar)
+    var PRIMEIRA_MIN = 4000;     // 1ª explosão: entre 4 e 10 s depois de abrir a página
+    var PRIMEIRA_MAX = 10000;
+    var ESPERA_MIN = 8000;       // depois, uma a cada 8-22 s (sorteado a cada vez)
+    var ESPERA_MAX = 22000;
+    var JUNTA = 0.84;            // fração do raio percorrida ao se juntar (1 = exatamente no centro)
+    var JUNTA_FORTE = 0.90;      // "compressão" logo antes de explodir
+    var ALCANCE = 0.9;           // quanto passa do raio normal ao explodir (0.9 => vai a 1,9x o raio)
+
+    var rodando = false;
+    var timer = null;
+
+    function aleatorio(min, max) {
+        return min + Math.random() * (max - min);
+    }
+
+    function explodir() {
+        if (rodando || document.hidden) return false;
+        rodando = true;
+
+        // Centro do átomo e posição de cada dot no referencial do próprio átomo
+        // (layout: não é afetado pelo giro nem pelo pulso).
+        var centroX = atom.offsetWidth / 2;
+        var centroY = atom.offsetHeight / 2;
+        var restantes = dots.length;
+
+        function terminou() {
+            restantes -= 1;
+            if (restantes > 0) return;
+            rodando = false;
+            agendar(ESPERA_MIN, ESPERA_MAX);
+        }
+
+        dots.forEach(function (dot) {
+            // Vetor do centro até o dot (posição "de casa").
+            var hx = (dot.offsetLeft + dot.offsetWidth / 2) - centroX;
+            var hy = (dot.offsetTop + dot.offsetHeight / 2) - centroY;
+            var z = parseFloat(getComputedStyle(dot).getPropertyValue('--z')) || 0;
+
+            // "translate" é relativo à posição de casa.
+            function mover(fracao, profundidade) {
+                return (hx * fracao).toFixed(1) + 'px ' +
+                       (hy * fracao).toFixed(1) + 'px ' +
+                       profundidade.toFixed(1) + 'px';
+            }
+
+            var casa = mover(0, z);
+
+            try {
+                var anim = dot.animate([
+                    { offset: 0,    translate: casa,                  scale: 1,    filter: 'brightness(1)',
+                      easing: 'cubic-bezier(.45, 0, .55, 1)' },
+                    // 1) juntam-se perto do centro (e "achatam" a profundidade)
+                    { offset: 0.32, translate: mover(-JUNTA, 0),      scale: 0.85, filter: 'brightness(1.2)',
+                      easing: 'ease-in-out' },
+                    // 2) comprimem um pouco mais, acendendo...
+                    { offset: 0.40, translate: mover(-JUNTA_FORTE, 0), scale: 0.7, filter: 'brightness(1.7)',
+                      easing: 'cubic-bezier(.12, .85, .25, 1)' },
+                    // 3) ...e são lançados para fora, passando do raio normal
+                    { offset: 0.50, translate: mover(ALCANCE, z * 2), scale: 1.7,  filter: 'brightness(1.9)',
+                      easing: 'cubic-bezier(.25, .1, .25, 1)' },
+                    // 4) desaceleram e voltam à órbita normal
+                    { offset: 1,    translate: casa,                  scale: 1,    filter: 'brightness(1)' }
+                ], { duration: DURACAO, fill: 'none' });
+
+                anim.onfinish = terminou;
+                anim.oncancel = terminou;
+            } catch (e) {
+                terminou();
+            }
+        });
+
+        return true;
+    }
+
+    function agendar(min, max) {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+            // Aba oculta ou efeito ainda rodando: tenta de novo daqui a pouco.
+            if (!explodir()) agendar(2000, 5000);
+        }, aleatorio(min, max));
+    }
+
+    // Para testar sem esperar: no console, window.flExplodirDots()
+    window.flExplodirDots = explodir;
+
+    agendar(PRIMEIRA_MIN, PRIMEIRA_MAX);
+})();
+</script>
+
 {% endblock %}
 
 {% block scripts %}
