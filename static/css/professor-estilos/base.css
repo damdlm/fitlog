@@ -53,15 +53,40 @@
     width: 100%;
     max-width: 560px;
     margin: 0 auto;
+    /* Permite medir a largura do pôster (cqw) pra derivar a altura 9:16 */
+    container-type: inline-size;
 }
 
-/* PÔSTER (inclui o "Sobre mim") */
+/* PÔSTER (inclui o "Sobre mim")
+   Formato de Stories (Instagram/Facebook/WhatsApp): proporção vertical
+   9:16, a mesma de 1080 x 1920 px. min-height (e não aspect-ratio) pra o
+   pôster CRESCER se o "Sobre mim" for longo, em vez de cortar o texto
+   (o pôster tem overflow: hidden). */
 .pp-poster {
     position: relative;
+    display: flex;
+    flex-direction: column;
     width: 100%;
+    min-height: calc(100cqw * 16 / 9);
     overflow: hidden;
     padding: 44px 14px 16px;
     isolation: isolate;
+}
+
+/* Navegadores sem container query units: proporção direta */
+@supports not (width: 1cqw) {
+    .pp-poster {
+        min-height: 0;
+        aspect-ratio: 9 / 16;
+    }
+}
+
+/* O espaço extra do 9:16 fica entre o cabeçalho (foto, nome, frase) e o
+   bloco de especialidades/avaliação/redes/"Sobre mim", que desce pra base.
+   Seletor com 3 classes pra vencer o margin dos CSS de cada estilo. */
+.pp-page .pp-poster > .pp-services {
+    margin-top: auto;
+    padding-top: 14px;
 }
 
 /* AÇÕES (compartilhar / editar) -- a logo do FitLog fica à esquerda */
@@ -105,7 +130,7 @@
 }
 
 .pp-ring {
-    --pp-ring-size: clamp(132px, 37vw, 172px);
+    --pp-ring-size: clamp(150px, 46cqw, 250px);
     position: relative;
     width: var(--pp-ring-size) !important;
     height: var(--pp-ring-size) !important;
@@ -321,6 +346,9 @@
     z-index: 3;
     display: flex;
     justify-content: center;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 16px;
     margin-top: 12px;
 }
 

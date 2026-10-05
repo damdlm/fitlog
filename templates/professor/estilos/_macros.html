@@ -46,3 +46,24 @@
 <a class="pp-brand" href="{{ url_for('main.index') }}" aria-label="FitLog — página inicial"><img src="{{ url_for('static', filename='images/logo-poster.png') }}" alt="FitLog" width="73" height="48"></a>
 {%- endif -%}
 {%- endmacro %}
+
+{# Redes do pôster: @fitlog.vip sempre vem ANTES do Instagram do professor.
+   Só aparece quando o professor informou o Instagram. #}
+{% macro _icone_instagram() -%}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c-2.7 0-3 0-4.1.06-1.1.05-1.8.22-2.5.47a5 5 0 00-1.8 1.17 5 5 0 00-1.17 1.8c-.25.7-.42 1.4-.47 2.5C2 8.9 2 9.2 2 12s0 3 .06 4.1c.05 1.1.22 1.8.47 2.5a5 5 0 001.17 1.8 5 5 0 001.8 1.17c.7.25 1.4.42 2.5.47C9 22 9.2 22 12 22s3 0 4.1-.06c1.1-.05 1.8-.22 2.5-.47a5 5 0 001.8-1.17 5 5 0 001.17-1.8c.25-.7.42-1.4.47-2.5.06-1.1.06-1.4.06-4.1s0-3-.06-4.1c-.05-1.1-.22-1.8-.47-2.5a5 5 0 00-1.17-1.8 5 5 0 00-1.8-1.17c-.7-.25-1.4-.42-2.5-.47C15 2 14.7 2 12 2zm0 4.9a5.1 5.1 0 110 10.2 5.1 5.1 0 010-10.2zm0 1.8a3.3 3.3 0 100 6.6 3.3 3.3 0 000-6.6zm5.3-2a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"/></svg>
+{%- endmacro %}
+
+{% macro redes_instagram(professor) -%}
+{% if professor.professor_instagram %}
+<div class="pp-social">
+    <a class="pp-social-fitlog" href="https://instagram.com/fitlog.vip" target="_blank" rel="noopener">
+        {{ _icone_instagram() }}
+        @fitlog.vip
+    </a>
+    <a class="pp-social-professor" href="https://instagram.com/{{ professor.professor_instagram }}" target="_blank" rel="noopener">
+        {{ _icone_instagram() }}
+        @{{ professor.professor_instagram }}
+    </a>
+</div>
+{% endif %}
+{%- endmacro %}

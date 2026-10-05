@@ -40,10 +40,37 @@
                     <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
                 </svg>
             </button>
+            {# Compartilhar: logo abaixo do X. No celular abre direto a folha de
+               compartilhamento do sistema (Instagram, WhatsApp...); no
+               computador abre o menu abaixo. #}
+            <button type="button" class="epp-preview-share" id="ppShareModalBtn"
+                    title="Compartilhar" aria-label="Compartilhar página"
+                    aria-haspopup="true" aria-expanded="false">
+                <i class="bi bi-share-fill" aria-hidden="true"></i>
+            </button>
+            <div class="epp-share-menu" id="ppShareMenu" role="menu" aria-label="Compartilhar página" hidden>
+                <a class="epp-share-item" role="menuitem" data-canal="whatsapp" target="_blank" rel="noopener" href="#">
+                    <i class="bi bi-whatsapp" aria-hidden="true"></i> WhatsApp
+                </a>
+                <button type="button" class="epp-share-item" role="menuitem" data-canal="instagram">
+                    <i class="bi bi-instagram" aria-hidden="true"></i> Instagram
+                </button>
+                <a class="epp-share-item" role="menuitem" data-canal="facebook" target="_blank" rel="noopener" href="#">
+                    <i class="bi bi-facebook" aria-hidden="true"></i> Facebook
+                </a>
+                <a class="epp-share-item" role="menuitem" data-canal="telegram" target="_blank" rel="noopener" href="#">
+                    <i class="bi bi-telegram" aria-hidden="true"></i> Telegram
+                </a>
+                <button type="button" class="epp-share-item" role="menuitem" data-canal="copiar">
+                    <i class="bi bi-link-45deg" aria-hidden="true"></i> Copiar link
+                </button>
+            </div>
             <div class="modal-body p-0">
                 <iframe id="ppVerPaginaFrame"
-                        {% if pp_modal_slug %}data-src="{{ url_for('professor.pagina_publica', slug=pp_modal_slug, embed=1) }}"{% endif %}
+                        {% if pp_modal_slug %}data-src="{{ url_for('professor.pagina_publica', slug=pp_modal_slug, embed=1) }}"
+                        data-share-url="{{ canonical_url(url_for('professor.pagina_publica', slug=pp_modal_slug)) }}"{% endif %}
                         data-src-template="{{ url_for('professor.pagina_publica', slug='__SLUG__', embed=1) }}"
+                        data-share-template="{{ canonical_url(url_for('professor.pagina_publica', slug='__SLUG__')) }}"
                         title="Prévia da página pública"></iframe>
             </div>
             {% if pp_modal_com_rodape %}
@@ -119,6 +146,86 @@
         .epp-preview-close svg { transition: none; }
         .epp-preview-close:hover svg { transform: none; }
     }
+    /* Compartilhar: mesmo "vidro" do X, logo abaixo dele (12px + 38px de
+       altura do X + 10px de respiro). */
+    .epp-preview-share {
+        position: absolute;
+        top: 60px;
+        right: 12px;
+        z-index: 5;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        border: 1px solid rgba(255, 255, 255, .28);
+        border-radius: 50%;
+        background: rgba(25, 25, 25, .55);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        color: #fff;
+        font-size: .95rem;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
+        cursor: pointer;
+        transition: background-color .2s ease, transform .2s ease,
+                    box-shadow .2s ease;
+    }
+    .epp-preview-share:hover,
+    .epp-preview-share[aria-expanded="true"] {
+        background: #F28C33;
+        border-color: #F28C33;
+        box-shadow: 0 6px 18px rgba(242, 140, 51, .45);
+    }
+    .epp-preview-share:active { transform: scale(.92); }
+    .epp-preview-share:focus-visible {
+        outline: 3px solid rgba(242, 140, 51, .55);
+        outline-offset: 2px;
+    }
+    /* Menu de compartilhar (computador): abre à esquerda do botão. */
+    .epp-share-menu {
+        position: absolute;
+        top: 60px;
+        right: 58px;
+        z-index: 6;
+        display: flex;
+        flex-direction: column;
+        min-width: 172px;
+        padding: 6px;
+        border: 1px solid rgba(255, 255, 255, .14);
+        border-radius: 14px;
+        background: rgba(25, 25, 25, .92);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, .35);
+    }
+    .epp-share-menu[hidden] { display: none; }
+    .epp-share-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 9px 12px;
+        border: 0;
+        border-radius: 9px;
+        background: transparent;
+        color: #fff;
+        font-size: .88rem;
+        font-weight: 600;
+        text-align: left;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    .epp-share-item .bi { font-size: 1.05rem; color: #F28C33; }
+    .epp-share-item:hover,
+    .epp-share-item:focus-visible {
+        background: rgba(242, 140, 51, .18);
+        color: #fff;
+        outline: none;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .epp-preview-share { transition: none; }
+    }
     #ppVerPaginaFrame {
         display: block;
         width: 100%;
@@ -188,6 +295,15 @@
             width: 42px;
             height: 42px;
         }
+        .epp-preview-share {
+            top: calc(64px + env(safe-area-inset-top, 0px));
+            width: 42px;
+            height: 42px;
+        }
+        .epp-share-menu {
+            top: calc(64px + env(safe-area-inset-top, 0px));
+            right: 62px;
+        }
         #ppVerPaginaFrame { height: 100vh; }
         .epp-com-rodape #ppVerPaginaFrame {
             height: calc(100vh - 72px - env(safe-area-inset-bottom, 0px));
@@ -212,9 +328,127 @@
     var btnSolicitar = document.getElementById('ppSolicitarBtn');
     var avisoSolicitar = document.getElementById('ppSolicitarAviso');
 
+    // ---- Compartilhar -------------------------------------------------
+    var shareBtn = document.getElementById('ppShareModalBtn');
+    var shareMenu = document.getElementById('ppShareMenu');
+    var shareUrl = frame.dataset.shareUrl || '';
+
+    function tituloParaCompartilhar() {
+        // O iframe é da mesma origem: o <title> é "<Nome> — FitLog".
+        try {
+            var t = frame.contentDocument && frame.contentDocument.title;
+            if (t) return t;
+        } catch (e) { /* sem acesso: usa o texto padrão */ }
+        return 'Página do professor — FitLog';
+    }
+
+    function toast(msg, tipo) {
+        if (window.FitLogUtils && window.FitLogUtils.showToast) {
+            window.FitLogUtils.showToast(msg, tipo);
+        }
+    }
+
+    async function copiarLink(url) {
+        try {
+            if (window.FitLogUtils && window.FitLogUtils.copyToClipboard) {
+                await window.FitLogUtils.copyToClipboard(url);
+            } else {
+                await navigator.clipboard.writeText(url);
+            }
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function fecharMenu() {
+        if (!shareMenu || shareMenu.hidden) return;
+        shareMenu.hidden = true;
+        shareBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function abrirMenu() {
+        var texto = encodeURIComponent(tituloParaCompartilhar() + ' ' + shareUrl);
+        var url = encodeURIComponent(shareUrl);
+        shareMenu.querySelector('[data-canal="whatsapp"]').href = 'https://wa.me/?text=' + texto;
+        shareMenu.querySelector('[data-canal="facebook"]').href =
+            'https://www.facebook.com/sharer/sharer.php?u=' + url;
+        shareMenu.querySelector('[data-canal="telegram"]').href =
+            'https://t.me/share/url?url=' + url + '&text=' + encodeURIComponent(tituloParaCompartilhar());
+        shareMenu.hidden = false;
+        shareBtn.setAttribute('aria-expanded', 'true');
+        var primeiro = shareMenu.querySelector('.epp-share-item');
+        if (primeiro) primeiro.focus();
+    }
+
+    if (shareBtn && shareMenu) {
+        // Celular/tablet (toque): folha nativa, que já lista Instagram,
+        // WhatsApp, Facebook etc. Computador: menu próprio (a folha nativa
+        // do desktop quase nunca tem essas redes).
+        function usaFolhaNativa() {
+            return !!navigator.share &&
+                !!window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+        }
+
+        shareBtn.addEventListener('click', async function (event) {
+            event.stopPropagation();
+            if (!shareUrl) {
+                toast('Não foi possível gerar o link para compartilhar.', 'danger');
+                return;
+            }
+            if (usaFolhaNativa()) {
+                var titulo = tituloParaCompartilhar();
+                try {
+                    await navigator.share({ title: titulo, text: titulo, url: shareUrl });
+                    return;
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return;  // cancelou
+                    // falhou de outro jeito: cai no menu próprio
+                }
+            }
+            if (shareMenu.hidden) abrirMenu(); else fecharMenu();
+        });
+
+        shareMenu.addEventListener('click', async function (event) {
+            event.stopPropagation();
+            var item = event.target.closest('.epp-share-item');
+            if (!item) return;
+            var canal = item.dataset.canal;
+            if (canal === 'copiar') {
+                var ok = await copiarLink(shareUrl);
+                toast(ok ? 'Link copiado!' : 'Não foi possível copiar o link.', ok ? 'success' : 'danger');
+                fecharMenu();
+            } else if (canal === 'instagram') {
+                // O Instagram não tem link de compartilhamento pela web:
+                // copia o link e abre o app/site pra colar (Stories, bio, DM).
+                var copiou = await copiarLink(shareUrl);
+                toast(copiou ? 'Link copiado! Cole no Instagram.' : 'Abra o Instagram e cole o link da página.',
+                      copiou ? 'success' : 'warning');
+                window.open('https://www.instagram.com/', '_blank', 'noopener');
+                fecharMenu();
+            } else {
+                fecharMenu();  // WhatsApp/Facebook/Telegram: o <a> abre em nova aba
+            }
+        });
+
+        document.addEventListener('click', fecharMenu);
+        modal.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !shareMenu.hidden) {
+                event.stopPropagation();
+                fecharMenu();
+                shareBtn.focus();
+            }
+        });
+        modal.addEventListener('hidden.bs.modal', fecharMenu);
+    }
+
     modal.addEventListener('show.bs.modal', function (event) {
         var trigger = event.relatedTarget;
         var slugDinamico = trigger && trigger.getAttribute('data-professor-slug');
+        // Link público do professor deste gatilho (ou o fixo da tela).
+        shareUrl = slugDinamico
+            ? frame.dataset.shareTemplate.replace('__SLUG__', encodeURIComponent(slugDinamico))
+            : (frame.dataset.shareUrl || '');
 
         // Rodapé "Solicitar vínculo": aponta o formulário pro professor
         // do gatilho (a URL-modelo termina em /0, trocado pelo id real).

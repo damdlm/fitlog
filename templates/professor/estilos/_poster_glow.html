@@ -1,21 +1,25 @@
-{# Pôster público — estilo Glow.
+{# Pôster público — estilo 5 (Esportivo).
    Layout igual aos mockups: logo do FitLog no canto, nome em uma linha, frase
    entre aspas (via CSS), cartões de especialidade com ícone + título,
    avaliação em uma linha e "Sobre mim" DENTRO do mesmo cartão do pôster.
    Só a identidade visual muda entre os estilos (CSS próprio + base.css). #}
-{% from "professor/estilos/_macros.html" import icone_servico, marca %}
+{% from "professor/estilos/_macros.html" import icone_servico, marca, redes_instagram %}
 {% set partes_nome = nome_exibicao.split(' ') %}
 {% set primeiro_nome = partes_nome[0] %}
 {% set sobrenome = partes_nome[1:] | join(' ') %}
 
-<div class="pp-page pp-page-feminino">
+<div class="pp-page pp-page-estilo-5">
     <div class="pp-column">
-        <article class="pp-poster pp-poster-feminino">
-            <div class="pp-glow-topo" aria-hidden="true"></div>
-            <div class="pp-glow-base" aria-hidden="true"></div>
-            <div class="pp-glow-pontos pp-glow-pontos-esq" aria-hidden="true"></div>
-            <div class="pp-glow-pontos pp-glow-pontos-dir" aria-hidden="true"></div>
-            <div class="pp-glow-folhas" aria-hidden="true"></div>
+        <article class="pp-poster pp-poster-estilo-5">
+            <svg class="pp-sport-defs" aria-hidden="true" focusable="false">
+                <filter id="pp-rough-sport" x="-4%" y="-14%" width="108%" height="128%">
+                    <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3" result="t"/>
+                    <feDisplacementMap in="SourceGraphic" in2="t" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+                </filter>
+            </svg>
+            <div class="pp-sport-grunge" aria-hidden="true"></div>
+            <div class="pp-sport-brush pp-sport-brush-right" aria-hidden="true"></div>
+            <div class="pp-sport-brush pp-sport-brush-left" aria-hidden="true"></div>
             {{ marca(embed) }}
 
             {% if not embed %}
@@ -49,8 +53,8 @@
                         {% else %}
                             <div class="pp-placeholder">
                                 <svg viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                    <circle cx="50" cy="28" r="20" fill="#d9aab6"/>
-                                    <path d="M10 95c2-28 20-42 40-42s38 14 40 42z" fill="#d9aab6"/>
+                                    <circle cx="50" cy="28" r="20" fill="#3a3a3a"/>
+                                    <path d="M10 95c2-28 20-42 40-42s38 14 40 42z" fill="#3a3a3a"/>
                                 </svg>
                             </div>
                         {% endif %}
@@ -102,33 +106,21 @@
             </div>
             {% endif %}
 
-            {% if professor.professor_instagram %}
-            <div class="pp-social">
-                <a href="https://instagram.com/{{ professor.professor_instagram }}"
-                   target="_blank"
-                   rel="noopener">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M12 2c-2.7 0-3 0-4.1.06-1.1.05-1.8.22-2.5.47a5 5 0 00-1.8 1.17 5 5 0 00-1.17 1.8c-.25.7-.42 1.4-.47 2.5C2 8.9 2 9.2 2 12s0 3 .06 4.1c.05 1.1.22 1.8.47 2.5a5 5 0 001.17 1.8 5 5 0 001.8 1.17c.7.25 1.4.42 2.5.47C9 22 9.2 22 12 22s3 0 4.1-.06c1.1-.05 1.8-.22 2.5-.47a5 5 0 001.8-1.17 5 5 0 001.17-1.8c.25-.7.42-1.4.47-2.5.06-1.1.06-1.4.06-4.1s0-3-.06-4.1c-.05-1.1-.22-1.8-.47-2.5a5 5 0 00-1.17-1.8 5 5 0 00-1.8-1.17c-.7-.25-1.4-.42-2.5-.47C15 2 14.7 2 12 2zm0 4.9a5.1 5.1 0 110 10.2 5.1 5.1 0 010-10.2zm0 1.8a3.3 3.3 0 100 6.6 3.3 3.3 0 000-6.6zm5.3-2a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"/>
-                    </svg>
-                    @{{ professor.professor_instagram }}
-                </a>
-            </div>
+            {{ redes_instagram(professor) }}
+
+            {% if professor.professor_bio %}
+            <section class="pp-about pp-about-estilo-5">
+                <div class="pp-section-title">Sobre mim</div>
+                <p class="pp-about-text">{{ professor.professor_bio }}</p>
+            </section>
             {% endif %}
 
-            {% if professor.professor_bio or especialidades %}
-            <section class="pp-about pp-about-feminino">
-                <div class="pp-section-title">Sobre mim</div>
-                {% if professor.professor_bio %}
-                <p class="pp-about-text">{{ professor.professor_bio }}</p>
-                {% endif %}
-                {% if especialidades %}
-                <div class="pp-chips">
-                    {% for esp in especialidades %}
-                    <span class="pp-chip">{{ esp }}</span>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </section>
+            {% if especialidades %}
+            <div class="pp-chips pp-chips-fora">
+                {% for esp in especialidades %}
+                <span class="pp-chip">{{ esp }}</span>
+                {% endfor %}
+            </div>
             {% endif %}
         </article>
     </div>

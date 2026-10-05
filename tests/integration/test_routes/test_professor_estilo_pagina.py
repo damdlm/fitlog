@@ -263,3 +263,48 @@ def test_nomes_dos_estilos_na_tela_de_edicao(app, client, professor):
         assert f'value="{chave}"' in html and f'>{nome}</option>' in html, chave
     for antigo in ('Default', 'Diagonal', 'Textura', 'Moderno', 'Esportivo', 'Glow'):
         assert f'>{antigo}</option>' not in html, antigo
+
+
+@pytest.mark.parametrize('chave', list(ESTILOS_PAGINA))
+def test_fitlog_vip_aparece_antes_do_instagram_do_professor(app, client, professor, chave):
+    """Em todos os estilos, o @fitlog.vip vem ANTES do @ do professor; sem
+    Instagram informado, a linha de redes não aparece."""
+    uid, slug = professor
+    usuario = db.session.get(User, uid)
+    usuario.professor_estilo_pagina = chave
+    usuario.professor_instagram = None
+    db.session.commit()
+    html = client.get(f'/professor/pagina/{slug}').get_data(as_text=True)
+    assert '@fitlog.vip' not in html
+
+    usuario.professor_instagram = 'felipeluis'
+    db.session.commit()
+    html = client.get(f'/professor/pagina/{slug}').get_data(as_text=True)
+    assert html.count('@fitlog.vip') == 1
+    assert 'href="https://instagram.com/fitlog.vip"' in html
+    assert html.index('@fitlog.vip') < html.index('@felipeluis')
+
+
+def test_modal_ver_pagina_tem_botao_compartilhar_abaixo_do_fechar(app, client, professor):
+    """O modal 'Ver página' tem o botão Compartilhar logo depois do X, com o
+    link público do professor (não o ?embed=1) e o menu de redes."""
+    uid, slug = professor
+    _login(client)
+    html = client.get('/professor/pagina/editar').get_data(as_text=True)
+    assert 'id="ppShareModalBtn"' in html
+    assert html.index('epp-preview-close') < html.index('id="ppShareModalBtn"')
+    assert f'data-share-url="http://localhost/professor/pagina/{slug}"' in html
+    assert 'data-share-template="http://localhost/professor/pagina/__SLUG__"' in html
+    assert 'embed=1' not in html.split('data-share-url=')[1].split('"')[1]
+    for canal in ('whatsapp', 'instagram', 'facebook', 'telegram', 'copiar'):
+        assert f'data-canal="{canal}"' in html
+
+
+def test_base_css_define_formato_stories_9_16():
+    """Todos os estilos que usam o base.css herdam o pôster 9:16 (Stories)."""
+    import pathlib
+    css = pathlib.Path('static/css/professor-estilos/base.css').read_text(encoding='utf-8')
+    assert 'min-height: calc(100cqw * 16 / 9)' in css
+    assert 'aspect-ratio: 9 / 16' in css  # fallback sem container queries
+    diag = pathlib.Path('static/css/professor-estilos/diagonal.css').read_text(encoding='utf-8')
+    assert 'min-height: calc(100cqw * 16 / 9)' in diag

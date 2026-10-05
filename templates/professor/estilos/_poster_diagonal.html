@@ -4,7 +4,7 @@
    modal "Ver minha página", sem navbar). `embed` (bool) esconde os
    botões de compartilhar/editar, que não fazem sentido dentro do
    preview em miniatura. #}
-{% from "professor/estilos/_macros.html" import icone_servico, marca %}
+{% from "professor/estilos/_macros.html" import icone_servico, marca, redes_instagram %}
 {% set partes_nome = nome_exibicao.split(' ') %}
 {% set primeiro_nome = partes_nome[0] %}
 {% set sobrenome = partes_nome[1:] | join(' ') %}
@@ -120,18 +120,7 @@
             </div>
             {% endif %}
 
-            {% if professor.professor_instagram %}
-            <div class="pp-social">
-                <a href="https://instagram.com/{{ professor.professor_instagram }}"
-                   target="_blank"
-                   rel="noopener">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M12 2c-2.7 0-3 0-4.1.06-1.1.05-1.8.22-2.5.47a5 5 0 00-1.8 1.17 5 5 0 00-1.17 1.8c-.25.7-.42 1.4-.47 2.5C2 8.9 2 9.2 2 12s0 3 .06 4.1c.05 1.1.22 1.8.47 2.5a5 5 0 001.17 1.8 5 5 0 001.8 1.17c.7.25 1.4.42 2.5.47C9 22 9.2 22 12 22s3 0 4.1-.06c1.1-.05 1.8-.22 2.5-.47a5 5 0 001.8-1.17 5 5 0 001.17-1.8c.25-.7.42-1.4.47-2.5.06-1.1.06-1.4.06-4.1s0-3-.06-4.1c-.05-1.1-.22-1.8-.47-2.5a5 5 0 00-1.17-1.8 5 5 0 00-1.8-1.17c-.7-.25-1.4-.42-2.5-.47C15 2 14.7 2 12 2zm0 4.9a5.1 5.1 0 110 10.2 5.1 5.1 0 010-10.2zm0 1.8a3.3 3.3 0 100 6.6 3.3 3.3 0 000-6.6zm5.3-2a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"/>
-                    </svg>
-                    @{{ professor.professor_instagram }}
-                </a>
-            </div>
-            {% endif %}
+            {{ redes_instagram(professor) }}
 
             {% if professor.professor_bio or especialidades %}
             <section class="pp-about pp-about-diagonal">
