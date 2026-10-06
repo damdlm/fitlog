@@ -627,31 +627,12 @@
         var centroY = atom.offsetHeight / 2;
         var restantes = dots.length;
 
-       // function terminou() {
-       //     restantes -= 1;
-       //     if (restantes > 0) return;
-       //     rodando = false;
-       //     agendar(ESPERA_MIN, ESPERA_MAX);
-       // }
         function terminou() {
             restantes -= 1;
-        
             if (restantes > 0) return;
-        
-            // A explosão terminou: inverte o sentido de rotação do átomo
-            var animacoes = atom.getAnimations();
-        
-            animacoes.forEach(function (animation) {
-                try {
-                    animation.reverse();
-                } catch (e) {
-                    // Ignora caso o navegador não permita inverter a animação
-                }
-            });
-        
             rodando = false;
             agendar(ESPERA_MIN, ESPERA_MAX);
-        }        
+        }    
 
         dots.forEach(function (dot) {
             // Vetor do centro até o dot (posição "de casa").
