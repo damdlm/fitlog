@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, abort
-from utils.validators import validar_senha
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, abort, session
+from utils.validators import erros_senha
 from flask_login import login_required, current_user
 from models import db, User, AlunoProfessor, RegistroTreino, SolicitacaoVinculo, VersaoGlobal, HistoricoTreino, TreinoVersao
 from services.base_service import BaseService
@@ -116,6 +116,18 @@ def listar_alunos():
                          busca=busca)
 
 
+def _voltar_ao_novo_aluno(*mensagens):
+    """Mostra o(s) erro(s) e volta ao formulário mantendo o que o professor
+    digitou (menos a senha, que nunca é devolvida ao navegador)."""
+    for mensagem in mensagens:
+        flash(mensagem, 'danger')
+    session['novo_aluno_form'] = {
+        campo: request.form.get(campo, '')
+        for campo in ('nome_completo', 'username', 'email', 'telefone')
+    }
+    return redirect(url_for('professor.novo_aluno'))
+
+
 @professor_bp.route('/aluno/novo', methods=['GET', 'POST'])
 @login_required
 @professor_acesso_tela_required('professor_novo_aluno')
@@ -142,27 +154,22 @@ def novo_aluno():
         telefone = request.form.get('telefone')
         
         if not username or not email or not password:
-            flash('Todos os campos são obrigatórios', 'danger')
-            return redirect(url_for('professor.novo_aluno'))
+            return _voltar_ao_novo_aluno('Todos os campos são obrigatórios')
         
         if len(username) < 3:
-            flash('Usuário deve ter pelo menos 3 caracteres', 'danger')
-            return redirect(url_for('professor.novo_aluno'))
+            return _voltar_ao_novo_aluno('Usuário deve ter pelo menos 3 caracteres')
         
         # Mesma política do cadastro público (8+ caracteres, letra e número,
         # fora da lista de senhas comuns). Antes aqui bastavam 6 caracteres.
-        ok_senha, msg_senha = validar_senha(password, username=username, email=email)
-        if not ok_senha:
-            flash(msg_senha, 'danger')
-            return redirect(url_for('professor.novo_aluno'))
+        erros_da_senha = erros_senha(password, username=username, email=email)
+        if erros_da_senha:
+            return _voltar_ao_novo_aluno(*erros_da_senha)
         
         if User.query.filter_by(username=username).first():
-            flash('Nome de usuário já existe', 'danger')
-            return redirect(url_for('professor.novo_aluno'))
+            return _voltar_ao_novo_aluno('Nome de usuário já existe')
         
         if User.query.filter_by(email=email).first():
-            flash('E-mail já cadastrado', 'danger')
-            return redirect(url_for('professor.novo_aluno'))
+            return _voltar_ao_novo_aluno('E-mail já cadastrado')
         
         aluno = User(
             username=username,
@@ -200,7 +207,7 @@ def novo_aluno():
         flash(f'Aluno {nome_completo or username} cadastrado com sucesso!', 'success')
         return redirect(url_for('professor.visualizar_aluno', aluno_id=aluno.id))
     
-    return render_template('professor/novo_aluno.html')
+    return render_template('professor/novo_aluno.html', form=session.pop('novo_aluno_form', {}))
 
 
 @professor_bp.route('/aluno/<int:aluno_id>')
@@ -314,9 +321,16 @@ def editar_aluno(aluno_id):
         aluno.email = email
         aluno.telefone = telefone
         
-        if nova_senha and len(nova_senha) >= 6:
-            aluno.set_password(nova_senha)
-            flash('Senha alterada com sucesso!', 'success')
+        if nova_senha:
+            # Mesma política do cadastro (8+, letra, número, fora da lista de
+            # senhas comuns). Antes bastavam 6 caracteres, e uma senha curta
+            # era ignorada em silêncio. Os demais dados continuam sendo salvos.
+            erros_da_senha = erros_senha(nova_senha, username=aluno.username, email=email)
+            if erros_da_senha:
+                flash('Os dados foram salvos, mas a senha NÃO foi alterada: ' + '; '.join(erros_da_senha) + '.', 'warning')
+            else:
+                aluno.set_password(nova_senha)
+                flash('Senha alterada com sucesso!', 'success')
         
         db.session.commit()
         

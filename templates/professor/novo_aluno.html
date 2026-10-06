@@ -13,39 +13,40 @@
                 </h4>
             </div>
             <div class="card-body">
-                <form method="post">
+                {% set form = form|default({}) %}
+            <form method="post">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nome Completo</label>
                         <input type="text" name="nome_completo" class="form-control" 
-                               placeholder="Digite o nome completo" required>
+                               placeholder="Digite o nome completo" required value="{{ form.get('nome_completo', '') }}">
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold">Usuário</label>
                         <input type="text" name="username" class="form-control" 
-                               placeholder="Escolha um nome de usuário" required minlength="3">
+                               placeholder="Escolha um nome de usuário" required minlength="3" value="{{ form.get('username', '') }}">
                         <small class="text-muted">Mínimo 3 caracteres</small>
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold">E-mail</label>
                         <input type="email" name="email" class="form-control" 
-                               placeholder="Digite o e-mail" required>
+                               placeholder="Digite o e-mail" required value="{{ form.get('email', '') }}">
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold">Telefone</label>
                         <input type="text" name="telefone" class="form-control" 
-                               placeholder="(11) 99999-9999">
+                               placeholder="(11) 99999-9999" value="{{ form.get('telefone', '') }}">
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold">Senha</label>
                         <input type="password" name="password" class="form-control" 
-                               placeholder="Digite a senha" required minlength="6">
-                        <small class="text-muted">Mínimo 6 caracteres</small>
+                               placeholder="Digite a senha" required minlength="8" autocomplete="new-password">
+                        <small class="text-muted">Mínimo 8 caracteres, com letra e número. Evite senhas comuns (ex.: &quot;senha123&quot;) e não use o usuário nem o e-mail do aluno na senha.</small>
                     </div>
                     
                     <div class="alert alert-info">

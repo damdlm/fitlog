@@ -26,20 +26,21 @@
                 <p>Leva menos de um minuto pra começar a treinar com o FitLog.</p>
             </div>
 
+            {% set form = form|default({}) %}
             <form method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
                 <div class="login-field">
                     <label>Tipo de Usuário</label>
                     <div class="tipo-usuario-group" role="group">
-                        <input type="radio" class="btn-check" name="tipo_usuario" id="tipo_aluno" value="aluno" checked>
+                        <input type="radio" class="btn-check" name="tipo_usuario" id="tipo_aluno" value="aluno" {% if form.get('tipo_usuario') != 'professor' %}checked{% endif %}>
                         <label class="btn btn-outline-primary d-flex align-items-center justify-content-center" for="tipo_aluno">
                             <i class="bi bi-person me-2 aluno-icon"></i>
                             <span>Aluno</span>
                             <i class="bi bi-graph-up-arrow ms-2 text-muted aluno-icon-feature" style="font-size: 0.8rem;"></i>
                         </label>
 
-                        <input type="radio" class="btn-check" name="tipo_usuario" id="tipo_professor" value="professor">
+                        <input type="radio" class="btn-check" name="tipo_usuario" id="tipo_professor" value="professor" {% if form.get('tipo_usuario') == 'professor' %}checked{% endif %}>
                         <label class="btn btn-outline-primary d-flex align-items-center justify-content-center" for="tipo_professor">
                             <i class="bi bi-person-badge me-2 professor-icon"></i>
                             <span>Professor</span>
@@ -53,7 +54,7 @@
                     <div class="login-input-group">
                         <i class="bi bi-person login-input-icon"></i>
                         <input type="text" id="regNomeCompleto" name="nome_completo"
-                               placeholder="Digite seu nome completo">
+                               placeholder="Digite seu nome completo" value="{{ form.get('nome_completo', '') }}">
                     </div>
                 </div>
 
@@ -63,8 +64,8 @@
                         <i class="bi bi-person-vcard login-input-icon"></i>
                         <select id="regGenero" name="genero" class="form-select">
                             <option value="">Prefiro não informar</option>
-                            <option value="M">Masculino</option>
-                            <option value="F">Feminino</option>
+                            <option value="M" {% if form.get('genero') == 'M' %}selected{% endif %}>Masculino</option>
+                            <option value="F" {% if form.get('genero') == 'F' %}selected{% endif %}>Feminino</option>
                         </select>
                     </div>
                     <span class="login-field-hint">Usado só para personalizar sua mensagem de boas-vindas</span>
@@ -75,8 +76,8 @@
                     <div class="login-input-group">
                         <i class="bi bi-at login-input-icon"></i>
                         <input type="text" id="regUsername" name="username"
-                               placeholder="Escolha um nome de usuário" required autofocus
-                               minlength="3" maxlength="80">
+                               placeholder="Escolha um nome de usuário" required {% if not form %}autofocus{% endif %}
+                               minlength="3" maxlength="80" value="{{ form.get('username', '') }}">
                     </div>
                     <span class="login-field-hint">Mínimo 3 caracteres</span>
                     <div id="usernameFeedback" class="register-email-alert d-flex align-items-center gap-2 mt-2 mb-0 py-2 px-3 d-none"
@@ -91,7 +92,7 @@
                     <div class="login-input-group">
                         <i class="bi bi-envelope login-input-icon"></i>
                         <input type="email" name="email" id="emailInput"
-                               placeholder="Digite seu e-mail" required>
+                               placeholder="Digite seu e-mail" required value="{{ form.get('email', '') }}">
                     </div>
                     <div id="emailFeedback" class="register-email-alert d-flex align-items-center gap-2 mt-2 mb-0 py-2 px-3 d-none"
                          style="animation: fitlogFadeIn 0.2s ease-out;">
@@ -105,7 +106,7 @@
                     <div class="login-input-group">
                         <i class="bi bi-telephone login-input-icon"></i>
                         <input type="text" id="regTelefone" name="telefone"
-                               placeholder="(11) 99999-9999">
+                               placeholder="(11) 99999-9999" value="{{ form.get('telefone', '') }}">
                     </div>
                 </div>
 
@@ -114,9 +115,15 @@
                     <div class="login-input-group">
                         <i class="bi bi-lock login-input-icon"></i>
                         <input type="password" id="regPassword" name="password"
-                               placeholder="Digite sua senha" required minlength="6">
+                               placeholder="Digite sua senha" required minlength="8" autocomplete="new-password" {% if form %}autofocus{% endif %}>
                     </div>
-                    <span class="login-field-hint">Mínimo 6 caracteres</span>
+                    <ul id="senhaRegras" class="list-unstyled small mb-0 mt-2">
+                        <li data-regra="tamanho"><i class="bi bi-circle"></i> Pelo menos 8 caracteres</li>
+                        <li data-regra="letra"><i class="bi bi-circle"></i> Pelo menos uma letra</li>
+                        <li data-regra="numero"><i class="bi bi-circle"></i> Pelo menos um número</li>
+                        <li data-regra="pessoal"><i class="bi bi-circle"></i> Não conter seu usuário nem a parte do e-mail antes do @</li>
+                    </ul>
+                    <span class="login-field-hint">Evite senhas comuns, como &quot;senha123&quot;.</span>
                 </div>
 
                 <div class="login-field">
@@ -124,8 +131,9 @@
                     <div class="login-input-group">
                         <i class="bi bi-lock-fill login-input-icon"></i>
                         <input type="password" id="regConfirmPassword" name="confirm_password"
-                               placeholder="Digite a senha novamente" required>
+                               placeholder="Digite a senha novamente" required autocomplete="new-password">
                     </div>
+                    <span id="senhaIgual" class="login-field-hint"></span>
                 </div>
 
                 <div class="register-info-box mb-3" id="infoAluno" style="display: block;">
@@ -139,7 +147,7 @@
                 </div>
 
                 <div class="register-terms-check">
-                    <input type="checkbox" class="form-check-input" id="aceite_termos" name="aceite_termos" required>
+                    <input type="checkbox" class="form-check-input" id="aceite_termos" name="aceite_termos" required {% if form.get('aceite_termos') %}checked{% endif %}>
                     <label for="aceite_termos">
                         Li e aceito os <a href="{{ url_for('privacidade.termos') }}" target="_blank">Termos de Uso</a> e a <a href="{{ url_for('privacidade.politica') }}" target="_blank">Política de Privacidade</a>.
                     </label>
@@ -309,5 +317,47 @@
             }
         });
     });
+</script>
+
+<script>
+    // Regras da senha em tempo real. É só apoio visual: quem decide é o
+    // servidor (utils/validators.py), que também recusa senhas comuns.
+    (function () {
+        var senha = document.getElementById('regPassword');
+        var confirma = document.getElementById('regConfirmPassword');
+        var usuario = document.getElementById('regUsername');
+        var email = document.getElementById('emailInput');
+        var igual = document.getElementById('senhaIgual');
+        var itens = {};
+        document.querySelectorAll('#senhaRegras li').forEach(function (li) { itens[li.dataset.regra] = li; });
+
+        function marcar(li, ok) {
+            li.className = ok ? 'text-success' : 'text-muted';
+            li.querySelector('i').className = ok ? 'bi bi-check-circle-fill' : 'bi bi-circle';
+        }
+
+        function avaliar() {
+            var s = senha.value, sl = s.toLowerCase();
+            var u = usuario.value.trim().toLowerCase();
+            var local = email.value.split('@')[0].trim().toLowerCase();
+            var contemPessoal = (u.length >= 3 && sl.indexOf(u) !== -1) || (local.length >= 4 && sl.indexOf(local) !== -1);
+            marcar(itens.tamanho, s.length >= 8);
+            marcar(itens.letra, /[A-Za-z]/.test(s));
+            marcar(itens.numero, /[0-9]/.test(s));
+            marcar(itens.pessoal, s.length > 0 && !contemPessoal);
+            if (!confirma.value) {
+                igual.textContent = '';
+            } else if (confirma.value === s) {
+                igual.textContent = 'As senhas coincidem';
+                igual.className = 'login-field-hint text-success';
+            } else {
+                igual.textContent = 'As senhas não coincidem';
+                igual.className = 'login-field-hint text-danger';
+            }
+        }
+
+        [senha, confirma, usuario, email].forEach(function (campo) { campo.addEventListener('input', avaliar); });
+        avaliar();
+    })();
 </script>
 {% endblock %}

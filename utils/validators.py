@@ -123,30 +123,47 @@ SENHAS_COMUNS = frozenset({
 })
 
 
+REQUISITOS_SENHA = (
+    "Pelo menos 8 caracteres",
+    "Pelo menos uma letra",
+    "Pelo menos um número",
+    "Não ser uma senha comum (ex.: senha123)",
+    "Não conter seu usuário nem a parte do e-mail antes do @",
+)
+
+
+def erros_senha(senha, username=None, email=None):
+    """Lista TODOS os motivos pelos quais a senha é recusada ([] = válida).
+
+    Serve para mostrar ao usuário tudo o que falta de uma vez, em vez de
+    descobrir uma regra por tentativa. A ordem é a mesma de validar_senha.
+    """
+    if not senha:
+        return ["Senha é obrigatória"]
+
+    erros = []
+    if len(senha) < 8:
+        erros.append("Senha deve ter pelo menos 8 caracteres")
+    if not re.search(r'[A-Za-z]', senha):
+        erros.append("Senha deve conter pelo menos uma letra")
+    if not re.search(r'[0-9]', senha):
+        erros.append("Senha deve conter pelo menos um número")
+    if senha.lower() in SENHAS_COMUNS or len(set(senha.lower())) <= 2:
+        erros.append("Essa senha é muito comum ou previsível. Escolha outra.")
+    if username and len(username) >= 3 and username.lower() in senha.lower():
+        erros.append("A senha não pode conter o seu nome de usuário")
+    if email and len(email.split('@')[0]) >= 4 and email.split('@')[0].lower() in senha.lower():
+        erros.append("A senha não pode conter o seu e-mail")
+    return erros
+
+
 def validar_senha(senha, username=None, email=None):
     """
     Valida se a senha atende aos requisitos mínimos.
-    Retorna (bool, mensagem_erro ou valor validado)
+    Retorna (bool, mensagem_erro ou valor validado). Em caso de vários
+    problemas devolve o primeiro; use erros_senha() para obter todos.
     """
-    if not senha:
-        return False, "Senha é obrigatória"
-
-    if len(senha) < 8:
-        return False, "Senha deve ter pelo menos 8 caracteres"
-
-    if not re.search(r'[A-Za-z]', senha):
-        return False, "Senha deve conter pelo menos uma letra"
-
-    if not re.search(r'[0-9]', senha):
-        return False, "Senha deve conter pelo menos um número"
-
-    if senha.lower() in SENHAS_COMUNS or len(set(senha.lower())) <= 2:
-        return False, "Essa senha é muito comum ou previsível. Escolha outra."
-
-    if username and len(username) >= 3 and username.lower() in senha.lower():
-        return False, "A senha não pode conter o seu nome de usuário"
-
-    if email and len(email.split('@')[0]) >= 4 and email.split('@')[0].lower() in senha.lower():
-        return False, "A senha não pode conter o seu e-mail"
-
+    erros = erros_senha(senha, username=username, email=email)
+    if erros:
+        return False, erros[0]
     return True, senha

@@ -5,7 +5,7 @@ from extensions import limiter   # <-- importa de extensions, nunca de app
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse, urljoin
 import logging
-from utils.validators import validar_email, validar_senha
+from utils.validators import erros_senha, validar_email, validar_senha
 from utils.email_utils import enviar_email
 from utils.genero_utils import resolver_genero
 from utils.mensagens_boas_vindas import gerar_mensagem_boas_vindas
@@ -304,6 +304,22 @@ def check_username():
     return jsonify({'exists': existe})
 
 
+CAMPOS_FORM_CADASTRO = ('username', 'email', 'nome_completo', 'telefone', 'genero', 'tipo_usuario')
+
+
+def _voltar_ao_cadastro(*mensagens):
+    """Mostra o(s) erro(s) e volta ao formulário de cadastro MANTENDO o que
+    foi digitado. As senhas ficam de fora de propósito (nunca são devolvidas
+    ao navegador). Os dados vão numa chave de sessão lida uma única vez pelo
+    GET seguinte -- o padrão POST/redirect/GET continua valendo."""
+    for mensagem in mensagens:
+        flash(mensagem, 'danger')
+    dados = {campo: request.form.get(campo, '') for campo in CAMPOS_FORM_CADASTRO}
+    dados['aceite_termos'] = bool(request.form.get('aceite_termos'))
+    session['cadastro_form'] = dados
+    return redirect(url_for('auth.register'))
+
+
 @auth_bp.route('/register', methods=['GET', 'POST'])
 @limiter.limit("5 per hour")
 def register():
@@ -322,8 +338,7 @@ def register():
             # mas um POST manual poderia mandar qualquer string. Sem essa
             # checagem, um tipo_usuario inválido deixa o usuário sem acesso
             # a nenhuma área (is_professor() e is_aluno() ficam False).
-            flash('Tipo de usuário inválido', 'danger')
-            return redirect(url_for('auth.register'))
+            return _voltar_ao_cadastro('Tipo de usuário inválido')
         nome_completo = request.form.get('nome_completo', '').strip()
         telefone = request.form.get('telefone', '').strip()
         # Opcional -- só aceita 'M'/'F'; qualquer outra coisa (campo não
@@ -333,38 +348,29 @@ def register():
         genero = genero if genero in ('M', 'F') else None
 
         if not username or not email or not password:
-            flash('Todos os campos são obrigatórios', 'danger')
-            return redirect(url_for('auth.register'))
+            return _voltar_ao_cadastro('Todos os campos são obrigatórios')
 
         if not request.form.get('aceite_termos'):
-            flash('É preciso ler e aceitar os Termos de Uso e a Política de Privacidade para criar uma conta.', 'danger')
-            return redirect(url_for('auth.register'))
+            return _voltar_ao_cadastro('É preciso ler e aceitar os Termos de Uso e a Política de Privacidade para criar uma conta.')
 
         if len(username) < 3:
-            flash('Usuário deve ter pelo menos 3 caracteres', 'danger')
-            return redirect(url_for('auth.register'))
+            return _voltar_ao_cadastro('Usuário deve ter pelo menos 3 caracteres')
 
-        ok_senha, msg_senha = validar_senha(password, username=username, email=email)
-        if not ok_senha:
-            flash(msg_senha, 'danger')
-            return redirect(url_for('auth.register'))
-
+        erros_da_senha = erros_senha(password, username=username, email=email)
         if password != confirm_password:
-            flash('As senhas não coincidem', 'danger')
-            return redirect(url_for('auth.register'))
+            erros_da_senha.append('As senhas não coincidem')
+        if erros_da_senha:
+            return _voltar_ao_cadastro(*erros_da_senha)
 
         ok_email, msg_email = validar_email(email)
         if not ok_email:
-            flash(msg_email, 'danger')
-            return redirect(url_for('auth.register'))
+            return _voltar_ao_cadastro(msg_email)
 
         if User.query.filter_by(username=username).first():
-            flash('Nome de usuário já existe', 'danger')
-            return redirect(url_for('auth.register'))
+            return _voltar_ao_cadastro('Nome de usuário já existe')
 
         if User.query.filter_by(email=email).first():
-            flash('E-mail já cadastrado', 'danger')
-            return redirect(url_for('auth.register'))
+            return _voltar_ao_cadastro('E-mail já cadastrado')
 
         # Cadastro é UMA transação só: User + trial + aceite de Termos/
         # Política. Se qualquer etapa falhar, nada é confirmado -- sem
@@ -414,8 +420,7 @@ def register():
                 "Erro ao criar conta -- cadastro revertido por completo (tipo_usuario=%s)",
                 tipo_usuario,
             )
-            flash('Não foi possível criar sua conta agora. Tente novamente.', 'danger')
-            return redirect(url_for('auth.register'))
+            return _voltar_ao_cadastro('Não foi possível criar sua conta agora. Tente novamente.')
 
         if user.tipo_usuario == 'aluno':
             flash('Conta criada! Enviamos um link de confirmação para o seu e-mail.' if EmailVerificacaoService.obrigatoria() else 'Conta criada com sucesso!', 'success')
@@ -436,7 +441,7 @@ def register():
 
         return redirect(url_for('auth.login'))
 
-    return render_template('auth/register.html')
+    return render_template('auth/register.html', form=session.pop('cadastro_form', {}))
 
 
 @auth_bp.route('/logout')
