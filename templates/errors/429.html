@@ -1,0 +1,18 @@
+{% extends "errors/base_erro.html" %}
+
+{% block titulo %}Muitas tentativas · FitLog{% endblock %}
+{% block codigo %}429{% endblock %}
+{% block titulo_erro %}Muitas tentativas em pouco tempo{% endblock %}
+{% block mensagem %}
+Por segurança, limitamos quantas vezes essa ação pode ser repetida.
+Aguarde alguns minutos (em alguns casos, até 1 hora) e tente de novo.
+{% endblock %}
+
+{% block acoes %}
+<a href="javascript:history.back()" class="erro-btn erro-btn-primario">
+    Voltar
+</a>
+<a href="/" class="erro-btn erro-btn-secundario">
+    Voltar pro início
+</a>
+{% endblock %}

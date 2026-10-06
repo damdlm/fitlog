@@ -747,6 +747,18 @@ def create_app(config_class=None):
     # caso é o proxy de borda da Railway que responde, sem nunca chegar
     # a rodar este código. Ver templates/errors/base_erro.html para o
     # motivo de essas páginas não estenderem base.html.
+    @app.errorhandler(429)
+    def erro_429(e):
+        # Limite de requisições excedido (Flask-Limiter). Para quem navega
+        # no site, uma página explicando em português em vez do texto cru
+        # "Too Many Requests". Chamadas de API/webhook/streaming mantêm a
+        # resposta padrão (os clientes delas só olham o status).
+        from flask import request as _request
+        caminho = _request.path
+        if caminho.startswith(("/api/", "/fitbot/", "/billing/", "/contato/")) or _request.is_json:
+            return e
+        return render_template("errors/429.html"), 429
+
     @app.errorhandler(404)
     def erro_404(e):
         return render_template("errors/404.html"), 404

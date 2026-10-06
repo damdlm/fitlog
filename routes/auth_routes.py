@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session, g
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User
 from extensions import limiter   # <-- importa de extensions, nunca de app
@@ -321,7 +321,18 @@ def _voltar_ao_cadastro(*mensagens):
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
-@limiter.limit("5 per hour")
+# Dois limites, só sobre o ENVIO do formulário (POST) -- abrir a página
+# (GET) não conta. Antes havia um único "5 per hour" sobre TODAS as
+# requisições da rota: cada erro de validação gastava duas (o POST e o GET
+# que recarrega o formulário), então 2-3 tentativas já bloqueavam a pessoa.
+#  1) cota de CONTAS CRIADAS por IP (freia criação em massa / farm de trial):
+#     só é consumida quando o cadastro realmente dá certo (g.cadastro_criado);
+#  2) teto geral de envios por IP, folgado, para limitar quem fica testando
+#     usuário/e-mail já existentes ou adivinhando campos.
+# Escopos próprios: não herdam contadores do limite antigo.
+@limiter.limit("30 per hour", methods=["POST"], scope="cadastro_envios")
+@limiter.limit("5 per hour", methods=["POST"], scope="cadastro_criado",
+               deduct_when=lambda response: bool(getattr(g, 'cadastro_criado', False)))
 def register():
     """Página de registro."""
     if current_user.is_authenticated:
@@ -428,6 +439,7 @@ def register():
             flash('Conta de professor criada! Enviamos um link de confirmação para o seu e-mail.' if EmailVerificacaoService.obrigatoria() else 'Conta de professor criada com sucesso!', 'success')
 
         logger.info(f"Novo usuario: {username} ({tipo_usuario})")
+        g.cadastro_criado = True  # consome a cota de contas criadas (ver decorators)
 
         # Link de confirmação de e-mail (best-effort: se falhar, o usuário
         # pede reenvio na tela de pendência ao entrar).
