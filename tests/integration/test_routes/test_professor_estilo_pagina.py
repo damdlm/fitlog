@@ -328,3 +328,49 @@ def test_embed_carrega_gerador_de_imagem_do_poster(app, client, professor):
     assert 'LARGURA = 1080' in js and 'ALTURA = 1920' in js
     # comentários HTML com "--" quebram o SVG da captura: têm que ser filtrados
     assert 'nodeType !== 8' in js
+
+
+def test_pagina_carrega_ajuste_que_mantem_o_poster_em_9_16(app, client, professor):
+    """Sem o ajuste, conteúdo grande (avaliação + "Sobre mim" longo) faz cada
+    estilo crescer diferente e as páginas deixam de ter o mesmo tamanho. Tanto
+    a página pública quanto o embed do modal carregam o script de ajuste."""
+    import pathlib
+    uid, slug = professor
+    for url in (f'/professor/pagina/{slug}', f'/professor/pagina/{slug}?embed=1'):
+        html = client.get(url).get_data(as_text=True)
+        assert 'js/professor-pagina-ajuste.js' in html, url
+    # no embed ele vem antes do gerador de imagem
+    emb = client.get(f'/professor/pagina/{slug}?embed=1').get_data(as_text=True)
+    assert emb.index('professor-pagina-ajuste.js') < emb.index('professor-pagina-imagem.js')
+    js = pathlib.Path('static/js/professor-pagina-ajuste.js').read_text(encoding='utf-8')
+    assert 'window.ppAjustarPoster' in js and '16 / 9' in js
+    img = pathlib.Path('static/js/professor-pagina-imagem.js').read_text(encoding='utf-8')
+    assert 'ppAjustarPoster' in img  # a captura ajusta antes de gerar a imagem
+
+
+def test_nenhum_estilo_pinta_o_fundo_da_pagina_inteira():
+    """O fundo da PÁGINA (.pp-page-*) é o mesmo em todos os estilos. Quando o
+    Esportivo pintava a página de preto (e Moderno/Vitalidade de cinza/rosa), no
+    modal ele virava um bloco escuro maior e as páginas pareciam ter tamanhos
+    diferentes. A cor fica só no pôster (.pp-poster-*)."""
+    import pathlib, re
+    for css in pathlib.Path('static/css/professor-estilos').glob('*.css'):
+        texto = css.read_text(encoding='utf-8')
+        for regra in re.finditer(r'(\.pp-page-[\w-]+)\s*\{([^}]*)\}', texto):
+            corpo = re.sub(r'/\*.*?\*/', '', regra.group(2), flags=re.S)
+            for decl in corpo.split(';'):
+                nome, _, valor = decl.partition(':')
+                if nome.strip() in ('background', 'background-color'):
+                    assert valor.strip() in ('transparent', 'none', ''), (
+                        f'{css.name}: {regra.group(1)} define {nome.strip()}: {valor.strip()}')
+
+
+def test_ajuste_9_16_nao_depende_da_barra_de_rolagem():
+    """Com barra de rolagem clássica, conteúdo alto estreitava a página e o
+    ajuste reduzia o conteúdo ao mínimo. Cada tentativa mede a largura do
+    momento e o base.css reserva o espaço da barra."""
+    import pathlib
+    js = pathlib.Path('static/js/professor-pagina-ajuste.js').read_text(encoding='utf-8')
+    assert 'function cabe(' in js and 'getBoundingClientRect().width' in js
+    base = pathlib.Path('static/css/professor-estilos/base.css').read_text(encoding='utf-8')
+    assert 'scrollbar-gutter: stable' in base

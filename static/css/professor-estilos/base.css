@@ -36,6 +36,13 @@
     src: url('../../fonts/professor/montserrat-latin-900-normal.woff2') format('woff2');
 }
 
+/* Reserva o espaço da barra de rolagem mesmo quando ela não aparece: a
+   largura (e portanto a altura 9:16) do pôster não muda se o conteúdo
+   passar a rolar. Sem efeito em barras de sobreposição (celular). */
+html {
+    scrollbar-gutter: stable;
+}
+
 .pp-page {
     width: 100%;
     padding: 0 10px 36px;
