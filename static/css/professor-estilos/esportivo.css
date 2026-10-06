@@ -41,6 +41,9 @@
 .pp-poster-estilo-5 {
     --u: calc(min(100vw - 20px, 480px) / 287);
     --laranja: #ff7a00;
+    /* Diâmetro do anel em unidades u. O mockup usava 124; no formato
+       Stories 9:16 isso deixava a foto ~25% menor que nos outros estilos. */
+    --anel-u: 160;
 }
 
 @supports (width: 1cqw) {
@@ -93,7 +96,7 @@
 }
 
 .pp-sport-brush-right {
-    top: calc(var(--u) * 30);
+    top: calc(var(--u) * 41);
     right: 0;
     width: calc(var(--u) * 84);
     height: calc(var(--u) * 78);
@@ -101,7 +104,7 @@
 }
 
 .pp-sport-brush-left {
-    top: calc(var(--u) * 52);
+    top: calc(var(--u) * 63);
     left: 0;
     width: calc(var(--u) * 67);
     height: calc(var(--u) * 136);
@@ -121,13 +124,14 @@
 /* ---------- Foto + anel (arte do mockup) ---------- */
 .pp-poster-estilo-5 .pp-photo-area {
     width: 100%;
-    height: calc(var(--u) * 124);
-    margin: calc(var(--u) * 21) 0 0;
+    height: calc(var(--u) * var(--anel-u));
+    margin: calc(var(--u) * 14) 0 0;
 }
 
 .pp-poster-estilo-5 .pp-ring {
-    --pp-ring-size: calc(var(--u) * 124);
-    padding: calc(var(--u) * 15);
+    --pp-ring-size: calc(var(--u) * var(--anel-u));
+    /* a espessura do anel acompanha o tamanho (15u no anel de 124u do mockup) */
+    padding: calc(var(--u) * var(--anel-u) * .121);
     background: url('../../img/professor-estilos/esportivo-anel.webp') center / 100% 100% no-repeat;
     transform: translateX(calc(var(--u) * 1.5));
 }
