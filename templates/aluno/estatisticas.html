@@ -155,19 +155,6 @@
         text-align: center;
         margin: 0;
     }
-    /* Sem dados: a caixa do gráfico, os botões "Por semana/Por treino" e a
-       legenda somem, e sobra só uma linha de aviso (ícone ao lado do texto).
-       Os filtros de treino e período continuam no topo do card. */
-    #evolucaoVazio {
-        padding: 12px 10px 4px;
-        font-size: 0.85rem;
-    }
-    #evolucaoVazio i {
-        display: inline-block;
-        font-size: 1.1rem;
-        margin: 0 6px 0 0;
-        vertical-align: -2px;
-    }
     .est-chart-wrap {
         position: relative;
         width: 100%;
@@ -185,6 +172,18 @@
         color: #e0a877;
         margin-bottom: 10px;
         display: block;
+    }
+    /* Gráfico sem dados: a mensagem fica dentro da caixa do gráfico, no mesmo
+       espaço e centralizada. Antes só o canvas sumia e a caixa (190-300px)
+       ficava em branco, com a mensagem perdida embaixo -- e o card mudava de
+       altura a cada troca de filtro/período. */
+    .est-chart-wrap > .est-empty {
+        position: absolute;
+        inset: 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0 16px;
     }
 
     /* ===== Recordes Pessoais ===== */
@@ -633,10 +632,11 @@
         </div>
         <div class="est-chart-wrap">
             <canvas id="evolucaoChart"></canvas>
-        </div>
-        <div class="est-empty" id="evolucaoVazio" style="display: none;">
-            <i class="bi bi-graph-up"></i>
-            Ainda não há registros suficientes pra montar esse gráfico.
+            <!-- Sem dados: a mensagem ocupa o lugar do gráfico (mesma altura) -->
+            <div class="est-empty" id="evolucaoVazio" style="display: none;">
+                <i class="bi bi-graph-up"></i>
+                Ainda não há registros suficientes pra montar esse gráfico.
+            </div>
         </div>
         <div class="est-chart-toolbar" id="toolbarEvolucao">
             <div class="est-pill-group" id="filtrosModoEvolucao">
@@ -1153,12 +1153,9 @@
 
                 const canvas = document.getElementById('evolucaoChart');
                 const semDados = !data.semanas || data.semanas.length === 0 || data.volumes.every(v => v === 0);
-                // Esconde a CAIXA do gráfico (altura fixa), não só o canvas: senão
-                // sobra um bloco enorme em branco acima do aviso.
-                canvas.parentElement.style.display = semDados ? 'none' : '';
-                // Sem dados, os botões "Por semana/Por treino" e a legenda não servem de nada.
-                document.getElementById('toolbarEvolucao').style.display = semDados ? 'none' : '';
-                document.getElementById('evolucaoVazio').style.display = semDados ? 'block' : 'none';
+                canvas.style.display = semDados ? 'none' : 'block';
+                // 'flex' (não 'block'): centraliza a mensagem dentro da caixa do gráfico.
+                document.getElementById('evolucaoVazio').style.display = semDados ? 'flex' : 'none';
                 if (semDados) return;
 
                 const isMobile = window.innerWidth < 576;
