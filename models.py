@@ -101,6 +101,17 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     last_login = db.Column(db.DateTime(timezone=True))
 
+    # Verificação de e-mail: NULL = ainda não confirmou o link enviado no
+    # cadastro. Contas anteriores a esta funcionalidade foram marcadas
+    # como verificadas pela migration. Ver services/email_verificacao_service.py.
+    email_verificado_em = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    # Bloqueio temporário por conta após muitas senhas erradas seguidas
+    # (o rate limit por IP sozinho não protege contra brute force
+    # distribuído em vários IPs). Ver routes/auth_routes.py:login.
+    falhas_login = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    login_bloqueado_ate = db.Column(db.DateTime(timezone=True), nullable=True)
+
     # CORREÇÃO 10 (hardening de segurança): incrementada em set_password()
     # -- permite invalidar sessões antigas após troca de senha sem
     # precisar de uma tabela/query extra por requisição (comparada com o

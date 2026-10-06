@@ -73,7 +73,7 @@ def test_enviar_mensagem_com_payload_nao_gera_excecao(client, db, app):
     from models import User
     with app.app_context():
         admin = User(username='admin_teste', email='admin@teste.com', is_admin=True)
-        admin.set_password('Senha1234')
+        admin.set_password('Treino#Forte9')
         db.session.add(admin)
         db.session.commit()
 

@@ -219,6 +219,20 @@ class Config:
     ASAAS_API_KEY = os.getenv('ASAAS_API_KEY')
     ASAAS_WEBHOOK_TOKEN = os.getenv('ASAAS_WEBHOOK_TOKEN')
     ASAAS_ENV = os.getenv('ASAAS_ENV', 'sandbox')  # 'sandbox' ou 'production'
+    # Reconsulta o pagamento na API do Asaas antes de liberar acesso por
+    # um webhook de pagamento confirmado (ver BillingService._pagamento_confirmado_na_api).
+    ASAAS_WEBHOOK_VERIFICAR_API = os.getenv('ASAAS_WEBHOOK_VERIFICAR_API', 'true').lower() != 'false'
+
+    # Exige confirmar o e-mail (link enviado no cadastro) antes de usar o
+    # app. "false" desliga -- só como válvula de escape se o provedor de
+    # e-mail (Resend) ficar fora do ar por muito tempo.
+    EMAIL_VERIFICACAO_OBRIGATORIA = os.getenv('EMAIL_VERIFICACAO_OBRIGATORIA', 'true').lower() != 'false'
+
+    # Teto GLOBAL de mensagens/minuto do FitBot (todos os usuários juntos).
+    # Existe para não estourar a cota dos planos gratuitos do Groq/Gemini
+    # (30 e 15 RPM). Ao contratar plano pago, suba este valor pela
+    # variável de ambiente (ex.: "60 per minute") -- sem mexer em código.
+    FITBOT_LIMITE_GLOBAL = os.getenv('FITBOT_LIMITE_GLOBAL', '12 per minute')
 
     # Analytics de produto -- privacy-first, 100% server-side (ver
     # services/analytics_service.py). Desligado por padrão em qualquer
@@ -239,6 +253,9 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
+    # Os testes criam usuários direto no banco (sem verificar e-mail); os
+    # testes de verificação ligam esta flag explicitamente.
+    EMAIL_VERIFICACAO_OBRIGATORIA = False
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
 
 

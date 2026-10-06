@@ -105,7 +105,25 @@ def validar_email(email):
     
     return True, email
 
-def validar_senha(senha):
+# Senhas mais usadas (pt-BR e globais) que passariam nas regras de
+# tamanho/letra/número. Comparação em minúsculas.
+SENHAS_COMUNS = frozenset({
+    'senha123', 'senha1234', 'senha12345', 'senha@123', 'senha#123', 'mudar123', 'mudar@123',
+    'abc12345', 'abcd1234', 'abc123456', 'qwerty123', 'qwerty1234', 'qwer1234', 'asdf1234',
+    'password1', 'password12', 'password123', 'passw0rd', 'p@ssw0rd', 'p@ssword1', 'admin123',
+    'admin1234', 'teste123', 'teste1234', 'usuario123', 'brasil123', 'brasil2020', 'brasil2024',
+    'brasil2025', 'brasil2026', 'fitlog123', 'fitlog1234', 'treino123', 'treino1234', 'academia1',
+    'academia123', 'flamengo1', 'flamengo123', 'corinthians1', 'palmeiras1', 'saopaulo1',
+    'gremio123', 'vasco1898', 'iloveyou1', 'iloveyou123', 'welcome1', 'welcome123', 'letmein123',
+    'monkey123', 'dragon123', 'master123', 'football1', 'baseball1', 'superman1', 'princesa1',
+    'princesa123', 'amor12345', 'meuamor123', 'minhasenha1', 'minhasenha123', 'trocar123',
+    'a1b2c3d4', 'a1234567', 'a12345678', 'aa123456', '1q2w3e4r', '1qaz2wsx', '123456789a',
+    'a123456789', 'abcdefg1', 'qwertyui1', '12345678a', '1234567a', 'senha2020', 'senha2021',
+    'senha2022', 'senha2023', 'senha2024', 'senha2025', 'senha2026',
+})
+
+
+def validar_senha(senha, username=None, email=None):
     """
     Valida se a senha atende aos requisitos mínimos.
     Retorna (bool, mensagem_erro ou valor validado)
@@ -121,5 +139,14 @@ def validar_senha(senha):
 
     if not re.search(r'[0-9]', senha):
         return False, "Senha deve conter pelo menos um número"
+
+    if senha.lower() in SENHAS_COMUNS or len(set(senha.lower())) <= 2:
+        return False, "Essa senha é muito comum ou previsível. Escolha outra."
+
+    if username and len(username) >= 3 and username.lower() in senha.lower():
+        return False, "A senha não pode conter o seu nome de usuário"
+
+    if email and len(email.split('@')[0]) >= 4 and email.split('@')[0].lower() in senha.lower():
+        return False, "A senha não pode conter o seu e-mail"
 
     return True, senha

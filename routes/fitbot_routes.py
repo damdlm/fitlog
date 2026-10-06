@@ -6,6 +6,7 @@ from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
 from extensions import limiter
+from flask import current_app
 from services.billing_service import BillingService
 from services.fitbot_service import FitBotService
 from services.privacidade_service import PrivacidadeService
@@ -40,7 +41,7 @@ def _chave_por_usuario_fitbot():
 
 @fitbot_bp.route("/chat", methods=["POST"])
 @login_required
-@limiter.limit("12 per minute", key_func=_chave_global_fitbot)
+@limiter.limit(lambda: current_app.config.get("FITBOT_LIMITE_GLOBAL", "12 per minute"), key_func=_chave_global_fitbot)
 @limiter.limit("4 per minute", key_func=_chave_por_usuario_fitbot)
 def chat():
     """

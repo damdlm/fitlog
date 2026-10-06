@@ -14,9 +14,19 @@ import pytest
 
 from models import db, User, AlunoProfessor, Assinatura, EventoWebhookAsaas, Plano, Notificacao
 from services.billing_service import (
+
     AssinaturaAtualizadaError, AssinaturaGatewaySumiuError, AssinaturaJaAtivaError,
     BillingService, DadosCobrancaIncompletosError, NadaParaCancelarError, TRIAL_DIAS,
 )
+
+
+@pytest.fixture(autouse=True)
+def _sem_reconsulta_asaas_no_webhook(app):
+    """Estes testes cobrem a lógica de assinatura/cancelamento, não a
+    reconsulta do pagamento na API do Asaas (testada em
+    tests/security/test_prelancamento.py) -- sem isso, ela tentaria sair
+    para a rede de verdade em tudo que passa por processar_webhook."""
+    app.config['ASAAS_WEBHOOK_VERIFICAR_API'] = False
 
 
 def _criar_usuario(username, tipo_usuario='aluno'):

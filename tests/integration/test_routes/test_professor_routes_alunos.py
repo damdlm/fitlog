@@ -94,7 +94,7 @@ class TestNovoAluno:
         _login(client, username)
         resp = client.post('/professor/aluno/novo', data={
             'username': 'pr_novo_aluno_criado', 'email': 'novoaluno@teste.com',
-            'password': 'senha123', 'nome_completo': 'Aluno Criado',
+            'password': 'Treino#Forte9', 'nome_completo': 'Aluno Criado',
         }, follow_redirects=True)
         assert resp.status_code == 200
 
@@ -113,7 +113,7 @@ class TestNovoAluno:
 
         _login(client, username)
         resp = client.post('/professor/aluno/novo', data={
-            'username': 'ab', 'email': 'x@teste.com', 'password': 'senha123',
+            'username': 'ab', 'email': 'x@teste.com', 'password': 'Treino#Forte9',
         }, follow_redirects=True)
         assert resp.status_code == 200
 
@@ -140,7 +140,7 @@ class TestNovoAluno:
 
         _login(client, username)
         resp = client.post('/professor/aluno/novo', data={
-            'username': 'pr_novo_duplicado', 'email': 'outro@teste.com', 'password': 'senha123',
+            'username': 'pr_novo_duplicado', 'email': 'outro@teste.com', 'password': 'Treino#Forte9',
         }, follow_redirects=True)
         assert resp.status_code == 200
 

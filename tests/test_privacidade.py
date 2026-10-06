@@ -29,7 +29,7 @@ from services.privacidade_service import (
 )
 
 
-def _login(client, username, senha='Senha1234'):
+def _login(client, username, senha='Treino#Forte9'):
     return client.post('/auth/login', data={'username': username, 'password': senha})
 
 
@@ -41,7 +41,7 @@ def _criar_usuario_direto(username, tipo_usuario='aluno', nome_completo=None):
         username=username, email=f'{username}@teste.com',
         tipo_usuario=tipo_usuario, nome_completo=nome_completo or username.title(),
     )
-    user.set_password('Senha1234')
+    user.set_password('Treino#Forte9')
     db.session.add(user)
     db.session.commit()
     return user
@@ -92,7 +92,7 @@ class TestAceiteTermosNoCadastro:
     def test_registro_sem_marcar_checkbox_nao_cria_conta(self, client, db):
         client.post('/auth/register', data={
             'username': 'semcheckbox', 'email': 'semcheckbox@t.com',
-            'password': 'Senha1234', 'confirm_password': 'Senha1234',
+            'password': 'Treino#Forte9', 'confirm_password': 'Treino#Forte9',
         }, follow_redirects=True)
 
         assert User.query.filter_by(username='semcheckbox').first() is None
@@ -100,7 +100,7 @@ class TestAceiteTermosNoCadastro:
     def test_novo_usuario_aceite_e_versao_registrados(self, client, db):
         resp = client.post('/auth/register', data={
             'username': 'novoaluno', 'email': 'novoaluno@t.com',
-            'password': 'Senha1234', 'confirm_password': 'Senha1234',
+            'password': 'Treino#Forte9', 'confirm_password': 'Treino#Forte9',
             'aceite_termos': 'on',
         }, follow_redirects=True)
 
@@ -132,7 +132,7 @@ class TestCadastroTransacional:
 
         client.post('/auth/register', data={
             'username': 'vaifalhar', 'email': 'vaifalhar@t.com',
-            'password': 'Senha1234', 'confirm_password': 'Senha1234',
+            'password': 'Treino#Forte9', 'confirm_password': 'Treino#Forte9',
             'aceite_termos': 'on',
         }, follow_redirects=True)
 
@@ -146,7 +146,7 @@ class TestCadastroTransacional:
 
         client.post('/auth/register', data={
             'username': 'vaifuncionar', 'email': 'vaifuncionar@t.com',
-            'password': 'Senha1234', 'confirm_password': 'Senha1234',
+            'password': 'Treino#Forte9', 'confirm_password': 'Treino#Forte9',
             'aceite_termos': 'on',
         }, follow_redirects=True)
 
@@ -339,7 +339,7 @@ class TestAlunoCriadoPeloProfessor:
 
         client.post('/professor/aluno/novo', data={
             'username': 'alunodoprof', 'email': 'alunodoprof@t.com',
-            'password': 'Senha1234', 'nome_completo': 'Aluno Do Professor',
+            'password': 'Treino#Forte9', 'nome_completo': 'Aluno Do Professor',
         }, follow_redirects=True)
 
         aluno = User.query.filter_by(username='alunodoprof').first()
@@ -354,7 +354,7 @@ class TestAlunoCriadoPeloProfessor:
         self._criar_professor_logado(client)
         client.post('/professor/aluno/novo', data={
             'username': 'alunoprimeiroacesso', 'email': 'alunoprimeiro@t.com',
-            'password': 'Senha1234', 'nome_completo': 'Aluno Primeiro Acesso',
+            'password': 'Treino#Forte9', 'nome_completo': 'Aluno Primeiro Acesso',
         }, follow_redirects=True)
 
         # troca a sessão do professor pela do aluno no MESMO client --
@@ -373,7 +373,7 @@ class TestAlunoCriadoPeloProfessor:
         self._criar_professor_logado(client)
         client.post('/professor/aluno/novo', data={
             'username': 'alunoaceita', 'email': 'alunoaceita@t.com',
-            'password': 'Senha1234', 'nome_completo': 'Aluno Que Aceita',
+            'password': 'Treino#Forte9', 'nome_completo': 'Aluno Que Aceita',
         }, follow_redirects=True)
         aluno = User.query.filter_by(username='alunoaceita').first()
 
@@ -402,10 +402,10 @@ class TestExclusaoConta:
         _criar_usuario_direto('vousumir')
         _login(client, 'vousumir')
 
-        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Senha1234'}, follow_redirects=True)
+        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Treino#Forte9'}, follow_redirects=True)
 
         client2 = client.application.test_client()
-        resp = client2.post('/auth/login', data={'username': 'vousumir', 'password': 'Senha1234'}, follow_redirects=True)
+        resp = client2.post('/auth/login', data={'username': 'vousumir', 'password': 'Treino#Forte9'}, follow_redirects=True)
         assert b'inv\xc3\xa1lidos' in resp.data or resp.status_code == 200
 
     def test_dados_pessoais_removidos_apos_exclusao(self, client, db):
@@ -413,7 +413,7 @@ class TestExclusaoConta:
         user_id = user.id
         _login(client, 'meusdados')
 
-        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Senha1234'})
+        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Treino#Forte9'})
 
         db.session.expire_all()
         atualizado = db.session.get(User, user_id)
@@ -431,7 +431,7 @@ class TestExclusaoConta:
         db.session.commit()
 
         _login(client, 'alunosumindo')
-        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Senha1234'})
+        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Treino#Forte9'})
 
         db.session.expire_all()
         vinculo_atualizado = db.session.get(AlunoProfessor, vinculo.id)
@@ -446,7 +446,7 @@ class TestExclusaoConta:
             assert registro.used_at is None
 
         _login(client, 'comtokenativo')
-        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Senha1234'})
+        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Treino#Forte9'})
 
         db.session.expire_all()
         registro_atualizado = db.session.get(PasswordResetToken, registro.id)
@@ -478,7 +478,7 @@ class TestExclusaoConta:
         registro_id = dados['registro'].id
 
         _login(client, 'comtreinos')
-        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Senha1234'})
+        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Treino#Forte9'})
 
         db.session.expire_all()
         assert db.session.get(VersaoGlobal, versao_id) is None
@@ -498,7 +498,7 @@ class TestExclusaoConta:
 
         user = _criar_usuario_direto('comcachefitbot')
         _login(client, 'comcachefitbot')
-        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Senha1234'})
+        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Treino#Forte9'})
 
         assert any(f"fitbot_context:{user.id}:" in c for c in chamadas)
 
@@ -524,7 +524,7 @@ class TestExclusaoConta:
         )
 
         _login(client, 'vaifalharexclusao')
-        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Senha1234'})
+        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Treino#Forte9'})
 
         db.session.expire_all()
         ainda_intacto = db.session.get(User, user_id)
@@ -563,7 +563,7 @@ class TestIsolamentoEntreUsuarios:
         aluno_id = aluno.id
 
         _login(client, 'alunoposexclusao')
-        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Senha1234'})
+        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Treino#Forte9'})
 
         client2 = client.application.test_client()
         _login(client2, 'profposexclusao')
@@ -580,10 +580,10 @@ class TestIsolamentoEntreUsuarios:
     def test_usuario_excluido_nao_reloga_com_username_antigo(self, client, db):
         _criar_usuario_direto('exusuario')
         _login(client, 'exusuario')
-        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Senha1234'})
+        client.post('/privacidade/excluir-conta', data={'senha_confirmacao': 'Treino#Forte9'})
 
         client2 = client.application.test_client()
-        resp = client2.post('/auth/login', data={'username': 'exusuario', 'password': 'Senha1234'}, follow_redirects=True)
+        resp = client2.post('/auth/login', data={'username': 'exusuario', 'password': 'Treino#Forte9'}, follow_redirects=True)
         # username antigo não existe mais (foi anonimizado) -- login falha.
         # '/' agora é a landing page pública (não exige mais login), então
         # o teste de "continua deslogado" não é mais o redirect 302 -- é

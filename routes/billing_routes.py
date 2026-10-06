@@ -10,7 +10,7 @@ from flask_login import current_user, login_required
 
 from extensions import limiter
 from models import db, Plano
-from services.billing_service import BillingService, AssinaturaAtualizadaError, AssinaturaJaAtivaError, AssinaturaGatewaySumiuError, DadosCobrancaIncompletosError, NadaParaCancelarError
+from services.billing_service import BillingService, AssinaturaAtualizadaError, AssinaturaJaAtivaError, AssinaturaGatewaySumiuError, DadosCobrancaIncompletosError, NadaParaCancelarError, ConfirmacaoPagamentoIndisponivelError
 from services.configuracao_service import ConfiguracaoService
 from utils.decorators import tela_assinatura_ativa_required
 
@@ -44,7 +44,13 @@ def webhook_asaas():
         return jsonify({'erro': 'token inválido'}), 401
 
     payload = request.get_json(silent=True) or {}
-    ok = BillingService.processar_webhook(payload)
+    try:
+        ok = BillingService.processar_webhook(payload)
+    except ConfirmacaoPagamentoIndisponivelError:
+        # API do Asaas fora do ar/instável: 503 faz o Asaas reenviar o
+        # evento depois, em vez de liberar acesso sem confirmação.
+        logger.exception('Não foi possível confirmar o pagamento na API do Asaas; pedindo reenvio')
+        return jsonify({'erro': 'confirmação indisponível'}), 503
     # Sempre 200 quando processado (mesmo se o evento não exigia ação
     # nenhuma) -- devolver erro faria o Asaas ficar reenviando o mesmo
     # evento à toa. Só payload malformado retorna 400.

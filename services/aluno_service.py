@@ -199,7 +199,8 @@ class AlunoService(BaseService):
                 nome_completo=dados.get('nome_completo'),
                 telefone=dados.get('telefone'),
                 data_nascimento=dados.get('data_nascimento'),
-                ativo=True
+                ativo=True,
+                email_verificado_em=datetime.now(timezone.utc),  # criado por admin
             )
             aluno.set_password(dados['password'])
             

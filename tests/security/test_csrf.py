@@ -21,6 +21,7 @@ class CsrfOnConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     WTF_CSRF_ENABLED = True
     WTF_CSRF_CHECK_DEFAULT = True
+    EMAIL_VERIFICACAO_OBRIGATORIA = False  # testes criam usuários direto no banco
 
 
 @pytest.fixture
@@ -41,7 +42,7 @@ def csrf_client(csrf_app):
 def _cria_usuario_logado(app, client, username='aluno_csrf'):
     with app.app_context():
         user = User(username=username, email=f'{username}@teste.com', tipo_usuario='aluno')
-        user.set_password('Senha1234')
+        user.set_password('Treino#Forte9')
         _db.session.add(user)
         _db.session.commit()
         user_id = user.id
@@ -53,7 +54,7 @@ def _cria_usuario_logado(app, client, username='aluno_csrf'):
     token = match.group(1).decode() if match else None
     client.post('/auth/login', data={
         'username': username,
-        'password': 'Senha1234',
+        'password': 'Treino#Forte9',
         'csrf_token': token,
     })
     return user_id

@@ -1,5 +1,7 @@
 """Serviço para operações com professores"""
 
+from datetime import datetime, timezone
+
 from models import db, User, AlunoProfessor
 from .base_service import BaseService
 import logging
@@ -82,7 +84,8 @@ class ProfessorService(BaseService):
                 tipo_usuario='professor',
                 nome_completo=dados.get('nome_completo'),
                 telefone=dados.get('telefone'),
-                ativo=True
+                ativo=True,
+                email_verificado_em=datetime.now(timezone.utc),  # criado por admin
             )
             professor.set_password(dados['password'])
             

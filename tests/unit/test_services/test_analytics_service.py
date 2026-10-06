@@ -14,7 +14,7 @@ from services.analytics_service import AnalyticsService
 def _criar_usuario(username, tipo_usuario='aluno'):
     user = User(username=username, email=f'{username}@teste.com',
                 tipo_usuario=tipo_usuario, nome_completo=username.title())
-    user.set_password('Senha1234')
+    user.set_password('Treino#Forte9')
     db.session.add(user)
     db.session.commit()
     return user
@@ -56,8 +56,8 @@ class TestSignUpNoCadastro:
         resp = client.post('/auth/register', data={
             'username': 'novo_usuario_analytics',
             'email': 'novo_usuario_analytics@teste.com',
-            'password': 'Senha1234',
-            'confirm_password': 'Senha1234',
+            'password': 'Treino#Forte9',
+            'confirm_password': 'Treino#Forte9',
             'tipo_usuario': 'aluno',
             'aceite_termos': 'on',
         }, follow_redirects=True)
@@ -74,8 +74,8 @@ class TestSignUpNoCadastro:
         client.post('/auth/register', data={
             'username': 'ab',  # username curto demais -- falha de validação
             'email': 'invalido@teste.com',
-            'password': 'Senha1234',
-            'confirm_password': 'Senha1234',
+            'password': 'Treino#Forte9',
+            'confirm_password': 'Treino#Forte9',
             'tipo_usuario': 'aluno',
             'aceite_termos': 'on',
         })

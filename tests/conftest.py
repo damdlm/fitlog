@@ -9,6 +9,9 @@ class TestConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     WTF_CSRF_ENABLED = False
+    # Testes criam usuários direto no banco, sem confirmar e-mail; os testes
+    # de verificação de e-mail ligam esta flag explicitamente.
+    EMAIL_VERIFICACAO_OBRIGATORIA = False
 
 
 @event.listens_for(Engine, "connect")

@@ -14,8 +14,8 @@ def test_primeiro_usuario_registrado_nao_vira_admin(client, db):
     response = client.post('/auth/register', data={
         'username': 'primeirousuario',
         'email': 'primeiro@teste.com',
-        'password': 'Senha1234',
-        'confirm_password': 'Senha1234',
+        'password': 'Treino#Forte9',
+        'confirm_password': 'Treino#Forte9',
         'aceite_termos': 'on',
     }, follow_redirects=True)
 
@@ -32,8 +32,8 @@ def test_primeiro_usuario_registrado_como_aluno_nao_vira_professor(client, db):
     response = client.post('/auth/register', data={
         'username': 'alunoum',
         'email': 'alunoum@teste.com',
-        'password': 'Senha1234',
-        'confirm_password': 'Senha1234',
+        'password': 'Treino#Forte9',
+        'confirm_password': 'Treino#Forte9',
         'tipo_usuario': 'aluno',
         'aceite_termos': 'on',
     }, follow_redirects=True)
@@ -52,8 +52,8 @@ def test_multiplos_registros_nenhum_vira_admin(client, db):
         client.post('/auth/register', data={
             'username': f'usuario{i}',
             'email': f'usuario{i}@teste.com',
-            'password': 'Senha1234',
-            'confirm_password': 'Senha1234',
+            'password': 'Treino#Forte9',
+            'confirm_password': 'Treino#Forte9',
             'aceite_termos': 'on',
         }, follow_redirects=True)
 

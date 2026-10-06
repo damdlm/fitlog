@@ -57,8 +57,8 @@ def test_register_user(client, db):
     response = client.post('/auth/register', data={
         'username': 'testuser',
         'email': 'test@test.com',
-        'password': 'Senha1234',
-        'confirm_password': 'Senha1234',
+        'password': 'Treino#Forte9',
+        'confirm_password': 'Treino#Forte9',
         'aceite_termos': 'on',
     }, follow_redirects=True)
 
@@ -80,15 +80,15 @@ def test_login_user(client, db):
     client.post('/auth/register', data={
         'username': 'logintest',
         'email': 'login@test.com',
-        'password': 'Senha1234',
-        'confirm_password': 'Senha1234',
+        'password': 'Treino#Forte9',
+        'confirm_password': 'Treino#Forte9',
         'aceite_termos': 'on',
     })
 
     # Depois faz login
     response = client.post('/auth/login', data={
         'username': 'logintest',
-        'password': 'Senha1234'
+        'password': 'Treino#Forte9'
     }, follow_redirects=True)
 
     assert response.status_code == 200

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Confirme seu e-mail — FitLog{% endblock %}
+{% block robots_meta %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white text-center py-3">
+                <h4 class="mb-0" style="color: #F28C33;">
+                    <i class="bi bi-envelope-check"></i> Confirme seu e-mail
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted">
+                    Enviamos um link de confirmação para
+                    <strong>{{ current_user.email }}</strong>.
+                    Abra o e-mail e clique no link para liberar sua conta.
+                </p>
+                <p class="text-muted small">
+                    Não encontrou? Olhe também a caixa de spam. O link vale por 48 horas.
+                </p>
+                <form method="post" action="{{ url_for('auth.reenviar_verificacao') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn w-100 py-2" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
+                        <i class="bi bi-send"></i> Reenviar e-mail de confirmação
+                    </button>
+                </form>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('auth.logout') }}" class="small text-muted">Sair</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

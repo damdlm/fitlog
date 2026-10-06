@@ -128,6 +128,16 @@ EVENTOS_ATRASO = ('PAYMENT_OVERDUE',)
 EVENTOS_CANCELAMENTO = ('PAYMENT_DELETED', 'PAYMENT_REFUNDED', 'SUBSCRIPTION_DELETED')
 
 
+class ConfirmacaoPagamentoIndisponivelError(Exception):
+    """Levantada quando não foi possível consultar o pagamento na API do
+    Asaas para confirmar um evento de pagamento. A rota do webhook
+    responde 503 nesse caso, e o Asaas reenvia o evento depois -- melhor
+    atrasar a liberação do que liberar acesso sem confirmação."""
+
+
+STATUS_PAGAMENTO_CONFIRMADO = ('CONFIRMED', 'RECEIVED', 'RECEIVED_IN_CASH')
+
+
 class DadosCobrancaIncompletosError(Exception):
     """Levantada por criar_assinatura_checkout quando falta algum dado
     obrigatório pro Asaas gerar a cobrança -- CPF/CNPJ, telefone, CEP
@@ -1219,7 +1229,7 @@ class BillingService:
         event_id = payload.get('id')
         tipo_evento = payload.get('event')
         if not event_id or not tipo_evento:
-            logger.warning('Webhook Asaas sem id/event no payload, ignorado. Payload: %s', payload)
+            logger.warning('Webhook Asaas sem id/event no payload, ignorado. Chaves recebidas: %s', sorted(payload.keys()) if isinstance(payload, dict) else type(payload).__name__)
             return False
 
         # Eventos PAYMENT_* trazem os dados em payload['payment'].
@@ -1252,6 +1262,17 @@ class BillingService:
         # gerar dupla liberação de acesso ou dupla baixa de pagamento.
         if EventoWebhookAsaas.query.filter_by(event_id=event_id).first():
             logger.info('Webhook Asaas %s já processado antes, ignorando', event_id)
+            return True
+
+        # Defesa em profundidade: o token do header é a única prova de
+        # autenticidade do webhook. Antes de LIBERAR acesso por um evento
+        # de pagamento confirmado, reconsultamos o pagamento direto na
+        # API do Asaas (canal autenticado por nossa chave) e só seguimos
+        # se o status e o vínculo (cliente/assinatura) baterem com o que
+        # o payload afirmou. Se o token vazar, um evento forjado não
+        # libera nada. Se a API estiver fora, levantamos erro -> 503 ->
+        # o Asaas reenvia o evento depois.
+        if tipo_evento in EVENTOS_CONFIRMACAO_PAGAMENTO and not BillingService._pagamento_confirmado_na_api(payment):
             return True
 
         # Primeira cobrança de uma assinatura criada via /checkouts
@@ -1360,6 +1381,56 @@ class BillingService:
                 plano=plano.codigo if plano else None,
             )
 
+        return True
+
+    @staticmethod
+    def _pagamento_confirmado_na_api(payment: dict) -> bool:
+        """True se o pagamento do payload existe no Asaas, está
+        confirmado/recebido e pertence ao mesmo cliente/assinatura
+        informados no evento. False = evento inconsistente (não aplicar,
+        não reenviar). Levanta ConfirmacaoPagamentoIndisponivelError se a
+        API não puder ser consultada (o Asaas deve reenviar)."""
+        if not current_app.config.get('ASAAS_WEBHOOK_VERIFICAR_API', True):
+            return True
+        if not current_app.config.get('ASAAS_API_KEY'):
+            # Sem chave não há como consultar (ambiente de teste/dev).
+            logger.warning('ASAAS_API_KEY ausente: webhook aceito SEM reconsulta na API do Asaas')
+            return True
+
+        payment_id = (payment or {}).get('id')
+        if not payment_id or not isinstance(payment_id, str) or not payment_id.replace('_', '').isalnum():
+            logger.warning('Webhook de pagamento confirmado sem payment.id válido, ignorado')
+            return False
+
+        try:
+            resp = requests.get(
+                f'{BillingService._base_url()}/payments/{payment_id}',
+                headers=BillingService._headers(),
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+        except requests.RequestException as exc:
+            raise ConfirmacaoPagamentoIndisponivelError(str(exc)) from exc
+
+        if resp.status_code == 404:
+            logger.warning('Webhook Asaas: pagamento %s NÃO existe na API -- evento ignorado', payment_id)
+            return False
+        if resp.status_code != 200:
+            raise ConfirmacaoPagamentoIndisponivelError(f'HTTP {resp.status_code} ao consultar pagamento')
+
+        real = resp.json() or {}
+        if real.get('status') not in STATUS_PAGAMENTO_CONFIRMADO:
+            logger.warning(
+                'Webhook Asaas: pagamento %s está %s na API (não confirmado) -- evento ignorado',
+                payment_id, real.get('status'),
+            )
+            return False
+        for campo in ('customer', 'subscription'):
+            if payment.get(campo) and real.get(campo) != payment.get(campo):
+                logger.warning(
+                    'Webhook Asaas: pagamento %s divergente da API no campo %s -- evento ignorado',
+                    payment_id, campo,
+                )
+                return False
         return True
 
     @staticmethod

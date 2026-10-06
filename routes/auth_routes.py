@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User
 from extensions import limiter   # <-- importa de extensions, nunca de app
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse, urljoin
 import logging
 from utils.validators import validar_email, validar_senha
@@ -12,8 +12,12 @@ from utils.mensagens_boas_vindas import gerar_mensagem_boas_vindas
 from services.base_service import CacheService
 from services.billing_service import BillingService
 from services.analytics_service import AnalyticsService
+from services.email_verificacao_service import EmailVerificacaoService
 
 auth_bp = Blueprint('auth', __name__)
+
+MAX_FALHAS_LOGIN = 8
+BLOQUEIO_LOGIN_MINUTOS = 15
 logger = logging.getLogger(__name__)
 
 
@@ -85,11 +89,28 @@ def login():
         remember = bool(request.form.get('remember'))
 
         user = User.query.filter_by(username=username).first()
+        agora = datetime.now(timezone.utc)
 
-        if not user or not user.check_password(password):
+        # Bloqueio temporário por conta: depois de MAX_FALHAS_LOGIN senhas
+        # erradas seguidas a conta fica BLOQUEIO_LOGIN_MINUTOS sem aceitar
+        # nem a senha certa. A mensagem é a mesma de "usuário ou senha
+        # inválidos" (não revela se a conta existe nem se está bloqueada).
+        bloqueado_ate = user.login_bloqueado_ate if user else None
+        if bloqueado_ate is not None and bloqueado_ate.tzinfo is None:
+            bloqueado_ate = bloqueado_ate.replace(tzinfo=timezone.utc)
+        conta_bloqueada = bloqueado_ate is not None and bloqueado_ate > agora
+
+        if conta_bloqueada or not user or not user.check_password(password):
+            if user and not conta_bloqueada:
+                user.falhas_login = (user.falhas_login or 0) + 1
+                if user.falhas_login >= MAX_FALHAS_LOGIN:
+                    user.login_bloqueado_ate = agora + timedelta(minutes=BLOQUEIO_LOGIN_MINUTOS)
+                    user.falhas_login = 0
+                    logger.warning(f"Conta bloqueada por excesso de senhas erradas -- usuario ID {user.id}")
+                db.session.commit()
             # Não revela se foi o usuário ou a senha que errou (evita user enumeration)
             logger.warning(f"Login invalido -- IP: {request.remote_addr}")
-            flash('Usuário ou senha inválidos', 'danger')
+            flash(f'Usuário ou senha inválidos. Após {MAX_FALHAS_LOGIN} tentativas erradas, o acesso fica bloqueado por {BLOQUEIO_LOGIN_MINUTOS} minutos.', 'danger')
             return redirect(url_for('auth.login'))
 
         if not user.ativo:
@@ -98,6 +119,8 @@ def login():
             return redirect(url_for('auth.login'))
 
         user.last_login = datetime.now(timezone.utc)
+        user.falhas_login = 0
+        user.login_bloqueado_ate = None
         db.session.commit()
 
         login_user(user, remember=remember)
@@ -174,7 +197,7 @@ def reset_password(token):
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
 
-        ok_senha, msg_senha = validar_senha(password)
+        ok_senha, msg_senha = validar_senha(password, username=user.username, email=user.email)
         if not ok_senha:
             flash(msg_senha, 'danger')
             return render_template('auth/reset_password.html', token=token)
@@ -184,6 +207,10 @@ def reset_password(token):
             return render_template('auth/reset_password.html', token=token)
 
         user.set_password(password)
+        # Receber o link de reset no e-mail prova a posse dele.
+        EmailVerificacaoService.marcar_verificado(user, commit=False)
+        user.falhas_login = 0
+        user.login_bloqueado_ate = None
         User.invalidate_reset_token(token)
         db.session.commit()
         logger.info(f"Senha redefinida via token -- usuario ID {user.id}")
@@ -193,8 +220,60 @@ def reset_password(token):
     return render_template('auth/reset_password.html', token=token)
 
 
+def _enviar_email_verificacao(user):
+    """Envia o link de confirmação de e-mail. Nunca derruba a request:
+    se o envio falhar, o usuário pede reenvio na tela de pendência."""
+    token = EmailVerificacaoService.gerar_token(user)
+    url = _build_trusted_url('auth.verificar_email', token=token)
+    corpo_texto = (
+        f"Olá, {user.nome_completo or user.username}!\n\n"
+        f"Falta só um passo para começar a usar o FitLog: confirme seu e-mail "
+        f"clicando no link abaixo (válido por 48 horas):\n\n{url}\n\n"
+        f"Se você não criou uma conta no FitLog, pode ignorar este e-mail."
+    )
+    return enviar_email(user.email, 'FitLog — Confirme seu e-mail', corpo_texto)
+
+
+@auth_bp.route('/verificar-email/<token>')
+@limiter.limit("30 per hour")
+def verificar_email(token):
+    """Link recebido por e-mail: marca o e-mail como verificado."""
+    user = EmailVerificacaoService.usuario_do_token(token)
+    if user is None:
+        flash('Este link de confirmação é inválido ou expirou. Entre na sua conta para receber um novo.', 'danger')
+        return redirect(url_for('auth.login'))
+    EmailVerificacaoService.marcar_verificado(user)
+    logger.info("E-mail verificado -- usuario ID %s", user.id)
+    flash('E-mail confirmado com sucesso!', 'success')
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    return redirect(url_for('auth.login'))
+
+
+@auth_bp.route('/verificar-email')
+@login_required
+def verificar_email_pendente():
+    """Tela exibida enquanto o e-mail não foi confirmado."""
+    if not EmailVerificacaoService.precisa_verificar(current_user):
+        return redirect(url_for('main.index'))
+    return render_template('auth/verificar_email_pendente.html')
+
+
+@auth_bp.route('/reenviar-verificacao', methods=['POST'])
+@login_required
+@limiter.limit("3 per hour", key_func=lambda: f"reenvio-verif:{current_user.get_id()}")
+def reenviar_verificacao():
+    if not EmailVerificacaoService.precisa_verificar(current_user):
+        return redirect(url_for('main.index'))
+    if _enviar_email_verificacao(current_user):
+        flash('Enviamos um novo link para o seu e-mail.', 'success')
+    else:
+        flash('Não conseguimos enviar o e-mail agora. Tente novamente em alguns minutos.', 'danger')
+    return redirect(url_for('auth.verificar_email_pendente'))
+
+
 @auth_bp.route('/check-email')
-@limiter.limit("20 per minute")
+@limiter.limit("10 per minute")
 def check_email():
     """
     Verifica se um e-mail já está cadastrado -- usado tanto no cadastro
@@ -211,7 +290,7 @@ def check_email():
 
 
 @auth_bp.route('/check-username')
-@limiter.limit("20 per minute")
+@limiter.limit("10 per minute")
 def check_username():
     """
     Verifica se um nome de usuário já está cadastrado -- usado na tela
@@ -265,7 +344,7 @@ def register():
             flash('Usuário deve ter pelo menos 3 caracteres', 'danger')
             return redirect(url_for('auth.register'))
 
-        ok_senha, msg_senha = validar_senha(password)
+        ok_senha, msg_senha = validar_senha(password, username=username, email=email)
         if not ok_senha:
             flash(msg_senha, 'danger')
             return redirect(url_for('auth.register'))
@@ -339,11 +418,16 @@ def register():
             return redirect(url_for('auth.register'))
 
         if user.tipo_usuario == 'aluno':
-            flash('Conta criada com sucesso!', 'success')
+            flash('Conta criada! Enviamos um link de confirmação para o seu e-mail.' if EmailVerificacaoService.obrigatoria() else 'Conta criada com sucesso!', 'success')
         else:
-            flash('Conta de professor criada com sucesso!', 'success')
+            flash('Conta de professor criada! Enviamos um link de confirmação para o seu e-mail.' if EmailVerificacaoService.obrigatoria() else 'Conta de professor criada com sucesso!', 'success')
 
         logger.info(f"Novo usuario: {username} ({tipo_usuario})")
+
+        # Link de confirmação de e-mail (best-effort: se falhar, o usuário
+        # pede reenvio na tela de pendência ao entrar).
+        if EmailVerificacaoService.obrigatoria():
+            _enviar_email_verificacao(user)
 
         # Analytics: só dispara aqui, depois do commit confirmado --
         # nunca ao abrir /register, nunca em erro de validação, nunca
@@ -443,7 +527,7 @@ def change_password():
         flash('As senhas não coincidem', 'danger')
         return redirect(url_for('auth.profile'))
 
-    ok_nova, msg_nova = validar_senha(new_password)
+    ok_nova, msg_nova = validar_senha(new_password, username=current_user.username, email=current_user.email)
     if not ok_nova:
         flash(msg_nova, 'danger')
         return redirect(url_for('auth.profile'))

@@ -329,6 +329,30 @@ def create_app(config_class=None):
         return None
 
     # =============================================================
+    # Verificação de e-mail -- conta nova só usa o app depois de confirmar
+    # =============================================================
+    # Diferente do hook de LGPD, este também barra POST/JSON (a conta ainda
+    # não provou que o e-mail é dela -- não pode agir). Ficam de fora só o
+    # fluxo de confirmação/auth, os termos/privacidade (inclui exportar e
+    # excluir a própria conta, direito LGPD) e arquivos estáticos/health.
+    @app.before_request
+    def _exigir_email_verificado():
+        from flask import request as flask_request, redirect as flask_redirect, url_for as flask_url_for, jsonify as flask_jsonify
+        from flask_login import current_user as flask_current_user
+        from services.email_verificacao_service import EmailVerificacaoService
+
+        if not flask_current_user.is_authenticated:
+            return None
+        endpoint = flask_request.endpoint or ''
+        if endpoint in ('static', 'health', 'health_db') or endpoint.startswith('privacidade.') or endpoint.startswith('auth.'):
+            return None
+        if not EmailVerificacaoService.precisa_verificar(flask_current_user):
+            return None
+        if flask_request.method == 'GET' and not flask_request.path.startswith('/api/'):
+            return flask_redirect(flask_url_for('auth.verificar_email_pendente'))
+        return flask_jsonify({'erro': 'Confirme seu e-mail para continuar.'}), 403
+
+    # =============================================================
     # Financeiro do admin -- desbloqueio cai ao sair da área
     # =============================================================
     # A reautenticação de /admin/financeiro (ver routes/financeiro_routes.py)
@@ -769,6 +793,15 @@ def create_app(config_class=None):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        # Recursos do navegador que o app NÃO usa ficam desligados (um XSS
+        # ou script de terceiro não consegue pedir câmera, pagamento etc.).
+        # Microfone (gravação de áudio no contato) e geolocalização (mapa
+        # de professores) continuam liberados só para o próprio domínio.
+        response.headers["Permissions-Policy"] = (
+            "camera=(), microphone=(self), geolocation=(self), payment=(), usb=(), "
+            "serial=(), bluetooth=(), magnetometer=(), gyroscope=(), accelerometer=(), "
+            "interest-cohort=()"
+        )
 
         # CORREÇÃO seção 17 (hardening de segurança -- CSP progressiva):
         # primeira fase, mapeada a partir do que a aplicação realmente
@@ -796,6 +829,11 @@ def create_app(config_class=None):
             "base-uri 'self'; "
             "frame-ancestors 'self';"
         )
+
+        if em_producao:
+            # Qualquer recurso http:// referenciado por engano é buscado
+            # via https:// (evita conteúdo misto).
+            response.headers["Content-Security-Policy"] += " upgrade-insecure-requests;"
 
         # HSTS só faz sentido (e só é seguro) quando servido via HTTPS,
         # ou seja, em produção -- em dev/testes, servido por http://
@@ -840,6 +878,14 @@ def create_app(config_class=None):
         from flask import send_from_directory, request, Response, stream_with_context
         import mimetypes
         from services.storage_service import StorageService
+
+        # Defesa em profundidade: o bucket é compartilhado com outras
+        # pastas (ex.: "professores/", anexos de contato). Esta rota só
+        # pode servir chaves de exercícios, e nunca aceitar travessia
+        # de caminho. Qualquer outra coisa é 404 antes de tocar no bucket.
+        if ".." in caminho.split("/") or caminho.startswith(("/", "professores/", "contato/")):
+            from flask import abort
+            abort(404)
 
         if StorageService.is_configured():
             # Proxy em vez de redirect: Railway Buckets são sempre
@@ -911,6 +957,13 @@ def create_app(config_class=None):
         from flask import Response, stream_with_context, abort
         import mimetypes
         from services.storage_service import StorageService
+
+        # Esta rota só serve fotos de professores. Sem o prefixo, ela
+        # funcionaria como leitor genérico de qualquer chave do bucket
+        # (sem login), incluindo exercícios e anexos de contato.
+        partes = caminho.split("/")
+        if not caminho.startswith("professores/") or ".." in partes or len(partes) != 2:
+            abort(404)
 
         obj = StorageService.get_object_stream(caminho, range_header=request.headers.get("Range"))
         if not obj:

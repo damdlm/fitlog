@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, abort
+from utils.validators import validar_senha
 from flask_login import login_required, current_user
 from models import db, User, AlunoProfessor, RegistroTreino, SolicitacaoVinculo, VersaoGlobal, HistoricoTreino, TreinoVersao
 from services.base_service import BaseService
@@ -148,8 +149,11 @@ def novo_aluno():
             flash('Usuário deve ter pelo menos 3 caracteres', 'danger')
             return redirect(url_for('professor.novo_aluno'))
         
-        if len(password) < 6:
-            flash('Senha deve ter pelo menos 6 caracteres', 'danger')
+        # Mesma política do cadastro público (8+ caracteres, letra e número,
+        # fora da lista de senhas comuns). Antes aqui bastavam 6 caracteres.
+        ok_senha, msg_senha = validar_senha(password, username=username, email=email)
+        if not ok_senha:
+            flash(msg_senha, 'danger')
             return redirect(url_for('professor.novo_aluno'))
         
         if User.query.filter_by(username=username).first():
@@ -166,7 +170,11 @@ def novo_aluno():
             tipo_usuario='aluno',
             nome_completo=nome_completo,
             telefone=telefone,
-            ativo=True
+            ativo=True,
+            # Conta criada por um professor autenticado: o aluno não passa
+            # pela confirmação de e-mail do cadastro público (o professor
+            # é quem informa o e-mail e a senha inicial).
+            email_verificado_em=datetime.now(timezone.utc),
         )
         aluno.set_password(password)
         

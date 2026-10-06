@@ -241,9 +241,14 @@ class TestValidarEmail:
 
 class TestValidarSenha:
     def test_valida(self):
-        ok, valor = validar_senha('senha123')
+        ok, valor = validar_senha('Treino#Forte9')
         assert ok is True
-        assert valor == 'senha123'
+        assert valor == 'Treino#Forte9'
+
+    def test_senha_comum_invalida(self):
+        ok, msg = validar_senha('senha123')
+        assert ok is False
+        assert 'comum' in msg
 
     def test_vazia_invalida(self):
         ok, msg = validar_senha('')
@@ -270,5 +275,5 @@ class TestValidarSenha:
         assert 'número' in msg
 
     def test_limite_minimo_valido(self):
-        ok, valor = validar_senha('abcdefg1')
+        ok, valor = validar_senha('xk4mz9qp')
         assert ok is True
