@@ -20,7 +20,7 @@
     --fem-ink: #1f2a37;
     --fem-muted: #5f6b77;
     --fem-line: #efd3da;
-    /* sem fundo próprio: igual aos demais estilos */
+    background: #f8f1f1;
 }
 
 .pp-poster-feminino {
