@@ -296,7 +296,8 @@ def test_modal_ver_pagina_tem_botao_compartilhar_abaixo_do_fechar(app, client, p
     assert f'data-share-url="http://localhost/professor/pagina/{slug}"' in html
     assert 'data-share-template="http://localhost/professor/pagina/__SLUG__"' in html
     assert 'embed=1' not in html.split('data-share-url=')[1].split('"')[1]
-    for canal in ('whatsapp', 'instagram', 'facebook', 'telegram', 'copiar'):
+    # compartilha a IMAGEM do pôster; o link fica como opção secundária
+    for canal in ('baixar', 'copiar-imagem', 'whatsapp', 'copiar'):
         assert f'data-canal="{canal}"' in html
 
 
@@ -308,3 +309,22 @@ def test_base_css_define_formato_stories_9_16():
     assert 'aspect-ratio: 9 / 16' in css  # fallback sem container queries
     diag = pathlib.Path('static/css/professor-estilos/diagonal.css').read_text(encoding='utf-8')
     assert 'min-height: calc(100cqw * 16 / 9)' in diag
+
+
+def test_embed_carrega_gerador_de_imagem_do_poster(app, client, professor):
+    """O iframe do modal precisa trazer o gerador da imagem 1080x1920 (e a
+    biblioteca vendorizada), que o botão Compartilhar chama."""
+    import pathlib
+    uid, slug = professor
+    html = client.get(f'/professor/pagina/{slug}?embed=1').get_data(as_text=True)
+    assert 'vendor/html-to-image/html-to-image.js' in html
+    assert 'js/professor-pagina-imagem.js' in html
+    # fora do embed (página pública normal) não carrega nada disso
+    normal = client.get(f'/professor/pagina/{slug}').get_data(as_text=True)
+    assert 'professor-pagina-imagem.js' not in normal
+    assert pathlib.Path('static/vendor/html-to-image/html-to-image.js').exists()
+    assert pathlib.Path('static/vendor/html-to-image/LICENSE').exists()
+    js = pathlib.Path('static/js/professor-pagina-imagem.js').read_text(encoding='utf-8')
+    assert 'LARGURA = 1080' in js and 'ALTURA = 1920' in js
+    # comentários HTML com "--" quebram o SVG da captura: têm que ser filtrados
+    assert 'nodeType !== 8' in js

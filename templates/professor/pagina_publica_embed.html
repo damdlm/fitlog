@@ -34,5 +34,10 @@
 </head>
 <body>
     {% include estilo_info.template %}
+
+    {# Gera a imagem 1080x1920 do pôster pro botão Compartilhar do modal
+       (window.ppGerarImagem, chamada pelo iframe pai). #}
+    <script src="{{ static_v('vendor/html-to-image/html-to-image.js') }}"></script>
+    <script src="{{ static_v('js/professor-pagina-imagem.js') }}"></script>
 </body>
 </html>

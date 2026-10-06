@@ -40,26 +40,24 @@
                     <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
                 </svg>
             </button>
-            {# Compartilhar: logo abaixo do X. No celular abre direto a folha de
-               compartilhamento do sistema (Instagram, WhatsApp...); no
-               computador abre o menu abaixo. #}
+            {# Compartilhar: logo abaixo do X. Compartilha a IMAGEM do pôster
+               (1080x1920, formato Stories). No celular abre direto a folha
+               de compartilhamento do sistema (Instagram, WhatsApp...); no
+               computador abre o menu abaixo (baixar/copiar imagem). #}
             <button type="button" class="epp-preview-share" id="ppShareModalBtn"
                     title="Compartilhar" aria-label="Compartilhar página"
                     aria-haspopup="true" aria-expanded="false">
                 <i class="bi bi-share-fill" aria-hidden="true"></i>
             </button>
             <div class="epp-share-menu" id="ppShareMenu" role="menu" aria-label="Compartilhar página" hidden>
-                <a class="epp-share-item" role="menuitem" data-canal="whatsapp" target="_blank" rel="noopener" href="#">
-                    <i class="bi bi-whatsapp" aria-hidden="true"></i> WhatsApp
-                </a>
-                <button type="button" class="epp-share-item" role="menuitem" data-canal="instagram">
-                    <i class="bi bi-instagram" aria-hidden="true"></i> Instagram
+                <button type="button" class="epp-share-item" role="menuitem" data-canal="baixar">
+                    <i class="bi bi-download" aria-hidden="true"></i> Baixar imagem
                 </button>
-                <a class="epp-share-item" role="menuitem" data-canal="facebook" target="_blank" rel="noopener" href="#">
-                    <i class="bi bi-facebook" aria-hidden="true"></i> Facebook
-                </a>
-                <a class="epp-share-item" role="menuitem" data-canal="telegram" target="_blank" rel="noopener" href="#">
-                    <i class="bi bi-telegram" aria-hidden="true"></i> Telegram
+                <button type="button" class="epp-share-item" role="menuitem" data-canal="copiar-imagem" hidden>
+                    <i class="bi bi-images" aria-hidden="true"></i> Copiar imagem
+                </button>
+                <a class="epp-share-item" role="menuitem" data-canal="whatsapp" target="_blank" rel="noopener" href="#">
+                    <i class="bi bi-whatsapp" aria-hidden="true"></i> Enviar link no WhatsApp
                 </a>
                 <button type="button" class="epp-share-item" role="menuitem" data-canal="copiar">
                     <i class="bi bi-link-45deg" aria-hidden="true"></i> Copiar link
@@ -226,8 +224,14 @@
         color: #fff;
         outline: none;
     }
+    /* Gerando a imagem: ícone girando e botão sem clique. */
+    .epp-preview-share.carregando { pointer-events: none; opacity: .85; }
+    .epp-preview-share.carregando .bi { animation: eppShareGiro 1s linear infinite; }
+    @keyframes eppShareGiro { to { transform: rotate(360deg); } }
+    .epp-share-item[hidden] { display: none; }
     @media (prefers-reduced-motion: reduce) {
         .epp-preview-share { transition: none; }
+        .epp-preview-share.carregando .bi { animation-duration: 3s; }
     }
     #ppVerPaginaFrame {
         display: block;
@@ -364,6 +368,44 @@
         }
     }
 
+    // ---- Imagem do pôster (1080x1920) ----------------------------------
+    // Gerada pelo próprio iframe (professor-pagina-imagem.js). Começa a
+    // gerar assim que a página carrega: quando a pessoa toca em
+    // Compartilhar a imagem já está pronta, e o navigator.share roda
+    // dentro do gesto do toque (o iOS recusa se esperar muito).
+    var imagemPromise = null;
+    var frameCarregado = !!(frame.getAttribute('src'));
+
+    function iniciarImagem(forcar) {
+        try {
+            var janela = frame.contentWindow;
+            if (!janela || typeof janela.ppGerarImagem !== 'function') {
+                return Promise.reject(new Error('Gerador de imagem indisponível.'));
+            }
+            imagemPromise = janela.ppGerarImagem(!!forcar);
+        } catch (e) {
+            imagemPromise = Promise.reject(e);
+        }
+        imagemPromise.catch(function () { /* o erro aparece só no clique */ });
+        return imagemPromise;
+    }
+
+    function nomeDoArquivo() {
+        var slug = (shareUrl.split('/').filter(Boolean).pop() || 'professor').split('?')[0];
+        return 'fitlog-' + slug + '-stories.png';
+    }
+
+    function baixarBlob(blob, nome) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = nome;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    }
+
     function fecharMenu() {
         if (!shareMenu || shareMenu.hidden) return;
         shareMenu.hidden = true;
@@ -372,12 +414,10 @@
 
     function abrirMenu() {
         var texto = encodeURIComponent(tituloParaCompartilhar() + ' ' + shareUrl);
-        var url = encodeURIComponent(shareUrl);
         shareMenu.querySelector('[data-canal="whatsapp"]').href = 'https://wa.me/?text=' + texto;
-        shareMenu.querySelector('[data-canal="facebook"]').href =
-            'https://www.facebook.com/sharer/sharer.php?u=' + url;
-        shareMenu.querySelector('[data-canal="telegram"]').href =
-            'https://t.me/share/url?url=' + url + '&text=' + encodeURIComponent(tituloParaCompartilhar());
+        // "Copiar imagem" só onde o navegador deixa copiar PNG.
+        var podeCopiarImagem = !!(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem);
+        shareMenu.querySelector('[data-canal="copiar-imagem"]').hidden = !podeCopiarImagem;
         shareMenu.hidden = false;
         shareBtn.setAttribute('aria-expanded', 'true');
         var primeiro = shareMenu.querySelector('.epp-share-item');
@@ -386,30 +426,57 @@
 
     if (shareBtn && shareMenu) {
         // Celular/tablet (toque): folha nativa, que já lista Instagram,
-        // WhatsApp, Facebook etc. Computador: menu próprio (a folha nativa
-        // do desktop quase nunca tem essas redes).
+        // WhatsApp, Facebook etc. e aceita a imagem. Computador: menu
+        // próprio (a folha nativa do desktop quase nunca tem essas redes).
         function usaFolhaNativa() {
-            return !!navigator.share &&
+            return !!navigator.share && !!navigator.canShare &&
                 !!window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
         }
 
         shareBtn.addEventListener('click', async function (event) {
             event.stopPropagation();
-            if (!shareUrl) {
-                toast('Não foi possível gerar o link para compartilhar.', 'danger');
-                return;
+            if (!shareMenu.hidden) { fecharMenu(); return; }
+
+            // Ainda carregando/gerando? Mostra o ícone girando até ficar pronta.
+            shareBtn.classList.add('carregando');
+            var blob = null;
+            try {
+                if (!frameCarregado) {
+                    // Tocou antes do preview terminar de carregar: espera (até 8s).
+                    await new Promise(function (resolve) {
+                        var t = setTimeout(resolve, 8000);
+                        frame.addEventListener('load', function () { clearTimeout(t); resolve(); }, { once: true });
+                    });
+                }
+                if (!imagemPromise) iniciarImagem(false);
+                blob = await imagemPromise;
+            } catch (err) {
+                blob = null;
+            } finally {
+                shareBtn.classList.remove('carregando');
             }
-            if (usaFolhaNativa()) {
-                var titulo = tituloParaCompartilhar();
-                try {
-                    await navigator.share({ title: titulo, text: titulo, url: shareUrl });
-                    return;
-                } catch (err) {
-                    if (err && err.name === 'AbortError') return;  // cancelou
-                    // falhou de outro jeito: cai no menu próprio
+
+            if (blob && usaFolhaNativa()) {
+                var arquivo = new File([blob], nomeDoArquivo(), { type: 'image/png' });
+                if (navigator.canShare({ files: [arquivo] })) {
+                    var titulo = tituloParaCompartilhar();
+                    try {
+                        await navigator.share({
+                            files: [arquivo],
+                            title: titulo,
+                            text: titulo + ' ' + shareUrl
+                        });
+                        return;
+                    } catch (err) {
+                        if (err && err.name === 'AbortError') return;  // cancelou
+                        // falhou de outro jeito: cai no menu
+                    }
                 }
             }
-            if (shareMenu.hidden) abrirMenu(); else fecharMenu();
+            if (!blob) {
+                toast('Não foi possível gerar a imagem. Você ainda pode enviar o link.', 'warning');
+            }
+            abrirMenu();
         });
 
         shareMenu.addEventListener('click', async function (event) {
@@ -417,20 +484,30 @@
             var item = event.target.closest('.epp-share-item');
             if (!item) return;
             var canal = item.dataset.canal;
-            if (canal === 'copiar') {
+
+            if (canal === 'baixar' || canal === 'copiar-imagem') {
+                var imagem = null;
+                try { imagem = await (imagemPromise || iniciarImagem(false)); } catch (err) { imagem = null; }
+                if (!imagem) {
+                    toast('Não foi possível gerar a imagem.', 'danger');
+                } else if (canal === 'baixar') {
+                    baixarBlob(imagem, nomeDoArquivo());
+                    toast('Imagem baixada! Agora é só postar.', 'success');
+                } else {
+                    try {
+                        await navigator.clipboard.write([new ClipboardItem({ 'image/png': imagem })]);
+                        toast('Imagem copiada! Cole na conversa ou no post.', 'success');
+                    } catch (err) {
+                        toast('Não foi possível copiar a imagem. Use "Baixar imagem".', 'danger');
+                    }
+                }
+                fecharMenu();
+            } else if (canal === 'copiar') {
                 var ok = await copiarLink(shareUrl);
                 toast(ok ? 'Link copiado!' : 'Não foi possível copiar o link.', ok ? 'success' : 'danger');
                 fecharMenu();
-            } else if (canal === 'instagram') {
-                // O Instagram não tem link de compartilhamento pela web:
-                // copia o link e abre o app/site pra colar (Stories, bio, DM).
-                var copiou = await copiarLink(shareUrl);
-                toast(copiou ? 'Link copiado! Cole no Instagram.' : 'Abra o Instagram e cole o link da página.',
-                      copiou ? 'success' : 'warning');
-                window.open('https://www.instagram.com/', '_blank', 'noopener');
-                fecharMenu();
             } else {
-                fecharMenu();  // WhatsApp/Facebook/Telegram: o <a> abre em nova aba
+                fecharMenu();  // WhatsApp: o <a> abre em nova aba
             }
         });
 
@@ -446,6 +523,14 @@
             }
         }, true);
         modal.addEventListener('hidden.bs.modal', fecharMenu);
+
+        // A cada carga do iframe (abrir o modal, trocar de professor,
+        // atualizar o preview) gera a imagem de novo, já em segundo plano.
+        frame.addEventListener('load', function () {
+            frameCarregado = true;
+            imagemPromise = null;
+            setTimeout(function () { if (!imagemPromise) iniciarImagem(false); }, 400);
+        });
     }
 
     modal.addEventListener('show.bs.modal', function (event) {
@@ -484,6 +569,9 @@
         if (estiloEscolhido && estiloEscolhido.value) {
             url += '&estilo=' + encodeURIComponent(estiloEscolhido.value);
         }
+        // Vai recarregar o preview: a imagem anterior não vale mais.
+        imagemPromise = null;
+        frameCarregado = false;
         frame.src = url + '&_=' + Date.now();
     });
     modal.addEventListener('hidden.bs.modal', function () {

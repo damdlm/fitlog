@@ -21,6 +21,11 @@ Antes: Bootstrap CSS/JS e Bootstrap Icons vinham do CDN externo
   + `font/fonts/*` (woff2/woff), extraídos do pacote npm
   `bootstrap-icons@1.11.3`.
 
+- `html-to-image/` — html-to-image **1.11.13** (MIT), `dist/html-to-image.js` + `LICENSE`,
+  extraídos do pacote npm `html-to-image@1.11.13`. Usado só na versão embed
+  da página pública do professor (`pagina_publica_embed.html`) para gerar a
+  imagem 1080x1920 que o botão Compartilhar do modal envia.
+
 ## Como atualizar a versão no futuro
 
 ```bash
