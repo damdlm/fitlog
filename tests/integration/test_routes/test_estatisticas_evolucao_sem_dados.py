@@ -1,13 +1,12 @@
-"""Evolução do Volume sem dados -- vale para as duas páginas de estatísticas
-(a do aluno e a do aluno vista pelo professor).
+"""Evolução do Volume sem dados: o estado vazio é ENXUTO. Sem gráfico, somem a
+caixa do gráfico (altura fixa de 190-300px), os botões "Por semana/Por treino"
+e a legenda -- sobra só uma linha de aviso, mantendo no topo do card os filtros
+de treino e de período. (Antes só o canvas sumia e o card ficava do mesmo
+tamanho de quando tinha dados, só que vazio.)
 
-Comportamento: sem dados, o JS esconde a CAIXA do gráfico (.est-chart-wrap, de
-altura fixa), não só o canvas, e mostra um aviso compacto (#evolucaoVazio).
-Com dados de novo, a caixa volta ANTES de o gráfico ser recriado (o Chart.js
-mede o tamanho do contêiner na criação: num contêiner escondido sairia 0x0).
-"""
+Vale para as duas páginas de estatísticas: a do aluno e a do aluno vista pelo
+professor. São testes sobre o template (o comportamento é JavaScript)."""
 import re
-from html.parser import HTMLParser
 
 import pytest
 
@@ -15,9 +14,6 @@ TEMPLATES = {
     'aluno': 'templates/aluno/estatisticas.html',
     'professor': 'templates/professor/estatisticas_aluno.html',
 }
-
-_VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link',
-         'meta', 'param', 'source', 'track', 'wbr'}
 
 
 def _ler(chave):
@@ -30,57 +26,48 @@ def template(request):
     return _ler(request.param)
 
 
-class _Ancestrais(HTMLParser):
-    """Guarda, para o elemento com o id pedido, as classes de todos os ancestrais."""
-
-    def __init__(self, id_alvo):
-        super().__init__()
-        self.id_alvo = id_alvo
-        self.pilha = []
-        self.ancestrais = None
-
-    def handle_starttag(self, tag, attrs):
-        d = dict(attrs)
-        if d.get('id') == self.id_alvo and self.ancestrais is None:
-            self.ancestrais = [c for _, cls in self.pilha for c in cls]
-        if tag not in _VOID:
-            self.pilha.append((tag, (d.get('class') or '').split()))
-
-    def handle_endtag(self, tag):
-        for i in range(len(self.pilha) - 1, -1, -1):
-            if self.pilha[i][0] == tag:
-                del self.pilha[i:]
-                break
+def test_aviso_de_vazio_fica_fora_da_caixa_de_altura_fixa(template):
+    # Dentro da caixa ele herdaria os 190-300px de altura.
+    wrap = template.split('class="est-chart-wrap"', 1)[1].split('id="evolucaoVazio"', 1)[0]
+    assert 'id="evolucaoChart"' in wrap
+    assert '</div>' in wrap  # a caixa já fechou antes do aviso
 
 
-def test_aviso_de_vazio_fica_fora_da_caixa_que_e_escondida(template):
-    # Se o aviso estivesse DENTRO de .est-chart-wrap, esconder a caixa
-    # esconderia o aviso junto e o card ficaria sem nada.
-    p = _Ancestrais('evolucaoVazio')
-    p.feed(template)
-    assert p.ancestrais is not None, 'falta o elemento #evolucaoVazio'
-    assert 'est-chart-wrap' not in p.ancestrais
+def _funcao_carregar_evolucao(template):
+    # só o trecho do gráfico de evolução (a página tem outros gráficos que
+    # escondem o próprio canvas, o que é correto para eles)
+    return template.split('function carregarEvolucao', 1)[1].split('new Chart(', 1)[0]
 
 
 def test_sem_dados_esconde_a_caixa_do_grafico_e_nao_so_o_canvas(template):
-    assert "canvas.parentElement.style.display = semDados ? 'none' : ''" in template
+    trecho = _funcao_carregar_evolucao(template)
+    assert "canvas.parentElement.style.display = semDados ? 'none' : ''" in trecho
+    assert "canvas.style.display = semDados" not in trecho
+
+
+def test_sem_dados_esconde_os_botoes_de_modo_e_a_legenda(template):
+    assert "getElementById('toolbarEvolucao').style.display = semDados ? 'none' : ''" in _funcao_carregar_evolucao(template)
+
+
+def test_com_dados_o_aviso_volta_a_ficar_escondido(template):
     assert "getElementById('evolucaoVazio').style.display = semDados ? 'block' : 'none'" in template
 
 
-def test_caixa_volta_a_aparecer_antes_de_recriar_o_grafico(template):
-    mostrar = template.index("canvas.parentElement.style.display = semDados ? 'none' : ''")
-    criar = template.index('evolucaoChart = new Chart(')
-    assert mostrar < criar
-
-
-def test_aviso_de_vazio_e_compacto(template):
+def test_aviso_e_uma_linha_compacta_sem_o_icone_grande(template):
     regra = re.search(r'#evolucaoVazio\s*\{(.*?)\}', template, re.S)
-    assert regra, 'falta a regra que compacta o aviso de vazio'
-    # menos padding que o .est-empty padrão (40px 20px)
-    assert 'padding: 18px 10px' in regra.group(1)
+    assert regra, 'falta a regra que compacta o aviso do gráfico vazio'
+    padding = re.search(r'padding:\s*(\d+)px', regra.group(1))
+    assert padding and int(padding.group(1)) <= 16, 'padding vertical grande demais'
+    icone = re.search(r'#evolucaoVazio i\s*\{(.*?)\}', template, re.S)
+    assert icone, 'falta a regra do ícone do aviso'
+    assert 'display: inline-block' in icone.group(1)
+    tamanho = re.search(r'font-size:\s*([\d.]+)rem', icone.group(1))
+    assert tamanho and float(tamanho.group(1)) <= 1.2, 'ícone grande demais'
 
 
-def test_erro_de_rede_na_pagina_do_professor_tambem_esconde_a_caixa():
+def test_erro_de_rede_no_painel_do_professor_tambem_fica_enxuto():
     html = _ler('professor')
-    assert "getElementById('evolucaoChart').parentElement.style.display = 'none'" in html
-    assert "getElementById('evolucaoVazio').style.display = 'block'" in html
+    marca = "getElementById('evolucaoChart').parentElement.style.display = 'none'"
+    assert marca in html
+    # a linha que esconde a legenda/botões vem logo depois, no mesmo catch
+    assert "getElementById('toolbarEvolucao').style.display = 'none'" in html.split(marca, 1)[1][:200]

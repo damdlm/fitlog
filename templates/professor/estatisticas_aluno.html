@@ -321,14 +321,18 @@
         text-align: center;
         margin: 0;
     }
-    /* Sem dados: a caixa do gráfico some (não deixa a altura fixa vazia) e o
-       aviso fica compacto. */
+    /* Sem dados: a caixa do gráfico, os botões "Por semana/Por treino" e a
+       legenda somem, e sobra só uma linha de aviso (ícone ao lado do texto).
+       Os filtros de treino e período continuam no topo do card. */
     #evolucaoVazio {
-        padding: 18px 10px;
+        padding: 12px 10px 4px;
+        font-size: 0.85rem;
     }
     #evolucaoVazio i {
-        font-size: 1.6rem;
-        margin-bottom: 6px;
+        display: inline-block;
+        font-size: 1.1rem;
+        margin: 0 6px 0 0;
+        vertical-align: -2px;
     }
     .est-chart-wrap {
         position: relative;
@@ -777,6 +781,8 @@
                     const semDados = !data.semanas || data.semanas.length === 0 || data.volumes.every(v => v === 0);
                     // Esconde a CAIXA do gráfico (altura fixa), não só o canvas.
                     canvas.parentElement.style.display = semDados ? 'none' : '';
+                    // Sem dados, os botões "Por semana/Por treino" e a legenda não servem de nada.
+                    document.getElementById('toolbarEvolucao').style.display = semDados ? 'none' : '';
                     document.getElementById('evolucaoVazio').style.display = semDados ? 'block' : 'none';
                     if (semDados) return;
 
@@ -925,6 +931,7 @@
                     if (meu !== reqEvolucao) return;
                     if (evolucaoChart) { evolucaoChart.destroy(); evolucaoChart = null; }
                     document.getElementById('evolucaoChart').parentElement.style.display = 'none';
+                    document.getElementById('toolbarEvolucao').style.display = 'none';
                     document.getElementById('evolucaoVazio').style.display = 'block';
                 });
         }
