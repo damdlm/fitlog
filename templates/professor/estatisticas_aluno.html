@@ -282,18 +282,6 @@
         margin-bottom: 10px;
         display: block;
     }
-    /* Gráfico sem dados: a mensagem fica dentro da caixa do gráfico, no mesmo
-       espaço e centralizada. Antes só o canvas sumia e a caixa (190-300px)
-       ficava em branco, com a mensagem perdida embaixo -- e o card mudava de
-       altura a cada troca de filtro/período. */
-    .est-chart-wrap > .est-empty {
-        position: absolute;
-        inset: 0;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 0 16px;
-    }
 
     /* ===== Gráfico "Evolução do Volume" (mesmo visual da página Estatísticas) ===== */
     .est-pill-group {
@@ -332,6 +320,15 @@
         color: #8a8a8a;
         text-align: center;
         margin: 0;
+    }
+    /* Sem dados: a caixa do gráfico some (não deixa a altura fixa vazia) e o
+       aviso fica compacto. */
+    #evolucaoVazio {
+        padding: 18px 10px;
+    }
+    #evolucaoVazio i {
+        font-size: 1.6rem;
+        margin-bottom: 6px;
     }
     .est-chart-wrap {
         position: relative;
@@ -527,11 +524,10 @@
         </div>
         <div class="est-chart-wrap">
             <canvas id="evolucaoChart"></canvas>
-            <!-- Sem dados: a mensagem ocupa o lugar do gráfico (mesma altura) -->
-            <div class="est-empty" id="evolucaoVazio" style="display: none;">
-                <i class="bi bi-graph-up"></i>
-                Ainda não há registros suficientes pra montar esse gráfico.
-            </div>
+        </div>
+        <div class="est-empty" id="evolucaoVazio" style="display: none;">
+            <i class="bi bi-graph-up"></i>
+            Ainda não há registros suficientes pra montar esse gráfico.
         </div>
         <div class="est-chart-toolbar" id="toolbarEvolucao">
             <div class="est-pill-group" id="filtrosModoEvolucao">
@@ -779,9 +775,9 @@
 
                     const canvas = document.getElementById('evolucaoChart');
                     const semDados = !data.semanas || data.semanas.length === 0 || data.volumes.every(v => v === 0);
-                    canvas.style.display = semDados ? 'none' : 'block';
-                    // 'flex' (não 'block'): centraliza a mensagem dentro da caixa do gráfico.
-                    document.getElementById('evolucaoVazio').style.display = semDados ? 'flex' : 'none';
+                    // Esconde a CAIXA do gráfico (altura fixa), não só o canvas.
+                    canvas.parentElement.style.display = semDados ? 'none' : '';
+                    document.getElementById('evolucaoVazio').style.display = semDados ? 'block' : 'none';
                     if (semDados) return;
 
                     const isMobile = window.innerWidth < 576;
@@ -928,8 +924,8 @@
                 .catch(() => {
                     if (meu !== reqEvolucao) return;
                     if (evolucaoChart) { evolucaoChart.destroy(); evolucaoChart = null; }
-                    document.getElementById('evolucaoChart').style.display = 'none';
-                    document.getElementById('evolucaoVazio').style.display = 'flex';
+                    document.getElementById('evolucaoChart').parentElement.style.display = 'none';
+                    document.getElementById('evolucaoVazio').style.display = 'block';
                 });
         }
 

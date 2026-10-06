@@ -4,6 +4,7 @@ filtro de período (data inicial/final) adicionado à página.
 """
 from datetime import date, datetime, timedelta
 
+from services.estatistica_service import EstatisticaService
 from models import (db, User, AlunoProfessor, Musculo, ExercicioUsuario,
                      VersaoGlobal, TreinoVersao, RegistroTreino, HistoricoTreino)
 
@@ -223,7 +224,9 @@ class TestFiltroVersaoDesempenhoPorTreino:
         db.session.add(exercicio)
         db.session.commit()
 
-        hoje = datetime.combine(date.today(), datetime.min.time())
+        # "hoje" no fuso do Brasil (o mesmo que o gráfico usa): com date.today()
+        # em UTC, o teste quebrava das 21h às 24h de Brasília.
+        hoje = datetime.combine(EstatisticaService.hoje_brasil(), datetime.min.time())
         ids = {}
         for numero, codigo, nome, fim in ((1, 'A', 'Treino Antigo', date(2020, 6, 1)),
                                           (2, 'B', 'Treino Atual', None)):
@@ -359,6 +362,19 @@ class TestEvolucaoDoVolumeDoAluno:
         # período do gráfico começa igual ao do filtro da página
         assert 'id="periodoEvolucaoInicio" value="2026-01-01"' in html
         assert 'id="periodoEvolucaoFim" value="2026-01-31"' in html
+
+    def test_sem_dados_esconde_a_caixa_do_grafico_e_nao_so_o_canvas(self, client, app):
+        # A caixa (.est-chart-wrap) tem altura fixa; escondendo só o canvas
+        # sobrava um bloco gigante em branco acima do aviso "sem registros".
+        with app.app_context():
+            username, aluno_id, _ = self._montar(app, 'ev0')
+        _login(client, username)
+
+        html = client.get(f'/professor/aluno/{aluno_id}/estatisticas').get_data(as_text=True)
+
+        assert "canvas.parentElement.style.display = semDados ? 'none' : ''" in html
+        assert "canvas.style.display = semDados" not in html
+        assert 'id="evolucaoVazio"' in html
 
     def test_semana_na_versao_ativa_soma_so_o_que_o_aluno_treinou(self, client, app):
         with app.app_context():
