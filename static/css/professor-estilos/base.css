@@ -70,7 +70,7 @@ html {
    Formato de Stories (Instagram/Facebook/WhatsApp): proporção vertical
    9:16, a mesma de 1080 x 1920 px. min-height (e não aspect-ratio) pra o
    pôster CRESCER se o "Sobre mim" for longo, em vez de cortar o texto
-   (o pôster tem overflow: hidden). */
+   (o pôster tem overflow: hidden). */ 
 .pp-poster {
     position: relative;
     display: flex;
