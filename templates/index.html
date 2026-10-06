@@ -602,10 +602,10 @@
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     var DURACAO = 2800;          // ms do efeito inteiro (juntar + explodir + voltar)
-    var PRIMEIRA_MIN = 4000;     // 1ª explosão: entre 4 e 10 s depois de abrir a página
-    var PRIMEIRA_MAX = 10000;
-    var ESPERA_MIN = 8000;       // depois, uma a cada 8-22 s (sorteado a cada vez)
-    var ESPERA_MAX = 22000;
+    var PRIMEIRA_MIN = 10000;     // 1ª explosão: entre 4 e 10 s depois de abrir a página
+    var PRIMEIRA_MAX = 18000;
+    var ESPERA_MIN = 18000;       // depois, uma a cada 8-22 s (sorteado a cada vez)
+    var ESPERA_MAX = 38000;
     var JUNTA = 0.84;            // fração do raio percorrida ao se juntar (1 = exatamente no centro)
     var JUNTA_FORTE = 0.90;      // "compressão" logo antes de explodir
     var ALCANCE = 0.9;           // quanto passa do raio normal ao explodir (0.9 => vai a 1,9x o raio)
@@ -627,12 +627,31 @@
         var centroY = atom.offsetHeight / 2;
         var restantes = dots.length;
 
+       // function terminou() {
+       //     restantes -= 1;
+       //     if (restantes > 0) return;
+       //     rodando = false;
+       //     agendar(ESPERA_MIN, ESPERA_MAX);
+       // }
         function terminou() {
             restantes -= 1;
+        
             if (restantes > 0) return;
+        
+            // A explosão terminou: inverte o sentido de rotação do átomo
+            var animacoes = atom.getAnimations();
+        
+            animacoes.forEach(function (animation) {
+                try {
+                    animation.reverse();
+                } catch (e) {
+                    // Ignora caso o navegador não permita inverter a animação
+                }
+            });
+        
             rodando = false;
             agendar(ESPERA_MIN, ESPERA_MAX);
-        }
+        }        
 
         dots.forEach(function (dot) {
             // Vetor do centro até o dot (posição "de casa").
