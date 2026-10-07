@@ -74,6 +74,8 @@
             await document.fonts.ready;
         }
         await aguardarImagens(poster);
+        // Garante o pôster em 9:16 exato antes de capturar.
+        if (typeof window.ppAjustarPoster === 'function') window.ppAjustarPoster();
 
         var largura = poster.offsetWidth;
         var canvas = await window.htmlToImage.toCanvas(poster, {

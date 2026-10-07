@@ -333,29 +333,39 @@
 }
 
 /* ---------- Chips: cada um sobre uma pincelada do mockup ---------- */
+/* O mockup tinha exatamente 3 pinceladas numa linha. O professor pode ter
+   até mais (ex.: 5): elas quebram em linhas de 3, a última centralizada, e
+   o nome comprido (ex.: "Performance esportiva") vai pra 2 linhas DENTRO da
+   pincelada, em vez de ser cortado. */
 .pp-poster-estilo-5 .pp-chips-fora {
-    flex-wrap: nowrap;
-    gap: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: calc(var(--u) * 2) 0;
     margin: calc(var(--u) * 7) calc(var(--u) * -3) 0;
 }
 
 .pp-poster-estilo-5 .pp-chip {
-    flex: 1 1 auto;
+    flex: 0 0 calc(100% / 3);
+    max-width: calc(100% / 3);
+    min-width: 0;
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;
     height: calc(var(--u) * 32);
-    padding: 0 calc(var(--u) * 10);
+    padding: 0 calc(var(--u) * 15);
     border: 0;
     border-radius: 0;
     color: #231a10;
     background-repeat: no-repeat;
     background-size: 100% 100%;
     font-size: calc(var(--u) * 8.4);
+    line-height: 1.1;
     font-weight: 700;
+    text-align: center;
+    text-wrap: balance;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
 }
 
 .pp-poster-estilo-5 .pp-chip:nth-child(3n + 1) {
