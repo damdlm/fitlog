@@ -241,12 +241,22 @@
     }
     /* Rodapé fixo com o "Solicitar vínculo" (só quando o modal é
        incluído com pp_modal_solicitar_url, ex.: mapa do aluno). */
+    /* Flutuante: sem faixa branca -- o botão fica sobre o rodapé da
+       página, e só ele (e o aviso) captura toques. */
     .epp-preview-footer {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 5;
         justify-content: center;
-        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
-        border-top: 1px solid rgba(0, 0, 0, .08);
-        background: #fff;
+        padding: 0 16px calc(14px + env(safe-area-inset-bottom, 0px));
+        border: 0;
+        background: transparent;
+        pointer-events: none;
     }
+    .epp-preview-footer > * { pointer-events: auto; }
+    .epp-preview-footer form { width: auto !important; }
     .epp-solicitar-aviso {
         display: flex;
         align-items: flex-start;
@@ -267,14 +277,17 @@
         color: #F28C33;
     }
     .epp-solicitar-btn {
-        display: block;
-        width: 100%;
-        padding: 11px 16px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        width: auto;
+        margin: 0 auto;
+        padding: 8px 20px;
         border: none;
         border-radius: 999px;
         background: #F28C33;
         color: #fff;
-        font-size: .95rem;
+        font-size: .85rem;
         font-weight: 600;
         box-shadow: 0 4px 12px rgba(242, 140, 51, .3);
         transition: background-color .15s ease, transform .15s ease;
@@ -289,11 +302,6 @@
     .epp-solicitar-btn:disabled {
         opacity: .7;
         cursor: wait;
-    }
-    /* O rodapé ocupa ~72px: tira isso da altura do iframe pra não criar
-       uma segunda barra de rolagem dentro do modal. */
-    .epp-com-rodape #ppVerPaginaFrame {
-        height: calc(78vh - 72px);
     }
     @media (max-width: 575.98px) {
         .epp-preview-content { border-radius: 0; }
@@ -312,10 +320,6 @@
             right: 62px;
         }
         #ppVerPaginaFrame { height: 100vh; }
-        .epp-com-rodape #ppVerPaginaFrame {
-            height: calc(100vh - 72px - env(safe-area-inset-bottom, 0px));
-            height: calc(100dvh - 72px - env(safe-area-inset-bottom, 0px));
-        }
     }
 </style>
 
