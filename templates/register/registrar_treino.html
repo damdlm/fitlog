@@ -3741,7 +3741,7 @@
 {% endif %}
 
 {% if not erro_versao and not exercicios %}
-<div class="empty-state mb-4 {% if not treino_selecionado %}d-none d-md-block{% endif %}">
+<div class="empty-state mb-4 d-none d-md-block">
     <div class="empty-icon"><i class="bi bi-clipboard2-pulse"></i></div>
     <h5>{% if treino_selecionado %}Nenhum exercício encontrado{% else %}Pronto para treinar?{% endif %}</h5>
     <p>
@@ -3752,6 +3752,75 @@
         {% endif %}
     </p>
 </div>
+{% endif %}
+
+{% if not erro_versao and not exercicios and treino_selecionado %}
+<!-- Mobile: treino sem exercicios -> alerta centralizado na pagina (no desktop segue o empty-state acima) -->
+<div class="rt-alerta-vazio d-md-none" id="rtAlertaVazio" role="alertdialog" aria-modal="true" aria-labelledby="rtAlertaVazioTitulo">
+    <div class="rt-alerta-vazio-card">
+        <div class="rt-alerta-vazio-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        <h5 id="rtAlertaVazioTitulo">Treino sem exercícios</h5>
+        <p>Este treino não possui exercícios cadastrados para a data selecionada.</p>
+        <button type="button" class="rt-alerta-vazio-btn" id="rtAlertaVazioOk">Entendi</button>
+    </div>
+</div>
+<style>
+    .rt-alerta-vazio {
+        position: fixed;
+        inset: 0;
+        z-index: 1085;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(0, 0, 0, 0.45);
+    }
+    .rt-alerta-vazio.d-none-js { display: none !important; }
+    .rt-alerta-vazio-card {
+        width: 100%;
+        max-width: 340px;
+        padding: 24px 20px 20px;
+        text-align: center;
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    }
+    .rt-alerta-vazio-icon {
+        font-size: 2.2rem;
+        line-height: 1;
+        color: var(--primary-orange, #F28C33);
+        margin-bottom: 10px;
+    }
+    .rt-alerta-vazio-card h5 {
+        margin: 0 0 8px;
+        font-weight: 700;
+        color: #2b2b2b;
+    }
+    .rt-alerta-vazio-card p {
+        margin: 0 0 18px;
+        color: #6b6b6b;
+        font-size: 0.95rem;
+    }
+    .rt-alerta-vazio-btn {
+        width: 100%;
+        padding: 10px 16px;
+        border: 0;
+        border-radius: 12px;
+        font-weight: 600;
+        color: #fff;
+        background: var(--primary-orange, #F28C33);
+    }
+</style>
+<script>
+    (function () {
+        var alerta = document.getElementById('rtAlertaVazio');
+        var ok = document.getElementById('rtAlertaVazioOk');
+        if (!alerta || !ok) return;
+        function fechar() { alerta.classList.add('d-none-js'); }
+        ok.addEventListener('click', fechar);
+        alerta.addEventListener('click', function (e) { if (e.target === alerta) fechar(); });
+    })();
+</script>
 {% endif %}
 
 {% if exercicios %}
