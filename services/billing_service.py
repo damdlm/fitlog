@@ -1484,6 +1484,25 @@ class BillingService:
                     tipo_evento, assinatura.id, assinatura.periodo_atual_fim,
                     (payment or {}).get('id'), assinatura.gateway_ultimo_pagamento_confirmado_id,
                 )
+            elif assinatura.status in ('blocked', 'canceled'):
+                # Evento de atraso (cobrança antiga, reenvio ou outra cobrança
+                # do mesmo cliente) NÃO reabre carência de quem já está
+                # bloqueado ou cancelado: antes ele voltava a 'past_due' com
+                # 3-15 dias de acesso novos a cada evento, sem pagar nada.
+                # O acesso só volta com pagamento confirmado (PAYMENT_RECEIVED
+                # / PAYMENT_CONFIRMED), que reativa a assinatura normalmente.
+                logger.info(
+                    'Evento %s ignorado p/ assinatura %s: já está %s e atraso não reabre carência (payment=%s)',
+                    tipo_evento, assinatura.id, assinatura.status, (payment or {}).get('id'),
+                )
+            elif assinatura.status == 'past_due' and assinatura.carencia_termina_em is not None:
+                # Já em atraso, com a carência correndo: o evento só confirma
+                # o atraso. Não estende o prazo (idempotente se o mesmo evento
+                # ou outra cobrança vencida chegar de novo).
+                logger.info(
+                    'Evento %s ignorado p/ assinatura %s: já está em atraso, carência mantida até %s (payment=%s)',
+                    tipo_evento, assinatura.id, assinatura.carencia_termina_em, (payment or {}).get('id'),
+                )
             else:
                 BillingService._iniciar_atraso(assinatura, agora)
         elif tipo_evento in EVENTOS_CANCELAMENTO:
