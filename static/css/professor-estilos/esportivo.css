@@ -27,8 +27,11 @@
     src: url('../../fonts/professor/inter-latin-wght-normal.woff2') format('woff2');
 }
 
+/* Sem fundo próprio na página: o fundo é o mesmo em todos os estilos
+   (antes o Esportivo pintava a página inteira de preto e, no modal, o
+   cartão sumia dentro de um bloco escuro maior que o dos outros). */
 .pp-page-estilo-5 {
-    background: #020304;
+    background: transparent;
 }
 
 /* O container define a unidade u (cqw). Sem suporte a container
