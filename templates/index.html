@@ -126,6 +126,20 @@
         flex: 1 1 auto;
         min-height: 36vh;
     }
+    /* Mobile: dois "planos" independentes. O plano do átomo (.admin-hero)
+       captura o gesto sozinho (sem rolagem da página competindo e
+       cancelando o toque); o plano das dicas fica por cima, com a sua
+       própria área de toque. Um gesto que começa em um não mexe no outro. */
+    @media (max-width: 991.98px) {
+        .home-stage .admin-hero {
+            touch-action: none;
+            z-index: 1;
+        }
+        .home-stage .home-tips {
+            position: relative;
+            z-index: 2;
+        }
+    }
 
     /* Dicas: sem card nem fundo -- só ícone + título e a frase logo abaixo. */
     .home-tips {
@@ -442,6 +456,13 @@
     // nas dicas e sai delas; o closest() cobre o toque (cujo alvo permanece
     // nas dicas durante todo o gesto).
     let gestoNasDicas = false;
+    // Origem do gesto de toque: só vale se começou no plano do átomo.
+    let gestoNoAtomo = false;
+
+    function veioDoAtomo(event) {
+        return !!(event.target && event.target.closest &&
+                  event.target.closest('.admin-hero'));
+    }
 
     function veioDasDicas(event) {
         return !!(event.target && event.target.closest &&
@@ -450,6 +471,7 @@
 
     window.addEventListener('pointerdown', function (event) {
         gestoNasDicas = veioDasDicas(event);
+        gestoNoAtomo = !gestoNasDicas && veioDoAtomo(event);
     }, { passive: true });
 
     // Impede o arrasto nativo do texto das dicas.
@@ -462,6 +484,7 @@
     // arrasto de texto, e o gesto continua nas dicas.
     function encerrarGestoNasDicas() {
         gestoNasDicas = false;
+        gestoNoAtomo = false;
     }
 
     ['pointerup', 'mouseup', 'touchend', 'dragend', 'blur'].forEach(function (nome) {
@@ -470,6 +493,11 @@
 
     function handlePointerMove(event) {
         if (gestoNasDicas || veioDasDicas(event)) return;
+
+        // Toque: o átomo só acompanha gestos que começaram nele (nada
+        // que comece nas dicas ou fora do átomo o move). Mouse segue
+        // reagindo à página inteira, como antes.
+        if (event.pointerType === 'touch' && !gestoNoAtomo) return;
 
         const rect = parallax.parentElement.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
