@@ -138,6 +138,13 @@
         .home-stage .home-tips {
             position: relative;
             z-index: 2;
+            /* Arrastar nas dicas não rola nem "puxa" a página (o que
+               deslocava o átomo junto, por estarem na mesma folha). */
+            touch-action: none;
+        }
+        html:has(.home-stage),
+        body:has(.home-stage) {
+            overscroll-behavior: none;
         }
     }
 
@@ -514,9 +521,14 @@
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
 
     function soltarPonteiro() {
+        const tinhaGestoNoAtomo = pointerActive;
         pointerActive = false;
 
-        if (!gyroActive && !gestoNasDicas) {
+        // Soltar o dedo/mouse só mexe no átomo se o gesto era dele. Um
+        // toque nas dicas não pode nem fazê-lo voltar ao centro.
+        if (!tinhaGestoNoAtomo) return;
+
+        if (!gyroActive) {
             resetTarget();
         }
     }
@@ -542,8 +554,9 @@
         const gyroX = clamp(event.gamma, -40, 40) / 40;
         const gyroY = clamp((event.beta - 15) / 45, -1, 1);
 
-        // Se o usuário estiver tocando/arrastando, o toque tem prioridade.
-        if (!pointerActive && !gestoNasDicas) {
+        // Se o usuário estiver arrastando o átomo, o toque tem prioridade.
+        // Tocar nas dicas não interfere: o giroscópio segue o celular.
+        if (!pointerActive) {
             setTarget(gyroX, gyroY);
         }
     }
