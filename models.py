@@ -517,6 +517,23 @@ class ConfiguracaoApp(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     cobranca_ativa = db.Column(db.Boolean, nullable=False, default=True)
     tela_assinatura_ativa = db.Column(db.Boolean, nullable=False, default=True)
+
+    # Plano padrão: versão de treino (de uma conta admin) usada como modelo
+    # para todo aluno que se cadastra sozinho, sem professor. A estrutura
+    # (treinos + exercícios) é COPIADA para a conta do aluno no cadastro --
+    # depois disso a cópia é só dele e ele edita à vontade, sem afetar o
+    # modelo nem os outros alunos. Nulo = sem plano padrão (aluno novo
+    # começa sem versão, como sempre foi). ondelete='SET NULL': se o admin
+    # excluir a versão modelo, o recurso apenas desliga, sem quebrar nada.
+    # Ver services/configuracao_service.py e
+    # VersaoService.aplicar_plano_padrao_ao_aluno.
+    versao_padrao_id = db.Column(
+        db.Integer,
+        db.ForeignKey('versoes_globais.id', ondelete='SET NULL'),
+        nullable=True,
+    )
+    versao_padrao = db.relationship('VersaoGlobal', foreign_keys=[versao_padrao_id])
+
     atualizado_em = db.Column(
         db.DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

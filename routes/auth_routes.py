@@ -11,6 +11,7 @@ from utils.genero_utils import resolver_genero
 from utils.mensagens_boas_vindas import gerar_mensagem_boas_vindas
 from services.base_service import CacheService
 from services.billing_service import BillingService
+from services.versao_service import VersaoService
 from services.analytics_service import AnalyticsService
 from services.email_verificacao_service import EmailVerificacaoService
 
@@ -418,6 +419,16 @@ def register():
             # do formulário vira dois registros (Termos + Política),
             # dentro desta mesma transação.
             PrivacidadeService.registrar_aceite_cadastro(user.id, commit=False)
+
+            # Aluno que se cadastra sozinho (sem professor) já começa com
+            # uma cópia do plano padrão definido pelo admin, se houver --
+            # ele edita à vontade depois. Só aqui no /register: alunos
+            # criados por professor (professor_routes.novo_aluno) não
+            # passam por este ponto e continuam sem versão. Nunca levanta
+            # exceção e nunca confirma nada por conta própria (SAVEPOINT):
+            # entra no mesmo commit do cadastro.
+            if user.tipo_usuario == 'aluno':
+                VersaoService.aplicar_plano_padrao_ao_aluno(user.id)
 
             db.session.commit()
         except Exception:

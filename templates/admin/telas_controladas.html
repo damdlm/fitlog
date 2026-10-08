@@ -75,6 +75,64 @@
     </div>
 </div>
 
+<div class="card mb-4 {% if versao_padrao_id %}border-success{% endif %}">
+    <div class="card-body">
+        <h5 class="card-title mb-1">
+            <i class="bi bi-clipboard-check me-2" style="color: #F28C33;"></i>
+            Plano padrão para alunos novos
+        </h5>
+        <p class="text-muted">
+            Todo aluno que se cadastra sozinho (sem ser cadastrado por um professor) já entra com uma
+            <strong>cópia</strong> da versão escolhida aqui: treinos e exercícios prontos, que ele pode
+            editar depois sem afetar ninguém. Mudanças feitas nesta versão valem só para os próximos
+            cadastros -- quem já recebeu a cópia não é alterado.<br>
+            Para montar ou ajustar o modelo, use a sua própria conta em
+            <a href="{{ url_for('aluno.cadastrar_treinos') }}">Cadastrar Treinos</a>
+            e depois escolha a versão abaixo.
+        </p>
+        {% if versoes_admin %}
+        <form method="POST" action="{{ url_for('admin.telas_controladas') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="acao" value="plano_padrao">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-8">
+                    <label class="form-label" for="versao-padrao-id">Versão modelo</label>
+                    <select class="form-select" name="versao_padrao_id" id="versao-padrao-id">
+                        <option value="" {% if not versao_padrao_id %}selected{% endif %}>Nenhuma (aluno novo começa sem versão)</option>
+                        {% for v in versoes_admin %}
+                        <option value="{{ v.id }}"
+                                {% if v.id == versao_padrao_id %}selected{% endif %}
+                                {% if not v.utilizavel and v.id != versao_padrao_id %}disabled{% endif %}>
+                            v{{ v.numero }} -- {{ v.descricao }}
+                            ({{ v.n_treinos }} treino(s), {{ v.n_exercicios }} exercício(s){% if v.ativa %}, ativa{% else %}, finalizada{% endif %})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check2-circle me-1"></i>Salvar plano padrão
+                    </button>
+                </div>
+            </div>
+        </form>
+        {% if versao_padrao_id %}
+        <p class="mt-3 mb-0 text-success">
+            <i class="bi bi-check-circle me-1"></i>
+            Plano padrão <strong>ligado</strong> --
+            <a href="{{ url_for('aluno.ver_versao', versao_id=versao_padrao_id) }}">ver/editar a versão modelo</a>.
+        </p>
+        {% endif %}
+        {% else %}
+        <div class="alert alert-info mb-0">
+            Você ainda não tem nenhuma versão na sua conta.
+            <a href="{{ url_for('aluno.cadastrar_treinos') }}">Crie uma em Cadastrar Treinos</a>,
+            adicione treinos com exercícios e volte aqui para escolhê-la.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
 <div class="card mb-4">
     <div class="card-body">
         <h5 class="card-title mb-1">

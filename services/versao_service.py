@@ -1176,6 +1176,131 @@ class VersaoService(BaseService):
         return copia.id
 
     @staticmethod
+    def aplicar_plano_padrao_ao_aluno(aluno_id):
+        """Dá ao aluno recém-cadastrado uma cópia do PLANO PADRÃO definido
+        pelo admin (ConfiguracaoApp.versao_padrao_id): uma nova versão
+        ATIVA com os mesmos treinos, exercícios e observações do modelo.
+
+        A cópia é totalmente independente do modelo: depois dela o aluno
+        edita treinos/exercícios pelas telas de sempre ("Cadastrar
+        Treinos"), sem afetar o modelo nem outros alunos, e mudanças
+        futuras no modelo NÃO chegam a quem já recebeu a cópia.
+        - exercícios do catálogo (exercicio_base_id) são reaproveitados
+          direto, por serem compartilhados;
+        - exercícios personalizados do admin (exercicio_usuario_id) viram
+          exercícios próprios do aluno, SEM vínculo com o original
+          (copiado_de_* fica vazio -- não é professor, então nenhuma
+          propagação de edição se aplica).
+
+        Feita para rodar DENTRO da transação do cadastro: usa flush +
+        SAVEPOINT, nunca commit -- quem chama (auth_routes.register)
+        confirma tudo de uma vez. NUNCA levanta exceção: se não houver
+        plano padrão configurado, ou qualquer coisa falhar, o cadastro
+        segue normalmente e o aluno só começa sem versão (como sempre
+        foi). Retorna a nova VersaoGlobal, ou None se nada foi aplicado.
+        """
+        from models import ExercicioUsuario
+        from services.configuracao_service import ConfiguracaoService
+
+        try:
+            versao_padrao_id = ConfiguracaoService.get_versao_padrao_id()
+            if not versao_padrao_id:
+                return None
+
+            origem = VersaoGlobal.query.get(versao_padrao_id)
+            if not origem:
+                return None
+
+            # Nunca cria uma segunda versão ativa por cima de uma existente
+            # (mesma regra de create_livre/clonar_versao*).
+            if VersaoService.get_ativa(user_id=aluno_id):
+                return None
+
+            treinos_origem = TreinoVersao.query.filter_by(versao_id=origem.id) \
+                .options(joinedload(TreinoVersao.exercicios)) \
+                .order_by(TreinoVersao.ordem).all()
+            if not any(tv.exercicios for tv in treinos_origem):
+                logger.warning(
+                    f"Plano padrão (versão {origem.id}) sem exercícios -- "
+                    f"aluno {aluno_id} começa sem versão"
+                )
+                return None
+
+            with db.session.begin_nested():
+                ultima_versao = db.session.query(func.max(VersaoGlobal.numero_versao)) \
+                    .filter_by(user_id=aluno_id).scalar() or 0
+
+                nova_versao = VersaoGlobal(
+                    numero_versao=ultima_versao + 1,
+                    descricao=origem.descricao[:200],
+                    divisao='LIVRE',
+                    data_inicio=datetime.now(timezone.utc).date(),
+                    data_fim=None,
+                    user_id=aluno_id,
+                    validade_meses=origem.validade_meses,
+                )
+                db.session.add(nova_versao)
+                db.session.flush()
+
+                # Mesmo exercício do admin em mais de um treino -> uma
+                # única cópia do aluno, reaproveitada.
+                copias_do_aluno = {}
+
+                def _exercicio_do_aluno(exercicio_admin_id):
+                    if exercicio_admin_id in copias_do_aluno:
+                        return copias_do_aluno[exercicio_admin_id]
+                    ex_admin = ExercicioUsuario.query.get(exercicio_admin_id)
+                    if not ex_admin or ex_admin.usuario_id != origem.user_id:
+                        copias_do_aluno[exercicio_admin_id] = None
+                        return None
+                    copia = ExercicioUsuario(
+                        usuario_id=aluno_id,
+                        nome=ex_admin.nome,
+                        descricao=ex_admin.descricao,
+                        musculo_id=ex_admin.musculo_id,
+                        observacoes=ex_admin.observacoes,
+                    )
+                    db.session.add(copia)
+                    db.session.flush()
+                    copias_do_aluno[exercicio_admin_id] = copia.id
+                    return copia.id
+
+                for tv in treinos_origem:
+                    novo_tv = TreinoVersao(
+                        versao_id=nova_versao.id,
+                        codigo=tv.codigo,
+                        nome_treino=tv.nome_treino,
+                        descricao_treino=tv.descricao_treino,
+                        ordem=tv.ordem,
+                    )
+                    db.session.add(novo_tv)
+                    db.session.flush()
+                    for ve in tv.exercicios:
+                        exercicio_usuario_id_aluno = None
+                        if ve.exercicio_usuario_id is not None:
+                            exercicio_usuario_id_aluno = _exercicio_do_aluno(ve.exercicio_usuario_id)
+                            if exercicio_usuario_id_aluno is None:
+                                continue  # exercício de origem sumiu -- pula só este item
+                        db.session.add(VersaoExercicio(
+                            treino_versao_id=novo_tv.id,
+                            exercicio_usuario_id=exercicio_usuario_id_aluno,
+                            exercicio_base_id=ve.exercicio_base_id,
+                            ordem=ve.ordem,
+                            observacao=ve.observacao,
+                        ))
+
+            logger.info(
+                f"Plano padrão (versão {origem.id}) aplicado ao aluno {aluno_id} "
+                f"como versão {nova_versao.id}"
+            )
+            return nova_versao
+        except Exception:
+            # begin_nested() já reverteu o SAVEPOINT; o resto da transação
+            # do cadastro (usuário, trial, aceite) continua intacto.
+            logger.exception(f"Erro ao aplicar plano padrão ao aluno {aluno_id}")
+            return None
+
+    @staticmethod
     def excluir_versao(versao_id, user_id=None):
         """Exclui uma versão inteira (e seus treinos/exercícios, via
         cascade). Só é permitido para versão já FINALIZADA (a versão

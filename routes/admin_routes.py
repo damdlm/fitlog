@@ -464,6 +464,25 @@ def telas_controladas():
                 flash('Tela de assinatura desativada -- escondida do menu e bloqueada pra quem não é admin.', 'warning')
             return redirect(url_for('admin.telas_controladas'))
 
+        if acao == "plano_padrao":
+            # versao_padrao_id vazio (opção "Nenhum") desliga o recurso.
+            bruto = (request.form.get("versao_padrao_id") or "").strip()
+            try:
+                versao_id = int(bruto) if bruto else None
+            except ValueError:
+                flash('Versão inválida.', 'danger')
+                return redirect(url_for('admin.telas_controladas'))
+            try:
+                ConfiguracaoService.set_versao_padrao(versao_id, admin_id=current_user.id)
+            except ValueError as e:
+                flash(str(e), 'danger')
+            else:
+                if versao_id is None:
+                    flash('Plano padrão desligado -- alunos novos voltam a começar sem versão.', 'warning')
+                else:
+                    flash('Plano padrão definido! Todo aluno novo (sem professor) receberá uma cópia dele.', 'success')
+            return redirect(url_for('admin.telas_controladas'))
+
         if acao == "telas_professor":
             chaves_marcadas = set(request.form.getlist("bloqueia_professor"))
             TelaControladaProfessorService.atualizar(chaves_marcadas)
@@ -481,6 +500,25 @@ def telas_controladas():
     planos = PlanoService.listar_editaveis()
     cobranca_ativa = ConfiguracaoService.cobranca_ativa()
     tela_assinatura_ativa = ConfiguracaoService.tela_assinatura_ativa()
+
+    # Plano padrão: candidatas são as versões do PRÓPRIO admin (é nelas
+    # que ele monta os treinos, pela tela "Cadastrar Treinos" de sempre),
+    # com contagem de treinos/exercícios pra deixar claro quais já servem.
+    versao_padrao_id = ConfiguracaoService.get_versao_padrao_id()
+    versoes_admin = []
+    for v in VersaoService.get_all(user_id=current_user.id):
+        treinos_v = TreinoVersao.query.filter_by(versao_id=v.id).all()
+        n_exercicios = sum(len(t.exercicios) for t in treinos_v)
+        versoes_admin.append({
+            'id': v.id,
+            'numero': v.numero_versao,
+            'descricao': v.descricao,
+            'ativa': v.data_fim is None,
+            'n_treinos': len(treinos_v),
+            'n_exercicios': n_exercicios,
+            'utilizavel': n_exercicios > 0,
+        })
+
     return render_template(
         "admin/telas_controladas.html",
         telas=telas,
@@ -488,6 +526,8 @@ def telas_controladas():
         planos=planos,
         cobranca_ativa=cobranca_ativa,
         tela_assinatura_ativa=tela_assinatura_ativa,
+        versao_padrao_id=versao_padrao_id,
+        versoes_admin=versoes_admin,
     )
 
 
