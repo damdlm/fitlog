@@ -79,16 +79,10 @@
     .tip-slide-item {
         width: 50%;
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 0.15rem 0;
-    }
-    .tip-slide-row {
-        display: flex;
         align-items: center;
         justify-content: center;
         gap: 12px;
+        padding: 0.15rem 0;
     }
 
     .item-icon {
@@ -143,15 +137,8 @@
         position: relative;
         z-index: 2;
     }
-    .home-stage .dash-tip-slide,
-    .home-stage .tip-wrapper,
-    .home-stage .tip-slide-item,
-    .home-stage .tip-text {
-        touch-action: none;
-        -webkit-user-select: none;
-        user-select: none;
-        -webkit-user-drag: none;
-    }
+    /* As dicas ficam ancoradas no rodapé do palco, fora do fluxo, com a
+       mesma aparência de antes. */
     .home-stage .home-tips {
         position: absolute;
         left: 0;
@@ -391,30 +378,20 @@
 
 {% if not current_user.is_admin %}
 <section class="home-tips" aria-label="Dicas de treino">
-    <!-- Slide de dicas com efeito lateral. O título faz parte de cada
-         item: título e frase andam juntos (arrasto/troca), como uma
-         peça só, independente do átomo. -->
+    <h5 class="home-tips-title">
+        <span class="dash-card-icon"><i class="bi bi-lightbulb"></i></span>
+        Dicas de treino
+    </h5>
+    <!-- Slide de dicas com efeito lateral -->
     <div class="dash-tip-slide" id="tipSlide">
         <div class="tip-wrapper" id="tipWrapper">
             <div class="tip-slide-item">
-                <h5 class="home-tips-title">
-                    <span class="dash-card-icon"><i class="bi bi-lightbulb"></i></span>
-                    Dicas de treino
-                </h5>
-                <div class="tip-slide-row">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span class="tip-text" id="tipText1">Carregando...</span>
-                </div>
+                <span class="item-icon"><i class="bi bi-check-lg"></i></span>
+                <span class="tip-text" id="tipText1">Carregando...</span>
             </div>
             <div class="tip-slide-item">
-                <h5 class="home-tips-title">
-                    <span class="dash-card-icon"><i class="bi bi-lightbulb"></i></span>
-                    Dicas de treino
-                </h5>
-                <div class="tip-slide-row">
-                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                    <span class="tip-text" id="tipText2">Carregando...</span>
-                </div>
+                <span class="item-icon"><i class="bi bi-check-lg"></i></span>
+                <span class="tip-text" id="tipText2">Carregando...</span>
             </div>
         </div>
     </div>
@@ -873,82 +850,8 @@
         currentIndex = 1 - currentIndex; // alterna
     }
 
-    // Troca a cada 7 segundos
-    let timerDicas = setInterval(proximaDica, 7000);
-
-    // Arrastar as dicas: o dedo/mouse leva o slide para o lado e, ao
-    // soltar, ele encaixa na outra dica (ou volta). É independente do
-    // átomo: o gesto é capturado pelo próprio slide.
-    (function () {
-        const slide = document.getElementById('tipSlide');
-        if (!slide || !wrapper) return;
-
-        let ativo = false;
-        let pointerId = null;
-        let inicioX = 0;
-        let inicioY = 0;
-        let deslocamento = 0;
-        let maiorMovimento = 0;
-
-        function larguraSlide() {
-            return slide.offsetWidth || 1;
-        }
-
-        slide.addEventListener('pointerdown', function (event) {
-            ativo = true;
-            pointerId = event.pointerId;
-            inicioX = event.clientX;
-            inicioY = event.clientY;
-            deslocamento = 0;
-            maiorMovimento = 0;
-            wrapper.style.transition = 'none';
-            clearInterval(timerDicas);
-            try { slide.setPointerCapture(pointerId); } catch (e) { /* ok */ }
-        });
-
-        slide.addEventListener('pointermove', function (event) {
-            if (!ativo || event.pointerId !== pointerId) return;
-
-            const largura = larguraSlide();
-            const base = currentIndex === 0 ? 0 : -largura;
-            deslocamento = event.clientX - inicioX;
-            const dy = event.clientY - inicioY;
-            maiorMovimento = Math.max(maiorMovimento, Math.abs(deslocamento), Math.abs(dy));
-
-            const posicao = Math.max(-largura, Math.min(0, base + deslocamento));
-            // Movimento vertical com resistência: o conteúdo "acompanha" o
-            // dedo nos dois eixos e volta ao soltar.
-            const y = Math.max(-14, Math.min(14, dy * 0.3));
-            wrapper.style.transform = 'translate(' + posicao + 'px, ' + y + 'px)';
-        });
-
-        function soltar(event) {
-            if (!ativo || (event && event.pointerId !== pointerId)) return;
-            ativo = false;
-
-            const limite = Math.min(40, larguraSlide() / 6);
-
-            wrapper.style.transition = '';
-
-            if (maiorMovimento < 6) {
-                // Toque simples: passa para a outra dica.
-                currentIndex = currentIndex === 0 ? 1 : 0;
-            } else if (currentIndex === 0 && deslocamento < -limite) {
-                currentIndex = 1;
-            } else if (currentIndex === 1 && deslocamento > limite) {
-                currentIndex = 0;
-            }
-
-            wrapper.style.transform = currentIndex === 0 ? 'translateX(0)' : 'translateX(-50%)';
-
-            clearInterval(timerDicas);
-            timerDicas = setInterval(proximaDica, 7000);
-        }
-
-        slide.addEventListener('dragstart', function (e) { e.preventDefault(); });
-        slide.addEventListener('pointerup', soltar);
-        slide.addEventListener('pointercancel', soltar);
-    })();
+    // Troca a cada 5 segundos
+    setInterval(proximaDica, 7000);
 </script>
 {% endif %}
 {% endblock %}
