@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<!-- Textura de cimento queimado (estilo Disciplina): nuvens claras e escuras,
+     grão fino e poros. Tudo em preto/branco com transparência, por cima do
+     degradê cinza do pôster. stitchTiles deixa o ladrilho sem emenda. -->
+<filter id="nuvem-clara" x="0" y="0" width="100%" height="100%">
+<feTurbulence type="fractalNoise" baseFrequency=".007 .010" numOctaves="3" seed="12" stitchTiles="stitch"/>
+<feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.5 -.62"/>
+</filter>
+<filter id="nuvem-escura" x="0" y="0" width="100%" height="100%">
+<feTurbulence type="fractalNoise" baseFrequency=".011 .008" numOctaves="3" seed="27" stitchTiles="stitch"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1.5 -.60"/>
+</filter>
+<filter id="grao" x="0" y="0" width="100%" height="100%">
+<feTurbulence type="fractalNoise" baseFrequency=".62" numOctaves="2" seed="5" stitchTiles="stitch"/>
+<feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.2 -.50"/>
+</filter>
+<filter id="poros" x="0" y="0" width="100%" height="100%">
+<feTurbulence type="fractalNoise" baseFrequency=".95" numOctaves="1" seed="31" stitchTiles="stitch"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 3.2 -1.85"/>
+</filter>
+<rect width="512" height="512" filter="url(#nuvem-clara)" opacity=".30"/>
+<rect width="512" height="512" filter="url(#nuvem-escura)" opacity=".34"/>
+<rect width="512" height="512" filter="url(#grao)" opacity=".26"/>
+<rect width="512" height="512" filter="url(#poros)" opacity=".55"/>
+</svg>
