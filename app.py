@@ -674,6 +674,18 @@ def create_app(config_class=None):
             "User-agent: *",
             "Allow: /",
             "",
+            # Página pública do professor e a foto dela (og:image) precisam
+            # ficar liberadas: "Disallow: /professor" é por prefixo e
+            # pegava tanto /professor/pagina/<slug> quanto
+            # /professores-media/..., então os robôs de prévia de link
+            # (WhatsApp, Facebook, Telegram, X...) que respeitam o
+            # robots.txt não liam a página nem baixavam a foto. Os Allow
+            # vêm ANTES do Disallow porque alguns crawlers usam a primeira
+            # regra que casa; os que usam a mais específica também acertam.
+            "Disallow: /professor/pagina/editar",
+            "Disallow: /professor/pagina/foto",
+            "Allow: /professor/pagina/",
+            "Allow: /professores-media/",
             "Disallow: /admin",
             "Disallow: /professor",
             "Disallow: /aluno",
