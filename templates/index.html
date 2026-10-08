@@ -79,10 +79,16 @@
     .tip-slide-item {
         width: 50%;
         display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0.15rem 0;
+    }
+    .tip-slide-row {
+        display: flex;
         align-items: center;
         justify-content: center;
         gap: 12px;
-        padding: 0.15rem 0;
     }
 
     .item-icon {
@@ -385,20 +391,30 @@
 
 {% if not current_user.is_admin %}
 <section class="home-tips" aria-label="Dicas de treino">
-    <h5 class="home-tips-title">
-        <span class="dash-card-icon"><i class="bi bi-lightbulb"></i></span>
-        Dicas de treino
-    </h5>
-    <!-- Slide de dicas com efeito lateral -->
+    <!-- Slide de dicas com efeito lateral. O título faz parte de cada
+         item: título e frase andam juntos (arrasto/troca), como uma
+         peça só, independente do átomo. -->
     <div class="dash-tip-slide" id="tipSlide">
         <div class="tip-wrapper" id="tipWrapper">
             <div class="tip-slide-item">
-                <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                <span class="tip-text" id="tipText1">Carregando...</span>
+                <h5 class="home-tips-title">
+                    <span class="dash-card-icon"><i class="bi bi-lightbulb"></i></span>
+                    Dicas de treino
+                </h5>
+                <div class="tip-slide-row">
+                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
+                    <span class="tip-text" id="tipText1">Carregando...</span>
+                </div>
             </div>
             <div class="tip-slide-item">
-                <span class="item-icon"><i class="bi bi-check-lg"></i></span>
-                <span class="tip-text" id="tipText2">Carregando...</span>
+                <h5 class="home-tips-title">
+                    <span class="dash-card-icon"><i class="bi bi-lightbulb"></i></span>
+                    Dicas de treino
+                </h5>
+                <div class="tip-slide-row">
+                    <span class="item-icon"><i class="bi bi-check-lg"></i></span>
+                    <span class="tip-text" id="tipText2">Carregando...</span>
+                </div>
             </div>
         </div>
     </div>
