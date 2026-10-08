@@ -32,6 +32,7 @@ from sqlalchemy.exc import IntegrityError
 
 from models import db, AlunoProfessor, Assinatura, EventoWebhookAsaas, PagamentoRecebido, Plano, User
 from services.analytics_service import AnalyticsService
+from utils.format_utils import FUSO_BRASIL
 
 logger = logging.getLogger(__name__)
 
@@ -83,14 +84,14 @@ ASAAS_BASE_URL_PRODUCAO = "https://api.asaas.com/v3"
 # não há sincronização automática entre os dois.
 # CODIGO_SERVICO_MUNICIPAL_NFSE é o código de serviço da PREFEITURA de
 # Jaraguá do Sul/SC (não o NBS, nem o Código de Tributação Nacional --
-# são tabelas independentes, sem fórmula de conversão entre elas,
-# confirmado empiricamente: nenhuma variação de "01.05" funcionou,
-# nem mesmo o próprio Código de Tributação Nacional da conta,
-# "010501", que a Asaas usa como fallback quando nada é enviado).
-# CONTINUA SEM CONFIRMAÇÃO. Só sai de alguém com login em
-# nfse.gov.br (ou no sistema da prefeitura) buscando o serviço por
-# descrição -- ver histórico completo de tentativas no comentário
-# dentro de _agendar_nota_fiscal.
+# são tabelas independentes, sem fórmula de conversão entre elas).
+# '01.05.01' é o valor CONFIRMADO em produção: foi testado e a nota foi
+# autorizada (informado pelo responsável pelo projeto). Valores já
+# rejeitados estão listados no histórico dentro de
+# _agendar_nota_fiscal. Se um dia a prefeitura mudar a tabela e o
+# Asaas voltar a recusar o código, o valor certo só sai de alguém com
+# login em nfse.gov.br (ou no sistema da prefeitura) buscando o serviço
+# por descrição.
 CODIGO_SERVICO_MUNICIPAL_NFSE = '01.05.01'
 DESCRICAO_SERVICO_NFSE = (
     'Licenciamento de uso de aplicativo de gestão e acompanhamento '
@@ -98,11 +99,24 @@ DESCRICAO_SERVICO_NFSE = (
 )
 
 # Ver o aviso completo dentro de _agendar_nota_fiscal. True = emissão
-# automática pausada (só loga, não chama a Asaas) até
-# CODIGO_SERVICO_MUNICIPAL_NFSE ser confirmado de verdade contra o
-# sistema da prefeitura -- 5 tentativas erradas em produção até agora.
+# automática pausada (só loga, não chama a Asaas). Fica False com o
+# código de serviço atual confirmado; virar True se o código voltar a
+# ser recusado, até ele ser reconfirmado contra o sistema da prefeitura.
 PAUSAR_EMISSAO_AUTOMATICA_NFSE = False
 
+
+def _data_competencia_nfse(agora: datetime | None = None) -> str:
+    """Data (YYYY-MM-DD) usada como effectiveDate/competência da NFS-e,
+    no fuso America/Sao_Paulo -- o mesmo da empresa (Jaraguá do Sul/SC).
+
+    O servidor roda em UTC: usar a data UTC fazia um pagamento
+    confirmado depois das 21h (horário de Brasília) ser datado no dia
+    SEGUINTE e, no último dia do mês, cair na competência do mês
+    seguinte. `agora` só existe pra teste; sem fuso é tratado como UTC."""
+    agora = agora or datetime.now(timezone.utc)
+    if agora.tzinfo is None:
+        agora = agora.replace(tzinfo=timezone.utc)
+    return agora.astimezone(FUSO_BRASIL).strftime('%Y-%m-%d')
 
 
 def _proximo_vencimento_mensal(referencia: datetime) -> datetime:
@@ -1287,6 +1301,22 @@ class BillingService:
             logger.info('Webhook Asaas %s já processado antes, ignorando', event_id)
             return True
 
+        # Eventos de nota fiscal (INVOICE_*) não trazem payment/subscription
+        # no nível raiz e não mexem em assinatura: só registramos o
+        # resultado (principalmente INVOICE_ERROR) e gravamos o event_id
+        # pra manter a idempotência. Sem isto, caíam no aviso "sem
+        # Assinatura correspondente" e o erro da nota passava batido.
+        if tipo_evento.startswith('INVOICE_'):
+            BillingService._registrar_evento_nota_fiscal(tipo_evento, payload.get('invoice'))
+            db.session.add(EventoWebhookAsaas(event_id=event_id, tipo_evento=tipo_evento))
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                if not EventoWebhookAsaas.query.filter_by(event_id=event_id).first():
+                    raise
+            return True
+
         # Defesa em profundidade: o token do header é a única prova de
         # autenticidade do webhook. Antes de LIBERAR acesso por um evento
         # de pagamento confirmado, reconsultamos o pagamento direto na
@@ -1669,15 +1699,21 @@ class BillingService:
         CODIGO_SERVICO_MUNICIPAL_NFSE e DESCRICAO_SERVICO_NFSE acima.
         Documentação: https://docs.asaas.com/reference/agendar-nota-fiscal
 
-        CODIGO_SERVICO_MUNICIPAL_NFSE já foi ajustado uma vez depois de
-        um erro real em produção (ver comentário na constante, acima)
-        -- se voltar a falhar com "CodigoServicoMunicipal" não
-        localizado, o formato pode precisar mudar (ex: "01.05" ou
-        "105" em vez de "1.05", dependendo de como o sistema da
-        prefeitura -- IPM Sistemas, em Jaraguá do Sul -- valida a
-        pontuação). TESTAR contra a próxima cobrança confirmada em
-        produção, conferindo em Notas Fiscais > Cobranças no painel se
-        a nota foi agendada (status SCHEDULED) ou se voltou com erro.
+        CODIGO_SERVICO_MUNICIPAL_NFSE ('01.05.01') é o valor confirmado
+        em produção (ver comentário na constante, acima). Se a Asaas
+        voltar a recusar o código ("CodigoServicoMunicipal" não
+        localizado / GW000004), veja o histórico de valores já
+        rejeitados mais abaixo antes de testar outro palpite.
+
+        Atenção: resposta 2xx aqui só significa que a Asaas ACEITOU o
+        agendamento. A emissão no Portal Nacional é assíncrona e pode
+        falhar depois (ex: "Falha ao carregar opcao simples nacional",
+        instabilidade do portal) sem nenhum erro neste ponto. Esse
+        resultado chega por webhook (eventos INVOICE_*, tratados em
+        processar_webhook/_registrar_evento_nota_fiscal) -- o webhook
+        no painel da Asaas precisa estar inscrito nesses eventos. O id
+        e o status da nota são logados aqui pra cruzar com esses
+        eventos.
 
         Falha aqui NUNCA pode derrubar o processamento do webhook --
         só loga. Um pagamento confirmado precisa ficar registrado no
@@ -1686,18 +1722,17 @@ class BillingService:
         fiscal, mesmo fluxo manual já usado antes de existir isto).
         """
         if PAUSAR_EMISSAO_AUTOMATICA_NFSE:
-            # Pausado depois de 3 tentativas erradas em produção pra
-            # CODIGO_SERVICO_MUNICIPAL_NFSE (a mais recente: erro
-            # GW000004 -- "Código tributação Municipal incorreto.
-            # Exemplo: 03.02.01 Informado: 1.05"). O formato exigido
-            # pela prefeitura de Jaraguá do Sul (sistema IPM) é um
-            # código interno próprio deles, não achado em nenhuma lei
-            # pública nem na busca -- precisa ser confirmado direto no
-            # Livro Eletrônico de Serviços da prefeitura ou com o
-            # contador antes de reativar. Até lá, continuar emitindo
-            # manualmente (Notas Fiscais > Cobranças > Emitir nota
-            # fiscal), que já funcionou. Reativar virando essa
-            # constante pra False depois de confirmar o código certo.
+            # Pausa manual (PAUSAR_EMISSAO_AUTOMATICA_NFSE = True), pra
+            # usar se o CODIGO_SERVICO_MUNICIPAL_NFSE voltar a ser
+            # recusado (ex: erro GW000004 -- "Código tributação
+            # Municipal incorreto. Exemplo: 03.02.01 Informado: ...").
+            # O formato exigido pela prefeitura de Jaraguá do Sul
+            # (sistema IPM) é um código interno próprio deles --
+            # precisa ser reconfirmado direto no Livro Eletrônico de
+            # Serviços da prefeitura ou com o contador antes de
+            # reativar. Enquanto pausado, emitir manualmente (Notas
+            # Fiscais > Cobranças > Emitir nota fiscal). Reativar
+            # virando a constante pra False.
             logger.info(
                 'Emissão automática de nota fiscal pausada (payment=%s) -- '
                 'ver comentário de PAUSAR_EMISSAO_AUTOMATICA_NFSE.',
@@ -1711,27 +1746,26 @@ class BillingService:
                     'payment': payment_id,
                     'value': valor,
                     'serviceDescription': DESCRICAO_SERVICO_NFSE,
-                    'effectiveDate': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+                    # Competência no fuso de São Paulo, não em UTC --
+                    # ver _data_competencia_nfse.
+                    'effectiveDate': _data_competencia_nfse(),
                     'municipalServiceCode': CODIGO_SERVICO_MUNICIPAL_NFSE,
                     'municipalServiceName': DESCRICAO_SERVICO_NFSE,
-                    # HISTÓRICO DE TESTES (todos rejeitados pelo Portal
+                    # HISTÓRICO DE VALORES JÁ REJEITADOS (Portal
                     # Nacional, especificamente pra Jaraguá do Sul):
                     # '1.1103.22.00' (o NBS -- errado, tabela diferente)
-                    # '1.05', '01.05.01', '01.05.00' (variações do item
-                    # da LC 116 -- nenhuma bate com o código municipal)
+                    # '1.05', '01.05.00' (variações do item da LC 116
+                    # sem o detalhamento municipal)
                     # campo ausente -- erro "Descrição do Serviço vazia"
                     # '010501' (o próprio Código de Tributação Nacional
-                    # da conta, testado quando a Asaas usa ele como
-                    # fallback ao não receber nada -- também rejeitado,
-                    # confirmando que NÃO EXISTE conversão entre
-                    # Código de Tributação Nacional e Código de
-                    # Tributação Municipal de Jaraguá do Sul)
-                    # CONCLUSÃO: o valor certo só sai de alguém com
-                    # login em nfse.gov.br (ou no sistema da
-                    # prefeitura) buscando o serviço por descrição —
-                    # não existe fórmula de conversão a partir do item
-                    # da LC 116/NBS. Ver CODIGO_SERVICO_MUNICIPAL_NFSE
-                    # no topo do arquivo.
+                    # da conta, usado pela Asaas como fallback quando
+                    # nada é enviado -- também rejeitado, o que mostra
+                    # que NÃO EXISTE conversão entre Código de
+                    # Tributação Nacional e Código de Tributação
+                    # Municipal de Jaraguá do Sul)
+                    # '01.05.01' foi removido desta lista: é o valor
+                    # atual, confirmado em produção (ver
+                    # CODIGO_SERVICO_MUNICIPAL_NFSE no topo do arquivo).
                     # Exigido pela Asaas mesmo já havendo alíquota
                     # configurada no painel (confirmado por erro 400
                     # "Necessário informar os impostos da nota fiscal"
@@ -1758,8 +1792,44 @@ class BillingService:
                     'Asaas respondeu %s ao agendar nota fiscal do pagamento %s: %s',
                     resp.status_code, payment_id, resp.text,
                 )
+            else:
+                # Só registra o id/status da nota aceita pela Asaas --
+                # a emissão no Portal Nacional ainda pode falhar depois
+                # (ver docstring); esse id é o que se cruza com os
+                # eventos INVOICE_* e com o painel da Asaas.
+                try:
+                    dados = resp.json()
+                except ValueError:
+                    dados = {}
+                dados = dados if isinstance(dados, dict) else {}
+                logger.info(
+                    'Nota fiscal agendada no Asaas: invoice=%s status=%s payment=%s',
+                    dados.get('id'), dados.get('status'), payment_id,
+                )
         except requests.RequestException:
             logger.exception('Erro de rede ao agendar nota fiscal do pagamento %s', payment_id)
+
+    @staticmethod
+    def _registrar_evento_nota_fiscal(tipo_evento: str, invoice: dict):
+        """Loga um evento INVOICE_* do webhook do Asaas (nota fiscal).
+        Só observabilidade -- não muda assinatura nem acesso. Erro de
+        emissão (INVOICE_ERROR, ex: "Falha ao carregar opcao simples
+        nacional") sai em ERROR com a descrição completa pra aparecer
+        no log do Railway sem precisar abrir o painel da Asaas."""
+        invoice = invoice if isinstance(invoice, dict) else {}
+        campos = (
+            tipo_evento, invoice.get('id'), invoice.get('status'),
+            invoice.get('payment'), invoice.get('number'),
+            invoice.get('statusDescription'),
+        )
+        mensagem = (
+            'Nota fiscal Asaas: event=%s invoice=%s status=%s payment=%s '
+            'number=%s statusDescription=%s'
+        )
+        if tipo_evento == 'INVOICE_ERROR' or invoice.get('status') == 'ERROR':
+            logger.error(mensagem, *campos)
+        else:
+            logger.info(mensagem, *campos)
 
     @staticmethod
     def _cancelar_subscription_asaas(subscription_id: str, assinatura_id: int, motivo: str) -> bool:
