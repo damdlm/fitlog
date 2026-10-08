@@ -125,7 +125,24 @@ def _proximo_vencimento_mensal(referencia: datetime) -> datetime:
 # pois nomes de evento podem mudar entre versões da API.
 EVENTOS_CONFIRMACAO_PAGAMENTO = ('PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED')
 EVENTOS_ATRASO = ('PAYMENT_OVERDUE',)
-EVENTOS_CANCELAMENTO = ('PAYMENT_DELETED', 'PAYMENT_REFUNDED', 'SUBSCRIPTION_DELETED')
+# PAYMENT_CHARGEBACK_REQUESTED: o titular contestou a cobrança no banco emissor
+# do cartão -- trata como estorno (corta o acesso). Para o Asaas enviar esse
+# evento, ele precisa estar marcado na configuração do webhook no painel.
+EVENTOS_CANCELAMENTO = (
+    'PAYMENT_DELETED', 'PAYMENT_REFUNDED', 'PAYMENT_CHARGEBACK_REQUESTED', 'SUBSCRIPTION_DELETED',
+)
+
+
+def _texto(valor):
+    """Normaliza identificadores vindos do webhook: texto não vazio ou
+    inteiro viram str; qualquer outra coisa (dict, lista, None) vira None."""
+    if isinstance(valor, bool):
+        return None
+    if isinstance(valor, int):
+        return str(valor)
+    if isinstance(valor, str) and valor.strip():
+        return valor.strip()
+    return None
 
 
 class ConfirmacaoPagamentoIndisponivelError(Exception):
@@ -1226,9 +1243,12 @@ class BillingService:
         Retorna True se processado (ou já tinha sido processado antes),
         False se o payload não tiver o formato mínimo esperado.
         """
+        if not isinstance(payload, dict):
+            logger.warning('Webhook Asaas com corpo fora do formato esperado (%s), ignorado', type(payload).__name__)
+            return False
         event_id = payload.get('id')
         tipo_evento = payload.get('event')
-        if not event_id or not tipo_evento:
+        if not event_id or not tipo_evento or not isinstance(event_id, str) or not isinstance(tipo_evento, str):
             logger.warning('Webhook Asaas sem id/event no payload, ignorado. Chaves recebidas: %s', sorted(payload.keys()) if isinstance(payload, dict) else type(payload).__name__)
             return False
 
@@ -1240,12 +1260,15 @@ class BillingService:
         # diferente do objeto payment). Sem separar os dois, todo evento
         # de assinatura chegava com os três identificadores vazios e
         # nunca casava com nada no banco.
-        payment = payload.get('payment') or {}
-        subscription_obj = payload.get('subscription') or {}
+        # Campos fora do tipo esperado (ex.: externalReference numérico, payment
+        # como texto) davam erro 500 -> o Asaas reenviava e, após falhas
+        # repetidas, pausava a fila. Aqui viram "ausente".
+        payment = payload.get('payment') if isinstance(payload.get('payment'), dict) else {}
+        subscription_obj = payload.get('subscription') if isinstance(payload.get('subscription'), dict) else {}
 
-        subscription_id = payment.get('subscription') or subscription_obj.get('id')
-        external_reference = payment.get('externalReference') or subscription_obj.get('externalReference')
-        customer_id = payment.get('customer') or subscription_obj.get('customer')
+        subscription_id = _texto(payment.get('subscription') or subscription_obj.get('id'))
+        external_reference = _texto(payment.get('externalReference') or subscription_obj.get('externalReference'))
+        customer_id = _texto(payment.get('customer') or subscription_obj.get('customer'))
 
         # Sempre em INFO (não DEBUG) -- app.logger está configurado pra
         # INFO em produção (ver app.py), então isso é o que garante dar
@@ -1272,8 +1295,24 @@ class BillingService:
         # o payload afirmou. Se o token vazar, um evento forjado não
         # libera nada. Se a API estiver fora, levantamos erro -> 503 ->
         # o Asaas reenvia o evento depois.
-        if tipo_evento in EVENTOS_CONFIRMACAO_PAGAMENTO and not BillingService._pagamento_confirmado_na_api(payment):
-            return True
+        pagamento_api = None
+        if tipo_evento in EVENTOS_CONFIRMACAO_PAGAMENTO:
+            confirmado, pagamento_api = BillingService._consultar_pagamento_na_api(payment)
+            if not confirmado:
+                return True
+            if pagamento_api:
+                # A partir daqui valem os identificadores devolvidos pela API
+                # do Asaas (canal autenticado pela NOSSA chave), e não os do
+                # corpo do webhook: quem localiza a assinatura é o que o
+                # Asaas afirma sobre o pagamento.
+                payment = {**payment, **{
+                    campo: pagamento_api[campo]
+                    for campo in ('customer', 'subscription', 'billingType', 'externalReference')
+                    if isinstance(pagamento_api.get(campo), str) and pagamento_api.get(campo)
+                }}
+                subscription_id = _texto(payment.get('subscription')) or subscription_id
+                customer_id = _texto(payment.get('customer')) or customer_id
+                external_reference = _texto(payment.get('externalReference')) or external_reference
 
         # Primeira cobrança de uma assinatura criada via /checkouts
         # ainda não tem gateway_subscription_id gravado no nosso banco.
@@ -1293,6 +1332,15 @@ class BillingService:
             assinatura = Assinatura.query.get(int(external_reference))
         if assinatura is None and customer_id:
             assinatura = Assinatura.query.filter_by(gateway_customer_id=customer_id).first()
+        if assinatura and pagamento_api:
+            cliente_api = pagamento_api.get('customer')
+            if assinatura.gateway_customer_id and cliente_api and assinatura.gateway_customer_id != cliente_api:
+                logger.warning(
+                    'Webhook Asaas: pagamento %s pertence a outro cliente na API (assinatura %s) -- evento ignorado',
+                    payment.get('id'), assinatura.id,
+                )
+                return True
+
         if assinatura and subscription_id and not assinatura.gateway_subscription_id:
             assinatura.gateway_subscription_id = subscription_id
         elif (
@@ -1384,23 +1432,24 @@ class BillingService:
         return True
 
     @staticmethod
-    def _pagamento_confirmado_na_api(payment: dict) -> bool:
-        """True se o pagamento do payload existe no Asaas, está
-        confirmado/recebido e pertence ao mesmo cliente/assinatura
-        informados no evento. False = evento inconsistente (não aplicar,
-        não reenviar). Levanta ConfirmacaoPagamentoIndisponivelError se a
-        API não puder ser consultada (o Asaas deve reenviar)."""
+    def _consultar_pagamento_na_api(payment: dict):
+        """Reconsulta o pagamento direto na API do Asaas antes de liberar
+        acesso. Devolve (confirmado, dados_da_api):
+          (True, dict)  -> existe, está confirmado/recebido e bate com o evento
+          (True, None)  -> verificação desligada/sem chave (testes/dev)
+          (False, None) -> evento inconsistente: não aplicar, não reenviar
+        Levanta ConfirmacaoPagamentoIndisponivelError se a API não puder ser
+        consultada (o Asaas deve reenviar o evento depois)."""
         if not current_app.config.get('ASAAS_WEBHOOK_VERIFICAR_API', True):
-            return True
+            return True, None
         if not current_app.config.get('ASAAS_API_KEY'):
-            # Sem chave não há como consultar (ambiente de teste/dev).
             logger.warning('ASAAS_API_KEY ausente: webhook aceito SEM reconsulta na API do Asaas')
-            return True
+            return True, None
 
         payment_id = (payment or {}).get('id')
         if not payment_id or not isinstance(payment_id, str) or not payment_id.replace('_', '').isalnum():
             logger.warning('Webhook de pagamento confirmado sem payment.id válido, ignorado')
-            return False
+            return False, None
 
         try:
             resp = requests.get(
@@ -1413,7 +1462,7 @@ class BillingService:
 
         if resp.status_code == 404:
             logger.warning('Webhook Asaas: pagamento %s NÃO existe na API -- evento ignorado', payment_id)
-            return False
+            return False, None
         if resp.status_code != 200:
             raise ConfirmacaoPagamentoIndisponivelError(f'HTTP {resp.status_code} ao consultar pagamento')
 
@@ -1423,20 +1472,32 @@ class BillingService:
                 'Webhook Asaas: pagamento %s está %s na API (não confirmado) -- evento ignorado',
                 payment_id, real.get('status'),
             )
-            return False
+            return False, None
         for campo in ('customer', 'subscription'):
             if payment.get(campo) and real.get(campo) != payment.get(campo):
                 logger.warning(
                     'Webhook Asaas: pagamento %s divergente da API no campo %s -- evento ignorado',
                     payment_id, campo,
                 )
-                return False
-        return True
+                return False, None
+        return True, real
 
     @staticmethod
     def _aplicar_evento(assinatura: Assinatura, tipo_evento: str, payment: dict = None):
         agora = datetime.now(timezone.utc)
         if tipo_evento in EVENTOS_CONFIRMACAO_PAGAMENTO:
+            pagamento_id = (payment or {}).get('id')
+            if pagamento_id and pagamento_id == assinatura.gateway_ultimo_pagamento_confirmado_id:
+                # Este pagamento JÁ foi contabilizado (Pix dispara CONFIRMED e
+                # depois RECEIVED; o Asaas também reenvia eventos, e o painel
+                # tem "reenviar"). Reprocessar estendia o período a cada
+                # reenvio e reativava assinatura que já tinha vencido.
+                logger.info(
+                    'Evento %s ignorado p/ assinatura %s: pagamento %s já contabilizado (reenvio)',
+                    tipo_evento, assinatura.id, pagamento_id,
+                )
+                BillingService._registrar_pagamento_recebido(assinatura, payment)
+                return
             assinatura.status = 'active'
             assinatura.carencia_termina_em = None
             # Regularizou -- para a régua de notificações de vencimento
@@ -1445,29 +1506,45 @@ class BillingService:
             assinatura.ultima_notificacao_vencimento_dias = None
             # Pix é pagamento avulso (sem assinatura recorrente no
             # Asaas) -- cada confirmação vale por ~1 mês a partir de
-            # AGORA, não a partir de um "próximo vencimento" que o
-            # gateway já saberia (isso só existe pra cartão, via
-            # subscription). Cartão não usa periodo_atual_fim -- quem
-            # garante a renovação dele é o próprio Asaas.
-            if assinatura.forma_pagamento == 'pix':
-                if (payment or {}).get('id') != assinatura.gateway_ultimo_pagamento_confirmado_id:
-                    # Um Pix NOVO foi pago: quem cancelou e voltou a pagar
-                    # quer continuar -- limpa o cancelamento agendado.
-                    assinatura.cancelado_em = None
+            # AGORA. Cartão não usa periodo_atual_fim -- quem garante a
+            # renovação dele é o próprio Asaas.
+            # Quem decide é o TIPO DO PAGAMENTO confirmado (billingType), e
+            # não o que está gravado na assinatura: gerar um Pix e não pagar
+            # já troca forma_pagamento para 'pix', e a cobrança de cartão
+            # do mês seguinte era tratada como Pix (cancelava a recorrência
+            # do cartão no Asaas).
+            tipo_pagamento = (payment or {}).get('billingType')
+            if tipo_pagamento:
+                eh_pix = tipo_pagamento == 'PIX'
+            else:
+                eh_pix = assinatura.forma_pagamento == 'pix'
+            if eh_pix:
+                if assinatura.forma_pagamento != 'pix':
+                    assinatura.forma_pagamento = 'pix'
+                # Um Pix NOVO foi pago: quem cancelou e voltou a pagar quer
+                # continuar -- limpa o cancelamento agendado.
+                assinatura.cancelado_em = None
                 assinatura.periodo_atual_fim = _proximo_vencimento_mensal(agora)
                 if assinatura.gateway_subscription_id:
                     # Sobrou uma assinatura recorrente de CARTÃO de uma
                     # troca de forma de pagamento pra Pix (ver
                     # criar_pagamento_pix_ativacao) -- só cancela agora,
-                    # que esse Pix confirmou de verdade. Cancelar já na
-                    # hora de gerar o Pix seria arriscado: se o usuário
-                    # abandonasse o Pix sem pagar, ficaria sem NENHUMA
-                    # forma de pagamento funcionando.
+                    # que esse Pix confirmou de verdade.
                     BillingService._cancelar_subscription_asaas(
                         assinatura.gateway_subscription_id, assinatura.id,
                         motivo='troca de cartão para pix confirmada',
                     )
                     assinatura.gateway_subscription_id = None
+            elif (
+                tipo_pagamento == 'CREDIT_CARD'
+                and assinatura.forma_pagamento == 'pix'
+                and (payment or {}).get('subscription')
+                and (payment or {}).get('subscription') == assinatura.gateway_subscription_id
+            ):
+                # Cobrança recorrente do cartão confirmada enquanto a
+                # assinatura estava marcada como 'pix' (Pix gerado e não
+                # pago): o cartão segue valendo -- restaura a forma.
+                assinatura.forma_pagamento = 'cartao'
             if payment:
                 # Marca qual payment foi o responsável por essa
                 # ativação -- é contra esse id que um futuro evento de
