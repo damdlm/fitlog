@@ -137,6 +137,15 @@
         position: relative;
         z-index: 2;
     }
+    .home-stage .dash-tip-slide,
+    .home-stage .tip-wrapper,
+    .home-stage .tip-slide-item,
+    .home-stage .tip-text {
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-user-drag: none;
+    }
     .home-stage .home-tips {
         position: absolute;
         left: 0;
@@ -861,7 +870,9 @@
         let ativo = false;
         let pointerId = null;
         let inicioX = 0;
+        let inicioY = 0;
         let deslocamento = 0;
+        let maiorMovimento = 0;
 
         function larguraSlide() {
             return slide.offsetWidth || 1;
@@ -871,7 +882,9 @@
             ativo = true;
             pointerId = event.pointerId;
             inicioX = event.clientX;
+            inicioY = event.clientY;
             deslocamento = 0;
+            maiorMovimento = 0;
             wrapper.style.transition = 'none';
             clearInterval(timerDicas);
             try { slide.setPointerCapture(pointerId); } catch (e) { /* ok */ }
@@ -883,20 +896,28 @@
             const largura = larguraSlide();
             const base = currentIndex === 0 ? 0 : -largura;
             deslocamento = event.clientX - inicioX;
+            const dy = event.clientY - inicioY;
+            maiorMovimento = Math.max(maiorMovimento, Math.abs(deslocamento), Math.abs(dy));
 
             const posicao = Math.max(-largura, Math.min(0, base + deslocamento));
-            wrapper.style.transform = 'translateX(' + posicao + 'px)';
+            // Movimento vertical com resistência: o conteúdo "acompanha" o
+            // dedo nos dois eixos e volta ao soltar.
+            const y = Math.max(-14, Math.min(14, dy * 0.3));
+            wrapper.style.transform = 'translate(' + posicao + 'px, ' + y + 'px)';
         });
 
         function soltar(event) {
             if (!ativo || (event && event.pointerId !== pointerId)) return;
             ativo = false;
 
-            const limite = Math.min(60, larguraSlide() / 4);
+            const limite = Math.min(40, larguraSlide() / 6);
 
             wrapper.style.transition = '';
 
-            if (currentIndex === 0 && deslocamento < -limite) {
+            if (maiorMovimento < 6) {
+                // Toque simples: passa para a outra dica.
+                currentIndex = currentIndex === 0 ? 1 : 0;
+            } else if (currentIndex === 0 && deslocamento < -limite) {
                 currentIndex = 1;
             } else if (currentIndex === 1 && deslocamento > limite) {
                 currentIndex = 0;
@@ -908,6 +929,7 @@
             timerDicas = setInterval(proximaDica, 7000);
         }
 
+        slide.addEventListener('dragstart', function (e) { e.preventDefault(); });
         slide.addEventListener('pointerup', soltar);
         slide.addEventListener('pointercancel', soltar);
     })();
