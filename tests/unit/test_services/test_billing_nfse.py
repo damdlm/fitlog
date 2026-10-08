@@ -6,8 +6,9 @@ from datetime import datetime, timezone
 import pytest
 
 import services.billing_service as billing
-from models import EventoWebhookAsaas
+from models import EventoWebhookAsaas, Notificacao, User, db
 from services.billing_service import BillingService, _data_competencia_nfse
+from services.notificacao_service import NotificacaoService
 
 
 @pytest.fixture(autouse=True)
@@ -136,3 +137,128 @@ class TestWebhookInvoice:
     def test_payload_invoice_malformado_nao_quebra(self, app):
         payload = {'id': 'evt_inv_mal', 'event': 'INVOICE_UPDATED', 'invoice': 'texto'}
         assert BillingService.processar_webhook(payload) is True
+
+def _usuario(username, is_admin=False):
+    user = User(username=username, email=f'{username}@teste.com', tipo_usuario='professor', is_admin=is_admin)
+    user.set_password('SenhaForte123!')
+    db.session.add(user)
+    db.session.commit()
+    return user
+
+
+def _evento_erro(evt='evt_nf_1', invoice_id='inv_77', motivo='Falha ao carregar opcao simples nacional', **extra):
+    invoice = {'id': invoice_id, 'status': 'ERROR', 'payment': 'pay_77', 'statusDescription': motivo}
+    invoice.update(extra)
+    return {'id': evt, 'event': 'INVOICE_ERROR', 'invoice': invoice}
+
+
+def _notificacoes_de(usuario, tipo='nota_fiscal_erro'):
+    return Notificacao.query.filter_by(destinatario_id=usuario.id, tipo=tipo).all()
+
+
+class TestNotificacaoAdminErroNota:
+    """INVOICE_ERROR vira notificação in-app (sino) pros admins."""
+
+    def test_notifica_o_admin_com_motivo_nota_e_pagamento(self, app):
+        admin = User.query.filter_by(is_admin=True).first()
+        assert BillingService.processar_webhook(_evento_erro()) is True
+        notificacoes = _notificacoes_de(admin)
+        assert len(notificacoes) == 1
+        n = notificacoes[0]
+        assert n.titulo == 'Erro na emissão de nota fiscal'
+        assert 'Falha ao carregar opcao simples nacional' in n.mensagem
+        assert 'inv_77' in n.mensagem and 'pay_77' in n.mensagem
+        assert n.lida is False
+        assert n.remetente_id is None
+
+    def test_notifica_todos_os_admins_e_so_eles(self, app):
+        admin_extra = _usuario('admin_extra', is_admin=True)
+        comum = _usuario('professor_comum')
+        BillingService.processar_webhook(_evento_erro())
+        assert len(_notificacoes_de(admin_extra)) == 1
+        assert len(_notificacoes_de(User.query.filter_by(username='admin').first())) == 1
+        assert Notificacao.query.filter_by(destinatario_id=comum.id).count() == 0
+
+    def test_nota_autorizada_nao_notifica(self, app):
+        payload = {'id': 'evt_ok', 'event': 'INVOICE_AUTHORIZED',
+                   'invoice': {'id': 'inv_1', 'status': 'AUTHORIZED', 'payment': 'pay_1', 'number': '12'}}
+        assert BillingService.processar_webhook(payload) is True
+        assert Notificacao.query.filter_by(tipo='nota_fiscal_erro').count() == 0
+
+    def test_status_error_em_outro_evento_tambem_notifica(self, app):
+        payload = _evento_erro(evt='evt_upd')
+        payload['event'] = 'INVOICE_UPDATED'
+        BillingService.processar_webhook(payload)
+        assert Notificacao.query.filter_by(tipo='nota_fiscal_erro').count() >= 1
+
+    def test_reenvio_do_mesmo_evento_nao_duplica(self, app):
+        admin = User.query.filter_by(is_admin=True).first()
+        BillingService.processar_webhook(_evento_erro())
+        BillingService.processar_webhook(_evento_erro())
+        assert len(_notificacoes_de(admin)) == 1
+        assert _notificacoes_de(admin)[0].ocorrencias == 1
+
+    def test_mesma_nota_em_eventos_diferentes_agrupa_com_contador(self, app):
+        admin = User.query.filter_by(is_admin=True).first()
+        BillingService.processar_webhook(_evento_erro(evt='evt_a'))
+        BillingService.processar_webhook(_evento_erro(evt='evt_b'))
+        notificacoes = _notificacoes_de(admin)
+        assert len(notificacoes) == 1
+        assert notificacoes[0].ocorrencias == 2
+
+    def test_notas_diferentes_geram_notificacoes_separadas(self, app):
+        admin = User.query.filter_by(is_admin=True).first()
+        BillingService.processar_webhook(_evento_erro(evt='evt_a', invoice_id='inv_A'))
+        BillingService.processar_webhook(_evento_erro(evt='evt_b', invoice_id='inv_B'))
+        assert len(_notificacoes_de(admin)) == 2
+
+    def test_sem_motivo_no_evento_usa_texto_padrao(self, app):
+        admin = User.query.filter_by(is_admin=True).first()
+        payload = _evento_erro()
+        del payload['invoice']['statusDescription']
+        BillingService.processar_webhook(payload)
+        assert 'sem detalhes no evento' in _notificacoes_de(admin)[0].mensagem
+
+    def test_sem_nenhum_admin_nao_quebra_e_avisa_no_log(self, app, caplog):
+        User.query.filter_by(is_admin=True).delete()
+        db.session.commit()
+        with caplog.at_level(logging.WARNING, logger='services.billing_service'):
+            assert BillingService.processar_webhook(_evento_erro()) is True
+        assert 'nenhum usuário admin para notificar' in caplog.text
+        assert EventoWebhookAsaas.query.filter_by(event_id='evt_nf_1').count() == 1
+
+    def test_falha_ao_notificar_nao_derruba_o_webhook(self, app, monkeypatch, caplog):
+        def _explode(*a, **k):
+            raise RuntimeError('banco fora')
+
+        monkeypatch.setattr(NotificacaoService, 'criar_ou_agrupar', staticmethod(_explode))
+        with caplog.at_level(logging.ERROR, logger='services.billing_service'):
+            assert BillingService.processar_webhook(_evento_erro()) is True
+        assert 'Falha ao notificar os admins' in caplog.text
+        assert EventoWebhookAsaas.query.filter_by(event_id='evt_nf_1').count() == 1
+
+    def test_motivo_gigante_e_truncado_sem_estourar_o_limite(self, app):
+        admin = User.query.filter_by(is_admin=True).first()
+        BillingService.processar_webhook(_evento_erro(motivo='x' * 5000))
+        assert len(_notificacoes_de(admin)[0].mensagem) <= 300
+
+
+class TestNotificacaoAparecePraAdmin:
+    """O admin logado enxerga a notificação no sino (API) e na tela."""
+
+    def test_aparece_na_api_do_sino_e_na_tela(self, auth_client):
+        with auth_client.application.app_context():
+            BillingService.processar_webhook(_evento_erro())
+
+        api = auth_client.get('/api/notificacoes')
+        assert api.status_code == 200
+        corpo = api.get_json()
+        tipos = [n['tipo'] for n in corpo['notificacoes']]
+        assert 'nota_fiscal_erro' in tipos
+        assert corpo['nao_lidas'] >= 1
+
+        tela = auth_client.get('/notificacoes')
+        assert tela.status_code == 200
+        html = tela.get_data(as_text=True)
+        assert 'Erro na emissão de nota fiscal' in html
+        assert 'bi-exclamation-triangle' in html

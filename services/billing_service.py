@@ -1307,14 +1307,22 @@ class BillingService:
         # pra manter a idempotência. Sem isto, caíam no aviso "sem
         # Assinatura correspondente" e o erro da nota passava batido.
         if tipo_evento.startswith('INVOICE_'):
-            BillingService._registrar_evento_nota_fiscal(tipo_evento, payload.get('invoice'))
+            invoice = payload.get('invoice') if isinstance(payload.get('invoice'), dict) else {}
+            BillingService._registrar_evento_nota_fiscal(tipo_evento, invoice)
             db.session.add(EventoWebhookAsaas(event_id=event_id, tipo_evento=tipo_evento))
             try:
                 db.session.commit()
             except IntegrityError:
+                # Mesmo evento em paralelo: a outra requisição já tratou
+                # (e já notificou) -- não notifica de novo.
                 db.session.rollback()
                 if not EventoWebhookAsaas.query.filter_by(event_id=event_id).first():
                     raise
+                return True
+            # Só depois de gravar o event_id: um reenvio do mesmo evento
+            # cai na checagem de idempotência acima e nunca chega aqui.
+            if BillingService._nota_com_erro(tipo_evento, invoice):
+                BillingService._notificar_admins_erro_nota(invoice)
             return True
 
         # Defesa em profundidade: o token do header é a única prova de
@@ -1826,10 +1834,68 @@ class BillingService:
             'Nota fiscal Asaas: event=%s invoice=%s status=%s payment=%s '
             'number=%s statusDescription=%s'
         )
-        if tipo_evento == 'INVOICE_ERROR' or invoice.get('status') == 'ERROR':
+        if BillingService._nota_com_erro(tipo_evento, invoice):
             logger.error(mensagem, *campos)
         else:
             logger.info(mensagem, *campos)
+
+    @staticmethod
+    def _nota_com_erro(tipo_evento: str, invoice) -> bool:
+        """True se o evento INVOICE_* indica que a emissão da nota falhou
+        (INVOICE_ERROR, ou qualquer outro evento trazendo status ERROR)."""
+        invoice = invoice if isinstance(invoice, dict) else {}
+        return tipo_evento == 'INVOICE_ERROR' or invoice.get('status') == 'ERROR'
+
+    @staticmethod
+    def _notificar_admins_erro_nota(invoice):
+        """Avisa TODOS os admins (sino/tela de notificações do app) que a
+        emissão de uma NFS-e falhou, com o motivo devolvido pelo portal.
+
+        Sem isto o erro só aparecia no log do Railway ou, depois, no
+        painel da Asaas. Best effort: nunca levanta -- um problema aqui
+        não pode derrubar o processamento do webhook (que já gravou o
+        event_id antes de chegar neste ponto, então o Asaas não reenvia).
+
+        Erros repetidos da MESMA nota dentro da janela de agrupamento
+        (NotificacaoService.JANELA_AGRUPAMENTO_MINUTOS), enquanto a
+        notificação ainda não foi lida, viram uma só com contador (Nx), e
+        não uma linha por tentativa de emissão."""
+        try:
+            from services.notificacao_service import NotificacaoService
+
+            invoice = invoice if isinstance(invoice, dict) else {}
+            invoice_id = _texto(invoice.get('id'))
+            pagamento_id = _texto(invoice.get('payment'))
+            motivo = _texto(invoice.get('statusDescription')) or 'sem detalhes no evento'
+
+            admins = User.query.filter_by(is_admin=True).all()
+            if not admins:
+                logger.warning(
+                    'Erro na emissão da nota %s, mas não há nenhum usuário admin para notificar',
+                    invoice_id,
+                )
+                return
+
+            partes = [f'Motivo: {motivo[:150]}.']
+            if invoice_id:
+                partes.append(f'Nota {invoice_id}.')
+            if pagamento_id:
+                partes.append(f'Pagamento {pagamento_id}.')
+            partes.append('Veja em Asaas > Notas Fiscais e use "Emitir agora".')
+            mensagem = ' '.join(partes)
+
+            for admin in admins:
+                NotificacaoService.criar_ou_agrupar(
+                    destinatario_id=admin.id,
+                    remetente_id=None,
+                    tipo='nota_fiscal_erro',
+                    titulo='Erro na emissão de nota fiscal',
+                    mensagem=mensagem,
+                    chave_agrupamento=f'nfse:{invoice_id}' if invoice_id else None,
+                )
+        except Exception:
+            db.session.rollback()
+            logger.exception('Falha ao notificar os admins sobre erro de nota fiscal')
 
     @staticmethod
     def _cancelar_subscription_asaas(subscription_id: str, assinatura_id: int, motivo: str) -> bool:

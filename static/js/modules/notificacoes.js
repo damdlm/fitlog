@@ -40,6 +40,8 @@
                 return 'bi-flag';
             case 'versao_expirando':
                 return 'bi-hourglass-split';
+            case 'nota_fiscal_erro':
+                return 'bi-exclamation-triangle';
             default:
                 return 'bi-pencil-square';
         }
