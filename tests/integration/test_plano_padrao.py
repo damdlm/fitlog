@@ -8,6 +8,8 @@ configuração (ConfiguracaoService.set_versao_padrao), o gancho no
 """
 from datetime import date
 
+import pytest
+
 from models import (
     db, User, Musculo, VersaoGlobal, TreinoVersao, VersaoExercicio,
     ExercicioUsuario, ExercicioSistema, ConfiguracaoApp,
@@ -312,3 +314,66 @@ class TestTelaAdminPlanoPadrao:
             client.post('/admin/telas-controladas',
                         data={'acao': 'plano_padrao', 'versao_padrao_id': '1'})
             assert ConfiguracaoService.get_versao_padrao_id() is None
+
+
+class TestAdminCadastraTreinosModelo:
+    """O admin usa a tela "Cadastrar Treinos" (a mesma do aluno) para montar
+    a versão-modelo, escolhe-a como plano padrão e o aluno novo recebe a
+    cópia -- fluxo completo, sem montar nada direto no banco."""
+
+    @pytest.mark.parametrize('tipo', ['aluno', 'professor', 'admin'])
+    def test_admin_abre_a_tela_e_cria_versao(self, client, app, tipo):
+        with app.app_context():
+            admin = _usuario(f'admin_ct_{tipo}', tipo, is_admin=True)
+            client.post('/auth/login', data={'username': admin.username, 'password': '123456'})
+
+            assert client.get('/aluno/cadastrar-treinos').status_code == 200
+
+            client.post('/aluno/cadastrar-treinos/versao', data={'descricao': 'Plano iniciante'})
+            versao = VersaoGlobal.query.filter_by(user_id=admin.id).first()
+            assert versao is not None and versao.descricao == 'Plano iniciante'
+
+    def test_fluxo_completo_admin_monta_define_e_aluno_recebe(self, client, app):
+        with app.app_context():
+            admin = _usuario('admin_fluxo', 'aluno', is_admin=True)
+            base = ExercicioSistema(id_original='0100', nome='Remada', grupo_muscular='Costas')
+            db.session.add(base)
+            db.session.commit()
+            base_id = base.id
+
+            client.post('/auth/login', data={'username': 'admin_fluxo', 'password': '123456'})
+            client.post('/aluno/cadastrar-treinos/versao', data={'descricao': 'Plano padrão'})
+            versao = VersaoGlobal.query.filter_by(user_id=admin.id).first()
+            client.post(f'/aluno/cadastrar-treinos/{versao.id}/treino', data={
+                'nome_treino': 'Costas', 'descricao_treino': '',
+                'exercicios[]': [f'b_{base_id}'],
+            })
+            tv = TreinoVersao.query.filter_by(versao_id=versao.id).first()
+            assert tv is not None and len(tv.exercicios) == 1
+
+            # a versão aparece na tela do admin e pode ser definida como padrão
+            html = client.get('/admin/telas-controladas').get_data(as_text=True)
+            assert 'Plano padrão' in html
+            client.post('/admin/telas-controladas',
+                        data={'acao': 'plano_padrao', 'versao_padrao_id': str(versao.id)})
+            assert ConfiguracaoService.get_versao_padrao_id() == versao.id
+
+            client.get('/auth/logout')
+            client.post('/auth/register', data={
+                'username': 'aluno_novo_fluxo', 'email': 'aluno_novo_fluxo@t.com',
+                'password': SENHA, 'confirm_password': SENHA,
+                'tipo_usuario': 'aluno', 'aceite_termos': 'on',
+            })
+            novo = User.query.filter_by(username='aluno_novo_fluxo').first()
+            copia = VersaoGlobal.query.filter_by(user_id=novo.id).first()
+            assert copia is not None and copia.id != versao.id
+            treinos = TreinoVersao.query.filter_by(versao_id=copia.id).all()
+            assert [t.nome_treino for t in treinos] == ['Costas']
+            assert treinos[0].exercicios[0].exercicio_base_id == base_id
+
+    def test_menu_do_admin_tem_link_para_cadastrar_treinos(self, client, app):
+        with app.app_context():
+            _usuario('admin_menu', 'aluno', is_admin=True)
+            client.post('/auth/login', data={'username': 'admin_menu', 'password': '123456'})
+            html = client.get('/admin/telas-controladas').get_data(as_text=True)
+            assert '/aluno/cadastrar-treinos' in html

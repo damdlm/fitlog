@@ -297,9 +297,12 @@ class User(UserMixin, db.Model):
         treinos e versões -- alunos sempre podem, e professores também,
         já que um professor pode treinar por conta própria usando o
         mesmo sistema (reaproveita as telas/rotas do aluno, sempre
-        filtradas por user_id=current_user.id).
+        filtradas por user_id=current_user.id). O admin também: é na
+        conta dele que ficam as versões-modelo do plano padrão (ver
+        ConfiguracaoApp.versao_padrao_id), cadastradas pela mesma tela
+        "Cadastrar Treinos".
         """
-        return self.is_aluno() or self.is_professor()
+        return self.is_aluno() or self.is_professor() or bool(self.is_admin)
     
     def get_alunos(self):
         """Retorna alunos ativos do professor em uma única query (sem N+1)."""
