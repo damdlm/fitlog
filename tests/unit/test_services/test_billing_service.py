@@ -1181,6 +1181,8 @@ class TestCriarAssinaturaCheckout:
             _preencher_dados_cobranca(aluno)
             assinatura = BillingService.iniciar_trial(aluno)
             db.session.commit()
+            plano_antes = assinatura.plano_id
+            forma_antes = assinatura.forma_pagamento
 
             link = BillingService.criar_assinatura_checkout(aluno, fit)
 
@@ -1214,7 +1216,11 @@ class TestCriarAssinaturaCheckout:
             # gateway_subscription_id ainda neste ponto.
             db.session.refresh(assinatura)
             assert assinatura.gateway_subscription_id is None
-            assert assinatura.plano_id == fit.id
+            # Gerar o checkout NÃO altera plano nem forma de pagamento: eles
+            # só passam a valer quando o pagamento confirma (ver
+            # TestPlanoSoValePeloPagamento).
+            assert assinatura.plano_id == plano_antes
+            assert assinatura.forma_pagamento == forma_antes
 
     def test_sem_dados_de_cobranca_levanta_erro_especifico_sem_chamar_gateway(self, app, monkeypatch):
         chamou = {'valor': False}
@@ -1559,12 +1565,11 @@ class TestPrevencaoDeCobrancaDupla:
             assert any(c[0] == 'POST' and c[1].endswith('/checkouts') for c in chamadas)
             assert url_checkout == 'https://sandbox.asaas.com/checkoutSession/show/chk_novo'
 
-            # O checkout novo já reflete o plano pedido (mesmo comportamento
-            # de qualquer criar_assinatura_checkout bem-sucedido) -- só
-            # gateway_subscription_id fica de fato pendente até o Asaas
+            # O checkout novo NÃO troca o plano (só o pagamento confirmado
+            # troca) e gateway_subscription_id segue pendente até o Asaas
             # confirmar o pagamento via webhook.
             assinatura_atualizada = Assinatura.query.filter_by(usuario_id=professor.id).first()
-            assert assinatura_atualizada.plano_id == premium.id
+            assert assinatura_atualizada.plano_id == pro.id
             assert assinatura_atualizada.gateway_subscription_id is None
 
     def test_assinatura_past_due_ainda_permite_checkout_normal(self, app, monkeypatch):
@@ -1658,8 +1663,9 @@ class TestPixBloqueiaCartaoAtivoMesmoPlano:
             assert link == 'https://pix/fake'
 
             db.session.refresh(assinatura)
-            assert assinatura.plano_id == premium.id
-            assert assinatura.forma_pagamento == 'pix'
+            # Pix só foi GERADO, não pago: plano e forma continuam os de antes.
+            assert assinatura.plano_id == pro.id
+            assert assinatura.forma_pagamento == 'cartao'
             # Ainda não cancelou -- Pix só foi GERADO, não confirmado.
             assert assinatura.gateway_subscription_id == 'sub_cartao_vigente'
             assert chamadas_delete == []

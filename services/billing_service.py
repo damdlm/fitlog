@@ -828,21 +828,20 @@ class BillingService:
         BillingService._checar_resposta(resp, 'criar cobrança pix avulsa')
         dados = resp.json()
 
-        # Otimista, igual ao fluxo de cartão em criar_assinatura_checkout:
-        # o plano só passa a valer de verdade (status='active' +
-        # periodo_atual_fim) quando o webhook confirmar o pagamento --
-        # ver _aplicar_evento. Isso aqui só marca a INTENÇÃO.
+        # NADA do plano nem da forma de pagamento da assinatura é alterado
+        # aqui: gerar a cobrança só cria a cobrança no Asaas. Antes, gravar o
+        # plano novo neste ponto (sem pagar) já liberava os limites do plano
+        # maior (ex.: o professor gerava o Pix do Premium e cadastrava mais
+        # alunos) e trocava a forma para 'pix', o que fazia a cobrança de
+        # cartão do mês seguinte cancelar a recorrência. Plano e forma passam
+        # a valer quando o pagamento CONFIRMA -- ver _aplicar_evento e
+        # _plano_pelo_valor_pago.
         #
-        # gateway_subscription_id É MANTIDO de propósito quando
-        # cartao_ativo (não zera aqui): só cancelamos a recorrência de
-        # cartão em _aplicar_evento, no momento em que esse Pix
-        # REALMENTE confirmar -- se cancelássemos já aqui e o usuário
-        # abandonar o Pix sem pagar, ele ficaria sem nenhuma forma de
+        # gateway_subscription_id (e os dados do cartão) também são mantidos:
+        # só cancelamos a recorrência de cartão em _aplicar_evento, no momento
+        # em que esse Pix REALMENTE confirmar -- se cancelássemos já aqui e o
+        # usuário abandonar o Pix sem pagar, ele ficaria sem nenhuma forma de
         # pagamento funcionando, pior do que a situação de origem.
-        assinatura.plano_id = plano.id
-        assinatura.forma_pagamento = 'pix'
-        assinatura.cartao_ultimos_digitos = None
-        assinatura.cartao_bandeira = None
         db.session.commit()
 
         return dados.get('invoiceUrl')
@@ -1003,8 +1002,9 @@ class BillingService:
         BillingService._checar_resposta(resp, 'criar checkout')
         dados = resp.json()
 
-        assinatura.plano_id = plano.id
-        assinatura.forma_pagamento = 'cartao'
+        # Plano e forma só passam a valer quando o primeiro pagamento
+        # confirmar (ver _aplicar_evento / _plano_pelo_valor_pago): abrir o
+        # checkout e desistir não pode alterar a assinatura.
         db.session.commit()
 
         return dados.get('link')
@@ -1348,6 +1348,9 @@ class BillingService:
                     for campo in ('customer', 'subscription', 'billingType', 'externalReference')
                     if isinstance(pagamento_api.get(campo), str) and pagamento_api.get(campo)
                 }}
+                valor_api = pagamento_api.get('value')
+                if isinstance(valor_api, (int, float)) and not isinstance(valor_api, bool):
+                    payment['value'] = valor_api
                 subscription_id = _texto(payment.get('subscription')) or subscription_id
                 customer_id = _texto(payment.get('customer')) or customer_id
                 external_reference = _texto(payment.get('externalReference')) or external_reference
@@ -1379,8 +1382,12 @@ class BillingService:
                 )
                 return True
 
+        # True quando este evento apresenta uma assinatura recorrente (cartão)
+        # que ainda não era a da conta: é o PRIMEIRO pagamento dela.
+        assinatura_nova = False
         if assinatura and subscription_id and not assinatura.gateway_subscription_id:
             assinatura.gateway_subscription_id = subscription_id
+            assinatura_nova = True
         elif (
             assinatura and subscription_id
             and assinatura.gateway_subscription_id
@@ -1400,6 +1407,7 @@ class BillingService:
             # causa de um checkout novo que o usuário nem chegou a
             # pagar). Ver BillingService._substituir_gateway_subscription_id.
             BillingService._substituir_gateway_subscription_id(assinatura, subscription_id)
+            assinatura_nova = True
 
         # Quando o payment confirmado veio de cartão, o Asaas costuma
         # incluir um objeto 'creditCard' com os últimos dígitos e a
@@ -1417,7 +1425,7 @@ class BillingService:
 
         if assinatura:
             status_antes = assinatura.status
-            BillingService._aplicar_evento(assinatura, tipo_evento, payment)
+            BillingService._aplicar_evento(assinatura, tipo_evento, payment, assinatura_nova=assinatura_nova)
             logger.info(
                 'Assinatura %s (usuario=%s): status %s -> %s (evento %s)',
                 assinatura.id, assinatura.usuario_id, status_antes, assinatura.status, tipo_evento,
@@ -1521,7 +1529,23 @@ class BillingService:
         return True, real
 
     @staticmethod
-    def _aplicar_evento(assinatura: Assinatura, tipo_evento: str, payment: dict = None):
+    def _plano_pelo_valor_pago(assinatura: Assinatura, payment: dict):
+        """Plano (ativo, do mesmo tipo de usuário) cujo preço é exatamente o
+        valor do pagamento confirmado. None se o valor não veio no payload ou
+        se não houver UM plano com esse preço (então o plano atual fica)."""
+        valor = (payment or {}).get('value')
+        if isinstance(valor, bool) or not isinstance(valor, (int, float)):
+            return None
+        usuario = db.session.get(User, assinatura.usuario_id)
+        if usuario is None:
+            return None
+        candidatos = Plano.query.filter_by(
+            tipo_usuario=usuario.tipo_usuario, ativo=True, preco_centavos=int(round(valor * 100)),
+        ).all()
+        return candidatos[0] if len(candidatos) == 1 else None
+
+    @staticmethod
+    def _aplicar_evento(assinatura: Assinatura, tipo_evento: str, payment: dict = None, assinatura_nova: bool = False):
         agora = datetime.now(timezone.utc)
         if tipo_evento in EVENTOS_CONFIRMACAO_PAGAMENTO:
             pagamento_id = (payment or {}).get('id')
@@ -1563,6 +1587,8 @@ class BillingService:
                 # continuar -- limpa o cancelamento agendado.
                 assinatura.cancelado_em = None
                 assinatura.periodo_atual_fim = _proximo_vencimento_mensal(agora)
+                assinatura.cartao_ultimos_digitos = None
+                assinatura.cartao_bandeira = None
                 if assinatura.gateway_subscription_id:
                     # Sobrou uma assinatura recorrente de CARTÃO de uma
                     # troca de forma de pagamento pra Pix (ver
@@ -1573,9 +1599,28 @@ class BillingService:
                         motivo='troca de cartão para pix confirmada',
                     )
                     assinatura.gateway_subscription_id = None
-            elif (
-                tipo_pagamento == 'CREDIT_CARD'
-                and assinatura.forma_pagamento == 'pix'
+            # O PLANO vale pelo que foi PAGO: gerar checkout não altera nada
+            # (ver criar_pagamento_pix_ativacao / criar_assinatura_checkout).
+            # Pix é cobrança avulsa -- cada um define o plano. No cartão só o
+            # 1º pagamento da assinatura: as renovações seguem o plano atual
+            # (que atualizar_valor_assinatura mantém em dia), senão uma fatura
+            # antiga, gerada antes de um upgrade, rebaixaria o plano.
+            renovacao_cartao = (
+                not eh_pix and not assinatura_nova
+                and assinatura.gateway_ultimo_pagamento_confirmado_id is not None
+            )
+            if not renovacao_cartao:
+                plano_pago = BillingService._plano_pelo_valor_pago(assinatura, payment)
+                if plano_pago is not None and plano_pago.id != assinatura.plano_id:
+                    logger.info(
+                        'Assinatura %s: plano %s -> %s pelo valor pago (payment=%s)',
+                        assinatura.id, assinatura.plano_id, plano_pago.id, (payment or {}).get('id'),
+                    )
+                    assinatura.plano_id = plano_pago.id
+            if (
+                not eh_pix
+                and tipo_pagamento == 'CREDIT_CARD'
+                and assinatura.forma_pagamento != 'cartao'
                 and (payment or {}).get('subscription')
                 and (payment or {}).get('subscription') == assinatura.gateway_subscription_id
             ):
