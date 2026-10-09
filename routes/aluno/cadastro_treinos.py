@@ -162,7 +162,7 @@ def cadastrar_treinos_adicionar_treino(versao_id):
         return redirect(url_for('main.index'))
 
     nome_treino = request.form.get('nome_treino', '')
-    descricao_treino = request.form.get('descricao_treino', '')
+    descricao_treino = request.form.get('descricao_treino')
     # exercicios[]/observacao_<chave>: opcionais -- o modal "Adicionar treino"
     # reaproveita o mesmo modal de edição (modalExercicios), então o form já
     # pode vir com exercícios selecionados desde a criação. Mesmo formato
@@ -206,7 +206,7 @@ def cadastrar_treinos_salvar_treino(versao_id, treino_versao_id):
         return redirect(url_for('main.index'))
 
     nome_treino = request.form.get('nome_treino', '')
-    descricao_treino = request.form.get('descricao_treino', '')
+    descricao_treino = request.form.get('descricao_treino')
     exercicios_raw = request.form.getlist('exercicios[]')
     # Observação por exercício (campo observacao_<chave>, até 60 chars) --
     # mesmo padrão usado em aluno.editar_treino_versao.

@@ -148,7 +148,6 @@
         flex-shrink: 0;
     }
     .ct-treino-nome { font-weight: 700; color: var(--ct-ink); font-size: 1rem; }
-    .ct-treino-desc { color: var(--ct-muted); font-size: 0.85rem; margin: 2px 0 0 44px; }
     .ct-count-chip {
         font-size: 0.75rem;
         font-weight: 700;
@@ -559,9 +558,6 @@
                         {{ qtd_ex }} exercício{{ 's' if qtd_ex != 1 else '' }}
                     </span>
                 </div>
-                {% if tv.descricao_treino %}
-                <div class="ct-treino-desc">{{ tv.descricao_treino }}</div>
-                {% endif %}
             </div>
             <div class="ct-treino-actions">
                 <button type="button" class="btn btn-sm ct-btn-treino ct-btn-editar-treino ct-btn-editar-exercicios"
@@ -570,7 +566,6 @@
                         data-treino-versao-id="{{ tv.id }}"
                         data-treino-codigo="{{ codigo }}"
                         data-treino-nome="{{ tv.nome_treino }}"
-                        data-treino-descricao="{{ tv.descricao_treino or '' }}"
                         data-action="{{ url_for('aluno.cadastrar_treinos_salvar_treino', versao_id=versao.id, treino_versao_id=tv.id) }}">
                     <span class="ct-btn-treino-icon"><i class="bi bi-pencil-fill"></i></span> Editar
                 </button>
@@ -675,13 +670,9 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="row g-2 ct-modal-dados-treino">
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <label class="etv-field-label">Nome do treino</label>
                             <input type="text" name="nome_treino" id="ctInputNome" class="form-control" maxlength="100" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="etv-field-label">Descrição</label>
-                            <input type="text" name="descricao_treino" id="ctInputDescricao" class="form-control" maxlength="200">
                         </div>
                     </div>
 

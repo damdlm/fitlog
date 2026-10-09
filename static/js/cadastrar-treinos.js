@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const form = document.getElementById('formEditarTreino');
     const inputNome = document.getElementById('ctInputNome');
-    const inputDescricao = document.getElementById('ctInputDescricao');
     const modalCodigo = document.getElementById('ctModalCodigo');
     const modalTitulo = document.getElementById('ctModalTitulo');
     const modalIcone = document.getElementById('ctModalIcone');
@@ -257,12 +256,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const treinoVersaoId = trigger.getAttribute('data-treino-versao-id') || '';
         const codigo = trigger.getAttribute('data-treino-codigo') || '';
         const nome = trigger.getAttribute('data-treino-nome') || '';
-        const descricao = trigger.getAttribute('data-treino-descricao') || '';
         const action = trigger.getAttribute('data-action') || '';
 
         if (form && action) form.action = action;
         if (inputNome) inputNome.value = nome;
-        if (inputDescricao) inputDescricao.value = descricao;
         if (modalCodigo) modalCodigo.textContent = modoAdicionar ? '' : codigo;
 
         // Mesmo modal servindo os dois fluxos (ver cadastrar_treinos.html):

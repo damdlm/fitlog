@@ -815,7 +815,11 @@ class VersaoService(BaseService):
         )
 
         nome_treino = (nome_treino or '').strip()
-        descricao_treino = (descricao_treino or '').strip()
+        # None = o formulário não tem mais o campo "Descrição do treino":
+        # mantém a que já estava gravada em vez de apagá-la.
+        if descricao_treino is None:
+            descricao_treino = treino_versao.descricao_treino or ''
+        descricao_treino = descricao_treino.strip()
         if not nome_treino:
             raise ValueError("Nome do treino é obrigatório.")
         if len(nome_treino) > 100:

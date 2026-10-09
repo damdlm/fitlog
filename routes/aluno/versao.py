@@ -161,7 +161,7 @@ def versao_adicionar_treino(versao_id):
         return _acesso_negado()
 
     nome_treino = request.form.get('nome_treino', '')
-    descricao_treino = request.form.get('descricao_treino', '')
+    descricao_treino = request.form.get('descricao_treino')
     # exercicios[]/observacao_<chave>: opcionais -- mesmo esquema de
     # versao_salvar_treino, já que ver_versao.html agora reaproveita o
     # mesmo modal (modalExercicios) tanto pra adicionar quanto editar.
@@ -205,7 +205,7 @@ def versao_salvar_treino(versao_id, treino_versao_id):
         return _acesso_negado()
 
     nome_treino = request.form.get('nome_treino', '')
-    descricao_treino = request.form.get('descricao_treino', '')
+    descricao_treino = request.form.get('descricao_treino')
     exercicios_raw = request.form.getlist('exercicios[]')
     observacoes = {
         chave: request.form.get(f'observacao_{chave}', '').strip()[:60]

@@ -539,3 +539,42 @@ class TestAcessoNaoAutenticado:
     def test_post_sem_login_redireciona(self, client):
         resp = client.post('/aluno/cadastrar-treinos/versao', data={'descricao': 'x'})
         assert resp.status_code in (302, 401)
+
+class TestSemCampoDescricaoDoTreino:
+    """A tela não pede mais "Descrição" do treino. Descrições já gravadas
+    não podem ser apagadas ao salvar o treino sem esse campo."""
+
+    def _versao_com_treino(self, aluno_client, app, aluno, descricao_treino=''):
+        aluno_client.post('/aluno/cadastrar-treinos/versao', data={'descricao': 'v1'})
+        with app.app_context():
+            versao_id = VersaoGlobal.query.filter_by(user_id=aluno).first().id
+        aluno_client.post(f'/aluno/cadastrar-treinos/{versao_id}/treino', data={
+            'nome_treino': 'Peito', 'descricao_treino': descricao_treino,
+        })
+        with app.app_context():
+            tv_id = TreinoVersao.query.filter_by(versao_id=versao_id).first().id
+        return versao_id, tv_id
+
+    def test_tela_nao_tem_campo_nem_exibe_descricao_do_treino(self, aluno_client, app, aluno):
+        self._versao_com_treino(aluno_client, app, aluno, descricao_treino='texto antigo')
+        html = aluno_client.get('/aluno/cadastrar-treinos').get_data(as_text=True)
+        assert 'name="descricao_treino"' not in html
+        assert 'texto antigo' not in html
+        assert 'name="descricao"' in html  # descrição da VERSÃO continua
+
+    def test_salvar_sem_o_campo_preserva_descricao_gravada(self, aluno_client, app, aluno):
+        versao_id, tv_id = self._versao_com_treino(aluno_client, app, aluno, descricao_treino='texto antigo')
+        aluno_client.post(f'/aluno/cadastrar-treinos/{versao_id}/treino/{tv_id}', data={
+            'nome_treino': 'Peito e ombro',
+        })
+        with app.app_context():
+            tv = db.session.get(TreinoVersao, tv_id)
+            assert tv.nome_treino == 'Peito e ombro'
+            assert tv.descricao_treino == 'texto antigo'
+
+    def test_adicionar_treino_sem_o_campo_funciona(self, aluno_client, app, aluno):
+        versao_id, _ = self._versao_com_treino(aluno_client, app, aluno)
+        aluno_client.post(f'/aluno/cadastrar-treinos/{versao_id}/treino', data={'nome_treino': 'Costas'})
+        with app.app_context():
+            nomes = [t.nome_treino for t in TreinoVersao.query.filter_by(versao_id=versao_id)]
+            assert 'Costas' in nomes
