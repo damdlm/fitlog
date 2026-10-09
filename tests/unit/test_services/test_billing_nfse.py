@@ -15,7 +15,7 @@ from services.notificacao_service import NotificacaoService
 def _sem_reconsulta_asaas(app):
     app.config['ASAAS_WEBHOOK_VERIFICAR_API'] = False
     # _agendar_nota_fiscal monta os headers com a chave; sem ela levanta
-    # RuntimeError antes mesmo do POST (que os testes substituem por um fake).
+    # RuntimeError antes mesmo do POST (que os testes substituem por um fake). 
     app.config['ASAAS_API_KEY'] = 'chave_de_teste'
 
 
