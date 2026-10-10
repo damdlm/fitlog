@@ -1,27 +1,31 @@
 name: CI
 
 # Roda em todo push e Pull Request pra main -- pega erro antes de
-# chegar no Railway, que builda direto da main sem nenhuma checagem.
+# chegar no Railway, que builda direto da main (ligue "Wait for CI" no
+# serviço no Railway para o deploy esperar este CI passar).
 # Não precisa de Postgres/Redis reais: os testes usam SQLite em
 # memória (ver tests/conftest.py) e as extensões (cache, rate limiter)
 # caem pra modo em-memória sozinhas quando REDIS_URL não está setada
 # (ver config.py) -- por isso não tem nenhum "services:" aqui.
+#
+# A suíte inteira leva ~17 min em série. Por isso os testes rodam em
+# 4 jobs paralelos (unit, security, integration e o "resto") e o tempo total cai para o
+# do grupo mais lento (~9 min). O lint é um job à parte, rápido.
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
 
+env:
+  # Necessária só pra config.py não falhar durante o import; os
+  # testes em si usam SQLite em memória, não essa SECRET_KEY.
+  SECRET_KEY: ci-only-secret-key-not-for-production
+  FLASK_ENV: testing
+
 jobs:
-  lint-and-test:
+  lint:
     runs-on: ubuntu-latest
-
-    env:
-      # Necessária só pra config.py não falhar durante o import; os
-      # testes em si usam SQLite em memória, não essa SECRET_KEY.
-      SECRET_KEY: ci-only-secret-key-not-for-production
-      FLASK_ENV: testing
-
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
@@ -51,12 +55,49 @@ jobs:
           # atual.
           flake8 . --count --exit-zero --max-line-length=120 --statistics
 
-      - name: Rodar testes com cobertura
-        run: pytest --cov-report=xml
+  testes:
+    runs-on: ubuntu-latest
+    strategy:
+      # Um grupo falhar não cancela os outros: o resultado mostra tudo de uma vez.
+      fail-fast: false
+      matrix:
+        include:
+          - nome: unit
+            caminho: tests/unit
+          - nome: security
+            caminho: tests/security
+          - nome: integration
+            caminho: tests/integration
+          # "resto": tudo que NÃO está nas 3 pastas acima (hoje, os testes
+          # soltos em tests/ como test_contato.py e test_privacidade.py, e
+          # qualquer pasta ou arquivo novo) -- senão eles nunca rodariam.
+          - nome: resto
+            caminho: tests --ignore=tests/unit --ignore=tests/security --ignore=tests/integration
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.8"
+          cache: pip
+
+      - name: Instalar dependências do sistema (libpq para psycopg2)
+        run: sudo apt-get update && sudo apt-get install -y libpq-dev
+
+      - name: Instalar dependências Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Rodar testes (${{ matrix.nome }}) com cobertura
+        run: pytest ${{ matrix.caminho }} --cov-report=xml
 
       - name: Publicar relatório de cobertura como artefato
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: coverage-report-${{ matrix.nome }}
           path: coverage.xml
