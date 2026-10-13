@@ -128,7 +128,7 @@
 .pp-poster-estilo-5 .pp-photo-area {
     width: 100%;
     height: calc(var(--u) * var(--anel-u));
-    margin: calc(var(--u) * 14) 0 0;
+    margin: calc(var(--u) * 9) 0 0;
 }
 
 .pp-poster-estilo-5 .pp-ring {

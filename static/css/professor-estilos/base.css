@@ -78,7 +78,7 @@ html {
     width: 100%;
     min-height: calc(100cqw * 16 / 9);
     overflow: hidden;
-    padding: 44px 14px 16px;
+    padding: 24px 14px 16px;
     isolation: isolate;
 }
 
@@ -121,7 +121,7 @@ html {
     margin-bottom: var(--pp-gap);
 }
 
-/* AÇÕES (compartilhar / editar) -- a logo do FitLog fica à esquerda */
+/* AÇÕES (compartilhar / editar) -- no canto superior direito; a logo do FitLog fica no rodapé */
 .pp-actions {
     position: absolute;
     z-index: 8;
@@ -460,7 +460,7 @@ html {
     }
 
     .pp-poster {
-        padding: 50px 34px 24px;
+        padding: 20px 34px 24px;
     }
 
     .pp-actions {

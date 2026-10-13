@@ -1,16 +1,22 @@
 /* =========================================================
    FITLOG — PÁGINA PÚBLICA — PARTES COMUNS A TODOS OS ESTILOS
-   Carregado antes de qualquer estilo. Hoje: a logo do FitLog no
-   canto superior esquerdo do pôster (a logo tem contorno branco,
+   Carregado antes de qualquer estilo. Hoje: a logo do FitLog
+   centralizada no rodapé do pôster (a logo tem contorno branco,
    então lê bem em fundo claro e escuro).
+
+   O macro marca() é chamado no início do HTML do pôster, mas o
+   pôster é uma coluna flex: "order" joga a logo para o FIM da
+   coluna, abaixo do "Sobre mim", sem mexer no HTML de cada estilo.
    ========================================================= */
 
 .pp-brand {
-    position: absolute;
+    position: relative;
     z-index: 9;
-    top: 12px;
-    left: 14px;
+    order: 100;
+    flex: 0 0 auto;
+    align-self: center;
     display: block;
+    margin: 12px auto 0;
     line-height: 0;
     text-decoration: none;
 }
@@ -23,8 +29,7 @@
 
 @media (min-width: 561px) {
     .pp-brand {
-        top: 16px;
-        left: 20px;
+        margin-top: 10px;
     }
 
     .pp-brand img {

@@ -33,14 +33,14 @@
     border: 1px solid rgba(255, 255, 255, .14);
     border-radius: 18px;
     box-shadow: 0 18px 50px rgba(0, 0, 0, .35);
-    /* Um pouco menos de respiro no topo que o base.css: a logo fica no
-       canto e a foto é redonda, então não encostam uma na outra. */
-    padding-top: 30px;
+    /* Um pouco menos de respiro no topo que o base.css (a logo agora
+       fica no rodapé, então o topo só precisa respirar da foto). */
+    padding-top: 18px;
 }
 
 @media (min-width: 561px) {
     .pp-poster-textura {
-        padding-top: 38px;
+        padding-top: 16px;
     }
 }
 
