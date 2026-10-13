@@ -485,7 +485,10 @@ def logout():
     # aceitado nada. Removendo a flag aqui, cada login volta a
     # verificar o aceite do zero para o usuário que está entrando.
     session.pop('lgpd_versoes_ok', None)
-    flash('Você saiu do sistema', 'info')
+    # Categoria própria 'logout' (renderizada como alerta info em
+    # templates/base.html): no mobile o aviso é escondido por CSS
+    # (.alert-logout), no desktop continua aparecendo normalmente.
+    flash('Você saiu do sistema', 'logout')
     return redirect(url_for('auth.login'))
 
 
