@@ -2166,7 +2166,7 @@
         });
 
         // Fecha as mensagens de alerta (boas-vindas, sucesso, erro etc.)
-        // automaticamente após 3 segundos, ou ao clicar fora delas.
+        // automaticamente após 2 segundos, ou ao clicar fora delas.
         (function () {
             const alertas = document.querySelectorAll('.alert.alert-dismissible');
             if (!alertas.length) return;
@@ -2180,7 +2180,7 @@
             alertas.forEach(function (el) {
                 const timer = setTimeout(function () {
                     fecharAlerta(el);
-                }, 3000);
+                }, 2000);
 
                 // Se o usuário fechar manualmente antes, cancela o timer
                 el.addEventListener('closed.bs.alert', function () {
