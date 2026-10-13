@@ -10,7 +10,7 @@ name: CI
 #
 # A suíte inteira leva ~17 min em série. Por isso os testes rodam em
 # 4 jobs paralelos (unit, security, integration e o "resto") e o tempo total cai para o
-# do grupo mais lento (~9 min). O lint é um job à parte, rápido.
+# do grupo mais lento (~9 min). O lint é um job à parte, rápido. 
 on:
   push:
     branches: [main]
