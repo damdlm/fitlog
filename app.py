@@ -1,4 +1,5 @@
 import os
+import sys
 import secrets
 import logging
 from logging.handlers import RotatingFileHandler
@@ -42,9 +43,16 @@ def setup_logging(app):
     # stdout/stderr do processo do Gunicorn são. Sem um handler para
     # stream, logger.exception(...) e afins não aparecem no painel de
     # logs do Railway -- só localmente, no arquivo.
-    stream_handler = logging.StreamHandler()
+    # INFO/WARNING vão para stdout e ERROR+ para stderr: a Railway marca
+    # tudo que sai em stderr como severidade "error", o que fazia cada
+    # linha INFO aparecer como erro e atrapalhava filtros e alertas.
+    stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setFormatter(formatter)
     stream_handler.setLevel(logging.INFO)
+    stream_handler.addFilter(lambda record: record.levelno < logging.ERROR)
+    error_handler = logging.StreamHandler(sys.stderr)
+    error_handler.setFormatter(formatter)
+    error_handler.setLevel(logging.ERROR)
 
     # CRÍTICO: os dois handlers acima são anexados no logger RAIZ do
     # Python (logging.getLogger(), sem nome), não em app.logger. Todo
@@ -67,8 +75,10 @@ def setup_logging(app):
     if not any(getattr(h, '_fitlog_root_handler', False) for h in root_logger.handlers):
         file_handler._fitlog_root_handler = True
         stream_handler._fitlog_root_handler = True
+        error_handler._fitlog_root_handler = True
         root_logger.addHandler(file_handler)
         root_logger.addHandler(stream_handler)
+        root_logger.addHandler(error_handler)
     root_logger.setLevel(logging.INFO)
 
     # O Flask anexa seu próprio handler padrão em app.logger na
