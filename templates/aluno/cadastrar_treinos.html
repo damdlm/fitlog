@@ -5,6 +5,8 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ static_v('css/editar-treino-versao.css') }}">
+<link rel="stylesheet" href="{{ static_v('vendor/driverjs/driver.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/registrar-treino-tour.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -480,6 +482,9 @@
 <div class="ct-empty-card">
     <div class="ct-empty-icon"><i class="bi bi-flag"></i></div>
     <h2>Comece uma nova versão</h2>
+    <button type="button" class="rt-tour-ajuda mb-2" id="btnTourCadastrarSemVersao">
+        <i class="bi bi-question-circle"></i> Tutorial
+    </button>
     <p>Dê um nome pra essa fase do seu treino. A data de início é hoje, e você escolhe depois quantos treinos ela vai ter.</p>
     <form method="post" action="{{ url_for('aluno.cadastrar_treinos_criar_versao') }}" class="ct-empty-form text-start">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -536,6 +541,9 @@
 
 <div class="ct-section-title">
     <h2><i class="bi bi-trophy" style="color:#F28C33;"></i> Treinos desta versão</h2>
+    <button type="button" class="rt-tour-ajuda" id="btnTourCadastrarLista">
+        <i class="bi bi-question-circle"></i> Tutorial
+    </button>
 </div>
 
 {% if not treinos_versao %}
@@ -678,7 +686,12 @@
 
                     <hr class="ct-modal-divider">
 
-                    <label class="etv-field-label">Exercícios do catálogo</label>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <label class="etv-field-label">Exercícios do catálogo</label>
+                        <button type="button" class="rt-tour-ajuda" id="btnTourCadastrarModal">
+                            <i class="bi bi-question-circle"></i> Tutorial
+                        </button>
+                    </div>
 
                     <div class="etv-toolbar">
                         <div class="etv-toolbar-row">
@@ -854,4 +867,6 @@
 <script src="{{ static_v('js/editar-treino-versao.js') }}"></script>
 <script src="{{ static_v('js/cadastrar-treinos.js') }}"></script>
 <script src="{{ static_v('js/cadastrar-treinos-reordenar.js') }}"></script>
+<script src="{{ static_v('vendor/driverjs/driver.js.iife.js') }}"></script>
+<script src="{{ static_v('js/cadastrar-treinos-tour.js') }}" data-user-id="{{ current_user.id if current_user.is_authenticated else 'anon' }}"></script>
 {% endblock %}
