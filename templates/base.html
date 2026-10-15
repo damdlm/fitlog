@@ -99,7 +99,7 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/page-transition.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/fitbot-chat.css') }}">
+    <link rel="stylesheet" href="{{ static_v('css/fitbot-chat.css') }}">
     {% if current_user.is_authenticated %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pwa-install.css') }}">
     <link rel="stylesheet" href="{{ static_v('css/notificacoes.css') }}">
@@ -2131,7 +2131,7 @@
 
     <!-- Modal de imagens do exercício -->
     <script src="{{ url_for('static', filename='js/modules/exercicio-imagens.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/modules/fitbot-chat.js') }}"></script>
+    <script src="{{ static_v('js/modules/fitbot-chat.js') }}"></script>
 
     <!-- Instalação do PWA (banner Android/Desktop + tutorial iOS) --
          só carrega/roda com usuário logado (login, cadastro, landing
