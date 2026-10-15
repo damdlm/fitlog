@@ -156,10 +156,9 @@
 }
 
 /* Isolado no cantinho superior direito, flutuando por cima das
-   mensagens -- sem nome, sem status, só a animação. O anel ao redor
-   (box-shadow) muda de cor/pulsa conforme o estado do robô -- é o
-   elemento de assinatura visual do chat. Tamanho cresce nos
-   breakpoints maiores (ver media queries no fim do arquivo). */
+   mensagens -- sem nome, sem status, só a animação. O quadro fica
+   parado (sem efeito de pulsar). Tamanho cresce nos breakpoints
+   maiores (ver media queries no fim do arquivo). */
 .fitbot-avatar-corner {
     position: absolute;
     top: 10px;
@@ -170,21 +169,6 @@
     box-shadow: none;
     opacity: 1;
     transition: opacity .4s ease;
-    animation: fitbot-avatar-breathe 3s ease-in-out infinite;
-}
-
-@keyframes fitbot-avatar-breathe {
-    0%, 100% { transform: scale(1); }
-    50%      { transform: scale(1.03); }
-}
-
-.fitbot-widget.is-thinking .fitbot-avatar-corner {
-    animation: fitbot-avatar-thinking 1.1s ease-in-out infinite;
-}
-
-@keyframes fitbot-avatar-thinking {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50%      { transform: scale(1.04); opacity: 0.85; }
 }
 
 .fitbot-widget.is-talking .fitbot-avatar-corner {
