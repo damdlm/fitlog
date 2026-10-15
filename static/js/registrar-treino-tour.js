@@ -235,6 +235,38 @@
         };
     }
 
+    // ---------- rolagem do contêiner ----------
+    // O Driver.js só rola até o elemento quando ele sai da JANELA. No modo
+    // treino a lista rola dentro de #modoTreinoBody, que termina acima do
+    // rodapé do cronômetro: um elemento ainda "dentro da janela", mas
+    // cortado por esse contêiner (ex: o botão de exercício avulso, que
+    // fica logo abaixo da área visível), era considerado visível e o
+    // destaque aparecia por cima do rodapé, apontando para o lugar errado.
+    // Aqui rolamos o contêiner por conta própria antes de destacar.
+    function ancestralRolavel(el) {
+        var p = el.parentElement;
+        while (p && p !== document.body && p !== document.documentElement) {
+            var oy = window.getComputedStyle(p).overflowY;
+            if ((oy === 'auto' || oy === 'scroll') && p.scrollHeight > p.clientHeight) return p;
+            p = p.parentElement;
+        }
+        return null;
+    }
+
+    function garantirVisivelNoContainer(el) {
+        if (!el || !el.getBoundingClientRect) return;
+        var cont = ancestralRolavel(el);
+        if (!cont) return;
+        var margem = 12;
+        var c = cont.getBoundingClientRect();
+        var r = el.getBoundingClientRect();
+        if (r.top >= c.top + margem && r.bottom <= c.bottom - margem) return;
+        // Centraliza o elemento na área visível do contêiner (o navegador
+        // limita o scrollTop ao fim da lista, então o último item só encosta
+        // embaixo, o que também serve).
+        cont.scrollTop += (r.top + r.bottom) / 2 - (c.top + c.bottom) / 2;
+    }
+
     // ---------- execução ----------
     function iniciar(fase) {
         if (instanciaAtiva) return;
@@ -262,6 +294,11 @@
             stagePadding: 6,
             stageRadius: 10,
             popoverClass: 'fl-tour',
+            // Rola o contêiner do modo treino ANTES de o Driver.js medir o
+            // elemento (ver garantirVisivelNoContainer).
+            onHighlightStarted: function (el) {
+                garantirVisivelNoContainer(el);
+            },
             // Segurança extra: confere a posição logo depois de destacar,
             // caso o navegador ainda esteja assentando a rolagem.
             onHighlighted: function () {
