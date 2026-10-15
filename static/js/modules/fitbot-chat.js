@@ -264,6 +264,19 @@
         // em que o vídeo podia já estar adiantado, cortando ele antes de
         // terminar.
         agendarProximaRotacaoIdle();
+
+        // Pré-carrega o PRÓXIMO vídeo no buffer que acabou de sair de cena,
+        // enquanto o atual ainda toca. Sem isso, o download só começava na
+        // hora da troca: o vídeo atual (que tem "loop") reiniciava do zero
+        // e ficava repetindo até o próximo chegar, o que parecia travar.
+        // Espera o fim do fade para não trocar o src do buffer que ainda
+        // está esmaecendo.
+        setTimeout(function () {
+            if (chatAberto && elIdleInativo === bufferAnterior && bufferAnterior &&
+                !bufferAnterior.classList.contains('is-active')) {
+                carregarVideoIdleNoBuffer(bufferAnterior, null);
+            }
+        }, CROSSFADE_DURACAO_MS + 100);
     }
 
     // Carrega um vídeo idle num buffer específico e decodifica o primeiro
@@ -298,6 +311,11 @@
             var promessaPreload = bufferAlvo.play();
             function marcarPronto() {
                 idleBufferPreparado = bufferAlvo;
+                // Se o chat fechou enquanto este vídeo carregava, não deixa
+                // o buffer escondido tocando.
+                if (!chatAberto) {
+                    try { bufferAlvo.pause(); } catch (e) { /* inofensivo */ }
+                }
                 // Só um dos dois interessados é avisado -- os dois fariam
                 // exatamente a mesma coisa (ativar esse mesmo buffer), e
                 // como cada "ativarAgora" só aplica a classe depois de 2
