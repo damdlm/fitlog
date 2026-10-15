@@ -23,14 +23,33 @@ def _versao_finalizada_para(versao, data_obj):
     estivesse ativa. Aqui o dia da finalização já conta como encerrado:
     não dá pra COMEÇAR um registro novo a partir dele. Datas anteriores à
     finalização continuam aceitas (lançamento retroativo dentro do
-    período da versão), e editar o que já foi registrado segue pelo
-    calendário, que não passa por esta checagem.
+    período da versão). Editar o que já foi registrado, pelo calendário,
+    é liberado em salvar_registro (ver _edicao_de_sessao_existente).
     """
     return (
         versao is not None
         and versao.data_fim is not None
         and data_obj >= versao.data_fim
     )
+
+
+def _edicao_de_sessao_existente(veio_do_calendario, data_original, treino_id):
+    """True se o POST é a edição (pelo modal do calendário) de uma sessão
+    que JÁ está registrada: veio com data_original e existem registros desse
+    treino naquela data, na versão que valia nela.
+
+    Só o campo data_original não basta: sem checar que a sessão existe, ele
+    serviria de atalho para registrar treino novo numa versão finalizada.
+    """
+    if not veio_do_calendario:
+        return False
+    data_ok, data_original_obj = validar_data(data_original)
+    if not data_ok:
+        return False
+    versao_original = VersaoService.get_ativa_por_data(data_original_obj)
+    if versao_original is None:
+        return False
+    return bool(RegistroService.get_by_data(treino_id, versao_original.id, data_original_obj))
 
 
 def _msg_versao_finalizada(versao):
@@ -243,7 +262,11 @@ def salvar_registro():
         flash(f"Não há versão ativa para {data_obj.strftime('%d/%m/%Y')}", "danger")
         return _redirect_apos_salvar(sucesso=False, data_para_exibir=data_obj.isoformat())
     
-    if _versao_finalizada_para(versao_ativa, data_obj):
+    # Versão finalizada bloqueia só o registro NOVO. Editar pelo calendário
+    # uma sessão que já existe (mesmo treino, mesma versão, na data
+    # original) é sempre permitido, inclusive no dia da finalização.
+    if not _edicao_de_sessao_existente(veio_do_calendario, data_original, treino_id) \
+            and _versao_finalizada_para(versao_ativa, data_obj):
         flash(f"{_msg_versao_finalizada(versao_ativa)}. Cadastre uma nova versão para registrar treinos.", "danger")
         return _redirect_apos_salvar(sucesso=False, data_para_exibir=data_obj.isoformat())
     

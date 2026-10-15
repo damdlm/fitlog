@@ -182,6 +182,91 @@ class TestSalvarRegistro:
             assert len(registros) == 1
             assert registros[0].series[0].carga == 60
 
+    def _registrar_e_finalizar(self, client, app, username):
+        """Registra uma sessão em 2026-01-05 e finaliza a versão NESSE dia
+        (data_fim == data da sessão) -- o caso em que get_ativa_por_data
+        ainda casa com a versão, mas _versao_finalizada_para a considera
+        encerrada."""
+        with app.app_context():
+            u = _criar_usuario(username)
+            versao, treino_id, ex = _montar_versao_com_treino_e_exercicio(u.id)
+            versao_id = versao.id
+            chave = f'u_{ex.id}'
+
+        _login(client, username)
+        client.post('/registrar/registrar-treino', data={
+            'treino': str(treino_id),
+            'data': '2026-01-05',
+            f'carga_{chave}': '50',
+            f'reps_{chave}': '10',
+            f'num_series_{chave}': '3',
+        })
+        with app.app_context():
+            v = db.session.get(VersaoGlobal, versao_id)
+            v.data_fim = date(2026, 1, 5)
+            db.session.commit()
+        return treino_id, ex, chave
+
+    def test_editar_pelo_calendario_funciona_com_versao_finalizada(self, client, app):
+        """Abrir um treino pelo calendário e editar tem que funcionar mesmo
+        com a versão finalizada, inclusive no dia da finalização."""
+        treino_id, ex, chave = self._registrar_e_finalizar(client, app, 'reg_post_final_edit')
+
+        resp = client.post('/registrar/registrar-treino', data={
+            'treino': str(treino_id),
+            'data': '2026-01-05',
+            'data_original': '2026-01-05',
+            f'carga_{chave}': '60',
+            f'reps_{chave}': '12',
+            f'num_series_{chave}': '3',
+        })
+
+        assert resp.status_code == 302
+        assert '/calendar/calendario' in resp.headers['Location']
+        with app.app_context():
+            registros = RegistroTreino.query.filter_by(exercicio_usuario_id=ex.id).all()
+            assert len(registros) == 1
+            assert registros[0].series[0].carga == 60
+            assert registros[0].series[0].repeticoes == 12
+
+    def test_novo_registro_no_dia_da_finalizacao_continua_bloqueado(self, client, app):
+        """Só a edição de uma sessão que já existe é liberada: começar um
+        registro novo numa versão finalizada continua sendo recusado."""
+        treino_id, ex, chave = self._registrar_e_finalizar(client, app, 'reg_post_final_novo')
+
+        resp = client.post('/registrar/registrar-treino', data={
+            'treino': str(treino_id),
+            'data': '2026-01-05',
+            f'carga_{chave}': '99',
+            f'reps_{chave}': '9',
+            f'num_series_{chave}': '3',
+        })
+
+        assert resp.status_code == 302
+        with app.app_context():
+            registros = RegistroTreino.query.filter_by(exercicio_usuario_id=ex.id).all()
+            assert len(registros) == 1
+            assert registros[0].series[0].carga == 50
+
+    def test_data_original_sem_sessao_existente_nao_burla_o_bloqueio(self, client, app):
+        """Mandar data_original de um dia sem sessão não pode servir de
+        atalho para registrar numa versão finalizada."""
+        treino_id, ex, chave = self._registrar_e_finalizar(client, app, 'reg_post_final_fake')
+
+        client.post('/registrar/registrar-treino', data={
+            'treino': str(treino_id),
+            'data': '2026-01-05',
+            'data_original': '2026-01-03',
+            f'carga_{chave}': '99',
+            f'reps_{chave}': '9',
+            f'num_series_{chave}': '3',
+        })
+
+        with app.app_context():
+            registros = RegistroTreino.query.filter_by(exercicio_usuario_id=ex.id).all()
+            assert len(registros) == 1
+            assert registros[0].series[0].carga == 50
+
     def test_sem_treino_ou_data_nao_salva(self, client, app):
         with app.app_context():
             _criar_usuario('reg_post_2')
