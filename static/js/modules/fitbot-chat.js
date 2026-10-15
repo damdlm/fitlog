@@ -20,22 +20,16 @@
     var MAX_HISTORICO = 10;
     var DURACAO_ESTADO_TALKING_MS = 2500;
     var DURACAO_ESTADO_ERROR_MS = 3000;
-    var DURACAO_ESTADO_BYE_MS = 1200; // usado ao FECHAR o chat (despedirEFechar)
 
-    // Vídeos "de humor" do FitBot — sem significado fixo, só para
-    // deixar a espera mais divertida. Um é sorteado toda vez que o
-    // robô volta para o estado parado (idle).
+    // Vídeos do FitBot: enquanto o chat está aberto, um é sorteado do
+    // pool a cada vez, sem nenhuma outra regra (só não repete o mesmo
+    // vídeo duas vezes seguidas).
     var VIDEOS_POOL_IDLE = [
-
         'Agachamento.mp4', 'agua.mp4', 'alo.mp4', 'arremesso.mp4', 'beijo.mp4',
         'bracos.mp4', 'celular.mp4', 'dancando.mp4', 'dancando2.mp4', 'duvida.mp4',
-        'fortao.mp4', 'mao.mp4', 'pensando.mp4', 'prancheta.mp4', 'pulso.mp4', 
-        'saudacao.mp4', 'stiff.mp4', 'tchau.mp4',
+        'fortao.mp4', 'mao.mp4', 'padrao.mp4', 'pensando.mp4', 'prancheta.mp4',
+        'pulso.mp4', 'saudacao.mp4', 'stiff.mp4', 'tchau.mp4',
     ];
-    // "padrao.mp4" não entra no sorteio -- ele é intercalado manualmente
-    // entre os aleatórios (ver escolherProximoVideoIdle): aleatório,
-    // padrão, aleatório, padrão... sempre alternando.
-    var VIDEO_PADRAO_IDLE = 'padrao.mp4';
     var PASTA_VIDEOS = '/static/videos/fitbot/';
     // Duração do esmaecimento entre um vídeo e outro (crossfade simultâneo:
     // o antigo esmaece enquanto o novo já vai aparecendo). Precisa bater
@@ -103,7 +97,7 @@
     var elIdleAtivo = null;
     var elIdleInativo = null;
     var ultimoVideoAleatorioIdle = null;
-    var proximoIdleEhPadrao = false;
+    var chatAberto = false; // a rotação de vídeos só roda com o chat aberto
     var idleRotationTimeoutId = null;
     var idleBufferPreparado = null; // buffer (A ou B) já carregado/decodificado, pronto pra ativar sem espera de rede
     var idleBufferEmCarregamento = null; // buffer que está no meio de um load() ainda sem loadedmetadata (evita 2 loads concorrentes no mesmo buffer)
@@ -143,19 +137,11 @@
         elIdleVideoB = byId('fitbotIdleVideoB');
         elIdleAtivo = elIdleVideoA;
         elIdleInativo = elIdleVideoB;
-        elCloseBtn = elModal.querySelector('[data-bs-dismiss="modal"]');
 
         setState('idle');
 
         elModal.addEventListener('show.bs.modal', onModalShown);
-
-        if (elCloseBtn) {
-            elCloseBtn.addEventListener('click', function (evt) {
-                evt.preventDefault();
-                evt.stopPropagation();
-                despedirEFechar();
-            });
-        }
+        elModal.addEventListener('hidden.bs.modal', onModalHidden);
 
         elForm.addEventListener('submit', onSubmit);
 
@@ -178,40 +164,40 @@
         var primeiraVez = !conversaIniciada;
         conversaIniciada = true;
 
-        // Abre direto no idle (rotação normal de vídeos), sem forçar
-        // nenhum vídeo específico de abertura.
+        chatAberto = true;
         setState('idle');
+        // Retoma o vídeo que ficou pausado ao fechar e já sorteia o próximo.
+        if (elIdleAtivo && elIdleAtivo.paused && elIdleAtivo.classList.contains('is-active')) {
+            var retomada = elIdleAtivo.play();
+            if (retomada && retomada.catch) retomada.catch(function () {});
+        }
+        sortearVideoIdle();
+
         if (primeiraVez) {
             adicionarMensagem('bot', sortearSaudacaoInicial());
         }
     }
 
-    function despedirEFechar() {
-        setState('bye', function aoFicarVisivel() {
-            setTimeout(function () {
-                var instancia = bootstrap.Modal.getOrCreateInstance(elModal);
-                instancia.hide();
-                setState('idle');
-            }, DURACAO_ESTADO_BYE_MS);
-        });
+    // Chat fechado: para de sortear/baixar vídeos e pausa os dois buffers.
+    function onModalHidden() {
+        chatAberto = false;
+        pararRotacaoIdle();
+        if (elIdleVideoA) elIdleVideoA.pause();
+        if (elIdleVideoB) elIdleVideoB.pause();
     }
 
     /* ------------------------------------------------------------
        Máquina de estados do robô
        ------------------------------------------------------------ */
-    // aoFicarVisivel (opcional): chamado quando o vídeo do novo estado
-    // realmente terminou de aparecer (não antes) -- ver ativarVideoComPreload.
-    // Só se aplica a estados de vídeo único (bye/talking/error/thinking);
-    // pro 'idle' (dois buffers, crossfade próprio) não é usado.
-    function setState(novoEstado, aoFicarVisivel) {
+    // O estado só controla o visual do widget (classes is-*, indicador
+    // "digitando..."). Os vídeos não dependem do estado.
+    function setState(novoEstado) {
         if (estadoTimeoutId) {
             clearTimeout(estadoTimeoutId);
             estadoTimeoutId = null;
         }
-        elWidget.classList.remove('is-idle', 'is-thinking', 'is-talking', 'is-error', 'is-bye');
+        elWidget.classList.remove('is-idle', 'is-thinking', 'is-talking', 'is-error');
         elWidget.classList.add('is-' + novoEstado);
-
-        pararRotacaoIdle(); // se estava girando os vídeos de idle, para -- reagenda de novo se o novo estado for idle
 
         if (novoEstado === 'thinking' && elTyping) {
             elMessages.appendChild(elTyping); // mantém o "digitando..." sempre por último
@@ -223,111 +209,10 @@
         } else if (novoEstado === 'error') {
             estadoTimeoutId = setTimeout(function () { setState('idle'); }, DURACAO_ESTADO_ERROR_MS);
         }
-
-        if (novoEstado === 'idle') {
-            sortearVideoIdle();
-        }
-
-        trocarVideoAtivo(novoEstado, aoFicarVisivel);
     }
 
-    function trocarVideoAtivo(estado, aoFicarVisivel) {
-        var videos = elWidget.querySelectorAll('.fitbot-avatar-frame video');
-        var videoAlvo = null;
-
-        for (var i = 0; i < videos.length; i++) {
-            var video = videos[i];
-            var ehDoEstadoAtual = video.getAttribute('data-state') === estado;
-
-            if (estado === 'idle' && ehDoEstadoAtual) {
-                // Os dois buffers de idle são geridos por sortearVideoIdle
-                // (play/pause/crossfade) -- não mexe neles aqui.
-                continue;
-            }
-
-            if (!ehDoEstadoAtual) {
-                if (video.classList.contains('is-active')) {
-                    video.classList.remove('is-active');
-                    // Só pausa depois que o fade (CROSSFADE_DURACAO_MS) terminar --
-                    // pausar na hora congela o quadro no meio da transição visível
-                    // e ainda deixa o vídeo "frio" (precisando decodificar de novo)
-                    // na próxima vez que ele for reativado, o que causava o
-                    // intervalo/piscada entre um vídeo e outro.
-                    (function (v) {
-                        setTimeout(function () {
-                            if (!v.classList.contains('is-active')) v.pause();
-                        }, CROSSFADE_DURACAO_MS);
-                    })(video);
-                }
-                continue;
-            }
-
-            videoAlvo = video;
-        }
-
-        if (!videoAlvo) return;
-
-        // Crossfade simultâneo: o vídeo que estava ativo já começou a
-        // esmaecer (acima) enquanto este já é ativado aqui -- os dois
-        // ficam com opacidade > 0 ao mesmo tempo durante CROSSFADE_DURACAO_MS.
-        ativarVideoComPreload(videoAlvo, aoFicarVisivel);
-    }
-
-    // Ativa um vídeo de estado (bye/talking/error/thinking) só depois que
-    // o frame no início dele já está decodificado -- evita o flash/pulo
-    // que acontecia quando o vídeo estava pausado numa posição antiga
-    // (ex.: "tchau.mp4" da última vez que o chat foi aberto) e a gente
-    // tentava mostrar ele já em fade antes do navegador ter o frame pronto.
-    // aoAtivar (opcional): chamado assim que a classe is-active é aplicada
-    // (o vídeo começou a de fato aparecer) -- é o que permite a quem chamou
-    // contar o "tempo em tela" a partir da aparição real, não da intenção.
-    function ativarVideoComPreload(video, aoAtivar) {
-        if (video.classList.contains('is-active')) {
-            if (aoAtivar) aoAtivar();
-            return;
-        }
-
-        function tocarEEsmaecer() {
-            var promessa = video.play();
-            function esmaecer() {
-                requestAnimationFrame(function () {
-                    requestAnimationFrame(function () {
-                        video.classList.add('is-active');
-                        if (aoAtivar) aoAtivar();
-                    });
-                });
-            }
-            if (promessa && promessa.then) {
-                promessa.then(esmaecer).catch(esmaecer);
-            } else {
-                esmaecer();
-            }
-        }
-
-        // Já está exatamente no frame 0 e com dado suficiente decodificado?
-        // Pode tocar direto, sem esperar por "seeked".
-        if (video.currentTime === 0 && video.readyState >= 2) {
-            tocarEEsmaecer();
-            return;
-        }
-
-        video.addEventListener('seeked', function aoBuscarFrame() {
-            video.removeEventListener('seeked', aoBuscarFrame);
-            tocarEEsmaecer();
-        });
-        video.currentTime = 0;
-    }
-
-    // Escolhe o próximo vídeo do estado idle, sempre alternando entre um
-    // aleatório do pool e o "padrao.mp4" -- ou seja, o padrão sempre roda
-    // entre dois vídeos aleatórios, nunca dois aleatórios seguidos.
+    // Sorteia o próximo vídeo do pool, sem repetir o anterior.
     function escolherProximoVideoIdle() {
-        if (proximoIdleEhPadrao) {
-            proximoIdleEhPadrao = false;
-            return VIDEO_PADRAO_IDLE;
-        }
-
-        proximoIdleEhPadrao = true;
         var opcoes = VIDEOS_POOL_IDLE;
         if (opcoes.length > 1 && ultimoVideoAleatorioIdle) {
             opcoes = opcoes.filter(function (nome) { return nome !== ultimoVideoAleatorioIdle; });
@@ -370,6 +255,8 @@
             // exatamente do zero dessa vez.
         }
         bufferNovo.classList.add('is-active');
+        var tocar = bufferNovo.play();
+        if (tocar && tocar.catch) tocar.catch(function () {});
 
         // Só agenda a próxima rotação AGORA, com o vídeo já reiniciado e
         // realmente visível -- contar a partir de antes (como acontecia
@@ -436,7 +323,7 @@
     }
 
     function sortearVideoIdle() {
-        if (!elIdleInativo) return;
+        if (!elIdleInativo || !chatAberto) return;
 
         var bufferAlvo = elIdleInativo;
 
@@ -459,7 +346,7 @@
             // na próxima vez que o idle realmente entrar de verdade, o
             // fast-path abaixo (idleBufferPreparado === bufferAlvo) usa
             // esse mesmo vídeo já carregado, sem gastar rede de novo.
-            if (!elWidget.classList.contains('is-idle')) {
+            if (!chatAberto) {
                 idleBufferPreparado = bufferAlvo;
                 return;
             }
@@ -505,9 +392,7 @@
         var duracaoComMargem = Math.max(duracaoMs - CROSSFADE_DURACAO_MS, 500);
 
         idleRotationTimeoutId = setTimeout(function () {
-            // só troca se ainda estiver parado -- se o usuário mandou uma
-            // mensagem nesse meio tempo, setState já limpou esse timer
-            if (elWidget.classList.contains('is-idle')) {
+            if (chatAberto) {
                 sortearVideoIdle();
             }
         }, duracaoComMargem);
