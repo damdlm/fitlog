@@ -106,27 +106,6 @@
                 }
             },
             {
-                element: '#registroForm .btn-imagens-exercicio',
-                popover: {
-                    title: 'Veja o exercício em movimento',
-                    description: 'Toque no ícone de imagem para abrir a demonstração em '
-                        + 'GIF ou vídeo e conferir a execução antes da série.',
-                    side: 'bottom',
-                    align: 'start'
-                }
-            },
-            {
-                element: '#registroForm .btn-instrucoes-exercicio',
-                popover: {
-                    title: 'Passo a passo',
-                    description: 'Toque no <b>i</b> para ler as instruções de como '
-                        + 'executar o exercício. Aparece nos exercícios que têm '
-                        + 'instruções cadastradas.',
-                    side: 'bottom',
-                    align: 'end'
-                }
-            },
-            {
                 element: '#registroForm .exercise-row .exercicio-valores-grid',
                 popover: {
                     title: 'Carga, repetições e séries',
@@ -165,6 +144,27 @@
                         + 'Toque na seta para lançar uma série por vez.',
                     side: 'left',
                     align: 'center'
+                }
+            },
+            {
+                element: '#registroForm .btn-instrucoes-exercicio',
+                popover: {
+                    title: 'Passo a passo',
+                    description: 'Toque no <b>i</b> para ler as instruções de como '
+                        + 'executar o exercício. Aparece nos exercícios que têm '
+                        + 'instruções cadastradas.',
+                    side: 'bottom',
+                    align: 'end'
+                }
+            },
+            {
+                element: '#registroForm .btn-imagens-exercicio',
+                popover: {
+                    title: 'Veja o exercício em movimento',
+                    description: 'Toque no ícone de imagem para abrir a demonstração em '
+                        + 'GIF ou vídeo e conferir a execução antes da série.',
+                    side: 'bottom',
+                    align: 'start'
                 }
             },
             {
