@@ -1,0 +1,81 @@
+/* Tema do product tour (Driver.js) da tela Registrar Treino.
+   Segue a identidade do FitLog: laranja #F28C33, cantos arredondados
+   e a mesma sombra suave dos cards. Carregado depois de
+   vendor/driverjs/driver.css. */
+
+.driver-popover.fl-tour {
+    border-radius: 16px;
+    padding: 18px 18px 14px;
+    max-width: 320px;
+    box-shadow: 0 12px 32px rgba(45, 45, 45, 0.22);
+}
+
+.driver-popover.fl-tour .driver-popover-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #2D2D2D;
+}
+
+.driver-popover.fl-tour .driver-popover-description {
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: #5a554d;
+}
+
+.driver-popover.fl-tour .driver-popover-progress-text {
+    color: #8a857a;
+    font-size: 0.78rem;
+}
+
+.driver-popover.fl-tour .driver-popover-footer button {
+    border: none;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-shadow: none;
+}
+
+.driver-popover.fl-tour .driver-popover-next-btn {
+    background: #F28C33;
+    color: #fff;
+}
+
+.driver-popover.fl-tour .driver-popover-next-btn:hover,
+.driver-popover.fl-tour .driver-popover-next-btn:focus-visible {
+    background: #e07b22;
+}
+
+.driver-popover.fl-tour .driver-popover-prev-btn {
+    background: #f7f5f2;
+    color: #5a554d;
+}
+
+.driver-popover.fl-tour .driver-popover-prev-btn:hover,
+.driver-popover.fl-tour .driver-popover-prev-btn:focus-visible {
+    background: #ece7e0;
+}
+
+/* Botão "Tutorial" que reabre o passeio. Discreto de propósito: não
+   compete com as ações principais da tela. */
+.rt-tour-ajuda {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    background: transparent;
+    color: #8a857a;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.rt-tour-ajuda:hover,
+.rt-tour-ajuda:focus-visible {
+    color: #F28C33;
+    background: rgba(242, 140, 51, 0.08);
+    outline: none;
+}

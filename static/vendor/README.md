@@ -26,6 +26,11 @@ Antes: Bootstrap CSS/JS e Bootstrap Icons vinham do CDN externo
   da página pública do professor (`pagina_publica_embed.html`) para gerar a
   imagem 1080x1920 que o botão Compartilhar do modal envia.
 
+- `driverjs/` — Driver.js **1.10.0** (MIT), `driver.js.iife.js` + `driver.css` + `LICENSE`,
+  extraídos do pacote npm `driver.js@1.10.0` (pasta `dist/`). Usado no product tour da
+  tela Registrar Treino (`static/js/registrar-treino-tour.js`). Global exposto:
+  `window.driver.js.driver`.
+
 ## Como atualizar a versão no futuro
 
 ```bash
