@@ -27,6 +27,7 @@
     var CLASSE_MODO_TREINO = 'fl-modo-treino-ativo';
 
     var instanciaAtiva = null;
+    var desligarReposicionamento = null;
 
     // ---------- localStorage (nunca pode quebrar a tela) ----------
     function jaViu(fase) {
@@ -198,6 +199,42 @@
         });
     }
 
+    // ---------- reposicionamento ----------
+    // O modo treino rola dentro de um contêiner próprio (não na janela).
+    // O Driver.js só recalcula o destaque quando a JANELA rola/redimensiona,
+    // e o evento "scroll" não borbulha: sem isso, ao voltar/avançar o
+    // destaque fica no lugar antigo. Aqui escutamos a rolagem em qualquer
+    // contêiner (fase de captura) e mandamos o Driver.js recalcular.
+    function ligarReposicionamento() {
+        var pendente = false;
+
+        function agendar(ev) {
+            // Rolagem dentro da própria caixa do tour não precisa recalcular.
+            if (ev && ev.target && ev.target.closest
+                && ev.target.closest('.driver-popover')) return;
+            if (pendente) return;
+            pendente = true;
+            window.requestAnimationFrame(function () {
+                pendente = false;
+                if (instanciaAtiva) instanciaAtiva.refresh();
+            });
+        }
+
+        document.addEventListener('scroll', agendar, true);
+        window.addEventListener('resize', agendar);
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', agendar);
+        }
+
+        return function () {
+            document.removeEventListener('scroll', agendar, true);
+            window.removeEventListener('resize', agendar);
+            if (window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', agendar);
+            }
+        };
+    }
+
     // ---------- execução ----------
     function iniciar(fase) {
         if (instanciaAtiva) return;
@@ -211,7 +248,9 @@
         instanciaAtiva = lib.driver({
             steps: passos,
             animate: !reduzirMovimento,
-            smoothScroll: !reduzirMovimento,
+            // Rolagem instantânea: com "smooth" o Driver.js mede a posição
+            // no meio da animação e o destaque aponta para o lugar errado.
+            smoothScroll: false,
             showProgress: true,
             progressText: '{{current}} de {{total}}',
             nextBtnText: 'Próximo &rsaquo;',
@@ -223,6 +262,13 @@
             stagePadding: 6,
             stageRadius: 10,
             popoverClass: 'fl-tour',
+            // Segurança extra: confere a posição logo depois de destacar,
+            // caso o navegador ainda esteja assentando a rolagem.
+            onHighlighted: function () {
+                window.setTimeout(function () {
+                    if (instanciaAtiva) instanciaAtiva.refresh();
+                }, 250);
+            },
             onPopoverRender: function (popover, ctx) {
                 var atual = ((ctx && ctx.state && ctx.state.activeIndex) || 0) + 1;
                 var total = passos.length;
@@ -250,8 +296,13 @@
             onDestroyed: function () {
                 marcarVisto(fase);
                 instanciaAtiva = null;
+                if (desligarReposicionamento) {
+                    desligarReposicionamento();
+                    desligarReposicionamento = null;
+                }
             }
         });
+        desligarReposicionamento = ligarReposicionamento();
         instanciaAtiva.drive();
     }
 
