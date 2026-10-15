@@ -2852,6 +2852,20 @@
         transform: scale(0.97);
     }
 
+    /* "Continuar treino": mesmo formato em pílula do "Sim, cancelar treino".
+       padding vertical 1px menor porque este botão tem borda de 1px e o
+       "Sim" não -- assim os dois ficam com a mesma altura. */
+    .btn-continuar-cancelamento {
+        border-radius: 999px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: background-color .15s ease, color .15s ease, transform .15s ease;
+    }
+
+    .btn-continuar-cancelamento:active {
+        transform: scale(0.97);
+    }
+
     /* Loading ao trocar de treino/data -- efeito "scanner" (Opção 10 de
        Animações.html), reaproveitando a película/posicionamento já
        globais de .fl-loader-overlay (page-transition.css). */
@@ -3460,7 +3474,7 @@
                     <button type="button" id="btnConfirmarCancelamentoSim" class="btn btn-confirmar-cancelamento w-100">
                         Sim, cancelar treino
                     </button>
-                    <button type="button" class="btn btn-outline-secondary w-100" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-outline-secondary btn-continuar-cancelamento w-100" data-bs-dismiss="modal">
                         Continuar treino
                     </button>
                 </div>
@@ -3901,15 +3915,15 @@
 {% from "macros/exercicio_instrucoes.html" import botao_instrucoes_exercicio %}
 {% if exercicios %}
 <div class="card d-none" id="exerciciosCard">
-    <div class="card-header bg-white p-3 d-flex align-items-center justify-content-between gap-2">
+    <div class="card-header bg-white p-3">
         <h4 class="mb-0">
             <i class="bi bi-list-check me-2" style="color: var(--primary-orange);"></i>
             {% if ns.nome_treino %}{{ ns.codigo_treino }} - {{ ns.nome_treino }}{% else %}Exercícios do Treino{% endif %}
             <span class="badge bg-secondary ms-2">{{ exercicios|length }} exercícios</span>
+            <button type="button" class="rt-tour-ajuda ms-1 align-middle" id="btnTourRegistrarTreino">
+                <i class="bi bi-question-circle"></i> Tutorial
+            </button>
         </h4>
-        <button type="button" class="rt-tour-ajuda flex-shrink-0" id="btnTourRegistrarTreino">
-            <i class="bi bi-question-circle"></i> Tutorial
-        </button>
     </div>
     <div class="card-body p-4">
         <form method="post" id="registroForm">
