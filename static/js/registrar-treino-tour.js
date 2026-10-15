@@ -99,10 +99,30 @@
                 popover: {
                     title: 'Um cartão por exercício',
                     description: 'Toque no nome para ver os músculos trabalhados. '
-                        + 'Quando houver imagem ou passo a passo, os ícones ao lado '
-                        + 'do nome abrem a demonstração.',
+                        + 'Logo abaixo, os campos para registrar o que você fez.',
                     side: 'bottom',
                     align: 'center'
+                }
+            },
+            {
+                element: '#registroForm .btn-imagens-exercicio',
+                popover: {
+                    title: 'Veja o exercício em movimento',
+                    description: 'Toque no ícone de imagem para abrir a demonstração em '
+                        + 'GIF ou vídeo e conferir a execução antes da série.',
+                    side: 'bottom',
+                    align: 'start'
+                }
+            },
+            {
+                element: '#registroForm .btn-instrucoes-exercicio',
+                popover: {
+                    title: 'Passo a passo',
+                    description: 'Toque no <b>i</b> para ler as instruções de como '
+                        + 'executar o exercício. Aparece nos exercícios que têm '
+                        + 'instruções cadastradas.',
+                    side: 'bottom',
+                    align: 'end'
                 }
             },
             {
@@ -194,8 +214,8 @@
             smoothScroll: !reduzirMovimento,
             showProgress: true,
             progressText: '{{current}} de {{total}}',
-            nextBtnText: 'Próximo',
-            prevBtnText: 'Anterior',
+            nextBtnText: 'Próximo &rsaquo;',
+            prevBtnText: '&lsaquo; Anterior',
             doneBtnText: 'Concluir',
             allowClose: true,
             disableActiveInteraction: true,
@@ -203,6 +223,28 @@
             stagePadding: 6,
             stageRadius: 10,
             popoverClass: 'fl-tour',
+            onPopoverRender: function (popover, ctx) {
+                var atual = ((ctx && ctx.state && ctx.state.activeIndex) || 0) + 1;
+                var total = passos.length;
+
+                // No 1º passo "Anterior" não tem para onde voltar: some.
+                if (popover.previousButton) {
+                    popover.previousButton.style.display = atual === 1 ? 'none' : '';
+                }
+
+                // Barra de progresso fina no topo do rodapé.
+                if (popover.footer) {
+                    var barra = popover.footer.querySelector('.fl-tour-barra');
+                    if (!barra) {
+                        barra = document.createElement('div');
+                        barra.className = 'fl-tour-barra';
+                        barra.setAttribute('aria-hidden', 'true');
+                        barra.appendChild(document.createElement('span'));
+                        popover.footer.insertBefore(barra, popover.footer.firstChild);
+                    }
+                    barra.firstChild.style.width = Math.round((atual / total) * 100) + '%';
+                }
+            },
             // Fechar (X, Esc ou clicar fora) também conta como visto:
             // o tour nunca deve voltar a abrir sozinho e atrapalhar.
             onDestroyed: function () {
