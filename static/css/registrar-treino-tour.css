@@ -1,59 +1,147 @@
 /* Tema do product tour (Driver.js) da tela Registrar Treino.
    Segue a identidade do FitLog: laranja #F28C33, cantos arredondados
-   e a mesma sombra suave dos cards. Carregado depois de
+   e sombra suave com brilho laranja. Carregado depois de
    vendor/driverjs/driver.css. */
 
 .driver-popover.fl-tour {
-    border-radius: 16px;
-    padding: 18px 18px 14px;
+    border: 2px solid #F28C33;
+    border-radius: 20px;
+    padding: 20px 20px 16px;
+    min-width: 260px;
     max-width: 320px;
-    box-shadow: 0 12px 32px rgba(45, 45, 45, 0.22);
+    background-color: #fff;
+    box-shadow:
+        0 16px 40px rgba(242, 140, 51, 0.28),
+        0 4px 12px rgba(45, 45, 45, 0.14);
 }
 
+@media (prefers-reduced-motion: no-preference) {
+    .driver-popover.fl-tour {
+        animation: fl-tour-pop 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+}
+
+@keyframes fl-tour-pop {
+    from { opacity: 0; transform: translateY(6px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Setinha na mesma cor da borda, para o balão parecer uma peça só. */
+.driver-popover.fl-tour .driver-popover-arrow-side-bottom { border-bottom-color: #F28C33; }
+.driver-popover.fl-tour .driver-popover-arrow-side-top    { border-top-color: #F28C33; }
+.driver-popover.fl-tour .driver-popover-arrow-side-left   { border-left-color: #F28C33; }
+.driver-popover.fl-tour .driver-popover-arrow-side-right  { border-right-color: #F28C33; }
+
 .driver-popover.fl-tour .driver-popover-title {
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: #2D2D2D;
+    padding-right: 22px; /* espaço para o botão fechar */
 }
 
 .driver-popover.fl-tour .driver-popover-description {
-    font-size: 0.92rem;
-    line-height: 1.45;
+    font-size: 0.93rem;
+    line-height: 1.5;
     color: #5a554d;
+}
+
+.driver-popover.fl-tour .driver-popover-close-btn {
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    border-radius: 50%;
+    color: #b8b2a7;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.driver-popover.fl-tour .driver-popover-close-btn:hover,
+.driver-popover.fl-tour .driver-popover-close-btn:focus-visible {
+    color: #F28C33;
+    background: rgba(242, 140, 51, 0.1);
+}
+
+/* O driver.js desenha o rodapé com a tag <footer>, e a regra global
+   `footer { ... }` do base.html (fundo escuro, padding 20px, margin-top
+   50px) vazava para dentro do balão. Reseta aqui, só no tour. */
+.driver-popover.fl-tour .driver-popover-footer {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    margin-top: 18px;
+    gap: 10px;
 }
 
 .driver-popover.fl-tour .driver-popover-progress-text {
     color: #8a857a;
     font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.driver-popover.fl-tour .driver-popover-navigation-btns {
+    gap: 8px;
+}
+
+.driver-popover.fl-tour .driver-popover-navigation-btns button + button {
+    margin-left: 0;
 }
 
 .driver-popover.fl-tour .driver-popover-footer button {
-    border: none;
-    border-radius: 8px;
-    padding: 7px 14px;
+    border: 1.5px solid transparent;
+    border-radius: 999px;
+    padding: 8px 18px;
     font-size: 0.88rem;
     font-weight: 600;
+    line-height: 1.2;
     text-shadow: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease,
+                background-color 0.15s ease, color 0.15s ease;
 }
 
+.driver-popover.fl-tour .driver-popover-footer button:active {
+    transform: scale(0.96);
+}
+
+.driver-popover.fl-tour .driver-popover-footer button:focus-visible {
+    outline: 3px solid rgba(242, 140, 51, 0.35);
+    outline-offset: 2px;
+}
+
+/* Próximo / Concluir: ação principal, laranja cheio com brilho. */
 .driver-popover.fl-tour .driver-popover-next-btn {
-    background: #F28C33;
+    background: linear-gradient(135deg, #F7A04A 0%, #F28C33 100%);
     color: #fff;
+    box-shadow: 0 4px 12px rgba(242, 140, 51, 0.4);
 }
 
 .driver-popover.fl-tour .driver-popover-next-btn:hover,
 .driver-popover.fl-tour .driver-popover-next-btn:focus-visible {
-    background: #e07b22;
+    background: linear-gradient(135deg, #F28C33 0%, #E07B22 100%);
+    box-shadow: 0 6px 16px rgba(242, 140, 51, 0.5);
+    transform: translateY(-1px);
 }
 
-.driver-popover.fl-tour .driver-popover-prev-btn {
-    background: #f7f5f2;
-    color: #5a554d;
+/* Anterior: ação secundária, contorno laranja. */
+.driver-popover.fl-tour .driver-popover-footer .driver-popover-prev-btn {
+    background: #fff;
+    color: #F28C33;
+    border-color: #F28C33;
 }
 
-.driver-popover.fl-tour .driver-popover-prev-btn:hover,
-.driver-popover.fl-tour .driver-popover-prev-btn:focus-visible {
-    background: #ece7e0;
+.driver-popover.fl-tour .driver-popover-footer .driver-popover-prev-btn:hover,
+.driver-popover.fl-tour .driver-popover-footer .driver-popover-prev-btn:focus-visible {
+    background: rgba(242, 140, 51, 0.1);
+}
+
+/* Primeiro passo: "Anterior" desabilitado (o driver.js já aplica
+   opacity .5 e pointer-events none; aqui só tira o contorno forte). */
+.driver-popover.fl-tour .driver-popover-footer .driver-popover-prev-btn.driver-popover-btn-disabled {
+    border-color: #e4ded4;
+    color: #b8b2a7;
+    background: #faf8f5;
 }
 
 /* Botão "Tutorial" que reabre o passeio. Discreto de propósito: não
