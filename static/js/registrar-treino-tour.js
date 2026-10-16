@@ -267,6 +267,17 @@
         cont.scrollTop += (r.top + r.bottom) / 2 - (c.top + c.bottom) / 2;
     }
 
+    // Devolve a lista do modo treino ao topo (primeiro exercício).
+    function voltarAoTopoDoModoTreino() {
+        var corpo = document.getElementById('modoTreinoBody');
+        if (!corpo) return;
+        if (typeof corpo.scrollTo === 'function') {
+            corpo.scrollTo({ top: 0, behavior: 'auto' });
+        } else {
+            corpo.scrollTop = 0;
+        }
+    }
+
     // ---------- execução ----------
     function iniciar(fase) {
         if (instanciaAtiva) return;
@@ -333,6 +344,9 @@
             onDestroyed: function () {
                 marcarVisto(fase);
                 instanciaAtiva = null;
+                // Os últimos passos rolam a lista até o fim (avulso, descanso).
+                // Ao concluir/fechar, volta ao começo dos exercícios.
+                if (fase === 'treino') voltarAoTopoDoModoTreino();
                 if (desligarReposicionamento) {
                     desligarReposicionamento();
                     desligarReposicionamento = null;
