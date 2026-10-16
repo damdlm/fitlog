@@ -783,6 +783,10 @@ def calendario_aluno(aluno_id):
         aluno=aluno,
         data_atual=data_atual,
         eventos_api_url=url_for('calendar.api_eventos', aluno_id=aluno.id),
+        # Gráfico "Acompanhe a evolução" do calendário: filtros (A, B, C...)
+        # da versão ativa DO ALUNO e a API de progresso dele.
+        treinos_grafico=TreinoService.get_da_versao_ativa(user_id=aluno.id),
+        progresso_api_url=url_for('professor.progresso_aluno', aluno_id=aluno.id),
     )
 
 

@@ -289,15 +289,18 @@ class TestCalendarioPagina:
         assert resp.status_code == 200
         assert 'id="progressChart"' not in resp.get_data(as_text=True)
 
-    def test_professor_vendo_calendario_do_aluno_nao_ve_o_grafico(self, client, app):
-        # /api/progresso devolve os dados de quem está logado (o professor),
-        # não os do aluno -- mostrar o gráfico ali seria enganoso.
+    def test_professor_vendo_calendario_do_aluno_ve_o_grafico_do_aluno(self, client, app):
+        # No calendário do aluno o professor ganha o gráfico "Acompanhe a
+        # evolução", alimentado pela API de progresso DO ALUNO (e não pela
+        # /api/progresso, que devolve os dados de quem está logado), com
+        # os filtros (A, B, C...) dos treinos da versão ativa do aluno.
         with app.app_context():
             professor = _criar_usuario('prof_cal_grafico', tipo='professor')
             aluno = _criar_usuario('aluno_cal_grafico')
+            treino, _ = _criar_treino(aluno, 'A')
             db.session.add(AlunoProfessor(aluno_id=aluno.id, professor_id=professor.id, ativo=True))
             db.session.commit()
-            professor_id, aluno_id = professor.id, aluno.id
+            professor_id, aluno_id, treino_id = professor.id, aluno.id, treino.id
         _login(client, User.query.get(professor_id))
 
         resp = client.get(f'/professor/aluno/{aluno_id}/calendario')
@@ -305,7 +308,26 @@ class TestCalendarioPagina:
 
         assert resp.status_code == 200
         assert 'id="calendar"' in html
-        assert 'id="progressChart"' not in html
+        assert 'id="progressChart"' in html
+        assert html.index('id="calendar"') < html.index('id="progressChart"')
+        assert 'Acompanhe a evolução' in html
+        assert 'Acompanhe sua evolução' not in html.split('id="evolucaoWrap"', 1)[1].split('id="progressChart"', 1)[0]
+        assert f'data-treino="{treino_id}"' in html
+        assert f'/professor/aluno/{aluno_id}/progresso' in html
+        # sem o botão "Registrar primeiro treino" (o professor não registra pelo aluno)
+        assert 'Registrar primeiro treino' not in html
+
+    def test_aluno_continua_com_o_titulo_e_a_api_proprios(self, client, app):
+        with app.app_context():
+            u = _criar_usuario('cal_grafico_titulo')
+            user_id = u.id
+        _login(client, User.query.get(user_id))
+
+        html = client.get('/calendar/calendario').get_data(as_text=True)
+
+        assert 'Acompanhe sua evolução' in html
+        assert 'Acompanhe a evolução' not in html
+        assert '/professor/aluno/' not in html.split('URL_PROGRESSO', 1)[1].split(';', 1)[0]
 
 
 class TestApiEventoDetalhe:

@@ -1559,17 +1559,18 @@
 
 
 {# Gráfico "Acompanhe sua evolução" -- movido da página inicial para cá,
-   logo abaixo do calendário. Fica de fora quando um professor vê o
-   calendário de um aluno (/api/progresso devolve os dados de quem está
-   logado, não os do aluno) e para o admin (que também nunca viu o
-   gráfico na página inicial). #}
-{% if not aluno and not current_user.is_admin %}
+   logo abaixo do calendário. Quando o professor (ou o admin) vê o
+   calendário de um aluno, o mesmo gráfico aparece como "Acompanhe a
+   evolução", alimentado pelos dados do ALUNO (progresso_api_url, ver
+   professor.calendario_aluno). O admin no próprio calendário continua
+   sem o gráfico (nunca o viu na página inicial). #}
+{% if aluno or not current_user.is_admin %}
 <div class="evolucao-wrap" id="evolucaoWrap">
     <div class="card dash-card">
         <div class="dash-card-header">
             <h5 class="mb-0 d-flex align-items-center">
                 <span class="dash-card-icon"><i class="bi bi-graph-up"></i></span>
-                Acompanhe sua evolução
+                {{ 'Acompanhe a evolução' if aluno else 'Acompanhe sua evolução' }}
             </h5>
             <div class="dash-filter-group">
                 <button type="button" class="dash-filter-pill active" data-treino="todos" onclick="atualizarGrafico('todos', this)">Todos</button>
@@ -1581,10 +1582,14 @@
         <div class="card-body position-relative" id="chartCard">
             <div id="chartEmptyState" class="dash-empty-state d-none">
                 <i class="bi bi-graph-up dash-empty-state-icon"></i>
+                {% if aluno %}
+                <p>Este aluno ainda não registrou treinos para mostrar aqui.</p>
+                {% else %}
                 <p>Ainda não há treinos registrados para mostrar aqui.</p>
                 <a href="{{ url_for('register.registrar_treino') }}" class="nav-link btn-treino-cta">
                     <i class="bi bi-plus-circle-fill"></i> Registrar primeiro treino
                 </a>
+                {% endif %}
             </div>
             <div class="dash-chart-wrap">
                 <canvas id="progressChart"></canvas>
@@ -2558,7 +2563,7 @@
 
             // Resumo do gráfico "Acompanhe sua evolução" (o que está na tela:
             // respeita o filtro de treino e o modo semana/treino). Fica de
-            // fora quando o gráfico não existe (professor vendo aluno, admin)
+            // fora quando o gráfico não existe (admin no próprio calendário)
             // ou ainda não tem pontos suficientes.
             let evolucao = null;
             if (typeof chart !== 'undefined' && chart && chart.data && chart.data.labels
@@ -2597,7 +2602,7 @@
         });
     }
 </script>
-{% if not aluno and not current_user.is_admin %}
+{% if aluno or not current_user.is_admin %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
 <script>
     // Fallback pro cdnjs (já liberado no CSP) se o jsdelivr falhar por
@@ -2615,7 +2620,10 @@
     // ---------- Gráfico "Acompanhe sua evolução" ----------
     // Movido da página inicial. Mesma lógica de antes (API /api/progresso,
     // filtro por treino, modo semana/treino); a única diferença é que as
-    // cores seguem o tema claro/escuro do calendário.
+    // cores seguem o tema claro/escuro do calendário. No calendário de um
+    // aluno (visão do professor) os dados vêm de
+    // /professor/aluno/<id>/progresso, que devolve o mesmo formato.
+    const URL_PROGRESSO = {{ (progresso_api_url or '/api/progresso')|tojson }};
     let chart;
     let modoGrafico = 'semana';   // 'semana' | 'treino' (rodada completa A+B+C+D)
     let treinoGrafico = 'todos';  // 'todos' ou id do treino individual
@@ -2848,7 +2856,7 @@
 
         const params = new URLSearchParams({ modo: modoGrafico });
         if (treinoGrafico !== 'todos') params.set('treino', treinoGrafico);
-        const url = `/api/progresso?${params.toString()}`;
+        const url = `${URL_PROGRESSO}?${params.toString()}`;
 
         fetch(url)
             .then(r => {
