@@ -28,6 +28,7 @@
 
     var instanciaAtiva = null;
     var desligarReposicionamento = null;
+    var rolagemInicial = 0;
 
     // ---------- localStorage (nunca pode quebrar a tela) ----------
     function jaViu(fase) {
@@ -96,11 +97,14 @@
                 }
             },
             {
-                element: '.ct-treino-card',
+                // Só o cabeçalho do cartão: o cartão inteiro cresce com a
+                // lista de exercícios e passaria da altura da tela.
+                element: '.ct-treino-card .ct-treino-top',
                 popover: {
                     title: 'Um cartão por treino',
-                    description: 'Cada treino (A, B, C...) mostra o nome, quantos exercícios '
-                        + 'tem e a lista deles. Treino sem exercício aparece em vermelho.',
+                    description: 'Cada treino (A, B, C...) mostra o nome e quantos exercícios '
+                        + 'tem, com a lista deles logo abaixo. Treino sem exercício '
+                        + 'aparece em vermelho.',
                     side: 'bottom',
                     align: 'center'
                 }
@@ -126,11 +130,11 @@
                 }
             },
             {
-                element: '.ct-treino-card .ct-ex-toolbar',
+                element: '.ct-treino-card .ct-ex-drag-handle',
                 popover: {
                     title: 'Reordene os exercícios',
-                    description: 'Segure a alça <b>&#8942;&#8942;</b> de um exercício e arraste para '
-                        + 'mudar a ordem. Depois toque em <b>Salvar ordem</b>.',
+                    description: 'Segure esta alça e arraste o exercício para mudar a ordem. '
+                        + 'Quando mexer, aparece o botão <b>Salvar ordem</b>.',
                     side: 'bottom',
                     align: 'start'
                 }
@@ -302,6 +306,10 @@
         var passos = filtrarVisiveis(PASSOS[fase]());
         if (!passos.length) return;
 
+        // Os passos rolam a página (ex: "Adicionar treino" fica no fim da
+        // lista). Guarda onde o usuário estava para devolver ao terminar.
+        rolagemInicial = window.pageYOffset || 0;
+
         var reduzirMovimento = window.matchMedia
             && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -353,6 +361,7 @@
             onDestroyed: function () {
                 marcarVisto(fase);
                 instanciaAtiva = null;
+                if (fase !== 'modal') window.scrollTo(0, rolagemInicial);
                 if (desligarReposicionamento) {
                     desligarReposicionamento();
                     desligarReposicionamento = null;
