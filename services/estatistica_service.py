@@ -274,6 +274,52 @@ class EstatisticaService(BaseService):
             return []
 
     @staticmethod
+    def exercicios_com_registro_no_periodo(user_id=None, data_inicio=None, data_fim=None):
+        """
+        Chaves ('<tipo>_<id>', tipo 'usuario' ou 'base' -- a mesma chave do
+        seletor da "Progressão de Força") dos exercícios que têm treino
+        apontado no período: ao menos uma série com carga e repetições
+        (as mesmas séries que contam no gráfico de 1RM estimado, ver
+        progressao_forca_exercicio). Alimenta o seletor da seção, que só
+        deve oferecer exercícios com dados no período escolhido.
+
+        `data_inicio`/`data_fim` (datetimes UTC, opcionais) limitam o
+        período; sem eles, histórico inteiro.
+        """
+        try:
+            user_id = user_id or BaseService.get_current_user_id()
+            if not user_id:
+                return []
+
+            filtros = [
+                RegistroTreino.user_id == user_id,
+                HistoricoTreino.carga > 0,
+                HistoricoTreino.repeticoes > 0,
+            ]
+            if data_inicio is not None:
+                filtros.append(RegistroTreino.data_registro >= data_inicio)
+            if data_fim is not None:
+                filtros.append(RegistroTreino.data_registro <= data_fim)
+
+            linhas = db.session.query(
+                RegistroTreino.exercicio_usuario_id,
+                RegistroTreino.exercicio_base_id,
+            ).join(
+                HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id
+            ).filter(*filtros).distinct().all()
+
+            chaves = []
+            for usuario_id, base_id in linhas:
+                if usuario_id is not None:
+                    chaves.append(f'usuario_{usuario_id}')
+                elif base_id is not None:
+                    chaves.append(f'base_{base_id}')
+            return chaves
+        except Exception as e:
+            BaseService.handle_error(e, "Erro ao listar exercícios com treino no período")
+            return []
+
+    @staticmethod
     def calcular_recordes_pessoais(user_id=None, dias_recentes=60, limite=6,
                                    data_inicio=None, data_fim=None, todo_periodo=False):
         """

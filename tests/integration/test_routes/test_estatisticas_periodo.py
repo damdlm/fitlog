@@ -172,3 +172,33 @@ def test_progressao_forca_respeita_periodo(client, app):
     assert len(client.get(f'/api/progressao-forca?exercicio={chave}&dias=30').get_json()['valores']) == 2
     assert len(client.get(f'/api/progressao-forca?exercicio={chave}&dias=7').get_json()['valores']) == 1
     assert len(client.get(f'/api/progressao-forca?exercicio={chave}&tudo=1').get_json()['valores']) == 3
+
+
+def test_progressao_forca_lista_so_exercicios_com_treino_no_periodo(client, app):
+    uid, vid, ex, t = _montar(app, 'per_rm_lista')
+    with app.app_context():
+        musculo = Musculo.query.filter_by(nome='m_per_rm_lista').first()
+        antigo = ExercicioUsuario(usuario_id=uid, nome='Agachamento', musculo_id=musculo.id)
+        sem_carga = ExercicioUsuario(usuario_id=uid, nome='Prancha', musculo_id=musculo.id)
+        db.session.add_all([antigo, sem_carga])
+        db.session.commit()
+        antigo_id, sem_carga_id = antigo.id, sem_carga.id
+    _registrar(app, uid, vid, ex, t['A'], 3, 100, 10)            # recente
+    _registrar(app, uid, vid, antigo_id, t['A'], 40, 100, 10)    # há 40 dias
+    _registrar(app, uid, vid, sem_carga_id, t['A'], 3, 0, 0)     # sem carga/reps: não gera ponto no gráfico
+    _logar(client, app, uid)
+
+    url = '/api/progressao-forca/exercicios'
+    recente = f'usuario_{ex}'
+    velho = f'usuario_{antigo_id}'
+
+    assert set(client.get(f'{url}?dias=7').get_json()['exercicios']) == {recente}
+    assert set(client.get(f'{url}?dias=60').get_json()['exercicios']) == {recente, velho}
+    assert set(client.get(f'{url}?tudo=1').get_json()['exercicios']) == {recente, velho}
+    assert set(client.get(url).get_json()['exercicios']) == {recente, velho}   # sem período: histórico inteiro
+    assert client.get(f'{url}?dias=1').get_json()['exercicios'] == []
+
+    hoje = datetime.now(timezone.utc).date()
+    ini = (hoje - timedelta(days=45)).isoformat()
+    fim = (hoje - timedelta(days=35)).isoformat()
+    assert client.get(f'{url}?inicio={ini}&fim={fim}').get_json()['exercicios'] == [velho]

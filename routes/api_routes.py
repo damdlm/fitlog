@@ -334,6 +334,27 @@ def api_progressao_forca():
     })
 
 
+@api_bp.route("/progressao-forca/exercicios")
+@login_required
+@acesso_premium_required('estatisticas')
+def api_progressao_forca_exercicios():
+    """Exercícios (chaves '<tipo>_<id>') com treino apontado no período.
+
+    Mesmos parâmetros de período de /api/progressao-forca (dias=N,
+    inicio=&fim= ou tudo=1; sem nada, histórico inteiro). Usado pelo
+    seletor da seção "Progressão de Força" para oferecer só exercícios
+    que têm dados no período escolhido.
+    """
+    periodo, erro = _periodo_da_requisicao()
+    if erro:
+        return erro
+    chaves = EstatisticaService.exercicios_com_registro_no_periodo(
+        data_inicio=periodo['inicio'] if periodo else None,
+        data_fim=periodo['fim'] if periodo else None
+    )
+    return jsonify({"exercicios": chaves})
+
+
 @api_bp.route("/recordes-pessoais")
 @login_required
 @acesso_premium_required('estatisticas')

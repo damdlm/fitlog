@@ -792,8 +792,7 @@
         carregarKpis();
         carregarMusculoStats(periodoAtual.query);
         carregarRecordes();
-        const seletor = document.getElementById('seletor1RM');
-        if (seletor) carregarProgressaoForca(seletor.value);
+        if (document.getElementById('seletor1RM')) carregarExerciciosDaForca();
         periodoEvolucao = novo;
         sincronizarFiltroEvolucao();
         carregarEvolucao(treinoEvolucao, codigoTreinoEvolucao, null);
@@ -1084,9 +1083,60 @@
     }
 
     const seletor1RM = document.getElementById('seletor1RM');
+
+    // O seletor só oferece exercícios com treino apontado no período
+    // escolhido. A lista completa (grade do aluno) vem renderizada no HTML;
+    // a cada mudança de período a API diz quais têm dados e o seletor é
+    // reconstruído só com eles (mantendo o exercício atual se ele ainda
+    // estiver na lista).
+    const EXERCICIOS_FORCA = seletor1RM
+        ? Array.from(seletor1RM.options).map(o => ({ chave: o.value, nome: o.textContent }))
+        : [];
+    const rmVazioPadrao = document.getElementById('rmVazio').textContent;
+
+    function mostrarSemExerciciosNaForca() {
+        if (rmChart) { rmChart.destroy(); rmChart = null; }
+        seletor1RM.style.display = 'none';
+        document.getElementById('rmChart').style.display = 'none';
+        const vazio = document.getElementById('rmVazio');
+        vazio.textContent = 'Nenhum exercício com treino registrado nesse período.';
+        vazio.style.display = 'block';
+    }
+
+    function carregarExerciciosDaForca() {
+        const meu = reqPeriodo;
+        fetch(`/api/progressao-forca/exercicios?${periodoAtual.query}`)
+            .then(r => r.json())
+            .then(data => {
+                if (meu !== reqPeriodo) return;
+                const comTreino = new Set(data.exercicios || []);
+                const lista = EXERCICIOS_FORCA.filter(e => comTreino.has(e.chave));
+                if (!lista.length) {
+                    mostrarSemExerciciosNaForca();
+                    return;
+                }
+                const atual = seletor1RM.value;
+                seletor1RM.innerHTML = '';
+                lista.forEach(e => {
+                    const opcao = document.createElement('option');
+                    opcao.value = e.chave;
+                    opcao.textContent = e.nome;
+                    seletor1RM.appendChild(opcao);
+                });
+                seletor1RM.value = lista.some(e => e.chave === atual) ? atual : lista[0].chave;
+                seletor1RM.style.display = '';
+                document.getElementById('rmVazio').textContent = rmVazioPadrao;
+                carregarProgressaoForca(seletor1RM.value);
+            })
+            .catch(() => {
+                // Se a lista falhar, segue com o seletor completo como antes.
+                if (meu === reqPeriodo) carregarProgressaoForca(seletor1RM.value);
+            });
+    }
+
     if (seletor1RM) {
         seletor1RM.addEventListener('change', () => carregarProgressaoForca(seletor1RM.value));
-        carregarProgressaoForca(seletor1RM.value);
+        carregarExerciciosDaForca();
     } else {
         document.getElementById('rmVazio').textContent = 'Cadastre exercícios na sua grade de treino pra ver a evolução de força aqui.';
     }
