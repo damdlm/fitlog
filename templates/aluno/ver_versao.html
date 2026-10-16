@@ -5,6 +5,8 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/editar-treino-versao.css') }}">
+<link rel="stylesheet" href="{{ static_v('vendor/driverjs/driver.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/registrar-treino-tour.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -502,6 +504,9 @@
 
 <div class="ct-section-title">
     <h2><i class="bi bi-trophy" style="color:#F28C33;"></i> Treinos desta versão</h2>
+    <button type="button" class="rt-tour-ajuda" id="btnTourVersaoLista">
+        <i class="bi bi-question-circle"></i> Tutorial
+    </button>
 </div>
 
 {% if not treinos_versao %}
@@ -654,7 +659,12 @@
 
                     <hr class="ct-modal-divider">
 
-                    <label class="etv-field-label">Exercícios do catálogo</label>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <label class="etv-field-label">Exercícios do catálogo</label>
+                        <button type="button" class="rt-tour-ajuda" id="btnTourVersaoModal">
+                            <i class="bi bi-question-circle"></i> Tutorial
+                        </button>
+                    </div>
 
                     <div class="etv-toolbar">
                         <div class="etv-toolbar-row">
@@ -848,4 +858,10 @@
 <script src="{{ static_v('js/editar-treino-versao.js') }}"></script>
 <script src="{{ static_v('js/cadastrar-treinos.js') }}"></script>
 <script src="{{ static_v('js/cadastrar-treinos-reordenar.js') }}"></script>
+<script src="{{ static_v('vendor/driverjs/driver.js.iife.js') }}"></script>
+{# data-contexto: o mesmo template serve o aluno (suas versões) e o professor
+   (versão de um aluno); o tour ajusta o texto. #}
+<script src="{{ static_v('js/ver-versao-tour.js') }}"
+        data-user-id="{{ current_user.id if current_user.is_authenticated else 'anon' }}"
+        data-contexto="{{ 'professor' if (current_user.is_authenticated and versao.user_id != current_user.id) else 'aluno' }}"></script>
 {% endblock %}
