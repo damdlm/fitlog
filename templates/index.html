@@ -249,6 +249,33 @@
             margin: 0 auto;
         }
     }
+    /* Mobile: faixa mais compacta -- título e dica com fonte menor, ícones
+       menores e sem espaços extras, para ocupar pouca altura e ficar
+       colada na parte de baixo. */
+    @media (max-width: 991.98px) {
+        .home-tips { padding-top: 0.4rem; padding-bottom: 0; }
+        .home-tips-title { font-size: 0.85rem; margin-bottom: 0; }
+        .home-tips-title .dash-card-icon {
+            width: 24px;
+            height: 24px;
+            font-size: 0.75rem;
+            border-radius: 7px;
+            margin-right: 6px;
+        }
+        .home-tips .dash-tip-slide { min-height: 0; }
+        .home-tips .tip-slide-item { padding-top: 0; padding-bottom: 0; }
+        .home-tips .tip-text {
+            font-size: clamp(0.76rem, 0.56rem + 1.2vw, 0.9rem);
+            line-height: 1.3;
+        }
+        .home-tips .item-icon {
+            width: 26px;
+            height: 26px;
+            min-width: 26px;
+            font-size: 0.8rem;
+            border-radius: 8px;
+        }
+    }
     /* Telas baixas (celular deitado / aparelhos pequenos): tudo mais
        compacto para sobrar espaço ao átomo. */
     @media (max-height: 560px) {
@@ -1005,7 +1032,7 @@
                 const cta = nav.querySelector('.bottom-nav-cta');
                 if (cta) {
                     const sobe = nav.getBoundingClientRect().top - cta.getBoundingClientRect().top;
-                    if (sobe > 0) saliencia = Math.ceil(sobe) + 4;
+                    if (sobe > 0) saliencia = Math.ceil(sobe) + 2;
                 }
             } else {
                 document.documentElement.style.removeProperty('--bottom-nav-h');
