@@ -131,8 +131,13 @@
            iPhone); o respiro do body precisa acompanhar, senão as dicas
            ficam por baixo dela. */
         body.has-bottom-nav:has(.home-stage) {
-            padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+            padding-bottom: var(--bottom-nav-h, calc(78px + env(safe-area-inset-bottom, 0px)));
         }
+    }
+    /* A tela inicial não precisa da margem inferior do <main> (my-4): ela
+       só empurrava o palco -- e as dicas -- para cima. */
+    main.container:has(.home-stage) {
+        margin-bottom: 0 !important;
     }
     /* Átomo e dicas são camadas independentes: nenhum dos dois ocupa
        espaço no layout do outro. O átomo é centralizado no palco todo e
@@ -198,7 +203,7 @@
         /* Responsivo: respiro lateral e inferior proporcionais à tela, para
            a frase nunca encostar na borda nem na barra de baixo. */
         padding-right: clamp(0.75rem, 4vw, 2rem);
-        padding-bottom: clamp(0.5rem, 2.2dvh, 1.25rem);
+        padding-bottom: 0.25rem;
         padding-left: clamp(0.75rem, 4vw, 2rem);
         text-align: center;
         background: transparent;
@@ -238,6 +243,7 @@
         flex: 0 0 auto;
     }
     @media (min-width: 992px) {
+        .home-tips { padding-bottom: 1rem; }
         .home-tips .dash-tip-slide {
             max-width: 46rem;
             margin: 0 auto;
@@ -271,7 +277,11 @@
         background-image: url("{{ url_for('static', filename='images/fitlog-logo.png') }}");
         background-repeat: no-repeat;
         background-position: center;
-        background-size: 400px auto;
+        /* Proporcional ao aparelho: nunca passa de 400px nem de ~82% da
+           largura, e também é limitada pela altura (a logo tem proporção
+           ~1,32:1), para não invadir as dicas em telas baixas. */
+        background-size: min(400px, 82vw) auto;
+        background-size: min(400px, 82vw, calc(46dvh * 1.32)) auto;
 
         /* Respiração lenta e contínua */
         animation: watermark-breathe 12s ease-in-out infinite;
@@ -982,8 +992,27 @@
             const topo = stage.getBoundingClientRect().top + window.scrollY;
             const main = stage.closest('main');
             const margemMain = main ? (parseFloat(estilo(main).marginBottom) || 0) : 0;
+
+            // Barra inferior (só no mobile): altura real, e quanto o botão
+            // central (+) "sobe" acima dela -- as dicas ficam centralizadas
+            // e não podem passar por baixo desse botão.
+            const nav = document.querySelector('.bottom-nav');
+            const navVisivel = nav && estilo(nav).display !== 'none';
+            let saliencia = 0;
+            if (navVisivel) {
+                const alturaNav = Math.ceil(nav.getBoundingClientRect().height);
+                document.documentElement.style.setProperty('--bottom-nav-h', alturaNav + 'px');
+                const cta = nav.querySelector('.bottom-nav-cta');
+                if (cta) {
+                    const sobe = nav.getBoundingClientRect().top - cta.getBoundingClientRect().top;
+                    if (sobe > 0) saliencia = Math.ceil(sobe) + 4;
+                }
+            } else {
+                document.documentElement.style.removeProperty('--bottom-nav-h');
+            }
+
             const respiroBody = parseFloat(estilo(document.body).paddingBottom) || 0;
-            const livre = Math.floor(window.innerHeight - topo - margemMain - respiroBody);
+            const livre = Math.floor(window.innerHeight - topo - margemMain - respiroBody - saliencia);
             stage.style.setProperty('--home-stage-h', Math.max(livre, 240) + 'px');
         }
 
