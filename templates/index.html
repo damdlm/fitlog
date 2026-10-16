@@ -113,13 +113,25 @@
         flex-direction: column;
         position: relative;
         z-index: 1;
+        /* Altura exata do espaço livre entre a navbar e a barra inferior,
+           medida por JS (--home-stage-h, ver ajustarPalco no fim da página)
+           a cada resize/rotação. Este calc() é só o plano B (antes do JS
+           rodar ou com JS desligado). */
         min-height: calc(100vh - 120px);
         min-height: calc(100dvh - 120px);
+        min-height: var(--home-stage-h, calc(100dvh - 120px));
     }
     @media (max-width: 991.98px) {
         .home-stage {
             min-height: calc(100vh - 195px);
-            min-height: calc(100dvh - 195px);
+            min-height: calc(100dvh - 195px - env(safe-area-inset-bottom, 0px));
+            min-height: var(--home-stage-h, calc(100dvh - 195px - env(safe-area-inset-bottom, 0px)));
+        }
+        /* A barra inferior cresce com a área segura (home indicator do
+           iPhone); o respiro do body precisa acompanhar, senão as dicas
+           ficam por baixo dela. */
+        body.has-bottom-nav:has(.home-stage) {
+            padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
         }
     }
     /* Átomo e dicas são camadas independentes: nenhum dos dois ocupa
@@ -183,6 +195,11 @@
     .home-tips {
         margin-top: auto;
         padding-top: 1rem;
+        /* Responsivo: respiro lateral e inferior proporcionais à tela, para
+           a frase nunca encostar na borda nem na barra de baixo. */
+        padding-right: clamp(0.75rem, 4vw, 2rem);
+        padding-bottom: clamp(0.5rem, 2.2dvh, 1.25rem);
+        padding-left: clamp(0.75rem, 4vw, 2rem);
         text-align: center;
         background: transparent;
         /* Sem seleção/arrasto nativo de texto: o drag-and-drop do navegador
@@ -203,6 +220,36 @@
     }
     .home-tips-title .dash-card-icon {
         margin-right: 8px;
+    }
+    /* Texto da dica fluido: acompanha a largura da tela (de celulares
+       pequenos a desktop) e quebra de forma equilibrada. */
+    .home-tips .tip-text {
+        font-size: clamp(0.85rem, 0.7rem + 1.6vw, 1.05rem);
+        line-height: 1.35;
+        text-wrap: balance;
+        min-width: 0;
+    }
+    .home-tips .tip-slide-item {
+        gap: clamp(8px, 2.5vw, 12px);
+        padding-right: 0.25rem;
+        padding-left: 0.25rem;
+    }
+    .home-tips .item-icon {
+        flex: 0 0 auto;
+    }
+    @media (min-width: 992px) {
+        .home-tips .dash-tip-slide {
+            max-width: 46rem;
+            margin: 0 auto;
+        }
+    }
+    /* Telas baixas (celular deitado / aparelhos pequenos): tudo mais
+       compacto para sobrar espaço ao átomo. */
+    @media (max-height: 560px) {
+        .home-tips { padding-top: 0.5rem; }
+        .home-tips-title { font-size: 0.9rem; }
+        .home-tips .tip-text { font-size: 0.8rem; line-height: 1.25; }
+        .home-tips .item-icon { width: 26px; height: 26px; min-width: 26px; font-size: 0.8rem; }
     }
 
     /* --- Marca d'água --- */
@@ -919,6 +966,39 @@
         card.addEventListener('dragstart', function (e) { e.preventDefault(); });
         card.addEventListener('pointerup', soltar);
         card.addEventListener('pointercancel', soltar);
+    })();
+</script>
+<script>
+    // Palco da tela inicial: mede o espaço realmente livre (entre a navbar
+    // e a barra inferior fixa) em vez de depender de um valor fixo em px,
+    // para as dicas ficarem sempre coladas na parte baixa em qualquer
+    // aparelho (notch, home indicator, barra do navegador, rotação).
+    (function () {
+        const stage = document.querySelector('.home-stage');
+        if (!stage) return;
+
+        function ajustarPalco() {
+            const estilo = window.getComputedStyle;
+            const topo = stage.getBoundingClientRect().top + window.scrollY;
+            const main = stage.closest('main');
+            const margemMain = main ? (parseFloat(estilo(main).marginBottom) || 0) : 0;
+            const respiroBody = parseFloat(estilo(document.body).paddingBottom) || 0;
+            const livre = Math.floor(window.innerHeight - topo - margemMain - respiroBody);
+            stage.style.setProperty('--home-stage-h', Math.max(livre, 240) + 'px');
+        }
+
+        ajustarPalco();
+        window.addEventListener('load', ajustarPalco);
+        window.addEventListener('resize', ajustarPalco, { passive: true });
+        window.addEventListener('orientationchange', function () {
+            setTimeout(ajustarPalco, 250);
+        });
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', ajustarPalco, { passive: true });
+        }
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(ajustarPalco);
+        }
     })();
 </script>
 {% endif %}
