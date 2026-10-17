@@ -6,7 +6,7 @@ daqui via polling (ver static/js/modules/notificacoes.js).
 
 import logging
 
-from flask import Blueprint, render_template, jsonify, request
+from flask import Blueprint, current_app, render_template, jsonify, request
 from flask_login import login_required, current_user
 
 from extensions import limiter
@@ -63,7 +63,7 @@ def listar():
 
 @notificacao_bp.route('/api/notificacoes')
 @login_required
-@limiter.limit("200 per hour", key_func=_chave_por_usuario)
+@limiter.limit(lambda: current_app.config.get("LIMITE_NOTIFICACOES", "400 per hour"), key_func=_chave_por_usuario)
 def api_listar():
     """Usado pelo sininho: contagem de não lidas + as mais recentes,
     consultado por polling (ver notificacoes.js)."""

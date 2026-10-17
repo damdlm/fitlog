@@ -15,9 +15,6 @@ from models import db, User
 
 from extensions import login_manager, csrf, limiter, cache, compress
 
-# Teto de páginas de professores listadas no sitemap.xml (ver sitemap_xml).
-SITEMAP_LIMITE_PROFESSORES = 5000
-
 
 # =============================================================
 # LOGS
@@ -153,6 +150,23 @@ def _criar_admin_inicial(app):
 # =============================================================
 # FACTORY
 # =============================================================
+def _limite_midia():
+    """Limite das rotas de mídia (GIFs dos exercícios e fotos de professores).
+
+    Cada GIF contava na cota geral de 300 req/hora por usuário (2000/dia), e uma
+    tela com muitos exercícios novos esgotava a cota -- aí as páginas e as
+    próprias imagens passavam a dar 429. Com limite próprio e folgado, só a
+    PRIMEIRA carga de cada arquivo conta (o navegador guarda por 1 ano:
+    Cache-Control immutable). Ajustável pela variável de ambiente LIMITE_MIDIA.
+
+    Precisa ser UMA função de módulo: o Limiter é global e deduplica limites
+    iguais; um lambda novo a cada create_app (os testes criam um app por teste)
+    acumulava limites repetidos e a mesma requisição contava várias vezes.
+    """
+    from flask import current_app
+    return current_app.config.get("LIMITE_MIDIA", "3000 per hour")
+
+
 def create_app(config_class=None):
 
     if config_class is None:
@@ -817,7 +831,9 @@ def create_app(config_class=None):
         # resposta padrão (os clientes delas só olham o status).
         from flask import request as _request
         caminho = _request.path
-        if caminho.startswith(("/api/", "/fitbot/", "/billing/", "/contato/")) or _request.is_json:
+        if caminho.startswith(
+            ("/api/", "/fitbot/", "/billing/", "/contato/", "/exercicios-media/", "/professores-media/")
+        ) or _request.is_json:
             return e
         return render_template("errors/429.html"), 429
 
@@ -947,7 +963,9 @@ def create_app(config_class=None):
     # abaixo mantém tudo funcionando dos dois jeitos.
     EXERCICIOS_MEDIA_DIR = os.environ.get("EXERCICIOS_MEDIA_DIR", "/app/exercicios")
 
+    # Limite de requisições próprio para mídia: ver _limite_midia (no topo do arquivo).
     @app.route("/exercicios-media/<path:caminho>")
+    @limiter.limit(_limite_midia)
     def exercicios_media(caminho):
         from flask import send_from_directory, request, Response, stream_with_context
         import mimetypes
@@ -1027,6 +1045,7 @@ def create_app(config_class=None):
     # origem (ProfessorPerfilService.salvar_foto), então nunca existe
     # uma chave pra servir sem o bucket.
     @app.route("/professores-media/<path:caminho>")
+    @limiter.limit(_limite_midia)
     def professores_media(caminho):
         from flask import Response, stream_with_context, abort
         import mimetypes

@@ -234,6 +234,16 @@ class Config:
     # variável de ambiente (ex.: "60 per minute") -- sem mexer em código.
     FITBOT_LIMITE_GLOBAL = os.getenv('FITBOT_LIMITE_GLOBAL', '12 per minute')
 
+    # Limites de requisição por usuário logado (ou por IP, visitante), além do
+    # padrão geral de 300/hora e 2000/dia de extensions.py. Ajuste pela variável
+    # de ambiente, sem mexer em código.
+    # Mídia (GIFs dos exercícios e fotos de professores): só a 1ª carga de cada
+    # arquivo conta, pois o navegador guarda por 1 ano.
+    LIMITE_MIDIA = os.getenv('LIMITE_MIDIA', '3000 per hour')
+    # Consulta do sino de notificações: a cada 45 s por aba visível (~80/hora por
+    # aba), mais 1 consulta a cada página aberta.
+    LIMITE_NOTIFICACOES = os.getenv('LIMITE_NOTIFICACOES', '400 per hour')
+
     # Analytics de produto -- privacy-first, 100% server-side (ver
     # services/analytics_service.py). Desligado por padrão em qualquer
     # ambiente; precisa ser ligado explicitamente.
