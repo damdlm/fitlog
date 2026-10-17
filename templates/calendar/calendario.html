@@ -7,6 +7,8 @@
 <!-- FullCalendar CSS -->
 <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet'
       onerror="this.onerror=null;this.href='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.css';" />
+<link rel="stylesheet" href="{{ static_v('vendor/driverjs/driver.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/registrar-treino-tour.css') }}">
 <style>
     :root {
         --fl-accent: #F28C33;
@@ -1530,6 +1532,12 @@
     </button>
 </div>
 
+<div class="d-flex justify-content-end mb-2">
+    <button type="button" class="rt-tour-ajuda" id="btnTourCalendario">
+        <i class="bi bi-question-circle"></i> Tutorial
+    </button>
+</div>
+
 <!-- Calendário -->
 <div class="card">
     <div class="card-body position-relative">
@@ -1628,6 +1636,9 @@
                 </div>
             </div>
             <div class="modal-footer">
+                <button type="button" class="rt-tour-ajuda me-auto" id="btnTourCalendarioDetalhes">
+                    <i class="bi bi-question-circle"></i> Tutorial
+                </button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-2"></i>Fechar
                 </button>
@@ -1663,7 +1674,12 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3 editar-registro-data-row">
-                        <label for="editarRegistroData" class="form-label">Data do treino</label>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label for="editarRegistroData" class="form-label mb-0">Data do treino</label>
+                            <button type="button" class="rt-tour-ajuda" id="btnTourCalendarioEdicao">
+                                <i class="bi bi-question-circle"></i> Tutorial
+                            </button>
+                        </div>
                         <input type="date" class="form-control" name="data" id="editarRegistroData" required>
                     </div>
                     <div id="editarRegistroCorpo">
@@ -2900,5 +2916,11 @@
 </script>
 {% endif %}
 <script src="{{ static_v('js/fitlog-share.js') }}"></script>
+<script src="{{ static_v('vendor/driverjs/driver.js.iife.js') }}"></script>
+<script src="{{ static_v('js/fl-tour-core.js') }}"></script>
+{# data-contexto: o professor vê o calendário de um aluno (sem editar). #}
+<script src="{{ static_v('js/calendario-tour.js') }}"
+        data-user-id="{{ current_user.id if current_user.is_authenticated else 'anon' }}"
+        data-contexto="{{ 'professor' if aluno else 'aluno' }}"></script>
 
 {% endblock %}

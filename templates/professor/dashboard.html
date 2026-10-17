@@ -3,6 +3,11 @@
 {% block page_icon %}<i class="bi bi-speedometer2" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Painel do Professor{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ static_v('vendor/driverjs/driver.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/registrar-treino-tour.css') }}">
+{% endblock %}
+
 {% block content %}
 <style>
     .dash-hero {
@@ -147,8 +152,14 @@
     <p class="dash-hero-subtitle">Aqui está um resumo do que merece sua atenção hoje.</p>
 </div>
 
+<div class="d-flex justify-content-end mb-2">
+    <button type="button" class="rt-tour-ajuda" id="btnTourPainel">
+        <i class="bi bi-question-circle"></i> Tutorial
+    </button>
+</div>
+
 <!-- Indicadores principais -->
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-4" id="pdIndicadores">
     <div class="col-6 col-md-3">
         <div class="pd-stat">
             <div class="pd-stat-value">{{ dados.total_alunos }}</div>
@@ -199,7 +210,7 @@
 </div>
 
 <!-- O que precisa da sua atenção -->
-<div class="pd-card mb-4">
+<div class="pd-card mb-4" id="pdAtencao">
     <div class="pd-card-title"><i class="bi bi-bell" style="color: #F28C33;"></i> O que precisa da sua atenção</div>
 
     {% if dados.alunos_atencao.total == 0 and dados.treinos_revisao.total == 0 %}
@@ -234,7 +245,7 @@
 <div class="row g-3 mb-4">
     <!-- Alunos que precisam de atenção -->
     <div class="col-md-6">
-        <div class="pd-card">
+        <div class="pd-card" id="pdAlunosAtencao">
             <div class="pd-card-title"><i class="bi bi-exclamation-triangle" style="color: #d9534f;"></i> Alunos que precisam de atenção</div>
             {% if dados.alunos_atencao.itens %}
                 {% for item in dados.alunos_atencao.itens %}
@@ -261,7 +272,7 @@
 
     <!-- Treinos aguardando revisão -->
     <div class="col-md-6">
-        <div class="pd-card">
+        <div class="pd-card" id="pdRevisao">
             <div class="pd-card-title"><i class="bi bi-clipboard2-pulse" style="color: #F28C33;"></i> Treinos aguardando revisão</div>
             {% if dados.treinos_revisao.itens %}
                 {% for item in dados.treinos_revisao.itens %}
@@ -288,7 +299,7 @@
 <div class="row g-3 mb-4">
     <!-- Última atividade dos alunos -->
     <div class="col-md-7">
-        <div class="pd-card">
+        <div class="pd-card" id="pdAtividade">
             <div class="pd-card-title"><i class="bi bi-activity" style="color: #F28C33;"></i> Última atividade dos alunos</div>
             {% if dados.atividade_recente %}
                 {% for a in dados.atividade_recente %}
@@ -308,7 +319,7 @@
 
     <!-- Gráfico de treinos nos últimos 30 dias -->
     <div class="col-md-5">
-        <div class="pd-card">
+        <div class="pd-card" id="pdGrafico">
             <div class="pd-card-title"><i class="bi bi-bar-chart-line" style="color: #F28C33;"></i> Treinos nos últimos 30 dias</div>
             <canvas id="graficoTreinos30d" height="160"></canvas>
         </div>
@@ -316,7 +327,7 @@
 </div>
 
 <!-- Ações rápidas -->
-<div class="pd-card">
+<div class="pd-card" id="pdAcoesRapidas">
     <div class="pd-card-title"><i class="bi bi-lightning-charge" style="color: #F28C33;"></i> Ações rápidas</div>
     <div class="pd-quick-grid">
         <a href="{{ url_for('professor.novo_aluno') }}" class="dash-quick-tile">
@@ -335,6 +346,10 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<script src="{{ static_v('vendor/driverjs/driver.js.iife.js') }}"></script>
+<script src="{{ static_v('js/fl-tour-core.js') }}"></script>
+<script src="{{ static_v('js/professor-dashboard-tour.js') }}"
+        data-user-id="{{ current_user.id if current_user.is_authenticated else 'anon' }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('graficoTreinos30d');

@@ -3,6 +3,11 @@
 {% block page_icon %}<i class="bi bi-bell" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Solicitações de Vínculo{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ static_v('vendor/driverjs/driver.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/registrar-treino-tour.css') }}">
+{% endblock %}
+
 {% block content %}
 <style>
     /* Mesma linguagem visual de professor/alunos.html e
@@ -45,8 +50,11 @@
     }
 </style>
 
-<div class="d-flex justify-content-end mb-3">
-    <a href="{{ url_for('professor.listar_alunos') }}" class="btn btn-outline-secondary">
+<div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+    <button type="button" class="rt-tour-ajuda" id="btnTourSolicitacoes">
+        <i class="bi bi-question-circle"></i> Tutorial
+    </button>
+    <a href="{{ url_for('professor.listar_alunos') }}" class="btn btn-outline-secondary" id="svVoltar">
         <i class="bi bi-arrow-left"></i> Voltar
     </a>
 </div>
@@ -60,7 +68,7 @@
         <div class="col-md-6">
             <div class="card sv-card h-100">
                 <div class="card-body">
-                    <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="d-flex align-items-center gap-3 mb-3 sv-aluno-info">
                         <div class="sv-avatar">{{ iniciais }}</div>
                         <div class="flex-grow-1">
                             <div class="fw-semibold">{{ nome_exibicao }}</div>
@@ -76,7 +84,7 @@
                         <span><i class="bi bi-calendar3"></i> Solicitado em {{ sol.data_solicitacao.strftime('%d/%m/%Y às %H:%M') }}</span>
                     </div>
 
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 sv-acoes">
                         <a href="{{ url_for('professor.aprovar_solicitacao', solicitacao_id=sol.id) }}"
                            class="btn btn-success flex-fill"
                            data-confirm-title="Aprovar vínculo com este aluno?"
@@ -101,7 +109,7 @@
         {% endfor %}
     </div>
 {% else %}
-    <div class="card sv-card">
+    <div class="card sv-card" id="svVazio">
         <div class="card-body text-center py-5">
             <i class="bi bi-inbox fs-1 d-block mb-3" style="color: #ccc;"></i>
             <h5>Nenhuma solicitação pendente</h5>
@@ -109,4 +117,11 @@
         </div>
     </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ static_v('vendor/driverjs/driver.js.iife.js') }}"></script>
+<script src="{{ static_v('js/fl-tour-core.js') }}"></script>
+<script src="{{ static_v('js/professor-solicitacoes-tour.js') }}"
+        data-user-id="{{ current_user.id if current_user.is_authenticated else 'anon' }}"></script>
 {% endblock %}

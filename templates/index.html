@@ -4,6 +4,8 @@
 {% block page_title %}Train · Log · Analyze{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{{ static_v('vendor/driverjs/driver.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/registrar-treino-tour.css') }}">
 <style>
     /* --- Estilos gerais ---  */
     .dash-hero {
@@ -475,10 +477,15 @@
 
 {% if not current_user.is_admin %}
 <section class="home-tips" aria-label="Dicas de treino">
-    <h5 class="home-tips-title">
-        <span class="dash-card-icon"><i class="bi bi-lightbulb"></i></span>
-        Dicas de treino
-    </h5>
+    <div class="d-flex align-items-center justify-content-between gap-2">
+        <h5 class="home-tips-title">
+            <span class="dash-card-icon"><i class="bi bi-lightbulb"></i></span>
+            Dicas de treino
+        </h5>
+        <button type="button" class="rt-tour-ajuda" id="btnTourInicio">
+            <i class="bi bi-question-circle"></i> Tutorial
+        </button>
+    </div>
     <!-- Slide de dicas com efeito lateral -->
     <div class="dash-tip-slide" id="tipSlide">
         <div class="tip-wrapper" id="tipWrapper">
@@ -851,6 +858,11 @@
 
 {% block scripts %}
 {% if not current_user.is_admin %}
+<script src="{{ static_v('vendor/driverjs/driver.js.iife.js') }}"></script>
+<script src="{{ static_v('js/fl-tour-core.js') }}"></script>
+<script src="{{ static_v('js/index-tour.js') }}"
+        data-user-id="{{ current_user.id if current_user.is_authenticated else 'anon' }}"
+        data-contexto="{{ 'professor' if current_user.is_professor() else 'aluno' }}"></script>
 <script>
     // ---------- Dicas em slide lateral (aleatório) ----------
     const dicas = [
