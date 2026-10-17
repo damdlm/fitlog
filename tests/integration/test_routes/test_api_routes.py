@@ -5,7 +5,7 @@ Antes de escrever testes, foi feita uma triagem no frontend
 (templates + JS): das rotas do arquivo, algumas não são chamadas por
 nenhum template/JS (evolucao/<id>, e as de catalogo/*) -- ficaram de
 fora aqui de propósito, por serem código morto (não vale testar o que
-nunca roda). /debug/rotas é utilitário de dev, também fora do escopo.
+nunca roda). /debug/rotas foi removida (P1-04) -- ver TestApiDebugRotasRemovida.
 /api/verificar-treino foi removida junto com a tela "Meus Treinos"
 (treino deixou de ter um código único por usuário -- agora é só único
 dentro da versão).
@@ -309,3 +309,22 @@ class TestApiCriarExercicio:
     def test_requer_login(self, client):
         resp = client.post('/api/criar-exercicio', json={'nome': 'X'})
         assert resp.status_code == 302
+
+
+class TestApiDebugRotasRemovida:
+    """/api/debug/rotas listava todas as rotas da API para qualquer
+    usuário logado (reconhecimento gratuito para um atacante). Foi
+    removida -- nenhum template, JS ou doc a usava."""
+
+    def test_aluno_logado_recebe_404(self, client):
+        _criar_usuario('aluno_dbg')
+        _login(client, 'aluno_dbg')
+
+        resp = client.get('/api/debug/rotas')
+
+        assert resp.status_code == 404
+
+    def test_rota_nao_existe_no_mapa_de_urls(self, client):
+        regras = [str(r) for r in client.application.url_map.iter_rules()]
+
+        assert '/api/debug/rotas' not in regras

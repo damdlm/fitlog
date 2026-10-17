@@ -739,27 +739,6 @@ def api_reordenar_exercicios():
         return jsonify({"success": False, "error": "Não foi possível concluir a operação."}), 500
 
 
-# ============================================================================
-# DEBUG (OPCIONAL)
-# ============================================================================
-
-@api_bp.route("/debug/rotas")
-@login_required
-def api_debug_rotas():
-    """Retorna lista de todas as rotas da API (para debug)"""
-    from flask import current_app
-    
-    rotas = []
-    for rule in current_app.url_map.iter_rules():
-        if rule.endpoint.startswith('api.'):
-            rotas.append({
-                "endpoint": rule.endpoint,
-                "methods": list(rule.methods),
-                "path": str(rule)
-            })
-    
-    return jsonify(rotas)
-
 @api_bp.route("/professores/mapa")
 @login_required
 def api_professores_mapa():

@@ -15,6 +15,9 @@ from models import db, User
 
 from extensions import login_manager, csrf, limiter, cache, compress
 
+# Teto de páginas de professores listadas no sitemap.xml (ver sitemap_xml).
+SITEMAP_LIMITE_PROFESSORES = 5000
+
 
 # =============================================================
 # LOGS
@@ -725,20 +728,57 @@ def create_app(config_class=None):
         # fonte confiável de data de modificação para essas páginas, e
         # inventar uma data só pra "parecer atualizado" é pior que
         # omitir o campo.
+        from flask import url_for
+        from xml.sax.saxutils import escape
+
         urls_publicas = [
             canonical_url('/'),
+            canonical_url('/precos'),
+            canonical_url('/faq'),
             canonical_url('/privacidade/'),
             canonical_url('/privacidade/termos'),
             canonical_url('/contato/publico'),
         ]
-        itens = "".join(f"<url><loc>{u}</loc></url>" for u in urls_publicas)
+
+        # Páginas públicas dos professores (/professor/pagina/<slug>).
+        # Mesmo critério de ProfessorPerfilService.get_por_slug: só
+        # professor ATIVO com slug definido -- conta desativada devolve
+        # 404 na página e por isso não pode aparecer aqui. Seleciona só
+        # a coluna do slug (sem carregar o User inteiro) e limita o
+        # total pra o sitemap nunca crescer sem controle (o protocolo
+        # aceita até 50.000 URLs por arquivo).
+        slugs = [
+            linha[0] for linha in (
+                db.session.query(User.professor_slug)
+                .filter(
+                    User.tipo_usuario == 'professor',
+                    User.ativo.is_(True),
+                    User.professor_slug.isnot(None),
+                    User.professor_slug != '',
+                )
+                .order_by(User.id)
+                .limit(SITEMAP_LIMITE_PROFESSORES)
+                .all()
+            )
+        ]
+        urls_publicas += [
+            canonical_url(url_for('professor.pagina_publica', slug=slug))
+            for slug in slugs
+        ]
+
+        itens = "".join(f"<url><loc>{escape(u)}</loc></url>" for u in urls_publicas)
         xml = (
             '<?xml version="1.0" encoding="UTF-8"?>'
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
             f'{itens}'
             '</urlset>'
         )
-        return Response(xml, mimetype="application/xml")
+        resposta = Response(xml, mimetype="application/xml")
+        # Cache HTTP curto (navegador/CDN/crawler) em vez de cache em
+        # memória do servidor: a consulta é barata e assim um professor
+        # novo não fica invisível por causa de um valor velho guardado.
+        resposta.headers["Cache-Control"] = "public, max-age=3600"
+        return resposta
 
     @app.route("/llms.txt")
     def llms_txt():
