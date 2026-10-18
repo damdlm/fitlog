@@ -167,10 +167,18 @@
                 }
             },
             {
+                element: '#modalEditarRegistro .modal-footer .btn-secondary',
+                popover: {
+                    title: 'Cancelar',
+                    description: 'Fecha a janela sem alterar nada.',
+                    side: 'top', align: 'center'
+                }
+            },
+            {
                 element: '#editarRegistroBtnSalvar',
                 popover: {
                     title: 'Salvar',
-                    description: 'Grava as mudanças. <b>Cancelar</b> fecha sem alterar nada.',
+                    description: 'Grava as mudanças no treino.',
                     side: 'top', align: 'end'
                 }
             }

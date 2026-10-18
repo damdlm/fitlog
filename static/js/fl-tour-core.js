@@ -140,12 +140,17 @@
                 stageRadius: 10,
                 popoverClass: 'fl-tour',
                 onHighlightStarted: function (el) { garantirVisivelNoContainer(el); },
-                onHighlighted: function () {
+                onHighlighted: function (el) {
+                    // O Driver.js pode mexer na rolagem do contêiner depois de
+                    // onHighlightStarted (ex: janela com a lista grande); refaz.
+                    garantirVisivelNoContainer(el);
                     // Dois recálculos: gráficos e imagens podem mudar a
                     // altura da página logo depois da rolagem.
                     [250, 800].forEach(function (ms) {
                         window.setTimeout(function () {
-                            if (instanciaAtiva) instanciaAtiva.refresh();
+                            if (!instanciaAtiva) return;
+                            garantirVisivelNoContainer(el);
+                            instanciaAtiva.refresh();
                         }, ms);
                     });
                 },
