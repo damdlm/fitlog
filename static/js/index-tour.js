@@ -29,6 +29,23 @@
                 }
             },
             {
+                element: ['a.mega-trigger[title="Painel"]'],
+                popover: {
+                    title: 'Painel',
+                    description: 'O resumo dos seus alunos: quem treinou hoje, quem está parado e o que precisa de atenção.',
+                    side: 'bottom', align: 'center'
+                }
+            },
+            {
+                element: ['.bottom-nav a.bottom-nav-item:first-child', 'a.mega-trigger[title="Dashboard"]'],
+                popover: {
+                    title: 'Início',
+                    description: 'Seu resumo pessoal: quantos dias você treinou na semana, '
+                        + 'o gráfico de constância e o seu <b>último treino</b>, com o tempo que levou.',
+                    side: 'top', align: 'center'
+                }
+            },
+            {
                 element: ['.bottom-nav a[href*="calend"]', 'a.mega-trigger[title="Calendário"]'],
                 popover: {
                     title: 'Calendário',
