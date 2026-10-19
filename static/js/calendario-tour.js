@@ -185,10 +185,42 @@
         ];
     }
 
+    // Janela de edição com muitos exercícios: ela inteira rola e Excluir/
+    // Cancelar/Salvar ficam lá embaixo, fora da tela. Rolar a janela durante
+    // o tour brigava com o Driver.js (o destaque tremia e se perdia). Só
+    // enquanto o tour roda, fixa o cabeçalho e o rodapé e deixa só a lista
+    // rolar: os botões ficam sempre visíveis e nenhum passo precisa rolar a janela.
+    var ID_ESTILO = 'flTourEdicaoFixa';
+    function injetarEstilo() {
+        if (document.getElementById(ID_ESTILO)) return;
+        var st = document.createElement('style');
+        st.id = ID_ESTILO;
+        st.textContent =
+            '#modalEditarRegistro.fl-tour-fixo{overflow:hidden!important}'
+            + '#modalEditarRegistro.fl-tour-fixo .modal-dialog{height:calc(100% - 1rem);margin:.5rem auto;display:flex}'
+            + '#modalEditarRegistro.fl-tour-fixo .modal-content{width:100%;max-height:100%;display:flex;flex-direction:column}'
+            + '#modalEditarRegistro.fl-tour-fixo form{display:flex;flex-direction:column;min-height:0;flex:1 1 auto}'
+            + '#modalEditarRegistro.fl-tour-fixo .modal-body{overflow-y:auto;min-height:0;flex:1 1 auto}'
+            + '#modalEditarRegistro.fl-tour-fixo .modal-header,#modalEditarRegistro.fl-tour-fixo .modal-footer{flex:0 0 auto}';
+        document.head.appendChild(st);
+    }
+
     var tour = window.FlTour.criar({
         tela: 'calendario',
         scriptEl: scriptEl,
         fasesModal: ['detalhes', 'edicao'],
+        aoIniciar: function (fase) {
+            if (fase !== 'edicao') return;
+            var m = document.getElementById('modalEditarRegistro');
+            if (!m) return;
+            injetarEstilo();
+            m.classList.add('fl-tour-fixo');
+        },
+        aoEncerrar: function (fase) {
+            if (fase !== 'edicao') return;
+            var m = document.getElementById('modalEditarRegistro');
+            if (m) m.classList.remove('fl-tour-fixo');
+        },
         passos: { pagina: passosPagina, detalhes: passosDetalhes, edicao: passosEdicao }
     });
 

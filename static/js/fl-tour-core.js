@@ -175,6 +175,7 @@
                 onDestroyed: function () {
                     marcarVisto(fase);
                     instanciaAtiva = null;
+                    if (cfg.aoEncerrar) cfg.aoEncerrar(fase);
                     if (restaurarRolagem) window.scrollTo(0, rolagemInicial);
                     if (desligarReposicionamento) {
                         desligarReposicionamento();
@@ -182,6 +183,7 @@
                     }
                 }
             });
+            if (cfg.aoIniciar) cfg.aoIniciar(fase);
             desligarReposicionamento = ligarReposicionamento();
             instanciaAtiva.drive();
         }
