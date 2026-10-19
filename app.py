@@ -15,6 +15,9 @@ from models import db, User
 
 from extensions import login_manager, csrf, limiter, cache, compress
 
+# Teto de páginas de professores listadas no sitemap.xml (ver sitemap_xml).
+SITEMAP_LIMITE_PROFESSORES = 5000
+
 
 # =============================================================
 # LOGS
