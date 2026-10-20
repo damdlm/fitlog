@@ -18,6 +18,18 @@
     var scriptEl = document.currentScript;
     var doProfessor = (scriptEl && scriptEl.getAttribute('data-contexto')) === 'professor';
 
+    // O gráfico chega por fetch: "data-carregado" é marcado pela página
+    // quando ele terminou de desenhar (ou de mostrar o estado vazio).
+    function graficoCarregado() {
+        var w = document.getElementById('evolucaoWrap');
+        return !w || w.getAttribute('data-carregado') === '1';
+    }
+    function graficoVazio() {
+        var e = document.getElementById('chartEmptyState');
+        return graficoCarregado() && !!e && !e.classList.contains('d-none');
+    }
+    function graficoComDados() { return graficoCarregado() && !graficoVazio(); }
+
     function passosPagina() {
         return [
             {
@@ -64,7 +76,18 @@
                 }
             },
             {
+                element: '#chartEmptyState',
+                visivelSe: graficoVazio,
+                popover: {
+                    title: 'Evolução',
+                    description: 'Quando ' + (doProfessor ? 'o aluno registrar' : 'você registrar')
+                        + ' treinos, o gráfico da <b>evolução da carga</b> aparece aqui.',
+                    side: 'top', align: 'center'
+                }
+            },
+            {
                 element: '#evolucaoWrap .dash-card-header',
+                visivelSe: graficoComDados,
                 popover: {
                     title: 'Evolução',
                     description: 'O gráfico mostra a carga ao longo do tempo. Use os botões para ver '
@@ -74,6 +97,7 @@
             },
             {
                 element: '#evolucaoWrap .dash-chart-toolbar',
+                visivelSe: graficoComDados,
                 popover: {
                     title: 'Por semana ou por treino',
                     description: '<b>Por semana</b> soma o período; <b>Por treino</b> compara cada treino registrado.',
@@ -224,11 +248,11 @@
         passos: { pagina: passosPagina, detalhes: passosDetalhes, edicao: passosEdicao }
     });
 
-    function ligarModal(idModal, fase, atraso) {
+    function ligarModal(idModal, fase, atraso, pronto) {
         var modal = document.getElementById(idModal);
         if (!modal) return;
         modal.addEventListener('shown.bs.modal', function () {
-            tour.iniciarAposAtraso(fase, atraso);
+            tour.iniciarAposAtraso(fase, atraso, pronto);
         });
         modal.addEventListener('hide.bs.modal', tour.destruir);
     }
@@ -237,13 +261,17 @@
         tour.ligarBotao('btnTourCalendario', 'pagina');
         tour.ligarBotao('btnTourCalendarioDetalhes', 'detalhes');
         tour.ligarBotao('btnTourCalendarioEdicao', 'edicao');
-        ligarModal('eventoModal', 'detalhes', 450);
+        ligarModal('eventoModal', 'detalhes', 450, function () {
+            return !!document.querySelector('#eventoDetalhes .exercicio-card, #eventoDetalhes .grupo-treino-header');
+        });
         // O corpo da edição chega por fetch depois de abrir a janela.
-        ligarModal('modalEditarRegistro', 'edicao', 900);
+        ligarModal('modalEditarRegistro', 'edicao', 900, function () {
+            return !!document.querySelector('#editarRegistroCorpo .editar-registro-card');
+        });
 
         if (document.getElementById('calendar')) {
             // Espera o loader, a transição de página e os eventos do mês.
-            tour.iniciarAposAtraso('pagina', 1600);
+            tour.iniciarAposAtraso('pagina', 1600, graficoCarregado);
         }
     }
 

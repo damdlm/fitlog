@@ -599,7 +599,14 @@ const InstallManager = (function () {
 
     function agendarExibicaoAutomatica() {
         if (autoShowTimer) return;
-        autoShowTimer = window.setTimeout(function () {
+        var tentativas = 0;
+        autoShowTimer = window.setTimeout(function tentar() {
+            // Não sobrepõe o tutorial (Driver.js marca o <body> com
+            // "driver-active"): espera ele terminar, por até ~1 minuto.
+            if (document.body.classList.contains('driver-active') && tentativas++ < 30) {
+                autoShowTimer = window.setTimeout(tentar, 2000);
+                return;
+            }
             if (!shouldShowInstallPrompt()) return;
 
             // Tanto iOS quanto Android/Desktop começam pelo banner leve --

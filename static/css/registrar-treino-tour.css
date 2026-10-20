@@ -53,7 +53,7 @@
     line-height: 32px;
     border-radius: 50%;
     font-size: 20px;
-    color: #9a958a;
+    color: #5f5a50;
     transition: color 0.15s ease, background-color 0.15s ease;
 }
 
@@ -99,7 +99,7 @@
 .driver-popover.fl-tour .driver-popover-progress-text {
     font-size: 0.8rem;
     font-weight: 600;
-    color: #8a857a;
+    color: #5f5a50;
     white-space: nowrap;
 }
 
@@ -143,14 +143,14 @@
 
 /* Próximo / Concluir: ação principal. */
 .driver-popover.fl-tour .driver-popover-next-btn {
-    background: #F28C33;
+    background: #B45309; /* 5:1 com texto branco (WCAG AA) */
     color: #fff;
     box-shadow: 0 4px 12px rgba(242, 140, 51, 0.35);
 }
 
 .driver-popover.fl-tour .driver-popover-next-btn:hover,
 .driver-popover.fl-tour .driver-popover-next-btn:focus-visible {
-    background: #e07b22;
+    background: #9a4508;
 }
 
 /* Anterior: ação secundária, só contorno. */
@@ -185,18 +185,30 @@
     gap: 6px;
     border: none;
     background: transparent;
-    color: #8a857a;
+    color: #5f5a50;
     font-size: 0.85rem;
     font-weight: 600;
     padding: 4px 8px;
     border-radius: 8px;
+    position: relative;
     cursor: pointer;
     transition: color 0.15s ease, background-color 0.15s ease;
 }
 
+/* Área de toque de 44px sem aumentar o botão na tela. */
+.rt-tour-ajuda::after {
+    content: "";
+    position: absolute;
+    inset: -8px -6px;
+}
+
 .rt-tour-ajuda:hover,
 .rt-tour-ajuda:focus-visible {
-    color: #F28C33;
-    background: rgba(242, 140, 51, 0.08);
-    outline: none;
+    color: #B45309;
+    background: rgba(242, 140, 51, 0.12);
+}
+
+.rt-tour-ajuda:focus-visible {
+    outline: 3px solid rgba(180, 83, 9, 0.55);
+    outline-offset: 2px;
 }

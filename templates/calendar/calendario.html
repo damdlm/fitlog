@@ -2711,6 +2711,8 @@
 
         emptyState.classList.toggle('d-none', !vazio);
         canvas.classList.toggle('d-none', vazio);
+        const wrapEvolucao = document.getElementById('evolucaoWrap');
+        if (wrapEvolucao) wrapEvolucao.setAttribute('data-carregado', '1');
 
         if (vazio) {
             if (chart) chart.destroy();

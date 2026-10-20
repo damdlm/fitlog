@@ -21,7 +21,7 @@
     function passos() {
         return [
             {
-                element: ['.bottom-nav', '#navbarNav .navbar-nav', '.navbar-nav'],
+                element: ['.bottom-nav', '.navbar-nav'],
                 popover: {
                     title: 'Menu principal',
                     description: 'É por aqui que você navega pelo FitLog. Vamos ver os atalhos principais, um a um.',

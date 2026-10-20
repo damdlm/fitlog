@@ -17,55 +17,26 @@
  */
 (function () {
     'use strict';
-
-    var lib = window.driver && window.driver.js;
-    if (!lib || typeof lib.driver !== 'function') return;
+    if (!window.FlTour) return;
 
     var scriptEl = document.currentScript;
     var usuarioId = (scriptEl && scriptEl.getAttribute('data-user-id')) || 'anon';
-    var CHAVE_STORAGE = 'fitlog:tour:professor-alunos:v1:' + usuarioId;
 
-    var instanciaAtiva = null;
-    var rolagemInicial = 0;
-
-    // ---------- localStorage (nunca pode quebrar a tela) ----------
-    function jaViu() {
-        try {
-            return window.localStorage.getItem(CHAVE_STORAGE) === '1';
-        } catch (e) {
-            // Sem storage não dá pra lembrar: melhor não abrir sozinho
-            // a cada visita. O botão "Tutorial" continua funcionando.
-            return true;
+    // A versão anterior guardava a flag sem sufixo de fase. Quem já viu o
+    // tour não deve vê-lo de novo por causa da migração.
+    try {
+        var legado = 'fitlog:tour:professor-alunos:v1:' + usuarioId;
+        if (window.localStorage.getItem(legado) === '1') {
+            window.localStorage.setItem(legado + ':pagina', '1');
         }
-    }
-
-    function marcarVisto() {
-        try {
-            window.localStorage.setItem(CHAVE_STORAGE, '1');
-        } catch (e) { /* storage cheio/indisponível -- ignora */ }
-    }
-
-    // ---------- helpers de DOM ----------
-    function visivel(el) {
-        return !!el && (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0);
-    }
-
-    // Primeiro elemento VISÍVEL do seletor (tabela no desktop, cartão no
-    // celular) -- ou null, e o passo é descartado.
-    function primeiroVisivel(seletor) {
-        var lista = document.querySelectorAll(seletor);
-        for (var i = 0; i < lista.length; i++) {
-            if (visivel(lista[i])) return lista[i];
-        }
-        return null;
-    }
+    } catch (e) { /* sem storage: ignora */ }
 
     // ---------- passos ----------
     function montarPassos() {
         var temAlunos = !!document.querySelector('.ga-aluno-item');
         var passos = [
             {
-                element: primeiroVisivel('#gaAlertaSolicitacoes'),
+                element: '#gaAlertaSolicitacoes',
                 popover: {
                     title: 'Pedidos de vínculo',
                     description: 'Este aviso aparece quando algum aluno pediu para ser seu aluno. '
@@ -75,7 +46,7 @@
                 }
             },
             {
-                element: primeiroVisivel('#gaBusca'),
+                element: '#gaBusca',
                 popover: {
                     title: 'Encontre um aluno',
                     description: 'Digite o nome, o usuário ou o e-mail e toque em <b>Filtrar</b>. '
@@ -89,7 +60,7 @@
         if (temAlunos) {
             passos.push(
                 {
-                    element: primeiroVisivel('.ga-aluno-item'),
+                    element: '.ga-aluno-item',
                     popover: {
                         title: 'Seus alunos',
                         description: 'Cada aluno vinculado a você aparece aqui, em ordem alfabética, '
@@ -99,7 +70,7 @@
                     }
                 },
                 {
-                    element: primeiroVisivel('.ga-registros'),
+                    element: '.ga-registros',
                     popover: {
                         title: 'Treinos registrados',
                         description: 'Quantos treinos o aluno já registrou. Dá para ver de relance '
@@ -109,7 +80,7 @@
                     }
                 },
                 {
-                    element: primeiroVisivel('.ga-btn-ver'),
+                    element: '.ga-btn-ver',
                     popover: {
                         title: 'Abrir o aluno',
                         description: 'Abre a ficha dele: versões de treino, estatísticas, calendário '
@@ -119,7 +90,7 @@
                     }
                 },
                 {
-                    element: primeiroVisivel('.ga-btn-editar'),
+                    element: '.ga-btn-editar',
                     popover: {
                         title: 'Editar, desativar e reativar',
                         description: 'Ações de administrador: corrigir os dados do aluno e '
@@ -133,7 +104,7 @@
 
         passos.push(
             {
-                element: primeiroVisivel('#gaBtnSolicitacoes'),
+                element: '#gaBtnSolicitacoes',
                 popover: {
                     title: 'Solicitações',
                     description: 'Reúne os pedidos de alunos que querem treinar com você. '
@@ -143,7 +114,7 @@
                 }
             },
             {
-                element: primeiroVisivel('#gaBtnNovoAluno'),
+                element: '#gaBtnNovoAluno',
                 popover: {
                     title: 'Cadastrar um aluno novo',
                     description: 'Cria o acesso do aluno e já vincula a você. '
@@ -154,96 +125,21 @@
             }
         );
 
-        // Só entram os passos cujo elemento existe e está visível
-        // (ex: sem solicitações pendentes, o aviso não existe).
-        return passos.filter(function (p) { return !!p.element; });
+        return passos;
     }
 
-    // ---------- execução ----------
-    function iniciar() {
-        if (instanciaAtiva) return;
+    var tour = window.FlTour.criar({
+        tela: 'professor-alunos',
+        scriptEl: scriptEl,
+        passos: { pagina: montarPassos }
+    });
 
-        var passos = montarPassos();
-        if (!passos.length) return;
-
-        var reduzirMovimento = window.matchMedia
-            && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-        // Os passos do fim da página rolam a janela. Guarda onde o usuário
-        // estava para devolver ao terminar.
-        rolagemInicial = window.pageYOffset || 0;
-
-        instanciaAtiva = lib.driver({
-            steps: passos,
-            animate: !reduzirMovimento,
-            smoothScroll: false,
-            showProgress: true,
-            progressText: '{{current}} de {{total}}',
-            nextBtnText: 'Próximo &rsaquo;',
-            prevBtnText: '&lsaquo; Anterior',
-            doneBtnText: 'Concluir',
-            allowClose: true,
-            disableActiveInteraction: true,
-            overlayOpacity: 0.6,
-            stagePadding: 6,
-            stageRadius: 10,
-            popoverClass: 'fl-tour',
-            // Confere a posição logo depois de destacar, caso o navegador
-            // ainda esteja assentando a rolagem.
-            onHighlighted: function () {
-                window.setTimeout(function () {
-                    if (instanciaAtiva) instanciaAtiva.refresh();
-                }, 250);
-            },
-            onPopoverRender: function (popover, ctx) {
-                var atual = ((ctx && ctx.state && ctx.state.activeIndex) || 0) + 1;
-                var total = passos.length;
-
-                // No 1º passo "Anterior" não tem para onde voltar: some.
-                if (popover.previousButton) {
-                    popover.previousButton.style.display = atual === 1 ? 'none' : '';
-                }
-
-                // Barra de progresso fina no topo do rodapé.
-                if (popover.footer) {
-                    var barra = popover.footer.querySelector('.fl-tour-barra');
-                    if (!barra) {
-                        barra = document.createElement('div');
-                        barra.className = 'fl-tour-barra';
-                        barra.setAttribute('aria-hidden', 'true');
-                        barra.appendChild(document.createElement('span'));
-                        popover.footer.insertBefore(barra, popover.footer.firstChild);
-                    }
-                    barra.firstChild.style.width = Math.round((atual / total) * 100) + '%';
-                }
-            },
-            // Fechar (X, Esc ou clicar fora) também conta como visto:
-            // o tour nunca deve voltar a abrir sozinho e atrapalhar.
-            onDestroyed: function () {
-                marcarVisto();
-                instanciaAtiva = null;
-                window.scrollTo(0, rolagemInicial);
-            }
-        });
-        instanciaAtiva.drive();
-    }
-
-    // ---------- gatilhos ----------
     function init() {
-        var btn = document.getElementById('btnTourProfessorAlunos');
-        if (btn) btn.addEventListener('click', iniciar);
-
+        tour.ligarBotao('btnTourProfessorAlunos', 'pagina');
         // Espera o loader e a transição de página terminarem antes de abrir.
-        if (document.getElementById('gaBusca')) {
-            window.setTimeout(function () {
-                if (!jaViu()) iniciar();
-            }, 900);
-        }
+        if (document.getElementById('gaBusca')) tour.iniciarAposAtraso('pagina', 900);
     }
 
-    if (document.readyState === 'complete') {
-        init();
-    } else {
-        window.addEventListener('load', init);
-    }
+    if (document.readyState === 'complete') init();
+    else window.addEventListener('load', init);
 })();

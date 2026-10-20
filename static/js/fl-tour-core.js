@@ -8,7 +8,7 @@
  * terminar e nunca altera nenhum fluxo da tela (disableActiveInteraction).
  *
  * Uso: FlTour.criar({ tela, scriptEl, passos: { fase: function () { return [...]; } } })
- * devolve { iniciar(fase), iniciarAposAtraso(fase, ms), ligarBotao(id, fase),
+ * devolve { iniciar(fase), iniciarAposAtraso(fase, ms, pronto), ligarBotao(id, fase),
  *           destruir(), ativo() }.
  * Cada passo é um passo do Driver.js; "element" pode ser uma lista de
  * seletores (usa o primeiro visível) e "visivelSe" um teste opcional.
@@ -27,8 +27,10 @@
     function primeiroVisivel(seletores) {
         var lista = Array.isArray(seletores) ? seletores : [seletores];
         for (var i = 0; i < lista.length; i++) {
-            var el = document.querySelector(lista[i]);
-            if (visivel(el)) return el;
+            var todos = document.querySelectorAll(lista[i]);
+            for (var j = 0; j < todos.length; j++) {
+                if (visivel(todos[j])) return todos[j];
+            }
         }
         return null;
     }
@@ -188,9 +190,20 @@
             instanciaAtiva.drive();
         }
 
-        function iniciarAposAtraso(fase, ms) {
+        // Espera "ms" e, se houver o teste "pronto", continua esperando (até
+        // 8 s) o conteúdo existir antes de abrir: em rede lenta o passo não é
+        // mais pulado por um atraso fixo curto demais.
+        function iniciarAposAtraso(fase, ms, pronto) {
             window.setTimeout(function () {
-                if (!jaViu(fase)) iniciar(fase);
+                if (jaViu(fase)) return;
+                if (!pronto) { iniciar(fase); return; }
+                var limite = Date.now() + 8000;
+                (function verificar() {
+                    var ok = false;
+                    try { ok = !!pronto(); } catch (e) { ok = false; }
+                    if (ok || Date.now() >= limite) { if (!jaViu(fase)) iniciar(fase); return; }
+                    window.setTimeout(verificar, 150);
+                })();
             }, ms);
         }
 
