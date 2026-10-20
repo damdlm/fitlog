@@ -487,6 +487,8 @@ class BillingService:
         valor no Asaas) é um passo separado, deliberadamente não
         automático aqui."""
         mudancas = []
+        if not BillingService._cobranca_ativa():
+            return mudancas  # modo grátis: nenhuma faixa é exigida
         professores = User.query.filter_by(tipo_usuario='professor', ativo=True).all()
         for professor in professores:
             plano_necessario = BillingService.plano_gestao_necessario(professor)
@@ -523,6 +525,9 @@ class BillingService:
         e some sozinho quando resolver (upgrade feito, ou perdeu
         alunos e não precisa mais)."""
         from services.notificacao_service import NotificacaoService
+        if not BillingService._cobranca_ativa():
+            logger.info('Modo grátis: avisos de tier desatualizado pulados')
+            return 0
         agora = datetime.now(timezone.utc)
         total = 0
         professores = User.query.filter_by(tipo_usuario='professor', ativo=True).all()
@@ -1185,26 +1190,72 @@ class BillingService:
         return fim if fim is not None and fim > agora else None
 
     @staticmethod
+    def _transicionar(assinatura_id: int, filtros: list, novo_status: str) -> bool:
+        """UPDATE atômico e condicional de UMA assinatura: só muda o status
+        se a linha AINDA satisfizer `filtros` no momento da escrita. Os
+        jobs periódicos carregam candidatas com um SELECT e depois
+        escrevem; se um webhook confirmar o pagamento nesse intervalo,
+        um save de objeto sobrescreveria 'active' com 'blocked'. Com o
+        WHERE no próprio UPDATE, o Postgres espera o lock da linha, relê
+        a condição e simplesmente não casa mais. Devolve True se mudou."""
+        atualizadas = Assinatura.query.filter(
+            Assinatura.id == assinatura_id, *filtros
+        ).update({'status': novo_status}, synchronize_session=False)
+        return bool(atualizadas)
+
+    @staticmethod
     def finalizar_cancelamentos_agendados() -> int:
         """Vira 'canceled' de vez as assinaturas cujo cancelamento foi
         pedido (cancelado_em setado por cancelar_assinatura) mas cujo
         acesso foi mantido até o fim do período já pago
         (periodo_atual_fim) -- até essa data passar, elas continuam
         'active' de propósito. Rodar junto do cron horário de
-        carências (ver app.py: flask billing-expirar-carencias)."""
+        carências (ver app.py: flask billing-expirar-carencias).
+
+        Roda mesmo no modo grátis: é a vontade do usuário (ele pediu
+        para cancelar), não cobrança."""
         agora = datetime.now(timezone.utc)
-        pendentes = Assinatura.query.filter(
+        filtros = [
             Assinatura.status == 'active',
             Assinatura.cancelado_em.isnot(None),
             Assinatura.periodo_atual_fim.isnot(None),
             Assinatura.periodo_atual_fim <= agora,
-        ).all()
-        for assinatura in pendentes:
-            assinatura.status = 'canceled'
-        if pendentes:
-            db.session.commit()
-        return len(pendentes)
+        ]
+        ids = [i for (i,) in db.session.query(Assinatura.id).filter(*filtros).all()]
+        total = 0
+        for assinatura_id in ids:
+            try:
+                if BillingService._transicionar(assinatura_id, filtros, 'canceled'):
+                    total += 1
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                logger.exception('Falha ao finalizar cancelamento agendado (assinatura=%s)', assinatura_id)
+        return total
 
+    @staticmethod
+    def reiniciar_trials(dias: int = TRIAL_DIAS, executar: bool = False) -> int:
+        """Reabre o teste grátis de quem está 'trialing': trial_termina_em
+        passa a ser agora + `dias` (nunca encurta um trial que já termina
+        depois disso). Pensado para rodar UMA vez, na virada do modo grátis
+        para cobrança (flask billing-reiniciar-trials) -- quem se cadastrou
+        durante o lançamento grátis chegaria ao primeiro dia de cobrança
+        com os 30 dias já gastos e perderia o acesso de uma vez, sem aviso.
+        Sem `executar`, só conta (dry-run). Devolve quantas assinaturas
+        seriam/foram atualizadas."""
+        novo_fim = datetime.now(timezone.utc) + timedelta(days=dias)
+        filtros = [
+            Assinatura.status == 'trialing',
+            Assinatura.trial_termina_em.isnot(None),
+            Assinatura.trial_termina_em < novo_fim,
+        ]
+        if not executar:
+            return Assinatura.query.filter(*filtros).count()
+        atualizadas = Assinatura.query.filter(*filtros).update(
+            {'trial_termina_em': novo_fim}, synchronize_session=False)
+        db.session.commit()
+        logger.info('%d trial(s) reiniciado(s) por %d dias', atualizadas, dias)
+        return atualizadas
 
     @staticmethod
     def _checar_resposta(resp: requests.Response, contexto: str):
@@ -2043,6 +2094,31 @@ class BillingService:
         return payment_id != assinatura.gateway_ultimo_pagamento_confirmado_id
 
     @staticmethod
+    def _cobranca_ativa() -> bool:
+        """False = modo grátis de lançamento (ConfiguracaoService). Os jobs
+        periódicos que cobram, expiram ou avisam sobre plano consultam isto
+        e não fazem nada enquanto a cobrança estiver desligada -- senão
+        mandariam "faça upgrade"/"seu plano expirou" para quem hoje usa
+        tudo de graça, e a carência de quem não pagou correria à toa."""
+        from services.configuracao_service import ConfiguracaoService
+        return ConfiguracaoService.cobranca_ativa()
+
+    @staticmethod
+    def _marco_notificacao_vencimento(dias: int) -> int | None:
+        """Maior marco da régua (DIAS_NOTIFICACAO_VENCIMENTO_FIXOS e,
+        depois, a cada DIAS_NOTIFICACAO_VENCIMENTO_INTERVALO_FINAL dias)
+        que já foi atingido com `dias` dias de atraso, ou None se ainda
+        não chegou no primeiro. Permite recuperar um aviso cujo dia exato
+        o cron perdeu (falha/atraso) em vez de pulá-lo para sempre."""
+        atingidos = [m for m in DIAS_NOTIFICACAO_VENCIMENTO_FIXOS if m <= dias]
+        ultimo_fixo = DIAS_NOTIFICACAO_VENCIMENTO_FIXOS[-1]
+        if dias > ultimo_fixo:
+            passos = (dias - ultimo_fixo) // DIAS_NOTIFICACAO_VENCIMENTO_INTERVALO_FINAL
+            if passos:
+                atingidos.append(ultimo_fixo + passos * DIAS_NOTIFICACAO_VENCIMENTO_INTERVALO_FINAL)
+        return max(atingidos) if atingidos else None
+
+    @staticmethod
     def _deve_notificar_vencimento(dias: int) -> bool:
         """dias: quantos dias inteiros se passaram desde vencido_em.
         True nos dias fixos da régua (1, 2, 3, 6, 9, 12, 15, 18), e daí
@@ -2070,6 +2146,9 @@ class BillingService:
         Idempotente: se rodar mais de uma vez no mesmo dia, não duplica
         a notificação (ver ultima_notificacao_vencimento_dias)."""
         from services.notificacao_service import NotificacaoService
+        if not BillingService._cobranca_ativa():
+            logger.info('Modo grátis: notificações de vencimento puladas')
+            return 0
         agora = datetime.now(timezone.utc)
         candidatas = Assinatura.query.filter(
             Assinatura.status.in_(('past_due', 'blocked')),
@@ -2083,9 +2162,12 @@ class BillingService:
             dias = (agora.date() - vencido_em.date()).days
             if dias <= 0:
                 continue
-            if not BillingService._deve_notificar_vencimento(dias):
+            marco = BillingService._marco_notificacao_vencimento(dias)
+            if marco is None:
                 continue
-            if assinatura.ultima_notificacao_vencimento_dias == dias:
+            # Já avisou este marco (ou um posterior)? Não repete. Se o cron
+            # perdeu o dia exato de um marco, o aviso sai no próximo run.
+            if (assinatura.ultima_notificacao_vencimento_dias or 0) >= marco:
                 continue
             NotificacaoService._criar(
                 destinatario_id=assinatura.usuario_id,
@@ -2098,7 +2180,7 @@ class BillingService:
                 ),
                 url='/billing/minha-assinatura',
             )
-            assinatura.ultima_notificacao_vencimento_dias = dias
+            assinatura.ultima_notificacao_vencimento_dias = marco
             db.session.commit()
             total += 1
         return total
@@ -2151,19 +2233,33 @@ class BillingService:
         então este job só compara contra a data, sem recalcular nada).
         Não é feito dentro de acesso_premium_ativo() -- esse método só
         LÊ o status; quem escreve é sempre um processo explícito
-        (webhook ou este job), nunca uma leitura incidental."""
+        (webhook ou este job), nunca uma leitura incidental.
+
+        Cada assinatura é bloqueada por um UPDATE condicional (ver
+        _transicionar): se o webhook reativou a conta entre o SELECT e a
+        escrita, ela não é bloqueada. Não faz nada no modo grátis."""
+        if not BillingService._cobranca_ativa():
+            logger.info('Modo grátis: expiração de carências pulada')
+            return 0
         agora = datetime.now(timezone.utc)
-        vencidas = Assinatura.query.filter(
+        filtros = [
             Assinatura.status == 'past_due',
             Assinatura.carencia_termina_em.isnot(None),
             Assinatura.carencia_termina_em <= agora,
-        ).all()
-        for assinatura in vencidas:
-            assinatura.status = 'blocked'
-        if vencidas:
-            db.session.commit()
-            logger.info('%d assinatura(s) movida(s) para blocked por carência vencida', len(vencidas))
-        return len(vencidas)
+        ]
+        ids = [i for (i,) in db.session.query(Assinatura.id).filter(*filtros).all()]
+        total = 0
+        for assinatura_id in ids:
+            try:
+                if BillingService._transicionar(assinatura_id, filtros, 'blocked'):
+                    total += 1
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                logger.exception('Falha ao bloquear carência vencida (assinatura=%s)', assinatura_id)
+        if total:
+            logger.info('%d assinatura(s) movida(s) para blocked por carência vencida', total)
+        return total
 
     @staticmethod
     def expirar_pix_vencidos():
@@ -2174,18 +2270,46 @@ class BillingService:
         este job precisa varrer ativamente as assinaturas via Pix cujo
         periodo_atual_fim já passou e iniciar a carência de atraso
         (mesma lógica/prazos de sempre -- ver _iniciar_atraso), como se
-        fosse um evento de atraso vindo do gateway."""
+        fosse um evento de atraso vindo do gateway.
+
+        Cada assinatura é "reivindicada" por um UPDATE condicional
+        (active -> past_due, ver _transicionar) antes de _iniciar_atraso
+        rodar; um pagamento confirmado no meio do caminho vence a corrida.
+        Não faz nada no modo grátis: a carência só começa a contar quando
+        a cobrança for ligada."""
+        if not BillingService._cobranca_ativa():
+            logger.info('Modo grátis: expiração de períodos Pix pulada')
+            return 0
         agora = datetime.now(timezone.utc)
-        vencidas = Assinatura.query.filter(
+        filtros = [
             Assinatura.status == 'active',
             Assinatura.forma_pagamento == 'pix',
             Assinatura.cancelado_em.is_(None),  # cancelamento agendado vira 'canceled' em finalizar_cancelamentos_agendados, sem carência
             Assinatura.periodo_atual_fim.isnot(None),
             Assinatura.periodo_atual_fim <= agora,
-        ).all()
-        for assinatura in vencidas:
-            BillingService._iniciar_atraso(assinatura, agora)
-        if vencidas:
-            db.session.commit()
-            logger.info('%d assinatura(s) Pix movida(s) para past_due por período vencido', len(vencidas))
-        return len(vencidas)
+        ]
+        ids = [i for (i,) in db.session.query(Assinatura.id).filter(*filtros).all()]
+        total = 0
+        for assinatura_id in ids:
+            try:
+                if not BillingService._transicionar(assinatura_id, filtros, 'past_due'):
+                    db.session.rollback()
+                    continue  # mudou de estado (ex: pagou) desde o SELECT
+                assinatura = db.session.get(Assinatura, assinatura_id)
+                db.session.refresh(assinatura)
+                BillingService._iniciar_atraso(assinatura, agora)
+                db.session.commit()
+                # NotificacaoService._criar faz rollback da sessão inteira se
+                # falhar -- nesse caso a reivindicação some e a assinatura
+                # volta a 'active', então o próximo run tenta de novo.
+                db.session.refresh(assinatura)
+                if assinatura.status == 'past_due' and assinatura.vencido_em is not None:
+                    total += 1
+                else:
+                    logger.error('Pix vencido não pôde ser movido para past_due (assinatura=%s); novo try no próximo run', assinatura_id)
+            except Exception:
+                db.session.rollback()
+                logger.exception('Falha ao iniciar atraso Pix (assinatura=%s)', assinatura_id)
+        if total:
+            logger.info('%d assinatura(s) Pix movida(s) para past_due por período vencido', total)
+        return total

@@ -507,12 +507,18 @@ def create_app(config_class=None):
         BillingService.finalizar_cancelamentos_agendados). Rodar a
         cada hora."""
         from services.billing_service import BillingService
-        total_pix = BillingService.expirar_pix_vencidos()
-        total = BillingService.expirar_carencias_vencidas()
-        total_cancelamentos = BillingService.finalizar_cancelamentos_agendados()
-        print(f"{total_pix} assinatura(s) Pix movida(s) para past_due por período vencido.")
-        print(f"{total} assinatura(s) movida(s) para blocked.")
-        print(f"{total_cancelamentos} cancelamento(s) agendado(s) finalizado(s).")
+        from utils.cron_utils import executar_etapas
+        resultados, falhas = executar_etapas([
+            ('expirar_pix_vencidos', BillingService.expirar_pix_vencidos),
+            ('expirar_carencias_vencidas', BillingService.expirar_carencias_vencidas),
+            ('finalizar_cancelamentos_agendados', BillingService.finalizar_cancelamentos_agendados),
+        ])
+        print(f"{resultados.get('expirar_pix_vencidos', 0)} assinatura(s) Pix movida(s) para past_due por período vencido.")
+        print(f"{resultados.get('expirar_carencias_vencidas', 0)} assinatura(s) movida(s) para blocked.")
+        print(f"{resultados.get('finalizar_cancelamentos_agendados', 0)} cancelamento(s) agendado(s) finalizado(s).")
+        if falhas:
+            print(f"FALHA nas etapas: {', '.join(falhas)}", file=sys.stderr)
+            raise SystemExit(1)
 
     @app.cli.command("billing-verificar-tiers")
     def billing_verificar_tiers():
@@ -529,6 +535,9 @@ def create_app(config_class=None):
             atual = m['tier_atual'].codigo if m['tier_atual'] else 'gratuito'
             novo = m['tier_novo'].codigo if m['tier_novo'] else 'gratuito'
             print(f"professor_id={m['professor'].id} {atual} -> {novo}")
+            # Também vai pro log da aplicação (auditoria: fica pesquisável
+            # no Sentry/Railway com a chave tier_pendente).
+            app.logger.info("tier_pendente professor_id=%s atual=%s novo=%s", m['professor'].id, atual, novo)
 
     @app.cli.command("billing-notificar-vencimentos")
     def billing_notificar_vencimentos():
@@ -551,6 +560,49 @@ def create_app(config_class=None):
         from services.billing_service import BillingService
         total = BillingService.notificar_professores_tier_desatualizado()
         print(f"{total} notificação(ões) de tier desatualizado enviada(s).")
+
+    @app.cli.command("billing-rotina-diaria")
+    def billing_rotina_diaria():
+        """Rotina diária de cobrança (Railway Cron, 1x/dia): auditoria de
+        tiers, aviso de tier desatualizado e aviso de vencimentos. Substitui
+        o `sh -c "flask a; flask b; flask c"`, que escondia falhas porque só
+        o código de saída do último comando contava. Cada etapa é isolada e
+        o comando sai com código 1 se QUALQUER uma falhar."""
+        from services.billing_service import BillingService
+        from utils.cron_utils import executar_etapas
+        resultados, falhas = executar_etapas([
+            ('verificar_tiers', BillingService.verificar_mudancas_tier_professores),
+            ('notificar_tier_desatualizado', BillingService.notificar_professores_tier_desatualizado),
+            ('notificar_vencimentos', BillingService.notificar_vencimentos_pendentes),
+        ])
+        for m in resultados.get('verificar_tiers', []):
+            atual = m['tier_atual'].codigo if m['tier_atual'] else 'gratuito'
+            novo = m['tier_novo'].codigo if m['tier_novo'] else 'gratuito'
+            app.logger.info("tier_pendente professor_id=%s atual=%s novo=%s", m['professor'].id, atual, novo)
+        print(f"{len(resultados.get('verificar_tiers', []))} mudança(s) de tier pendente(s).")
+        print(f"{resultados.get('notificar_tier_desatualizado', 0)} notificação(ões) de tier desatualizado enviada(s).")
+        print(f"{resultados.get('notificar_vencimentos', 0)} notificação(ões) de vencimento enviada(s).")
+        if falhas:
+            print(f"FALHA nas etapas: {', '.join(falhas)}", file=sys.stderr)
+            raise SystemExit(1)
+
+    @app.cli.command("billing-reiniciar-trials")
+    @click.option("--dias", default=30, show_default=True, type=click.IntRange(1, 365),
+                  help="Novo prazo de teste, contado a partir de agora.")
+    @click.option("--executar", is_flag=True,
+                  help="Aplica de verdade. Sem esta flag é só uma simulação (dry-run).")
+    def billing_reiniciar_trials(dias, executar):
+        """Reabre o teste grátis de quem está 'trialing' (trial_termina_em =
+        agora + DIAS; nunca encurta um trial maior). Rodar UMA vez, logo
+        antes de desligar o modo grátis, para quem se cadastrou durante o
+        lançamento não chegar ao 1º dia de cobrança com o trial já vencido.
+        NÃO é um cron -- é manual (railway run flask billing-reiniciar-trials)."""
+        from services.billing_service import BillingService
+        total = BillingService.reiniciar_trials(dias=dias, executar=executar)
+        if executar:
+            print(f"{total} trial(s) reiniciado(s) por {dias} dias.")
+        else:
+            print(f"[dry-run] {total} trial(s) seriam reiniciados por {dias} dias. Use --executar para aplicar.")
 
     # =============================================================
     # COMANDOS CLI (notificações)
