@@ -1003,8 +1003,11 @@ class TestNotificarVencimentosPendentes:
             assert assinatura.ultima_notificacao_vencimento_dias == 1
 
     def test_dia_fora_da_regua_nao_gera_notificacao(self, app):
+        """Dia 4 fica entre os marcos 3 e 6: se o aviso do dia 3 já saiu,
+        nada é enviado. (Com o aviso do dia 3 perdido, o job o recupera --
+        ver test_billing_cron_jobs.py::test_aviso_perdido_e_recuperado_no_proximo_run.)"""
         with app.app_context():
-            aluno, _ = self._criar_assinatura_vencida(dias_atras=4)
+            aluno, _ = self._criar_assinatura_vencida(dias_atras=4, ultima_notificacao=3)
 
             total = BillingService.notificar_vencimentos_pendentes()
 
