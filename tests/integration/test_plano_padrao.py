@@ -1,4 +1,4 @@
-"""Plano padrão para alunos novos: o admin escolhe uma de suas versões como
+"""Plano padrão para alunos e professores novos: o admin escolhe uma de suas versões como
 modelo e todo aluno que se cadastra sozinho (sem professor) recebe uma
 CÓPIA independente dela -- treinos + exercícios já prontos, editáveis.
 
@@ -238,11 +238,21 @@ class TestCadastroAplicaPlanoPadrao:
             assert ativa is not None
             assert TreinoVersao.query.filter_by(versao_id=ativa.id).count() == 2
 
-    def test_professor_que_se_cadastra_nao_recebe(self, client, app):
+    def test_professor_que_se_cadastra_recebe_o_plano(self, client, app):
         with app.app_context():
             self._configurar_modelo()
             self._registrar(client, 'prof_auto', tipo='professor')
             prof = User.query.filter_by(username='prof_auto').first()
+            assert prof is not None
+            assert prof.tipo_usuario == 'professor'
+            ativa = VersaoService.get_ativa(user_id=prof.id)
+            assert ativa is not None
+            assert TreinoVersao.query.filter_by(versao_id=ativa.id).count() == 2
+
+    def test_professor_sem_plano_configurado_cadastro_funciona_como_antes(self, client, app):
+        with app.app_context():
+            self._registrar(client, 'prof_sem_cfg', tipo='professor')
+            prof = User.query.filter_by(username='prof_sem_cfg').first()
             assert prof is not None
             assert VersaoGlobal.query.filter_by(user_id=prof.id).count() == 0
 
@@ -291,7 +301,7 @@ class TestTelaAdminPlanoPadrao:
             resp = client.get('/admin/telas-controladas')
             assert resp.status_code == 200
             html = resp.get_data(as_text=True)
-            assert 'Plano padrão para alunos novos' in html
+            assert 'Plano padrão para alunos e professores novos' in html
             assert 'Plano iniciante' in html
 
     def test_admin_define_e_desliga_o_plano_padrao(self, client, app):

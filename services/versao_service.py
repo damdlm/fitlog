@@ -1181,7 +1181,8 @@ class VersaoService(BaseService):
 
     @staticmethod
     def aplicar_plano_padrao_ao_aluno(aluno_id):
-        """Dá ao aluno recém-cadastrado uma cópia do PLANO PADRÃO definido
+        """Dá ao usuário recém-cadastrado (aluno ou professor -- o professor
+        também treina por conta própria) uma cópia do PLANO PADRÃO definido
         pelo admin (ConfiguracaoApp.versao_padrao_id): uma nova versão
         ATIVA com os mesmos treinos, exercícios e observações do modelo.
 

@@ -420,15 +420,15 @@ def register():
             # dentro desta mesma transação.
             PrivacidadeService.registrar_aceite_cadastro(user.id, commit=False)
 
-            # Aluno que se cadastra sozinho (sem professor) já começa com
-            # uma cópia do plano padrão definido pelo admin, se houver --
-            # ele edita à vontade depois. Só aqui no /register: alunos
-            # criados por professor (professor_routes.novo_aluno) não
-            # passam por este ponto e continuam sem versão. Nunca levanta
-            # exceção e nunca confirma nada por conta própria (SAVEPOINT):
-            # entra no mesmo commit do cadastro.
-            if user.tipo_usuario == 'aluno':
-                VersaoService.aplicar_plano_padrao_ao_aluno(user.id)
+            # Quem se cadastra sozinho -- aluno OU professor (que também
+            # treina por conta própria, com as telas de aluno) -- já começa
+            # com uma cópia do plano padrão definido pelo admin, se houver;
+            # edita à vontade depois. Só aqui no /register: alunos criados
+            # por professor (professor_routes.novo_aluno) não passam por
+            # este ponto e continuam sem versão. Nunca levanta exceção e
+            # nunca confirma nada por conta própria (SAVEPOINT): entra no
+            # mesmo commit do cadastro.
+            VersaoService.aplicar_plano_padrao_ao_aluno(user.id)
 
             db.session.commit()
         except Exception:

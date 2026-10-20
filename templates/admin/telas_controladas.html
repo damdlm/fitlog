@@ -79,10 +79,10 @@
     <div class="card-body">
         <h5 class="card-title mb-1">
             <i class="bi bi-clipboard-check me-2" style="color: #F28C33;"></i>
-            Plano padrão para alunos novos
+            Plano padrão para alunos e professores novos
         </h5>
         <p class="text-muted">
-            Todo aluno que se cadastra sozinho (sem ser cadastrado por um professor) já entra com uma
+            Todo aluno ou professor que se cadastra sozinho (sem ser cadastrado por um professor) já entra com uma
             <strong>cópia</strong> da versão escolhida aqui: treinos e exercícios prontos, que ele pode
             editar depois sem afetar ninguém. Mudanças feitas nesta versão valem só para os próximos
             cadastros -- quem já recebeu a cópia não é alterado.<br>
@@ -98,7 +98,7 @@
                 <div class="col-md-8">
                     <label class="form-label" for="versao-padrao-id">Versão modelo</label>
                     <select class="form-select" name="versao_padrao_id" id="versao-padrao-id">
-                        <option value="" {% if not versao_padrao_id %}selected{% endif %}>Nenhuma (aluno novo começa sem versão)</option>
+                        <option value="" {% if not versao_padrao_id %}selected{% endif %}>Nenhuma (usuário novo começa sem versão)</option>
                         {% for v in versoes_admin %}
                         <option value="{{ v.id }}"
                                 {% if v.id == versao_padrao_id %}selected{% endif %}
