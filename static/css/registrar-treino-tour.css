@@ -143,14 +143,14 @@
 
 /* Próximo / Concluir: ação principal. */
 .driver-popover.fl-tour .driver-popover-next-btn {
-    background: #B45309; /* 5:1 com texto branco (WCAG AA) */
-    color: #fff;
+    background: #F28C33; /* laranja da marca; texto escuro = 7:1 (WCAG AA) */
+    color: #1f1a14;
     box-shadow: 0 4px 12px rgba(242, 140, 51, 0.35);
 }
 
 .driver-popover.fl-tour .driver-popover-next-btn:hover,
 .driver-popover.fl-tour .driver-popover-next-btn:focus-visible {
-    background: #9a4508;
+    background: #E8801F; /* continua com 6,2:1 com o texto escuro */
 }
 
 /* Anterior: ação secundária, só contorno. */
