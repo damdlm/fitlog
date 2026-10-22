@@ -179,7 +179,7 @@
     }
 }
 
-/* ---------- Botão "Tutorial" que reabre o passeio ----------
+/* ---------- Botão "Tutorial" que reabre o passeio ---------- 
    Discreto de propósito: não compete com as ações principais. */
 .rt-tour-ajuda {
     display: inline-flex;
