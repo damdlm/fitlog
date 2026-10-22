@@ -272,13 +272,32 @@ def create_app(config_class=None):
     @login_manager.user_loader
     def load_user(user_id):
         from flask import session as flask_session
-        user = db.session.get(User, int(user_id))
+
+        # Formato atual: "<id>.<session_version>" (ver User.get_id). A
+        # versão viaja junto do identificador, então vale tanto para o
+        # cookie de sessão quanto para o cookie "remember" -- este último
+        # recria a sessão do zero (sem 'sv'), e é isso que derrubava o
+        # login no PWA reaberto.
+        uid, tem_versao, versao = str(user_id).partition('.')
+        try:
+            user = db.session.get(User, int(uid))
+        except (ValueError, TypeError):
+            return None
         if user is None:
             return None
+
         # CORREÇÃO 10 (hardening de segurança): invalida sessões antigas
         # após troca de senha. Não é uma query extra -- o usuário já é
         # buscado em toda requisição autenticada por causa do próprio
         # Flask-Login; só comparamos o contador que já veio junto.
+        if tem_versao:
+            if str(user.session_version or 0) != versao:
+                return None
+            return user
+
+        # Formato legado (id puro, de sessões emitidas antes desta
+        # mudança): mantém a checagem pelo 'sv' da sessão. Essas sessões
+        # são reemitidas no formato novo no próximo login.
         if flask_session.get('sv') != user.session_version:
             return None
         return user

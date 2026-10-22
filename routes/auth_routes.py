@@ -124,6 +124,9 @@ def login():
         user.login_bloqueado_ate = None
         db.session.commit()
 
+        # Sem session.permanent o cookie de sessão morre quando o PWA é
+        # encerrado; com ele, dura PERMANENT_SESSION_LIFETIME (config.py).
+        session.permanent = remember
         login_user(user, remember=remember)
         session['sv'] = user.session_version
         logger.info(f"Login OK -- usuario ID {user.id} ({user.tipo_usuario})")

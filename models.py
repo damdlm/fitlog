@@ -219,6 +219,14 @@ class User(UserMixin, db.Model):
         # de query extra -- é o mesmo objeto/UPDATE que já ia rolar.
         self.session_version = (self.session_version or 0) + 1
 
+    def get_id(self):
+        """Identificador gravado na sessão E no cookie "remember" do
+        Flask-Login: "<id>.<session_version>". Com a versão dentro do
+        próprio identificador, uma troca de senha invalida os dois
+        cookies de uma vez, e o login restaurado pelo remember cookie
+        (PWA reaberto) não depende de nada guardado na sessão."""
+        return f"{self.id}.{self.session_version or 0}"
+
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 

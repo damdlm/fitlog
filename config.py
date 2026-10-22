@@ -1,5 +1,6 @@
 import os
 import logging
+from datetime import timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -68,6 +69,11 @@ def get_config():
 
 
 class Config:
+    # Duração do cookie de sessão quando session.permanent = True (login
+    # com "Lembrar-me"). Sem isso o Flask usa 31 dias; 90 casa com o uso
+    # típico de um PWA de treino aberto ao longo da semana.
+    PERMANENT_SESSION_LIFETIME = timedelta(days=90)
+
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # ATENÇÃO: o fallback acima só é seguro para desenvolvimento local.
