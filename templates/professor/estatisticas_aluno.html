@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ static_v('vendor/driverjs/driver.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/registrar-treino-tour.css') }}">
+{% endblock %}
+
 {% block content %}
 <style>
     /* Hero compacto: cabe título + destaque + voltar numa faixa baixa,
@@ -396,6 +401,12 @@
     <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}" class="est-hero-voltar">
         <i class="bi bi-arrow-left"></i> Voltar
     </a>
+</div>
+
+<div class="d-flex justify-content-end mb-2">
+    <button type="button" class="rt-tour-ajuda" id="btnTourProfEstatisticas">
+        <i class="bi bi-question-circle"></i> Tutorial
+    </button>
 </div>
 
 <!-- Filtro de período: carrega com o mês corrente e todos os valores
@@ -981,4 +992,8 @@
         carregarEvolucao('todos', null, null);
     })();
 </script>
+<script src="{{ static_v('vendor/driverjs/driver.js.iife.js') }}"></script>
+<script src="{{ static_v('js/fl-tour-core.js') }}"></script>
+<script src="{{ static_v('js/professor-estatisticas-aluno-tour.js') }}"
+        data-user-id="{{ current_user.id if current_user.is_authenticated else 'anon' }}"></script>
 {% endblock %}

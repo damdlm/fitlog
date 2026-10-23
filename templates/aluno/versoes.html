@@ -3,6 +3,11 @@
 {% block page_icon %}<i class="bi bi-layers" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Minhas Versões{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ static_v('vendor/driverjs/driver.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/registrar-treino-tour.css') }}">
+{% endblock %}
+
 {% block content %}
 <style>
     :root {
@@ -105,6 +110,12 @@
     .v-card-actions { display: flex; align-items: center; gap: 8px; }
 </style>
 
+<div class="d-flex justify-content-end mb-2">
+    <button type="button" class="rt-tour-ajuda" id="btnTourVersoes">
+        <i class="bi bi-question-circle"></i> Tutorial
+    </button>
+</div>
+
 <div class="v-header">
     <a href="{{ voltar_url }}" class="btn btn-sm btn-outline-secondary v-voltar-btn">
         <i class="bi bi-arrow-left"></i> Voltar
@@ -154,4 +165,10 @@
     </a>
     {% endfor %}
 {% endif %}
+<script src="{{ static_v('vendor/driverjs/driver.js.iife.js') }}"></script>
+<script src="{{ static_v('js/fl-tour-core.js') }}"></script>
+{# data-contexto: o professor vê as versões de um aluno. #}
+<script src="{{ static_v('js/versoes-tour.js') }}"
+        data-user-id="{{ current_user.id if current_user.is_authenticated else 'anon' }}"
+        data-contexto="{{ 'professor' if voltar_label == 'Voltar ao aluno' else 'aluno' }}"></script>
 {% endblock %}
