@@ -606,67 +606,180 @@
             font-size: 0.85rem;
         }
 
-        /* --- Mega-menu (desktop, >= lg) --- */
-        .mega-nav {
-            gap: 0.3rem;
+        /* --- Sidebar (desktop, >= lg) ---------------------------------
+           O menu vive num <aside class="app-sidebar"> fixo à esquerda
+           (ver HTML logo após a navbar). Recolhida = só ícones (76px);
+           o estado fica em localStorage ("fl.sidebar") e a classe
+           .sidebar-collapsed é aplicada no <html> por um script no <head>
+           antes da primeira pintura. No mobile nada disso existe: o
+           <aside> é d-none d-lg-flex e a navegação continua sendo o
+           .bottom-nav. -------------------------------------------------- */
+        :root { --sidebar-w: 240px; }
+        html.sidebar-collapsed { --sidebar-w: 76px; }
+
+        @media (min-width: 992px) {
+            body.has-sidebar {
+                padding-left: var(--sidebar-w);
+                transition: padding-left 0.2s ease;
+            }
+
+            .app-sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: var(--sidebar-w);
+                z-index: 1031; /* acima da navbar (1030), abaixo de modais/overlays */
+                flex-direction: column;
+                background: #fff;
+                border-right: 1px solid rgba(0, 0, 0, 0.07);
+                transition: width 0.2s ease;
+            }
+
+            .side-head {
+                height: 62px;
+                flex: none;
+                display: flex;
+                align-items: center;
+                padding: 0 18px;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            }
+            .side-brand { display: flex; align-items: center; }
+            .side-logo-full { height: 42px; width: auto; }
+            .side-logo-mini { display: none; height: 36px; width: auto; }
+            html.sidebar-collapsed .side-head { justify-content: center; padding: 0; }
+            html.sidebar-collapsed .side-logo-full { display: none; }
+            html.sidebar-collapsed .side-logo-mini { display: block; }
+
+            .mega-nav {
+                flex: 1;
+                gap: 2px;
+                padding: 8px 10px;
+                margin: 0;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+
+            .side-sec {
+                font-size: 0.66rem;
+                font-weight: 700;
+                letter-spacing: 0.09em;
+                text-transform: uppercase;
+                color: #8a8f98;
+                padding: 16px 12px 5px;
+                white-space: nowrap;
+            }
+            .mega-nav > .side-sec:first-child { padding-top: 6px; }
+            html.sidebar-collapsed .side-sec {
+                font-size: 0;
+                height: 0;
+                padding: 0;
+                margin: 9px 12px;
+                border-top: 1px solid rgba(0, 0, 0, 0.09);
+            }
+            html.sidebar-collapsed .mega-nav > .side-sec:first-child { display: none; }
+
+            .mega-trigger {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                width: 100%;
+                padding: 9px 12px;
+                border: none;
+                border-bottom: 0 !important; /* anula o sublinhado de .nav-link.active */
+                border-radius: 10px;
+                background: none;
+                font-size: 0.9rem;
+                font-weight: 500;
+                color: #55606c;
+                position: relative;
+                white-space: nowrap;
+                transition: background 0.18s ease, color 0.18s ease;
+            }
+            .mega-trigger .ph-icon { width: 1.3rem; height: 1.3rem; flex: none; }
+            .mega-label { overflow: hidden; text-overflow: ellipsis; }
+
+            .mega-trigger:hover {
+                color: var(--primary-color) !important;
+                background: rgba(242, 140, 51, 0.1);
+            }
+            .mega-trigger.active {
+                color: var(--primary-color) !important;
+                background: rgba(242, 140, 51, 0.14);
+                font-weight: 600;
+            }
+            /* Barra lateral fina no item da tela atual. */
+            .mega-trigger.active::after {
+                content: '';
+                position: absolute;
+                left: -10px;
+                top: 20%;
+                bottom: 20%;
+                width: 3px;
+                border-radius: 0 3px 3px 0;
+                background: var(--gradient-primary);
+            }
+
+            .mega-badge-dot {
+                margin-left: auto;
+                font-size: 0.65rem;
+                padding: 0.2em 0.5em;
+            }
+            html.sidebar-collapsed .mega-trigger { justify-content: center; padding: 10px 0; }
+            html.sidebar-collapsed .mega-label { display: none; }
+            html.sidebar-collapsed .mega-badge-dot {
+                position: absolute;
+                top: 3px;
+                right: 9px;
+                margin: 0;
+            }
+
+            .side-foot {
+                flex: none;
+                padding: 8px 10px;
+                border-top: 1px solid rgba(0, 0, 0, 0.06);
+            }
+            .side-toggle {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                width: 100%;
+                padding: 9px 12px;
+                border: none;
+                border-radius: 10px;
+                background: none;
+                color: #8a8f98;
+                font-size: 0.85rem;
+                font-weight: 500;
+                white-space: nowrap;
+            }
+            .side-toggle:hover { background: rgba(0, 0, 0, 0.05); color: #55606c; }
+            .side-toggle .bi { font-size: 1.1rem; flex: none; transition: transform 0.2s ease; }
+            html.sidebar-collapsed .side-toggle { justify-content: center; padding: 10px 0; }
+            html.sidebar-collapsed .side-toggle .bi { transform: rotate(180deg); }
+
+            /* A logo agora mora na sidebar; a navbar fica só com as ações
+               (PWA, FitBot, sino, avatar) alinhadas à direita. */
+            body.has-sidebar .navbar-brand { display: none; }
+            body.has-sidebar .navbar > .container { justify-content: flex-end; }
+
+            body.has-sidebar .btn-registrar-treino {
+                width: auto;
+                height: 40px;
+                padding: 0 16px;
+                gap: 8px;
+                border-radius: 999px;
+                font-size: 0.88rem;
+                font-weight: 600;
+            }
+            body.has-sidebar .btn-registrar-treino .btn-registrar-label { display: inline; }
+        }
+        .btn-registrar-label { display: none; }
+
+        @media (prefers-reduced-motion: reduce) {
+            body.has-sidebar, .app-sidebar, .mega-trigger, .side-toggle .bi { transition: none !important; }
         }
 
-        .mega-trigger {
-            background: none;
-            border: none;
-            width: 42px;
-            height: 42px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            font-size: 1.2rem;
-            color: #55606c;
-            position: relative;
-            transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
-        }
-
-        /* O rótulo de texto (ex: "Painel", "Professor") usa a classe
-           .visually-hidden do Bootstrap direto no HTML -- some visualmente
-           mas continua acessível a leitor de tela. No desktop o menu
-           mostra só o ícone, e o nome aparece no tooltip nativo (atributo
-           title) ao passar o mouse. Não precisa de media query: o
-           .mega-nav inteiro já só existe em telas >= lg (d-none
-           d-lg-flex); no mobile o menu é outro elemento (.bottom-nav),
-           que continua exatamente igual. */
-
-        .mega-trigger:hover {
-            color: var(--primary-color) !important;
-            background: rgba(242, 140, 51, 0.1);
-            transform: translateY(-1px);
-        }
-
-        .mega-trigger.active {
-            color: var(--primary-color) !important;
-            background: rgba(242, 140, 51, 0.14);
-        }
-
-        /* Traço fino embaixo do ícone ativo -- indicador discreto de "tela
-           atual", no lugar de preencher o fundo do ícone inteiro. */
-        .mega-trigger.active::after {
-            content: '';
-            position: absolute;
-            left: 50%;
-            bottom: -6px;
-            transform: translateX(-50%);
-            width: 16px;
-            height: 3px;
-            border-radius: 3px;
-            background: var(--gradient-primary);
-        }
-
-        .mega-badge-dot {
-            position: absolute;
-            top: 2px;
-            right: -2px;
-            font-size: 0.6rem;
-            padding: 0.15em 0.4em;
-        }
 
         /* Ícones SVG embutidos (duotone) do menu desktop -- usam
            fill="currentColor" no próprio SVG, então herdam a cor do
@@ -1504,8 +1617,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
     {% block extra_css %}{% endblock %}
+    <script>
+        /* Sidebar desktop: restaura "recolhida" antes da primeira pintura
+           pra não piscar expandida -> recolhida a cada navegação. */
+        try { if (localStorage.getItem('fl.sidebar') === 'collapsed') document.documentElement.classList.add('sidebar-collapsed'); } catch (e) {}
+    </script>
 </head>
-<body class="{{ 'has-bottom-nav' if current_user.is_authenticated else '' }}">
+<body class="{{ 'has-bottom-nav has-sidebar' if current_user.is_authenticated else '' }}">
     <!-- Splash leve do PWA instalado. Só aparece se <html> tiver a classe
          pwa-standalone-launch (setada de forma síncrona no <head>, antes
          de qualquer CSS/JS pesado) -- ou seja, nunca numa aba comum do
@@ -1565,130 +1683,13 @@
             <!-- ========================================= -->
             <!-- MEGA-MENU (desktop, >= lg)                -->
             <!-- ========================================= -->
-            <ul class="navbar-nav mega-nav d-none d-lg-flex flex-row me-auto">
-
-                {% if current_user.is_admin %}
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.contas' else '' }}" href="{{ url_for('admin.contas') }}" title="Contas e Cobrança" aria-label="Contas e Cobrança">
-                        {{ ph('M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48Zm0,16V88H32V64Zm0,128H32V104H224v88Zm-16-24a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h32A8,8,0,0,1,208,168Zm-64,0a8,8,0,0,1-8,8H120a8,8,0,0,1,0-16h16A8,8,0,0,1,144,168Z', 'M232,96v96a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V96Z') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.blueprint == 'financeiro' else '' }}" href="{{ url_for('financeiro.painel') }}" title="Financeiro" aria-label="Financeiro">
-                        {{ ph('M216,64H56a8,8,0,0,1,0-16H192a8,8,0,0,0,0-16H56A24,24,0,0,0,32,56V184a24,24,0,0,0,24,24H216a16,16,0,0,0,16-16V80A16,16,0,0,0,216,64Zm0,128H56a8,8,0,0,1-8-8V78.63A23.84,23.84,0,0,0,56,80H216Zm-48-60a12,12,0,1,1,12,12A12,12,0,0,1,168,132Z', 'M224,80V192a8,8,0,0,1-8,8H56a16,16,0,0,1-16-16V56A16,16,0,0,0,56,72H216A8,8,0,0,1,224,80Z') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.monitoramento' else '' }}" href="{{ url_for('admin.monitoramento') }}" title="Monitoramento" aria-label="Monitoramento">
-                        {{ ph('M240,128a8,8,0,0,1-8,8H204.94l-37.78,75.58A8,8,0,0,1,160,216h-.4a8,8,0,0,1-7.08-5.14L95.35,60.76,63.28,131.31A8,8,0,0,1,56,136H24a8,8,0,0,1,0-16H50.85L88.72,36.69a8,8,0,0,1,14.76.46l57.51,151,31.85-63.71A8,8,0,0,1,200,120h32A8,8,0,0,1,240,128Z', 'M96,40l33.52,88H56Zm104,88H129.52L160,208Z') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.relatorio_telas' else '' }}" href="{{ url_for('admin.relatorio_telas') }}" title="Telas Mais Acessadas" aria-label="Telas Mais Acessadas">
-                        {{ ph('M224,200h-8V40a8,8,0,0,0-8-8H152a8,8,0,0,0-8,8V80H96a8,8,0,0,0-8,8v40H48a8,8,0,0,0-8,8v64H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16ZM160,48h40V200H160ZM104,96h40V200H104ZM56,144H88v56H56Z', 'M208,40V208H152V40Z') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.telas_controladas' else '' }}" href="{{ url_for('admin.telas_controladas') }}" title="Telas Controladas" aria-label="Telas Controladas">
-                        {{ ph('M64,105V40a8,8,0,0,0-16,0v65a32,32,0,0,0,0,62v49a8,8,0,0,0,16,0V167a32,32,0,0,0,0-62Zm-8,47a16,16,0,1,1,16-16A16,16,0,0,1,56,152Zm80-95V40a8,8,0,0,0-16,0V57a32,32,0,0,0,0,62v97a8,8,0,0,0,16,0V119a32,32,0,0,0,0-62Zm-8,47a16,16,0,1,1,16-16A16,16,0,0,1,128,104Zm104,64a32.06,32.06,0,0,0-24-31V40a8,8,0,0,0-16,0v97a32,32,0,0,0,0,62v17a8,8,0,0,0,16,0V199A32.06,32.06,0,0,0,232,168Zm-32,16a16,16,0,1,1,16-16A16,16,0,0,1,200,184Z', 'M80,136a24,24,0,1,1-24-24A24,24,0,0,1,80,136Zm48-72a24,24,0,1,0,24,24A24,24,0,0,0,128,64Zm72,80a24,24,0,1,0,24,24A24,24,0,0,0,200,144Z') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.cadastrar_treinos' else '' }}" href="{{ url_for('aluno.cadastrar_treinos') }}" title="Treinos modelo (plano padrão)" aria-label="Treinos modelo (plano padrão)">
-                        <i class="bi bi-clipboard2-plus"></i>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.crash_logs' else '' }}" href="{{ url_for('admin.crash_logs') }}" title="Travamentos" aria-label="Travamentos">
-                        {{ ph('M144,92a12,12,0,1,1,12,12A12,12,0,0,1,144,92ZM100,80a12,12,0,1,0,12,12A12,12,0,0,0,100,80Zm116,64A87.76,87.76,0,0,1,213,167l22.24,9.72A8,8,0,0,1,232,192a7.89,7.89,0,0,1-3.2-.67L207.38,182a88,88,0,0,1-158.76,0L27.2,191.33A7.89,7.89,0,0,1,24,192a8,8,0,0,1-3.2-15.33L43,167A87.76,87.76,0,0,1,40,144v-8H16a8,8,0,0,1,0-16H40v-8a87.76,87.76,0,0,1,3-23L20.8,79.33a8,8,0,1,1,6.4-14.66L48.62,74a88,88,0,0,1,158.76,0l21.42-9.36a8,8,0,0,1,6.4,14.66L213,89.05a87.76,87.76,0,0,1,3,23v8h24a8,8,0,0,1,0,16H216ZM56,120H200v-8a72,72,0,0,0-144,0Zm64,95.54V136H56v8A72.08,72.08,0,0,0,120,215.54ZM200,144v-8H136v79.54A72.08,72.08,0,0,0,200,144Z', 'M208,128v16a80,80,0,0,1-160,0V128Z') }}
-                    </a>
-                </li>
-                {% endif %}
-
-                {% if current_user.is_professor() and not current_user.is_admin %}
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'professor.dashboard' else '' }}" href="{{ url_for('professor.dashboard') }}" title="Painel" aria-label="Painel">
-                        {{ ph('M207.06,72.67A111.24,111.24,0,0,0,128,40h-.4C66.07,40.21,16,91,16,153.13V176a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V152A111.25,111.25,0,0,0,207.06,72.67ZM224,176H119.71l54.76-75.3a8,8,0,0,0-12.94-9.42L99.92,176H32V153.13c0-3.08.15-6.12.43-9.13H56a8,8,0,0,0,0-16H35.27c10.32-38.86,44-68.24,84.73-71.66V80a8,8,0,0,0,16,0V56.33A96.14,96.14,0,0,1,221,128H200a8,8,0,0,0,0,16h23.67c.21,2.65.33,5.31.33,8Z', 'M232,152v24a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V153.13C24,95.65,70.15,48.2,127.63,48A104,104,0,0,1,232,152Z') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'professor.listar_alunos' else '' }}" href="{{ url_for('professor.listar_alunos') }}" title="Meus Alunos" aria-label="Meus Alunos">
-                        {{ ph('M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z', 'M136,108A52,52,0,1,1,84,56,52,52,0,0,1,136,108Z') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'professor.novo_aluno' else '' }}" href="{{ url_for('professor.novo_aluno') }}" title="Novo Aluno" aria-label="Novo Aluno">
-                        {{ ph('M256,136a8,8,0,0,1-8,8H232v16a8,8,0,0,1-16,0V144H200a8,8,0,0,1,0-16h16V112a8,8,0,0,1,16,0v16h16A8,8,0,0,1,256,136Zm-57.87,58.85a8,8,0,0,1-12.26,10.3C165.75,181.19,138.09,168,108,168s-57.75,13.19-77.87,37.15a8,8,0,0,1-12.25-10.3c14.94-17.78,33.52-30.41,54.17-37.17a68,68,0,1,1,71.9,0C164.6,164.44,183.18,177.07,198.13,194.85ZM108,152a52,52,0,1,0-52-52A52.06,52.06,0,0,0,108,152Z', 'M168,100a60,60,0,1,1-60-60A60,60,0,0,1,168,100Z') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'professor.solicitacoes' else '' }}" href="{{ url_for('professor.solicitacoes') }}" title="Solicitações" aria-label="Solicitações">
-                        {{ ph('M224,71.1a8,8,0,0,1-10.78-3.42,94.13,94.13,0,0,0-33.46-36.91,8,8,0,1,1,8.54-13.54,111.46,111.46,0,0,1,39.12,43.09A8,8,0,0,1,224,71.1ZM35.71,72a8,8,0,0,0,7.1-4.32A94.13,94.13,0,0,1,76.27,30.77a8,8,0,1,0-8.54-13.54A111.46,111.46,0,0,0,28.61,60.32,8,8,0,0,0,35.71,72Zm186.1,103.94A16,16,0,0,1,208,200H167.2a40,40,0,0,1-78.4,0H48a16,16,0,0,1-13.79-24.06C43.22,160.39,48,138.28,48,112a80,80,0,0,1,160,0C208,138.27,212.78,160.38,221.81,175.94ZM150.62,200H105.38a24,24,0,0,0,45.24,0ZM208,184c-10.64-18.27-16-42.49-16-72a64,64,0,0,0-128,0c0,29.52-5.38,53.74-16,72Z', 'M208,192H48a8,8,0,0,1-6.88-12C47.71,168.6,56,147.81,56,112a72,72,0,0,1,144,0c0,35.82,8.3,56.6,14.9,68A8,8,0,0,1,208,192Z') }}
-                        {% if current_user.solicitacoes_pendentes_count > 0 %}
-                            <span class="badge rounded-pill bg-danger mega-badge-dot">{{ current_user.solicitacoes_pendentes_count }}</span>
-                        {% endif %}
-                    </a>
-                </li>
-                {% endif %}
-
-                {% if current_user.pode_gerenciar_treino_proprio() and not current_user.is_admin %}
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.dashboard' else '' }}" href="{{ url_for('aluno.dashboard') }}" title="Dashboard" aria-label="Dashboard">
-                        {{ ph('M207.06,72.67A111.24,111.24,0,0,0,128,40h-.4C66.07,40.21,16,91,16,153.13V176a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V152A111.25,111.25,0,0,0,207.06,72.67ZM224,176H119.71l54.76-75.3a8,8,0,0,0-12.94-9.42L99.92,176H32V153.13c0-3.08.15-6.12.43-9.13H56a8,8,0,0,0,0-16H35.27c10.32-38.86,44-68.24,84.73-71.66V80a8,8,0,0,0,16,0V56.33A96.14,96.14,0,0,1,221,128H200a8,8,0,0,0,0,16h23.67c.21,2.65.33,5.31.33,8Z', 'M232,152v24a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V153.13C24,95.65,70.15,48.2,127.63,48A104,104,0,0,1,232,152Z') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.blueprint == 'calendar' else '' }}" href="{{ url_for('calendar.calendario') }}" title="Calendário" aria-label="Calendário">
-                        {{ ph('M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z', 'M216,48V88H40V48a8,8,0,0,1,8-8H208A8,8,0,0,1,216,48Z') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.estatisticas' else '' }}" href="{{ url_for('aluno.estatisticas') }}" title="Estatísticas" aria-label="Estatísticas">
-                        {{ ph('M232,208a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V48a8,8,0,0,1,16,0V156.69l50.34-50.35a8,8,0,0,1,11.32,0L128,132.69,180.69,80H160a8,8,0,0,1,0-16h40a8,8,0,0,1,8,8v40a8,8,0,0,1-16,0V91.31l-58.34,58.35a8,8,0,0,1-11.32,0L96,123.31l-56,56V200H224A8,8,0,0,1,232,208Z', 'M224,64V208H32V48H208A16,16,0,0,1,224,64Z') }}
-                    </a>
-                </li>
-                {% if current_user.is_aluno() %}
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.blueprint == 'stats' else '' }}" href="{{ url_for('stats.visualizar_tabela') }}" title="Tabela de Progresso" aria-label="Tabela de Progresso">
-                        {{ ph('M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM40,112H80v32H40Zm56,0H216v32H96ZM216,64V96H40V64ZM40,160H80v32H40Zm176,32H96V160H216v32Z', 'M88,104v96H32V104Z') }}
-                    </a>
-                </li>
-                {% endif %}
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.ranking' else '' }}" href="{{ url_for('aluno.ranking') }}" title="Melhores Alunos" aria-label="Melhores Alunos">
-                        {{ ph('M232,64H208V48a8,8,0,0,0-8-8H56a8,8,0,0,0-8,8V64H24A16,16,0,0,0,8,80V96a40,40,0,0,0,40,40h3.65A80.13,80.13,0,0,0,120,191.61V216H96a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16H136V191.58c31.94-3.23,58.44-25.64,68.08-55.58H208a40,40,0,0,0,40-40V80A16,16,0,0,0,232,64ZM48,120A24,24,0,0,1,24,96V80H48v32q0,4,.39,8Zm144-8.9c0,35.52-29,64.64-64,64.9a64,64,0,0,1-64-64V56H192ZM232,96a24,24,0,0,1-24,24h-.5a81.81,81.81,0,0,0,.5-8.9V80h24Z', 'M200,48v63.1c0,39.7-31.75,72.6-71.45,72.9A72,72,0,0,1,56,112V48Z') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.cadastrar_treinos' else '' }}" href="{{ url_for('aluno.cadastrar_treinos') }}" title="Cadastrar Treinos" aria-label="Cadastrar Treinos">
-                        {{ ph('M168,152a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,152Zm-8-40H96a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16Zm56-64V216a16,16,0,0,1-16,16H56a16,16,0,0,1-16-16V48A16,16,0,0,1,56,32H92.26a47.92,47.92,0,0,1,71.48,0H200A16,16,0,0,1,216,48ZM96,64h64a32,32,0,0,0-64,0ZM200,48H173.25A47.93,47.93,0,0,1,176,64v8a8,8,0,0,1-8,8H88a8,8,0,0,1-8-8V64a47.93,47.93,0,0,1,2.75-16H56V216H200Z', 'M208,48V216a8,8,0,0,1-8,8H56a8,8,0,0,1-8-8V48a8,8,0,0,1,8-8H96a39.83,39.83,0,0,0-8,24v8h80V64a39.83,39.83,0,0,0-8-24h40A8,8,0,0,1,208,48Z') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.exercicios' else '' }}" href="{{ url_for('aluno.exercicios') }}" title="Meus Exercícios" aria-label="Meus Exercícios">
-                        {{ ph('M224,128a8,8,0,0,1-8,8H128a8,8,0,0,1,0-16h88A8,8,0,0,1,224,128ZM128,72h88a8,8,0,0,0,0-16H128a8,8,0,0,0,0,16Zm88,112H128a8,8,0,0,0,0,16h88a8,8,0,0,0,0-16ZM82.34,42.34,56,68.69,45.66,58.34A8,8,0,0,0,34.34,69.66l16,16a8,8,0,0,0,11.32,0l32-32A8,8,0,0,0,82.34,42.34Zm0,64L56,132.69,45.66,122.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32,0l32-32a8,8,0,0,0-11.32-11.32Zm0,64L56,196.69,45.66,186.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32,0l32-32a8,8,0,0,0-11.32-11.32Z', 'M216,64V192H128V64Z') }}
-                    </a>
-                </li>
-                {% if current_user.is_aluno() %}
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.mapa_professores' else '' }}" href="{{ url_for('aluno.mapa_professores') }}" title="Buscar Professores" aria-label="Buscar Professores">
-                        {{ ph('M128,64a40,40,0,1,0,40,40A40,40,0,0,0,128,64Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,128Zm0-112a88.1,88.1,0,0,0-88,88c0,31.4,14.51,64.68,42,96.25a254.19,254.19,0,0,0,41.45,38.3,8,8,0,0,0,9.18,0A254.19,254.19,0,0,0,174,200.25c27.45-31.57,42-64.85,42-96.25A88.1,88.1,0,0,0,128,16Zm0,206c-16.53-13-72-60.75-72-118a72,72,0,0,1,144,0C200,161.23,144.53,209,128,222Z', 'M128,24a80,80,0,0,0-80,80c0,72,80,128,80,128s80-56,80-128A80,80,0,0,0,128,24Zm0,112a32,32,0,1,1,32-32A32,32,0,0,1,128,136Z') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.meu_professor' else '' }}" href="{{ url_for('aluno.meu_professor') }}" title="Meu Professor" aria-label="Meu Professor">
-                        {{ ph('M240,192h-8V56a16,16,0,0,0-16-16H40A16,16,0,0,0,24,56V192H16a8,8,0,0,0,0,16H240a8,8,0,0,0,0-16ZM40,56H216V192H200V168a8,8,0,0,0-8-8H120a8,8,0,0,0-8,8v24H72V88H184v48a8,8,0,0,0,16,0V80a8,8,0,0,0-8-8H64a8,8,0,0,0-8,8V192H40ZM184,192H128V176h56Z', 'M192,80v88H120v32H64V80Z') }}
-                    </a>
-                </li>
-                {% endif %}
-                {% endif %}
-            </ul>
 
             <!-- Ação rápida + avatar (desktop e mobile) -->
             <div class="d-flex align-items-center gap-2 order-lg-2">
                 {% if current_user.pode_gerenciar_treino_proprio() and not current_user.is_admin %}                
                 <a href="{{ url_for('register.registrar_treino') }}" class="btn btn-registrar-treino d-none d-lg-inline-flex align-items-center justify-content-center" title="Registrar treino" aria-label="Registrar treino">
                     {{ ph('M228,128a12,12,0,0,1-12,12H140v76a12,12,0,0,1-24,0V140H40a12,12,0,0,1,0-24h76V40a12,12,0,0,1,24,0v76h76A12,12,0,0,1,228,128Z') }}
+                    <span class="btn-registrar-label">Registrar treino</span>
                 </a>
                 {% endif %}
                 <button type="button" id="pwaHeaderInstallBtn" class="pwa-header-install-btn" style="display: none;" title="Instalar aplicativo" aria-label="Instalar aplicativo FitLog">
@@ -1784,12 +1785,12 @@
                         </li>
                         {% endif %}
                         {% if current_user.is_aluno() and not current_user.is_admin %}
-                        <li>
+                        <li class="d-lg-none">
                             <a class="dropdown-item" href="{{ url_for('aluno.mapa_professores') }}">
                                 <i class="bi bi-geo-alt"></i> Buscar Professores
                             </a>
                         </li>
-                        <li>
+                        <li class="d-lg-none">
                             <a class="dropdown-item" href="{{ url_for('aluno.meu_professor') }}">
                                 <i class="bi bi-person-badge"></i> Meu Professor
                             </a>
@@ -1846,6 +1847,193 @@
             {% endif %}
         </div>
     </nav>
+
+    {% if current_user.is_authenticated %}
+    <!-- ========================================= -->
+    <!-- SIDEBAR (desktop, >= lg)                  -->
+    <!-- Fica FORA do <nav class="navbar">: a navbar usa backdrop-filter     -->
+    <!-- no desktop, e isso transformaria o position:fixed da sidebar em     -->
+    <!-- relativo à navbar. Mantém as classes .navbar-nav/.mega-trigger e   -->
+    <!-- os atributos title porque o tour (static/js/index-tour.js) os usa. -->
+    <!-- ========================================= -->
+    <aside class="app-sidebar d-none d-lg-flex" id="appSidebar" aria-label="Menu principal">
+        <div class="side-head">
+            <a class="side-brand" href="{{ url_for('main.index') }}" title="FitLog">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FitLog" class="side-logo-full">
+                <img src="{{ url_for('static', filename='images/logo-icon.png') }}" alt="" class="side-logo-mini" aria-hidden="true">
+            </a>
+        </div>
+            <ul class="navbar-nav mega-nav">
+
+                {% if current_user.is_admin %}
+                <li class="side-sec" role="presentation">Administração</li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.contas' else '' }}" href="{{ url_for('admin.contas') }}" title="Contas e Cobrança" aria-label="Contas e Cobrança">
+                        {{ ph('M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48Zm0,16V88H32V64Zm0,128H32V104H224v88Zm-16-24a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h32A8,8,0,0,1,208,168Zm-64,0a8,8,0,0,1-8,8H120a8,8,0,0,1,0-16h16A8,8,0,0,1,144,168Z', 'M232,96v96a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V96Z') }}
+                        <span class="mega-label">Contas e Cobrança</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.blueprint == 'financeiro' else '' }}" href="{{ url_for('financeiro.painel') }}" title="Financeiro" aria-label="Financeiro">
+                        {{ ph('M216,64H56a8,8,0,0,1,0-16H192a8,8,0,0,0,0-16H56A24,24,0,0,0,32,56V184a24,24,0,0,0,24,24H216a16,16,0,0,0,16-16V80A16,16,0,0,0,216,64Zm0,128H56a8,8,0,0,1-8-8V78.63A23.84,23.84,0,0,0,56,80H216Zm-48-60a12,12,0,1,1,12,12A12,12,0,0,1,168,132Z', 'M224,80V192a8,8,0,0,1-8,8H56a16,16,0,0,1-16-16V56A16,16,0,0,0,56,72H216A8,8,0,0,1,224,80Z') }}
+                        <span class="mega-label">Financeiro</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.monitoramento' else '' }}" href="{{ url_for('admin.monitoramento') }}" title="Monitoramento" aria-label="Monitoramento">
+                        {{ ph('M240,128a8,8,0,0,1-8,8H204.94l-37.78,75.58A8,8,0,0,1,160,216h-.4a8,8,0,0,1-7.08-5.14L95.35,60.76,63.28,131.31A8,8,0,0,1,56,136H24a8,8,0,0,1,0-16H50.85L88.72,36.69a8,8,0,0,1,14.76.46l57.51,151,31.85-63.71A8,8,0,0,1,200,120h32A8,8,0,0,1,240,128Z', 'M96,40l33.52,88H56Zm104,88H129.52L160,208Z') }}
+                        <span class="mega-label">Monitoramento</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.relatorio_telas' else '' }}" href="{{ url_for('admin.relatorio_telas') }}" title="Telas Mais Acessadas" aria-label="Telas Mais Acessadas">
+                        {{ ph('M224,200h-8V40a8,8,0,0,0-8-8H152a8,8,0,0,0-8,8V80H96a8,8,0,0,0-8,8v40H48a8,8,0,0,0-8,8v64H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16ZM160,48h40V200H160ZM104,96h40V200H104ZM56,144H88v56H56Z', 'M208,40V208H152V40Z') }}
+                        <span class="mega-label">Telas Mais Acessadas</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.telas_controladas' else '' }}" href="{{ url_for('admin.telas_controladas') }}" title="Telas Controladas" aria-label="Telas Controladas">
+                        {{ ph('M64,105V40a8,8,0,0,0-16,0v65a32,32,0,0,0,0,62v49a8,8,0,0,0,16,0V167a32,32,0,0,0,0-62Zm-8,47a16,16,0,1,1,16-16A16,16,0,0,1,56,152Zm80-95V40a8,8,0,0,0-16,0V57a32,32,0,0,0,0,62v97a8,8,0,0,0,16,0V119a32,32,0,0,0,0-62Zm-8,47a16,16,0,1,1,16-16A16,16,0,0,1,128,104Zm104,64a32.06,32.06,0,0,0-24-31V40a8,8,0,0,0-16,0v97a32,32,0,0,0,0,62v17a8,8,0,0,0,16,0V199A32.06,32.06,0,0,0,232,168Zm-32,16a16,16,0,1,1,16-16A16,16,0,0,1,200,184Z', 'M80,136a24,24,0,1,1-24-24A24,24,0,0,1,80,136Zm48-72a24,24,0,1,0,24,24A24,24,0,0,0,128,64Zm72,80a24,24,0,1,0,24,24A24,24,0,0,0,200,144Z') }}
+                        <span class="mega-label">Telas Controladas</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.cadastrar_treinos' else '' }}" href="{{ url_for('aluno.cadastrar_treinos') }}" title="Treinos modelo (plano padrão)" aria-label="Treinos modelo (plano padrão)">
+                        <i class="bi bi-clipboard2-plus"></i>
+                        <span class="mega-label">Treinos modelo</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.crash_logs' else '' }}" href="{{ url_for('admin.crash_logs') }}" title="Travamentos" aria-label="Travamentos">
+                        {{ ph('M144,92a12,12,0,1,1,12,12A12,12,0,0,1,144,92ZM100,80a12,12,0,1,0,12,12A12,12,0,0,0,100,80Zm116,64A87.76,87.76,0,0,1,213,167l22.24,9.72A8,8,0,0,1,232,192a7.89,7.89,0,0,1-3.2-.67L207.38,182a88,88,0,0,1-158.76,0L27.2,191.33A7.89,7.89,0,0,1,24,192a8,8,0,0,1-3.2-15.33L43,167A87.76,87.76,0,0,1,40,144v-8H16a8,8,0,0,1,0-16H40v-8a87.76,87.76,0,0,1,3-23L20.8,79.33a8,8,0,1,1,6.4-14.66L48.62,74a88,88,0,0,1,158.76,0l21.42-9.36a8,8,0,0,1,6.4,14.66L213,89.05a87.76,87.76,0,0,1,3,23v8h24a8,8,0,0,1,0,16H216ZM56,120H200v-8a72,72,0,0,0-144,0Zm64,95.54V136H56v8A72.08,72.08,0,0,0,120,215.54ZM200,144v-8H136v79.54A72.08,72.08,0,0,0,200,144Z', 'M208,128v16a80,80,0,0,1-160,0V128Z') }}
+                        <span class="mega-label">Travamentos</span>
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if current_user.is_professor() and not current_user.is_admin %}
+                <li class="side-sec" role="presentation">Alunos</li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'professor.dashboard' else '' }}" href="{{ url_for('professor.dashboard') }}" title="Painel" aria-label="Painel">
+                        {{ ph('M207.06,72.67A111.24,111.24,0,0,0,128,40h-.4C66.07,40.21,16,91,16,153.13V176a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V152A111.25,111.25,0,0,0,207.06,72.67ZM224,176H119.71l54.76-75.3a8,8,0,0,0-12.94-9.42L99.92,176H32V153.13c0-3.08.15-6.12.43-9.13H56a8,8,0,0,0,0-16H35.27c10.32-38.86,44-68.24,84.73-71.66V80a8,8,0,0,0,16,0V56.33A96.14,96.14,0,0,1,221,128H200a8,8,0,0,0,0,16h23.67c.21,2.65.33,5.31.33,8Z', 'M232,152v24a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V153.13C24,95.65,70.15,48.2,127.63,48A104,104,0,0,1,232,152Z') }}
+                        <span class="mega-label">Painel</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'professor.listar_alunos' else '' }}" href="{{ url_for('professor.listar_alunos') }}" title="Meus Alunos" aria-label="Meus Alunos">
+                        {{ ph('M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z', 'M136,108A52,52,0,1,1,84,56,52,52,0,0,1,136,108Z') }}
+                        <span class="mega-label">Meus Alunos</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'professor.novo_aluno' else '' }}" href="{{ url_for('professor.novo_aluno') }}" title="Novo Aluno" aria-label="Novo Aluno">
+                        {{ ph('M256,136a8,8,0,0,1-8,8H232v16a8,8,0,0,1-16,0V144H200a8,8,0,0,1,0-16h16V112a8,8,0,0,1,16,0v16h16A8,8,0,0,1,256,136Zm-57.87,58.85a8,8,0,0,1-12.26,10.3C165.75,181.19,138.09,168,108,168s-57.75,13.19-77.87,37.15a8,8,0,0,1-12.25-10.3c14.94-17.78,33.52-30.41,54.17-37.17a68,68,0,1,1,71.9,0C164.6,164.44,183.18,177.07,198.13,194.85ZM108,152a52,52,0,1,0-52-52A52.06,52.06,0,0,0,108,152Z', 'M168,100a60,60,0,1,1-60-60A60,60,0,0,1,168,100Z') }}
+                        <span class="mega-label">Novo Aluno</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'professor.solicitacoes' else '' }}" href="{{ url_for('professor.solicitacoes') }}" title="Solicitações" aria-label="Solicitações">
+                        {{ ph('M224,71.1a8,8,0,0,1-10.78-3.42,94.13,94.13,0,0,0-33.46-36.91,8,8,0,1,1,8.54-13.54,111.46,111.46,0,0,1,39.12,43.09A8,8,0,0,1,224,71.1ZM35.71,72a8,8,0,0,0,7.1-4.32A94.13,94.13,0,0,1,76.27,30.77a8,8,0,1,0-8.54-13.54A111.46,111.46,0,0,0,28.61,60.32,8,8,0,0,0,35.71,72Zm186.1,103.94A16,16,0,0,1,208,200H167.2a40,40,0,0,1-78.4,0H48a16,16,0,0,1-13.79-24.06C43.22,160.39,48,138.28,48,112a80,80,0,0,1,160,0C208,138.27,212.78,160.38,221.81,175.94ZM150.62,200H105.38a24,24,0,0,0,45.24,0ZM208,184c-10.64-18.27-16-42.49-16-72a64,64,0,0,0-128,0c0,29.52-5.38,53.74-16,72Z', 'M208,192H48a8,8,0,0,1-6.88-12C47.71,168.6,56,147.81,56,112a72,72,0,0,1,144,0c0,35.82,8.3,56.6,14.9,68A8,8,0,0,1,208,192Z') }}
+                        <span class="mega-label">Solicitações</span>
+                        {% if current_user.solicitacoes_pendentes_count > 0 %}
+                            <span class="badge rounded-pill bg-danger mega-badge-dot">{{ current_user.solicitacoes_pendentes_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if current_user.pode_gerenciar_treino_proprio() and not current_user.is_admin %}
+                <li class="side-sec" role="presentation">Treino</li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.dashboard' else '' }}" href="{{ url_for('aluno.dashboard') }}" title="Dashboard" aria-label="Dashboard">
+                        {{ ph('M207.06,72.67A111.24,111.24,0,0,0,128,40h-.4C66.07,40.21,16,91,16,153.13V176a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V152A111.25,111.25,0,0,0,207.06,72.67ZM224,176H119.71l54.76-75.3a8,8,0,0,0-12.94-9.42L99.92,176H32V153.13c0-3.08.15-6.12.43-9.13H56a8,8,0,0,0,0-16H35.27c10.32-38.86,44-68.24,84.73-71.66V80a8,8,0,0,0,16,0V56.33A96.14,96.14,0,0,1,221,128H200a8,8,0,0,0,0,16h23.67c.21,2.65.33,5.31.33,8Z', 'M232,152v24a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V153.13C24,95.65,70.15,48.2,127.63,48A104,104,0,0,1,232,152Z') }}
+                        <span class="mega-label">Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.cadastrar_treinos' else '' }}" href="{{ url_for('aluno.cadastrar_treinos') }}" title="Cadastrar Treinos" aria-label="Cadastrar Treinos">
+                        {{ ph('M168,152a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,152Zm-8-40H96a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16Zm56-64V216a16,16,0,0,1-16,16H56a16,16,0,0,1-16-16V48A16,16,0,0,1,56,32H92.26a47.92,47.92,0,0,1,71.48,0H200A16,16,0,0,1,216,48ZM96,64h64a32,32,0,0,0-64,0ZM200,48H173.25A47.93,47.93,0,0,1,176,64v8a8,8,0,0,1-8,8H88a8,8,0,0,1-8-8V64a47.93,47.93,0,0,1,2.75-16H56V216H200Z', 'M208,48V216a8,8,0,0,1-8,8H56a8,8,0,0,1-8-8V48a8,8,0,0,1,8-8H96a39.83,39.83,0,0,0-8,24v8h80V64a39.83,39.83,0,0,0-8-24h40A8,8,0,0,1,208,48Z') }}
+                        <span class="mega-label">Cadastrar Treinos</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.exercicios' else '' }}" href="{{ url_for('aluno.exercicios') }}" title="Meus Exercícios" aria-label="Meus Exercícios">
+                        {{ ph('M224,128a8,8,0,0,1-8,8H128a8,8,0,0,1,0-16h88A8,8,0,0,1,224,128ZM128,72h88a8,8,0,0,0,0-16H128a8,8,0,0,0,0,16Zm88,112H128a8,8,0,0,0,0,16h88a8,8,0,0,0,0-16ZM82.34,42.34,56,68.69,45.66,58.34A8,8,0,0,0,34.34,69.66l16,16a8,8,0,0,0,11.32,0l32-32A8,8,0,0,0,82.34,42.34Zm0,64L56,132.69,45.66,122.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32,0l32-32a8,8,0,0,0-11.32-11.32Zm0,64L56,196.69,45.66,186.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32,0l32-32a8,8,0,0,0-11.32-11.32Z', 'M216,64V192H128V64Z') }}
+                        <span class="mega-label">Meus Exercícios</span>
+                    </a>
+                </li>
+                <li class="side-sec" role="presentation">Evolução</li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.blueprint == 'calendar' else '' }}" href="{{ url_for('calendar.calendario') }}" title="Calendário" aria-label="Calendário">
+                        {{ ph('M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z', 'M216,48V88H40V48a8,8,0,0,1,8-8H208A8,8,0,0,1,216,48Z') }}
+                        <span class="mega-label">Calendário</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.estatisticas' else '' }}" href="{{ url_for('aluno.estatisticas') }}" title="Estatísticas" aria-label="Estatísticas">
+                        {{ ph('M232,208a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V48a8,8,0,0,1,16,0V156.69l50.34-50.35a8,8,0,0,1,11.32,0L128,132.69,180.69,80H160a8,8,0,0,1,0-16h40a8,8,0,0,1,8,8v40a8,8,0,0,1-16,0V91.31l-58.34,58.35a8,8,0,0,1-11.32,0L96,123.31l-56,56V200H224A8,8,0,0,1,232,208Z', 'M224,64V208H32V48H208A16,16,0,0,1,224,64Z') }}
+                        <span class="mega-label">Estatísticas</span>
+                    </a>
+                </li>
+                {% if current_user.is_aluno() %}
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.blueprint == 'stats' else '' }}" href="{{ url_for('stats.visualizar_tabela') }}" title="Tabela de Progresso" aria-label="Tabela de Progresso">
+                        {{ ph('M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM40,112H80v32H40Zm56,0H216v32H96ZM216,64V96H40V64ZM40,160H80v32H40Zm176,32H96V160H216v32Z', 'M88,104v96H32V104Z') }}
+                        <span class="mega-label">Tabela de Progresso</span>
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.ranking' else '' }}" href="{{ url_for('aluno.ranking') }}" title="Melhores Alunos" aria-label="Melhores Alunos">
+                        {{ ph('M232,64H208V48a8,8,0,0,0-8-8H56a8,8,0,0,0-8,8V64H24A16,16,0,0,0,8,80V96a40,40,0,0,0,40,40h3.65A80.13,80.13,0,0,0,120,191.61V216H96a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16H136V191.58c31.94-3.23,58.44-25.64,68.08-55.58H208a40,40,0,0,0,40-40V80A16,16,0,0,0,232,64ZM48,120A24,24,0,0,1,24,96V80H48v32q0,4,.39,8Zm144-8.9c0,35.52-29,64.64-64,64.9a64,64,0,0,1-64-64V56H192ZM232,96a24,24,0,0,1-24,24h-.5a81.81,81.81,0,0,0,.5-8.9V80h24Z', 'M200,48v63.1c0,39.7-31.75,72.6-71.45,72.9A72,72,0,0,1,56,112V48Z') }}
+                        <span class="mega-label">Melhores Alunos</span>
+                    </a>
+                </li>
+                {% if current_user.is_aluno() %}
+                <li class="side-sec" role="presentation">Professor</li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.mapa_professores' else '' }}" href="{{ url_for('aluno.mapa_professores') }}" title="Buscar Professores" aria-label="Buscar Professores">
+                        {{ ph('M128,64a40,40,0,1,0,40,40A40,40,0,0,0,128,64Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,128Zm0-112a88.1,88.1,0,0,0-88,88c0,31.4,14.51,64.68,42,96.25a254.19,254.19,0,0,0,41.45,38.3,8,8,0,0,0,9.18,0A254.19,254.19,0,0,0,174,200.25c27.45-31.57,42-64.85,42-96.25A88.1,88.1,0,0,0,128,16Zm0,206c-16.53-13-72-60.75-72-118a72,72,0,0,1,144,0C200,161.23,144.53,209,128,222Z', 'M128,24a80,80,0,0,0-80,80c0,72,80,128,80,128s80-56,80-128A80,80,0,0,0,128,24Zm0,112a32,32,0,1,1,32-32A32,32,0,0,1,128,136Z') }}
+                        <span class="mega-label">Buscar Professores</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'aluno.meu_professor' else '' }}" href="{{ url_for('aluno.meu_professor') }}" title="Meu Professor" aria-label="Meu Professor">
+                        {{ ph('M240,192h-8V56a16,16,0,0,0-16-16H40A16,16,0,0,0,24,56V192H16a8,8,0,0,0,0,16H240a8,8,0,0,0,0-16ZM40,56H216V192H200V168a8,8,0,0,0-8-8H120a8,8,0,0,0-8,8v24H72V88H184v48a8,8,0,0,0,16,0V80a8,8,0,0,0-8-8H64a8,8,0,0,0-8,8V192H40ZM184,192H128V176h56Z', 'M192,80v88H120v32H64V80Z') }}
+                        <span class="mega-label">Meu Professor</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% endif %}
+        </ul>
+        <div class="side-foot">
+            <button type="button" class="side-toggle" id="sidebarToggle" aria-expanded="true" aria-controls="appSidebar" title="Recolher menu" aria-label="Recolher menu">
+                <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
+                <span class="mega-label">Recolher menu</span>
+            </button>
+        </div>
+    </aside>
+    <script>
+        (function () {
+            var btn = document.getElementById('sidebarToggle');
+            if (!btn) return;
+            var root = document.documentElement;
+            function sync() {
+                var c = root.classList.contains('sidebar-collapsed');
+                var t = c ? 'Expandir menu' : 'Recolher menu';
+                btn.setAttribute('aria-expanded', String(!c));
+                btn.setAttribute('title', t);
+                btn.setAttribute('aria-label', t);
+            }
+            sync();
+            btn.addEventListener('click', function () {
+                var c = root.classList.toggle('sidebar-collapsed');
+                try { localStorage.setItem('fl.sidebar', c ? 'collapsed' : 'expanded'); } catch (e) {}
+                sync();
+            });
+        })();
+    </script>
+    {% endif %}
 
     {% if current_user.is_authenticated %}
     <!-- ========================================= -->
