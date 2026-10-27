@@ -608,19 +608,20 @@
 
         /* --- Sidebar (desktop, >= lg) ---------------------------------
            O menu vive num <aside class="app-sidebar"> fixo à esquerda
-           (ver HTML logo após a navbar). Recolhida = só ícones (76px);
-           o estado fica em localStorage ("fl.sidebar") e a classe
-           .sidebar-collapsed é aplicada no <html> por um script no <head>
-           antes da primeira pintura. No mobile nada disso existe: o
-           <aside> é d-none d-lg-flex e a navegação continua sendo o
-           .bottom-nav. -------------------------------------------------- */
-        :root { --sidebar-w: 240px; }
-        html.sidebar-collapsed { --sidebar-w: 76px; }
+           (ver HTML logo após a navbar), em vidro fosco como a navbar.
+           Recolhida = só ícones (80px) com tooltip; o estado fica em
+           localStorage ("fl.sidebar") e a classe .sidebar-collapsed é
+           aplicada no <html> por um script no <head> antes da primeira
+           pintura. No mobile nada disso existe: o <aside> é
+           d-none d-lg-flex e a navegação continua sendo o .bottom-nav.
+           -------------------------------------------------------------- */
+        :root { --sidebar-w: 248px; --sidebar-ease: cubic-bezier(0.4, 0, 0.2, 1); }
+        html.sidebar-collapsed { --sidebar-w: 80px; }
 
         @media (min-width: 992px) {
             body.has-sidebar {
                 padding-left: var(--sidebar-w);
-                transition: padding-left 0.2s ease;
+                transition: padding-left 0.25s var(--sidebar-ease);
             }
 
             .app-sidebar {
@@ -631,137 +632,199 @@
                 width: var(--sidebar-w);
                 z-index: 1031; /* acima da navbar (1030), abaixo de modais/overlays */
                 flex-direction: column;
-                background: #fff;
-                border-right: 1px solid rgba(0, 0, 0, 0.07);
-                transition: width 0.2s ease;
+                background: rgba(255, 255, 255, 0.92);
+                border-right: 1px solid rgba(0, 0, 0, 0.06);
+                box-shadow: 6px 0 28px rgba(45, 45, 45, 0.05);
+                transition: width 0.25s var(--sidebar-ease);
+            }
+            @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+                .app-sidebar {
+                    background: rgba(255, 255, 255, 0.72);
+                    backdrop-filter: blur(20px) saturate(180%);
+                    -webkit-backdrop-filter: blur(20px) saturate(180%);
+                }
             }
 
+            /* Altura igual à da navbar pra a linha divisória alinhar. */
             .side-head {
-                height: 62px;
+                height: var(--topbar-h, 56px);
                 flex: none;
                 display: flex;
                 align-items: center;
-                padding: 0 18px;
+                padding: 0 20px;
                 border-bottom: 1px solid rgba(0, 0, 0, 0.06);
             }
             .side-brand { display: flex; align-items: center; }
-            .side-logo-full { height: 42px; width: auto; }
-            .side-logo-mini { display: none; height: 36px; width: auto; }
+            .side-brand { border-radius: 8px; }
+            .side-brand:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 3px; }
+            .side-logo-full { height: 40px; width: auto; }
+            .side-logo-mini { display: none; height: 34px; width: auto; }
             html.sidebar-collapsed .side-head { justify-content: center; padding: 0; }
             html.sidebar-collapsed .side-logo-full { display: none; }
             html.sidebar-collapsed .side-logo-mini { display: block; }
 
+            /* Botão de recolher: bolinha na borda da sidebar. */
+            .side-toggle {
+                position: absolute;
+                top: calc(var(--topbar-h, 56px) / 2 - 13px);
+                right: -13px;
+                z-index: 2;
+                width: 26px;
+                height: 26px;
+                padding: 0;
+                display: grid;
+                place-items: center;
+                border: 1px solid rgba(0, 0, 0, 0.1);
+                border-radius: 50%;
+                background: #fff;
+                color: #6b7280;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+                transition: color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+            }
+            .side-toggle:hover {
+                color: var(--primary-color);
+                border-color: rgba(242, 140, 51, 0.45);
+                box-shadow: 0 3px 12px rgba(242, 140, 51, 0.25);
+            }
+            .side-toggle:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
+            .side-toggle .bi { font-size: 0.8rem; line-height: 1; transition: transform 0.25s var(--sidebar-ease); }
+            html.sidebar-collapsed .side-toggle .bi { transform: rotate(180deg); }
+
             .mega-nav {
                 flex: 1;
-                gap: 2px;
-                padding: 8px 10px;
+                gap: 3px;
+                padding: 10px 12px 16px;
                 margin: 0;
                 overflow-y: auto;
                 overflow-x: hidden;
+                scrollbar-width: thin;
+                scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
             }
 
             .side-sec {
-                font-size: 0.66rem;
+                font-size: 0.67rem;
                 font-weight: 700;
-                letter-spacing: 0.09em;
+                letter-spacing: 0.1em;
                 text-transform: uppercase;
-                color: #8a8f98;
-                padding: 16px 12px 5px;
+                color: #9aa0a8;
+                padding: 18px 14px 6px;
                 white-space: nowrap;
             }
-            .mega-nav > .side-sec:first-child { padding-top: 6px; }
+            .mega-nav > .side-sec:first-child { padding-top: 8px; }
             html.sidebar-collapsed .side-sec {
                 font-size: 0;
                 height: 0;
                 padding: 0;
-                margin: 9px 12px;
-                border-top: 1px solid rgba(0, 0, 0, 0.09);
+                margin: 10px 16px;
+                border-top: 1px solid rgba(0, 0, 0, 0.08);
             }
             html.sidebar-collapsed .mega-nav > .side-sec:first-child { display: none; }
 
             .mega-trigger {
                 display: flex;
                 align-items: center;
-                gap: 12px;
+                gap: 13px;
                 width: 100%;
-                padding: 9px 12px;
+                height: 42px;
+                padding: 0 14px;
                 border: none;
                 border-bottom: 0 !important; /* anula o sublinhado de .nav-link.active */
-                border-radius: 10px;
+                border-radius: 12px;
                 background: none;
-                font-size: 0.9rem;
+                font-size: 0.92rem;
                 font-weight: 500;
-                color: #55606c;
+                color: #4b5563;
                 position: relative;
                 white-space: nowrap;
-                transition: background 0.18s ease, color 0.18s ease;
+                transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
             }
-            .mega-trigger .ph-icon { width: 1.3rem; height: 1.3rem; flex: none; }
+            .mega-trigger .ph-icon {
+                width: 1.35rem;
+                height: 1.35rem;
+                flex: none;
+                transition: transform 0.2s var(--sidebar-ease);
+            }
             .mega-label { overflow: hidden; text-overflow: ellipsis; }
 
             .mega-trigger:hover {
                 color: var(--primary-color) !important;
-                background: rgba(242, 140, 51, 0.1);
+                background: rgba(242, 140, 51, 0.09);
+            }
+            .mega-trigger:hover .ph-icon { transform: scale(1.1); }
+            .mega-trigger:focus-visible {
+                outline: 2px solid var(--primary-color);
+                outline-offset: -2px;
             }
             .mega-trigger.active {
                 color: var(--primary-color) !important;
-                background: rgba(242, 140, 51, 0.14);
                 font-weight: 600;
+                background: linear-gradient(90deg, rgba(242, 140, 51, 0.2), rgba(242, 140, 51, 0.07));
+                box-shadow: inset 0 0 0 1px rgba(242, 140, 51, 0.2);
             }
-            /* Barra lateral fina no item da tela atual. */
+            /* Barrinha de destaque da tela atual. */
             .mega-trigger.active::after {
                 content: '';
                 position: absolute;
-                left: -10px;
-                top: 20%;
-                bottom: 20%;
+                left: 4px;
+                top: 11px;
+                bottom: 11px;
                 width: 3px;
-                border-radius: 0 3px 3px 0;
+                border-radius: 3px;
                 background: var(--gradient-primary);
             }
 
             .mega-badge-dot {
                 margin-left: auto;
-                font-size: 0.65rem;
-                padding: 0.2em 0.5em;
+                min-width: 20px;
+                font-size: 0.68rem;
+                font-weight: 700;
+                padding: 0.25em 0.5em;
             }
-            html.sidebar-collapsed .mega-trigger { justify-content: center; padding: 10px 0; }
+            html.sidebar-collapsed .mega-trigger { justify-content: center; padding: 0; }
             html.sidebar-collapsed .mega-label { display: none; }
+            html.sidebar-collapsed .mega-trigger.active::after { left: 2px; }
             html.sidebar-collapsed .mega-badge-dot {
                 position: absolute;
                 top: 3px;
-                right: 9px;
+                right: 12px;
+                min-width: 0;
                 margin: 0;
+                font-size: 0.6rem;
             }
 
-            .side-foot {
-                flex: none;
-                padding: 8px 10px;
-                border-top: 1px solid rgba(0, 0, 0, 0.06);
+            /* Tooltip da sidebar recolhida (posicionado por JS, fora do
+               aside, pra não ser cortado pelo overflow da lista). */
+            .side-tip {
+                position: fixed;
+                z-index: 2000;
+                pointer-events: none;
+                padding: 6px 11px;
+                border-radius: 8px;
+                background: #2d2d2d;
+                color: #fff;
+                font-size: 0.8rem;
+                font-weight: 600;
+                white-space: nowrap;
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+                opacity: 0;
+                transform: translateX(-4px);
+                transition: opacity 0.12s ease, transform 0.12s ease;
             }
-            .side-toggle {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                width: 100%;
-                padding: 9px 12px;
-                border: none;
-                border-radius: 10px;
-                background: none;
-                color: #8a8f98;
-                font-size: 0.85rem;
-                font-weight: 500;
+            .side-tip.show { opacity: 1; transform: none; }
+
+            /* A logo agora mora na sidebar; a navbar mostra o título da
+               tela à esquerda e as ações (PWA, FitBot, sino, avatar) à
+               direita. */
+            body.has-sidebar .navbar-brand { display: none; }
+            body.has-sidebar .navbar > .container { justify-content: space-between; }
+            .topbar-title {
+                gap: 10px;
+                font-size: 1.05rem;
+                font-weight: 600;
+                color: var(--secondary-color);
                 white-space: nowrap;
             }
-            .side-toggle:hover { background: rgba(0, 0, 0, 0.05); color: #55606c; }
-            .side-toggle .bi { font-size: 1.1rem; flex: none; transition: transform 0.2s ease; }
-            html.sidebar-collapsed .side-toggle { justify-content: center; padding: 10px 0; }
-            html.sidebar-collapsed .side-toggle .bi { transform: rotate(180deg); }
-
-            /* A logo agora mora na sidebar; a navbar fica só com as ações
-               (PWA, FitBot, sino, avatar) alinhadas à direita. */
-            body.has-sidebar .navbar-brand { display: none; }
-            body.has-sidebar .navbar > .container { justify-content: flex-end; }
+            .topbar-title .bi { font-size: 1.2rem; line-height: 1; }
 
             body.has-sidebar .btn-registrar-treino {
                 width: auto;
@@ -777,7 +840,8 @@
         .btn-registrar-label { display: none; }
 
         @media (prefers-reduced-motion: reduce) {
-            body.has-sidebar, .app-sidebar, .mega-trigger, .side-toggle .bi { transition: none !important; }
+            body.has-sidebar, .app-sidebar, .mega-trigger, .mega-trigger .ph-icon,
+            .side-toggle .bi, .side-tip { transition: none !important; }
         }
 
 
@@ -1684,6 +1748,12 @@
             <!-- MEGA-MENU (desktop, >= lg)                -->
             <!-- ========================================= -->
 
+            {% set _titulo_tela = self.page_title()|trim %}
+            {% if _titulo_tela and _titulo_tela != 'FitLog' %}
+            <!-- Título da tela (só desktop; no mobile já existe .navbar-brand-title). -->
+            <div class="topbar-title d-none d-lg-flex align-items-center">{{ self.page_icon() }}<span>{{ _titulo_tela }}</span></div>
+            {% endif %}
+
             <!-- Ação rápida + avatar (desktop e mobile) -->
             <div class="d-flex align-items-center gap-2 order-lg-2">
                 {% if current_user.pode_gerenciar_treino_proprio() and not current_user.is_admin %}                
@@ -2006,17 +2076,15 @@
                 {% endif %}
                 {% endif %}
         </ul>
-        <div class="side-foot">
-            <button type="button" class="side-toggle" id="sidebarToggle" aria-expanded="true" aria-controls="appSidebar" title="Recolher menu" aria-label="Recolher menu">
-                <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
-                <span class="mega-label">Recolher menu</span>
-            </button>
-        </div>
+        <button type="button" class="side-toggle" id="sidebarToggle" aria-expanded="true" aria-controls="appSidebar" title="Recolher menu" aria-label="Recolher menu">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </button>
     </aside>
     <script>
         (function () {
             var btn = document.getElementById('sidebarToggle');
-            if (!btn) return;
+            var aside = document.getElementById('appSidebar');
+            if (!btn || !aside) return;
             var root = document.documentElement;
             function sync() {
                 var c = root.classList.contains('sidebar-collapsed');
@@ -2029,7 +2097,50 @@
             btn.addEventListener('click', function () {
                 var c = root.classList.toggle('sidebar-collapsed');
                 try { localStorage.setItem('fl.sidebar', c ? 'collapsed' : 'expanded'); } catch (e) {}
+                hideTip();
                 sync();
+            });
+
+            /* Alinha a linha do cabeçalho da sidebar com a da navbar. */
+            function medirNavbar() {
+                var nav = document.querySelector('.navbar');
+                if (nav && nav.offsetHeight) root.style.setProperty('--topbar-h', nav.offsetHeight + 'px');
+            }
+            medirNavbar();
+            window.addEventListener('resize', medirNavbar);
+            window.addEventListener('load', medirNavbar);
+
+            /* Tooltip: só com a sidebar recolhida. Troca o title nativo
+               (que demora e duplica o rótulo) por um tooltip imediato; o
+               title volta ao sair do item -- o tour (index-tour.js) acha
+               os itens por [title="..."], então ele nunca fica de fora
+               por mais que o tempo do hover. */
+            var tip = null;
+            function hideTip() { if (tip) tip.classList.remove('show'); }
+            function showTip(el, texto) {
+                if (!root.classList.contains('sidebar-collapsed') || !texto) return;
+                if (!tip) { tip = document.createElement('div'); tip.className = 'side-tip'; tip.setAttribute('role', 'tooltip'); document.body.appendChild(tip); }
+                tip.textContent = texto;
+                var r = el.getBoundingClientRect();
+                tip.style.left = (r.right + 12) + 'px';
+                tip.style.top = (r.top + r.height / 2 - tip.offsetHeight / 2) + 'px';
+                tip.classList.add('show');
+            }
+            function entrar(e) {
+                var el = e.currentTarget, t = el.getAttribute('title');
+                if (t) { el.setAttribute('data-title', t); el.removeAttribute('title'); }
+                showTip(el, el.getAttribute('data-title'));
+            }
+            function sair(e) {
+                var el = e.currentTarget, t = el.getAttribute('data-title');
+                if (t) { el.setAttribute('title', t); el.removeAttribute('data-title'); }
+                hideTip();
+            }
+            aside.querySelectorAll('.mega-trigger, .side-toggle').forEach(function (el) {
+                el.addEventListener('mouseenter', entrar);
+                el.addEventListener('mouseleave', sair);
+                el.addEventListener('focus', entrar);
+                el.addEventListener('blur', sair);
             });
         })();
     </script>
