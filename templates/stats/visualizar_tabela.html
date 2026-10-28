@@ -296,6 +296,147 @@
         #progressTable { font-size: 0.76rem; }
         #progressTable th, #progressTable td { padding: 4px 6px; }
     }
+
+    /* ==========================================================
+       DESKTOP (>= 992px) -- visual moderno da tabela de progresso.
+       Isolado neste media query: celular e tablet continuam como antes.
+       ========================================================== */
+    @media (min-width: 992px) {
+        .prog-header { justify-content: flex-start; margin: 4px 0 18px; }
+        .prog-filtro select {
+            border: 1px solid rgba(20,20,20,0.08);
+            border-radius: 14px;
+            padding: 10px 40px 10px 16px;
+            min-width: 320px;
+            font-weight: 600;
+            text-align: left;
+            text-align-last: left;
+            background-color: #fff;
+            box-shadow: 0 4px 16px rgba(20,20,20,0.05);
+            cursor: pointer;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+        .prog-filtro select:hover { border-color: rgba(242,140,51,.5); }
+        .prog-filtro select:focus { outline: none; border-color: #F28C33; box-shadow: 0 0 0 4px rgba(242,140,51,.18); }
+
+        /* Cartão da tabela */
+        .prog-tabela-wrap {
+            background: #fff;
+            border: 1px solid rgba(20,20,20,0.06);
+            border-radius: 24px;
+            padding: 0;
+            box-shadow: 0 16px 44px rgba(20,20,20,0.07);
+        }
+        #progressTable {
+            font-family: inherit;
+            font-size: 0.93rem;
+        }
+        #progressTable th, #progressTable td { padding: 0; }
+        #progressTable th:not(.col-exercicio),
+        #progressTable td.td-dado { padding-left: 4px; padding-right: 4px; }
+
+        /* Cabeçalho claro */
+        #progressTable thead th {
+            background: #fff;
+            color: #8a8a94;
+            font-weight: 700;
+            font-size: 0.72rem;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            padding: 8px 4px;
+            border-bottom: 1px solid rgba(20,20,20,0.06);
+        }
+        #progressTable thead th.col-exercicio {
+            color: #2D2D2D;
+            font-size: 0.78rem;
+            padding-left: 24px;
+            vertical-align: bottom;
+            padding-bottom: 12px;
+        }
+        #progressTable thead th.th-semana {
+            font-style: normal;
+            color: #2D2D2D;
+            font-weight: 800;
+            font-size: 0.84rem;
+            letter-spacing: 0;
+            text-transform: none;
+            padding: 16px 4px 8px;
+            border-bottom: none;
+        }
+        #progressTable thead th.th-semana .semana-mes {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #8a8a94;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+        #progressTable thead tr:nth-child(2) th { padding-top: 2px; }
+        /* Semana atual (última coluna) em destaque */
+        #progressTable thead th.th-semana.semana-atual { color: #d9741f; }
+        #progressTable thead th.th-semana.semana-atual {
+            box-shadow: inset 0 3px 0 #F28C33;
+            background: #fff6ee;
+        }
+
+        /* Divisórias discretas */
+        #progressTable th.col-exercicio,
+        #progressTable td.col-exercicio { border-right: 1px solid rgba(20,20,20,0.07); }
+        #progressTable th.semana-inicio,
+        #progressTable td.semana-inicio { border-left: 1px solid rgba(20,20,20,0.06); }
+
+        /* Linhas: brancas, com barra de cor por treino e hover */
+        #progressTable tbody tr.bloco-azul td.td-dado,
+        #progressTable tbody tr.bloco-azul td.col-exercicio,
+        #progressTable tbody tr.bloco-pessego td.td-dado,
+        #progressTable tbody tr.bloco-pessego td.col-exercicio { background: #fff; }
+        #progressTable tbody td {
+            color: #2D2D2D;
+            height: 46px;
+            border-top: 1px solid rgba(20,20,20,0.045);
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            transition: background-color .12s ease;
+        }
+        #progressTable tbody tr:first-child td,
+        #progressTable tbody tr.linha-espacadora + tr td { border-top: none; }
+        #progressTable tbody td.col-exercicio {
+            padding-left: 21px;
+            padding-right: 12px;
+            font-weight: 600;
+            border-left: 3px solid transparent;
+        }
+        #progressTable tbody tr.bloco-azul td.col-exercicio { border-left-color: #2D2D2D; }
+        #progressTable tbody tr.bloco-pessego td.col-exercicio { border-left-color: #F28C33; }
+        #progressTable tbody tr.bloco-azul:hover td,
+        #progressTable tbody tr.bloco-pessego:hover td { background: #fff6ee; }
+
+        /* Repetições mais discretas; vazio vira traço suave */
+        #progressTable td.td-dado:not(.semana-inicio) { color: #6b6b75; font-weight: 500; }
+        #progressTable td.td-dado:empty::before { content: "–"; color: #d3d3da; font-weight: 400; }
+
+        /* Tendência da carga vs. semana anterior (marcada pelo JS) */
+        #progressTable td.td-dado.trend-up::after,
+        #progressTable td.td-dado.trend-down::after {
+            display: inline-block;
+            margin-left: 5px;
+            font-size: .62rem;
+            vertical-align: 1px;
+        }
+        #progressTable td.td-dado.trend-up::after { content: "▲"; color: #1f9d55; }
+        #progressTable td.td-dado.trend-down::after { content: "▼"; color: #d64545; }
+
+        /* Espaçador entre treinos */
+        #progressTable tr.linha-espacadora td {
+            background: #f6f6f8;
+            height: 12px;
+            border-top: 1px solid rgba(20,20,20,0.05);
+            border-bottom: 1px solid rgba(20,20,20,0.05);
+            border-left: none; border-right: none;
+        }
+        #progressTable tr.linha-espacadora td.col-exercicio { border-right: 1px solid rgba(20,20,20,0.07); }
+
+        .prog-tooltip { font-family: inherit; border-radius: 10px; }
+    }
 </style>
 {% endblock %}
 
@@ -328,7 +469,7 @@
             <tr>
                 <th class="col-exercicio" rowspan="2">Exercício</th>
                 {% for semana in semanas %}
-                <th colspan="2" class="th-semana semana-inicio">
+                <th colspan="2" class="th-semana semana-inicio{{ ' semana-atual' if loop.last }}">
                     {{ semana.semana_do_mes }}ª Semana
                     <span class="semana-mes">{{ semana.periodo.split('/')[0] }}</span>
                 </th>
@@ -393,6 +534,9 @@
         var MAX_EXERCICIO = 220;
         var MIN_DADO = 34;          // pequena folga a mais p/ "Carga" caber com padding mínimo
         var ABS_MIN_EXERCICIO = 64; // só usado se precisar encolher p/ garantir as 3 semanas
+        var mqDesktop = window.matchMedia('(min-width: 992px)');
+        var DESK_EXERCICIO = 280;   // largura da coluna Exercício no desktop
+        var DESK_DADO_MIN = 84;     // largura mínima de cada coluna Carga/Rep. no desktop
         var usuarioRolou = false;      // true assim que o usuário arrastar a tabela manualmente
         var ultimoAlvoProgramatico = null; // último valor de scrollLeft que NÓS definimos
 
@@ -489,14 +633,29 @@
             }
             if (!larguraDisponivel || larguraDisponivel <= 0) return;
 
-            var totalColunasDado = semanasParaCalculo * 2;
-            var larguraExercicio = Math.min(
-                MAX_EXERCICIO,
-                Math.max(MIN_EXERCICIO, larguraDisponivel * PCT_EXERCICIO)
-            );
-            var larguraDado = (larguraDisponivel - larguraExercicio) / totalColunasDado;
+            var larguraExercicio, larguraDado, totalColunasDado;
+            if (mqDesktop.matches) {
+                // Desktop: coluna Exercício larga e colunas de dado confortáveis;
+                // mostra quantas semanas couberem (mínimo 3, máximo o total).
+                larguraExercicio = DESK_EXERCICIO;
+                var maxSemanas = totalSemanasReais > 0 ? totalSemanasReais : 3;
+                var cabem = Math.floor((larguraDisponivel - larguraExercicio) / (2 * DESK_DADO_MIN));
+                N_SEMANAS_VISIVEIS = Math.min(maxSemanas, Math.max(3, cabem));
+                semanasParaCalculo = Math.min(N_SEMANAS_VISIVEIS, maxSemanas);
+                totalColunasDado = semanasParaCalculo * 2;
+                larguraDado = (larguraDisponivel - larguraExercicio) / totalColunasDado;
+            } else {
+                N_SEMANAS_VISIVEIS = 3;
+                semanasParaCalculo = (totalSemanasReais > 0) ? Math.min(3, totalSemanasReais) : 3;
+                totalColunasDado = semanasParaCalculo * 2;
+                larguraExercicio = Math.min(
+                    MAX_EXERCICIO,
+                    Math.max(MIN_EXERCICIO, larguraDisponivel * PCT_EXERCICIO)
+                );
+                larguraDado = (larguraDisponivel - larguraExercicio) / totalColunasDado;
+            }
 
-            if (larguraDado < MIN_DADO) {
+            if (!mqDesktop.matches && larguraDado < MIN_DADO) {
                 // Não dá pra manter os 34px mínimos de Carga/Rep. com a
                 // fatia cheia do Exercício -- encolhe o Exercício primeiro
                 // (até um piso menor) pra garantir que as 3 semanas
@@ -543,6 +702,18 @@
             reposicionarUltimasSemanas(larguraDado);
             atualizarTruncamento();
         }
+
+        // Tendência da carga vs. última semana com registro (setas só aparecem no desktop via CSS)
+        table.querySelectorAll('tbody tr:not(.linha-espacadora)').forEach(function (tr) {
+            var anterior = null;
+            tr.querySelectorAll('td.td-dado.semana-inicio').forEach(function (td) {
+                var v = parseFloat((td.textContent || '').replace(',', '.'));
+                if (isNaN(v)) return;
+                if (anterior !== null && v > anterior) td.classList.add('trend-up');
+                else if (anterior !== null && v < anterior) td.classList.add('trend-down');
+                anterior = v;
+            });
+        });
 
         ajustarLargura();
         window.addEventListener('resize', function () { ajustarLargura(); });
