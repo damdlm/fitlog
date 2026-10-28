@@ -297,6 +297,14 @@
         #progressTable th, #progressTable td { padding: 4px 6px; }
     }
 
+    /* Desktop: linhas mais compactas (só altura -- visual inalterado) */
+    @media (min-width: 992px) {
+        #progressTable tbody td {
+            padding-top: 2px;
+            padding-bottom: 2px;
+            line-height: 1.25;
+        }
+    }
 </style>
 {% endblock %}
 
