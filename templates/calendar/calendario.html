@@ -1478,6 +1478,241 @@
     .calendar-page[data-theme="dark"] .dash-mode-pill.active {
         color: #fff;
     }
+    /* ==========================================================
+       DESKTOP (>= 992px) -- redesign moderno do calendário.
+       Tudo isolado neste media query: celular e tablet (< 992px)
+       continuam exatamente como antes.
+       ========================================================== */
+    @media (min-width: 992px) {
+        .calendar-page {
+            --cal-accent-soft: rgba(242, 140, 51, 0.13);
+            --cal-accent-text: #b85f12;
+            --cal-cell: #f7f7f9;
+            --cal-cell-hover: #fff3e8;
+            --cal-line: rgba(20, 20, 20, 0.06);
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+        .calendar-page[data-theme="dark"] {
+            --cal-accent-soft: rgba(242, 140, 51, 0.18);
+            --cal-accent-text: #ffb066;
+            --cal-cell: #212129;
+            --cal-cell-hover: #2a2430;
+            --cal-line: rgba(255, 255, 255, 0.06);
+        }
+
+        /* --- KPIs: três cards separados, ícone em pastilha --- */
+        .calendar-page .month-summary-row {
+            max-width: none;
+            gap: 14px;
+            margin-bottom: 18px;
+            align-items: stretch;
+        }
+        .calendar-page .month-summary {
+            background: transparent;
+            box-shadow: none;
+            padding: 0;
+            gap: 14px;
+            overflow: visible;
+        }
+        .calendar-page[data-theme="dark"] .month-summary { box-shadow: none; }
+        .calendar-page .month-summary-divider { display: none; }
+        .calendar-page .month-summary-tile {
+            display: grid;
+            grid-template-columns: 52px 1fr;
+            grid-template-areas: "icon value" "icon label";
+            column-gap: 14px;
+            align-items: center;
+            justify-items: start;
+            text-align: left;
+            padding: 16px 20px;
+            background: var(--surface);
+            color: var(--text-primary);
+            border: 1px solid var(--cal-line);
+            border-radius: 20px;
+            box-shadow: 0 6px 22px rgba(20, 20, 20, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .calendar-page .month-summary-tile:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(242, 140, 51, 0.16);
+        }
+        .calendar-page .month-summary-icon {
+            grid-area: icon;
+            width: 52px; height: 52px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem;
+            margin: 0;
+            opacity: 1;
+            color: #fff;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--fl-accent) 0%, var(--fl-accent-2) 100%);
+            box-shadow: 0 6px 16px rgba(242, 140, 51, 0.32);
+        }
+        .calendar-page .month-summary-value {
+            grid-area: value;
+            font-size: 1.75rem;
+            align-self: end;
+        }
+        .calendar-page .month-summary-label {
+            grid-area: label;
+            align-self: start;
+            font-size: 0.74rem;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+            opacity: 1;
+            margin-top: 2px;
+        }
+        .calendar-page .btn-compartilhar-calendario { align-self: center; }
+        .calendar-page .btn-compartilhar-calendario {
+            width: 56px; height: 56px;
+            border-radius: 18px;
+        }
+        .calendar-page .rt-tour-ajuda { margin-top: -4px; }
+
+        /* --- Cartão do calendário --- */
+        .calendar-page #calendar {
+            max-width: none;
+            padding: 28px 28px 24px;
+            border-radius: 28px;
+            border: 1px solid var(--cal-line);
+        }
+
+        /* Barra: título à esquerda; navegação e visão à direita */
+        .calendar-page #calendar .fc-header-toolbar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.2em;
+            gap: 12px;
+        }
+        .calendar-page #calendar .fc-toolbar-chunk:nth-child(2) { order: -1; margin-right: auto; }
+        .calendar-page #calendar .fc-toolbar-chunk:nth-child(1) { order: 1; }
+        .calendar-page #calendar .fc-toolbar-chunk:nth-child(3) { order: 2; }
+        .calendar-page #calendar .fc-toolbar-title {
+            font-size: 1.9rem;
+        }
+        .calendar-page #calendar .fc-toolbar-title::first-letter { text-transform: uppercase; }
+        .calendar-page #calendar .fc-toolbar-chunk { display: flex; align-items: center; gap: 8px; }
+        .calendar-page #calendar .fc-button-group { gap: 6px; }
+        .calendar-page #calendar .fc-button-primary {
+            background: var(--cal-cell) !important;
+            border: 1px solid var(--cal-line) !important;
+            color: var(--text-primary) !important;
+            border-radius: 12px !important;
+            font-weight: 600;
+            padding: 8px 14px;
+            box-shadow: none;
+            text-transform: none;
+            transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+        }
+        .calendar-page #calendar .fc-button-primary:hover:not(:disabled) {
+            background: var(--cal-accent-soft) !important;
+            color: var(--cal-accent-text) !important;
+            transform: translateY(-1px);
+        }
+        .calendar-page #calendar .fc-button-primary:disabled {
+            opacity: 0.5;
+        }
+        .calendar-page #calendar .fc-today-button {
+            background: var(--cal-accent-soft) !important;
+            color: var(--cal-accent-text) !important;
+            border-color: transparent !important;
+        }
+        /* Mês/Semana como controle segmentado */
+        .calendar-page #calendar .fc-toolbar-chunk:nth-child(3) .fc-button-group {
+            gap: 0;
+            padding: 4px;
+            background: var(--cal-cell);
+            border: 1px solid var(--cal-line);
+            border-radius: 14px;
+        }
+        .calendar-page #calendar .fc-toolbar-chunk:nth-child(3) .fc-button-primary {
+            background: transparent !important;
+            border-color: transparent !important;
+            border-radius: 10px !important;
+            padding: 6px 16px;
+            transform: none;
+        }
+        .calendar-page #calendar .fc-toolbar-chunk:nth-child(3) .fc-button-primary.fc-button-active {
+            background: linear-gradient(135deg, var(--fl-accent) 0%, var(--fl-accent-2) 100%) !important;
+            color: #fff !important;
+            box-shadow: 0 4px 12px rgba(242, 140, 51, 0.35);
+        }
+
+        /* Cabeçalho dos dias da semana: discreto, sem cara de link */
+        .calendar-page #calendar .fc-col-header,
+        .calendar-page #calendar .fc-col-header-cell,
+        .calendar-page #calendar .fc-scrollgrid-section-header > *,
+        .calendar-page #calendar .fc-scrollgrid-section-header .fc-scroller { background: transparent !important; }
+        .calendar-page #calendar .fc-col-header-cell-cushion {
+            color: var(--text-muted) !important;
+            text-decoration: none !important;
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            padding: 8px 4px 10px;
+        }
+
+        /* Células como cartões */
+        .calendar-page #calendar .fc-daygrid-day-frame {
+            margin: 3px;
+            padding: 8px 8px 6px !important;
+            min-height: 116px !important;
+            border-radius: 16px;
+            background: var(--cal-cell);
+            border: 1px solid transparent;
+            transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .calendar-page #calendar .fc-daygrid-day:hover .fc-daygrid-day-frame {
+            background: var(--cal-cell-hover);
+            border-color: rgba(242, 140, 51, 0.35);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(242, 140, 51, 0.12);
+        }
+        .calendar-page #calendar .fc-day-today { background: transparent !important; }
+        .calendar-page #calendar .fc-day-today .fc-daygrid-day-frame {
+            background: var(--cal-accent-soft);
+            border-color: rgba(242, 140, 51, 0.6);
+        }
+        .calendar-page #calendar .fc-day-other .fc-daygrid-day-frame { opacity: 0.45; }
+        .calendar-page #calendar .fc-daygrid-day-top { flex-direction: row; }
+        .calendar-page #calendar .fc-daygrid-day-number {
+            width: 28px; height: 28px;
+            margin: 0;
+            background: transparent;
+            border-radius: 9px;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+        .calendar-page #calendar .fc-day-today .fc-daygrid-day-number {
+            background: linear-gradient(135deg, var(--fl-accent) 0%, var(--fl-accent-2) 100%);
+            box-shadow: 0 4px 12px rgba(242, 140, 51, 0.4);
+        }
+
+        /* Treino do dia: chip suave com barra de destaque */
+        .calendar-page #calendar .fc-daygrid-day-events { margin-top: 6px; }
+        .calendar-page #calendar .fc-daygrid-event {
+            margin: 3px 0 0;
+        }
+        .calendar-page #calendar .fc-event {
+            background: var(--cal-accent-soft) !important;
+            color: var(--cal-accent-text) !important;
+            border-left: 3px solid var(--fl-accent) !important;
+            border-radius: 9px !important;
+            padding: 4px 8px !important;
+            font-size: 0.8rem !important;
+            font-weight: 600;
+        }
+        .calendar-page #calendar .fc-event .fc-event-main,
+        .calendar-page #calendar .fc-event * { color: inherit !important; }
+        .calendar-page #calendar .fc-event:hover {
+            transform: none;
+            background: linear-gradient(135deg, var(--fl-accent) 0%, var(--fl-accent-2) 100%) !important;
+            color: #fff !important;
+            box-shadow: 0 6px 16px rgba(242, 140, 51, 0.35);
+        }
+    }
 </style>
 {% endblock %}
 
