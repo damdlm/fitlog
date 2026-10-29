@@ -942,7 +942,7 @@
             return `
                 <div class="est-ranking-item">
                     <div class="est-ranking-top">
-                        <span class="est-ranking-nome">${nome}</span>
+                        <span class="est-ranking-nome">${escapeHtml(nome)}</span>
                         <span class="est-ranking-valor">${Math.round(s.volume_total)}kg · ${s.qtd_registros} registros</span>
                     </div>
                     <div class="est-ranking-bar-bg">
@@ -950,6 +950,14 @@
                     </div>
                 </div>`;
         }).join('');
+    }
+
+    // Nomes de exercício podem ser criados por OUTRA pessoa (professor cria
+    // exercício para o aluno) -- nunca interpolar em innerHTML sem escapar.
+    function escapeHtml(valor) {
+        const div = document.createElement('div');
+        div.textContent = valor === undefined || valor === null ? '' : String(valor);
+        return div.innerHTML;
     }
 
     function carregarMusculoStats(params) {
@@ -1017,7 +1025,7 @@
             scroll.innerHTML = recordes.map(pr => `
                 <div class="est-pr-card">
                     <div class="est-pr-badge"><i class="bi bi-trophy-fill"></i> PR</div>
-                    <div class="est-pr-nome">${pr.nome}</div>
+                    <div class="est-pr-nome">${escapeHtml(pr.nome)}</div>
                     <div class="est-pr-valor">${pr.carga}kg <span class="unidade">× ${pr.reps}</span></div>
                     <div class="est-pr-data">~${pr.rm_estimado}kg de 1RM estimado · ${pr.data}</div>
                 </div>

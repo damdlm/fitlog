@@ -4865,7 +4865,16 @@ function inicializarModalSeriesIndividuais() {
         // tag <img> direto aqui dentro -- essa era a causa do ícone
         // de imagem quebrada quando o gif falhava ao carregar.
         if (gifUrl) {
-            iconeEl.innerHTML = `<button type="button" class="btn-imagens-exercicio-modal" data-nome="${nome}" data-gif="${gifUrl}" aria-label="Ver gif do exercício"><i class="bi bi-images"></i></button>`;
+            // Montado pelo DOM (e não por string HTML): `nome` pode conter aspas
+            // e escapar do atributo data-nome (XSS). dataset.* é sempre seguro.
+            const btnNovoImg = document.createElement('button');
+            btnNovoImg.type = 'button';
+            btnNovoImg.className = 'btn-imagens-exercicio-modal';
+            btnNovoImg.dataset.nome = nome;
+            btnNovoImg.dataset.gif = gifUrl;
+            btnNovoImg.setAttribute('aria-label', 'Ver gif do exercício');
+            btnNovoImg.innerHTML = '<i class="bi bi-images"></i>';
+            iconeEl.replaceChildren(btnNovoImg);
             const btnImg = iconeEl.querySelector('.btn-imagens-exercicio-modal');
             if (btnImg) {
                 btnImg.addEventListener('click', function () {
@@ -4885,7 +4894,7 @@ function inicializarModalSeriesIndividuais() {
         // últimos valores registrados -- em vez do chip/texto corrido
         // que o modal usava antes.
         let subinfoHtml = '';
-        if (musculo) subinfoHtml += `<span class="dash-badge"><i class="bi bi-tag-fill"></i> ${musculo}</span>`;
+        if (musculo) subinfoHtml += `<span class="dash-badge"><i class="bi bi-tag-fill"></i> ${escaparHtmlSeriesModal(musculo)}</span>`;
         if (ultimaCarga) {
             subinfoHtml += `<span class="dash-badge">${ultimaCarga}kg</span>`;
             subinfoHtml += `<span class="dash-badge">${ultimasReps}x</span>`;

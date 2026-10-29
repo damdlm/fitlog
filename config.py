@@ -81,6 +81,10 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
         'pool_recycle': 300,
+        # str(e) de erros do SQLAlchemy inclui o SQL e os VALORES dos
+        # parâmetros (e-mail, hash de senha...). Esse texto vai para o
+        # CrashLog (banco), logs do Railway e Sentry -- ocultamos.
+        'hide_parameters': True,
     }
 
     # NOTA: sessão é o cookie assinado padrão do Flask (client-side),
