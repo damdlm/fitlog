@@ -120,6 +120,64 @@
     /* .dash-registro-*, .dash-badge e .dash-empty ficam no CSS
        global (base.html), pois agora são usados em mais de uma
        tela (dashboard do aluno e "visualizar aluno" do professor). */
+
+    /* ==========================================================
+       DESKTOP (>= 992px) -- hero em linha, gráfico mais largo e
+       "Último Treino" em grade de 2 colunas, com o nome completo
+       dos exercícios. Mesmo tema; celular e tablet inalterados.
+       ========================================================== */
+    @media (min-width: 992px) {
+        .dash-hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            padding: 26px 32px;
+            border-radius: 22px;
+            margin-bottom: 22px;
+            box-shadow: 0 14px 34px rgba(20, 20, 20, 0.16);
+        }
+        .dash-hero::before { top: -80px; right: -40px; width: 320px; height: 320px; }
+        .dash-hero-greeting { margin-bottom: 0; font-size: 1.05rem; position: relative; }
+        .dash-hero-greeting .dash-hero-name { font-size: 1.6rem; letter-spacing: -0.01em; }
+        .dash-streak-pill { position: relative; padding: 10px 18px; font-size: 0.98rem; }
+
+        /* Gráfico de constância */
+        .dash-chart-card { border-radius: 20px; border: 1px solid rgba(20, 20, 20, 0.05); box-shadow: 0 8px 26px rgba(20, 20, 20, 0.05); }
+        .dash-chart-card .card-body { padding: 22px 26px 20px; }
+        .dash-chart-box { height: 230px !important; }
+
+        /* Último treino em 2 colunas */
+        .dash-ultimo-card { border-radius: 20px; border: 1px solid rgba(20, 20, 20, 0.05); box-shadow: 0 8px 26px rgba(20, 20, 20, 0.05); overflow: hidden; }
+        .dash-ultimo-card .card-header { padding: 18px 26px; }
+        .dash-ultimo-body {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            padding: 22px 26px 26px;
+        }
+        .dash-ultimo-body > .dash-empty { grid-column: 1 / -1; }
+        .dash-ultimo-body .dash-registro-item,
+        .dash-ultimo-body .dash-registro-item-clicavel {
+            margin: 0;
+            padding: 14px 16px;
+            background: #fafafb;
+            border: 1px solid rgba(20, 20, 20, 0.05);
+            border-radius: 16px;
+            cursor: default;
+            transition: background-color .15s ease, border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+        }
+        .dash-ultimo-body .dash-registro-item:last-child { border-bottom: 1px solid rgba(20, 20, 20, 0.05); }
+        .dash-ultimo-body .dash-registro-item:hover {
+            background: #fff6ee;
+            border-color: rgba(242, 140, 51, 0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 22px rgba(242, 140, 51, 0.12);
+        }
+        .dash-ultimo-body .dash-registro-icon { width: 44px; height: 44px; min-width: 44px; border-radius: 12px; }
+        .dash-ultimo-body .dash-registro-exercicio { font-size: 1rem; }
+        .dash-ultimo-body .dash-badge { background: #fff; border: 1px solid rgba(20, 20, 20, 0.07); }
+    }
 </style>
 
 <!-- Cabeçalho com saudação -->
@@ -134,13 +192,13 @@
 <div class="row mb-4 g-3">
     <!-- Gráfico de constância semanal -->
     <div class="col-12">
-        <div class="card h-100">
+        <div class="card h-100 dash-chart-card">
             <div class="card-body">
                 <h6 class="fw-bold mb-3">
                     <i class="bi bi-bar-chart-line me-1" style="color: #F28C33;"></i>
                     Constância da semana
                 </h6>
-                <div style="position: relative; height: 150px;">
+                <div class="dash-chart-box" style="position: relative; height: 150px;">
                     <canvas id="graficoSemana"></canvas>
                 </div>
             </div>
@@ -149,7 +207,7 @@
 </div>
 
 <!-- Últimos Registros -->
-<div class="card">
+<div class="card dash-ultimo-card">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
             <i class="bi bi-clock-history me-2" style="color: #F28C33;"></i>
@@ -161,7 +219,7 @@
         </span>
         {% endif %}
     </div>
-    <div class="card-body">
+    <div class="card-body dash-ultimo-body">
         {% if ultimos_registros %}
             {% for registro in ultimos_registros %}
             {% set nome_exercicio = (registro.exercicio.nome if registro.exercicio else registro.exercicio_base.nome if registro.exercicio_base else 'Exercício') %}
@@ -179,9 +237,10 @@
                 </div>
                 <div class="dash-registro-info">
                     <div class="dash-registro-top">
-                        <span class="dash-registro-exercicio{{ ' dash-registro-exercicio-trunc' if nome_exercicio|length > 20 else '' }}">
+                        <span class="dash-registro-exercicio d-lg-none{{ ' dash-registro-exercicio-trunc' if nome_exercicio|length > 20 else '' }}">
                             {{ nome_exercicio[:20] }}{{ '...' if nome_exercicio|length > 20 else '' }}
                         </span>
+                        <span class="dash-registro-exercicio d-none d-lg-inline">{{ nome_exercicio }}</span>
                         <span class="dash-registro-meta">
                             {{ registro.data_registro.strftime('%d/%m/%Y') }}
                             {% if registro.treino_ref %} · {{ registro.treino_ref.codigo }}{% endif %}
@@ -268,9 +327,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Popovers de clique -- mostram o nome completo dos exercícios
     // abreviados na lista de "Último Treino".
-    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
-        new bootstrap.Popover(el);
-    });
+    // (No desktop o nome completo já aparece na tela -- sem popover.)
+    if (!window.matchMedia('(min-width: 992px)').matches) {
+        document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
+            new bootstrap.Popover(el);
+        });
+    }
 
     const ctx = document.getElementById('graficoSemana');
     if (!ctx) return;
@@ -285,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 data: {{ dias_semana_valores|tojson }},
                 backgroundColor: {{ dias_semana_valores|tojson }}.map(v => v > 0 ? '#F28C33' : '#eee'),
                 borderRadius: 6,
-                maxBarThickness: 36
+                maxBarThickness: window.matchMedia('(min-width: 992px)').matches ? 56 : 36
             }]
         },
         options: {
