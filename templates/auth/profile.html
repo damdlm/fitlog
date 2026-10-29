@@ -99,7 +99,13 @@
                                     
                                     <div class="mb-3">
                                         <label class="form-label fw-bold">E-mail</label>
-                                        <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+                                        <input type="email" name="email" id="perfil-email" class="form-control" value="{{ user.email }}" data-original="{{ user.email }}" required>
+                                    </div>
+
+                                    <div class="mb-3 d-none" id="grupo-senha-atual">
+                                        <label class="form-label fw-bold" for="perfil-senha-atual">Senha atual</label>
+                                        <input type="password" name="senha_atual" id="perfil-senha-atual" class="form-control" autocomplete="current-password">
+                                        <div class="form-text">Necessária para alterar o e-mail. Você receberá um link para confirmar o novo endereço.</div>
                                     </div>
                                     
                                     <div class="mb-3">
@@ -169,4 +175,25 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    // A senha atual só é pedida (e exigida) quando o e-mail é editado.
+    const campoEmail = document.getElementById('perfil-email');
+    const grupoSenha = document.getElementById('grupo-senha-atual');
+    const campoSenha = document.getElementById('perfil-senha-atual');
+    if (!campoEmail || !grupoSenha || !campoSenha) return;
+
+    function atualizar() {
+        const mudou = campoEmail.value.trim() !== campoEmail.dataset.original;
+        grupoSenha.classList.toggle('d-none', !mudou);
+        campoSenha.required = mudou;
+        if (!mudou) campoSenha.value = '';
+    }
+    campoEmail.addEventListener('input', atualizar);
+    atualizar();
+})();
+</script>
 {% endblock %}

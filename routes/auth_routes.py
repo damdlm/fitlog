@@ -238,6 +238,30 @@ def _enviar_email_verificacao(user):
     return enviar_email(user.email, 'FitLog — Confirme seu e-mail', corpo_texto)
 
 
+def _mascarar_email(email):
+    """fulano@dominio.com -> f***@dominio.com (aviso não expõe o endereço todo)."""
+    local, _, dominio = (email or '').partition('@')
+    return f"{local[:1]}***@{dominio}" if dominio else '***'
+
+
+def _avisar_troca_de_email(user, email_antigo, email_novo):
+    """Avisa o endereço ANTERIOR que o e-mail da conta mudou. É o sinal que
+    permite ao dono real reagir se a troca não foi feita por ele. Nunca
+    derruba a request."""
+    corpo_texto = (
+        f"Olá, {user.nome_completo or user.username}!\n\n"
+        f"O e-mail da sua conta no FitLog foi alterado para "
+        f"{_mascarar_email(email_novo)}.\n\n"
+        f"Se foi você, não precisa fazer nada.\n"
+        f"Se NÃO foi você, alguém pode ter acesso à sua conta: fale com o "
+        f"suporte do FitLog o quanto antes."
+    )
+    try:
+        enviar_email(email_antigo, 'FitLog — O e-mail da sua conta foi alterado', corpo_texto)
+    except Exception:
+        logger.exception("Falha ao avisar o e-mail antigo sobre a troca (user_id=%s)", user.id)
+
+
 @auth_bp.route('/verificar-email/<token>')
 @limiter.limit("30 per hour")
 def verificar_email(token):
@@ -503,6 +527,7 @@ def profile():
 
 @auth_bp.route('/profile/update', methods=['POST'])
 @login_required
+@limiter.limit("20 per hour")
 def update_profile():
     try:
         nome_completo = request.form.get('nome_completo', '').strip()
@@ -515,13 +540,39 @@ def update_profile():
             flash('E-mail é obrigatório', 'danger')
             return redirect(url_for('auth.profile'))
 
-        if email != current_user.email:
+        email_antigo = current_user.email
+        trocou_email = email != email_antigo
+
+        if trocou_email:
+            # E-mail é o canal de recuperação de senha: quem controla o e-mail
+            # controla a conta. Por isso a troca exige a senha atual (uma
+            # sessão roubada ou um XSS sozinhos não bastam) e a ORDEM importa:
+            # formato -> senha -> unicidade, para não revelar a alguém que
+            # não provou a senha quais e-mails já têm conta.
+            email_valido, resultado = validar_email(email)
+            if not email_valido:
+                flash(resultado, 'danger')
+                return redirect(url_for('auth.profile'))
+
+            if not current_user.check_password(request.form.get('senha_atual', '')):
+                logger.warning(
+                    "Troca de e-mail recusada: senha atual incorreta (user_id=%s, ip=%s)",
+                    current_user.id, request.remote_addr,
+                )
+                flash('Para alterar o e-mail, informe sua senha atual corretamente.', 'danger')
+                return redirect(url_for('auth.profile'))
+
             if User.query.filter_by(email=email).first():
                 flash('Este e-mail já está em uso', 'danger')
                 return redirect(url_for('auth.profile'))
 
         current_user.nome_completo = nome_completo or None
         current_user.email = email
+        if trocou_email:
+            # O novo endereço precisa provar que é do usuário (os links
+            # enviados ao e-mail antigo já deixam de valer sozinhos: o token
+            # carrega o e-mail).
+            current_user.email_verificado_em = None
         current_user.telefone = telefone or None
         current_user.genero = genero
 
@@ -536,7 +587,16 @@ def update_profile():
 
         db.session.commit()
 
-        flash('Perfil atualizado com sucesso!', 'success')
+        if trocou_email:
+            _avisar_troca_de_email(current_user, email_antigo, email)
+            if _enviar_email_verificacao(current_user):
+                flash('Perfil atualizado! Enviamos um link de confirmação para o novo '
+                      'e-mail. Confirme para continuar usando o FitLog.', 'success')
+            else:
+                flash('Perfil atualizado, mas não conseguimos enviar o link de confirmação '
+                      'agora. Peça um novo na tela de confirmação de e-mail.', 'warning')
+        else:
+            flash('Perfil atualizado com sucesso!', 'success')
     except Exception:
         db.session.rollback()
         logger.exception("Erro ao atualizar perfil")
