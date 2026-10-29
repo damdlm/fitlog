@@ -3368,6 +3368,63 @@
         }
     }
 
+    /* ======================================================================
+       DESKTOP (>=992px) -- refino da sessão de treino e do pré-início.
+       Só ajusta posição/respiro em telas largas; celular e tablet
+       (<992px) seguem exatamente como antes. Nada de HTML/JS alterado.
+       ====================================================================== */
+    @media (min-width: 992px) {
+
+        /* ---- Treino em andamento: tudo centralizado numa coluna única ----
+           Antes a lista (max-width 1200px) ficava colada à esquerda e a
+           direita da tela sobrava vazia. Card, cabeçalho (cronômetro/
+           botões) e rodapé (intervalo) passam a compartilhar o mesmo eixo
+           central, com a mesma borda esquerda da lista. */
+        .modo-treino-body #exerciciosCard {
+            max-width: 1248px; /* 1200 da lista + 24px de padding de cada lado */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .modo-treino-body #registroForm {
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .modo-treino-footer > *,
+        #cronoIntervaloBox.cronometro-box {
+            max-width: 1200px;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        /* Cabeçalho: botões continuam compactos (640px), mas alinhados à
+           borda esquerda da lista, que agora está centralizada. */
+        .modo-treino-header > * {
+            max-width: 640px;
+            width: 100%;
+            margin-left: max(32px, calc((100% - 1200px) / 2));
+            margin-right: auto;
+        }
+
+        /* ---- Pré-início: lista em cards maiores, centralizada ---- */
+        #preInicioTreinoOverlay .pre-inicio-lista {
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            align-content: center;
+            gap: 14px;
+            padding: 56px max(40px, calc((100% - 1040px) / 2));
+        }
+        #preInicioTreinoOverlay .pre-inicio-item {
+            padding: 18px 22px;
+            border-radius: var(--radius-lg);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        #preInicioTreinoOverlay .pre-inicio-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        #preInicioTreinoOverlay .pre-inicio-item-nome { font-size: 1.05rem; }
+        #preInicioTreinoOverlay .pre-inicio-hero-titulo { font-size: 1.6rem; }
+    }
+
 </style>
 
 <!-- Loading ao selecionar treino/data -- some assim que a página troca -->
