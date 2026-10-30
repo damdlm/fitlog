@@ -314,6 +314,53 @@
         }
     }
 
+    /* ==========================================================
+       DESKTOP (>= 992px) -- mapa em largura total, busca de cidade
+       visível (a mesma do mobile, já no HTML) e card mais leve.
+       Celular e tablet (<992px) seguem como antes.
+       ========================================================== */
+    @media (min-width: 992px) {
+        .mapa-conteudo-inner { max-width: none; }
+
+        /* Busca de cidade: no mobile fica no topo; no desktop ela só
+           estava escondida (d-lg-none). Aparece acima do cartão, sem o
+           botão Voltar (o menu lateral já cobre a navegação). */
+        .mapa-page .mapa-mobile-header.d-lg-none {
+            display: flex !important;
+            padding: 0 0 14px;
+        }
+        .mapa-page .mapa-btn-voltar { display: none; }
+        .mapa-page .mapa-busca-cidade { flex: 0 1 460px; }
+        #mapaBuscaCidadeInput {
+            height: 44px;
+            border-radius: 14px;
+            background: #fff;
+            border-color: rgba(20, 20, 20, 0.08);
+            box-shadow: 0 4px 16px rgba(20, 20, 20, 0.05);
+            font-size: .95rem;
+        }
+        #mapa-busca-erro { padding: 0 0 10px; }
+
+        .mapa-card {
+            border: 1px solid rgba(20, 20, 20, 0.06);
+            border-radius: 22px;
+            padding: 22px 24px 24px;
+            box-shadow: 0 12px 34px rgba(20, 20, 20, 0.07);
+        }
+        .mapa-card h4 { font-weight: 800; letter-spacing: -0.01em; }
+        .mapa-card .btn-outline-secondary {
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-weight: 600;
+        }
+        #mapa {
+            height: calc(100vh - 330px);
+            min-height: 480px;
+            border: 1px solid rgba(242, 140, 51, 0.55);
+            border-radius: 16px;
+        }
+    }
+
     @media (max-width: 991.98px) {
         .mapa-mobile-header {
             display: flex;
