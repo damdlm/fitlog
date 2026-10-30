@@ -108,6 +108,55 @@
     .v-status-pill.finalizada { background: var(--v-bg-soft); color: var(--v-muted); }
 
     .v-card-actions { display: flex; align-items: center; gap: 8px; }
+
+    /* ==========================================================
+       DESKTOP (>= 992px) -- cabeçalho em linha única e versões em
+       grade de 2 colunas, com destaque para a versão ativa.
+       Celular e tablet (<992px) seguem como antes.
+       ========================================================== */
+    @media (min-width: 992px) {
+        .v-header { justify-content: flex-start; gap: 16px; margin-bottom: 22px; }
+        .v-header .v-voltar-btn { order: 1; }
+        .v-header h1 { order: 2; font-size: 1.3rem; }
+        .v-header > a.btn:not(.v-voltar-btn) { order: 3; margin-left: auto; padding: 8px 18px; border-radius: 12px; font-weight: 600; }
+
+        .v-lista {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+        .v-lista .v-card {
+            margin-bottom: 0;
+            border-radius: 20px;
+            padding: 22px 26px;
+            box-shadow: 0 6px 22px rgba(20, 20, 20, 0.05);
+            transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease;
+        }
+        .v-lista .v-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(242, 140, 51, 0.35);
+            box-shadow: 0 14px 32px rgba(20, 20, 20, 0.09);
+        }
+        .v-lista .v-card:has(.v-status-pill.ativa) {
+            background: linear-gradient(135deg, #FFF7EE 0%, #FFFFFF 70%);
+            border-color: rgba(242, 140, 51, 0.30);
+        }
+        .v-lista .v-card-titulo { font-size: 1.12rem; }
+        .v-lista .v-card-actions i {
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--v-bg-soft);
+            transition: background .2s ease, color .2s ease;
+        }
+        .v-lista .v-card:hover .v-card-actions i {
+            background: var(--v-orange);
+            color: #fff !important;
+        }
+    }
 </style>
 
 <div class="d-flex justify-content-end mb-2">
@@ -139,6 +188,7 @@
     </a>
 </div>
 {% else %}
+<div class="v-lista">
     {% for v in versoes %}
     {% set total_treinos = v.treinos|length %}
     <a href="{{ ver_versao_url(v.id) }}" class="v-card">
@@ -164,6 +214,7 @@
         </div>
     </a>
     {% endfor %}
+</div>
 {% endif %}
 <script src="{{ static_v('vendor/driverjs/driver.js.iife.js') }}"></script>
 <script src="{{ static_v('js/fl-tour-core.js') }}"></script>
