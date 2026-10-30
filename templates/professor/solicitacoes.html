@@ -48,6 +48,35 @@
     .sv-meta i {
         color: var(--primary-color, #F28C33);
     }
+
+    /* ==========================================================
+       DESKTOP (>= 992px) -- cards mais compactos e, em telas largas,
+       3 por linha. Celular e tablet (<992px) seguem como antes.
+       ========================================================== */
+    @media (min-width: 992px) {
+        .sv-card {
+            border-radius: 20px;
+            box-shadow: 0 6px 22px rgba(20, 20, 20, 0.05);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .sv-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 32px rgba(20, 20, 20, 0.09);
+        }
+        .sv-card > .card-body { padding: 22px 24px; }
+        .sv-card .sv-aluno-info { min-width: 0; }
+        .sv-card .sv-aluno-info > .flex-grow-1 { min-width: 0; }
+        .sv-card .sv-aluno-info .fw-semibold {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .sv-avatar { width: 52px; height: 52px; min-width: 52px; }
+        .sv-card .sv-acoes .btn { padding: 8px 14px; border-radius: 12px; }
+    }
+    @media (min-width: 1200px) {
+        .row.g-3 > .col-md-6:has(> .sv-card) { width: 33.3333%; }
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
