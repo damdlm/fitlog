@@ -158,6 +158,66 @@
         .exs-table-card { display: none; }
         .exs-cards { display: block; }
     }
+
+    /* ==========================================================
+       DESKTOP (>= 992px) -- exercícios em grade de cartões.
+       Em tela larga a tabela de 3 colunas deixava um vão enorme
+       entre nome, músculo e ações. Aqui os mesmos cartões do mobile
+       (já no HTML) viram uma grade de 2 a 4 colunas e a tabela some.
+       Celular e tablet (<992px) seguem como antes.
+       ========================================================== */
+    @media (min-width: 992px) {
+        .exs-actions-row { justify-content: space-between; margin-bottom: 18px; }
+        .exs-filtros { box-shadow: 0 6px 20px rgba(20, 20, 20, 0.05); }
+
+        .exs-table-card { display: none; }
+        .exs-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 14px;
+        }
+        .exs-cards > .exs-empty { grid-column: 1 / -1; }
+
+        .exs-card {
+            margin-bottom: 0;
+            padding: 16px 18px;
+            border-radius: 16px;
+            box-shadow: 0 4px 14px rgba(20, 20, 20, 0.04);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .exs-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(242, 140, 51, 0.14);
+        }
+        .exs-card-top { margin-bottom: 0; align-items: center; }
+        .exs-card-nome { font-size: 1.02rem; margin-bottom: 8px; }
+
+        /* Ações discretas (preenchem só ao passar o mouse) */
+        .exs-card .exs-card-acoes .btn.btn-warning {
+            background: rgba(242, 140, 51, 0.13);
+            color: #d9741f;
+        }
+        .exs-card .exs-card-acoes .btn.btn-danger {
+            background: rgba(220, 53, 69, 0.10);
+            color: #dc3545;
+        }
+        .exs-card .exs-card-acoes .btn.btn-warning:hover { background: #F28C33; color: #fff; }
+        .exs-card .exs-card-acoes .btn.btn-danger:hover { background: #dc3545; color: #fff; }
+
+        /* Estado vazio dentro da grade */
+        .exs-cards > .exs-empty {
+            background: rgba(242, 140, 51, 0.05);
+            border: 2px dashed rgba(242, 140, 51, 0.4);
+            border-radius: 20px;
+            padding: 56px 20px;
+        }
+        .exs-cards > .exs-empty a {
+            color: #d9741f;
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .exs-cards > .exs-empty a:hover { text-decoration: underline; }
+    }
 </style>
 {% endblock %}
 
