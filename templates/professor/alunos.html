@@ -27,6 +27,59 @@
     /* Modal de confirmação: agora usa o padrão global (fl-confirm.js),
        ver base.html -- as regras locais específicas do gaConfirmModal
        foram removidas daqui. */
+
+    /* ==========================================================
+       DESKTOP (>= 992px) -- filtro e tabela como cartões arredondados,
+       cabeçalho discreto e linhas mais respiradas. Celular e tablet
+       (<992px) seguem como antes.
+       ========================================================== */
+    @media (min-width: 992px) {
+        .ga-filtros,
+        .ga-tabela-card {
+            border-radius: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 6px 22px rgba(20, 20, 20, 0.05);
+        }
+        .ga-filtros > .card-body { padding: 18px 20px; }
+        .ga-filtros .input-group > * { border-radius: 12px; }
+        .ga-filtros .input-group > .input-group-text { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+        .ga-filtros .input-group > .form-control { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+        .ga-filtros .btn { border-radius: 12px; padding-left: 20px; padding-right: 20px; }
+
+        .ga-tabela-card { overflow: hidden; }
+        .ga-tabela-card thead th {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #8A8F98;
+            padding-top: 16px;
+            padding-bottom: 14px;
+            background: #FAFAFB;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        .ga-tabela-card tbody td { padding-top: 14px; padding-bottom: 14px; }
+        .ga-tabela-card tbody tr { transition: background-color 0.15s ease; }
+        .ga-tabela-card tbody tr:hover { background-color: #FFF7EE; }
+        .ga-tabela-card tbody td > .d-flex > .rounded-circle {
+            width: 44px !important;
+            height: 44px !important;
+            box-shadow: 0 3px 10px rgba(242, 140, 51, 0.28);
+        }
+        .ga-tabela-card .ga-registros {
+            min-width: 42px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-weight: 700;
+            background: #FFF1E2 !important;
+            border-color: #FBD9B5 !important;
+            color: #B85F0C !important;
+        }
+        .ga-tabela-card .btn-group .btn { border-radius: 10px; margin-left: 6px; }
+        .ga-tabela-card .btn-group > form:not(:first-child) .btn,
+        .ga-tabela-card .btn-group > .btn:not(:first-child) { margin-left: 6px; }
+        .ga-footer-actions { margin-top: 28px; }
+    }
 </style>
 
 {% if current_user.solicitacoes_pendentes_count > 0 %}
@@ -49,7 +102,7 @@
 </div>
 
 <!-- Filtros -->
-<div class="card mb-4">
+<div class="card mb-4 ga-filtros">
     <div class="card-body">
         <form method="get" class="d-flex gap-2 align-items-center">
             <div class="input-group">
@@ -72,7 +125,7 @@
 </div>
 
 <!-- Lista de Alunos — versão desktop (tabela) -->
-<div class="card d-none d-md-block">
+<div class="card d-none d-md-block ga-tabela-card">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
