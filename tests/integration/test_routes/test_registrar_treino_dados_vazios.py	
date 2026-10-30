@@ -1,0 +1,66 @@
+"""Registrar treino com campos de carga/repetições vazios.
+
+O "0" cinza dos campos é só placeholder: sem digitar, o campo vai vazio no
+POST e o servidor recusa o treino inteiro ("Nenhum dado válido para
+salvar"). Antes, a tela mostrava apenas o toast genérico "Não foi possível
+salvar o treino" (e em azul), sem dizer o motivo. Agora o front-end avisa
+antes de enviar e, quando o servidor recusa, mostra o motivo real.
+"""
+from models import RegistroTreino
+from tests.integration.test_routes.test_register_routes import (
+    _criar_usuario, _login, _montar_versao_com_treino_e_exercicio,
+)
+
+
+def test_campos_vazios_sao_recusados_com_aviso_do_motivo(client, app):
+    with app.app_context():
+        u = _criar_usuario('vazios_1')
+        versao, treino_id, ex = _montar_versao_com_treino_e_exercicio(u.id)
+        chave, ex_id = f'u_{ex.id}', ex.id
+
+    _login(client, 'vazios_1')
+    resp = client.post('/registrar/registrar-treino', data={
+        'treino': str(treino_id), 'data': '2026-01-05',
+        f'carga_{chave}': '', f'reps_{chave}': '', f'num_series_{chave}': '3',
+    })
+
+    # volta para a própria tela de registro (é o que o front lê como "falha")
+    assert resp.status_code == 302
+    assert '/registrar-treino' in resp.headers['Location']
+    with client.session_transaction() as sess:
+        avisos = [msg for _cat, msg in sess.get('_flashes', [])]
+    assert any('Nenhum dado válido' in m for m in avisos)
+    with app.app_context():
+        assert RegistroTreino.query.filter_by(exercicio_usuario_id=ex_id).count() == 0
+
+
+def test_carga_preenchida_sem_repeticoes_tambem_e_recusada(client, app):
+    with app.app_context():
+        u = _criar_usuario('vazios_2')
+        versao, treino_id, ex = _montar_versao_com_treino_e_exercicio(u.id)
+        chave, ex_id = f'u_{ex.id}', ex.id
+
+    _login(client, 'vazios_2')
+    resp = client.post('/registrar/registrar-treino', data={
+        'treino': str(treino_id), 'data': '2026-01-05',
+        f'carga_{chave}': '20', f'reps_{chave}': '', f'num_series_{chave}': '3',
+    })
+    assert '/registrar-treino' in resp.headers['Location']
+    with app.app_context():
+        assert RegistroTreino.query.filter_by(exercicio_usuario_id=ex_id).count() == 0
+
+
+def test_tela_valida_antes_de_enviar_e_mostra_o_motivo_da_recusa(client, app):
+    with app.app_context():
+        u = _criar_usuario('vazios_3')
+        versao, treino_id, ex = _montar_versao_com_treino_e_exercicio(u.id)
+
+    _login(client, 'vazios_3')
+    html = client.get(f'/registrar/registrar-treino?data=2026-01-05&treino={treino_id}').get_data(as_text=True)
+
+    assert 'function existeExercicioComDadosValidos' in html
+    assert 'if (!existeExercicioComDadosValidos())' in html
+    assert 'async function lerMotivoDaRecusa' in html
+    assert "showToast(mensagemErro, 'error', 7000)" in html
+    # 'danger' não existe no showToast (cai no estilo "info", azul)
+    assert "showToast('Falha de conexão ao salvar o treino.', 'danger')" not in html

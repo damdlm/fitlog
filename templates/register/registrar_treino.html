@@ -4494,6 +4494,32 @@ document.addEventListener('DOMContentLoaded', function() {
     let treinoJaSalvo = false;
     let urlAposSalvar = "{{ url_for('main.index') }}";
 
+    // O servidor só grava exercício com carga E repetições MAIORES que zero
+    // (vazio ou 0 são descartados) e recusa o treino inteiro quando nenhum
+    // exercício marcado ("Vou treinar hoje") atende isso. O "0" cinza dos
+    // campos é só placeholder: sem digitar, o campo vai vazio.
+    function existeExercicioComDadosValidos() {
+        return Array.from(document.querySelectorAll('.carga-input')).some(function (cargaEl) {
+            const repsEl = document.querySelector('.reps-input[name="' + cargaEl.name.replace(/^carga_/, 'reps_') + '"]');
+            if (cargaEl.disabled || !repsEl || repsEl.disabled) return false;
+            return parseFloat(cargaEl.value) > 0 && parseInt(repsEl.value, 10) > 0;
+        });
+    }
+
+    // Quando o servidor recusa, ele explica o motivo num aviso (flash) da
+    // página para a qual redireciona ("Nenhum dado válido...", "Não há
+    // versão ativa..."). O fetch já seguiu esse redirect: lemos o aviso da
+    // resposta em vez de mostrar só a mensagem genérica.
+    async function lerMotivoDaRecusa(resposta) {
+        try {
+            const doc = new DOMParser().parseFromString(await resposta.text(), 'text/html');
+            const alerta = doc.querySelector('#flash-messages .alert-danger, #flash-messages .alert-warning');
+            return alerta ? alerta.textContent.replace(/\s+/g, ' ').trim() : '';
+        } catch (e) {
+            return '';
+        }
+    }
+
     async function salvarTreino() {
         const btnFinalizar = form.querySelector('button[name="salvar"]');
         if (btnFinalizar) btnFinalizar.disabled = true;
@@ -4524,16 +4550,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else {
                 document.getElementById('global-loader').style.display = 'none';
+                const motivo = await lerMotivoDaRecusa(resposta);
+                const mensagemErro = motivo
+                    ? 'Não foi possível salvar o treino: ' + motivo
+                    : 'Não foi possível salvar o treino. Confira os dados e tente novamente.';
                 if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
-                    window.FitLogUtils.showToast('Não foi possível salvar o treino. Confira os dados e tente novamente.', 'danger');
+                    window.FitLogUtils.showToast(mensagemErro, 'error', 7000);
                 } else {
-                    alert('Não foi possível salvar o treino. Confira os dados e tente novamente.');
+                    alert(mensagemErro);
                 }
             }
         } catch (err) {
             document.getElementById('global-loader').style.display = 'none';
             if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
-                window.FitLogUtils.showToast('Falha de conexão ao salvar o treino.', 'danger');
+                window.FitLogUtils.showToast('Falha de conexão ao salvar o treino.', 'error');
             } else {
                 alert('Falha de conexão ao salvar o treino.');
             }
@@ -4559,9 +4589,27 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             if (!valid) {
                 if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
-                    window.FitLogUtils.showToast('Valores não podem ser negativos.', 'danger');
+                    window.FitLogUtils.showToast('Valores não podem ser negativos.', 'error');
                 } else {
                     alert('Valores não podem ser negativos.');
+                }
+                return;
+            }
+
+            // Sem nenhum exercício marcado com carga e repetições > 0, o
+            // servidor recusaria o treino inteiro: avisa aqui, com o motivo,
+            // e destaca os campos que faltam.
+            if (!existeExercicioComDadosValidos()) {
+                document.querySelectorAll('.carga-input, .reps-input').forEach(function (campo) {
+                    if (campo.disabled || parseFloat(campo.value) > 0) return;
+                    campo.classList.add('is-invalid');
+                    campo.addEventListener('input', function () { campo.classList.remove('is-invalid'); }, { once: true });
+                });
+                const aviso = 'Informe carga e repetições (maiores que zero) em pelo menos um exercício marcado.';
+                if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
+                    window.FitLogUtils.showToast(aviso, 'error', 7000);
+                } else {
+                    alert(aviso);
                 }
                 return;
             }
