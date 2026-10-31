@@ -27,7 +27,7 @@ import re
 from datetime import datetime, timedelta, timezone
 
 import requests
-from flask import current_app
+from flask import current_app, g
 from sqlalchemy.exc import IntegrityError
 
 from models import db, AlunoProfessor, Assinatura, EventoWebhookAsaas, PagamentoRecebido, Plano, User
@@ -1474,6 +1474,7 @@ class BillingService:
             assinatura.cartao_ultimos_digitos = credit_card.get('creditCardNumber')
             assinatura.cartao_bandeira = credit_card.get('creditCardBrand')
 
+        g.pop('nfse_avisos_pendentes', None)
         if assinatura:
             status_antes = assinatura.status
             BillingService._aplicar_evento(assinatura, tipo_evento, payment, assinatura_nova=assinatura_nova)
@@ -1516,6 +1517,9 @@ class BillingService:
                 logger.info('Webhook Asaas %s processado em paralelo por outra requisição, ignorando', event_id)
                 return True
             raise
+
+        # Já com tudo gravado: agora é seguro avisar os admins de nota recusada.
+        BillingService._notificar_admins_agendamento_nota()
 
         if deve_registrar_conversao:
             plano = assinatura.plano
@@ -1896,6 +1900,9 @@ class BillingService:
                     'Asaas respondeu %s ao agendar nota fiscal do pagamento %s: %s',
                     resp.status_code, payment_id, resp.text,
                 )
+                BillingService._guardar_aviso_agendamento_nota(
+                    payment_id, BillingService._motivo_recusa_asaas(resp),
+                )
             else:
                 # Só registra o id/status da nota aceita pela Asaas --
                 # a emissão no Portal Nacional ainda pode falhar depois
@@ -1912,6 +1919,82 @@ class BillingService:
                 )
         except requests.RequestException:
             logger.exception('Erro de rede ao agendar nota fiscal do pagamento %s', payment_id)
+            BillingService._guardar_aviso_agendamento_nota(
+                payment_id, 'sem resposta do Asaas (erro de rede)',
+            )
+
+    @staticmethod
+    def _motivo_recusa_asaas(resp) -> str:
+        """Texto curto do motivo de uma recusa do Asaas: as descrições de
+        `errors[]` quando vierem, senão só o código HTTP."""
+        try:
+            dados = resp.json()
+        except ValueError:
+            dados = {}
+        erros = dados.get('errors') if isinstance(dados, dict) else None
+        descricoes = [
+            _texto(erro.get('description'))
+            for erro in (erros if isinstance(erros, list) else [])
+            if isinstance(erro, dict)
+        ]
+        descricoes = [d for d in descricoes if d]
+        return '; '.join(descricoes) if descricoes else f'HTTP {resp.status_code}'
+
+    @staticmethod
+    def _guardar_aviso_agendamento_nota(payment_id, motivo):
+        """Só ENFILEIRA o aviso (em flask.g, vale pela requisição). O envio
+        real fica para depois do commit do webhook (ver
+        _notificar_admins_agendamento_nota): este ponto roda NO MEIO da
+        transação que ativa o plano e registra o pagamento, e criar a
+        notificação faz commit (e, se falhar, rollback) -- gravaria o plano
+        antes do registro de idempotência ou o descartaria."""
+        try:
+            g.setdefault('nfse_avisos_pendentes', []).append(
+                {'payment_id': _texto(payment_id), 'motivo': _texto(motivo)},
+            )
+        except RuntimeError:
+            # Fora de contexto de aplicação: nada a enfileirar (o log já saiu).
+            pass
+
+    @staticmethod
+    def _notificar_admins_agendamento_nota():
+        """Avisa os admins (sino do app) que o Asaas RECUSOU o agendamento
+        da nota de um pagamento -- sem isto o erro só ficava no log do
+        Railway e ninguém emitia a nota (caso real: a validação de
+        PIS/COFINS de 21/10/2026 recusou notas por dias sem ninguém saber).
+        Chamado só DEPOIS do commit do webhook. Best effort: nunca levanta."""
+        avisos = g.pop('nfse_avisos_pendentes', None) or []
+        if not avisos:
+            return
+        try:
+            from services.notificacao_service import NotificacaoService
+
+            admins = User.query.filter_by(is_admin=True).all()
+            if not admins:
+                logger.warning(
+                    'Agendamento de nota recusado (%s), mas não há nenhum usuário admin para notificar',
+                    ', '.join(a['payment_id'] for a in avisos),
+                )
+                return
+            for aviso in avisos:
+                payment_id = aviso['payment_id']
+                mensagem = (
+                    f"Motivo: {(aviso['motivo'] or 'sem detalhes')[:150]}. "
+                    f"Pagamento {payment_id}. "
+                    'Emita a nota manualmente em Asaas > Notas Fiscais > Cobranças.'
+                )
+                for admin in admins:
+                    NotificacaoService.criar_ou_agrupar(
+                        destinatario_id=admin.id,
+                        remetente_id=None,
+                        tipo='nota_fiscal_erro',
+                        titulo='Nota fiscal não foi agendada',
+                        mensagem=mensagem,
+                        chave_agrupamento=f'nfse-agendar:{payment_id}' if payment_id else None,
+                    )
+        except Exception:
+            db.session.rollback()
+            logger.exception('Falha ao notificar os admins sobre agendamento de nota recusado')
 
     @staticmethod
     def _registrar_evento_nota_fiscal(tipo_evento: str, invoice: dict):
