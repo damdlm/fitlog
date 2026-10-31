@@ -3586,6 +3586,158 @@
         }
     }
 
+
+/* ===== Treino em andamento: 3 painéis (SOMENTE desktop >= 992px) ===== */
+.mt3-lista, .mt3-centro { display: none; }
+@media (min-width: 992px) {
+    .modo-treino-overlay.mt3-ativo {
+        display: grid;
+        grid-template-columns: 290px minmax(0, 1fr) 340px;
+        grid-template-rows: auto auto 1fr auto;
+        background: #f4f5f7;
+    }
+    .modo-treino-overlay.mt3-ativo > .modo-treino-header { grid-column: 1 / -1; grid-row: 1; }
+    .modo-treino-overlay.mt3-ativo #top-save-bar {
+        display: flex; align-items: center; justify-content: space-between;
+        width: 100%; max-width: none; padding: 14px 28px;
+    }
+    .modo-treino-overlay.mt3-ativo .top-save-bar-actions .btn,
+    .modo-treino-overlay.mt3-ativo .top-save-bar-actions button { min-height: 48px; }
+
+    .modo-treino-overlay.mt3-ativo > .mt3-lista {
+        display: flex; flex-direction: column; gap: 10px;
+        grid-column: 1; grid-row: 2 / 5;
+        background: #fff; border-right: 1px solid #e6e8ec;
+        padding: 20px 16px; overflow-y: auto; min-height: 0;
+    }
+    .mt3-lista-titulo { font-weight: 700; font-size: 1.05rem; color: #2D2D2D; padding: 0 6px 6px; }
+    .mt3-lista-itens { display: flex; flex-direction: column; gap: 6px; }
+    .mt3-item {
+        display: flex; align-items: center; gap: 10px; width: 100%;
+        text-align: left; border: 1px solid transparent; background: transparent;
+        padding: 10px 12px; border-radius: 12px; color: #2D2D2D; font-weight: 600;
+        cursor: pointer; transition: background .15s, border-color .15s;
+    }
+    .mt3-item:hover { background: #fff6ec; }
+    .mt3-item.is-sel { background: #fff1e0; border-color: #F28C33; }
+    .mt3-item.is-off .mt3-item-nome { opacity: .45; text-decoration: line-through; }
+    .mt3-item-nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mt3-num {
+        flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: #eceef1; color: #2D2D2D; font-size: .85rem; font-weight: 700;
+    }
+    .mt3-item.is-sel .mt3-num { background: #F28C33; color: #fff; }
+    .mt3-item.is-feito .mt3-num { background: #2e9e5b; color: #fff; }
+    .mt3-tag { font-size: .7rem; background: #eceef1; border-radius: 999px; padding: 2px 8px; color: #666; }
+    .mt3-prog { height: 8px; background: #eceef1; border-radius: 999px; overflow: hidden; margin-top: 8px; }
+    .mt3-prog i { display: block; height: 100%; background: #F28C33; border-radius: 999px; transition: width .3s; }
+    .mt3-prog-txt { font-size: .85rem; color: #666; padding: 0 4px; }
+    .mt3-tutorial {
+        margin-top: auto; border: 1px dashed #cfd3da; background: transparent; border-radius: 12px;
+        padding: 8px; color: #666; font-weight: 600; cursor: pointer;
+    }
+
+    .modo-treino-overlay.mt3-ativo > .mt3-centro {
+        display: block; grid-column: 2; grid-row: 2 / 5;
+        padding: 28px 32px; overflow-y: auto; min-height: 0;
+    }
+    .mt3-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
+    .mt3-pill { display: inline-block; background: #fff1e0; color: #c2610f; font-weight: 700; font-size: .8rem; border-radius: 999px; padding: 3px 12px; }
+    .mt3-nome { margin: 8px 0 4px; font-size: 1.7rem; font-weight: 800; color: #2D2D2D; }
+    .mt3-sub { color: #666; font-size: .95rem; }
+    .mt3-topo-acoes { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+    .mt3-icone {
+        width: 44px; height: 44px; border-radius: 12px; border: 1px solid #e0e3e8; background: #fff;
+        color: #2D2D2D; cursor: pointer; font-size: 1.1rem;
+    }
+    .mt3-icone:hover { border-color: #F28C33; color: #F28C33; }
+    .mt3-switch { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: #2D2D2D; cursor: pointer; }
+    .mt3-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 18px rgba(0,0,0,.07); padding: 8px 16px 12px; }
+    .mt3-card.is-off { opacity: .55; }
+    .mt3-tabela { width: 100%; border-collapse: collapse; }
+    .mt3-tabela th { text-align: left; font-size: .8rem; color: #888; font-weight: 700; padding: 12px 8px; text-transform: uppercase; letter-spacing: .03em; }
+    .mt3-tabela td { padding: 8px; border-top: 1px solid #f0f1f4; vertical-align: middle; }
+    .mt3-ant { color: #888; font-size: .9rem; white-space: nowrap; }
+    .mt3-tabela tr.is-feita td { background: #f1faf4; }
+    .mt3-in {
+        width: 100px; height: 46px; border: 1px solid #dfe2e7; border-radius: 10px;
+        text-align: center; font-size: 1.05rem; font-weight: 700; color: #2D2D2D; background: #fff;
+    }
+    .mt3-in:focus { outline: none; border-color: #F28C33; box-shadow: 0 0 0 3px rgba(242,140,51,.2); }
+    .mt3-in.is-invalid { border-color: #dc3545; }
+    .mt3-feita {
+        width: 44px; height: 44px; border-radius: 12px; border: 2px solid #d5d9e0; background: #fff;
+        color: transparent; cursor: pointer; font-size: 1.2rem; transition: all .15s;
+    }
+    .mt3-feita.is-on { background: #2e9e5b; border-color: #2e9e5b; color: #fff; }
+    .mt3-feita:disabled { cursor: not-allowed; }
+    .mt3-rodape { display: flex; gap: 12px; margin-top: 16px; }
+    .mt3-btn {
+        border: 1px dashed #F28C33; background: #fff8f0; color: #c2610f; font-weight: 700;
+        border-radius: 12px; padding: 10px 18px; cursor: pointer;
+    }
+    .mt3-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .mt3-btn-sec { border-color: #cfd3da; background: #fff; color: #666; }
+
+    /* cartão do cronômetro de descanso (coluna da direita) */
+    .modo-treino-overlay.mt3-ativo > .modo-treino-footer {
+        grid-column: 3; grid-row: 2; position: static;
+        margin: 24px 24px 12px 0; padding: 20px; background: #fff; border-radius: 16px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.07); border: 0; width: auto;
+    }
+    .modo-treino-overlay.mt3-ativo > .modo-treino-footer::before {
+        content: "Descanso"; display: block; font-weight: 700; color: #2D2D2D; margin-bottom: 8px;
+    }
+    .mt3-ativo > .modo-treino-footer #cronoIntervaloBox.cronometro-box {
+        display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px;
+    }
+    .mt3-ativo > .modo-treino-footer #cronoIntervaloDisplay { flex-basis: 100%; text-align: center; font-size: 3.4rem; font-weight: 800; order: 2; }
+    .mt3-ativo > .modo-treino-footer .cronometro-actions { order: 3; display: flex; justify-content: center; gap: 10px; }
+    .mt3-ativo > .modo-treino-footer #cronoIntervaloPresets { order: 4; flex-basis: 100%; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+
+    /* corpo do formulário some do fluxo; só o resumo e o botão avulso reaparecem */
+    .mt3-ativo > .modo-treino-body,
+    .mt3-ativo #exerciciosCard,
+    .mt3-ativo #exerciciosCard > .card-body,
+    .mt3-ativo #registroForm { display: contents; }
+    .mt3-ativo #exerciciosCard > .card-header,
+    .mt3-ativo #registroForm .exercicio-tabela-head,
+    .mt3-ativo #registroForm .exercise-row-wrap { display: none !important; }
+    .modo-treino-overlay.mt3-ativo #registroForm > .resumo-treino-box {
+        grid-column: 3; grid-row: 3; align-self: start; position: static;
+        margin: 0 24px 12px 0; background: #fff; border-radius: 16px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.07); padding: 20px;
+    }
+    .modo-treino-overlay.mt3-ativo #registroForm > .resumo-treino-box::before {
+        content: "Resumo do treino"; display: block; font-weight: 700; color: #2D2D2D; margin-bottom: 8px;
+    }
+    .mt3-ativo #registroForm > .btn-adicionar-avulso { grid-column: 1; grid-row: 4; margin: 0 16px 16px; }
+}
+
+@media (min-width: 992px) {
+    .modo-treino-overlay.mt3-ativo #top-save-bar .top-save-bar-actions {
+        display: flex; gap: 12px; flex: 0 0 auto; width: auto; margin-left: auto;
+    }
+    .modo-treino-overlay.mt3-ativo #top-save-bar .top-save-bar-actions > * {
+        flex: 0 0 auto; width: auto; min-width: 150px; padding-left: 22px; padding-right: 22px;
+    }
+    .modo-treino-overlay.mt3-ativo #top-save-bar > :first-child { margin-right: auto; }
+    .modo-treino-overlay.mt3-ativo > .mt3-lista { padding-bottom: 84px; }
+    .modo-treino-overlay.mt3-ativo #registroForm > .resumo-treino-box {
+        margin: 0 24px 12px 0 !important; width: auto !important; max-width: none !important; box-sizing: border-box;
+    }
+    .mt3-ativo #registroForm > .btn-adicionar-avulso { width: calc(100% - 32px); box-sizing: border-box; }
+}
+
+@media (min-width: 992px) {
+    .modo-treino-overlay.mt3-ativo > .modo-treino-header #top-save-bar {
+        position: static; left: auto; right: auto; transform: none;
+        margin: 0; width: 100%; max-width: none; box-sizing: border-box;
+        border-radius: 0; box-shadow: none; padding: 14px 28px;
+    }
+    .modo-treino-overlay.mt3-ativo #top-save-bar .top-save-bar-actions > .flex-fill { flex: 0 0 auto !important; }
+}
 </style>
 
 <!-- Loading ao selecionar treino/data -- some assim que a página troca -->
@@ -4532,6 +4684,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Modal de séries com valores individuais (seta no canto do card)
     inicializarModalSeriesIndividuais();
 
+    // Desktop (>=992px): treino em andamento em 3 painéis
+    inicializarPainelTresColunas();
+
     // Exercício avulso: busca no seletor + adicionar (recarrega com
     // ?avulso=) + remover (só client-side, tira o card e o marcador
     // hidden antes de salvar).
@@ -5243,6 +5398,357 @@ function inicializarAvulsoExercicio() {
             window.history.replaceState(null, '', url.toString());
         });
     });
+}
+
+/* ================= TREINO EM ANDAMENTO -- 3 PAINÉIS (DESKTOP) =================
+   Só entra em cena em telas >= 992px, com o modo treino em tela cheia
+   aberto. Monta dois painéis NOVOS (lista de exercícios à esquerda e
+   séries do exercício selecionado no centro) por cima dos MESMOS campos
+   de sempre -- nada é duplicado nem movido: cada célula da tabela de
+   séries escreve nos mesmos campos ocultos do modal de séries
+   individuais (carga_<id>_<n> / reps_<id>_<n> + flag modo_series_<id>),
+   então salvar, auto-save, volume e resumo continuam iguais. Abaixo de
+   992px nada disto é criado (celular/tablet seguem como sempre). */
+function inicializarPainelTresColunas() {
+    const overlay = document.getElementById('modoTreinoOverlay');
+    if (!overlay || !window.matchMedia) return;
+    const mq = window.matchMedia('(min-width: 992px)');
+
+    let listaEl = null;
+    let centroEl = null;
+    let selecionado = null;
+    const seriesFeitas = {}; // exId -> Set de números de série marcadas
+
+    function linhas() {
+        return Array.from(document.querySelectorAll('.exercise-row[data-exercicio-id]'));
+    }
+    function linhaDe(exId) {
+        return linhas().find(function (r) { return r.dataset.exercicioId === exId; }) || null;
+    }
+    function nomeDe(row) {
+        const el = row.querySelector('.exercicio-nome-trunc');
+        return (el && (el.dataset.fullNome || el.textContent) || 'Exercício').trim();
+    }
+    function musculoDe(row) {
+        const el = row.querySelector('.exercicio-info-trigger');
+        return (el && el.dataset.musculoPrincipal) || '';
+    }
+    function el(tag, cls, texto) {
+        const e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (texto !== undefined && texto !== null) e.textContent = texto;
+        return e;
+    }
+    function numSeriesDe(row) {
+        const sel = row.querySelector('select[name^="num_series_"]');
+        return parseInt(sel && sel.value) || 3;
+    }
+    function feito(row) { return row.classList.contains('is-feito'); }
+
+    function ativo() {
+        return mq.matches && !overlay.classList.contains('d-none');
+    }
+
+    function tituloTreino() {
+        const h4 = document.querySelector('#exerciciosCard .card-header h4');
+        if (!h4) return 'Exercícios do treino';
+        const t = Array.from(h4.childNodes)
+            .filter(function (n) { return n.nodeType === 3; })
+            .map(function (n) { return n.textContent.trim(); })
+            .join(' ').trim();
+        return t || 'Exercícios do treino';
+    }
+
+    /* ---------- painel da esquerda ---------- */
+    function renderLista() {
+        if (!listaEl) return;
+        const todas = linhas();
+        const feitas = todas.filter(feito).length;
+
+        listaEl.innerHTML = '';
+        listaEl.appendChild(el('div', 'mt3-lista-titulo', tituloTreino()));
+
+        const lista = el('div', 'mt3-lista-itens');
+        todas.forEach(function (row, i) {
+            const exId = row.dataset.exercicioId;
+            const item = el('button', 'mt3-item');
+            item.type = 'button';
+            if (exId === selecionado) item.classList.add('is-sel');
+            if (feito(row)) item.classList.add('is-feito');
+            if (row.classList.contains('is-desativado')) item.classList.add('is-off');
+            item.appendChild(el('span', 'mt3-num', feito(row) ? '✓' : String(i + 1)));
+            const txt = el('span', 'mt3-item-nome', nomeDe(row));
+            item.appendChild(txt);
+            if (row.classList.contains('exercise-row--avulso')) item.appendChild(el('span', 'mt3-tag', 'Avulso'));
+            item.addEventListener('click', function () { selecionar(exId); });
+            lista.appendChild(item);
+        });
+        listaEl.appendChild(lista);
+
+        const prog = el('div', 'mt3-prog');
+        const barra = el('i');
+        barra.style.width = (todas.length ? Math.round(feitas * 100 / todas.length) : 0) + '%';
+        prog.appendChild(barra);
+        listaEl.appendChild(prog);
+        listaEl.appendChild(el('div', 'mt3-prog-txt', feitas + ' de ' + todas.length + ' concluídos'));
+
+        const tutorial = document.getElementById('btnTourRegistrarTreino');
+        if (tutorial) {
+            const t = el('button', 'mt3-tutorial', 'Tutorial');
+            t.type = 'button';
+            t.addEventListener('click', function () { tutorial.click(); });
+            listaEl.appendChild(t);
+        }
+    }
+
+    /* ---------- painel central ---------- */
+    function sincronizarCelula(row, input) {
+        const exId = row.dataset.exercicioId;
+        const modoFlag = row.querySelector('.modo-series-flag');
+        const n = parseInt(input.dataset.serie);
+        const ehCarga = input.classList.contains('mt3-carga');
+
+        if (parseFloat(input.value) < 0) { input.classList.add('is-invalid'); return; }
+        input.classList.remove('is-invalid');
+
+        if (modoFlag) modoFlag.value = 'individual';
+
+        const ocultos = row.querySelectorAll(ehCarga ? '.carga-serie-input' : '.reps-serie-input');
+        ocultos.forEach(function (o) { if (parseInt(o.dataset.serie) === n) o.value = input.value; });
+
+        // O valor único (carga/reps do card) também é usado na validação
+        // de "salvar" e como valor padrão das séries que não foram
+        // tocadas -- se ainda estiver vazio, herda o primeiro valor digitado.
+        const unico = row.querySelector(ehCarga ? '.carga-input' : '.reps-input');
+        if (unico && unico.value === '' && input.value !== '') unico.value = input.value;
+
+        if (typeof atualizarResumo === 'function') atualizarResumo();
+        if (window.FitLogTreinoAutoSave) window.FitLogTreinoAutoSave.salvar();
+        void exId;
+    }
+
+    function sincronizarFeito(row) {
+        const exId = row.dataset.exercicioId;
+        const num = numSeriesDe(row);
+        const set = seriesFeitas[exId] || new Set();
+        let marcadas = 0;
+        set.forEach(function (n) { if (n <= num) marcadas++; });
+        const todas = marcadas >= num;
+        const btn = row.querySelector('.btn-marcar-feito');
+        if (btn && todas !== feito(row)) btn.click();
+        return todas;
+    }
+
+    function alternarSerie(row, n) {
+        const exId = row.dataset.exercicioId;
+        const set = seriesFeitas[exId] || (seriesFeitas[exId] = new Set());
+        const estavaFeito = feito(row);
+        if (set.has(n)) set.delete(n); else set.add(n);
+        const todas = sincronizarFeito(row);
+        renderCentro();
+        renderLista();
+        if (todas && !estavaFeito) {
+            const proximo = linhas().find(function (r) { return !feito(r) && !r.classList.contains('is-desativado'); });
+            if (proximo) setTimeout(function () { selecionar(proximo.dataset.exercicioId); }, 450);
+        }
+    }
+
+    function mudarNumSeries(row, delta) {
+        const sel = row.querySelector('select[name^="num_series_"]');
+        if (!sel) return;
+        const novo = sel.selectedIndex + delta;
+        if (novo < 0 || novo > sel.options.length - 1) return;
+        sel.selectedIndex = novo;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        sincronizarFeito(row);
+        if (typeof atualizarResumo === 'function') atualizarResumo();
+        if (window.FitLogTreinoAutoSave) window.FitLogTreinoAutoSave.salvar();
+        renderCentro();
+        renderLista();
+    }
+
+    function renderCentro() {
+        if (!centroEl) return;
+        centroEl.innerHTML = '';
+        const row = selecionado ? linhaDe(selecionado) : null;
+        if (!row) return;
+
+        const exId = row.dataset.exercicioId;
+        const nome = nomeDe(row);
+        const musculo = musculoDe(row);
+        const ultCarga = row.dataset.ultimaCarga || '';
+        const ultReps = row.dataset.ultimasReps || '';
+        const ultSeries = row.dataset.ultimasSeries || '';
+        const desativado = row.classList.contains('is-desativado');
+        const num = numSeriesDe(row);
+        const cargaUnica = (row.querySelector('.carga-input') || {}).value || '';
+        const repsUnica = (row.querySelector('.reps-input') || {}).value || '';
+
+        // Cabeçalho do exercício
+        const topo = el('div', 'mt3-topo');
+        const esq = el('div', 'mt3-topo-txt');
+        if (musculo) esq.appendChild(el('span', 'mt3-pill', musculo));
+        esq.appendChild(el('h2', 'mt3-nome', nome));
+        if (ultCarga || ultReps) {
+            esq.appendChild(el('div', 'mt3-sub',
+                'Último treino: ' + (ultCarga || '—') + ' kg × ' + (ultReps || '—') + ' · ' + ultSeries + ' série' + (ultSeries === '1' ? '' : 's')));
+        }
+        topo.appendChild(esq);
+
+        const acoes = el('div', 'mt3-topo-acoes');
+        [['.btn-imagens-exercicio', 'bi-images', 'Ver gif do exercício'],
+         ['.btn-instrucoes-exercicio', 'bi-info-lg', 'Ver passo a passo']].forEach(function (cfg) {
+            const alvo = row.querySelector(cfg[0]);
+            if (!alvo) return;
+            const bt = el('button', 'mt3-icone');
+            bt.type = 'button';
+            bt.title = cfg[2];
+            bt.setAttribute('aria-label', cfg[2]);
+            bt.appendChild(el('i', 'bi ' + cfg[1]));
+            bt.addEventListener('click', function () { alvo.click(); });
+            acoes.appendChild(bt);
+        });
+        const swReal = row.querySelector('.exercicio-switch');
+        if (swReal) {
+            const lbl = el('label', 'mt3-switch');
+            const cb = el('input');
+            cb.type = 'checkbox';
+            cb.checked = swReal.checked;
+            cb.addEventListener('change', function () {
+                swReal.checked = cb.checked;
+                swReal.dispatchEvent(new Event('change', { bubbles: true }));
+                renderCentro();
+                renderLista();
+            });
+            lbl.appendChild(cb);
+            lbl.appendChild(el('span', null, 'Vou treinar hoje'));
+            acoes.appendChild(lbl);
+        }
+        topo.appendChild(acoes);
+        centroEl.appendChild(topo);
+
+        // Tabela de séries
+        const card = el('div', 'mt3-card' + (desativado ? ' is-off' : ''));
+        const tabela = el('table', 'mt3-tabela');
+        const cab = el('thead');
+        const trc = el('tr');
+        ['Série', 'Anterior', 'Carga (kg)', 'Reps', 'Feita'].forEach(function (t) { trc.appendChild(el('th', null, t)); });
+        cab.appendChild(trc);
+        tabela.appendChild(cab);
+
+        const corpo = el('tbody');
+        const set = seriesFeitas[exId] || (seriesFeitas[exId] = new Set());
+        if (feito(row)) { for (let k = 1; k <= num; k++) set.add(k); }
+
+        for (let n = 1; n <= num; n++) {
+            const cOc = Array.from(row.querySelectorAll('.carga-serie-input')).find(function (x) { return parseInt(x.dataset.serie) === n; });
+            const rOc = Array.from(row.querySelectorAll('.reps-serie-input')).find(function (x) { return parseInt(x.dataset.serie) === n; });
+            const vCarga = (cOc && cOc.value !== '') ? cOc.value : cargaUnica;
+            const vReps = (rOc && rOc.value !== '') ? rOc.value : repsUnica;
+            const feita = set.has(n);
+
+            const tr = el('tr', feita ? 'is-feita' : '');
+            const tdN = el('td'); tdN.appendChild(el('span', 'mt3-num', String(n))); tr.appendChild(tdN);
+            tr.appendChild(el('td', 'mt3-ant', (ultCarga || ultReps) ? (ultCarga || '—') + ' kg × ' + (ultReps || '—') : '—'));
+
+            const tdC = el('td');
+            const iC = el('input', 'mt3-in mt3-carga');
+            iC.type = 'number'; iC.step = '0.5'; iC.min = '0'; iC.placeholder = '0';
+            iC.setAttribute('inputmode', 'decimal'); iC.setAttribute('aria-label', 'Carga da série ' + n);
+            iC.dataset.serie = String(n); iC.value = vCarga; iC.disabled = desativado;
+            tdC.appendChild(iC); tr.appendChild(tdC);
+
+            const tdR = el('td');
+            const iR = el('input', 'mt3-in mt3-reps');
+            iR.type = 'number'; iR.min = '0'; iR.max = '100'; iR.placeholder = '0';
+            iR.setAttribute('inputmode', 'numeric'); iR.setAttribute('aria-label', 'Repetições da série ' + n);
+            iR.dataset.serie = String(n); iR.value = vReps; iR.disabled = desativado;
+            tdR.appendChild(iR); tr.appendChild(tdR);
+
+            [iC, iR].forEach(function (inp) {
+                inp.addEventListener('input', function () { sincronizarCelula(row, inp); });
+                inp.addEventListener('focus', function () { this.select(); });
+                inp.addEventListener('mouseup', function (e) { if (document.activeElement === this) e.preventDefault(); });
+            });
+
+            const tdF = el('td');
+            const bf = el('button', 'mt3-feita' + (feita ? ' is-on' : ''));
+            bf.type = 'button'; bf.disabled = desativado;
+            bf.setAttribute('aria-pressed', String(feita));
+            bf.setAttribute('aria-label', 'Marcar série ' + n + ' como feita');
+            bf.appendChild(el('i', 'bi bi-check-lg'));
+            bf.addEventListener('click', function () { alternarSerie(row, n); });
+            tdF.appendChild(bf); tr.appendChild(tdF);
+            corpo.appendChild(tr);
+        }
+        tabela.appendChild(corpo);
+        card.appendChild(tabela);
+        centroEl.appendChild(card);
+
+        // Ações da tabela
+        const sel = row.querySelector('select[name^="num_series_"]');
+        const rodape = el('div', 'mt3-rodape');
+        const bAdd = el('button', 'mt3-btn', '+ Adicionar série');
+        bAdd.type = 'button';
+        bAdd.disabled = desativado || !sel || sel.selectedIndex >= sel.options.length - 1;
+        bAdd.addEventListener('click', function () { mudarNumSeries(row, 1); });
+        rodape.appendChild(bAdd);
+        if (num > 1) {
+            const bRem = el('button', 'mt3-btn mt3-btn-sec', '− Remover última');
+            bRem.type = 'button';
+            bRem.disabled = desativado;
+            bRem.addEventListener('click', function () { mudarNumSeries(row, -1); });
+            rodape.appendChild(bRem);
+        }
+        centroEl.appendChild(rodape);
+    }
+
+    function selecionar(exId) {
+        selecionado = exId;
+        renderLista();
+        renderCentro();
+        if (centroEl) centroEl.scrollTop = 0;
+    }
+
+    function garantirSelecao() {
+        const todas = linhas();
+        if (!todas.length) { selecionado = null; return; }
+        if (selecionado && linhaDe(selecionado)) return;
+        const primeiro = todas.find(function (r) { return !feito(r); }) || todas[0];
+        selecionado = primeiro.dataset.exercicioId;
+    }
+
+    function atualizar() {
+        if (!ativo()) {
+            if (overlay.classList.contains('mt3-ativo')) overlay.classList.remove('mt3-ativo');
+            return;
+        }
+        if (!listaEl) {
+            listaEl = el('aside', 'mt3-lista');
+            centroEl = el('section', 'mt3-centro');
+            overlay.appendChild(listaEl);
+            overlay.appendChild(centroEl);
+        }
+        if (!overlay.classList.contains('mt3-ativo')) overlay.classList.add('mt3-ativo');
+        garantirSelecao();
+        renderLista();
+        renderCentro();
+    }
+
+    new MutationObserver(atualizar).observe(overlay, { attributes: true, attributeFilter: ['class'] });
+    if (mq.addEventListener) mq.addEventListener('change', atualizar);
+
+    // Mudanças de estado vindas de fora (restaurar treino salvo, remover
+    // exercício avulso, ligar/desligar exercício): só reflete na lista.
+    const form = document.getElementById('registroForm');
+    if (form) {
+        new MutationObserver(function () {
+            if (!listaEl || !overlay.classList.contains('mt3-ativo')) return;
+            garantirSelecao();
+            renderLista();
+        }).observe(form, { attributes: true, attributeFilter: ['class'], subtree: true, childList: true });
+    }
+    atualizar();
 }
 
 /* Liga/desliga um exercício: quando desmarcado, os campos de carga,
