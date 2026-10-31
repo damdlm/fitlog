@@ -1216,6 +1216,12 @@
         opacity: 0.92;
     }
 
+    /* Celular (<768px): sem o raio e com título um pouco menor. */
+    @media (max-width: 767.98px) {
+        #preInicioTreinoOverlay .pre-inicio-hero-icone { display: none; }
+        #preInicioTreinoOverlay .pre-inicio-hero-titulo { font-size: 1.05rem; }
+    }
+
     #preInicioTreinoOverlay .pre-inicio-lista {
         flex: 1;
         overflow-y: auto;
@@ -3498,7 +3504,7 @@
             text-align: center;
             justify-content: center;
             margin: 0;
-            padding: 30px 36px;
+            padding: 24px 64px;
             border: none;
             border-radius: 26px;
             box-shadow: 0 18px 40px rgba(242, 140, 51, 0.28);
@@ -3510,15 +3516,19 @@
             right: 18px;
             font-size: 1rem;
         }
+        /* Raio no canto oposto ao botão de fechar (que fica à direita). */
         #preInicioTreinoOverlay .pre-inicio-hero-icone {
-            width: 56px;
-            height: 56px;
-            border-radius: 18px;
-            font-size: 1.6rem;
-            margin-bottom: 16px;
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            width: 40px;
+            height: 40px;
+            border-radius: 13px;
+            font-size: 1.2rem;
+            margin-bottom: 0;
         }
         #preInicioTreinoOverlay .pre-inicio-hero-titulo {
-            font-size: 1.7rem;
+            font-size: 1.35rem;
             letter-spacing: -0.01em;
             margin-bottom: 6px;
             padding-right: 0;
