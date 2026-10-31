@@ -3425,6 +3425,167 @@
         #preInicioTreinoOverlay .pre-inicio-hero-titulo { font-size: 1.6rem; }
     }
 
+    /* ======================================================================
+       DESKTOP (>=992px) -- escolha do treino e pré-início redesenhados.
+       Só CSS, só em telas largas; celular e tablet (<992px) inalterados.
+       ====================================================================== */
+    @media (min-width: 992px) {
+
+        /* ---- Escolha do treino ---- */
+        /* O título grande repetia o da barra superior. */
+        .row.mb-4.d-md-flex:has(> .col-12 > h2.display-6) { display: none !important; }
+
+        #formBusca {
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        #campoDataTreino { max-width: 340px; width: 100%; justify-self: center; }
+
+        .treino-card {
+            border: 1px solid rgba(20, 20, 20, 0.06);
+            border-radius: 22px;
+            box-shadow: 0 8px 26px rgba(20, 20, 20, 0.05);
+        }
+        .treino-card .card-body { padding: 24px 28px !important; }
+
+        .treino-picker {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 360px));
+            justify-content: center;
+            gap: 12px;
+        }
+        .treino-picker-item {
+            flex-direction: row;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 52px 14px 16px;
+            border-radius: 16px;
+        }
+        .treino-picker-badge { width: 44px; height: 44px; border-radius: 14px; }
+        .treino-picker-nome { font-size: 1rem; }
+        .treino-picker-check {
+            top: 50%;
+            right: 16px;
+            margin-top: -0.65rem;
+        }
+
+        /* "Pronto para treinar?" vira um aviso enxuto, não metade da tela. */
+        .empty-state {
+            padding: 30px 24px;
+            border-radius: 22px;
+            background: transparent;
+        }
+        .empty-state .empty-icon { width: 64px; height: 64px; margin-bottom: 14px; }
+        .empty-state .empty-icon i { font-size: 2.2rem; }
+        .empty-state h5 { font-size: 1.05rem; margin-bottom: 6px; }
+        .empty-state p { font-size: 0.92rem; }
+
+        /* ---- Pré-início: cartão do treino + play à esquerda, exercícios
+           à direita, o conjunto centralizado na tela. ---- */
+        #preInicioTreinoOverlay {
+            grid-template-columns: minmax(0, 1040px);
+            grid-template-rows: auto auto auto;
+            justify-content: center;
+            align-content: center;
+            row-gap: 22px;
+            padding: 32px 40px;
+            background: var(--surface-muted);
+        }
+        #preInicioTreinoOverlay .pre-inicio-hero {
+            grid-column: 1;
+            grid-row: 1;
+            align-items: center;
+            text-align: center;
+            justify-content: center;
+            margin: 0;
+            padding: 30px 36px;
+            border: none;
+            border-radius: 26px;
+            box-shadow: 0 18px 40px rgba(242, 140, 51, 0.28);
+        }
+        #preInicioTreinoOverlay .pre-inicio-btn-fechar {
+            width: 36px;
+            height: 36px;
+            top: 18px;
+            right: 18px;
+            font-size: 1rem;
+        }
+        #preInicioTreinoOverlay .pre-inicio-hero-icone {
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
+            font-size: 1.6rem;
+            margin-bottom: 16px;
+        }
+        #preInicioTreinoOverlay .pre-inicio-hero-titulo {
+            font-size: 1.7rem;
+            letter-spacing: -0.01em;
+            margin-bottom: 6px;
+            padding-right: 0;
+        }
+        #preInicioTreinoOverlay .pre-inicio-hero-sub { font-size: 1rem; }
+        #preInicioTreinoOverlay .pre-inicio-footer {
+            grid-column: 1;
+            grid-row: 3;
+            display: flex;
+            justify-content: center;
+        }
+        #preInicioTreinoOverlay .pre-inicio-btn-play {
+            width: min(100%, 380px);
+            padding: 16px 24px;
+            font-size: 1.05rem;
+            border-radius: 18px;
+        }
+
+        #preInicioTreinoOverlay .pre-inicio-lista {
+            grid-column: 1;
+            grid-row: 2;
+            align-self: start;
+            align-content: start;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            padding: 0 6px 6px 0;
+            max-height: calc(100vh - 340px);
+            min-height: 0;
+            background: transparent;
+        }
+        #preInicioTreinoOverlay .pre-inicio-lista::before {
+            content: "Exercícios do treino";
+            grid-column: 1 / -1;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #8a8f98;
+            padding: 2px 2px 0;
+        }
+        #preInicioTreinoOverlay .pre-inicio-item {
+            padding: 20px 24px;
+            border: 1px solid rgba(20, 20, 20, 0.06);
+            border-radius: 18px;
+            box-shadow: 0 6px 18px rgba(20, 20, 20, 0.04);
+            gap: 16px;
+        }
+        #preInicioTreinoOverlay .pre-inicio-item-num {
+            width: 42px;
+            height: 42px;
+            border: none;
+            border-radius: 13px;
+            background: rgba(242, 140, 51, 0.12);
+        }
+        #preInicioTreinoOverlay .pre-inicio-item-nome { font-size: 1.1rem; }
+        #preInicioTreinoOverlay .pre-inicio-item-musculo {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 2px 10px;
+            border-radius: 999px;
+            background: var(--surface-muted);
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: #6b7280;
+        }
+    }
+
 </style>
 
 <!-- Loading ao selecionar treino/data -- some assim que a página troca -->
