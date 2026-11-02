@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import secrets
 import logging
@@ -153,6 +154,12 @@ def _criar_admin_inicial(app):
 # =============================================================
 # FACTORY
 # =============================================================
+# Formato aceito pela rota /exercicios-media (ver exercicios_media abaixo).
+_MEDIA_EXERCICIO_RE = re.compile(
+    r"^(?:[A-Za-z0-9_.-]+/){0,2}[A-Za-z0-9_.-]+\.(?:gif|jpe?g|png|webp|mp4|webm)\Z"
+)
+
+
 def _limite_midia():
     """Limite das rotas de mídia (GIFs dos exercícios e fotos de professores).
 
@@ -1050,6 +1057,14 @@ def create_app(config_class=None):
         # pode servir chaves de exercícios, e nunca aceitar travessia
         # de caminho. Qualquer outra coisa é 404 antes de tocar no bucket.
         if ".." in caminho.split("/") or caminho.startswith(("/", "professores/", "contato/")):
+            from flask import abort
+            abort(404)
+        # Lista PERMITIDA (e não só bloqueio de prefixos): o bucket é
+        # compartilhado, então qualquer pasta nova (exportações, anexos,
+        # backups...) ficaria pública, sem login, por esta rota. Só passa
+        # caminho no formato das mídias de exercício: até 3 níveis de
+        # pasta/arquivo, com extensão de imagem ou vídeo.
+        if not _MEDIA_EXERCICIO_RE.match(caminho):
             from flask import abort
             abort(404)
 

@@ -716,7 +716,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
 <script>
     // Fallback pro cdnjs (já liberado no CSP) se o jsdelivr falhar por
     // qualquer motivo nesse dispositivo/rede (bloqueador, DNS, etc).
@@ -726,7 +726,7 @@
     // fallback na hora, de forma síncrona, então o código de baixo que usa
     // "new Chart(...)" continua podendo contar com Chart já definido.
     if (typeof Chart === 'undefined') {
-        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"><\/script>');
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"><\/script>');
     }
 </script>
 <script>

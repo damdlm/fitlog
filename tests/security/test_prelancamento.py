@@ -236,3 +236,47 @@ class TestBloqueioDeConta:
         client.post('/auth/login', data={'username': 'alvo2', 'password': 'SenhaForte123!'})
         with app.app_context():
             assert User.query.filter_by(username='alvo2').first().falhas_login == 0
+
+
+class TestBloqueioPorContaEIp:
+    """Bloqueio por par (conta, IP): quem erra a senha de outra pessoa não
+    consegue trancá-la para fora, e a trava da conta inteira cobre a força
+    bruta distribuída."""
+
+    @staticmethod
+    def _login(client, ip, senha, username='alvo_ip'):
+        return client.post(
+            '/auth/login',
+            data={'username': username, 'password': senha},
+            environ_base={'REMOTE_ADDR': ip},
+        )
+
+    def test_atacante_nao_tranca_o_dono_em_outro_ip(self, client, app):
+        with app.app_context():
+            _criar_usuario('alvo_ip')
+        for _ in range(8):
+            self._login(client, '10.9.9.9', 'errada123')
+        # o IP do atacante continua bloqueado, mesmo com a senha certa
+        self._login(client, '10.9.9.9', 'SenhaForte123!')
+        assert client.get('/aluno/cadastrar-treinos').status_code == 302
+        # o dono, de outro IP, entra normalmente
+        self._login(client, '10.1.1.1', 'SenhaForte123!')
+        assert client.get('/aluno/cadastrar-treinos').status_code == 200
+
+    def test_trava_da_conta_inteira_vale_para_qualquer_ip(self, client, app):
+        from routes.auth_routes import MAX_FALHAS_LOGIN_CONTA
+        with app.app_context():
+            uid = _criar_usuario('alvo_ip')
+            user = db.session.get(User, uid)
+            user.falhas_login = MAX_FALHAS_LOGIN_CONTA - 1
+            db.session.commit()
+        self._login(client, '10.2.2.2', 'errada123')  # 30ª falha, de qualquer IP
+        self._login(client, '10.3.3.3', 'SenhaForte123!')
+        assert client.get('/aluno/cadastrar-treinos').status_code == 302
+
+
+class TestMidiaExerciciosListaPermitida:
+    def test_extensao_e_profundidade_fora_do_formato_viram_404(self, client):
+        assert client.get('/exercicios-media/exports/dados.json').status_code == 404
+        assert client.get('/exercicios-media/a/b/c/d.gif').status_code == 404
+        assert client.get('/exercicios-media/pasta/segredo').status_code == 404

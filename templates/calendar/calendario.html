@@ -5,8 +5,8 @@
 
 {% block extra_css %}
 <!-- FullCalendar CSS -->
-<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet'
-      onerror="this.onerror=null;this.href='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.css';" />
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' integrity='sha384-39yVKLsD9lMelmY+ij49KZgE+Mfk6hjdUPNE8yKHqdMPceLXzhlCJAK81xlD5jDj' crossorigin='anonymous' rel='stylesheet'
+      onerror="this.onerror=null;this.integrity='sha384-39yVKLsD9lMelmY+ij49KZgE+Mfk6hjdUPNE8yKHqdMPceLXzhlCJAK81xlD5jDj';this.href='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.css';" />
 <link rel="stylesheet" href="{{ static_v('vendor/driverjs/driver.css') }}">
 <link rel="stylesheet" href="{{ static_v('css/registrar-treino-tour.css') }}">
 <style>
@@ -1977,16 +1977,16 @@
 
 {% block scripts %}
 <!-- FullCalendar JS -->
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js' integrity='sha384-5/vsv56401Wf+RP3yE5/aIKW4wutk4nLY3HjueTXN0rA+DmweMtrYaN6RSjdv31b' crossorigin='anonymous'></script>
 <script>
     // Mesmo raciocínio do fallback do Chart.js (ver templates/index.html):
     // document.write síncrono, porque essa tag não é async/defer.
     if (typeof FullCalendar === 'undefined') {
-        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.js"><\/script>');
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.js" integrity="sha384-5/vsv56401Wf+RP3yE5/aIKW4wutk4nLY3HjueTXN0rA+DmweMtrYaN6RSjdv31b" crossorigin="anonymous"><\/script>');
     }
 </script>
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/pt-br.js'
-        onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/locales/pt-br.js';document.head.appendChild(s);"></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/pt-br.js' integrity='sha384-nYTm93SVXbkFBAZDYl7rIdivGWF6TuP6m3X7taeRDE3L5VaeNv4OW34We0UTtUyr' crossorigin='anonymous'
+        onerror="this.onerror=null;var s=document.createElement('script');s.integrity='sha384-nYTm93SVXbkFBAZDYl7rIdivGWF6TuP6m3X7taeRDE3L5VaeNv4OW34We0UTtUyr';s.crossOrigin='anonymous';s.src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/locales/pt-br.js';document.head.appendChild(s);"></script>
 
 <script>
     let calendar;
@@ -2854,7 +2854,7 @@
     }
 </script>
 {% if aluno or not current_user.is_admin %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
 <script>
     // Fallback pro cdnjs (já liberado no CSP) se o jsdelivr falhar por
     // qualquer motivo nesse dispositivo/rede (bloqueador, DNS, etc).
@@ -2864,7 +2864,7 @@
     // fallback na hora, de forma síncrona, então o código de baixo que usa
     // "new Chart(...)" continua podendo contar com Chart já definido.
     if (typeof Chart === 'undefined') {
-        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"><\/script>');
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"><\/script>');
     }
 </script>
 <script>

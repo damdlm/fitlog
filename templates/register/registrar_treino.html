@@ -4,7 +4,7 @@
 {% block page_title %}Registrar Treino{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/flatpickr/flatpickr.min.css') }}">
 <link rel="stylesheet" href="{{ static_v('vendor/driverjs/driver.css') }}">
 <link rel="stylesheet" href="{{ static_v('css/registrar-treino-tour.css') }}">
 {% endblock %}
@@ -4550,8 +4550,8 @@
 
 {% block scripts %}
 <script src="{{ static_v('vendor/driverjs/driver.js.iife.js') }}"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/pt.js"></script>
+<script src="{{ url_for('static', filename='vendor/flatpickr/flatpickr.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/flatpickr/l10n/pt.js') }}"></script>
 <script>
 // Calendário estilizado (flatpickr) no campo Data -- troca o seletor nativo
 // do navegador por um calendário com as cores do app. Mantém o valor real
@@ -6657,7 +6657,7 @@ function tocarBipe() {
 </script>
 
 <!-- html2canvas: usado só para gerar a imagem do resumo do treino para compartilhar -->
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
 
 <script>
 /* ====== Modal de resumo do treino: montagem do card + compartilhamento ====== */

@@ -17,9 +17,24 @@ from services.email_verificacao_service import EmailVerificacaoService
 
 auth_bp = Blueprint('auth', __name__)
 
+# Bloqueio por conta + IP (cache/Redis): 8 senhas erradas seguidas, vindas do
+# MESMO IP contra a MESMA conta, bloqueiam só aquele par por 15 min. Assim
+# alguém que conhece o usuário de outra pessoa não consegue trancar a conta
+# dela de fora (o dono, de outro IP, continua entrando).
 MAX_FALHAS_LOGIN = 8
+# Trava de segurança da conta inteira (banco), somando TODOS os IPs: cobre
+# força bruta distribuída (botnet), que o limite por IP não enxerga.
+MAX_FALHAS_LOGIN_CONTA = 30
 BLOQUEIO_LOGIN_MINUTOS = 15
 logger = logging.getLogger(__name__)
+
+
+def _chave_falhas_login(username):
+    """Chave de cache do contador de falhas do par (conta, IP). O usuário vai
+    em hash para não gravar nome de conta (nem inexistente) em claro no Redis."""
+    import hashlib
+    bruto = f"{(username or '').strip().lower()}|{request.remote_addr or ''}"
+    return 'login_falhas:' + hashlib.sha256(bruto.encode('utf-8')).hexdigest()
 
 
 def _safe_next_url(next_url):
@@ -101,13 +116,20 @@ def login():
             bloqueado_ate = bloqueado_ate.replace(tzinfo=timezone.utc)
         conta_bloqueada = bloqueado_ate is not None and bloqueado_ate > agora
 
-        if conta_bloqueada or not user or not user.check_password(password):
+        # Bloqueio do par (conta, IP) -- ver comentário em MAX_FALHAS_LOGIN.
+        chave_falhas = _chave_falhas_login(username)
+        falhas_ip = int(CacheService.get(chave_falhas) or 0)
+        ip_bloqueado = falhas_ip >= MAX_FALHAS_LOGIN
+
+        if conta_bloqueada or ip_bloqueado or not user or not user.check_password(password):
+            if not ip_bloqueado:
+                CacheService.set(chave_falhas, falhas_ip + 1, ttl_seconds=BLOQUEIO_LOGIN_MINUTOS * 60)
             if user and not conta_bloqueada:
                 user.falhas_login = (user.falhas_login or 0) + 1
-                if user.falhas_login >= MAX_FALHAS_LOGIN:
+                if user.falhas_login >= MAX_FALHAS_LOGIN_CONTA:
                     user.login_bloqueado_ate = agora + timedelta(minutes=BLOQUEIO_LOGIN_MINUTOS)
                     user.falhas_login = 0
-                    logger.warning(f"Conta bloqueada por excesso de senhas erradas -- usuario ID {user.id}")
+                    logger.warning(f"Conta bloqueada por excesso de senhas erradas (todos os IPs) -- usuario ID {user.id}")
                 db.session.commit()
             # Não revela se foi o usuário ou a senha que errou (evita user enumeration)
             logger.warning(f"Login invalido -- IP: {request.remote_addr}")
@@ -123,6 +145,7 @@ def login():
         user.falhas_login = 0
         user.login_bloqueado_ate = None
         db.session.commit()
+        CacheService.invalidate(chave_falhas)
 
         # Sem session.permanent o cookie de sessão morre quando o PWA é
         # encerrado; com ele, dura PERMANENT_SESSION_LIFETIME (config.py).
