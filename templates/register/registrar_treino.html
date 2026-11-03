@@ -3028,6 +3028,27 @@
         }
     }
 
+    /* Treino com 1h ou mais: o cronômetro passa de "MM:SS" para "H:MM:SS"
+       (2 caracteres a mais) e, nos celulares estreitos, os 3 botões ao lado
+       (que dividem o espaço que sobra em partes iguais) ficavam com
+       "Cancelar"/"Retomar" encostando na borda. Só nessas larguras e só
+       depois de 1h, o relógio fica um pouco menor e com menos padding
+       lateral. A classe .is-longo é posta/tirada pelo JS em
+       atualizarDisplay(). Acima de 430px nada muda. */
+    @media (max-width: 430px) {
+        #top-save-bar .top-save-bar-crono-value.is-longo {
+            font-size: 1.25rem;
+            padding: 2px 3px 0;
+        }
+    }
+
+    @media (max-width: 360px) {
+        #top-save-bar .top-save-bar-crono-value.is-longo {
+            font-size: 1rem;
+            padding: 1px 3px 0;
+        }
+    }
+
     /* Elemento novo (cabeçalho de tabela da lista de exercícios em
        desktop, ver dentro do @media abaixo) -- escondido por padrão
        pra nunca aparecer no mobile, mesmo que o navegador não carregue
@@ -6060,7 +6081,11 @@ function tocarBipe() {
     }
 
     function atualizarDisplay() {
-        elDisplay.textContent = formatarTempo(segundosAtuais());
+        var texto = formatarTempo(segundosAtuais());
+        elDisplay.textContent = texto;
+        // Formato H:MM:SS (treino com 1h ou mais): o CSS compacta o relógio
+        // em celulares estreitos -- ver .is-longo na barra do treino.
+        elDisplay.classList.toggle('is-longo', texto.length > 5);
     }
 
     // Exposto globalmente para o handler de submit do formulário conseguir
