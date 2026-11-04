@@ -420,6 +420,28 @@
     .admin-hero-dot:nth-child(3) { --z: 35px;  top: 50%; left: 0; transform: translateY(-50%); animation-delay: -1.8s; }
     .admin-hero-dot:nth-child(4) { --z: -35px; top: 50%; right: 0; transform: translateY(-50%); animation-delay: -2.7s; }
 
+    /* Dots desenhados em <canvas> (ver script "Dots nítidos" mais abaixo).
+       Os dots de DOM continuam existindo e animando (giro, pulso, explosão,
+       parallax), só ficam invisíveis: o script lê a posição/tamanho/opacidade
+       deles a cada quadro e redesenha no canvas, direto na resolução real da
+       tela. Assim a nitidez não depende de como cada navegador rasteriza
+       camadas 3D com scale/filter. Se o JS não rodar, os dots de DOM
+       continuam aparecendo normalmente. */
+    .admin-hero-dots-canvas {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: min(400px, 100vw);
+        height: min(400px, 100vw);
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .admin-hero.is-dots-canvas .admin-hero-dot {
+        visibility: hidden;
+    }
+
     .admin-hero h2 {
         margin-top: 2.2rem;
         font-weight: 700;
@@ -873,6 +895,260 @@
     window.flExplodirDots = explodir;
 
     agendar(PRIMEIRA_MIN, PRIMEIRA_MAX);
+})();
+</script>
+<script>
+(function () {
+    // Dots nítidos: redesenha os 4 dots do átomo num <canvas> na resolução
+    // real da tela (devicePixelRatio).
+    //
+    // Por quê: os dots de DOM ficam num espaço 3D (perspective + preserve-3d
+    // + translate em Z) e são escalados por animação (pulso, explosão). Os
+    // navegadores rasterizam cada camada num tamanho só e depois esticam a
+    // textura, então os dots perdiam nitidez (principalmente no Safari/iOS).
+    // No canvas o desenho é refeito a cada quadro no tamanho final.
+    //
+    // Como: os dots de DOM continuam animando normalmente (giro do átomo,
+    // pulso, explosão, parallax por mouse/toque), só ficam invisíveis. A cada
+    // quadro lemos o transform real de cada elemento, projetamos o centro e o
+    // raio pela mesma matriz (perspective * rotação do átomo * translate *
+    // pulso) e desenhamos o dot com o mesmo degradê, brilho e sombras do CSS.
+    var atom = document.querySelector('.admin-hero-atom');
+    var dots = Array.prototype.slice.call(document.querySelectorAll('.admin-hero-dot'));
+    var parallax = document.getElementById('adminHeroAtomParallax');
+    var palco = atom && atom.closest('.admin-hero');
+
+    if (!atom || !dots.length || !parallax || !palco || typeof DOMMatrix === 'undefined') return;
+
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext && canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.className = 'admin-hero-dots-canvas';
+    canvas.setAttribute('aria-hidden', 'true');
+    palco.appendChild(canvas);
+    palco.classList.add('is-dots-canvas');
+
+    var DOIS_PI = Math.PI * 2;
+    var LONGE = 2000;    // deslocamento usado para desenhar só a sombra (glow) do dot
+
+    function numero(v) { return parseFloat(v) || 0; }
+
+    function matrizDe(el) {
+        var t = getComputedStyle(el).transform;
+        try { return (t && t !== 'none') ? new DOMMatrix(t) : new DOMMatrix(); }
+        catch (e) { return new DOMMatrix(); }
+    }
+
+    // Aplica a matriz e faz a divisão de perspectiva (w).
+    function projetar(m, x, y) {
+        var p = m.transformPoint(new DOMPoint(x, y, 0, 1));
+        var w = p.w || 1;
+        return { x: p.x / w, y: p.y / w, z: p.z / w };
+    }
+
+    // Cor com o mesmo efeito do CSS "filter: brightness(b)": multiplica o RGB.
+    function cor(r, g, b, a, brilho) {
+        return 'rgba(' + Math.min(255, Math.round(r * brilho)) + ',' +
+                         Math.min(255, Math.round(g * brilho)) + ',' +
+                         Math.min(255, Math.round(b * brilho)) + ',' + a + ')';
+    }
+
+    // Glow externo (box-shadow "0 0 Npx cor"): desenha o círculo bem longe e
+    // traz só a sombra para o lugar certo, para o círculo em si não aparecer.
+    function glow(x, y, R, desfoque, alfa, brilho, k, esc) {
+        ctx.save();
+        ctx.shadowColor = cor(242, 140, 51, alfa, brilho);
+        ctx.shadowBlur = desfoque * k * esc;
+        ctx.shadowOffsetX = LONGE * esc;
+        ctx.shadowOffsetY = 0;
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(x - LONGE, y, R, 0, DOIS_PI);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    // Sombra interna (box-shadow "inset dx dy blur cor"): dentro do círculo,
+    // escurece/clareia a borda do lado oposto ao deslocamento. Feita com um
+    // degradê radial deslocado (a borda do "buraco" da sombra fica a R do
+    // centro deslocado, e o desfoque vira a largura da transição). Evita
+    // clip + sombra com preenchimento par-ímpar, que em alguns navegadores
+    // apaga o que já foi desenhado no canvas.
+    function sombraInterna(x, y, R, dx, dy, desfoque, rgb, alfa, brilho, k) {
+        var cx = x + dx, cy = y + dy;   // dx/dy já em pixels de tela (giram com o dot)
+        var meia = Math.max(desfoque * k * 0.5, 0.5);
+        var g = ctx.createRadialGradient(cx, cy, Math.max(R - meia, 0), cx, cy, R + meia);
+        g.addColorStop(0, cor(rgb[0], rgb[1], rgb[2], 0, brilho));
+        g.addColorStop(1, cor(rgb[0], rgb[1], rgb[2], alfa, brilho));
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x, y, R, 0, DOIS_PI);
+        ctx.clip();
+        ctx.fillStyle = g;
+        ctx.fillRect(x - R - 2, y - R - 2, 2 * R + 4, 2 * R + 4);
+        ctx.restore();
+    }
+
+    // radial-gradient(circle at 32% 28%, ...) do .admin-hero-dot, com as mesmas
+    // paradas do CSS: [posição, r, g, b, alfa]. Interpolação em alfa pré-multiplicado.
+    var PARADAS = [
+        [0,    255, 230, 220, 0.85],
+        [0.15, 250, 177, 112, 0.95],
+        [0.40, 242, 140, 51,  1],
+        [0.75, 205, 91,  21,  1],
+        [1,    145, 52,  8,   1]
+    ];
+
+    function corDoDegrade(t) {
+        for (var i = 1; i < PARADAS.length; i++) {
+            if (t <= PARADAS[i][0] || i === PARADAS.length - 1) {
+                var p0 = PARADAS[i - 1], p1 = PARADAS[i];
+                var u = Math.min(Math.max((t - p0[0]) / (p1[0] - p0[0]), 0), 1);
+                var a = p0[4] + (p1[4] - p0[4]) * u;
+                var pm0 = p0[4], pm1 = p1[4];
+                var rr = (p0[1] * pm0 + (p1[1] * pm1 - p0[1] * pm0) * u) / (a || 1);
+                var gg = (p0[2] * pm0 + (p1[2] * pm1 - p0[2] * pm0) * u) / (a || 1);
+                var bb = (p0[3] * pm0 + (p1[3] * pm1 - p0[3] * pm0) * u) / (a || 1);
+                return [rr, gg, bb, a];
+            }
+        }
+        return [145, 52, 8, 1];
+    }
+
+    function desenharDot(it, esc) {
+        var x = it.x, y = it.y, R = it.R, k = it.k, b = it.brilho, d = R * 2;
+
+        ctx.save();
+        ctx.globalAlpha = it.opacidade;
+
+        // box-shadow externo
+        glow(x, y, R, 35, 0.10, b, k, esc);
+        glow(x, y, R, 18, 0.22, b, k, esc);
+        glow(x, y, R, 7, 0.42, b, k, esc);
+
+        // fundo: radial-gradient(circle at 32% 28%, ...) (raio = canto mais distante)
+        // O ponto do brilho gira junto com o dot (o dot gira com o átomo).
+        var gx = x + it.hx;
+        var gy = y + it.hy;
+        var g = ctx.createRadialGradient(gx, gy, 0, gx, gy, 0.99 * d);
+        // O CSS interpola o degradê e só depois aplica o brilho (e limita a
+        // 255); por isso amostramos o degradê em vários pontos e aplicamos o
+        // brilho em cada um, em vez de só nos 5 pontos de parada.
+        var AMOSTRAS = 16;
+        for (var a = 0; a <= AMOSTRAS; a++) {
+            var c = corDoDegrade(a / AMOSTRAS);
+            g.addColorStop(a / AMOSTRAS, cor(c[0], c[1], c[2], c[3], b));
+        }
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(x, y, R, 0, DOIS_PI);
+        ctx.fill();
+
+        // box-shadow interno
+        sombraInterna(x, y, R, it.s1x, it.s1y, 5, [100, 35, 0], 0.25, b, k);
+        sombraInterna(x, y, R, it.s2x, it.s2y, 4, [255, 255, 255], 0.22, 1, k);
+
+        // border: 0.5px solid rgba(255,255,255,.9) (por dentro da borda)
+        ctx.lineWidth = Math.max(0.5 * k, 0.4);
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.beginPath();
+        ctx.arc(x, y, Math.max(R - 0.25 * k, 0), 0, DOIS_PI);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    function quadro() {
+        var dpr = Math.min(window.devicePixelRatio || 1, 3);
+        var r = canvas.getBoundingClientRect();
+        var largura = Math.max(1, Math.round(r.width * dpr));
+        var altura = Math.max(1, Math.round(r.height * dpr));
+        if (canvas.width !== largura || canvas.height !== altura) {
+            canvas.width = largura;
+            canvas.height = altura;
+        }
+        var esc = largura / r.width;   // pixels de tela por pixel CSS
+        ctx.setTransform(esc, 0, 0, esc, 0, 0);
+        ctx.clearRect(0, 0, r.width, r.height);
+
+        // Wrapper (inclinação + perspectiva) * átomo (giro). Os dois têm o
+        // mesmo centro (o átomo fica centralizado no wrapper), que é também o
+        // centro do canvas.
+        var base = matrizDe(parallax).multiply(matrizDe(atom));
+        var cx0 = r.width / 2;
+        var cy0 = r.height / 2;
+        var larguraAtom = atom.offsetWidth;
+        var alturaAtom = atom.offsetHeight;
+
+        var itens = [];
+        for (var i = 0; i < dots.length; i++) {
+            var dot = dots[i];
+            var cs = getComputedStyle(dot);
+            // Tamanho real da caixa de borda (offsetWidth arredonda para inteiro).
+            var borda = cs.boxSizing === 'border-box' ? 0 : numero(cs.borderLeftWidth) + numero(cs.borderRightWidth);
+            var lado = numero(cs.width) + borda;
+            var R0 = lado / 2;
+            if (R0 <= 0) continue;
+
+            // translate (propriedade individual: x y z) e transform (pulso)
+            var tr = (cs.translate && cs.translate !== 'none') ? cs.translate.split(/\s+/) : [];
+            var tx = numero(tr[0]), ty = numero(tr[1]), tz = numero(tr[2]);
+            var pulso;
+            try { pulso = (cs.transform && cs.transform !== 'none') ? new DOMMatrix(cs.transform) : new DOMMatrix(); }
+            catch (e) { pulso = new DOMMatrix(); }
+
+            // Centro do dot, no referencial do centro do átomo (layout).
+            var cx = dot.offsetLeft + R0 - larguraAtom / 2;
+            var cy = dot.offsetTop + R0 - alturaAtom / 2;
+
+            var m = base.translate(cx + tx, cy + ty, tz).multiply(pulso);
+            var c = projetar(m, 0, 0);
+            var pr1 = projetar(m, R0, 0);
+            var pr2 = projetar(m, 0, R0);
+            var R = (Math.hypot(pr1.x - c.x, pr1.y - c.y) + Math.hypot(pr2.x - c.x, pr2.y - c.y)) / 2;
+
+            // Direções que giram com o dot: ponto do brilho (32% / 28% da caixa,
+            // ou seja, -18% / -22% a partir do centro) e deslocamento das duas
+            // sombras internas (-2,-3 e 2,2 px), projetados como o resto.
+            var ph = projetar(m, -0.18 * lado, -0.22 * lado);
+            var p1 = projetar(m, -2, -3);
+            var p2 = projetar(m, 2, 2);
+
+            var f = /brightness\(([\d.]+)\)/.exec(cs.filter || '');
+            itens.push({
+                hx: ph.x - c.x, hy: ph.y - c.y,
+                s1x: p1.x - c.x, s1y: p1.y - c.y,
+                s2x: p2.x - c.x, s2y: p2.y - c.y,
+                x: cx0 + c.x,
+                y: cy0 + c.y,
+                z: c.z,
+                R: R,
+                k: R / R0,                                   // quanto o dot está ampliado na tela
+                brilho: f ? parseFloat(f[1]) : 1,
+                opacidade: cs.opacity === '' ? 1 : numero(cs.opacity)
+            });
+        }
+
+        // Mais longe primeiro (z menor = mais longe do observador).
+        itens.sort(function (a, b) { return a.z - b.z; });
+        for (var j = 0; j < itens.length; j++) desenharDot(itens[j], esc);
+    }
+
+    // Para teste/depuração: desenha um quadro sob demanda.
+    window.flDesenharDots = quadro;
+
+    function laco() {
+        try { quadro(); }
+        catch (e) {
+            // Qualquer erro inesperado: volta para os dots de DOM e para o laço.
+            palco.classList.remove('is-dots-canvas');
+            canvas.remove();
+            return;
+        }
+        requestAnimationFrame(laco);
+    }
+    requestAnimationFrame(laco);
 })();
 </script>
 
