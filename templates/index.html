@@ -291,14 +291,16 @@
     }
 
     /* --- Marca d'água --- */
+    /* Fica DENTRO do .admin-hero (mesmo box do átomo), por isso o centro da
+       marca d'água é sempre o centro do átomo -- com a sidebar aberta,
+       recolhida (o palco muda de largura) ou no celular. Antes era
+       position: fixed na janela inteira e ficava deslocada pela metade da
+       largura da sidebar no desktop. */
     .watermark {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        position: absolute;
+        inset: 0;
         pointer-events: none;
-        z-index: 0;
+        z-index: -1;   /* atrás do átomo (o .admin-hero abre um contexto de empilhamento) */
         display: flex;
         align-items: center;
         justify-content: center;
@@ -343,6 +345,7 @@
 
     /* --- Página inicial do admin: só marca d'água + animação --- */
     .admin-hero {
+        isolation: isolate;   /* contexto próprio: a marca d'água (z-index -1) fica atrás do átomo, não da página */
         min-height: 65vh;
         display: flex;
         flex-direction: column;
@@ -468,9 +471,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- Marca d'água -->
-<div class="watermark"></div>
-
 {# O átomo com os dots (antes só do admin) agora aparece para todos. Só quem
    não é admin vê o título "Train · Log · Analyze" acima e as Dicas de treino
    no rodapé; o admin continua com a tela só do átomo. #}
@@ -488,6 +488,8 @@
 {% endif %}
 
 <div class="admin-hero">
+    <!-- Marca d'água (centrada no mesmo box do átomo) -->
+    <div class="watermark"></div>
     <div class="admin-hero-atom-parallax" id="adminHeroAtomParallax">
         <div class="admin-hero-atom" aria-hidden="true">
         <div class="admin-hero-dot"></div>
@@ -1017,15 +1019,22 @@
     }
 
     function desenharDot(it, esc) {
-        var x = it.x, y = it.y, R = it.R, k = it.k, b = it.brilho, d = R * 2;
+        var x = it.x, y = it.y, R = it.R, k = it.k, d = R * 2;
+
+        // Profundidade: quanto mais ao fundo, mais escuro (multiplica o brilho
+        // de cima; a explosão, com brilho > 1, continua acendendo).
+        var b = it.brilho * (0.55 + 0.45 * it.prof);
+        var gf = 0.5 + 0.5 * it.prof;   // o glow também diminui ao ir para o fundo
 
         ctx.save();
-        ctx.globalAlpha = it.opacidade;
+        // O pulso apagava os dots lá no fundo (opacidade até 0,3), o que os
+        // deixava pálidos. Como agora eles escurecem, a opacidade mínima sobe.
+        ctx.globalAlpha = 0.45 + 0.55 * it.opacidade;
 
         // box-shadow externo
-        glow(x, y, R, 35, 0.10, b, k, esc);
-        glow(x, y, R, 18, 0.22, b, k, esc);
-        glow(x, y, R, 7, 0.42, b, k, esc);
+        glow(x, y, R, 35, 0.10 * gf, b, k, esc);
+        glow(x, y, R, 18, 0.22 * gf, b, k, esc);
+        glow(x, y, R, 7, 0.42 * gf, b, k, esc);
 
         // fundo: radial-gradient(circle at 32% 28%, ...) (raio = canto mais distante)
         // O ponto do brilho gira junto com o dot (o dot gira com o átomo).
@@ -1115,8 +1124,14 @@
             var p1 = projetar(m, -2, -3);
             var p2 = projetar(m, 2, 2);
 
+            // Profundidade: k é o quanto o dot está ampliado na tela (pulso x
+            // perspectiva). Dot pequeno = lá no fundo. De k >= 1 (sem efeito)
+            // até k <= 0.62 (mais escuro) a cor escurece e o glow diminui.
+            var prof = Math.min(Math.max((R / R0 - 0.62) / 0.38, 0), 1);
+
             var f = /brightness\(([\d.]+)\)/.exec(cs.filter || '');
             itens.push({
+                prof: prof,
                 hx: ph.x - c.x, hy: ph.y - c.y,
                 s1x: p1.x - c.x, s1y: p1.y - c.y,
                 s2x: p2.x - c.x, s2y: p2.y - c.y,
