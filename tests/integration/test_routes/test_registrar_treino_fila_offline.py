@@ -110,6 +110,8 @@ def test_deslogado_meta_de_usuario_vazia(client):
     html = client.get('/auth/login').get_data(as_text=True)
     assert '<meta name="fitlog-user-id" content="">' in html
     assert 'js/modules/fila-offline.js' in html
+    # o aviso "entre na sua conta para enviar" aparece justamente deslogado
+    assert 'css/fila-offline.css' in html
 
 
 def test_service_worker_envia_a_fila_por_background_sync(client):
