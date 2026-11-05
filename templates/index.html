@@ -432,11 +432,15 @@
        continuam aparecendo normalmente. */
     .admin-hero-dots-canvas {
         position: absolute;
-        left: 50%;
-        top: 50%;
+        /* left/top/width/height são definidos pelo JS, em pixels FÍSICOS
+           inteiros (ver quadro()). Centralizar com left: 50% + translate(-50%)
+           deixava o canvas em posição fracionária de pixel físico; em telas
+           com escala de 125%/150% (Windows) o navegador então reamostrava o
+           canvas inteiro e a imagem perdia nitidez. */
+        left: 0;
+        top: 0;
         width: min(400px, 100vw);
         height: min(400px, 100vw);
-        transform: translate(-50%, -50%);
         pointer-events: none;
         z-index: 2;
     }
@@ -1069,25 +1073,44 @@
         ctx.restore();
     }
 
+    var ultimaGeometria = '';
+
     function quadro() {
         var dpr = Math.min(window.devicePixelRatio || 1, 3);
-        var r = canvas.getBoundingClientRect();
-        var largura = Math.max(1, Math.round(r.width * dpr));
-        var altura = Math.max(1, Math.round(r.height * dpr));
-        if (canvas.width !== largura || canvas.height !== altura) {
-            canvas.width = largura;
-            canvas.height = altura;
+        var pr = palco.getBoundingClientRect();
+
+        // Tamanho em pixels FÍSICOS inteiros e posição na grade de pixels
+        // físicos: assim o canvas é exibido 1:1, sem o navegador reamostrar
+        // (o que borrava a imagem em telas com escala fracionária, 125%/150%).
+        var maxCss = Math.min(400, document.documentElement.clientWidth || 400);
+        var largura = Math.max(1, Math.floor(maxCss * dpr));
+        var ladoCss = largura / dpr;
+        var esq = Math.round((pr.left + pr.width / 2 - ladoCss / 2) * dpr) / dpr;
+        var topo = Math.round((pr.top + pr.height / 2 - ladoCss / 2) * dpr) / dpr;
+
+        var geometria = ladoCss + '|' + (esq - pr.left) + '|' + (topo - pr.top);
+        if (geometria !== ultimaGeometria) {
+            ultimaGeometria = geometria;
+            canvas.style.width = ladoCss + 'px';
+            canvas.style.height = ladoCss + 'px';
+            canvas.style.left = (esq - pr.left) + 'px';
+            canvas.style.top = (topo - pr.top) + 'px';
         }
-        var esc = largura / r.width;   // pixels de tela por pixel CSS
+        if (canvas.width !== largura || canvas.height !== largura) {
+            canvas.width = largura;
+            canvas.height = largura;
+        }
+        var esc = largura / ladoCss;   // pixels de tela por pixel CSS (= dpr)
         ctx.setTransform(esc, 0, 0, esc, 0, 0);
-        ctx.clearRect(0, 0, r.width, r.height);
+        ctx.clearRect(0, 0, ladoCss, ladoCss);
 
         // Wrapper (inclinação + perspectiva) * átomo (giro). Os dois têm o
         // mesmo centro (o átomo fica centralizado no wrapper), que é também o
         // centro do canvas.
         var base = matrizDe(parallax).multiply(matrizDe(atom));
-        var cx0 = r.width / 2;
-        var cy0 = r.height / 2;
+        // Centro do átomo (= centro do palco) nas coordenadas do canvas.
+        var cx0 = pr.left + pr.width / 2 - esq;
+        var cy0 = pr.top + pr.height / 2 - topo;
         var larguraAtom = atom.offsetWidth;
         var alturaAtom = atom.offsetHeight;
 
