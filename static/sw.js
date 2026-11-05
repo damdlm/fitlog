@@ -10,7 +10,7 @@
 
 importScripts('/static/js/modules/fila-offline.js');
 
-const CACHE_NAME = 'fitlog-shell-v3'; // bump pra forçar re-precache (v3: fila offline)
+const CACHE_NAME = 'fitlog-shell-v4'; // bump pra forçar re-precache (v3: fila offline; v4: offline.html sem zoom)
 
 // Só os assets realmente estáticos (não mudam por usuário/sessão)
 const SHELL_ASSETS = [
@@ -27,7 +27,10 @@ const OFFLINE_URL = '/static/offline.html';
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then((cache) => cache.addAll(SHELL_ASSETS))
+            // cache: 'reload' -- busca do servidor, nunca do cache HTTP do
+            // navegador; senão uma versão nova (ex: offline.html) podia
+            // entrar no cache novo ainda com o conteúdo antigo.
+            .then((cache) => cache.addAll(SHELL_ASSETS.map((url) => new Request(url, { cache: 'reload' }))))
             .catch(() => {}) // não trava a instalação se algum asset falhar
     );
     self.skipWaiting();

@@ -8,10 +8,12 @@
     bottom: calc(76px + env(safe-area-inset-bottom, 0px) + var(--fl-crono-flutuante-altura, 0px));
     z-index: 1045;
     width: max-content;
-    max-width: min(560px, calc(100vw - 24px));
-    display: flex;
+    max-width: min(520px, calc(100vw - 24px));
+    /* Grade: ícone | texto na 1ª linha; botões (quando há) na 2ª, sob o
+       texto. Com flex-wrap o texto descia para baixo do ícone. */
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
-    flex-wrap: wrap;
     gap: 8px 10px;
     padding: 10px 14px;
     border-radius: 14px;
@@ -44,21 +46,25 @@ body.fl-modo-treino-ativo .fila-offline-aviso {
     flex: 0 0 auto;
 }
 .fila-offline-aviso[data-estado="pendente"] > .bi { color: #FFB366; }
+.fila-offline-aviso[data-estado="offline"] > .bi { color: #FFB366; }
 .fila-offline-aviso[data-estado="erro"] {
     background: #3a1414;
 }
 .fila-offline-aviso[data-estado="erro"] > .bi { color: #ff8a8a; }
 
 .fila-offline-texto {
-    flex: 1 1 200px;
     min-width: 0;
+}
+.fila-offline-texto strong {
+    font-weight: 700;
 }
 
 .fila-offline-acoes {
+    grid-column: 2;
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
-    flex: 0 0 auto;
-    margin-left: auto;
+    justify-content: flex-end;
 }
 .fila-offline-acoes button {
     border: 0;
@@ -84,4 +90,25 @@ body.fl-modo-treino-ativo .fila-offline-aviso {
 }
 @media (prefers-reduced-motion: reduce) {
     .fila-offline-girando { animation: none; }
+}
+
+/* "Sem internet" encolhido: só o ícone, num círculo no canto direito, para
+   não ficar o treino inteiro por cima dos exercícios. Tocar expande (JS). */
+.fila-offline-aviso.fila-offline-compacto {
+    left: auto;
+    right: 12px;
+    transform: none;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    cursor: pointer;
+}
+.fila-offline-aviso.fila-offline-compacto .fila-offline-texto {
+    display: none;
+}
+.fila-offline-aviso.fila-offline-compacto > .bi {
+    font-size: 1.15rem;
 }

@@ -2,40 +2,57 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Mesmo viewport do base.html: sem zoom. Sem isso, no iPhone, tocar duas
+     vezes rápido em "Tentar novamente" disparava o zoom de duplo toque e a
+     página ficava ampliada e cortada nas laterais. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#F28C33">
 <title>FitLog — Sem conexão</title>
 <style>
     :root {
         color-scheme: light dark;
     }
+    *, *::before, *::after {
+        box-sizing: border-box;
+    }
+    html {
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+        /* Desliga o zoom de duplo toque também onde o navegador ignora
+           user-scalable=no (Safari recente, por acessibilidade). */
+        touch-action: manipulation;
+    }
     body {
         margin: 0;
         min-height: 100vh;
+        min-height: 100dvh;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 16px;
+        gap: 14px;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         text-align: center;
-        padding: 24px;
-        background: #fff;
+        padding: calc(24px + env(safe-area-inset-top, 0px)) 24px calc(24px + env(safe-area-inset-bottom, 0px));
+        background: #f8f9fa;
         color: #1a1a1a;
+        -webkit-tap-highlight-color: transparent;
     }
     @media (prefers-color-scheme: dark) {
         body { background: #121212; color: #f0f0f0; }
     }
     img {
-        width: 64px;
-        height: 64px;
-        opacity: 0.85;
+        width: 72px;
+        height: 72px;
+        border-radius: 18px;
     }
     h1 {
         font-size: 1.25rem;
-        margin: 0;
+        margin: 4px 0 0;
     }
     p {
         font-size: 0.95rem;
+        line-height: 1.45;
         color: #666;
         max-width: 320px;
         margin: 0;
@@ -44,31 +61,81 @@
         p { color: #aaa; }
     }
     button {
-        margin-top: 8px;
-        padding: 10px 24px;
-        border-radius: 8px;
+        margin-top: 6px;
+        min-width: 220px;
+        padding: 13px 28px;
+        border-radius: 999px;
         border: none;
-        background: #2563eb;
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
         color: #fff;
-        font-size: 0.95rem;
+        font-size: 1rem;
+        font-weight: 600;
         cursor: pointer;
+        touch-action: manipulation;
+        box-shadow: 0 6px 18px rgba(242, 140, 51, 0.3);
     }
     button:active {
-        opacity: 0.85;
+        transform: scale(0.98);
+    }
+    button:disabled {
+        opacity: 0.7;
+    }
+    #status {
+        min-height: 1.4em;
+        font-size: 0.875rem;
+        color: #c2410c;
+    }
+    @media (prefers-color-scheme: dark) {
+        #status { color: #ffb366; }
+    }
+    #filaOfflineInfo {
+        max-width: 340px;
+        padding: 12px 16px;
+        border-radius: 14px;
+        background: #fff4ea;
+        color: #8a4a12;
+        font-size: 0.9rem;
+    }
+    @media (prefers-color-scheme: dark) {
+        #filaOfflineInfo { background: #2b1f15; color: #ffcf9e; }
     }
 </style>
 </head>
 <body>
     <img src="/static/icons/icon-192.png" alt="FitLog" onerror="this.style.display='none'">
     <h1>Você está sem conexão</h1>
-    <p>Não foi possível carregar essa página. Assim que a internet voltar, é só tentar de novo.</p>
-    <button onclick="window.location.reload()">Tentar novamente</button>
+    <p>Não foi possível carregar esta página. Assim que a internet voltar, ela abre normalmente.</p>
     <p id="filaOfflineInfo" hidden></p>
+    <button type="button" id="btnTentar">Tentar novamente</button>
+    <p id="status" role="status" aria-live="polite"></p>
     <script src="/static/js/modules/fila-offline.js"></script>
     <script>
-        // Treinos guardados no aparelho (fila offline) -- tranquiliza quem
-        // salvou sem internet e caiu aqui ao sair do resumo.
         (function () {
+            var btn = document.getElementById('btnTentar');
+            var status = document.getElementById('status');
+
+            // Só recarrega se a internet voltou de fato. Recarregar sem rede
+            // só mostrava esta mesma página de novo, e a pessoa ficava
+            // tocando no botão sem perceber diferença.
+            function tentar() {
+                btn.disabled = true;
+                status.textContent = 'Verificando conexão...';
+                var semRede = function () {
+                    btn.disabled = false;
+                    status.textContent = 'Ainda sem conexão. Tente de novo em instantes.';
+                };
+                if (navigator.onLine === false) { setTimeout(semRede, 400); return; }
+                fetch('/health', { cache: 'no-store' }).then(function (r) {
+                    if (r.ok) window.location.reload();
+                    else semRede();
+                }, semRede);
+            }
+            btn.addEventListener('click', tentar);
+
+            window.addEventListener('online', function () { window.location.reload(); });
+
+            // Treinos guardados no aparelho (fila offline) -- tranquiliza quem
+            // salvou sem internet e caiu aqui ao sair do resumo.
             var fila = window.FitLogFilaOffline;
             var el = document.getElementById('filaOfflineInfo');
             if (!fila || !el) return;
@@ -79,7 +146,6 @@
                     : 'Seus ' + itens.length + ' treinos estão salvos neste aparelho e serão enviados assim que a internet voltar.';
                 el.hidden = false;
             });
-            window.addEventListener('online', function () { window.location.reload(); });
         })();
     </script>
 </body>

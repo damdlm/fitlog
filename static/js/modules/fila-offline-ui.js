@@ -17,6 +17,9 @@
     if (!Fila) return;
 
     var INTERVALO_MS = 60000;
+    var TEMPO_ATE_COMPACTAR_MS = 6000;
+    var compacto = false;
+    var timerCompacto = null;
 
     function meta(nome) {
         var el = document.querySelector('meta[name="' + nome + '"]');
@@ -57,6 +60,13 @@
         el.hidden = true;
         document.body.appendChild(el);
         el.addEventListener('click', function (e) {
+            if (el.classList.contains('fila-offline-compacto')) {
+                // Ícone de "sem internet": expande de novo e volta a
+                // encolher depois de alguns segundos.
+                compacto = false;
+                atualizar();
+                return;
+            }
             var botao = e.target.closest('[data-fila-acao]');
             if (!botao) return;
             var acao = botao.getAttribute('data-fila-acao');
@@ -112,11 +122,37 @@
             }
         } else if (offline) {
             estado = 'offline';
-            html = '<i class="bi bi-wifi-off"></i><span class="fila-offline-texto">Você está sem internet.</span>';
+            // Na tela de registro o que importa é saber que dá para seguir
+            // o treino e salvar; nas outras, que a tela pode não abrir.
+            var noTreino = !!document.getElementById('registroForm');
+            html = '<i class="bi bi-wifi-off"></i><span class="fila-offline-texto">' +
+                (noTreino
+                    ? '<strong>Sem internet.</strong> Pode continuar o treino: ao salvar, ele fica guardado no aparelho e é enviado quando a conexão voltar.'
+                    : '<strong>Sem internet.</strong> Algumas telas podem não abrir até a conexão voltar.') +
+                '</span>';
+        }
+
+        // "Sem internet" sem treino pendente encolhe para um ícone depois de
+        // alguns segundos: na academia sem sinal ele ficaria o treino inteiro
+        // por cima dos exercícios. Tocar no ícone mostra o texto de novo.
+        if (estado !== 'offline') {
+            compacto = false;
+            clearTimeout(timerCompacto);
+            timerCompacto = null;
+        } else if (!compacto && !timerCompacto) {
+            timerCompacto = setTimeout(function () {
+                timerCompacto = null;
+                compacto = true;
+                if (el && el.getAttribute('data-estado') === 'offline') el.classList.add('fila-offline-compacto');
+                posicionar();
+            }, TEMPO_ATE_COMPACTAR_MS);
         }
 
         aviso.innerHTML = html;
         aviso.setAttribute('data-estado', estado);
+        aviso.classList.toggle('fila-offline-compacto', estado === 'offline' && compacto);
+        aviso.setAttribute('aria-label', estado === 'offline' && compacto ? 'Sem internet. Toque para ver detalhes.' : '');
+        if (!(estado === 'offline' && compacto)) aviso.removeAttribute('aria-label');
         aviso.hidden = !html;
         document.documentElement.classList.toggle('fila-offline-visivel', !!html);
         posicionar();
