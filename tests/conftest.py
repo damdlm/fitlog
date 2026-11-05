@@ -1,3 +1,15 @@
+import os
+import time
+
+# O app grava/compara datas em UTC (datetime.now(timezone.utc).date()), mas os
+# testes usam date.today(), que segue o fuso da MÁQUINA. Rodando no Brasil
+# (UTC-3), entre 21h e meia-noite as duas datas diferem e testes de "data de
+# hoje" falham sem haver bug. Fixar UTC aqui deixa o resultado igual em
+# qualquer máquina (o CI do GitHub já roda em UTC).
+os.environ['TZ'] = 'UTC'
+if hasattr(time, 'tzset'):
+    time.tzset()
+
 import pytest
 from sqlalchemy import event
 from sqlalchemy.engine import Engine

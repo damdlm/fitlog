@@ -1,4 +1,9 @@
 [run]
+# Caminhos relativos: permite juntar (coverage combine) os dados gerados em
+# jobs/máquinas diferentes do CI.
+relative_files = True
+# Mede tambem os ramos (if/else nao executados), nao so as linhas.
+branch = True
 omit =
     tests/*
     migrations/*

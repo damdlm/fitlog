@@ -10,7 +10,8 @@ name: CI
 #
 # A suíte inteira leva ~17 min em série. Por isso os testes rodam em
 # 4 jobs paralelos (unit, security, integration e o "resto") e o tempo total cai para o
-# do grupo mais lento (~9 min). O lint é um job à parte, rápido. 
+# do grupo mais lento (~9 min). O lint é um job à parte, rápido. Um job final
+# ("cobertura") junta os dados dos 4 grupos e exige a cobertura mínima.
 on:
   push:
     branches: [main]
@@ -93,6 +94,11 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Rodar testes (${{ matrix.nome }}) com cobertura
+        # Cada grupo grava seus dados num arquivo próprio; o job "cobertura"
+        # (abaixo) junta os 4 e confere o mínimo -- cobrar o mínimo aqui, em
+        # cada grupo isolado, falharia, pois cada um cobre só uma parte.
+        env:
+          COVERAGE_FILE: cov-${{ matrix.nome }}
         run: pytest ${{ matrix.caminho }} --cov-report=xml
 
       - name: Publicar relatório de cobertura como artefato
@@ -101,3 +107,39 @@ jobs:
         with:
           name: coverage-report-${{ matrix.nome }}
           path: coverage.xml
+
+      - name: Publicar dados de cobertura (para o job que junta os grupos)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cov-data-${{ matrix.nome }}
+          path: cov-${{ matrix.nome }}
+          if-no-files-found: error
+
+  cobertura:
+    # Junta a cobertura dos 4 grupos de testes e falha se o total cair
+    # abaixo do mínimo -- protege o ganho de cobertura contra regressões.
+    needs: testes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.8"
+
+      - name: Instalar coverage
+        run: pip install coverage==7.6.10
+
+      - name: Baixar dados de cobertura dos 4 grupos
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cov-data-*
+          merge-multiple: true
+
+      - name: Juntar e conferir cobertura mínima
+        run: |
+          coverage combine cov-unit cov-security cov-integration cov-resto
+          coverage report --fail-under=85
