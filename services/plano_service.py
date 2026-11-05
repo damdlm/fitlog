@@ -43,7 +43,7 @@ class PlanoService:
         if not valor_str:
             return None
         limpo = valor_str.strip().replace(',', '.')
-        if not re.fullmatch(r'\d+(\.\d{1,2})?', limpo):
+        if not re.fullmatch(r'[0-9]+(\.[0-9]{1,2})?', limpo):
             return None
         return round(float(limpo) * 100)
 

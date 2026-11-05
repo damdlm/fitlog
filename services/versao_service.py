@@ -426,7 +426,7 @@ class VersaoService(BaseService):
 
     @staticmethod
     @staticmethod
-    def adicionar_exercicios_a_treino_versao(treino_versao_id, usuarios_ids, bases_ids, observacoes=None):
+    def adicionar_exercicios_a_treino_versao(treino_versao_id, usuarios_ids, bases_ids, observacoes=None, ordem_chaves=None):
         """
         Substitui todos os exercícios de um treino na versão.
 
@@ -434,6 +434,10 @@ class VersaoService(BaseService):
         com a observação de cada exercício dentro deste treino (até 60
         caracteres -- truncado aqui como segunda garantia, além do
         maxlength no formulário).
+
+        ordem_chaves: opcional, lista de chaves 'u_<id>'/'b_<id>' na ordem
+        desejada (ver chaves_na_ordem_enviada). Sem ela, mantém o
+        comportamento antigo: exercícios do usuário primeiro, depois os da base.
         """
         from models import VersaoExercicio, db
         
@@ -447,29 +451,21 @@ class VersaoService(BaseService):
         VersaoExercicio.query.filter_by(treino_versao_id=treino_versao_id).delete()
         db.session.flush()
         
-        ordem = 0
-        
-        for ex_id in usuarios_ids:
-            obs = (observacoes.get(f"u_{ex_id}") or '').strip()[:60] or None
+        itens = [('u', i) for i in usuarios_ids] + [('b', i) for i in bases_ids]
+        if ordem_chaves:
+            posicao = {c: n for n, c in enumerate(ordem_chaves)}
+            # sorted é estável: quem não está em ordem_chaves fica no fim
+            itens.sort(key=lambda it: posicao.get(f"{it[0]}_{it[1]}", len(posicao)))
+
+        for ordem, (tipo, ex_id) in enumerate(itens):
+            obs = (observacoes.get(f"{tipo}_{ex_id}") or '').strip()[:60] or None
             ve = VersaoExercicio()
             ve.treino_versao_id = treino_versao_id
-            ve.exercicio_usuario_id = ex_id
-            ve.exercicio_base_id = None
+            ve.exercicio_usuario_id = ex_id if tipo == 'u' else None
+            ve.exercicio_base_id = ex_id if tipo == 'b' else None
             ve.ordem = ordem
             ve.observacao = obs
             db.session.add(ve)
-            ordem += 1
-        
-        for ex_id in bases_ids:
-            obs = (observacoes.get(f"b_{ex_id}") or '').strip()[:60] or None
-            ve = VersaoExercicio()
-            ve.treino_versao_id = treino_versao_id
-            ve.exercicio_usuario_id = None
-            ve.exercicio_base_id = ex_id
-            ve.ordem = ordem
-            ve.observacao = obs
-            db.session.add(ve)
-            ordem += 1
         
         db.session.flush()
         logger.info(f"Adicionados {len(usuarios_ids)} exercícios de usuário e {len(bases_ids)} da base ao treino {treino_versao_id}")
@@ -532,25 +528,39 @@ class VersaoService(BaseService):
                 except ValueError:
                     pass
         
-        usuarios_ids = list(set(usuarios_ids))
-        bases_ids = list(set(bases_ids))
+        # dict.fromkeys remove duplicados MANTENDO a ordem em que o aluno
+        # enviou (list(set(...)) embaralhava).
+        usuarios_ids = list(dict.fromkeys(usuarios_ids))
+        bases_ids = list(dict.fromkeys(bases_ids))
         
         usuarios_ids_validos = []
         if usuarios_ids:
-            exercicios = ExercicioCustomizado.query.filter(
+            existentes = {ex.id for ex in ExercicioCustomizado.query.filter(
                 ExercicioCustomizado.id.in_(usuarios_ids),
                 ExercicioCustomizado.usuario_id == user_id
-            ).all()
-            usuarios_ids_validos = [ex.id for ex in exercicios]
+            ).all()}
+            usuarios_ids_validos = [i for i in usuarios_ids if i in existentes]
         
         bases_ids_validos = []
         if bases_ids:
-            exercicios = ExercicioSistema.query.filter(
+            existentes = {ex.id for ex in ExercicioSistema.query.filter(
                 ExercicioSistema.id.in_(bases_ids)
-            ).all()
-            bases_ids_validos = [ex.id for ex in exercicios]
+            ).all()}
+            bases_ids_validos = [i for i in bases_ids if i in existentes]
         
         return usuarios_ids_validos, bases_ids_validos
+
+    @staticmethod
+    def chaves_na_ordem_enviada(exercicios_raw):
+        """Chaves 'u_<id>'/'b_<id>' únicas, na ordem em que vieram do
+        formulário (ordem do arrasto). Usada para gravar `ordem` respeitando
+        a intercalação entre exercícios do usuário e da base."""
+        chaves = []
+        for item in exercicios_raw or []:
+            item = (item or '').strip()
+            if item[:2] in ('u_', 'b_') and item[2:].isdigit() and item not in chaves:
+                chaves.append(item)
+        return chaves
 
     # ==========================================================
     # TELA "CADASTRAR TREINOS" -- fluxo unificado (versão sem
@@ -763,7 +773,8 @@ class VersaoService(BaseService):
             if usuarios_ids_validos or bases_ids_validos:
                 db.session.flush()  # garante treino_versao.id antes de associar exercícios
                 VersaoService.adicionar_exercicios_a_treino_versao(
-                    treino_versao.id, usuarios_ids_validos, bases_ids_validos, observacoes=observacoes
+                    treino_versao.id, usuarios_ids_validos, bases_ids_validos, observacoes=observacoes,
+                    ordem_chaves=VersaoService.chaves_na_ordem_enviada(exercicios_raw),
                 )
             db.session.commit()
             logger.info(
@@ -839,7 +850,8 @@ class VersaoService(BaseService):
             treino_versao.nome_treino = nome_treino
             treino_versao.descricao_treino = descricao_treino
             VersaoService.adicionar_exercicios_a_treino_versao(
-                treino_versao.id, usuarios_ids_validos, bases_ids_validos, observacoes=observacoes
+                treino_versao.id, usuarios_ids_validos, bases_ids_validos, observacoes=observacoes,
+                ordem_chaves=VersaoService.chaves_na_ordem_enviada(exercicios_raw),
             )
             db.session.commit()
             logger.info(f"Treino {treino_versao.id} (versão {versao_id}) salvo via cadastro livre")

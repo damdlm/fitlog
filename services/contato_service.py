@@ -174,7 +174,7 @@ class ContatoService:
 
         if not nome or len(nome) > 120:
             return {"ok": False, "erro": "Informe seu nome."}
-        if not email or not validar_email(email):
+        if not email or not validar_email(email)[0]:
             return {"ok": False, "erro": "Informe um e-mail válido para retornarmos o contato."}
         if not mensagem:
             return {"ok": False, "erro": "Escreva sua mensagem antes de enviar."}

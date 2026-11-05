@@ -225,17 +225,6 @@ class TestEnviarContatoPublico:
         assert 'e-mail válido' in resp.get_json()['erro']
         assert emails == []
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "BUG CONHECIDO: ContatoService.enviar_mensagem_publica faz "
-            "`not validar_email(email)`, mas validar_email devolve uma TUPLA "
-            "(bool, msg) -- sempre verdadeira -- então QUALQUER texto passa como "
-            "e-mail ('abc', '@@@'...). auth_routes.py usa certo "
-            "(`ok, msg = validar_email(...)`). Ao corrigir, este teste vira XPASS "
-            "e o strict=True força a remoção do marcador."
-        ),
-    )
     @pytest.mark.parametrize('invalido', ['abc', 'sem-arroba.com', '@@@', 'a@b', 'a b@c.com'])
     def test_email_com_formato_invalido_e_recusado(self, client, app, emails, invalido):
         resp = _enviar(client, email=invalido)

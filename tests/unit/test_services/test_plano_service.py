@@ -90,9 +90,6 @@ class TestParseValor:
     def test_rejeita_o_que_nao_e_valor_monetario_valido(self, texto):
         assert PlanoService._parse_valor_para_centavos(texto) is None
 
-    @pytest.mark.xfail(strict=True, reason=(
-        'BUG menor: o regex usa \\d, que casa dígitos Unicode (árabe-índico etc.) '
-        'e int() os converte -> "١٢" vira R$ 12,00. Corrigir com [0-9] ou re.ASCII.'))
     def test_rejeita_digitos_unicode_nao_ascii(self):
         assert PlanoService._parse_valor_para_centavos('١٢') is None
 
