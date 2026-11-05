@@ -18,7 +18,7 @@ import pytest
 
 from models import (
     db, User, AlunoProfessor, VersaoGlobal, TreinoVersao, VersaoExercicio,
-    ExercicioUsuario, Notificacao,
+    ExercicioUsuario, ExercicioSistema, Notificacao,
 )
 
 
@@ -127,17 +127,6 @@ class TestSalvarTreinoVersaoAtiva:
             ids = {ve.exercicio_usuario_id for ve in tv.exercicios}
             assert ids == {c['remada'], c['supino']}
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "BUG CONHECIDO: VersaoService.processar_exercicios_formulario faz "
-            "list(set(...)) e depois .filter(id.in_(...)), então a ordem em que "
-            "o aluno arrastou os exercícios (SortableJS) NÃO é preservada -- "
-            "sai em ordem de id e com os 'u_' sempre antes dos 'b_'. Quando "
-            "corrigir, este teste passa a dar XPASS e o strict=True força a "
-            "remoção do marcador."
-        ),
-    )
     def test_preserva_a_ordem_em_que_os_exercicios_foram_enviados(self, client, app, cenario):
         c = cenario
         client.post(_url_salvar(c), data={
@@ -151,6 +140,30 @@ class TestSalvarTreinoVersaoAtiva:
                 key=lambda ve: ve.ordem,
             )
             assert [ve.exercicio_usuario_id for ve in ordenados] == [c['remada'], c['supino']]
+            assert [ve.ordem for ve in ordenados] == [0, 1]
+
+    def test_preserva_a_ordem_intercalando_exercicios_do_usuario_e_da_base(self, client, app, cenario):
+        c = cenario
+        with app.app_context():
+            base = ExercicioSistema(nome='Crucifixo', id_original='ord-1')
+            db.session.add(base)
+            db.session.commit()
+            base_id = base.id
+
+        client.post(_url_salvar(c), data={
+            'nome_treino': 'Treino A', 'descricao_treino': '',
+            'exercicios[]': [f"b_{base_id}", f"u_{c['supino']}", f"b_{base_id}", f"u_{c['remada']}"],  # b, u, (b repetido), u
+        }, follow_redirects=True)
+
+        with app.app_context():
+            ordenados = sorted(
+                VersaoExercicio.query.filter_by(treino_versao_id=c['tv_id']),
+                key=lambda ve: ve.ordem,
+            )
+            assert [(ve.exercicio_base_id, ve.exercicio_usuario_id) for ve in ordenados] == [
+                (base_id, None), (None, c['supino']), (None, c['remada']),
+            ]
+            assert [ve.ordem for ve in ordenados] == [0, 1, 2]
 
     def test_salva_observacao_por_exercicio_truncada_em_60_caracteres(self, client, app, cenario):
         c = cenario

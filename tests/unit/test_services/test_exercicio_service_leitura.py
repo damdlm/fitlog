@@ -6,7 +6,7 @@ Testes de ExercicioService -- o código VIVO que ainda estava sem cobertura:
 - get_by_id / get_exercicios_completos / get_exercicios_dos_treinos / get_by_treino
 - delete_exercicio_usuario / delete_exercicio_customizado / update_exercicio_customizado
 - reordenar_exercicios
-- get_ultima_sessao_series / get_ultima_sessao_series_em_lote / get_ultimas_series
+- get_ultima_sessao_series / get_ultima_sessao_series_em_lote
 
 Detalhe que atravessa vários testes: exercicios_usuario e exercicios_sistema têm
 sequências de ID INDEPENDENTES (o mesmo número pode existir nas duas tabelas).
@@ -762,47 +762,6 @@ class TestUltimaSessaoSeries:
         _registro(uid, v, t, [(30, 6)], usuario_id=u)
 
         assert ExercicioService.get_ultima_sessao_series(u, user_id=uid) == [{'carga': 30.0, 'repeticoes': 6}]
-
-
-class TestUltimasSeries:
-
-    def test_mais_recentes_primeiro_respeitando_o_limite(self, historico):
-        h = historico
-        r = ExercicioService.get_ultimas_series(h.u, tipo='usuario', limite=2, user_id=h.uid)
-
-        assert len(r) == 2
-        assert all(s['carga'] == 12.0 for s in r)                # as 2 da sessão mais recente
-
-    def test_limite_maior_que_a_sessao_puxa_series_da_sessao_anterior(self, historico):
-        """Comportamento documentado: é uma JANELA de linhas, não uma sessão
-        (por isso get_ultima_sessao_series existe)."""
-        h = historico
-        r = ExercicioService.get_ultimas_series(h.u, tipo='usuario', limite=3, user_id=h.uid)
-
-        assert len(r) == 3
-        assert r[-1]['carga'] == 10.0
-
-    def test_tipo_base_nao_mistura_com_usuario(self, historico):
-        h = historico
-        assert ExercicioService.get_ultimas_series(h.b, tipo='base', user_id=h.uid) == \
-            [{'carga': 100.0, 'repeticoes': 5}]
-
-    def test_filtra_por_versao(self, historico):
-        h = historico
-        outra = _versao(h.uid, numero=2, inicio=date(2025, 1, 1))
-        assert ExercicioService.get_ultimas_series(h.u, tipo='usuario', versao_id=outra, user_id=h.uid) == []
-
-    def test_sem_tipo_usa_compatibilidade(self, app):
-        uid = _user('us_compat')
-        u = _meu(uid, 'Único')
-        v = _versao(uid)
-        t = _treino(v)
-        _registro(uid, v, t, [(40, 4)], usuario_id=u)
-
-        assert ExercicioService.get_ultimas_series(u, user_id=uid) == [{'carga': 40.0, 'repeticoes': 4}]
-
-    def test_sem_usuario_retorna_vazio(self, historico):
-        assert ExercicioService.get_ultimas_series(historico.u, tipo='usuario', user_id=None) == []
 
 
 class TestUltimaSessaoEmLote:

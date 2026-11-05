@@ -3,7 +3,7 @@
 from models import db, ExercicioSistema, ExercicioUsuario, ExercicioCustomizado, Musculo, VersaoExercicio, RegistroTreino
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm.attributes import set_committed_value
-from sqlalchemy import text, func, or_
+from sqlalchemy import func, or_
 from .base_service import BaseService   # ← importação direta
 import logging
 
@@ -87,82 +87,9 @@ class ExercicioService(BaseService):
 
         return resultado
 
-    @staticmethod
-    def get_all_base(limite=500):
-        """Retorna todos os exercícios do catálogo base (exercicios_sistema)"""
-        try:
-            return ExercicioSistema.query.order_by(ExercicioSistema.nome).limit(limite).all()
-        except Exception as e:
-            BaseService.handle_error(e, "Erro ao buscar exercícios base")
-            return []
-    
-    @staticmethod
-    def get_base_by_id(exercicio_base_id):
-        """Retorna um exercício base por ID"""
-        try:
-            return ExercicioSistema.query.get(exercicio_base_id)
-        except Exception as e:
-            BaseService.handle_error(e, f"Erro ao buscar exercício base {exercicio_base_id}")
-            return None
-    
-    @staticmethod
-    def search_base(termo, musculo=None, limite=50):
-        """Busca exercícios no catálogo base (por nome ou por apelido/nickname)"""
-        try:
-            query = ExercicioSistema.query
-            
-            if termo:
-                termo_like = f'%{termo}%'
-                query = query.filter(
-                    or_(
-                        ExercicioSistema.nome.ilike(termo_like),
-                        db.cast(ExercicioSistema.nicknames, db.Text).ilike(termo_like),
-                    )
-                )
-            
-            if musculo:
-                query = query.filter(ExercicioSistema.grupo_muscular == musculo)
-            
-            return query.order_by(ExercicioSistema.nome).limit(limite).all()
-        except Exception as e:
-            BaseService.handle_error(e, f"Erro ao buscar exercícios base com termo {termo}")
-            return []
-    
     # =============================================
     # MÉTODOS PARA EXERCÍCIOS DO USUÁRIO (CATÁLOGO PESSOAL)
     # =============================================
-    
-    @staticmethod
-    def get_exercicios_usuario(user_id=None, load_relations=False):
-        """
-        Retorna todos os exercícios disponíveis para um usuário
-        (inclui exercícios base adicionados e customizados)
-        """
-        try:
-            if user_id is None:
-                user_id = BaseService.get_current_user_id()
-            if not user_id:
-                logger.warning("Tentativa de buscar exercícios sem usuário logado")
-                return []
-            
-            # Usar a view para obter todos os exercícios disponíveis
-            result = db.session.execute(text("""
-                SELECT 
-                    exercicio_id,
-                    nome,
-                    descricao,
-                    musculo,
-                    tipo,
-                    is_personalizado
-                FROM exercicios_disponiveis 
-                WHERE usuario_id = :user_id 
-                ORDER BY nome
-            """), {'user_id': user_id})
-            
-            return result.fetchall()
-        except Exception as e:
-            BaseService.handle_error(e, "Erro ao buscar exercícios do usuário")
-            return []
     
     @staticmethod
     def get_by_id(exercicio_id, user_id=None, load_relations=False):
@@ -447,39 +374,6 @@ class ExercicioService(BaseService):
     # =============================================
     
     @staticmethod
-    def adicionar_exercicio_base(user_id, exercicio_base_id, nome_personalizado=None, 
-                                  descricao_personalizada=None, musculo_personalizado_id=None):
-        """
-        Adiciona um exercício da base ao catálogo do usuário
-        """
-        try:
-            # Verificar se já existe
-            existente = ExercicioUsuario.query.filter_by(
-                usuario_id=user_id,
-                exercicio_base_id=exercicio_base_id
-            ).first()
-            
-            if existente:
-                logger.info(f"Exercício base {exercicio_base_id} já existe para usuário {user_id}")
-                return existente
-            
-            exercicio = ExercicioUsuario(
-                usuario_id=user_id,
-                exercicio_base_id=exercicio_base_id,
-                nome_personalizado=nome_personalizado,
-                descricao_personalizada=descricao_personalizada,
-                musculo_personalizado_id=musculo_personalizado_id
-            )
-            db.session.add(exercicio)
-            db.session.commit()
-            
-            logger.info(f"Exercício base {exercicio_base_id} adicionado ao usuário {user_id}")
-            return exercicio
-        except Exception as e:
-            BaseService.handle_error(e, f"Erro ao adicionar exercício base ao usuário")
-            return None
-    
-    @staticmethod
     def criar_exercicio_customizado(user_id, nome, musculo_nome, descricao=''):
         """
         Cria um novo exercício customizado para o usuário.
@@ -562,43 +456,6 @@ class ExercicioService(BaseService):
             )
             db.session.add(copia)
 
-    @staticmethod
-    def update_exercicio_usuario(exercicio_usuario_id, user_id=None, **kwargs):
-        """
-        Atualiza um exercício da tabela exercicios_usuario
-        """
-        try:
-            if user_id is None:
-                user_id = BaseService.get_current_user_id()
-            if not user_id:
-                return None
-            
-            exercicio = ExercicioUsuario.query.filter_by(
-                id=exercicio_usuario_id,
-                usuario_id=user_id
-            ).first()
-            
-            if not exercicio:
-                logger.warning(f"Exercício usuário {exercicio_usuario_id} não encontrado")
-                return None
-            
-            # Atualizar campos
-            if 'nome_personalizado' in kwargs:
-                exercicio.nome_personalizado = kwargs['nome_personalizado']
-            if 'descricao_personalizada' in kwargs:
-                exercicio.descricao_personalizada = kwargs['descricao_personalizada']
-            if 'musculo_personalizado_id' in kwargs:
-                exercicio.musculo_personalizado_id = kwargs['musculo_personalizado_id']
-            if 'observacoes' in kwargs:
-                exercicio.observacoes = kwargs['observacoes']
-            
-            db.session.commit()
-            logger.info(f"Exercício usuário {exercicio_usuario_id} atualizado")
-            return exercicio
-        except Exception as e:
-            BaseService.handle_error(e, f"Erro ao atualizar exercício usuário")
-            return None
-    
     @staticmethod
     def _propagar_edicao_para_alunos(exercicio_professor):
         """
@@ -769,83 +626,6 @@ class ExercicioService(BaseService):
     # =============================================
     
     @staticmethod
-    def get_ultima_carga(exercicio_id, user_id=None):
-        """
-        Retorna última carga de um exercício
-        (funciona com qualquer tipo de exercício)
-        """
-        try:
-            from models import RegistroTreino, HistoricoTreino
-            
-            if user_id is None:
-                user_id = BaseService.get_current_user_id()
-            if not user_id:
-                return None
-            
-            registro = RegistroTreino.query.filter_by(
-                exercicio_id=exercicio_id,
-                user_id=user_id
-            ).order_by(RegistroTreino.data_registro.desc()).first()
-            
-            if registro and registro.series:
-                primeira_serie = registro.series[0]
-                return float(primeira_serie.carga)
-            return None
-        except Exception:
-            logger.exception("Erro ao buscar última carga do exercício {exercicio_id}")
-            return None
-    
-    @staticmethod
-    def get_ultimas_series(exercicio_id, tipo=None, versao_id=None, limite=1, user_id=None):
-        """
-        Retorna as últimas séries de um exercício
-
-        IMPORTANTE: `tipo` ('usuario' ou 'base') deve ser informado sempre que
-        possível. exercicios_usuario e exercicios_base têm sequências de ID
-        independentes, então um mesmo número de ID pode existir nas duas
-        tabelas ao mesmo tempo. Sem o `tipo`, RegistroTreino.exercicio_id
-        (coalesce das duas colunas) pode misturar o histórico de dois
-        exercícios diferentes que coincidem no número do ID.
-        """
-        try:
-            from models import HistoricoTreino, RegistroTreino
-            
-            if user_id is None:
-                user_id = BaseService.get_current_user_id()
-            if not user_id:
-                return []
-            
-            query = HistoricoTreino.query\
-                .join(RegistroTreino)\
-                .filter(RegistroTreino.user_id == user_id)
-
-            if tipo == 'usuario':
-                query = query.filter(RegistroTreino.exercicio_usuario_id == exercicio_id)
-            elif tipo == 'base':
-                query = query.filter(RegistroTreino.exercicio_base_id == exercicio_id)
-            else:
-                # Compatibilidade com chamadas antigas sem `tipo` informado
-                query = query.filter(RegistroTreino.exercicio_id == exercicio_id)
-            
-            if versao_id:
-                query = query.filter(RegistroTreino.versao_id == versao_id)
-            
-            series = query.order_by(RegistroTreino.data_registro.desc())\
-                .limit(limite).all()
-            
-            resultado = []
-            for serie in series:
-                resultado.append({
-                    'carga': float(serie.carga),
-                    'repeticoes': serie.repeticoes
-                })
-            
-            return resultado
-        except Exception:
-            logger.exception("Erro ao buscar últimas séries")
-            return []
-
-    @staticmethod
     def get_ultima_sessao_series(exercicio_id, tipo=None, versao_id=None, user_id=None):
         """
         Retorna TODAS as séries (carga/repetições) do último treino
@@ -853,7 +633,7 @@ class ExercicioService(BaseService):
         HistoricoTreino que pertencem a um único RegistroTreino (o mais
         recente).
 
-        Diferença para get_ultimas_series: aquele método pega uma janela
+        Diferença para a antiga get_ultimas_series (removida): aquele método pegava uma janela
         de N linhas de HistoricoTreino ordenadas por data, o que mistura
         sessões diferentes sempre que a sessão mais recente teve menos
         séries que N (ex: pediu 3, a última sessão só tinha 2 séries --
@@ -986,25 +766,6 @@ class ExercicioService(BaseService):
     # =============================================
     
     @staticmethod
-    def get_musculo_id(nome_musculo):
-        """Retorna ID do músculo base pelo nome"""
-        try:
-            musculo = Musculo.query.filter_by(nome_exibicao=nome_musculo).first()
-            return musculo.id if musculo else None
-        except Exception:
-            logger.exception("Erro ao buscar ID do músculo {nome_musculo}")
-            return None
-    
-    @staticmethod
-    def get_all_musculos():
-        """Retorna todos os músculos base"""
-        try:
-            return Musculo.query.order_by(Musculo.nome_exibicao).all()
-        except Exception as e:
-            BaseService.handle_error(e, "Erro ao buscar músculos")
-            return []
-
-    @staticmethod
     def reordenar_exercicios(versao_id, treino_codigo, nova_ordem_ids, user_id=None):
         """
         Reordena os exercícios de um treino dentro de uma versão
@@ -1076,16 +837,6 @@ class ExercicioService(BaseService):
             BaseService.handle_error(e, "Erro ao reordenar exercícios")
             return False
 
-    @staticmethod
-    def get_all_musculos_nomes():
-        """Retorna lista com nomes de exibição dos músculos"""
-        try:
-            musculos = ExercicioService.get_all_musculos()
-            return [m.nome_exibicao for m in musculos]
-        except Exception:
-            logger.exception("Erro ao buscar nomes dos músculos")
-            return []
-    
     @staticmethod
     def get_estatisticas_exercicio(exercicio_id, user_id=None):
         """Retorna estatísticas de um exercício"""
