@@ -12,19 +12,42 @@ logger = logging.getLogger(__name__)
 
 
 class CacheService:
-    """Wrapper sobre Flask-Caching — funciona com Redis (prod) ou SimpleCache (dev)."""
+    """Wrapper sobre Flask-Caching — funciona com Redis (prod) ou SimpleCache (dev).
+
+    O cache é uma OTIMIZAÇÃO, nunca uma dependência: se o Redis cair,
+    reiniciar ou ficar lento, get() devolve None (= cache miss, quem
+    chamou busca no banco) e set()/invalidate() viram no-op. Antes, a
+    exceção do redis-py subia até o context processor do menu
+    (ConfiguracaoService.tela_assinatura_ativa) e TODA página dava 500
+    -- inclusive a própria página de erro 500, que também renderiza o
+    menu. Foi o que aconteceu em 02/11/2026 ~12:04 (restart do Redis
+    no Railway, ~3 min de site fora do ar).
+    """
 
     @classmethod
     def get(cls, key: str):
-        return flask_cache.get(key)
+        try:
+            return flask_cache.get(key)
+        except Exception:
+            logger.warning("CacheService.get falhou (cache indisponível?) key=%s", key, exc_info=True)
+            return None
 
     @classmethod
     def set(cls, key: str, value, ttl_seconds: int = 300):
-        flask_cache.set(key, value, timeout=ttl_seconds)
+        try:
+            flask_cache.set(key, value, timeout=ttl_seconds)
+        except Exception:
+            logger.warning("CacheService.set falhou (cache indisponível?) key=%s", key, exc_info=True)
 
     @classmethod
     def invalidate(cls, key: str):
-        flask_cache.delete(key)
+        try:
+            flask_cache.delete(key)
+        except Exception:
+            # Se o Redis está fora, a chave antiga também não está sendo
+            # servida; quando ele voltar, o TTL curto das chaves cuida do
+            # resto.
+            logger.warning("CacheService.invalidate falhou (cache indisponível?) key=%s", key, exc_info=True)
 
     @classmethod
     def invalidate_pattern(cls, pattern: str):
@@ -70,10 +93,10 @@ def cached(ttl_seconds: int = 300, key_prefix: str = ''):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             key = f"{key_prefix}_{f.__name__}_{args}_{kwargs}"
-            result = flask_cache.get(key)
+            result = CacheService.get(key)
             if result is None:
                 result = f(*args, **kwargs)
-                flask_cache.set(key, result, timeout=ttl_seconds)
+                CacheService.set(key, result, ttl_seconds=ttl_seconds)
             return result
         return decorated_function
     return decorator

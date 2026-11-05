@@ -317,6 +317,24 @@ class ProductionConfig(Config):
     CACHE_TYPE = 'RedisCache'
     CACHE_REDIS_URL = os.getenv('REDIS_URL')
 
+    # Resiliência a queda do Redis (incidente 02/11/2026: restart do Redis
+    # = ~3 min de 500 em todas as páginas). O Redis é otimização, não
+    # dependência -- o app tem que continuar funcionando sem ele:
+    #  - timeouts curtos: sem eles o redis-py espera indefinidamente um
+    #    host que não responde (sem RST), prendendo a thread do gunicorn
+    #    até o --timeout de 120s. Com 2s, cada request degrada no máximo
+    #    ~2s e segue pro banco.
+    #  - CacheService (services/base_service.py) trata erro como cache miss.
+    #  - Flask-Limiter: com Redis fora, passa a contar em memória (por
+    #    worker) em vez de quebrar a request; volta pro Redis sozinho
+    #    quando ele responder de novo. SWALLOW_ERRORS cobre o resto (ex:
+    #    erro no meio de um hit) -- loga e deixa a request passar.
+    _REDIS_TIMEOUTS = {'socket_connect_timeout': 2, 'socket_timeout': 2}
+    CACHE_OPTIONS = dict(_REDIS_TIMEOUTS)
+    RATELIMIT_STORAGE_OPTIONS = dict(_REDIS_TIMEOUTS)
+    RATELIMIT_IN_MEMORY_FALLBACK_ENABLED = True
+    RATELIMIT_SWALLOW_ERRORS = True
+
     # 'connect_timeout' é específico do psycopg2 (Postgres) — por isso fica
     # só aqui, e não na Config base (SQLite não aceita esse argumento).
     # Sem ele, uma conexão travada (rede, Postgres reiniciando etc.) pode
