@@ -1051,25 +1051,20 @@
         sombraInterna(x, y, R, it.s1x, it.s1y, 5, [100, 35, 0], 0.25, b, k);
         sombraInterna(x, y, R, it.s2x, it.s2y, 4, [255, 255, 255], 0.22, 1, k);
 
-        // border: 0.5px solid rgba(255,255,255,.9) (por dentro da borda)
-        ctx.lineWidth = Math.max(0.5 * k, 0.4);
-        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-        ctx.beginPath();
-        ctx.arc(x, y, Math.max(R - 0.25 * k, 0), 0, DOIS_PI);
-        ctx.stroke();
-
-        // Contorno fino de definição. Com o brilho alto da explosão (até 1,9x)
-        // o lado iluminado do dot fica amarelo-claro quase branco e a borda some
-        // no fundo claro: o dot parece desfocado mesmo estando nítido. Este
-        // aro laranja (sem o brilho aplicado) mantém a silhueta definida em todo
-        // o contorno; fica mais marcado quanto mais "aceso" o dot estiver.
+        // Escurecimento suave na borda (como o limbo de uma esfera): sem linha
+        // nem aro, só a cor fechando um pouco perto da silhueta. Com o brilho
+        // alto da explosão (até 1,9x) o lado iluminado do dot fica amarelo-claro
+        // e a borda se perderia no fundo claro; isto mantém a forma definida de
+        // forma natural, e fica mais marcado quanto mais "aceso" o dot estiver.
         var aceso = Math.min(Math.max((b - 1) / 0.9, 0), 1);
-        var largAro = Math.max(1 / esc, 0.9 * k * 0.9);
-        ctx.lineWidth = largAro;
-        ctx.strokeStyle = 'rgba(222, 108, 20,' + (0.22 + 0.30 * aceso).toFixed(3) + ')';
+        var limbo = ctx.createRadialGradient(x, y, R * 0.70, x, y, R);
+        limbo.addColorStop(0, 'rgba(205, 91, 21, 0)');
+        limbo.addColorStop(0.65, 'rgba(205, 91, 21,' + (0.06 + 0.10 * aceso).toFixed(3) + ')');
+        limbo.addColorStop(1, 'rgba(190, 80, 15,' + (0.20 + 0.26 * aceso).toFixed(3) + ')');
+        ctx.fillStyle = limbo;
         ctx.beginPath();
-        ctx.arc(x, y, Math.max(R - largAro / 2, 0), 0, DOIS_PI);
-        ctx.stroke();
+        ctx.arc(x, y, R, 0, DOIS_PI);
+        ctx.fill();
 
         ctx.restore();
     }
