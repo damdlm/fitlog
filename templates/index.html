@@ -1058,6 +1058,19 @@
         ctx.arc(x, y, Math.max(R - 0.25 * k, 0), 0, DOIS_PI);
         ctx.stroke();
 
+        // Contorno fino de definição. Com o brilho alto da explosão (até 1,9x)
+        // o lado iluminado do dot fica amarelo-claro quase branco e a borda some
+        // no fundo claro: o dot parece desfocado mesmo estando nítido. Este
+        // aro laranja (sem o brilho aplicado) mantém a silhueta definida em todo
+        // o contorno; fica mais marcado quanto mais "aceso" o dot estiver.
+        var aceso = Math.min(Math.max((b - 1) / 0.9, 0), 1);
+        var largAro = Math.max(1 / esc, 0.9 * k * 0.9);
+        ctx.lineWidth = largAro;
+        ctx.strokeStyle = 'rgba(222, 108, 20,' + (0.22 + 0.30 * aceso).toFixed(3) + ')';
+        ctx.beginPath();
+        ctx.arc(x, y, Math.max(R - largAro / 2, 0), 0, DOIS_PI);
+        ctx.stroke();
+
         ctx.restore();
     }
 
