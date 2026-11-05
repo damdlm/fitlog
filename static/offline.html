@@ -63,5 +63,24 @@
     <h1>Você está sem conexão</h1>
     <p>Não foi possível carregar essa página. Assim que a internet voltar, é só tentar de novo.</p>
     <button onclick="window.location.reload()">Tentar novamente</button>
+    <p id="filaOfflineInfo" hidden></p>
+    <script src="/static/js/modules/fila-offline.js"></script>
+    <script>
+        // Treinos guardados no aparelho (fila offline) -- tranquiliza quem
+        // salvou sem internet e caiu aqui ao sair do resumo.
+        (function () {
+            var fila = window.FitLogFilaOffline;
+            var el = document.getElementById('filaOfflineInfo');
+            if (!fila || !el) return;
+            fila.listar().then(function (itens) {
+                if (!itens.length) return;
+                el.textContent = itens.length === 1
+                    ? 'Seu treino está salvo neste aparelho e será enviado assim que a internet voltar.'
+                    : 'Seus ' + itens.length + ' treinos estão salvos neste aparelho e serão enviados assim que a internet voltar.';
+                el.hidden = false;
+            });
+            window.addEventListener('online', function () { window.location.reload(); });
+        })();
+    </script>
 </body>
 </html>

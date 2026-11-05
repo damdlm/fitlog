@@ -3,10 +3,14 @@
 // Propositalmente NÃO faz cache agressivo: a aplicação é dinâmica
 // (login, CSRF token, dados de treino), então cachear respostas
 // poderia servir páginas desatualizadas ou quebrar o CSRF.
-// A única função dele aqui é satisfazer o requisito do navegador
-// para permitir "Instalar app" / adicionar à tela inicial.
+// Funções: satisfazer o requisito do navegador para "Instalar app",
+// servir a página offline quando a navegação falha e enviar a fila
+// offline de treinos via Background Sync (Android/Chrome -- ver
+// static/js/modules/fila-offline.js).
 
-const CACHE_NAME = 'fitlog-shell-v2'; // bump pra forçar re-precache do offline.html
+importScripts('/static/js/modules/fila-offline.js');
+
+const CACHE_NAME = 'fitlog-shell-v3'; // bump pra forçar re-precache (v3: fila offline)
 
 // Só os assets realmente estáticos (não mudam por usuário/sessão)
 const SHELL_ASSETS = [
@@ -14,6 +18,8 @@ const SHELL_ASSETS = [
     '/static/icons/icon-512.png',
     '/static/images/logo.png',
     '/static/offline.html',
+    // Usado pela offline.html para mostrar os treinos guardados no aparelho.
+    '/static/js/modules/fila-offline.js',
 ];
 
 const OFFLINE_URL = '/static/offline.html';
@@ -71,6 +77,17 @@ self.addEventListener('fetch', (event) => {
     // Tudo o resto (páginas, formulários, APIs) vai direto pra rede,
     // sem cache, pra nunca servir conteúdo desatualizado.
     if (SHELL_ASSETS.includes(url.pathname)) {
+        // Network-first para o JS da fila (muda a cada deploy e as páginas
+        // o pedem com ?v=); cache só como reserva offline. Os demais
+        // (ícones, offline.html) seguem cache-first.
+        if (url.pathname.endsWith('.js')) {
+            event.respondWith(
+                fetch(event.request).catch(() =>
+                    caches.match(url.pathname).then((cached) => cached || Response.error())
+                )
+            );
+            return;
+        }
         event.respondWith(
             caches.match(event.request).then((cached) => cached || fetch(event.request))
         );
@@ -93,4 +110,22 @@ self.addEventListener('fetch', (event) => {
     // Passthrough padrão — mantém o comportamento normal de rede
     // pra tudo que não é navegação (chamadas de API, etc.)
     event.respondWith(fetch(event.request));
+});
+
+// Background Sync (Android/Chrome): o navegador dispara quando a conexão
+// volta, mesmo com o app fechado. No iPhone não existe -- lá a própria
+// página envia ao abrir/voltar a internet (fila-offline-ui.js).
+// Sem userId/csrfToken: o servidor confere o dono pelo campo
+// fila_offline_user_id e o token guardado é o da sessão que registrou.
+self.addEventListener('sync', (event) => {
+    if (event.tag !== self.FitLogFilaOffline.TAG_SYNC) return;
+    event.waitUntil(
+        self.FitLogFilaOffline.enviarTodos({}).then((r) => {
+            return self.clients.matchAll({ includeUncontrolled: true }).then((clientes) => {
+                clientes.forEach((c) => c.postMessage({ tipo: 'fila-offline-atualizada' }));
+                // Ainda sem rede: rejeitar faz o navegador tentar de novo mais tarde.
+                if (r && r.semRede) throw new Error('sem rede');
+            });
+        })
+    );
 });

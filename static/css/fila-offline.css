@@ -1,0 +1,87 @@
+/* Aviso flutuante da fila offline de treinos (ver js/modules/fila-offline-ui.js).
+   Fica no rodapé, acima da bottom-nav no celular (z-index 1035) e abaixo
+   dos modais do Bootstrap (1055) e das flash messages (1090). */
+.fila-offline-aviso {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px) + var(--fl-crono-flutuante-altura, 0px));
+    z-index: 1045;
+    width: max-content;
+    max-width: min(560px, calc(100vw - 24px));
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: #1f1f1f;
+    color: #fff;
+    font-size: 0.875rem;
+    line-height: 1.3;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.fila-offline-aviso[hidden] { display: none; }
+
+@media (min-width: 992px) {
+    .fila-offline-aviso {
+        bottom: calc(20px + var(--fl-crono-flutuante-altura, 0px));
+    }
+}
+
+/* Tela de registro em modo treino (tela cheia, .modo-treino-overlay z-index
+   1900): o aviso precisa ficar acima dela, mas abaixo dos modais que abrem
+   por cima (backdrop 1950 -- ver registrar_treino.html). Sem bottom-nav
+   aqui; o que há embaixo é o rodapé do treino (cronômetro de descanso),
+   cuja altura varia -- o JS mede e grava em --fila-offline-rodape. */
+body.fl-modo-treino-ativo .fila-offline-aviso {
+    z-index: 1940;
+    bottom: calc(var(--fila-offline-rodape, 88px) + 12px);
+}
+
+.fila-offline-aviso > .bi {
+    font-size: 1.05rem;
+    flex: 0 0 auto;
+}
+.fila-offline-aviso[data-estado="pendente"] > .bi { color: #FFB366; }
+.fila-offline-aviso[data-estado="erro"] {
+    background: #3a1414;
+}
+.fila-offline-aviso[data-estado="erro"] > .bi { color: #ff8a8a; }
+
+.fila-offline-texto {
+    flex: 1 1 200px;
+    min-width: 0;
+}
+
+.fila-offline-acoes {
+    display: flex;
+    gap: 6px;
+    flex: 0 0 auto;
+    margin-left: auto;
+}
+.fila-offline-acoes button {
+    border: 0;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    background: #F28C33;
+    color: #fff;
+    cursor: pointer;
+}
+.fila-offline-acoes button[data-fila-acao="descartar"] {
+    background: transparent;
+    color: #ffd0d0;
+    box-shadow: inset 0 0 0 1px rgba(255, 208, 208, 0.5);
+}
+
+.fila-offline-girando {
+    animation: fila-offline-girar 1s linear infinite;
+}
+@keyframes fila-offline-girar {
+    to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fila-offline-girando { animation: none; }
+}

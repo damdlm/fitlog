@@ -4327,7 +4327,7 @@
         </h4>
     </div>
     <div class="card-body p-4">
-        <form method="post" id="registroForm">
+        <form method="post" id="registroForm"{% if ns is defined and ns.codigo_treino %} data-treino-rotulo="{{ ns.codigo_treino }} - {{ ns.nome_treino }}"{% endif %}>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input type="hidden" name="treino" value="{{ treino_selecionado }}">
             <input type="hidden" name="data" value="{{ data_selecionada_str or data_atual_iso() }}">
@@ -4867,17 +4867,70 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Sem internet: guarda o treino no aparelho (fila offline, ver
+    // static/js/modules/fila-offline.js) e segue o fluxo de "salvo" --
+    // ele é enviado sozinho quando a conexão voltar. Resolve com false se
+    // não deu para guardar (IndexedDB indisponível, usuário deslogado);
+    // aí vale a mensagem antiga de falha de conexão, e o auto-save do
+    // localStorage continua com o treino.
+    async function guardarTreinoNoAparelho() {
+        const fila = window.FitLogFilaOffline;
+        if (!fila || !fila.ui || typeof fila.ui.guardarTreino !== 'function') return false;
+        const dataInput = form.querySelector('input[name="data"]');
+        const guardou = await fila.ui.guardarTreino(form, {
+            treino: form.getAttribute('data-treino-rotulo') || '',
+            data: dataInput ? dataInput.value : ''
+        });
+        if (!guardou) return false;
+
+        treinoJaSalvo = true;
+        window.FitLogTreinoState.finalizar();
+        document.getElementById('global-loader').style.display = 'none';
+        if (window.FitLogFecharModoTreinoTelaCheia) {
+            window.FitLogFecharModoTreinoTelaCheia();
+        }
+        if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
+            window.FitLogUtils.showToast('Sem internet: o treino ficou salvo no aparelho e será enviado assim que a conexão voltar.', 'warning', 8000);
+        }
+        if (window.FitLogResumoTreino) {
+            window.FitLogResumoTreino.abrir();
+        }
+        return true;
+    }
+
+    // Tempo máximo esperando o servidor antes de considerar "sem rede".
+    // Sinal fraco de academia costuma pendurar a requisição em vez de
+    // falhar na hora. Se o servidor tiver salvo mesmo assim, o reenvio da
+    // fila só substitui a mesma sessão (não duplica).
+    const TIMEOUT_SALVAR_MS = 20000;
+
     async function salvarTreino() {
         const btnFinalizar = form.querySelector('button[name="salvar"]');
         if (btnFinalizar) btnFinalizar.disabled = true;
         document.getElementById('global-loader').style.display = 'flex';
 
+        if (navigator.onLine === false) {
+            try {
+                if (await guardarTreinoNoAparelho()) return;
+            } finally {
+                if (btnFinalizar) btnFinalizar.disabled = false;
+            }
+        }
+
         try {
-            const resposta = await fetch(form.action || window.location.href, {
-                method: 'POST',
-                body: new FormData(form),
-                credentials: 'same-origin'
-            });
+            const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            const timerSalvar = controller ? setTimeout(function () { controller.abort(); }, TIMEOUT_SALVAR_MS) : null;
+            let resposta;
+            try {
+                resposta = await fetch(form.action || window.location.href, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    credentials: 'same-origin',
+                    signal: controller ? controller.signal : undefined
+                });
+            } finally {
+                if (timerSalvar) clearTimeout(timerSalvar);
+            }
 
             // O backend sempre responde com redirect: para a própria página
             // de registro em caso de erro de validação, ou para o dashboard
@@ -4908,6 +4961,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         } catch (err) {
+            // fetch() só rejeita por falha de rede/timeout (nunca por
+            // status HTTP) -- é o caso de guardar no aparelho.
+            if (await guardarTreinoNoAparelho()) return;
             document.getElementById('global-loader').style.display = 'none';
             if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
                 window.FitLogUtils.showToast('Falha de conexão ao salvar o treino.', 'error');

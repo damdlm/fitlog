@@ -217,6 +217,18 @@ def salvar_registro():
     data_original = request.form.get("data_original")
     veio_do_calendario = bool(data_original)
 
+    # Treino reenviado pela fila offline (static/js/modules/fila-offline.js):
+    # o campo diz quem registrou. Se quem está logado agora for outra
+    # pessoa (aparelho compartilhado), não salva na conta errada.
+    dono_fila_offline = request.form.get("fila_offline_user_id")
+    if dono_fila_offline and dono_fila_offline != str(current_user.id):
+        logger.warning(
+            "Fila offline: treino do usuário %s recusado na sessão do usuário %s",
+            dono_fila_offline, current_user.id,
+        )
+        flash("Este treino foi registrado por outra conta neste aparelho e não foi salvo.", "danger")
+        return redirect(url_for("register.registrar_treino"))
+
     def _redirect_apos_salvar(sucesso, data_para_exibir=None):
         """
         Pra onde ir depois de tentar salvar -- sucesso ou erro. Quando o

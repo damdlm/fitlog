@@ -26,6 +26,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="fitlog-user-id" content="{{ current_user.id if current_user.is_authenticated else '' }}">
 
     <!-- Bloqueio de pinça-zoom "à moda antiga", via JS -- redundante com
          touch-action: pan-x pan-y (ver <style> mais abaixo), mas
@@ -103,6 +104,7 @@
     {% if current_user.is_authenticated %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pwa-install.css') }}">
     <link rel="stylesheet" href="{{ static_v('css/notificacoes.css') }}">
+    <link rel="stylesheet" href="{{ static_v('css/fila-offline.css') }}">
     {% endif %}
     
     <!-- CSS Personalizado -->
@@ -2424,6 +2426,13 @@
     
     <!-- CSRF Protection -->
     <script src="{{ url_for('static', filename='js/modules/csrf.js') }}"></script>
+
+    <!-- Fila offline de treinos: guarda no aparelho o treino que não
+         conseguiu ser enviado por falta de internet e reenvia sozinho
+         (ver js/modules/fila-offline.js). Carrega também deslogado, para
+         avisar que há treino esperando login. -->
+    <script src="{{ static_v('js/modules/fila-offline.js') }}"></script>
+    <script src="{{ static_v('js/modules/fila-offline-ui.js') }}"></script>
 
     <!-- Fecha o tooltip dos gráficos ao tocar/clicar fora (todos os gráficos) -->
     <script src="{{ static_v('js/modules/chart-tooltip-dismiss.js') }}"></script>
