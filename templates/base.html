@@ -101,10 +101,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/page-transition.css') }}">
     <link rel="stylesheet" href="{{ static_v('css/fitbot-chat.css') }}">
+    <!-- Fora do if de usuário logado: o aviso da fila offline também aparece
+         deslogado ("entre na sua conta para enviar"). -->
+    <link rel="stylesheet" href="{{ static_v('css/fila-offline.css') }}">
     {% if current_user.is_authenticated %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pwa-install.css') }}">
     <link rel="stylesheet" href="{{ static_v('css/notificacoes.css') }}">
-    <link rel="stylesheet" href="{{ static_v('css/fila-offline.css') }}">
     {% endif %}
     
     <!-- CSS Personalizado -->
