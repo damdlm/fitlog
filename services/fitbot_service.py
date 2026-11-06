@@ -270,7 +270,7 @@ def _chamar_openai_reserva(system_instruction, mensagens_usuario, imagem_base64=
         "model": modelo,
         "messages": mensagens,
         "temperature": 0.5,
-        "max_tokens": 500,
+        "max_tokens": 800,
     }
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -337,7 +337,12 @@ SYSTEM_INSTRUCTION_TEXTO = (
     "usuário para consultar um profissional físico antes de começar um "
     "treino novo. Responda sempre de forma direta e resumida (poucas "
     "frases ou uma lista curta); só se aprofunde se o usuário pedir mais "
-    "detalhes."
+    "detalhes. Os dados reais incluem um 'resumo' (treinos da versão "
+    "ativa, último treino, frequência recente e, se citado, o histórico "
+    "do exercício): use-o para personalizar a resposta quando fizer "
+    "sentido, sem despejar os dados se a pergunta for geral. Formate só "
+    "com **negrito** e listas com '- '; nada de tabelas, títulos ou "
+    "blocos de código."
 )
 
 SYSTEM_INSTRUCTION_IMAGEM = (
@@ -579,8 +584,17 @@ class FitBotService:
             "model": modelo,
             "messages": mensagens,
             "temperature": 0.6,
-            "max_tokens": 500,
+            "max_completion_tokens": current_app.config.get("FITBOT_MAX_TOKENS", 1500),
         }
+        # Os gpt-oss "pensam" antes de responder, e esse raciocínio conta no
+        # limite de saída. Com 500 tokens e o esforço padrão (medium), a
+        # resposta podia vir cortada ou vazia. O FitBot não precisa de
+        # raciocínio longo: "low" responde mais rápido e sobra limite para
+        # o texto. Só os gpt-oss aceitam o parâmetro (outros modelos dariam
+        # erro 400), então ele só vai quando o GROQ_MODEL é um deles.
+        if str(modelo).startswith("openai/gpt-oss"):
+            payload["reasoning_effort"] = current_app.config.get("FITBOT_REASONING_EFFORT", "low")
+            payload["include_reasoning"] = False
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
@@ -615,13 +629,30 @@ class FitBotService:
 
         try:
             dados = resp.json()
-            texto_resposta = dados["choices"][0]["message"]["content"].strip()
-        except (KeyError, IndexError, ValueError) as e:
+            escolha = dados["choices"][0]
+            texto_resposta = (escolha["message"].get("content") or "").strip()
+            motivo_fim = escolha.get("finish_reason")
+        except (KeyError, IndexError, ValueError, AttributeError, TypeError) as e:
             logger.error("FitBot: resposta inesperada do Groq: %s", e)
             return _registrar_uso_fitbot("groq", tempo_inicio, {
                 "ok": False, "resposta": MENSAGEM_ERRO_GENERICO,
                 "aciona_reserva": True, "detalhe": f"resposta inesperada: {e}",
             })
+
+        if not texto_resposta:
+            # Limite de saída gasto inteiro no raciocínio (ou resposta vazia
+            # por outro motivo): tenta a reserva em vez de mostrar balão vazio.
+            logger.warning("FitBot: Groq devolveu resposta vazia (finish_reason=%s)", motivo_fim)
+            return _registrar_uso_fitbot("groq", tempo_inicio, {
+                "ok": False, "resposta": MENSAGEM_ERRO_GENERICO,
+                "aciona_reserva": True, "detalhe": f"resposta vazia (finish_reason={motivo_fim})",
+            })
+
+        if motivo_fim == "length":
+            # Cortada no meio: entrega o que veio, avisando, em vez de
+            # terminar a frase pela metade sem explicação.
+            logger.warning("FitBot: resposta do Groq cortada pelo limite de tokens")
+            texto_resposta = texto_resposta.rstrip() + "…\n\n_(Resposta resumida. Peça para eu continuar se quiser mais detalhes.)_"
 
         # A API do Groq é compatível com o formato da OpenAI -- "usage"
         # vem com prompt_tokens/completion_tokens quando presente.

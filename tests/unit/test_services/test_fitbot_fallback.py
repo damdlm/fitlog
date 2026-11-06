@@ -157,6 +157,48 @@ class TestChamarGroq:
             resultado = FitBotService._chamar_groq([{"role": "user", "content": "oi"}])
         assert resultado == {"ok": True, "resposta": "Oi!", "modo": "texto"}
 
+    def test_gpt_oss_vai_com_raciocinio_baixo_e_limite_maior(self, app, monkeypatch):
+        app.config['GROQ_API_KEY'] = 'fake'
+        app.config['GROQ_MODEL'] = 'openai/gpt-oss-120b'
+        enviado = {}
+        monkeypatch.setattr(svc._SESSION, 'post', lambda url, **kw: enviado.update(kw['json']) or _resposta_groq_ok("Oi!"))
+        with app.app_context():
+            FitBotService._chamar_groq([{"role": "user", "content": "oi"}])
+        assert enviado['reasoning_effort'] == 'low'
+        assert enviado['include_reasoning'] is False
+        assert enviado['max_completion_tokens'] == 1500
+        assert 'max_tokens' not in enviado
+
+    def test_outro_modelo_nao_recebe_parametro_de_raciocinio(self, app, monkeypatch):
+        # Modelos que não são gpt-oss respondem 400 a reasoning_effort.
+        app.config['GROQ_API_KEY'] = 'fake'
+        app.config['GROQ_MODEL'] = 'llama-3.3-70b-versatile'
+        enviado = {}
+        monkeypatch.setattr(svc._SESSION, 'post', lambda url, **kw: enviado.update(kw['json']) or _resposta_groq_ok("Oi!"))
+        with app.app_context():
+            FitBotService._chamar_groq([{"role": "user", "content": "oi"}])
+        assert 'reasoning_effort' not in enviado and 'include_reasoning' not in enviado
+
+    def test_resposta_vazia_aciona_reserva_em_vez_de_balao_vazio(self, app, monkeypatch):
+        app.config['GROQ_API_KEY'] = 'fake'
+        corpo = {"choices": [{"message": {"content": ""}, "finish_reason": "length"}]}
+        monkeypatch.setattr(svc._SESSION, 'post', lambda url, **kw: _RespostaFake(200, corpo))
+        with app.app_context():
+            resultado = FitBotService._chamar_groq([{"role": "user", "content": "oi"}])
+        assert resultado['ok'] is False
+        assert resultado['aciona_reserva'] is True
+        assert 'finish_reason=length' in resultado['detalhe']
+
+    def test_resposta_cortada_avisa_o_usuario(self, app, monkeypatch):
+        app.config['GROQ_API_KEY'] = 'fake'
+        corpo = {"choices": [{"message": {"content": "Faça 3 séries de"}, "finish_reason": "length"}]}
+        monkeypatch.setattr(svc._SESSION, 'post', lambda url, **kw: _RespostaFake(200, corpo))
+        with app.app_context():
+            resultado = FitBotService._chamar_groq([{"role": "user", "content": "oi"}])
+        assert resultado['ok'] is True
+        assert resultado['resposta'].startswith('Faça 3 séries de…')
+        assert 'continuar' in resultado['resposta']
+
     def test_rate_limit_429_nao_aciona_reserva(self, app, monkeypatch):
         app.config['GROQ_API_KEY'] = 'fake'
         monkeypatch.setattr(svc._SESSION, 'post', lambda url, **kw: _RespostaFake(429))

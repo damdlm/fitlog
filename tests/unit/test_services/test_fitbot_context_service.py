@@ -126,7 +126,10 @@ def test_contexto_historico_exercicio_nao_encontrado_retorna_none(app):
         # Pergunta sobre um exercício que o usuário nunca registrou --
         # o FitBot não deve inventar uma resposta.
         contexto = FitBotContextService.montar_contexto('Qual foi minha última vez no agachamento?', user.id)
-        assert contexto is None
+        # Vem só o resumo geral -- nada sobre agachamento é inventado.
+        assert set(contexto) == {'intencao', 'resumo'}
+        assert 'exercicio_citado' not in contexto['resumo']
+        assert 'sessoes' not in contexto
 
 
 def test_contexto_evolucao_compara_primeira_e_ultima_carga(app):
@@ -183,11 +186,64 @@ def test_contexto_perfil_retorna_nome(app):
 # ----------------------------------------------------------------------
 # DÚVIDA GERAL -- não consulta nada
 # ----------------------------------------------------------------------
-def test_duvida_geral_nao_gera_contexto(app):
+def test_duvida_geral_recebe_so_o_resumo(app):
     with app.app_context():
         user, _ = _criar_usuario_com_treino_e_registro('rafael', 'Supino Reto')
         contexto = FitBotContextService.montar_contexto('Como executar o levantamento terra?', user.id)
-        assert contexto is None
+        assert contexto['intencao'] == 'DUVIDA_GERAL'
+        assert set(contexto) == {'intencao', 'resumo'}
+
+
+# ----------------------------------------------------------------------
+# RESUMO enviado em toda mensagem
+# ----------------------------------------------------------------------
+def test_resumo_traz_treino_ativo_ultimo_treino_e_frequencia(app):
+    with app.app_context():
+        user, _ = _criar_usuario_com_treino_e_registro('resumo1', 'Supino Reto', carga=42.5, repeticoes=8)
+        contexto = FitBotContextService.montar_contexto('bom dia!', user.id)
+        resumo = contexto['resumo']
+        assert resumo['usuario'] == 'Resumo1'
+        assert resumo['treinos_da_versao_ativa'][0]['exercicios'] == ['Supino Reto']
+        ultimo = resumo['ultimo_treino']
+        assert ultimo['exercicios'][0]['nome'] == 'Supino Reto'
+        assert ultimo['exercicios'][0]['maior_carga'] == 42.5
+        assert ultimo['exercicios'][0]['repeticoes_na_maior_carga'] == 8
+        assert resumo['dias_treinados_ultimos_7_dias'] == 1
+
+
+def test_pergunta_sem_palavra_chave_ainda_ve_o_historico_do_exercicio(app):
+    """Antes "como estou indo no supino?" não tinha palavra-chave de
+    evolução e era respondida sem dados do usuário."""
+    with app.app_context():
+        user, _ = _criar_usuario_com_treino_e_registro('resumo2', 'Supino Reto', carga=30.0)
+        contexto = FitBotContextService.montar_contexto('e o supino, tá bom assim?', user.id)
+        citado = contexto['resumo']['exercicio_citado']
+        assert citado['nome'] == 'Supino Reto'
+        assert citado['ultimas_sessoes'][0]['maior_carga'] == 30.0
+
+
+def test_como_estou_indo_conta_como_evolucao(app):
+    with app.app_context():
+        user, _ = _criar_usuario_com_treino_e_registro('resumo3', 'Supino Reto')
+        assert FitBotContextService.identificar_intencao('como estou indo no supino?') == 'EVOLUCAO'
+        assert FitBotContextService.identificar_intencao('tô estagnado no agachamento') == 'EVOLUCAO'
+
+
+def test_usuario_sem_treino_nem_registro_nao_recebe_resumo_vazio(app):
+    with app.app_context():
+        user = _criar_usuario('resumo_vazio')
+        assert FitBotContextService.montar_contexto('oi', user.id) is None
+
+
+def test_resumo_nao_mistura_usuarios(app):
+    with app.app_context():
+        a, _ = _criar_usuario_com_treino_e_registro('resumo_a', 'Supino Reto', carga=99.0)
+        b, _ = _criar_usuario_com_treino_e_registro('resumo_b', 'Supino Reto', carga=11.0)
+        resumo_b = FitBotContextService.montar_contexto('e o supino?', b.id)['resumo']
+        cargas_b = [e['maior_carga'] for e in resumo_b['ultimo_treino']['exercicios']]
+        cargas_b += [s['maior_carga'] for s in resumo_b['exercicio_citado']['ultimas_sessoes']]
+        assert 99.0 not in cargas_b and 11.0 in cargas_b
+        assert resumo_b['usuario'] == 'Resumo_B'
 
 
 # ----------------------------------------------------------------------

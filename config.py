@@ -243,6 +243,12 @@ class Config:
     # (30 e 15 RPM). Ao contratar plano pago, suba este valor pela
     # variável de ambiente (ex.: "60 per minute") -- sem mexer em código.
     FITBOT_LIMITE_GLOBAL = os.getenv('FITBOT_LIMITE_GLOBAL', '12 per minute')
+    # Limite de saída do FitBot (Groq). Nos gpt-oss o raciocínio conta
+    # nesse limite -- com 500 a resposta podia vir cortada ou vazia.
+    FITBOT_MAX_TOKENS = int(os.getenv('FITBOT_MAX_TOKENS', '1500'))
+    # Esforço de raciocínio dos gpt-oss (low/medium/high). "low" basta
+    # para o FitBot e responde mais rápido.
+    FITBOT_REASONING_EFFORT = os.getenv('FITBOT_REASONING_EFFORT', 'low')
 
     # Limites de requisição por usuário logado (ou por IP, visitante), além do
     # padrão geral de 300/hora e 2000/dia de extensions.py. Ajuste pela variável

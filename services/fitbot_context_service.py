@@ -43,6 +43,7 @@ DUVIDA_GERAL = "DUVIDA_GERAL"
 
 MAX_EXERCICIOS_POR_TREINO_CONTEXTO = 15
 MAX_SESSOES_HISTORICO = 10
+MAX_SESSOES_RESUMO = 3
 CONTEXTO_CACHE_TTL_SEGUNDOS = 60
 
 
@@ -111,10 +112,25 @@ class FitBotContextService:
             )
             dados = None
 
-        if not dados:
+        # Resumo curto que vai em TODA mensagem (ver _contexto_resumo):
+        # antes, só uma palavra-chave certa ("evolu", "histórico"...) fazia
+        # o FitBot receber dados reais -- "como estou indo no supino?" caía
+        # como dúvida geral e era respondida sem olhar o treino do usuário.
+        try:
+            resumo = FitBotContextService._contexto_resumo(mensagem, user_id)
+        except Exception as e:
+            logger.warning("FitBot: falha ao montar resumo para user_id=%s: %s", user_id, e)
+            resumo = None
+
+        if not dados and not resumo:
             return None
 
-        return {"intencao": intencao, **dados}
+        contexto = {"intencao": intencao}
+        if resumo:
+            contexto["resumo"] = resumo
+        if dados:
+            contexto.update(dados)
+        return contexto
 
     # ------------------------------------------------------------------
     # Classificação de intenção
@@ -134,6 +150,7 @@ class FitBotContextService:
         if any(p in texto for p in (
             "evolu", "progred", "progressao", "progresso",
             "melhorei", "piorei", "aumentei", "diminui", "regredi",
+            "melhorando", "piorando", "estagn", "como estou indo", "to indo",
         )):
             return EVOLUCAO
 
@@ -305,6 +322,124 @@ class FitBotContextService:
             },
             "treino_atual": treinos_ctx,
         }
+
+    # ------------------------------------------------------------------
+    # RESUMO (enviado em toda mensagem)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _contexto_resumo(mensagem, user_id):
+        """Visão curta e barata em tokens do usuário: treinos da versão
+        ativa (só nomes), último treino feito, frequência recente e, se a
+        mensagem citar um exercício dele, as últimas sessões desse
+        exercício. A parte que não depende da mensagem fica em cache por
+        60s (o FitBot costuma receber várias mensagens seguidas)."""
+        cache_key = f"fitbot_context:{user_id}:resumo"
+        base = CacheService.get(cache_key)
+        if base is None:
+            base = FitBotContextService._resumo_base(user_id) or {}
+            CacheService.set(cache_key, base, ttl_seconds=CONTEXTO_CACHE_TTL_SEGUNDOS)
+
+        resumo = dict(base)
+        exercicio = FitBotContextService._encontrar_exercicio_pela_mensagem(mensagem, user_id)
+        if exercicio:
+            registros = RegistroService.get_por_exercicio(exercicio.id, limite=MAX_SESSOES_RESUMO, user_id=user_id)
+            sessoes = []
+            for r in registros:
+                series = list(r.series)
+                if not series:
+                    continue
+                top = max(series, key=lambda s: (float(s.carga), s.repeticoes))
+                sessoes.append({
+                    "data": _formatar_data(r.data_registro),
+                    "series": len(series),
+                    "maior_carga": float(top.carga),
+                    "repeticoes_na_maior_carga": top.repeticoes,
+                })
+            resumo["exercicio_citado"] = {
+                "nome": exercicio.nome,
+                "ultimas_sessoes": sessoes,
+            } if sessoes else {
+                "nome": exercicio.nome,
+                "observacao": "Nenhum registro deste exercício ainda.",
+            }
+        # Sem treino na versão ativa, sem registro e sem exercício citado,
+        # o resumo só teria nome e data -- não ajuda e gasta tokens.
+        tem_dados = (
+            resumo.get("treinos_da_versao_ativa")
+            or resumo.get("ultimo_treino")
+            or resumo.get("exercicio_citado")
+        )
+        return resumo if tem_dados else None
+
+    @staticmethod
+    def _resumo_base(user_id):
+        from models import db, RegistroTreino, User
+        from sqlalchemy.orm import selectinload
+
+        usuario = db.session.get(User, user_id)
+        if not usuario:
+            return None
+
+        resumo = {"usuario": usuario.nome_completo or usuario.username}
+
+        versao = VersaoService.get_ativa(user_id=user_id)
+        if versao:
+            treinos = VersaoService.get_treinos(versao.id, user_id=user_id) or {}
+            exercicios_por_treino_id = VersaoService.get_exercicios_agrupados_por_treino(user_id=user_id)
+            resumo["treinos_da_versao_ativa"] = [
+                {
+                    "codigo": codigo,
+                    "nome": dados.get("nome") or codigo,
+                    "exercicios": [
+                        ex.nome for ex in exercicios_por_treino_id.get(dados.get("id"), [])[:MAX_EXERCICIOS_POR_TREINO_CONTEXTO]
+                        if getattr(ex, "nome", None)
+                    ],
+                }
+                for codigo, dados in treinos.items()
+            ]
+
+        ultimo = (
+            RegistroTreino.query.filter(RegistroTreino.user_id == user_id)
+            .order_by(RegistroTreino.data_registro.desc())
+            .first()
+        )
+        if ultimo:
+            dia = ultimo.data_registro.date()
+            do_dia = (
+                RegistroTreino.query.options(selectinload(RegistroTreino.series))
+                .filter(
+                    RegistroTreino.user_id == user_id,
+                    db.func.date(RegistroTreino.data_registro) == dia,
+                )
+                .limit(MAX_EXERCICIOS_POR_TREINO_CONTEXTO)
+                .all()
+            )
+            exercicios = []
+            for r in do_dia:
+                ex = r.exercicio or r.exercicio_base
+                series = list(r.series)
+                if not ex or not series:
+                    continue
+                top = max(series, key=lambda s: (float(s.carga), s.repeticoes))
+                exercicios.append({
+                    "nome": ex.nome,
+                    "series": len(series),
+                    "maior_carga": float(top.carga),
+                    "repeticoes_na_maior_carga": top.repeticoes,
+                })
+            treino_ref = ultimo.treino_ref
+            resumo["ultimo_treino"] = {
+                "data": dia.isoformat(),
+                "treino": f"{treino_ref.codigo} - {treino_ref.nome_treino}" if treino_ref else None,
+                "exercicios": exercicios,
+            }
+            resumo["dias_treinados_ultimos_7_dias"] = FitBotContextService._dias_treinados_desde(user_id, dias=7)
+            resumo["dias_treinados_ultimos_30_dias"] = FitBotContextService._dias_treinados_desde(user_id, dias=30)
+        else:
+            resumo["ultimo_treino"] = None
+
+        resumo["data_de_hoje"] = datetime.now(timezone.utc).date().isoformat()
+        return resumo
 
     # ------------------------------------------------------------------
     # Localizar exercício citado na mensagem (entre os exercícios que

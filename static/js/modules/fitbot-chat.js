@@ -105,6 +105,12 @@
     var DURACAO_ROTACAO_IDLE_FALLBACK_MS = 6000; // usado só se não der pra ler a duração do vídeo
 
     var historico = [];               // [{papel: 'usuario'|'bot', texto: '...'}]
+    var mensagensNaTela = [];         // [{papel: 'user'|'bot'|'error', texto}] -- para restaurar a conversa
+    var MAX_MENSAGENS_SALVAS = 30;
+    var userIdAtual = (function () {
+        var meta = document.querySelector('meta[name="fitlog-user-id"]');
+        return meta ? meta.getAttribute('content') : '';
+    })();
     var imagemSelecionadaDataUrl = null; // dataURL completo (para preview)
     var estadoTimeoutId = null;
     var conversaIniciada = false;
@@ -119,6 +125,7 @@
     }
 
     function init() {
+        if (!userIdAtual) apagarConversasDeslogado();
         elWidget = byId('fitbotWidget');
         elModal = byId('fitbotModal');
         if (!elWidget || !elModal) return; // página sem o FitBot
@@ -173,7 +180,7 @@
         }
         sortearVideoIdle();
 
-        if (primeiraVez) {
+        if (primeiraVez && !restaurarConversa()) {
             adicionarMensagem('bot', sortearSaudacaoInicial());
         }
     }
@@ -426,10 +433,14 @@
     /* ------------------------------------------------------------
        Mensagens na tela
        ------------------------------------------------------------ */
-    function adicionarMensagem(papel, texto, imagemDataUrl) {
+    function adicionarMensagem(papel, texto, imagemDataUrl, opcoes) {
         var bolha = document.createElement('div');
         bolha.className = 'fitbot-msg from-' + papel;
-        bolha.textContent = texto;
+        if (papel === 'bot') {
+            renderizarMarkdownSeguro(bolha, texto);
+        } else {
+            bolha.textContent = texto;
+        }
 
         if (imagemDataUrl) {
             var img = document.createElement('img');
@@ -441,6 +452,111 @@
 
         elMessages.appendChild(bolha);
         elMessages.scrollTop = elMessages.scrollHeight;
+
+        if (!(opcoes && opcoes.restaurando)) {
+            mensagensNaTela.push({ papel: papel, texto: imagemDataUrl && !texto ? '(foto enviada)' : texto });
+            mensagensNaTela = mensagensNaTela.slice(-MAX_MENSAGENS_SALVAS);
+            salvarConversa();
+        }
+    }
+
+    /* ------------------------------------------------------------
+       Markdown mínimo e seguro nas respostas do bot
+       ------------------------------------------------------------
+       O modelo responde com **negrito** e listas "- item"; antes isso
+       aparecia cru na tela. Aqui só **negrito**, _itálico_/*itálico*,
+       listas e títulos viram formatação -- montados com createElement/
+       textContent, nunca innerHTML, então nenhum HTML vindo da resposta
+       é interpretado. Quebras de linha seguem pelo white-space: pre-wrap
+       da bolha. */
+    function adicionarTrechoFormatado(destino, linha) {
+        var re = /(\*\*[^*\n]+\*\*|__[^_\n]+__|\*[^*\s][^*\n]*\*|_[^_\s][^_\n]*_|`[^`\n]+`)/g;
+        var ultimo = 0;
+        var m;
+        while ((m = re.exec(linha)) !== null) {
+            if (m.index > ultimo) destino.appendChild(document.createTextNode(linha.slice(ultimo, m.index)));
+            var token = m[0];
+            var el;
+            if (token.indexOf('**') === 0 || token.indexOf('__') === 0) {
+                el = document.createElement('strong');
+                el.textContent = token.slice(2, -2);
+            } else if (token.charAt(0) === '`') {
+                el = document.createElement('span');
+                el.textContent = token.slice(1, -1);
+            } else {
+                el = document.createElement('em');
+                el.textContent = token.slice(1, -1);
+            }
+            destino.appendChild(el);
+            ultimo = m.index + token.length;
+        }
+        if (ultimo < linha.length) destino.appendChild(document.createTextNode(linha.slice(ultimo)));
+    }
+
+    function renderizarMarkdownSeguro(bolha, texto) {
+        var linhas = String(texto || '').replace(/\r\n?/g, '\n').split('\n');
+        linhas.forEach(function (linha, i) {
+            var item = /^\s*(?:[-*•]|\d+[.)])\s+(.*)$/.exec(linha);
+            var titulo = /^\s*#{1,6}\s+(.*)$/.exec(linha);
+            if (item) {
+                var numero = /^\s*(\d+[.)])/.exec(linha);
+                bolha.appendChild(document.createTextNode(numero ? numero[1] + ' ' : '• '));
+                adicionarTrechoFormatado(bolha, item[1]);
+            } else if (titulo) {
+                var forte = document.createElement('strong');
+                adicionarTrechoFormatado(forte, titulo[1]);
+                bolha.appendChild(forte);
+            } else {
+                adicionarTrechoFormatado(bolha, linha);
+            }
+            if (i < linhas.length - 1) bolha.appendChild(document.createTextNode('\n'));
+        });
+    }
+
+    /* ------------------------------------------------------------
+       Conversa preservada entre telas
+       ------------------------------------------------------------
+       Antes a conversa sumia a cada troca de página. Fica no
+       sessionStorage (só esta aba, apagado ao fechar o navegador), com a
+       chave do usuário logado -- e tudo é apagado quando não há usuário
+       logado (logout), para não aparecer para a próxima pessoa. */
+    function chaveConversa() {
+        return userIdAtual ? 'fitbot:conversa:' + userIdAtual : null;
+    }
+
+    function salvarConversa() {
+        var chave = chaveConversa();
+        if (!chave) return;
+        try {
+            sessionStorage.setItem(chave, JSON.stringify({ historico: historico, mensagens: mensagensNaTela }));
+        } catch (e) { /* storage cheio/bloqueado: segue sem persistir */ }
+    }
+
+    function apagarConversasDeslogado() {
+        try {
+            for (var i = sessionStorage.length - 1; i >= 0; i--) {
+                var k = sessionStorage.key(i);
+                if (k && k.indexOf('fitbot:conversa:') === 0) sessionStorage.removeItem(k);
+            }
+        } catch (e) { /* ignora */ }
+    }
+
+    function restaurarConversa() {
+        if (!userIdAtual) return false;
+        try {
+            var salvo = JSON.parse(sessionStorage.getItem(chaveConversa()) || 'null');
+            if (!salvo || !Array.isArray(salvo.mensagens) || !salvo.mensagens.length) return false;
+            historico = Array.isArray(salvo.historico) ? salvo.historico.slice(-MAX_HISTORICO) : [];
+            mensagensNaTela = salvo.mensagens.slice(-MAX_MENSAGENS_SALVAS);
+            mensagensNaTela.forEach(function (m) {
+                if (m && typeof m.texto === 'string' && /^(user|bot|error)$/.test(m.papel)) {
+                    adicionarMensagem(m.papel, m.texto, null, { restaurando: true });
+                }
+            });
+            return true;
+        } catch (e) {
+            return false;
+        }
     }
 
     /* ------------------------------------------------------------
@@ -482,7 +598,9 @@
             body: JSON.stringify({
                 mensagem: texto,
                 imagem_base64: imagemBase64,
-                historico: historico,
+                // Sem a última entrada: é a própria mensagem atual, que já
+                // vai em "mensagem" (antes ela chegava duas vezes ao modelo).
+                historico: historico.slice(0, -1),
             }),
         })
             .then(function (resp) {
@@ -504,6 +622,7 @@
                     adicionarMensagem('bot', dados.resposta);
                     historico.push({ papel: 'bot', texto: dados.resposta });
                     historico = historico.slice(-MAX_HISTORICO);
+                    salvarConversa();
                     setState('talking');
                 } else {
                     adicionarMensagem('error', dados.resposta || 'Não consegui responder agora.');
