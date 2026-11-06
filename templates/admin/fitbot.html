@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-robot" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}FitBot{% endblock %}
+
+{% block extra_css %}
+<style>
+    .fb-kpi {
+        font-size: 1.6rem;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+    .fb-kpi-sub {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    .fb-barras {
+        display: flex;
+        align-items: flex-end;
+        gap: 3px;
+        height: 120px;
+        padding-top: 8px;
+    }
+    .fb-barra {
+        flex: 1 1 0;
+        min-width: 4px;
+        background: linear-gradient(180deg, #FFB366 0%, #F28C33 100%);
+        border-radius: 3px 3px 0 0;
+        position: relative;
+    }
+    .fb-barra.vazia {
+        background: #eee;
+        height: 2px !important;
+    }
+    .fb-barras-legenda {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.72rem;
+        color: #6c757d;
+        margin-top: 4px;
+    }
+    .fb-progresso {
+        height: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set lim = estat.limites %}
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="fb-kpi-sub">Mensagens hoje</div>
+            <div class="fb-kpi" id="fb-msgs-hoje">{{ estat.mensagens_hoje }}</div>
+            <div class="fb-kpi-sub">{{ estat.usuarios_hoje }} usuário{{ '' if estat.usuarios_hoje == 1 else 's' }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="fb-kpi-sub">Mensagens no mês</div>
+            <div class="fb-kpi" id="fb-msgs-mes">{{ estat.mensagens_mes }}</div>
+            <div class="fb-kpi-sub">{{ estat.usuarios_mes }} usuário{{ '' if estat.usuarios_mes == 1 else 's' }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="fb-kpi-sub">Custo estimado no mês</div>
+            <div class="fb-kpi" id="fb-custo-mes">US$ {{ '%.2f'|format(estat.custo_mes_usd) }}</div>
+            <div class="fb-kpi-sub">hoje: US$ {{ '%.4f'|format(estat.custo_hoje_usd) }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="fb-kpi-sub">Teto mensal</div>
+            {% if lim.mensal %}
+                <div class="fb-kpi" id="fb-restante">{{ estat.restante_mes }}</div>
+                <div class="fb-kpi-sub">restantes de {{ lim.mensal }}</div>
+                {% set pct = (100 * estat.mensagens_mes / lim.mensal) if lim.mensal else 0 %}
+                <div class="progress fb-progresso mt-2" role="progressbar" aria-label="Uso do teto mensal"
+                     aria-valuenow="{{ pct|round|int }}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar {{ 'bg-danger' if pct >= 90 else ('bg-warning' if pct >= 70 else '') }}"
+                         style="width: {{ [pct, 100]|min }}%; {{ '' if pct >= 70 else 'background-color: #F28C33;' }}"></div>
+                </div>
+            {% else %}
+                <div class="fb-kpi" id="fb-restante">—</div>
+                <div class="fb-kpi-sub">sem teto definido</div>
+            {% endif %}
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-7">
+        <div class="card h-100"><div class="card-body">
+            <h5 class="card-title mb-1"><i class="bi bi-bar-chart me-2" style="color: #F28C33;"></i>Mensagens por dia <span class="text-muted small fw-normal">últimos 30 dias</span></h5>
+            {% set maximo = (estat.serie_30_dias|map(attribute='qtd')|max) or 0 %}
+            <div class="fb-barras" id="fb-barras" aria-label="Mensagens por dia nos últimos 30 dias">
+                {% for d in estat.serie_30_dias %}
+                    <div class="fb-barra {{ 'vazia' if d.qtd == 0 }}"
+                         style="height: {{ (100 * d.qtd / maximo) if maximo else 0 }}%"
+                         title="{{ d.dia[8:10] }}/{{ d.dia[5:7] }}: {{ d.qtd }} mensage{{ 'm' if d.qtd == 1 else 'ns' }}"></div>
+                {% endfor %}
+            </div>
+            <div class="fb-barras-legenda">
+                <span>{{ estat.serie_30_dias[0].dia[8:10] }}/{{ estat.serie_30_dias[0].dia[5:7] }}</span>
+                <span>máx. {{ maximo }}/dia</span>
+                <span>hoje</span>
+            </div>
+        </div></div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card h-100"><div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-sliders me-2" style="color: #F28C33;"></i>Limites</h5>
+            <form method="post" id="fb-form-limites">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-3">
+                    <label for="limite_diario" class="form-label mb-1">Mensagens por usuário por dia</label>
+                    <input type="number" min="0" step="1" inputmode="numeric" class="form-control"
+                           id="limite_diario" name="limite_diario" value="{{ lim.diario or '' }}" placeholder="Sem limite">
+                    <div class="form-text">
+                        Conta só respostas entregues (falha da IA não gasta a cota). O dia vira à meia-noite de Brasília.
+                        Admins não têm limite.
+                        {% if lim.diario %}Hoje, {{ estat.usuarios_no_limite_hoje }} usuário{{ '' if estat.usuarios_no_limite_hoje == 1 else 's' }} atingi{{ 'u' if estat.usuarios_no_limite_hoje == 1 else 'ram' }} a cota.{% endif %}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="limite_mensal" class="form-label mb-1">Teto mensal do app (todas as mensagens)</label>
+                    <input type="number" min="0" step="1" inputmode="numeric" class="form-control"
+                           id="limite_mensal" name="limite_mensal" value="{{ lim.mensal or '' }}" placeholder="Sem teto">
+                    <div class="form-text">
+                        Ao chegar no teto, o FitBot fica fora para todos até o dia 1º. Complementa o limite de gastos
+                        no painel de cada provedor de IA.
+                    </div>
+                </div>
+                <div class="form-text mb-3">Deixe em branco (ou 0) para não limitar.</div>
+                <button type="submit" class="btn btn-primary" style="background-color: #F28C33; border-color: #F28C33;">
+                    <i class="bi bi-check-lg"></i> Salvar limites
+                </button>
+            </form>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100"><div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-people me-2" style="color: #F28C33;"></i>Quem mais usa <span class="text-muted small fw-normal">este mês</span></h5>
+            {% if estat.top_usuarios_mes %}
+            <div class="table-responsive">
+            <table class="table table-sm mb-0" id="fb-top">
+                <thead><tr class="text-muted small"><th>Usuário</th><th class="text-end">Mensagens</th></tr></thead>
+                <tbody>
+                {% for u in estat.top_usuarios_mes %}
+                    <tr><td>{{ u.nome }}</td><td class="text-end">{{ u.qtd }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% else %}
+            <p class="text-muted small mb-0">Ninguém usou o FitBot este mês ainda.</p>
+            {% endif %}
+        </div></div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100"><div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-cash-coin me-2" style="color: #F28C33;"></i>Custo por provedor <span class="text-muted small fw-normal">este mês</span></h5>
+            {% if estat.custo_por_provedor_mes %}
+            <div class="table-responsive">
+            <table class="table table-sm mb-2" id="fb-custo">
+                <thead><tr class="text-muted small">
+                    <th>Provedor</th><th class="text-end">Chamadas</th><th class="text-end">Tokens (ent/saí)</th><th class="text-end">US$</th>
+                </tr></thead>
+                <tbody>
+                {% for p in estat.custo_por_provedor_mes %}
+                    <tr>
+                        <td>{{ {'groq': 'Groq (texto)', 'gemini': 'Gemini (foto)', 'openai_reserva': 'OpenAI (reserva)'}.get(p.provedor, p.provedor) }}</td>
+                        <td class="text-end">{{ p.chamadas }}</td>
+                        <td class="text-end">{{ '{:,}'.format(p.tokens_entrada).replace(',', '.') }} / {{ '{:,}'.format(p.tokens_saida).replace(',', '.') }}</td>
+                        <td class="text-end">{{ '%.4f'|format(p.custo_usd) }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% else %}
+            <p class="text-muted small">Nenhuma chamada às IAs este mês ainda.</p>
+            {% endif %}
+            <div class="form-text">
+                Estimativa: tokens registrados × preço por milhão de tokens
+                ({% for prov, preco in estat.precos_usd_por_milhao.items() %}{{ prov }} US$ {{ preco[0] }}/{{ preco[1] }}{{ '; ' if not loop.last }}{% endfor %}).
+                O valor cobrado de fato está no painel de cada provedor; se os preços mudarem, ajuste pela variável FITBOT_PRECOS_JSON.
+            </div>
+        </div></div>
+    </div>
+</div>
+
+<p class="small text-muted">
+    <a href="{{ url_for('admin.monitoramento') }}"><i class="bi bi-activity"></i> Saúde técnica das IAs (latência e falhas) no Monitoramento</a>
+</p>
+{% endblock %}

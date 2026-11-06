@@ -545,6 +545,13 @@ class ConfiguracaoApp(db.Model):
     )
     versao_padrao = db.relationship('VersaoGlobal', foreign_keys=[versao_padrao_id])
 
+    # Limites do FitBot (editáveis em Admin > FitBot). None = sem limite.
+    # Diário: mensagens respondidas por usuário por dia (horário de
+    # Brasília); admin não tem limite. Mensal: total do app inteiro no mês
+    # -- teto de gasto que independe dos painéis dos provedores de IA.
+    fitbot_limite_diario_usuario = db.Column(db.Integer, nullable=True, default=30)
+    fitbot_limite_mensal_total = db.Column(db.Integer, nullable=True, default=None)
+
     atualizado_em = db.Column(
         db.DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -842,6 +849,28 @@ class FitBotChamada(db.Model):
 
     def __repr__(self):
         return f'<FitBotChamada {self.provedor} sucesso={self.sucesso} {self.duracao_ms}ms>'
+
+
+class FitBotMensagem(db.Model):
+    """Uma mensagem do usuário respondida pelo FitBot -- base da cota
+    diária por usuário, do teto mensal e dos números da tela Admin >
+    FitBot. Diferente de FitBotChamada (uma linha por chamada HTTP a um
+    provedor, inclusive a reserva), aqui é uma linha por pergunta
+    respondida com sucesso. Não guarda o texto da conversa, só quem, quando
+    e o tipo."""
+    __tablename__ = 'fitbot_mensagens'
+    __table_args__ = (
+        db.Index('ix_fitbot_mensagens_user_criado', 'user_id', 'criado_em'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    modo = db.Column(db.String(10), nullable=False, default='texto')  # 'texto' | 'imagem'
+    criado_em = db.Column(db.DateTime(timezone=True), nullable=False,
+                          default=lambda: datetime.now(timezone.utc), index=True)
+
+    def __repr__(self):
+        return f'<FitBotMensagem user={self.user_id} {self.modo}>'
 
 
 class HistoricoMetricas(db.Model):

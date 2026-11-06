@@ -623,6 +623,14 @@
                     historico.push({ papel: 'bot', texto: dados.resposta });
                     historico = historico.slice(-MAX_HISTORICO);
                     salvarConversa();
+                    if (typeof dados.restantes_hoje === 'number' && dados.restantes_hoje <= 3) {
+                        // Aviso discreto perto do fim da cota diária (Admin > FitBot).
+                        // Não entra no histórico nem na conversa salva.
+                        adicionarMensagem('aviso', dados.restantes_hoje === 0
+                            ? 'Essa foi sua última mensagem com o FitBot hoje. Amanhã tem mais!'
+                            : (dados.restantes_hoje === 1 ? 'Resta 1 mensagem' : 'Restam ' + dados.restantes_hoje + ' mensagens') + ' com o FitBot hoje.',
+                            null, { restaurando: true });
+                    }
                     setState('talking');
                 } else {
                     adicionarMensagem('error', dados.resposta || 'Não consegui responder agora.');

@@ -12,6 +12,7 @@ from services.tela_controlada_professor_service import TelaControladaProfessorSe
 from services.crash_log_service import CrashLogService
 from services.plano_service import PlanoService
 from services.configuracao_service import ConfiguracaoService
+from services.fitbot_limite_service import FitBotLimiteService
 from utils.exercise_utils import buscar_musculo_no_catalogo
 from utils.decorators import admin_required
 from extensions import limiter
@@ -375,6 +376,32 @@ def monitoramento():
     (evita servir uma página em branco enquanto o JS carrega)."""
     metricas = MonitoringService.get_all_metrics()
     return render_template("admin/monitoramento.html", metricas=metricas)
+
+
+@admin_bp.route("/fitbot", methods=["GET", "POST"])
+@admin_required
+def fitbot():
+    """Uso do FitBot (mensagens, usuários, custo estimado) e os limites:
+    cota diária por usuário e teto mensal do app -- ver
+    services/fitbot_limite_service.py. Os números vêm de FitBotMensagem
+    (uma linha por pergunta respondida) e o custo, dos tokens registrados
+    em FitBotChamada."""
+    if request.method == "POST":
+        try:
+            limites = FitBotLimiteService.set_limites(
+                request.form.get("limite_diario"), request.form.get("limite_mensal"),
+            )
+        except ValueError as e:
+            flash(str(e), 'danger')
+        else:
+            partes = [
+                f"{limites['diario']} mensagens por usuário por dia" if limites['diario'] else "sem limite diário por usuário",
+                f"teto de {limites['mensal']} mensagens no mês" if limites['mensal'] else "sem teto mensal",
+            ]
+            flash('Limites do FitBot salvos: ' + ' e '.join(partes) + '.', 'success')
+        return redirect(url_for('admin.fitbot'))
+
+    return render_template("admin/fitbot.html", estat=FitBotLimiteService.estatisticas())
 
 
 @admin_bp.route("/api/monitoramento")

@@ -8,6 +8,7 @@ from flask_login import current_user, login_required
 from extensions import limiter
 from flask import current_app
 from services.billing_service import BillingService
+from services.fitbot_limite_service import FitBotLimiteService
 from services.fitbot_service import FitBotService
 from services.privacidade_service import PrivacidadeService
 from services.tela_controlada_service import TelaControladaService
@@ -119,12 +120,29 @@ def chat():
     if not isinstance(historico, list):
         historico = []
 
+    # Cota diária por usuário e teto mensal do app (Admin > FitBot). Checado
+    # só depois das validações acima, para mensagem inválida não contar, e
+    # antes de chamar a IA, para quem passou do limite não gerar custo.
+    bloqueio = FitBotLimiteService.verificar(current_user)
+    if bloqueio:
+        return jsonify({"ok": False, "limite_atingido": bloqueio["motivo"], "resposta": bloqueio["resposta"]}), 429
+
     resultado = FitBotService.get_resposta(
         mensagem=mensagem,
         imagem_base64=imagem_base64,
         historico=historico,
         aluno_id=aluno_id,
     )
+
+    if resultado.get("ok"):
+        # Só resposta entregue conta na cota: falha do provedor de IA não
+        # gasta mensagem de ninguém.
+        FitBotLimiteService.registrar(current_user.id, modo=resultado.get("modo"))
+        limite_diario = FitBotLimiteService.get_limites().get("diario")
+        if limite_diario and not current_user.is_admin:
+            resultado["restantes_hoje"] = max(
+                limite_diario - FitBotLimiteService.contar_do_usuario_hoje(current_user.id), 0
+            )
 
     status = 200 if resultado.get("ok") else 503
     return jsonify(resultado), status

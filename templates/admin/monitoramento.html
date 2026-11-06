@@ -188,6 +188,7 @@
         <div class="card h-100">
             <div class="card-body">
                 <h5 class="card-title mb-3 mon-tip" data-bs-toggle="tooltip" tabindex="0" title="Quantas vezes o FitBot foi chamado, pra qual provedor de IA, taxa de sucesso, tempo médio de resposta e tokens consumidos, nas últimas 24 horas."><i class="bi bi-robot me-2" style="color: #F28C33;"></i>FitBot (uso de IA) <span class="text-muted small fw-normal">últimas 24h</span></h5>
+                <p class="small mb-2"><a href="{{ url_for('admin.fitbot') }}">Mensagens, custo estimado e limites do FitBot <i class="bi bi-arrow-right"></i></a></p>
                 <div id="mon-fitbot-indisponivel" class="text-muted small d-none">
                     <i class="bi bi-exclamation-circle"></i> <span id="mon-fitbot-erro"></span>
                 </div>

@@ -250,6 +250,17 @@
     box-shadow: 0 3px 10px rgba(242, 140, 51, 0.3);
 }
 
+.fitbot-msg.from-aviso {
+    align-self: center;
+    max-width: 92%;
+    background: transparent;
+    color: #8a6d3b;
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    box-shadow: none;
+    text-align: center;
+}
+
 .fitbot-msg.from-error {
     align-self: flex-start;
     background: #fdecea;

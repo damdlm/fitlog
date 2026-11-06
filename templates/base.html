@@ -1964,6 +1964,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.fitbot' else '' }}" href="{{ url_for('admin.fitbot') }}" title="FitBot: uso e limites" aria-label="FitBot: uso e limites">
+                        <i class="bi bi-robot"></i>
+                        <span class="mega-label">FitBot</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link mega-trigger {{ 'active' if request.endpoint == 'admin.relatorio_telas' else '' }}" href="{{ url_for('admin.relatorio_telas') }}" title="Telas Mais Acessadas" aria-label="Telas Mais Acessadas">
                         {{ ph('M224,200h-8V40a8,8,0,0,0-8-8H152a8,8,0,0,0-8,8V80H96a8,8,0,0,0-8,8v40H48a8,8,0,0,0-8,8v64H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16ZM160,48h40V200H160ZM104,96h40V200H104ZM56,144H88v56H56Z', 'M208,40V208H152V40Z') }}
                         <span class="mega-label">Telas Mais Acessadas</span>
