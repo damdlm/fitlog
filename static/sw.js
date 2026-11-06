@@ -10,13 +10,17 @@
 
 importScripts('/static/js/modules/fila-offline.js');
 
-const CACHE_NAME = 'fitlog-shell-v4'; // bump pra forçar re-precache (v3: fila offline; v4: offline.html sem zoom)
+const CACHE_NAME = 'fitlog-shell-v5'; // bump pra forçar re-precache (v3: fila offline; v4: offline.html sem zoom; v5: ícone do FitBot)
 
 // Só os assets realmente estáticos (não mudam por usuário/sessão)
 const SHELL_ASSETS = [
     '/static/icons/icon-192.png',
     '/static/icons/icon-512.png',
     '/static/images/logo.png',
+    // Ícone do FitBot do cabeçalho. Sem estar aqui ele era buscado na rede
+    // a cada abertura e, quando esse pedido falhava, o botão ficava só com o
+    // círculo laranja (o logo, que está aqui, nunca falhava).
+    '/static/images/fitbot_icon.png',
     '/static/offline.html',
     // Usado pela offline.html para mostrar os treinos guardados no aparelho.
     '/static/js/modules/fila-offline.js',
@@ -110,9 +114,15 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Passthrough padrão — mantém o comportamento normal de rede
-    // pra tudo que não é navegação (chamadas de API, etc.)
-    event.respondWith(fetch(event.request));
+    // Todo o resto (imagens, CSS, JS, chamadas de API do mesmo domínio): NÃO
+    // interceptar. Antes era event.respondWith(fetch(event.request)), que
+    // "reproxeia" o pedido pelo service worker e faz ele perder a
+    // resiliência normal do navegador (retry, reaproveitar conexão, e o
+    // próprio custo de acordar o SW no iPhone). Qualquer soluço virava
+    // falha definitiva, e era isso que fazia imagens como o ícone do FitBot
+    // às vezes não carregarem. Sem respondWith, o navegador trata o pedido
+    // como se o service worker não existisse -- o mesmo raciocínio já
+    // aplicado acima para os recursos de terceiros.
 });
 
 // Background Sync (Android/Chrome): o navegador dispara quando a conexão

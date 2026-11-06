@@ -1771,7 +1771,11 @@
                 </button>
                 <button type="button" class="fitbot-toggle-btn" data-bs-toggle="modal" data-bs-target="#fitbotModal" title="Falar com o FitBot" aria-label="Abrir chat com o FitBot">
             <!--    <i class="bi bi-robot" aria-hidden="true"></i> -->
-                    <img src="{{ url_for('static', filename='images/fitbot_assist.png') }}" alt="FitBot" class="fitbot-toggle-icon">
+                    <!-- Ícone pequeno (114px, ~16 KB) em vez do fitbot_assist.png de 561px/343 KB
+                         exibido a 38px: carrega rápido mesmo em rede ruim e está no precache do
+                         service worker. Se ainda assim falhar, tenta de novo uma vez. -->
+                    <img src="{{ url_for('static', filename='images/fitbot_icon.png') }}" alt="FitBot" class="fitbot-toggle-icon" width="38" height="38" decoding="async" fetchpriority="high"
+                         onerror="if(!this.dataset.retry){this.dataset.retry='1';var i=this;setTimeout(function(){i.src='{{ url_for('static', filename='images/fitbot_icon.png') }}?r='+Date.now();},700);}">
                 </button>
 
                 <!-- Sino de notificações -->
