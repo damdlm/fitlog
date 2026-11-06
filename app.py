@@ -136,9 +136,25 @@ def _criar_admin_inicial(app):
         elif len(admin_password) < 12:
             raise ValueError("ADMIN_PASSWORD precisa ter pelo menos 12 caracteres")
 
+        # O e-mail do admin vem do ambiente. Antes era fixo em
+        # 'admin@fitlog.com' -- domínio que não é do FitLog --, e a
+        # recuperação de senha mandaria o link para quem controla aquele
+        # domínio. Em produção é obrigatório; em dev/testes usa um
+        # endereço local que não recebe e-mail.
+        admin_email = os.getenv('ADMIN_EMAIL', '').strip().lower()
+        if not admin_email:
+            if em_producao:
+                app.logger.error(
+                    "ADMIN_EMAIL não definida em produção. Nenhum usuário "
+                    "admin foi criado. Defina ADMIN_EMAIL (um e-mail seu) e "
+                    "reinicie a aplicação."
+                )
+                return
+            admin_email = 'admin@localhost'
+
         admin = User(
             username='admin',
-            email='admin@fitlog.com',
+            email=admin_email,
             is_admin=True
         )
 
@@ -149,6 +165,29 @@ def _criar_admin_inicial(app):
 
     except Exception:
         app.logger.exception("Erro ao criar admin inicial")
+
+
+# E-mail com que o admin inicial era criado até 11/2026. O domínio não é do
+# FitLog: se um admin ainda usa esse endereço, quem controla o domínio
+# poderia receber e-mails destinados a ele.
+EMAIL_ADMIN_PADRAO_ANTIGO = 'admin@fitlog.com'
+
+
+def _alertar_admin_com_email_padrao(app):
+    """Loga um erro a cada inicialização enquanto algum admin usar o e-mail
+    padrão antigo. A recuperação de senha por e-mail já não vale para
+    admins (routes/auth_routes.py), mas o e-mail certo continua importante
+    para avisos e para identificar a conta."""
+    admins = User.query.filter(
+        User.is_admin.is_(True),
+        db.func.lower(User.email) == EMAIL_ADMIN_PADRAO_ANTIGO,
+    ).all()
+    for admin in admins:
+        app.logger.error(
+            "Conta admin ID %s usa o e-mail padrão %s, de um domínio que não é "
+            "do FitLog. Troque por um e-mail seu em Admin > Contas.",
+            admin.id, EMAIL_ADMIN_PADRAO_ANTIGO,
+        )
 
 
 # =============================================================
@@ -333,6 +372,7 @@ def create_app(config_class=None):
             try:
                 if User.query.first() is None:
                     _criar_admin_inicial(app)
+                _alertar_admin_com_email_padrao(app)
             except Exception:
                 app.logger.exception("Erro ao verificar admin")
 
@@ -497,22 +537,57 @@ def create_app(config_class=None):
         if User.query.first() is not None:
             print("Já existe pelo menos um usuário no banco -- nada a fazer.")
             return
+        email = os.getenv('ADMIN_EMAIL', '').strip() or click.prompt("E-mail do admin (um e-mail seu)")
         senha = click.prompt(
             "Senha do admin (mínimo 12 caracteres)",
             hide_input=True, confirmation_prompt=True,
         )
         # Reaproveita _criar_admin_inicial (validação de tamanho,
-        # criação do User, etc.) passando a senha só em memória, pelo
-        # tempo da chamada -- nunca grava em os.environ de verdade.
+        # criação do User, etc.) passando e-mail e senha só em memória,
+        # pelo tempo da chamada.
+        email_antes = os.environ.get('ADMIN_EMAIL')
         os.environ['ADMIN_PASSWORD'] = senha
+        os.environ['ADMIN_EMAIL'] = email
         try:
             _criar_admin_inicial(app)
         finally:
             os.environ.pop('ADMIN_PASSWORD', None)
+            if email_antes is None:
+                os.environ.pop('ADMIN_EMAIL', None)
+            else:
+                os.environ['ADMIN_EMAIL'] = email_antes
         if User.query.first() is not None:
             print("Admin criado com sucesso.")
         else:
             print("Não foi possível criar o admin -- ver o log de erro acima.")
+
+    # Admins não recuperam a senha por e-mail (routes/auth_routes.py:
+    # quem controlasse a caixa de e-mail tomaria a conta mais poderosa do
+    # sistema). Este comando é o caminho: roda de dentro do servidor, ex.
+    # `railway ssh` no serviço fitlog e depois `flask redefinir-senha-admin`.
+    # A senha é digitada na hora e nunca aparece no terminal.
+    @app.cli.command("redefinir-senha-admin")
+    @click.argument("username")
+    def redefinir_senha_admin_cli(username):
+        """Define uma nova senha para um usuário admin (mínimo 12 caracteres)
+        e encerra as sessões abertas dele."""
+        admin = User.query.filter_by(username=username).first()
+        if admin is None or not admin.is_admin:
+            print("Nenhum admin com esse username.")
+            raise SystemExit(1)
+        senha = click.prompt(
+            "Nova senha (mínimo 12 caracteres)",
+            hide_input=True, confirmation_prompt=True,
+        )
+        if len(senha) < 12:
+            print("A senha precisa ter pelo menos 12 caracteres. Nada foi alterado.")
+            raise SystemExit(1)
+        admin.set_password(senha)  # também incrementa session_version
+        admin.falhas_login = 0
+        admin.login_bloqueado_ate = None
+        db.session.commit()
+        app.logger.warning("Senha do admin ID %s redefinida pela linha de comando", admin.id)
+        print("Senha redefinida. As sessões abertas dessa conta foram encerradas.")
 
     # =============================================================
     # COMANDOS CLI (cobrança/assinatura)

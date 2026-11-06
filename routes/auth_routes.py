@@ -177,7 +177,14 @@ def reset_password_request():
         # Mensagem sempre igual, exista ou não a conta com esse e-mail —
         # evita que alguém use este formulário para descobrir quais
         # e-mails estão cadastrados (user enumeration).
-        if user and user.ativo:
+        if user and user.ativo and user.is_admin:
+            # Admin não recupera a senha por e-mail: quem controlasse a
+            # caixa de e-mail (ou o domínio dela) tomaria a conta que tem
+            # acesso a tudo. A recuperação é pelo comando
+            # `flask redefinir-senha-admin` (app.py), rodado no servidor.
+            # A resposta na tela é a mesma, para não revelar que é admin.
+            logger.warning(f"Solicitacao de reset de senha para conta admin ignorada -- usuario ID {user.id}, IP: {request.remote_addr}")
+        elif user and user.ativo:
             token = user.get_reset_token()
             db.session.commit()
             reset_url = _build_trusted_url('auth.reset_password', token=token)
@@ -210,6 +217,14 @@ def reset_password(token):
     user = User.verify_reset_token(token)
     if user is None:
         flash('Este link de redefinição é inválido ou expirou. Solicite um novo.', 'danger')
+        return redirect(url_for('auth.reset_password_request'))
+
+    if user.is_admin:
+        # Defesa extra: reset_password_request não emite token para admin,
+        # mas um token emitido antes desta regra (ou antes de a conta virar
+        # admin) não pode servir.
+        logger.warning(f"Token de reset de senha usado para conta admin, recusado -- usuario ID {user.id}")
+        flash('Este link de redefinição não é mais válido.', 'danger')
         return redirect(url_for('auth.reset_password_request'))
 
     if not user.ativo:

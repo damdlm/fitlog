@@ -9,6 +9,8 @@ estatísticas e a API de busca.
 """
 from datetime import date, datetime, timezone
 
+import pytest
+
 from models import (db, User, AlunoProfessor, SolicitacaoVinculo, VersaoGlobal,
                      TreinoVersao, ExercicioUsuario, RegistroTreino, Plano)
 
@@ -253,7 +255,7 @@ class TestSolicitacoes:
             solicitacao_id, aluno_id, prof_id, username = s.id, aluno.id, prof.id, prof.username
 
         _login(client, username)
-        resp = client.get(f'/professor/solicitacao/{solicitacao_id}/aprovar', follow_redirects=True)
+        resp = client.post(f'/professor/solicitacao/{solicitacao_id}/aprovar', follow_redirects=True)
         assert resp.status_code == 200
 
         with app.app_context():
@@ -285,7 +287,7 @@ class TestSolicitacoes:
             solicitacao_id, aluno_id, prof_novo_id, username = s.id, aluno.id, prof_novo.id, prof_novo.username
 
         _login(client, username)
-        resp = client.get(f'/professor/solicitacao/{solicitacao_id}/aprovar', follow_redirects=True)
+        resp = client.post(f'/professor/solicitacao/{solicitacao_id}/aprovar', follow_redirects=True)
         assert resp.status_code == 200
 
         with app.app_context():
@@ -309,7 +311,7 @@ class TestSolicitacoes:
             solicitacao_id, aluno_id, username = s.id, aluno.id, prof.username
 
         _login(client, username)
-        resp = client.get(f'/professor/solicitacao/{solicitacao_id}/recusar', follow_redirects=True)
+        resp = client.post(f'/professor/solicitacao/{solicitacao_id}/recusar', follow_redirects=True)
         assert resp.status_code == 200
 
         with app.app_context():
@@ -329,7 +331,7 @@ class TestSolicitacoes:
             solicitacao_id, username = s.id, prof1.username
 
         _login(client, username)
-        client.get(f'/professor/solicitacao/{solicitacao_id}/aprovar', follow_redirects=True)
+        client.post(f'/professor/solicitacao/{solicitacao_id}/aprovar', follow_redirects=True)
 
         with app.app_context():
             s_atualizada = db.session.get(SolicitacaoVinculo, solicitacao_id)
@@ -347,12 +349,58 @@ class TestSolicitacoes:
             solicitacao_id, username = s.id, prof.username
 
         _login(client, username)
-        resp = client.get(f'/professor/solicitacao/{solicitacao_id}/recusar', follow_redirects=True)
+        resp = client.post(f'/professor/solicitacao/{solicitacao_id}/recusar', follow_redirects=True)
         assert resp.status_code == 200
 
         with app.app_context():
             s_atualizada = db.session.get(SolicitacaoVinculo, solicitacao_id)
             assert s_atualizada.status == 'aprovado'
+
+
+class TestSolicitacoesSoPorPost:
+    """Aprovar/recusar mudam o banco (e podem mudar o plano do professor):
+    por GET, um link mandado ao professor aprovava num clique (CSRF)."""
+
+    def _solicitacao(self, app, sufixo):
+        with app.app_context():
+            prof = _criar_usuario(f'pr_get_{sufixo}', tipo_usuario='professor')
+            aluno = _criar_usuario(f'pr_get_aluno_{sufixo}')
+            s = SolicitacaoVinculo(aluno_id=aluno.id, professor_id=prof.id, status='pendente',
+                                   data_solicitacao=datetime.now(timezone.utc))
+            db.session.add(s)
+            db.session.commit()
+            return s.id, prof.username
+
+    @pytest.mark.parametrize('acao', ['aprovar', 'recusar'])
+    def test_get_nao_e_aceito_e_nao_muda_nada(self, client, app, acao):
+        sid, username = self._solicitacao(app, f'g{acao}')
+        _login(client, username)
+
+        resp = client.get(f'/professor/solicitacao/{sid}/{acao}')
+
+        assert resp.status_code == 405
+        with app.app_context():
+            assert db.session.get(SolicitacaoVinculo, sid).status == 'pendente'
+
+    def test_post_sem_token_csrf_e_recusado(self, client, app):
+        sid, username = self._solicitacao(app, 'csrf')
+        _login(client, username)
+        app.config['WTF_CSRF_ENABLED'] = True
+        try:
+            resp = client.post(f'/professor/solicitacao/{sid}/aprovar')
+        finally:
+            app.config['WTF_CSRF_ENABLED'] = False
+
+        assert resp.status_code in (400, 302)
+        with app.app_context():
+            assert db.session.get(SolicitacaoVinculo, sid).status == 'pendente'
+
+    def test_tela_envia_aprovar_e_recusar_por_post(self, client, app):
+        sid, username = self._solicitacao(app, 'tela')
+        _login(client, username)
+        html = client.get('/professor/solicitacoes').get_data(as_text=True)
+        assert f'/professor/solicitacao/{sid}/aprovar' in html
+        assert 'data-confirm-method="get"' not in html
 
 
 class TestApiBuscarAlunos:

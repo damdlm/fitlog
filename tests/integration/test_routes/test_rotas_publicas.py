@@ -151,7 +151,7 @@ class TestEnviarContatoPublico:
         assert resp.status_code == 200
         assert resp.get_json() == {'ok': True, 'erro': None}
         assert len(emails) == 1
-        assert emails[0]['para'] == 'admin@fitlog.com'              # admin semeado pelo create_app
+        assert emails[0]['para'] == 'admin@localhost'              # admin semeado pelo create_app
         assert 'Fulano de Tal' in emails[0]['assunto']
         assert 'fulano@exemplo.com' in emails[0]['texto']
         assert 'Quero saber mais sobre os planos.' in emails[0]['texto']
@@ -163,7 +163,7 @@ class TestEnviarContatoPublico:
 
         _enviar(client)
 
-        assert {e['para'] for e in emails} == {'admin@fitlog.com', 'admin2@teste.com'}
+        assert {e['para'] for e in emails} == {'admin@localhost', 'admin2@teste.com'}
 
     def test_sem_admin_cai_no_ADMIN_EMAIL_configurado(self, client, app, emails):
         User.query.delete()

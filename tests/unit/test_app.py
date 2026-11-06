@@ -311,8 +311,19 @@ class TestCriarAdminInicial:
             assert User.query.filter_by(username='admin').first() is None
         monkeypatch.delenv('ADMIN_PASSWORD', raising=False)
 
+    def test_producao_sem_admin_email_nao_cria_admin(self, monkeypatch):
+        monkeypatch.setenv('ADMIN_PASSWORD', 'senha-valida-com-mais-de-12-chars')
+        monkeypatch.delenv('ADMIN_EMAIL', raising=False)
+        app_prod = create_app(ConfigProducaoSimulada)
+        with app_prod.app_context():
+            db.create_all()
+            from app import _criar_admin_inicial
+            _criar_admin_inicial(app_prod)
+            assert User.query.filter_by(username='admin').first() is None
+
     def test_producao_com_senha_valida_cria_admin(self, monkeypatch):
         monkeypatch.setenv('ADMIN_PASSWORD', 'senha-valida-com-mais-de-12-chars')
+        monkeypatch.setenv('ADMIN_EMAIL', 'Dono@Exemplo.com.br')
         app_prod = create_app(ConfigProducaoSimulada)
         with app_prod.app_context():
             db.create_all()
@@ -322,7 +333,23 @@ class TestCriarAdminInicial:
             assert admin is not None
             assert admin.is_admin is True
             assert admin.check_password('senha-valida-com-mais-de-12-chars')
+            assert admin.email == 'dono@exemplo.com.br'
         monkeypatch.delenv('ADMIN_PASSWORD', raising=False)
+
+    def test_alerta_no_log_se_admin_usa_o_email_padrao_antigo(self, app, caplog):
+        from app import _alertar_admin_com_email_padrao
+        admin = User.query.filter_by(is_admin=True).first()
+        admin.email = 'Admin@FitLog.com'
+        db.session.commit()
+        with caplog.at_level('ERROR'):
+            _alertar_admin_com_email_padrao(app)
+        assert any('admin@fitlog.com' in r.getMessage() and str(admin.id) in r.getMessage() for r in caplog.records)
+
+    def test_sem_alerta_quando_o_email_do_admin_e_outro(self, app, caplog):
+        from app import _alertar_admin_com_email_padrao
+        with caplog.at_level('ERROR'):
+            _alertar_admin_com_email_padrao(app)
+        assert not [r for r in caplog.records if 'e-mail padrão' in r.getMessage()]
 
 
 class TestBillingVerificarTiersComMudancas:

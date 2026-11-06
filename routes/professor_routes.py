@@ -362,11 +362,15 @@ def solicitacoes():
     return render_template('professor/solicitacoes.html', solicitacoes=solicitacoes)
 
 
-@professor_bp.route('/solicitacao/<int:solicitacao_id>/aprovar')
+@professor_bp.route('/solicitacao/<int:solicitacao_id>/aprovar', methods=['POST'])
 @login_required
 @professor_acesso_tela_required('professor_solicitacoes')
 def aprovar_solicitacao(solicitacao_id):
-    """Aprova uma solicitação de vínculo"""
+    """Aprova uma solicitação de vínculo.
+
+    Só POST (com CSRF): por GET, um aluno podia mandar ao professor um link
+    que aprovava a própria solicitação num clique -- e cada aluno a mais
+    pode mudar o plano do professor (Pró/Premium)."""
     if not current_user.is_professor() and not current_user.is_admin:
         flash('Acesso negado.', 'danger')
         return redirect(url_for('main.index'))
@@ -399,7 +403,7 @@ def aprovar_solicitacao(solicitacao_id):
     return redirect(url_for('professor.solicitacoes'))
 
 
-@professor_bp.route('/solicitacao/<int:solicitacao_id>/recusar')
+@professor_bp.route('/solicitacao/<int:solicitacao_id>/recusar', methods=['POST'])
 @login_required
 @professor_acesso_tela_required('professor_solicitacoes')
 def recusar_solicitacao(solicitacao_id):

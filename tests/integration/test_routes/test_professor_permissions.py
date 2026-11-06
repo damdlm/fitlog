@@ -64,6 +64,23 @@ class TestEditarAluno:
             aluno = db.session.get(User, professor_com_aluno['aluno_id'])
             assert aluno.nome_completo != 'Novo Nome'
 
+    def test_professor_nao_troca_email_nem_senha_do_proprio_aluno(self, client, professor_com_aluno):
+        """Tomada de conta: trocar e-mail + senha do aluno vinculado."""
+        with client.application.app_context():
+            aluno = db.session.get(User, professor_com_aluno['aluno_id'])
+            email_antes, hash_antes = aluno.email, aluno.password_hash
+        _login(client, 'prof1')
+        client.post(
+            f"/professor/aluno/editar/{professor_com_aluno['aluno_id']}",
+            data={'nome_completo': 'X', 'email': 'tomada@atacante.com', 'telefone': '',
+                  'nova_senha': 'SenhaDoProfessor123'},
+            follow_redirects=True,
+        )
+        with client.application.app_context():
+            aluno = db.session.get(User, professor_com_aluno['aluno_id'])
+            assert aluno.email == email_antes
+            assert aluno.password_hash == hash_antes
+
     def test_professor_nao_pode_editar_aluno_de_outro_professor(self, client, professor_com_aluno):
         _login(client, 'prof1')
         resp = client.post(

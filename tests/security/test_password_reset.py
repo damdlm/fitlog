@@ -127,3 +127,57 @@ def test_fluxo_reset_via_rotas_invalida_token_apos_uso(client, db):
     resp2 = client.get(f'/auth/reset-password/{token}', follow_redirects=False)
     assert resp2.status_code == 302
     assert '/auth/reset-password-request' in resp2.headers['Location']
+
+
+# ------------------------------------------------------------------
+# Admin não recupera a senha por e-mail: quem controlasse a caixa de
+# e-mail (o admin inicial era criado com admin@fitlog.com, domínio que não
+# é do FitLog) tomaria a conta com acesso a tudo.
+# ------------------------------------------------------------------
+def _cria_admin(db, username='adminreset'):
+    admin = User(username=username, email=f'{username}@teste.com', is_admin=True)
+    admin.set_password('SenhaAntigaAdmin123')
+    db.session.add(admin)
+    db.session.commit()
+    return admin
+
+
+def test_reset_para_admin_nao_envia_email_nem_gera_token(client, db, monkeypatch):
+    import routes.auth_routes as auth_mod
+    enviados = []
+    monkeypatch.setattr(auth_mod, 'enviar_email', lambda *a, **k: enviados.append(a) or True)
+    admin = _cria_admin(db)
+
+    resp = client.post('/auth/reset-password-request', data={'email': admin.email}, follow_redirects=True)
+
+    assert resp.status_code == 200
+    # mesma mensagem de sempre: não revela que a conta é de admin
+    assert 'Se este e-mail estiver cadastrado' in resp.get_data(as_text=True)
+    assert enviados == []
+    assert PasswordResetToken.query.filter_by(user_id=admin.id).first() is None
+
+
+def test_reset_para_usuario_comum_continua_enviando(client, db, monkeypatch):
+    import routes.auth_routes as auth_mod
+    enviados = []
+    monkeypatch.setattr(auth_mod, 'enviar_email', lambda *a, **k: enviados.append(a) or True)
+    user = _cria_usuario(db, username='comumreset')
+
+    client.post('/auth/reset-password-request', data={'email': user.email}, follow_redirects=True)
+
+    assert len(enviados) == 1 and enviados[0][0] == user.email
+
+
+def test_token_antigo_de_admin_nao_redefine_a_senha(client, db):
+    admin = _cria_admin(db, username='admintokenvelho')
+    token = admin.get_reset_token()   # emitido antes da regra nova
+    db.session.commit()
+
+    resp = client.post(f'/auth/reset-password/{token}', data={
+        'password': 'SenhaNovaForte123', 'confirm_password': 'SenhaNovaForte123',
+    }, follow_redirects=False)
+
+    assert resp.status_code == 302
+    assert '/auth/reset-password-request' in resp.headers['Location']
+    db.session.refresh(admin)
+    assert admin.check_password('SenhaAntigaAdmin123')

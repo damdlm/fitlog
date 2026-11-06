@@ -75,6 +75,12 @@ def banco_sem_usuarios(app):
 
 class TestCriarAdminInicial:
 
+    @pytest.fixture(autouse=True)
+    def _admin_email(self, monkeypatch):
+        # Com ADMIN_EMAIL definida o comando não pergunta o e-mail -- os
+        # testes abaixo continuam digitando só a senha.
+        monkeypatch.setenv('ADMIN_EMAIL', 'dono@exemplo.com.br')
+
     def test_nao_faz_nada_se_ja_existe_algum_usuario(self, app):
         antes = User.query.count()
 
@@ -380,3 +386,60 @@ class TestMonitoramentoSnapshot:
         assert r.exit_code == 0
         assert 'Snapshot de métricas capturado.' in r.output
         assert 'antigo(s) removido(s)' not in r.output
+
+
+class TestCriarAdminInicialEmail:
+
+    def test_sem_ADMIN_EMAIL_pergunta_o_email_e_usa_o_digitado(self, app, banco_sem_usuarios, monkeypatch):
+        monkeypatch.delenv('ADMIN_EMAIL', raising=False)
+        r = _invoke(app, 'criar-admin-inicial', input=f'eu@meudominio.com.br\n{SENHA_OK}\n{SENHA_OK}\n')
+        assert r.exit_code == 0, r.output
+        assert 'E-mail do admin' in r.output
+        assert User.query.filter_by(username='admin').one().email == 'eu@meudominio.com.br'
+        assert 'ADMIN_EMAIL' not in os.environ  # não fica no ambiente do processo
+
+    def test_nunca_cria_admin_com_o_email_padrao_antigo(self, app, banco_sem_usuarios, monkeypatch):
+        monkeypatch.setenv('ADMIN_EMAIL', 'dono@exemplo.com.br')
+        _invoke(app, 'criar-admin-inicial', input=f'{SENHA_OK}\n{SENHA_OK}\n')
+        assert User.query.filter_by(email='admin@fitlog.com').first() is None
+
+
+# ------------------------------------------------------------------
+# redefinir-senha-admin (admin não recupera senha por e-mail)
+# ------------------------------------------------------------------
+class TestRedefinirSenhaAdmin:
+
+    def test_redefine_a_senha_e_encerra_sessoes(self, app):
+        admin = User.query.filter_by(is_admin=True).first()
+        versao_antes = admin.session_version or 0
+        admin.falhas_login = 5
+        db.session.commit()
+
+        r = _invoke(app, 'redefinir-senha-admin', admin.username, input=f'{SENHA_OK}\n{SENHA_OK}\n')
+
+        assert r.exit_code == 0, r.output
+        assert SENHA_OK not in r.output
+        db.session.refresh(admin)
+        assert admin.check_password(SENHA_OK)
+        assert admin.session_version == versao_antes + 1
+        assert admin.falhas_login == 0
+
+    def test_nao_mexe_em_quem_nao_e_admin(self, app):
+        comum = User(username='comum_cli', email='comum_cli@teste.com', tipo_usuario='aluno')
+        comum.set_password('senha-original-123')
+        db.session.add(comum)
+        db.session.commit()
+
+        r = _invoke(app, 'redefinir-senha-admin', 'comum_cli', input=f'{SENHA_OK}\n{SENHA_OK}\n')
+
+        assert r.exit_code != 0
+        db.session.refresh(comum)
+        assert comum.check_password('senha-original-123')
+
+    def test_senha_curta_nao_altera(self, app):
+        admin = User.query.filter_by(is_admin=True).first()
+        hash_antes = admin.password_hash
+        r = _invoke(app, 'redefinir-senha-admin', admin.username, input='curta123\ncurta123\n')
+        assert r.exit_code != 0
+        db.session.refresh(admin)
+        assert admin.password_hash == hash_antes
