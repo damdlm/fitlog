@@ -124,6 +124,20 @@ class TestServiceWorker:
         assert resp.headers['Content-Type'] == 'application/javascript'
         assert resp.headers['Service-Worker-Allowed'] == '/'
 
+    @pytest.mark.parametrize('url', ['/sw.js', '/static/offline.html'])
+    def test_sw_e_offline_html_nunca_ficam_em_cache(self, client, url):
+        # Com o max-age de 1 dia dos estáticos, o Cloudflare guardava o
+        # /sw.js e os aparelhos ficavam até 24h no service worker antigo.
+        resp = client.get(url)
+        assert resp.status_code == 200
+        cc = resp.headers['Cache-Control']
+        assert 'no-cache' in cc and 'max-age=0' in cc
+        assert 'public' not in cc
+
+    def test_demais_estaticos_continuam_com_cache(self, client):
+        resp = client.get('/static/js/modules/fila-offline.js')
+        assert 'max-age=0' not in resp.headers.get('Cache-Control', '')
+
 
 # ------------------------------------------------------------------
 # Mídia dos exercícios -- proxy S3 com fallback pro volume local

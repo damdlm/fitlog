@@ -1028,6 +1028,22 @@ def create_app(config_class=None):
         response.headers["Service-Worker-Allowed"] = "/"
         return response
 
+    # O service worker e a página offline que ele guarda no aparelho nunca
+    # podem ser servidos de cache: com o max-age de 1 dia dos estáticos
+    # (SEND_FILE_MAX_AGE_DEFAULT), o Cloudflare na frente do fitlog.vip
+    # guardava o /sw.js e os aparelhos ficavam até 24h com o service worker
+    # do deploy anterior (visto em 05/11/2026: v2 ainda servido com HIT no
+    # Cloudflare depois do deploy da v4). "no-cache" faz CDN e navegador
+    # revalidarem sempre; o ETag/Last-Modified evita baixar de novo à toa.
+    _SEM_CACHE_PWA = {"/sw.js", "/static/offline.html"}
+
+    @app.after_request
+    def _pwa_sem_cache(response):
+        if request.path in _SEM_CACHE_PWA:
+            response.headers["Cache-Control"] = "no-cache, max-age=0, must-revalidate"
+            response.headers.pop("Expires", None)
+        return response
+
     # =============================================================
     # MÍDIA DOS EXERCÍCIOS (BUCKET S3-COMPATÍVEL, COM FALLBACK PRO
     # VOLUME LOCAL DO RAILWAY ENQUANTO A MIGRAÇÃO NÃO TERMINA)
