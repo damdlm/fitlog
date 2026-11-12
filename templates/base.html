@@ -2495,7 +2495,11 @@
             if (!alertas.length) return;
 
             function fecharAlerta(el) {
-                if (!document.body.contains(el)) return;
+                // Bootstrap não protege contra close() duplo: timer + clique
+                // durante o fade geravam "null is not an object
+                // (evaluating 'this._element')" no _destroyElement.
+                if (!document.body.contains(el) || el.dataset.fechando) return;
+                el.dataset.fechando = '1';
                 const instancia = bootstrap.Alert.getOrCreateInstance(el);
                 instancia.close();
             }

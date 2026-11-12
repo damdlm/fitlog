@@ -56,6 +56,10 @@ def _safe_next_url(next_url):
     if not next_url or '\\' in next_url or not next_url.startswith('/'):
         return url_for('main.index')
 
+    # Voltar para o logout logo depois de logar desfaria o login na hora.
+    if urlparse(next_url).path.rstrip('/') == url_for('auth.logout'):
+        return url_for('main.index')
+
     host_atual = urlparse(request.host_url).netloc
     destino = urlparse(urljoin(request.host_url, next_url))
 
@@ -533,8 +537,11 @@ def register():
 
 
 @auth_bp.route('/logout')
-@login_required
 def logout():
+    # Sem @login_required: se já está deslogado (ex.: segundo clique em
+    # "Sair"), só volta para o login -- sem gerar ?next=/auth/logout.
+    if not current_user.is_authenticated:
+        return redirect(url_for('auth.login'))
     logger.info(f"Logout -- usuario {current_user.username}")
     logout_user()
     # CORREÇÃO (achado durante os testes da Parte 2 do prompt de

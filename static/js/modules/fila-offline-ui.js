@@ -283,6 +283,12 @@
         var link = e.target.closest('a[href$="/auth/logout"]');
         if (!link) return;
         e.preventDefault();
+        // Este listener é de captura no document: parar aqui impede que o
+        // page-transition.js (listener de bolha no document) também navegue
+        // para /auth/logout. Com os dois, o logout era chamado 2 vezes; o
+        // 2º, já deslogado, caía em /auth/login?next=/auth/logout e o
+        // próximo login era desfeito na hora ("não loga na 1ª vez").
+        e.stopPropagation();
         var destino = link.href;
         Fila.listar().then(function (itens) {
             if (itens.length) {
