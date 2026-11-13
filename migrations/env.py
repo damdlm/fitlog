@@ -14,11 +14,18 @@ target_metadata = db.metadata
 
 
 def get_url():
-    """Lê a URL do banco do ambiente Flask, com fallback para alembic.ini."""
+    """Lê a URL do banco do ambiente Flask, com fallback para alembic.ini.
+
+    Normaliza postgres:// -> postgresql:// com a mesma função do app
+    (config.normalizar_database_url), para app e migrações nunca
+    divergirem no formato da URL."""
     import os
     from dotenv import load_dotenv
+    from config import normalizar_database_url
     load_dotenv()
-    return os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+    return normalizar_database_url(
+        os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+    )
 
 
 def run_migrations_offline() -> None:

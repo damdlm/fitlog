@@ -16,14 +16,21 @@ if os.getenv('DATABASE_URL') and 'postgres' in os.getenv('DATABASE_URL', ''):
     os.environ['FLASK_ENV'] = 'production'
 
 
+def normalizar_database_url(database_url):
+    """postgres:// -> postgresql:// (formato antigo, que o SQLAlchemy 2 não
+    aceita). Usada pelo app (get_database_url) e pelo Alembic
+    (migrations/env.py), para os dois lerem a URL do mesmo jeito."""
+    if database_url and database_url.startswith('postgres://'):
+        return database_url.replace('postgres://', 'postgresql://', 1)
+    return database_url
+
+
 def get_database_url():
     """Obtém e corrige a URL do banco de dados para Railway"""
     database_url = os.environ.get('DATABASE_URL')
 
     if database_url:
-        # Railway às vezes retorna postgres:// em vez de postgresql://
-        if database_url.startswith('postgres://'):
-            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        database_url = normalizar_database_url(database_url)
 
         # Nunca logar a URL, nem parcialmente: ela pode conter usuário/senha do banco.
         logger.debug("DATABASE_URL corrigida (postgres:// -> postgresql://) e pronta para uso")
@@ -47,6 +54,19 @@ def get_config():
         raise RuntimeError(
             "SECRET_KEY não definida no ambiente de produção. "
             "Configure a variável SECRET_KEY antes de subir a aplicação."
+        )
+
+    if config_class is ProductionConfig and not (
+        os.getenv('DATABASE_URL', '').startswith(('postgres://', 'postgresql'))
+    ):
+        # Sem isso, get_database_url() cairia para SQLite local: o app
+        # subiria "funcionando" com um banco vazio (sem schema -- em
+        # produção o init_db() não roda create_all()) e o /health/db
+        # (SELECT 1) passaria. Os crons não têm pré-deploy para barrar.
+        raise RuntimeError(
+            "DATABASE_URL não definida (ou não é PostgreSQL) em produção. "
+            "Configure a variável apontando para o Postgres antes de subir "
+            "a aplicação."
         )
 
     if config_class is ProductionConfig and not os.getenv('REDIS_URL'):

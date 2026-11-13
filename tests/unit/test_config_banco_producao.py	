@@ -1,0 +1,77 @@
+"""Produção exige PostgreSQL; app e Alembic normalizam a URL do mesmo jeito.
+
+Sem DATABASE_URL, get_database_url() caía para SQLite e o app subia
+"funcionando" com um banco vazio (o /health/db com SELECT 1 passava).
+"""
+import importlib
+from pathlib import Path
+
+import pytest
+
+import config as config_module
+from config import normalizar_database_url
+
+RAIZ = Path(__file__).resolve().parents[2]
+
+
+@pytest.fixture
+def ambiente_producao(monkeypatch):
+    monkeypatch.setenv('FLASK_ENV', 'production')
+    # SECRET_KEY é lida na importação do config (atributo de classe).
+    monkeypatch.setattr(config_module.ProductionConfig, 'SECRET_KEY', 'teste-producao')
+    monkeypatch.setenv('REDIS_URL', 'redis://localhost:6379/0')
+    yield monkeypatch
+
+
+def test_producao_sem_database_url_recusa_subir(ambiente_producao):
+    ambiente_producao.delenv('DATABASE_URL', raising=False)
+    with pytest.raises(RuntimeError, match='DATABASE_URL'):
+        config_module.get_config()
+
+
+def test_producao_com_sqlite_recusa_subir(ambiente_producao):
+    ambiente_producao.setenv('DATABASE_URL', 'sqlite:///instance/fitlog.db')
+    with pytest.raises(RuntimeError, match='PostgreSQL'):
+        config_module.get_config()
+
+
+@pytest.mark.parametrize('url', [
+    'postgresql://u:s@db:5432/fitlog',
+    'postgres://u:s@db:5432/fitlog',
+    'postgresql+psycopg2://u:s@db:5432/fitlog',
+])
+def test_producao_com_postgres_sobe(ambiente_producao, url):
+    ambiente_producao.setenv('DATABASE_URL', url)
+    assert config_module.get_config() is config_module.ProductionConfig
+
+
+def test_desenvolvimento_sem_database_url_continua_com_sqlite(monkeypatch):
+    monkeypatch.setenv('FLASK_ENV', 'development')
+    monkeypatch.delenv('DATABASE_URL', raising=False)
+    assert config_module.get_config() is config_module.DevelopmentConfig
+    assert config_module.get_database_url().startswith('sqlite:')
+
+
+@pytest.mark.parametrize('entrada, esperado', [
+    ('postgres://u:s@h:5432/d', 'postgresql://u:s@h:5432/d'),
+    ('postgresql://u:s@h:5432/d', 'postgresql://u:s@h:5432/d'),
+    ('sqlite:///x.db', 'sqlite:///x.db'),
+    (None, None),
+])
+def test_normalizar_database_url(entrada, esperado):
+    assert normalizar_database_url(entrada) == esperado
+
+
+def test_alembic_normaliza_a_url_igual_ao_app(monkeypatch):
+    """migrations/env.py:get_url() usa config.normalizar_database_url."""
+    monkeypatch.setenv('DATABASE_URL', 'postgres://u:s@h:5432/d')
+    codigo = (RAIZ / 'migrations/env.py').read_text(encoding='utf-8')
+    inicio = codigo.index('def get_url():')
+    fim = codigo.index('\ndef ', inicio + 1)
+    ns = {'config': type('Cfg', (), {'get_main_option': staticmethod(lambda k: 'fallback')})}
+    exec(codigo[inicio:fim], ns)
+    assert ns['get_url']() == 'postgresql://u:s@h:5432/d'
+
+
+def teardown_module(module):
+    importlib.reload(config_module)

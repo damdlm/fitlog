@@ -356,8 +356,11 @@ def create_app(config_class=None):
     def init_db():
         try:
             if em_producao:
-                # Em produção o schema é responsabilidade do Alembic
-                # (Procfile: "release: alembic upgrade head"), não daqui.
+                # Em produção o schema é responsabilidade do Alembic:
+                # "alembic upgrade head" roda no Pre-Deploy Command do
+                # serviço web no Railway (configurado no painel; a linha
+                # "release:" do Procfile é ignorada pelo Railway). Se a
+                # migração falha, o deploy é barrado.
                 # Chamar create_all() aqui também mascararia uma
                 # migração que falhou: a tabela nasceria sem passar
                 # pelo Alembic, sem revisão registrada, e o schema real
