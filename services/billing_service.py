@@ -433,6 +433,13 @@ class BillingService:
             return True, None
 
         plano_necessario = BillingService._plano_gestao_para_total(novo_total)
+        if plano_necessario is None:
+            # Nenhum plano ativo cobre esse total (plano desativado no
+            # admin, ou faixa acima do maior plano). Antes estourava
+            # AttributeError (500) ao montar a mensagem.
+            logger.error('Nenhum plano de gestão ativo cobre %s alunos (professor %s)',
+                         novo_total, professor.id)
+            return False, 'Limite de alunos atingido. Fale com o suporte para ampliar seu plano.'
         assinatura = professor.assinatura
         plano_atual_codigo = None
         if assinatura is not None and assinatura.status == 'active' and assinatura.plano is not None:

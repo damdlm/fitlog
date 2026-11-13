@@ -343,6 +343,17 @@ class TestPodeCadastrarAluno:
             assert pode is False
             assert 'Pró' in mensagem
 
+    def test_sem_plano_ativo_que_cubra_o_total_bloqueia_sem_erro(self, app):
+        """Nenhum plano de gestão ativo (ex.: desativado no admin):
+        antes estourava AttributeError ao montar a mensagem."""
+        with app.app_context():
+            professor = _criar_usuario('prof_sem_planos', tipo_usuario='professor')
+            _vincular_alunos(professor, 2)
+
+            pode, mensagem = BillingService.pode_cadastrar_aluno(professor)
+            assert pode is False
+            assert 'suporte' in mensagem
+
     def test_trial_nao_libera_cadastro_alem_de_2(self, app):
         """Trial só dá acesso a Estatísticas/FitBot -- não libera
         gerenciar mais de 2 alunos."""

@@ -72,7 +72,7 @@ class RailwayMetricsService:
                 continue
             nome, _, service_id = par.partition(":")
             nome, service_id = nome.strip(), service_id.strip()
-            if nome and service_id:
+            if nome and service_id and service_id not in {sid for _, sid in servicos}:
                 servicos.append((nome, service_id))
 
         return servicos
@@ -86,14 +86,46 @@ class RailwayMetricsService:
                     return valores[-1].get("value")
         return None
 
+    # Token de conta/time vai em "Authorization: Bearer"; token de PROJETO
+    # vai em "Project-Access-Token" (com Bearer a API responde
+    # "Not Authorized"). Tenta os dois e lembra qual funcionou.
+    _ESQUEMAS_AUTH = ("bearer", "projeto")
+    _esquema_auth_ok = None
+
+    @staticmethod
+    def _headers(token, esquema):
+        headers = {"Content-Type": "application/json"}
+        if esquema == "projeto":
+            headers["Project-Access-Token"] = token
+        else:
+            headers["Authorization"] = f"Bearer {token}"
+        return headers
+
     @classmethod
     def _metricas_de_um_servico(cls, token, environment_id, service_id, start_date_iso):
+        esquemas = list(cls._ESQUEMAS_AUTH)
+        if cls._esquema_auth_ok in esquemas:
+            esquemas.remove(cls._esquema_auth_ok)
+            esquemas.insert(0, cls._esquema_auth_ok)
+
+        ultimo_erro = None
+        for esquema in esquemas:
+            try:
+                metricas = cls._consultar_metricas(token, esquema, environment_id, service_id, start_date_iso)
+            except RuntimeError as e:
+                if "not authorized" not in str(e).lower():
+                    raise
+                ultimo_erro = e
+                continue
+            cls._esquema_auth_ok = esquema
+            return metricas
+        raise ultimo_erro
+
+    @classmethod
+    def _consultar_metricas(cls, token, esquema, environment_id, service_id, start_date_iso):
         resp = requests.post(
             RAILWAY_API_URL,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json",
-            },
+            headers=cls._headers(token, esquema),
             json={
                 "query": _QUERY_METRICS,
                 "variables": {

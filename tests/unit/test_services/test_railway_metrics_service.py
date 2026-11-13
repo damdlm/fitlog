@@ -1,6 +1,13 @@
 """Testes para RailwayMetricsService -- métricas de CPU/memória via API
 GraphQL do Railway (ver services/railway_metrics_service.py)."""
+import pytest
+
 from services.railway_metrics_service import RailwayMetricsService
+
+
+@pytest.fixture(autouse=True)
+def _esquema_auth_limpo(monkeypatch):
+    monkeypatch.setattr(RailwayMetricsService, '_esquema_auth_ok', None)
 
 
 class _RespostaFake:
@@ -125,3 +132,74 @@ class TestGetMetrics:
         resultado = RailwayMetricsService.get_metrics()
 
         assert resultado['servicos'][0]['disponivel'] is False
+
+
+class TestEsquemaDeAutenticacao:
+    """Token de projeto do Railway exige o header Project-Access-Token; com
+    "Authorization: Bearer" a API responde "Not Authorized" (era o que
+    acontecia em produção: o card do Railway nunca recebeu dados)."""
+
+    def _env(self, monkeypatch):
+        monkeypatch.setenv('RAILWAY_API_TOKEN', 'tok')
+        monkeypatch.setenv('RAILWAY_SERVICE_ID', 'srv-web')
+        monkeypatch.setenv('RAILWAY_SERVICE_NAME', 'fitlog')
+        monkeypatch.delenv('RAILWAY_SERVICOS_EXTRAS', raising=False)
+        monkeypatch.setattr(RailwayMetricsService, '_esquema_auth_ok', None)
+
+    def test_token_de_projeto_usa_project_access_token_e_lembra(self, monkeypatch):
+        self._env(monkeypatch)
+        headers_usados = []
+        ok = {"data": {"metrics": [{"measurement": "CPU_USAGE", "values": [{"value": 0.3}]}]}}
+        nao_autorizado = {"errors": [{"message": "Not Authorized"}]}
+
+        def post_fake(url, headers=None, json=None, timeout=None):
+            headers_usados.append('projeto' if 'Project-Access-Token' in headers else 'bearer')
+            if 'Project-Access-Token' in headers:
+                assert headers['Project-Access-Token'] == 'tok'
+                return _RespostaFake(200, ok)
+            return _RespostaFake(200, nao_autorizado)
+
+        monkeypatch.setattr('services.railway_metrics_service.requests.post', post_fake)
+
+        r1 = RailwayMetricsService.get_metrics()
+        assert r1['servicos'][0]['disponivel'] is True
+        assert r1['servicos'][0]['cpu_vcpu'] == 0.3
+        assert headers_usados == ['bearer', 'projeto']
+
+        RailwayMetricsService.get_metrics()
+        assert headers_usados == ['bearer', 'projeto', 'projeto']  # não tenta Bearer de novo
+
+    def test_token_invalido_nos_dois_formatos_marca_indisponivel(self, monkeypatch):
+        self._env(monkeypatch)
+        chamadas = []
+
+        def post_fake(url, headers=None, json=None, timeout=None):
+            chamadas.append(1)
+            return _RespostaFake(200, {"errors": [{"message": "Not Authorized"}]})
+
+        monkeypatch.setattr('services.railway_metrics_service.requests.post', post_fake)
+
+        r = RailwayMetricsService.get_metrics()
+        assert r['servicos'][0]['disponivel'] is False
+        assert 'Not Authorized' in r['servicos'][0]['erro']
+        assert len(chamadas) == 2
+
+    def test_outro_erro_graphql_nao_tenta_o_outro_formato(self, monkeypatch):
+        self._env(monkeypatch)
+        chamadas = []
+
+        def post_fake(url, headers=None, json=None, timeout=None):
+            chamadas.append(1)
+            return _RespostaFake(200, {"errors": [{"message": "Service not found"}]})
+
+        monkeypatch.setattr('services.railway_metrics_service.requests.post', post_fake)
+
+        r = RailwayMetricsService.get_metrics()
+        assert r['servicos'][0]['disponivel'] is False
+        assert len(chamadas) == 1
+
+    def test_servico_extra_repetido_nao_entra_duas_vezes(self, monkeypatch):
+        self._env(monkeypatch)
+        monkeypatch.setenv('RAILWAY_SERVICOS_EXTRAS', 'fitlog:srv-web, Postgres:srv-pg')
+        servicos = RailwayMetricsService._servicos_configurados()
+        assert [sid for _, sid in servicos] == ['srv-web', 'srv-pg']
