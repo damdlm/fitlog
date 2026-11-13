@@ -167,3 +167,11 @@ def validar_senha(senha, username=None, email=None):
     if erros:
         return False, erros[0]
     return True, senha
+
+def corpo_json_objeto():
+    """Corpo JSON da requisição como dict -- {} quando ausente, inválido ou
+    de outro tipo (ex.: uma lista). Evita 500 (AttributeError em .get) com
+    requisições malformadas; a rota responde 400 pela validação normal."""
+    from flask import request
+    dados = request.get_json(silent=True)
+    return dados if isinstance(dados, dict) else {}

@@ -25,6 +25,7 @@ from sqlalchemy import func
 import logging
 import json
 from collections import Counter
+from utils.validators import corpo_json_objeto
 
 professor_bp = Blueprint('professor', __name__, url_prefix='/professor')
 logger = logging.getLogger(__name__)
@@ -307,10 +308,14 @@ def editar_aluno(aluno_id):
     
     if request.method == 'POST':
         nome_completo = request.form.get('nome_completo')
-        email = request.form.get('email')
+        email = (request.form.get('email') or '').strip()
         telefone = request.form.get('telefone')
         nova_senha = request.form.get('nova_senha')
-        
+
+        if not email:
+            flash('Informe o e-mail do aluno.', 'danger')
+            return redirect(url_for('professor.editar_aluno', aluno_id=aluno.id))
+
         if email != aluno.email:
             existing_user = User.query.filter_by(email=email).first()
             if existing_user:
@@ -1047,7 +1052,7 @@ def reordenar_exercicios_aluno(aluno_id):
     if negado:
         return jsonify({"success": False, "error": "Acesso negado"}), 403
 
-    data = request.get_json(silent=True) or {}
+    data = corpo_json_objeto()
     versao_id = data.get('versao_id')
     treino_codigo = data.get('treino_codigo')
     nova_ordem = data.get('nova_ordem')

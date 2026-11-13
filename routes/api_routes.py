@@ -8,12 +8,10 @@ from services.estatistica_service import EstatisticaService
 from models import TreinoVersao
 from services.treino_service import TreinoService
 from utils.decorators import acesso_premium_required
-from utils.exercise_utils import buscar_musculo_no_catalogo, remover_acentos
+from utils.exercise_utils import buscar_musculo_no_catalogo
 from services.geolocalizacao_service import GeolocalizacaoService, ZOOM_MINIMO_PONTOS_INDIVIDUAIS
-import json
-import hashlib
-from pathlib import Path
 import logging
+from utils.validators import corpo_json_objeto
 
 api_bp = Blueprint('api', __name__)
 logger = logging.getLogger(__name__)
@@ -442,100 +440,25 @@ def api_buscar_musculo():
         })
 
 
-_CATALOGO_EXERCICIOS_CACHE = None
-
-
-def _get_catalogo_exercicios():
-    """
-    Carrega e cacheia em memória o catálogo de exercícios (JSON estático,
-    somente leitura). Antes, o arquivo era reaberto e re-parseado do disco
-    em TODA chamada a /buscar-exercicios — medido em ~215ms de parse só
-    pra abrir o arquivo (catálogo de referência de ~1300 itens/2.2MB usado
-    como proxy, já que o arquivo real de produção não está neste
-    checkout), fora o loop de comparação de string sobre o catálogo
-    inteiro a cada tecla digitada numa busca type-ahead.
-
-    Cada worker do Gunicorn mantém sua própria cópia em memória (arquivo é
-    estático e pequeno o bastante pra isso ser trivial — não precisa de
-    Redis/Postgres pra um catálogo somente-leitura que não muda em
-    runtime).
-    """
-    global _CATALOGO_EXERCICIOS_CACHE
-    if _CATALOGO_EXERCICIOS_CACHE is not None:
-        return _CATALOGO_EXERCICIOS_CACHE
-
-    catalogo_path = Path("storage/exercises-ptbr-full-translation.json")
-    if not catalogo_path.exists():
-        logger.error(f"Catálogo não encontrado: {catalogo_path}")
-        return []
-
-    with open(catalogo_path, 'r', encoding='utf-8') as f:
-        _CATALOGO_EXERCICIOS_CACHE = json.load(f)
-    return _CATALOGO_EXERCICIOS_CACHE
-
-
 @api_bp.route("/buscar-exercicios")
 @login_required
 def api_buscar_exercicios():
-    """API para buscar exercícios no catálogo"""
+    """Busca exercícios no catálogo do sistema (tabela exercicios_sistema,
+    importada de data/exercises.json), por nome ou apelido.
+
+    Antes lia storage/exercises-ptbr-full-translation.json, arquivo que não
+    existe no repositório nem em produção: a busca de Admin > Gerenciar
+    treinos sempre voltava vazia. Agora usa o mesmo catálogo do resto do app.
+    """
+    from services.catalogo_service import CatalogoService
+
     termo = request.args.get("termo", "").strip()
-
-    termo_normalizado = remover_acentos(termo.lower())
-
     try:
-        catalogo = _get_catalogo_exercicios()
-        if not catalogo:
-            return jsonify([])
-
-        resultados = []
-        
-        mapa_musculos = {
-            'abdominais': 'Abdômen',
-            'abductors': 'Abdutores',
-            'adductors': 'Adutores',
-            'biceps': 'Bíceps',
-            'calves': 'Panturrilhas',
-            'chest': 'Peitoral',
-            'forearms': 'Antebraços',
-            'glutes': 'Glúteos',
-            'hamstrings': 'Posterior de Coxa',
-            'lats': 'Dorsal',
-            'lower back': 'Lombar',
-            'middle back': 'Costas',
-            'neck': 'Pescoço',
-            'quadriceps': 'Quadríceps',
-            'shoulders': 'Ombros',
-            'traps': 'Trapézio',
-            'triceps': 'Tríceps'
-        }
-        
-        for ex in catalogo:
-            nome = ex.get('name', '')
-            primary_muscles = ex.get('primaryMuscles', [])
-            musculo_original = primary_muscles[0] if primary_muscles else "Não especificado"
-            
-            nome_normalizado = remover_acentos(nome.lower())
-            musculo_exibicao = mapa_musculos.get(musculo_original.lower(), musculo_original.title())
-            
-            if termo:
-                if termo_normalizado in nome_normalizado:
-                    id_hash = int(hashlib.md5(nome.encode(), usedforsecurity=False).hexdigest()[:8], 16)
-                    resultados.append({
-                        "id": id_hash,
-                        "nome": nome,
-                        "musculo": musculo_exibicao
-                    })
-            else:
-                if len(resultados) < 200:
-                    id_hash = int(hashlib.md5(nome.encode(), usedforsecurity=False).hexdigest()[:8], 16)
-                    resultados.append({
-                        "id": id_hash,
-                        "nome": nome,
-                        "musculo": musculo_exibicao
-                    })
-        
-        return jsonify(resultados)
-        
+        resultados = CatalogoService.buscar_exercicios(termo=termo or None, limite=200)
+        return jsonify([
+            {"id": ex["id"], "nome": ex["nome"], "musculo": ex["musculo"]}
+            for ex in resultados
+        ])
     except Exception:
         logger.exception("Erro ao buscar catálogo")
         return jsonify([])
@@ -614,7 +537,7 @@ def api_evolucao_exercicio(exercicio_id):
 @login_required
 def api_criar_exercicio():
     """Cria um exercício via API"""
-    data = request.json
+    data = corpo_json_objeto()
     
     if not data or not data.get("nome"):
         return jsonify({"success": False, "error": "Nome é obrigatório"}), 400
@@ -703,7 +626,7 @@ def api_catalogo_musculos():
 def api_reordenar_exercicios():
     """API para reordenar exercícios de um treino na versão"""
     try:
-        data = request.get_json()
+        data = corpo_json_objeto()
         
         versao_id = data.get('versao_id')
         user_id = current_user.id

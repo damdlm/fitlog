@@ -12,6 +12,7 @@ from services.fitbot_limite_service import FitBotLimiteService
 from services.fitbot_service import FitBotService
 from services.privacidade_service import PrivacidadeService
 from services.tela_controlada_service import TelaControladaService
+from utils.validators import corpo_json_objeto
 
 fitbot_bp = Blueprint("fitbot", __name__)
 logger = logging.getLogger(__name__)
@@ -96,7 +97,7 @@ def chat():
             "resposta": "Assine o Plano Fit para continuar conversando com o FitBot.",
         }), 403
 
-    dados = request.get_json(silent=True) or {}
+    dados = corpo_json_objeto()
 
     mensagem = (dados.get("mensagem") or "").strip()
     imagem_base64 = dados.get("imagem_base64")

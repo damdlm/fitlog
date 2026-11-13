@@ -13,6 +13,7 @@ from models import db, Plano
 from services.billing_service import BillingService, AssinaturaAtualizadaError, AssinaturaJaAtivaError, AssinaturaGatewaySumiuError, DadosCobrancaIncompletosError, NadaParaCancelarError, ConfirmacaoPagamentoIndisponivelError
 from services.configuracao_service import ConfiguracaoService
 from utils.decorators import tela_assinatura_ativa_required
+from utils.validators import corpo_json_objeto
 
 billing_bp = Blueprint('billing', __name__)
 logger = logging.getLogger(__name__)
@@ -43,7 +44,7 @@ def webhook_asaas():
         logger.warning('Webhook Asaas com token inválido/ausente, rejeitado (IP %s)', request.remote_addr)
         return jsonify({'erro': 'token inválido'}), 401
 
-    payload = request.get_json(silent=True) or {}
+    payload = corpo_json_objeto()
     try:
         ok = BillingService.processar_webhook(payload)
     except ConfirmacaoPagamentoIndisponivelError:

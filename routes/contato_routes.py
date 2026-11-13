@@ -10,6 +10,7 @@ from flask_login import current_user, login_required
 
 from extensions import limiter
 from services.contato_service import ContatoService
+from utils.validators import corpo_json_objeto
 
 contato_bp = Blueprint("contato", __name__)
 logger = logging.getLogger(__name__)
@@ -53,7 +54,7 @@ def transcrever():
 @limiter.limit("5 per hour", key_func=_chave_por_usuario)
 def enviar():
     """Envia a mensagem de contato (texto digitado ou transcrito) por e-mail."""
-    dados = request.get_json(silent=True) or {}
+    dados = corpo_json_objeto()
     mensagem = (dados.get("mensagem") or "").strip()
 
     resultado = ContatoService.enviar_mensagem(current_user, mensagem)
@@ -75,7 +76,7 @@ def publico_enviar():
     """Envia a mensagem do formulário público. Rate limit por IP (sem
     key_func = padrão do Flask-Limiter, mesmo usado em auth_routes pra
     rotas sem usuário logado, ex: esqueci minha senha)."""
-    dados = request.get_json(silent=True) or {}
+    dados = corpo_json_objeto()
     resultado = ContatoService.enviar_mensagem_publica(
         nome=dados.get("nome"),
         email=dados.get("email"),

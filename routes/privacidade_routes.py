@@ -28,6 +28,7 @@ from services.privacidade_service import (
     TIPO_POLITICA_PRIVACIDADE,
 )
 from routes.auth_routes import _safe_next_url
+from utils.validators import corpo_json_objeto
 
 privacidade_bp = Blueprint("privacidade", __name__)
 logger = logging.getLogger(__name__)
@@ -134,7 +135,7 @@ def fitbot_consentimento():
     """Concede ou revoga o consentimento para o FitBot enviar dados a
     IA de terceiros (Groq/Gemini/OpenAI). Chamado tanto pelo modal de
     primeiro uso do chat quanto pelo toggle em Meu Perfil."""
-    dados = request.get_json(silent=True) or {}
+    dados = corpo_json_objeto()
     concedido = bool(dados.get("concedido", True))
 
     PrivacidadeService.registrar_consentimento(

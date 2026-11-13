@@ -221,60 +221,55 @@ class TestApiBuscarMusculoEncontrado:
 
 
 class TestApiBuscarExercicios:
-    """O catálogo estático (storage/exercises-ptbr-full-translation.json)
-    não existe neste checkout (ver docstring de
-    routes/api_routes.py:_get_catalogo_exercicios) -- cobre o
-    comportamento real de fallback: sem o arquivo, a busca não quebra,
-    só devolve lista vazia."""
+    """Busca de Admin > Gerenciar treinos: usa o catálogo do banco
+    (exercicios_sistema). Antes lia um JSON que não existe no repositório
+    e sempre devolvia lista vazia em produção."""
 
-    def test_sem_arquivo_de_catalogo_nao_quebra_e_retorna_vazio(self, client, app):
+    def _catalogo(self):
+        from models import ExercicioSistema
+        db.session.add_all([
+            ExercicioSistema(id_original='bx1', nome='Supino Reto', grupo_muscular='Peito',
+                             nicknames=['supino barra']),
+            ExercicioSistema(id_original='bx2', nome='Agachamento Livre', grupo_muscular='Pernas',
+                             nicknames=['squat']),
+        ])
+        db.session.commit()
+
+    def test_encontra_por_nome_no_catalogo_do_banco(self, client, app):
         with app.app_context():
             _criar_usuario('api_busca_ex_1')
+            self._catalogo()
         _login(client, 'api_busca_ex_1')
 
         resp = client.get('/api/buscar-exercicios?termo=supino')
         assert resp.status_code == 200
-        assert resp.get_json() == []
-
-    def test_requer_login(self, client):
-        resp = client.get('/api/buscar-exercicios?termo=supino')
-        assert resp.status_code == 302
-
-    def test_com_catalogo_filtra_por_termo_e_mapeia_musculo(self, client, app, monkeypatch):
-        """Cobre a lógica de fato (normalização de acento, mapeamento
-        inglês->português, hash de id) mockando o carregamento do
-        arquivo, já que o catálogo estático não existe neste checkout."""
-        import routes.api_routes as api_routes_module
-        catalogo_fake = [
-            {"name": "Bench Press", "primaryMuscles": ["chest"]},
-            {"name": "Barbell Squat", "primaryMuscles": ["quadriceps"]},
-        ]
-        monkeypatch.setattr(api_routes_module, '_get_catalogo_exercicios', lambda: catalogo_fake)
-
-        with app.app_context():
-            _criar_usuario('api_busca_ex_2')
-        _login(client, 'api_busca_ex_2')
-
-        resp = client.get('/api/buscar-exercicios?termo=bench')
-        assert resp.status_code == 200
         data = resp.get_json()
-        assert len(data) == 1
-        assert data[0]['nome'] == 'Bench Press'
-        assert data[0]['musculo'] == 'Peitoral'
+        assert [d['nome'] for d in data] == ['Supino Reto']
+        assert data[0]['musculo'] == 'Peito'
         assert isinstance(data[0]['id'], int)
 
-    def test_sem_termo_lista_ate_200_com_catalogo_mockado(self, client, app, monkeypatch):
-        import routes.api_routes as api_routes_module
-        catalogo_fake = [{"name": f"Exercicio {i}", "primaryMuscles": ["biceps"]} for i in range(5)]
-        monkeypatch.setattr(api_routes_module, '_get_catalogo_exercicios', lambda: catalogo_fake)
+    def test_encontra_por_apelido(self, client, app):
+        with app.app_context():
+            _criar_usuario('api_busca_ex_2')
+            self._catalogo()
+        _login(client, 'api_busca_ex_2')
 
+        resp = client.get('/api/buscar-exercicios?termo=squat')
+        assert [d['nome'] for d in resp.get_json()] == ['Agachamento Livre']
+
+    def test_sem_termo_lista_o_catalogo(self, client, app):
         with app.app_context():
             _criar_usuario('api_busca_ex_3')
+            self._catalogo()
         _login(client, 'api_busca_ex_3')
 
         resp = client.get('/api/buscar-exercicios')
         assert resp.status_code == 200
-        assert len(resp.get_json()) == 5
+        assert len(resp.get_json()) == 2
+
+    def test_requer_login(self, client):
+        resp = client.get('/api/buscar-exercicios?termo=supino')
+        assert resp.status_code == 302
 
 
 class TestApiCriarExercicio:
