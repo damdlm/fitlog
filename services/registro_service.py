@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from .base_service import BaseService
 from .analytics_service import AnalyticsService
 import logging
+from services.cardio import volume_da_serie
 
 logger = logging.getLogger(__name__)
 
@@ -242,6 +243,15 @@ class RegistroService(BaseService):
             return []
     
     @staticmethod
+    def _dados_validos(dados):
+        """Exercício com algo a gravar: cardio com tempo, ou força com
+        repetições > 0. Carga 0 é válida (peso corporal: barra, flexão) --
+        antes `if carga and repeticoes` descartava em silêncio carga 0."""
+        if dados.get('cardio'):
+            return bool(dados.get('duracao_segundos'))
+        return dados.get('carga') is not None and bool(dados.get('repeticoes'))
+
+    @staticmethod
     def salvar_registros(treino_id, versao_id, periodo, semana, dados_exercicios, user_id=None, tempo_treino=None):
         """Salva múltiplos registros de uma sessão de treino
 
@@ -308,7 +318,7 @@ class RegistroService(BaseService):
             ).delete()
             
             for chave, dados in dados_exercicios.items():
-                if dados['carga'] and dados['repeticoes']:
+                if RegistroService._dados_validos(dados):
                     # Tipo já vem identificado da rota (ex.tipo), não precisa mais
                     # adivinhar em qual tabela o ID existe — exercicios_usuario e
                     # exercicios_base têm sequências de ID independentes, então o
@@ -329,6 +339,22 @@ class RegistroService(BaseService):
                     db.session.add(registro)
                     db.session.flush()
                     
+                    if dados.get('cardio'):
+                        # Cardio: uma "série" com tempo (e distância /
+                        # intensidade opcionais), sem carga/repetições --
+                        # fica fora de tudo que soma carga × repetições.
+                        db.session.add(HistoricoTreino(
+                            registro_id=registro.id,
+                            carga=None,
+                            repeticoes=None,
+                            ordem=1,
+                            tempo_treino=tempo_treino,
+                            duracao_segundos=dados['duracao_segundos'],
+                            distancia_km=dados.get('distancia_km'),
+                            intensidade=dados.get('intensidade'),
+                        ))
+                        continue
+
                     for i in range(dados['num_series']):
                         # Séries individuais (modal da seta, na tela de
                         # registro): cada uma com sua própria carga/repetições,
@@ -360,7 +386,7 @@ class RegistroService(BaseService):
             AnalyticsService.track(
                 'workout_completed',
                 exercise_count=sum(
-                    1 for d in dados_exercicios.values() if d.get('carga') and d.get('repeticoes')
+                    1 for d in dados_exercicios.values() if RegistroService._dados_validos(d)
                 ),
             )
 
@@ -491,7 +517,7 @@ class RegistroService(BaseService):
                     volume_por_semana[key] = 0
                 
                 for serie in r.series:
-                    volume_por_semana[key] += float(serie.carga) * serie.repeticoes
+                    volume_por_semana[key] += volume_da_serie(serie)
             
             return volume_por_semana
         except Exception:
@@ -609,9 +635,11 @@ class RegistroService(BaseService):
             
             for r in registros:
                 for s in r.series:
+                    if s.carga is None:  # cardio (services/cardio.py): sem carga/repetições
+                        continue
                     total_series += 1
                     soma_cargas += float(s.carga)
-                    soma_repeticoes += s.repeticoes
+                    soma_repeticoes += s.repeticoes or 0
                     
                     if float(s.carga) > maior_carga:
                         maior_carga = float(s.carga)

@@ -1252,10 +1252,27 @@ class HistoricoTreino(db.Model):
     __tablename__ = 'historico_treino'
     id = db.Column(db.Integer, primary_key=True)
     registro_id = db.Column(db.Integer, db.ForeignKey('registros_treino.id', ondelete='CASCADE'), nullable=False)
-    carga = db.Column(db.Numeric(5,1), nullable=False)
-    repeticoes = db.Column(db.Integer, nullable=False)
+    # Série de força: carga + repetições. Série de CARDIO (exercício com
+    # modo_registro='tempo', ver services/cardio.py): carga/repetições
+    # vazias e duracao_segundos preenchida (+ distância/intensidade
+    # opcionais) -- por isso NULL aqui; somas de carga × repetições
+    # ignoram essas linhas sozinhas.
+    carga = db.Column(db.Numeric(5,1), nullable=True)
+    repeticoes = db.Column(db.Integer, nullable=True)
     ordem = db.Column(db.Integer, default=0)
     tempo_treino = db.Column(db.Integer, nullable=True)  # Duração total do treino em segundos (cronômetro do topo)
+    duracao_segundos = db.Column(db.Integer, nullable=True)   # cardio: tempo do exercício
+    distancia_km = db.Column(db.Numeric(6, 2), nullable=True)  # cardio: opcional
+    intensidade = db.Column(db.String(10), nullable=True)      # cardio: leve | moderada | forte
+
+    @property
+    def eh_cardio(self):
+        return self.duracao_segundos is not None
+
+    @property
+    def resumo_cardio(self):
+        from services.cardio import resumo_serie_cardio
+        return resumo_serie_cardio(self)
     
     __table_args__ = (
         db.Index('idx_historico_registro', 'registro_id'),
@@ -1399,6 +1416,8 @@ class ExercicioUsuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     nome = db.Column(db.String(200), nullable=False)
+    # 'carga' (carga × repetições, padrão) ou 'tempo' (cardio) -- services/cardio.py
+    modo_registro = db.Column(db.String(10), nullable=False, default='carga', server_default='carga')
     descricao = db.Column(db.Text)
     musculo_id = db.Column(db.Integer, db.ForeignKey('musculos.id'))
     observacoes = db.Column(db.Text)
@@ -1438,6 +1457,9 @@ class ExercicioSistema(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     id_original = db.Column(db.String(50), unique=True, nullable=False)  # "id" do JSON, ex: "0001"
     nome = db.Column(db.String(200), nullable=False)
+    # 'carga' (padrão) ou 'tempo' (cardio) -- services/cardio.py;
+    # no JSON: "record_mode": "time".
+    modo_registro = db.Column(db.String(10), nullable=False, default='carga', server_default='carga')
     categoria = db.Column(db.String(100))
     parte_corpo = db.Column(db.String(100))
     equipamento = db.Column(db.String(100))

@@ -242,7 +242,11 @@
                                     </span>
                                 </td>
                                 <td>
-                                    {% if ultimo_registro and ultimo_registro.series|length > 0 %}
+                                    {% if ultimo_registro and ultimo_registro.series|length > 0 and ultimo_registro.series[0].eh_cardio %}
+                                        <span class="badge-carga">
+                                            <i class="bi bi-stopwatch"></i> {{ ultimo_registro.series[0].resumo_cardio }}
+                                        </span>
+                                    {% elif ultimo_registro and ultimo_registro.series|length > 0 %}
                                         <span class="badge-carga">
                                             <i class="bi bi-bar-chart"></i> {{ ultimo_registro.series[0].carga }}kg
                                         </span>

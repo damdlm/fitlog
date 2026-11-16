@@ -5,6 +5,7 @@ from services.versao_service import VersaoService
 from services.exercicio_service import ExercicioService
 from services.registro_service import RegistroService
 from services.notificacao_service import NotificacaoService
+from services.cardio import MODO_TEMPO, ler_cardio_do_formulario, opcoes_tipo_cardio
 from utils.date_utils import data_para_periodo, data_para_semana, formatar_data_br, validar_data
 from utils.format_utils import data_atual_iso, _agora_brasil
 import logging
@@ -58,6 +59,48 @@ def _msg_versao_finalizada(versao):
         f"{versao.data_fim.strftime('%d/%m/%Y')}"
     )
 
+def _cardios_fora_da_ficha(exercicios, registros_map, chaves_oficiais):
+    """Cardio já salvo neste dia em exercício FORA da ficha (tipo trocado no
+    combo da linha, ou cardio avulso do "+ Cardio"). Diferente dos avulsos
+    de força, ele volta na tela ao reabrir o dia -- senão um novo "Salvar"
+    (que substitui a sessão inteira) apagaria esse cardio sem aviso.
+
+    1) Linha de cardio da ficha sem registro próprio fica com o primeiro
+       desses registros (mesma regra do editar pelo calendário) -- o combo
+       já abre no tipo salvo (ex.cardio_tipo_salvo).
+    2) O que sobrar volta como lista para o JS recriar linhas avulsas.
+    """
+    extras = []
+    for chave, reg in registros_map.items():
+        if chave in chaves_oficiais or not reg.series:
+            continue
+        serie = reg.series[0]
+        if serie.duracao_segundos is None:
+            continue
+        ex_reg = reg.exercicio or reg.exercicio_base
+        extras.append((chave, ex_reg.nome if ex_reg else 'Cardio', reg, serie))
+
+    for ex in exercicios:
+        chave_ex = f"{ex.prefixo}{ex.id}"
+        if ex.modo_registro != MODO_TEMPO or chave_ex in registros_map or not extras:
+            continue
+        chave, nome, reg, _serie = extras.pop(0)
+        registros_map[chave_ex] = reg
+        ex.cardio_tipo_salvo = chave
+        ex.cardio_tipo_nome = nome
+
+    return [
+        {
+            'tipo': chave,
+            'nome': nome,
+            'duracao_min': round(serie.duracao_segundos / 60, 1),
+            'distancia_km': float(serie.distancia_km) if serie.distancia_km is not None else None,
+            'intensidade': serie.intensidade or '',
+        }
+        for chave, nome, _reg, serie in extras
+    ]
+
+
 @register_bp.route("/registrar-treino", methods=["GET"])
 @login_required
 def registrar_treino():
@@ -75,6 +118,7 @@ def registrar_treino():
     erro_versao = None
     treinos_disponiveis = []
     exercicios_catalogo = []
+    cardios_salvos = []
     
     # Validar a data e converter para objeto date
     data_valida, data_obj = validar_data(data_selecionada_str)
@@ -161,6 +205,7 @@ def registrar_treino():
                 # a TELA DE REGISTRO não fica reoferecendo pra reeditar
                 # de novo sozinha a cada vez que a pessoa reabre o dia.
                 chaves_oficiais = {f"{ex.prefixo}{ex.id}" for ex in exercicios}
+                cardios_salvos = _cardios_fora_da_ficha(exercicios, registros_map, chaves_oficiais)
                 chaves_avulsas = {
                     chave_url for chave_url in request.args.getlist("avulso")
                     if chave_url not in chaves_oficiais
@@ -196,7 +241,10 @@ def registrar_treino():
         historico_series=historico_series,
         versao_info=versao_info,
         erro_versao=erro_versao,
-        exercicios_catalogo=exercicios_catalogo
+        exercicios_catalogo=exercicios_catalogo,
+        # Combo "tipo de cardio" e modal "Cardio" (services/cardio.py).
+        opcoes_cardio=opcoes_tipo_cardio() if treino_selecionado else [],
+        cardios_salvos=cardios_salvos,
     )
 
 
@@ -305,12 +353,39 @@ def salvar_registro():
     # Buscar exercícios do treino nesta versão usando o CÓDIGO
     exercicios = VersaoService.get_exercicios(versao_ativa.id, treino_codigo)
 
-    def _extrair_dados_exercicio(chave, tipo, exercicio_id):
+    def _extrair_cardio(chave, tipo, exercicio_id):
+        """Linha de CARDIO (exercício com modo_registro='tempo'): tempo,
+        distância e intensidade em vez de carga/repetições. Se o combo
+        "tipo de cardio" da linha (cardio_tipo_<chave>) apontar para outro
+        exercício de cardio (ex.: trocou Esteira por Bike), grava nele."""
+        cardio = ler_cardio_do_formulario(request.form, chave)
+        if not cardio:
+            return None
+        chave_tipo = (request.form.get(f"cardio_tipo_{chave}") or '').strip()
+        if chave_tipo and chave_tipo != f"{'u_' if tipo == 'usuario' else 'b_'}{exercicio_id}":
+            escolhido = ExercicioService.buscar_por_chaves([chave_tipo], current_user.id).get(chave_tipo)
+            if escolhido is None or getattr(escolhido, 'modo_registro', None) != MODO_TEMPO:
+                return None
+            tipo, exercicio_id = escolhido.tipo, escolhido.id
+        return {
+            'cardio': True,
+            'carga': None,
+            'repeticoes': None,
+            'num_series': 1,
+            'tipo': tipo,
+            'exercicio_id': exercicio_id,
+            'data_registro': data_obj,
+            **cardio,
+        }
+
+    def _extrair_dados_exercicio(chave, tipo, exercicio_id, modo_registro=None):
         """Lê carga/repetições/séries (uniforme ou individual por série) de
         um único exercício do formulário, pelo prefixo da chave ("u_5",
         "b_12"). Mesma lógica tanto pros exercícios oficiais do treino
         quanto pros avulsos (ver avulso_exercicios[] mais abaixo) -- só
-        muda de onde vem o (tipo, exercicio_id)."""
+        muda de onde vem o (tipo, exercicio_id). Cardio: _extrair_cardio."""
+        if modo_registro == MODO_TEMPO:
+            return _extrair_cardio(chave, tipo, exercicio_id)
         carga = request.form.get(f"carga_{chave}")
         reps = request.form.get(f"reps_{chave}")
         if not (carga and reps and carga.strip() and reps.strip()):
@@ -362,7 +437,7 @@ def salvar_registro():
     
     for ex in exercicios:
         chave = f"{ex.prefixo}{ex.id}"  # ex: "u_5" ou "b_5" — evita colisão entre as duas tabelas
-        dado = _extrair_dados_exercicio(chave, ex.tipo, ex.id)
+        dado = _extrair_dados_exercicio(chave, ex.tipo, ex.id, getattr(ex, 'modo_registro', None))
         if dado:
             dados_exercicios[chave] = dado
 
@@ -382,9 +457,22 @@ def salvar_registro():
             ex_avulso = avulsos_validos.get(chave)
             if not ex_avulso:
                 continue  # chave inexistente, ou "u_*" que não pertence a este usuário
-            dado = _extrair_dados_exercicio(chave, ex_avulso.tipo, ex_avulso.id)
+            dado = _extrair_dados_exercicio(chave, ex_avulso.tipo, ex_avulso.id,
+                                            getattr(ex_avulso, 'modo_registro', None))
             if dado:
                 dados_exercicios[chave] = dado
+
+    # CARDIO AVULSO: botão "+ Cardio" cria a linha na própria tela (sem
+    # recarregar), com chave própria ("cardio1", "cardio2"...) listada em
+    # avulso_cardio[]; o exercício vem do combo cardio_tipo_<chave> (sempre
+    # um exercício de cardio -- validado em _extrair_cardio). Chave própria
+    # permite, ex., a Esteira da ficha E mais uma Esteira avulsa.
+    for chave in request.form.getlist("avulso_cardio[]")[:20]:
+        if not (chave.startswith('cardio') and chave[6:].isdigit()):
+            continue
+        dado = _extrair_cardio(chave, None, None)
+        if dado and dado.get('exercicio_id'):
+            dados_exercicios[chave] = dado
     
     if dados_exercicios:
         # Se a data foi alterada (edição pelo calendário), a sessão é

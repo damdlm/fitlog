@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, jsonify, request
 from flask_login import login_required, current_user
 from services.registro_service import RegistroService
+from services.cardio import eh_cardio, serie_para_dict, volume_da_serie
 from services.treino_service import TreinoService
 from utils.decorators import acesso_premium_required
 from datetime import datetime, timezone, timedelta
@@ -126,7 +127,7 @@ def api_eventos():
             # Calcular volume total do treino
             volume_total = 0
             for serie in r.series:
-                volume_total += float(serie.carga) * serie.repeticoes
+                volume_total += volume_da_serie(serie)
             
             # Agrupar por data
             data_str = data.strftime('%Y-%m-%d')
@@ -163,10 +164,7 @@ def api_eventos():
             exercicio_obj = r.exercicio if r.exercicio_usuario_id else r.exercicio_base
             exercicio_nome = exercicio_obj.nome if exercicio_obj else 'Exercício'
             
-            series_detalhe = [
-                {'carga': float(s.carga), 'repeticoes': s.repeticoes}
-                for s in r.series
-            ]
+            series_detalhe = [serie_para_dict(s) for s in r.series]
             
             volumes_por_dia[data_str]['treinos'].append({
                 'id': r.id,
@@ -264,9 +262,8 @@ def api_evento_detalhe(registro_id):
         exercicios.append({
             'nome': exercicio_obj.nome if exercicio_obj else 'Desconhecido',
             'musculo': musculo_nome or 'N/A',
-            'carga': float(serie.carga),
-            'repeticoes': serie.repeticoes,
-            'volume': float(serie.carga) * serie.repeticoes
+            **serie_para_dict(serie),
+            'volume': volume_da_serie(serie),
         })
     
     return jsonify({
@@ -358,12 +355,35 @@ def api_evento_dados_edicao():
     exercicios = VersaoService.get_exercicios(versao_ativa.id, treino_codigo)
 
     registros = RegistroService.get_by_data(treino_id, versao_ativa.id, data_obj)
-    registros_map = {}
-    for r in registros:
+
+    def _chave_do_registro(r):
         if r.exercicio_usuario_id is not None:
-            registros_map[f"u_{r.exercicio_usuario_id}"] = r
-        elif r.exercicio_base_id is not None:
-            registros_map[f"b_{r.exercicio_base_id}"] = r
+            return f"u_{r.exercicio_usuario_id}"
+        if r.exercicio_base_id is not None:
+            return f"b_{r.exercicio_base_id}"
+        return None
+
+    # Cardio (services/cardio.py) pode ter MAIS DE UM registro do mesmo
+    # exercício na sessão (a Esteira da ficha + uma Esteira avulsa do
+    # "+ Cardio"): indexar só por exercício perderia um deles ao salvar.
+    # O 1º registro de cardio de um exercício OFICIAL de cardio preenche a
+    # linha dele; os demais viram cardio avulso com chave própria.
+    chaves_cardio_oficiais = {
+        f"{ex.prefixo}{ex.id}" for ex in exercicios if eh_cardio(ex)
+    }
+    registros_map = {}
+    cardios_avulsos = []
+    for r in registros:
+        chave_r = _chave_do_registro(r)
+        if chave_r is None:
+            continue
+        if r.series and r.series[0].eh_cardio:
+            if chave_r in chaves_cardio_oficiais and chave_r not in registros_map:
+                registros_map[chave_r] = r
+            else:
+                cardios_avulsos.append((chave_r, r))
+            continue
+        registros_map[chave_r] = r
 
     # Exercícios AVULSOS (ver botão "Adicionar exercício" na tela de
     # registro): não fazem parte da lista oficial do treino, então sem
@@ -402,6 +422,9 @@ def api_evento_dados_edicao():
         cargas_distintas = {s['carga'] for s in series_json}
         reps_distintas = {s['repeticoes'] for s in series_json}
         modo_series = 'individual' if series_json and (len(cargas_distintas) > 1 or len(reps_distintas) > 1) else 'uniforme'
+        if eh_cardio(ex):
+            exercicios_json.append(_cardio_json(chave, ex.nome, chave, registro, getattr(ex, 'avulso', False)))
+            continue
         exercicios_json.append({
             'chave': chave,
             'nome': ex.nome,
@@ -413,11 +436,37 @@ def api_evento_dados_edicao():
             'avulso': getattr(ex, 'avulso', False),
         })
 
+    if cardios_avulsos:
+        exercicios_cardio = ExercicioService.buscar_por_chaves(
+            list({c for c, _r in cardios_avulsos}), current_user.id)
+        for indice, (chave_tipo, registro) in enumerate(cardios_avulsos, start=1):
+            ex_cardio = exercicios_cardio.get(chave_tipo)
+            if ex_cardio is None:
+                continue
+            item = _cardio_json(f"cardio{indice}", ex_cardio.nome, chave_tipo, registro, True)
+            item['cardio_avulso'] = True
+            exercicios_json.append(item)
+
     return jsonify({
         'treino_codigo': treino_codigo,
         'treino_nome': treino_nome,
         'exercicios': exercicios_json,
     })
+
+
+def _cardio_json(chave, nome, chave_tipo, registro, avulso):
+    """Linha de cardio do modal de edição do calendário."""
+    serie = registro.series[0] if (registro and registro.series) else None
+    return {
+        'chave': chave,
+        'nome': nome,
+        'cardio': True,
+        'cardio_tipo': chave_tipo,
+        'duracao_min': round(serie.duracao_segundos / 60, 1) if serie and serie.duracao_segundos else '',
+        'distancia_km': float(serie.distancia_km) if serie and serie.distancia_km is not None else '',
+        'intensidade': (serie.intensidade or '') if serie else '',
+        'avulso': avulso,
+    }
 
 
 def _estimar_data(periodo, semana):

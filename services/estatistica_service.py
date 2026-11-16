@@ -8,6 +8,7 @@ from models import db, Musculo, ExercicioCustomizado, ExercicioSistema, Exercici
 from sqlalchemy import func, and_
 from .base_service import BaseService, CacheService
 import logging
+from services.cardio import serie_para_dict
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ class EstatisticaService(BaseService):
                 Musculo.nome_exibicao.label('musculo'),
                 db.func.count(db.distinct(ExercicioCustomizado.id)).label('qtd_exercicios'),
                 db.func.count(db.distinct(RegistroTreino.id)).label('qtd_registros'),
-                db.func.count(HistoricoTreino.id).label('total_series'),
+                db.func.count(HistoricoTreino.carga).label('total_series'),
                 db.func.coalesce(db.func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume_total')
             ).select_from(Musculo)\
              .outerjoin(ExercicioCustomizado, and_(ExercicioCustomizado.musculo_id == Musculo.id, ExercicioCustomizado.usuario_id == user_id))\
@@ -99,7 +100,7 @@ class EstatisticaService(BaseService):
                 ExercicioSistema.grupo_muscular.label('musculo'),
                 db.func.count(db.distinct(ExercicioSistema.id)).label('qtd_exercicios'),
                 db.func.count(db.distinct(RegistroTreino.id)).label('qtd_registros'),
-                db.func.count(HistoricoTreino.id).label('total_series'),
+                db.func.count(HistoricoTreino.carga).label('total_series'),
                 db.func.coalesce(db.func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume_total')
             ).select_from(RegistroTreino)\
              .join(ExercicioSistema, ExercicioSistema.id == RegistroTreino.exercicio_base_id)\
@@ -178,7 +179,7 @@ class EstatisticaService(BaseService):
                     filtros.append(RegistroTreino.data_registro >= inicio)
                 row = db.session.query(
                     db.func.count(db.distinct(RegistroTreino.id)).label('treinos'),
-                    db.func.count(HistoricoTreino.id).label('series'),
+                    db.func.count(HistoricoTreino.carga).label('series'),
                     db.func.coalesce(db.func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume')
                 ).select_from(RegistroTreino)\
                  .outerjoin(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
@@ -458,7 +459,7 @@ class EstatisticaService(BaseService):
                     db.func.count(db.distinct(RegistroTreino.exercicio_usuario_id)).label('qtd_ex_personalizados'),
                     db.func.count(db.distinct(RegistroTreino.exercicio_base_id)).label('qtd_ex_sistema'),
                     db.func.count(db.distinct(RegistroTreino.id)).label('qtd_registros'),
-                    db.func.count(HistoricoTreino.id).label('total_series'),
+                    db.func.count(HistoricoTreino.carga).label('total_series'),
                     db.func.coalesce(db.func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume_total')
                 ).select_from(RegistroTreino)\
                  .outerjoin(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
@@ -618,7 +619,7 @@ class EstatisticaService(BaseService):
                 func.min(RegistroTreino.data_registro).label('inicio'),
                 func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes).label('volume'),
                 func.sum(HistoricoTreino.carga).label('soma_carga'),
-                func.count(HistoricoTreino.id).label('n_series'),
+                func.count(HistoricoTreino.carga).label('n_series'),
             ).select_from(RegistroTreino)\
              .join(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
              .join(TreinoVersao, TreinoVersao.id == RegistroTreino.treino_versao_id)\
@@ -697,7 +698,7 @@ class EstatisticaService(BaseService):
             linhas = db.session.query(
                 nome_exercicio.label('nome'),
                 func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes).label('volume'),
-                func.count(HistoricoTreino.id).label('n_series'),
+                func.count(HistoricoTreino.carga).label('n_series'),
                 func.max(HistoricoTreino.carga).label('carga_max'),
             ).select_from(RegistroTreino) \
              .join(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id) \
@@ -895,7 +896,8 @@ class EstatisticaService(BaseService):
                 sessoes.add(chave_sessao)
 
                 for serie in r.series:
-                    total_series += 1
+                    if not serie.eh_cardio:  # cardio não conta como série de força
+                        total_series += 1
                     total_repeticoes += serie.repeticoes or 0
                     # tempo_treino é gravado igual em todas as séries da
                     # mesma sessão (é o cronômetro do topo, não por
@@ -957,7 +959,7 @@ class EstatisticaService(BaseService):
                     key = f"{r.periodo}_{r.semana}"
                     registros_por_exercicio[chave_exercicio][key] = {
                         'id': r.id,
-                        'series': [{'carga': float(s.carga), 'repeticoes': s.repeticoes} for s in r.series],
+                        'series': [serie_para_dict(s) for s in r.series],
                         'periodo': r.periodo,
                         'semana': r.semana,
                         'treino_id': r.treino_versao_id,

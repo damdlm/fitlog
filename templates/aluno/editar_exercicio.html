@@ -39,6 +39,21 @@
                 <textarea name="descricao" class="form-control" rows="2">{{ exercicio.descricao or '' }}</textarea>
             </div>
             
+            <div class="mb-3">
+                <label class="form-label fw-bold">Como registrar</label>
+                <div class="d-flex gap-3 flex-wrap">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="modo_registro" id="modoCarga" value="carga" {% if exercicio.modo_registro != 'tempo' %}checked{% endif %}>
+                        <label class="form-check-label" for="modoCarga">Carga e repetições</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="modo_registro" id="modoTempo" value="tempo" {% if exercicio.modo_registro == 'tempo' %}checked{% endif %}>
+                        <label class="form-check-label" for="modoTempo">Tempo (cardio)</label>
+                    </div>
+                </div>
+                <div class="form-text">Cardio registra minutos, distância e intensidade em vez de carga.</div>
+            </div>
+
             <div class="mt-4">
                 <button type="submit" class="btn btn-primary">
                     <i class="bi bi-save"></i> Salvar Alterações

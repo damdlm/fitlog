@@ -208,10 +208,20 @@ def visualizar_tabela():
                 registro = registros_ex.get(semana['key'])
                 if registro and registro.get('series'):
                     primeira_serie = registro['series'][0]
-                    semanas_ex.append({
-                        'carga': primeira_serie['carga'],
-                        'repeticoes': primeira_serie['repeticoes'],
-                    })
+                    if primeira_serie.get('cardio'):
+                        # Cardio: minutos na coluna da carga e km na das
+                        # repetições (services/cardio.py).
+                        minutos = round(primeira_serie['duracao_segundos'] / 60)
+                        km = primeira_serie.get('distancia_km')
+                        semanas_ex.append({
+                            'carga': f"{minutos}'",
+                            'repeticoes': (f"{km:g}".replace('.', ',') + 'km') if km else '',
+                        })
+                    else:
+                        semanas_ex.append({
+                            'carga': primeira_serie['carga'],
+                            'repeticoes': primeira_serie['repeticoes'],
+                        })
                 else:
                     semanas_ex.append({'carga': None, 'repeticoes': None})
 

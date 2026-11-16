@@ -16235,7 +16235,8 @@
     "gif_url": "videos/2331-XSCHmiI.gif",
     "media_id": "XSCHmiI",
     "created_at": "2026-03-18T12:31:32.877347+00:00",
-    "attribution": "© Gym visual — https://gymvisual.com/"
+    "attribution": "© Gym visual — https://gymvisual.com/",
+    "record_mode": "time"
   },
   {
     "id": "0276",
@@ -30484,7 +30485,8 @@
     "gif_url": "videos/2612-e1e76I2.gif",
     "media_id": "e1e76I2",
     "created_at": "2026-03-18T12:31:32.884844+00:00",
-    "attribution": "© Gym visual — https://gymvisual.com/"
+    "attribution": "© Gym visual — https://gymvisual.com/",
+    "record_mode": "time"
   },
   {
     "id": "0514",
@@ -38702,7 +38704,8 @@
     "gif_url": "videos/0685-oLrKqDH.gif",
     "media_id": "oLrKqDH",
     "created_at": "2026-03-18T12:31:32.889299+00:00",
-    "attribution": "© Gym visual — https://gymvisual.com/"
+    "attribution": "© Gym visual — https://gymvisual.com/",
+    "record_mode": "time"
   },
   {
     "id": "0684",
@@ -38734,7 +38737,8 @@
     "gif_url": "videos/0684-y5p0H8a.gif",
     "media_id": "y5p0H8a",
     "created_at": "2026-03-18T12:31:32.889316+00:00",
-    "attribution": "© Gym visual — https://gymvisual.com/"
+    "attribution": "© Gym visual — https://gymvisual.com/",
+    "record_mode": "time"
   },
   {
     "id": "1585",
@@ -43228,7 +43232,8 @@
     "gif_url": "videos/2138-H1PESYI.gif",
     "media_id": "H1PESYI",
     "created_at": "2026-03-18T12:31:32.904767+00:00",
-    "attribution": "© Gym visual — https://gymvisual.com/"
+    "attribution": "© Gym visual — https://gymvisual.com/",
+    "record_mode": "time"
   },
   {
     "id": "0798",
@@ -43262,7 +43267,8 @@
     "gif_url": "videos/0798-a8VDgLw.gif",
     "media_id": "a8VDgLw",
     "created_at": "2026-03-18T12:31:32.904905+00:00",
-    "attribution": "© Gym visual — https://gymvisual.com/"
+    "attribution": "© Gym visual — https://gymvisual.com/",
+    "record_mode": "time"
   },
   {
     "id": "3314",
@@ -44295,7 +44301,8 @@
     "gif_url": "videos/2141-rjtuP6X.gif",
     "media_id": "rjtuP6X",
     "created_at": "2026-03-18T12:31:32.905618+00:00",
-    "attribution": "© Gym visual — https://gymvisual.com/"
+    "attribution": "© Gym visual — https://gymvisual.com/",
+    "record_mode": "time"
   },
   {
     "id": "3655",
@@ -44402,7 +44409,8 @@
     "gif_url": "videos/3666-rjiM4L3.gif",
     "media_id": "rjiM4L3",
     "created_at": "2026-03-18T12:31:32.905681+00:00",
-    "attribution": "© Gym visual — https://gymvisual.com/"
+    "attribution": "© Gym visual — https://gymvisual.com/",
+    "record_mode": "time"
   },
   {
     "id": "2311",
@@ -44437,7 +44445,8 @@
     "gif_url": "videos/2311-j9Q5crt.gif",
     "media_id": "j9Q5crt",
     "created_at": "2026-03-18T12:31:32.905703+00:00",
-    "attribution": "© Gym visual — https://gymvisual.com/"
+    "attribution": "© Gym visual — https://gymvisual.com/",
+    "record_mode": "time"
   },
   {
     "id": "0830",
@@ -46818,7 +46827,8 @@
     "gif_url": null,
     "media_id": null,
     "created_at": "2026-09-02T01:40:50.730993+00:00",
-    "attribution": null
+    "attribution": null,
+    "record_mode": "time"
   },
   {
     "id": "5226",
@@ -46890,7 +46900,8 @@
     "gif_url": null,
     "media_id": null,
     "created_at": "2026-09-02T01:40:50.730993+00:00",
-    "attribution": null
+    "attribution": null,
+    "record_mode": "time"
   },
   {
     "id": "5228",
@@ -46926,7 +46937,8 @@
     "gif_url": null,
     "media_id": null,
     "created_at": "2026-09-02T01:40:50.730993+00:00",
-    "attribution": null
+    "attribution": null,
+    "record_mode": "time"
   },
   {
     "id": "5229",
@@ -47389,5 +47401,209 @@
     "media_id": null,
     "created_at": "2026-09-02T09:54:57.792685+00:00",
     "attribution": null
+  },
+  {
+    "id": "9001",
+    "name": "Esteira",
+    "nicknames": [
+      "Corrida na esteira",
+      "Caminhada na esteira",
+      "Treadmill"
+    ],
+    "category": "Cardio",
+    "body_part": "Cardio",
+    "equipment": "Esteira",
+    "instructions": {
+      "pt": "Ajuste a velocidade e a inclinação aos poucos. Mantenha o tronco ereto, olhe para a frente e evite apoiar as mãos nas barras laterais."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Ajuste a velocidade e a inclinação aos poucos. Mantenha o tronco ereto, olhe para a frente e evite apoiar as mãos nas barras laterais."
+      ]
+    },
+    "muscle_group": "Cardio",
+    "secondary_muscles": [],
+    "target": "Sistema cardiovascular",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": null,
+    "attribution": null,
+    "record_mode": "time"
+  },
+  {
+    "id": "9002",
+    "name": "Bicicleta ergométrica",
+    "nicknames": [
+      "Bike",
+      "Bicicleta",
+      "Bike ergométrica"
+    ],
+    "category": "Cardio",
+    "body_part": "Cardio",
+    "equipment": "Bicicleta ergométrica",
+    "instructions": {
+      "pt": "Regule o banco na altura do quadril, com o joelho quase estendido no ponto mais baixo do pedal. Pedale em ritmo constante."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Regule o banco na altura do quadril, com o joelho quase estendido no ponto mais baixo do pedal. Pedale em ritmo constante."
+      ]
+    },
+    "muscle_group": "Cardio",
+    "secondary_muscles": [],
+    "target": "Sistema cardiovascular",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": null,
+    "attribution": null,
+    "record_mode": "time"
+  },
+  {
+    "id": "9003",
+    "name": "Spinning",
+    "nicknames": [
+      "Bike indoor",
+      "Ciclismo indoor",
+      "Bike de spinning"
+    ],
+    "category": "Cardio",
+    "body_part": "Cardio",
+    "equipment": "Bicicleta de spinning",
+    "instructions": {
+      "pt": "Ajuste banco e guidão antes de começar. Alterne a carga e a cadência conforme a aula ou o seu plano."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Ajuste banco e guidão antes de começar. Alterne a carga e a cadência conforme a aula ou o seu plano."
+      ]
+    },
+    "muscle_group": "Cardio",
+    "secondary_muscles": [],
+    "target": "Sistema cardiovascular",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": null,
+    "attribution": null,
+    "record_mode": "time"
+  },
+  {
+    "id": "9004",
+    "name": "Remo ergômetro",
+    "nicknames": [
+      "Remo",
+      "Remada no remo",
+      "Rowing"
+    ],
+    "category": "Cardio",
+    "body_part": "Cardio",
+    "equipment": "Remo ergômetro",
+    "instructions": {
+      "pt": "Empurre primeiro com as pernas, depois incline o tronco e puxe com os braços. Volte na ordem inversa, sem pressa."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Empurre primeiro com as pernas, depois incline o tronco e puxe com os braços. Volte na ordem inversa, sem pressa."
+      ]
+    },
+    "muscle_group": "Cardio",
+    "secondary_muscles": [],
+    "target": "Sistema cardiovascular",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": null,
+    "attribution": null,
+    "record_mode": "time"
+  },
+  {
+    "id": "9005",
+    "name": "Caminhada",
+    "nicknames": [
+      "Caminhada ao ar livre",
+      "Andar",
+      "Walking"
+    ],
+    "category": "Cardio",
+    "body_part": "Cardio",
+    "equipment": "Nenhum",
+    "instructions": {
+      "pt": "Caminhe em ritmo que eleve a respiração sem impedir de conversar. Use calçado confortável."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Caminhe em ritmo que eleve a respiração sem impedir de conversar. Use calçado confortável."
+      ]
+    },
+    "muscle_group": "Cardio",
+    "secondary_muscles": [],
+    "target": "Sistema cardiovascular",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": null,
+    "attribution": null,
+    "record_mode": "time"
+  },
+  {
+    "id": "9006",
+    "name": "Natação",
+    "nicknames": [
+      "Nadar",
+      "Piscina",
+      "Swimming"
+    ],
+    "category": "Cardio",
+    "body_part": "Cardio",
+    "equipment": "Piscina",
+    "instructions": {
+      "pt": "Aqueça com braçadas leves e mantenha o ritmo respiratório. Alterne estilos se quiser variar o esforço."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Aqueça com braçadas leves e mantenha o ritmo respiratório. Alterne estilos se quiser variar o esforço."
+      ]
+    },
+    "muscle_group": "Cardio",
+    "secondary_muscles": [],
+    "target": "Sistema cardiovascular",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": null,
+    "attribution": null,
+    "record_mode": "time"
+  },
+  {
+    "id": "9007",
+    "name": "Escada (simulador)",
+    "nicknames": [
+      "Escada",
+      "Simulador de escada",
+      "Stair climber",
+      "Escada rolante"
+    ],
+    "category": "Cardio",
+    "body_part": "Cardio",
+    "equipment": "Simulador de escada",
+    "instructions": {
+      "pt": "Mantenha o tronco ereto e apoie o pé inteiro em cada degrau. Use o corrimão só para equilíbrio."
+    },
+    "instruction_steps": {
+      "pt": [
+        "Mantenha o tronco ereto e apoie o pé inteiro em cada degrau. Use o corrimão só para equilíbrio."
+      ]
+    },
+    "muscle_group": "Cardio",
+    "secondary_muscles": [],
+    "target": "Sistema cardiovascular",
+    "image": null,
+    "gif_url": null,
+    "media_id": null,
+    "created_at": null,
+    "attribution": null,
+    "record_mode": "time"
   }
 ]

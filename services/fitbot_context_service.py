@@ -17,6 +17,7 @@ dados do usuário 15"). O isolamento é garantido aqui pela query, não pelo
 prompt.
 """
 
+from services.cardio import volume_da_serie
 import logging
 import unicodedata
 from datetime import datetime, timedelta, timezone
@@ -46,6 +47,35 @@ MAX_SESSOES_HISTORICO = 10
 MAX_SESSOES_RESUMO = 3
 CONTEXTO_CACHE_TTL_SEGUNDOS = 60
 
+
+
+def _serie_para_contexto(s):
+    """Série para o resumo que o FitBot recebe. Cardio: tempo/km/intensidade."""
+    if s.eh_cardio:
+        return {
+            "cardio": True,
+            "minutos": round(s.duracao_segundos / 60, 1),
+            "distancia_km": float(s.distancia_km) if s.distancia_km is not None else None,
+            "intensidade": s.intensidade,
+        }
+    return {"carga": float(s.carga), "repeticoes": s.repeticoes}
+
+
+def _resumo_das_series(series):
+    """Resumo de uma sessão de um exercício: maior carga (força) ou
+    tempo/distância (cardio, services/cardio.py)."""
+    cardio = [s for s in series if s.eh_cardio]
+    if cardio:
+        return {"cardio": True, **{k: v for k, v in _serie_para_contexto(cardio[0]).items() if k != "cardio"}}
+    forca = [s for s in series if s.carga is not None]
+    if not forca:
+        return {"series": len(series)}
+    top = max(forca, key=lambda s: (float(s.carga), s.repeticoes or 0))
+    return {
+        "series": len(forca),
+        "maior_carga": float(top.carga),
+        "repeticoes_na_maior_carga": top.repeticoes,
+    }
 
 def _normalizar(texto):
     """minúsculas + remove acentos, pra comparar 'Supino Reto' com 'supino'."""
@@ -348,13 +378,7 @@ class FitBotContextService:
                 series = list(r.series)
                 if not series:
                     continue
-                top = max(series, key=lambda s: (float(s.carga), s.repeticoes))
-                sessoes.append({
-                    "data": _formatar_data(r.data_registro),
-                    "series": len(series),
-                    "maior_carga": float(top.carga),
-                    "repeticoes_na_maior_carga": top.repeticoes,
-                })
+                sessoes.append({"data": _formatar_data(r.data_registro), **_resumo_das_series(series)})
             resumo["exercicio_citado"] = {
                 "nome": exercicio.nome,
                 "ultimas_sessoes": sessoes,
@@ -420,13 +444,7 @@ class FitBotContextService:
                 series = list(r.series)
                 if not ex or not series:
                     continue
-                top = max(series, key=lambda s: (float(s.carga), s.repeticoes))
-                exercicios.append({
-                    "nome": ex.nome,
-                    "series": len(series),
-                    "maior_carga": float(top.carga),
-                    "repeticoes_na_maior_carga": top.repeticoes,
-                })
+                exercicios.append({"nome": ex.nome, **_resumo_das_series(series)})
             treino_ref = ultimo.treino_ref
             resumo["ultimo_treino"] = {
                 "data": dia.isoformat(),
@@ -482,7 +500,7 @@ class FitBotContextService:
 
         sessoes = []
         for r in registros:
-            series = [{"carga": float(s.carga), "repeticoes": s.repeticoes} for s in r.series]
+            series = [_serie_para_contexto(s) for s in r.series]
             if not series:
                 continue
             sessoes.append({
@@ -511,13 +529,22 @@ class FitBotContextService:
             # inverte pra comparação cronológica (primeiro -> último).
             pontos = []
             for r in reversed(registros):
-                cargas = [float(s.carga) for s in r.series]
+                series_cardio = [s for s in r.series if s.eh_cardio]
+                if series_cardio:
+                    s0 = series_cardio[0]
+                    pontos.append({
+                        "data": _formatar_data(r.data_registro),
+                        "minutos": round(s0.duracao_segundos / 60, 1),
+                        "distancia_km": float(s0.distancia_km) if s0.distancia_km is not None else None,
+                    })
+                    continue
+                cargas = [float(s.carga) for s in r.series if s.carga is not None]
                 if not cargas:
                     continue
                 pontos.append({
                     "data": _formatar_data(r.data_registro),
                     "carga_maxima": max(cargas),
-                    "volume": sum(float(s.carga) * s.repeticoes for s in r.series),
+                    "volume": sum(volume_da_serie(s) for s in r.series),
                 })
 
             if not pontos:

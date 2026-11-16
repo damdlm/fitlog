@@ -68,6 +68,8 @@ def parse_registro(item: dict) -> dict:
         "media_id": item.get("media_id"),
         "data_criacao_original": data_criacao_original,
         "atribuicao": item.get("attribution"),
+        # "record_mode": "time" -> cardio registrado por tempo (services/cardio.py)
+        "modo_registro": "tempo" if item.get("record_mode") == "time" else "carga",
     }
 
 
@@ -108,6 +110,7 @@ def carregar():
                     "media_id": stmt.excluded.media_id,
                     "data_criacao_original": stmt.excluded.data_criacao_original,
                     "atribuicao": stmt.excluded.atribuicao,
+                    "modo_registro": stmt.excluded.modo_registro,
                 },
             )
             db.session.execute(stmt)

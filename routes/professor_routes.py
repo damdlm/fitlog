@@ -26,6 +26,7 @@ import logging
 import json
 from collections import Counter
 from utils.validators import corpo_json_objeto
+from services.cardio import volume_da_serie
 
 professor_bp = Blueprint('professor', __name__, url_prefix='/professor')
 logger = logging.getLogger(__name__)
@@ -716,7 +717,7 @@ def estatisticas_aluno(aluno_id):
             # do sistema têm o mesmo número de ID em tabelas diferentes.
             exercicios_ids.add((r.exercicio_usuario_id, r.exercicio_base_id))
             for s in r.series:
-                volume_total += float(s.carga) * s.repeticoes
+                volume_total += volume_da_serie(s)
                 total_series += 1
 
         treino_stats[t.id] = {

@@ -69,7 +69,8 @@ def buscar_musculo_no_catalogo(nome_exercicio):
 def get_series_from_registro(registro):
     """Retorna as séries de um registro, convertendo formato antigo se necessário"""
     if hasattr(registro, 'series') and registro.series:
-        return [{'carga': float(s.carga), 'repeticoes': s.repeticoes} for s in registro.series]
+        return [{'carga': float(s.carga), 'repeticoes': s.repeticoes} for s in registro.series
+                if s.carga is not None]  # cardio não tem carga (services/cardio.py)
     return []
 
 def calcular_media_series(series):

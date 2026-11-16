@@ -36,6 +36,7 @@ from models import (
     PagamentoRecebido,
 )
 from services.base_service import CacheService
+from services.cardio import serie_para_dict
 
 logger = logging.getLogger(__name__)
 
@@ -203,10 +204,7 @@ class PrivacidadeService:
 
         registros = []
         for r in RegistroTreino.query.filter_by(user_id=user.id).all():
-            series = [
-                {'carga': float(s.carga), 'repeticoes': s.repeticoes}
-                for s in r.series
-            ]
+            series = [serie_para_dict(s) for s in r.series]
             registros.append({
                 'periodo': r.periodo,
                 'semana': r.semana,

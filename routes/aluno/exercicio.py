@@ -59,7 +59,8 @@ def novo_exercicio():
             user_id=current_user.id,
             nome=nome,
             musculo_nome=musculo or 'Outros',
-            descricao=descricao
+            descricao=descricao,
+            modo_registro=request.form.get('modo_registro'),
         )
         
         if exercicio:
@@ -132,7 +133,8 @@ def editar_exercicio(exercicio_id):
             user_id=current_user.id,
             nome=nome,
             descricao=descricao,
-            musculo_id=musculo_obj.id if musculo_obj else None
+            musculo_id=musculo_obj.id if musculo_obj else None,
+            modo_registro=request.form.get('modo_registro'),
         )
         
         if exercicio_atualizado:

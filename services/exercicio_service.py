@@ -5,6 +5,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.orm.attributes import set_committed_value
 from sqlalchemy import func, or_
 from .base_service import BaseService   # ← importação direta
+from services.cardio import MODO_CARGA, MODOS_REGISTRO
 import logging
 
 logger = logging.getLogger(__name__)
@@ -374,7 +375,7 @@ class ExercicioService(BaseService):
     # =============================================
     
     @staticmethod
-    def criar_exercicio_customizado(user_id, nome, musculo_nome, descricao=''):
+    def criar_exercicio_customizado(user_id, nome, musculo_nome, descricao='', modo_registro=None):
         """
         Cria um novo exercício customizado para o usuário.
 
@@ -401,7 +402,8 @@ class ExercicioService(BaseService):
                 usuario_id=user_id,
                 nome=nome,
                 descricao=descricao,
-                musculo_id=musculo.id
+                musculo_id=musculo.id,
+                modo_registro=modo_registro if modo_registro in MODOS_REGISTRO else MODO_CARGA,
             )
             db.session.add(exercicio)
             db.session.flush()
@@ -450,6 +452,7 @@ class ExercicioService(BaseService):
                 usuario_id=aluno.id,
                 nome=exercicio_professor.nome,
                 descricao=exercicio_professor.descricao,
+                modo_registro=exercicio_professor.modo_registro or MODO_CARGA,
                 musculo_id=musculo.id,
                 copiado_de_professor_id=professor_id,
                 copiado_de_exercicio_id=exercicio_professor.id
@@ -496,6 +499,7 @@ class ExercicioService(BaseService):
                 continue
             copia.nome = exercicio_professor.nome
             copia.descricao = exercicio_professor.descricao
+            copia.modo_registro = exercicio_professor.modo_registro or MODO_CARGA
             copia.musculo_id = exercicio_professor.musculo_id
 
     @staticmethod
@@ -530,6 +534,8 @@ class ExercicioService(BaseService):
                 exercicio.descricao = kwargs['descricao']
             if 'musculo_id' in kwargs:
                 exercicio.musculo_id = kwargs['musculo_id']
+            if kwargs.get('modo_registro') in MODOS_REGISTRO:
+                exercicio.modo_registro = kwargs['modo_registro']
 
             ExercicioService._propagar_edicao_para_alunos(exercicio)
 
@@ -670,13 +676,26 @@ class ExercicioService(BaseService):
 
             series_ordenadas = sorted(ultimo_registro.series, key=lambda s: (s.ordem or 0))
 
-            return [
-                {'carga': float(s.carga), 'repeticoes': s.repeticoes}
-                for s in series_ordenadas
-            ]
+            return [ExercicioService._serie_para_dict(s) for s in series_ordenadas]
         except Exception:
             logger.exception("Erro ao buscar última sessão de séries")
             return []
+
+    @staticmethod
+    def _serie_para_dict(s):
+        """Série do histórico para a tela de registro. Cardio
+        (services/cardio.py) tem carga/repetições vazias e tempo/distância/
+        intensidade -- float(None) aqui derrubava o histórico de TODOS os
+        exercícios da tela (a exceção era engolida e voltava {})."""
+        if s.duracao_segundos is None:
+            return {'carga': float(s.carga) if s.carga is not None else None, 'repeticoes': s.repeticoes}
+        return {
+            'carga': None,
+            'repeticoes': None,
+            'duracao_segundos': s.duracao_segundos,
+            'distancia_km': float(s.distancia_km) if s.distancia_km is not None else None,
+            'intensidade': s.intensidade,
+        }
 
     @staticmethod
     def get_ultima_sessao_series_em_lote(exercicios, versao_id, user_id=None):
@@ -752,8 +771,7 @@ class ExercicioService(BaseService):
                 )
                 if series_do_registro:
                     resultado[f"{ex.prefixo}{ex.id}"] = [
-                        {'carga': float(s.carga), 'repeticoes': s.repeticoes}
-                        for s in series_do_registro
+                        ExercicioService._serie_para_dict(s) for s in series_do_registro
                     ]
 
             return resultado
@@ -867,9 +885,11 @@ class ExercicioService(BaseService):
             
             for r in registros:
                 for s in r.series:
+                    if s.carga is None:  # cardio (services/cardio.py): sem carga/repetições
+                        continue
                     total_series += 1
                     soma_cargas += float(s.carga)
-                    soma_repeticoes += s.repeticoes
+                    soma_repeticoes += s.repeticoes or 0
                     
                     if float(s.carga) > maior_carga:
                         maior_carga = float(s.carga)

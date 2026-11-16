@@ -435,6 +435,14 @@
     /* Mesma cor azul do badge "Avulso" da tela de registro
        (registrar_treino.html: .avulso-badge) -- consistência entre as
        duas telas que mostram esse tipo de exercício. */
+    .editar-registro-badge-cardio {
+        font-size: 0.68rem; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
+        color: #1F7A8C; background: #DDF0F3; border-radius: 6px; padding: 2px 7px; margin-right: 6px;
+    }
+    .editar-registro-card--cardio { border-left: 4px solid #1F7A8C; }
+    .editar-registro-card--cardio select {
+        width: 100%; border: 1px solid #dee2e6; border-radius: 8px; padding: 6px 4px; background: #fff;
+    }
     .editar-registro-badge-avulso {
         flex-shrink: 0;
         font-size: .65rem;
@@ -760,6 +768,11 @@
         padding-left: 14px;
     }
 
+    .serie-chip--cardio {
+        background: #DDF0F3 !important;
+        border-color: #BFDDE3 !important;
+        color: #1A6575 !important;
+    }
     .serie-chip {
         background: var(--surface);
         border: 1px solid var(--border-subtle);
@@ -2430,6 +2443,7 @@
                 }
 
                 corpo.innerHTML = dados.exercicios.map(ex => {
+                    if (ex.cardio) return cartaoCardioEdicao(ex);
                     const vazio = ex.carga === 0 && ex.repeticoes === 0 && ex.num_series === 0;
                     // Inputs ocultos com o valor de cada série (pro modal de
                     // séries individuais poder pré-preencher ao abrir) --
@@ -2495,6 +2509,46 @@
             });
     }
     window.abrirModalEditarRegistro = abrirModalEditarRegistro;
+
+    // Cardio (services/cardio.py): tempo/km/intensidade no lugar de
+    // carga/reps/séries. Cardio avulso do "+ Cardio" vem com chave própria
+    // ("cardio1"...) + o exercício em cardio_tipo_<chave> (avulso_cardio[]).
+    function cartaoCardioEdicao(ex) {
+        const k = ex.chave;
+        const vazio = ex.duracao_min === '' || ex.duracao_min === null;
+        const marcador = ex.cardio_avulso
+            ? `<input type="hidden" name="avulso_cardio[]" value="${escapeHtml(k)}">`
+            : (ex.avulso ? `<input type="hidden" name="avulso_exercicios[]" class="avulso-marker" value="${escapeHtml(k)}">` : '');
+        const opcaoInt = (valor, rotulo) =>
+            `<option value="${valor}" ${ex.intensidade === valor ? 'selected' : ''}>${rotulo}</option>`;
+        return `
+        <div class="editar-registro-card-wrap">
+        <div class="editar-registro-card editar-registro-card--cardio ${vazio ? 'editar-registro-card--vazio' : ''}" data-exercicio-id="${escapeHtml(k)}">
+            ${marcador}
+            <input type="hidden" name="cardio_tipo_${escapeHtml(k)}" value="${escapeHtml(ex.cardio_tipo || k)}">
+            <div class="editar-registro-top">
+                <span class="editar-registro-badge-cardio">Cardio</span>
+                <div class="editar-registro-nome">${escapeHtml(ex.nome)}</div>
+                ${ex.avulso ? '<span class="editar-registro-badge-avulso">Avulso</span>' : ''}
+                ${vazio ? '<span class="editar-registro-badge-vazio">Não apontado</span>' : ''}
+            </div>
+            <div class="editar-registro-labels">
+                <span>Tempo (min)</span>
+                <span>Km</span>
+                <span>Intensidade</span>
+            </div>
+            <div class="editar-registro-inputs">
+                <input type="number" name="duracao_${escapeHtml(k)}" min="0" max="600" step="1" inputmode="decimal"
+                       aria-label="Tempo em minutos" value="${ex.duracao_min}">
+                <input type="number" name="distancia_${escapeHtml(k)}" min="0" max="500" step="0.1" inputmode="decimal"
+                       aria-label="Distância em km" value="${ex.distancia_km}">
+                <select name="intensidade_${escapeHtml(k)}" aria-label="Intensidade">
+                    ${opcaoInt('', '—')}${opcaoInt('leve', 'Leve')}${opcaoInt('moderada', 'Moderada')}${opcaoInt('forte', 'Forte')}
+                </select>
+            </div>
+        </div>
+        </div>`;
+    }
 
     function alterarSeriesStepper(botao, delta) {
         const input = botao.parentElement.querySelector('.stepper-valor');
@@ -2711,7 +2765,9 @@
                 
                 grupo.exercicios.forEach(ex => {
                     const chips = (ex.series || [])
-                        .map(s => `<span class="serie-chip"><b>${escapeHtml(s.carga)}kg</b> × ${escapeHtml(s.repeticoes)}</span>`)
+                        .map(s => s.cardio
+                            ? `<span class="serie-chip serie-chip--cardio"><b>${escapeHtml(s.resumo)}</b></span>`
+                            : `<span class="serie-chip"><b>${escapeHtml(s.carga)}kg</b> × ${escapeHtml(s.repeticoes)}</span>`)
                         .join('');
                     html += `
                         <div class="exercicio-card">

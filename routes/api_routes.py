@@ -505,6 +505,8 @@ def api_evolucao_exercicio(exercicio_id):
     for r in registros:
         series_list = []
         for s in r.series:
+            if s.carga is None:  # cardio: sem carga/repetições (services/cardio.py)
+                continue
             series_list.append({
                 "carga": float(s.carga),
                 "repeticoes": s.repeticoes

@@ -5,6 +5,7 @@ from models import User
 from services.estatistica_service import EstatisticaService
 from services.treino_service import TreinoService
 from services.exercicio_service import ExercicioService
+from services.cardio import resumo_cardio_semana
 from utils.decorators import acesso_premium_required
 import logging
 
@@ -53,7 +54,8 @@ def estatisticas():
                          treinos_versao_ativa=treinos_versao_ativa,
                          musculo_destaque=musculo_destaque,
                          volume_maximo_musculo=volume_maximo_musculo,
-                         exercicios_selecionaveis=exercicios_selecionaveis)
+                         exercicios_selecionaveis=exercicios_selecionaveis,
+                         cardio_semana=resumo_cardio_semana(current_user.id))
 
 @aluno_bp.route('/api/buscar-professores')
 @login_required

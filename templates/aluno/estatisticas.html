@@ -471,6 +471,22 @@
         border-radius: 50%;
         display: inline-block;
     }
+    /* Cartão Cardio (teal #1F7A8C, cor do cardio no app) */
+    .est-cardio { border-left: 4px solid #1F7A8C; }
+    .est-cardio-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; margin-bottom: 14px; }
+    .est-cardio-valor { font-size: 1.5rem; font-weight: 800; color: #1F7A8C; line-height: 1.1; }
+    .est-cardio-rotulo { font-size: 0.75rem; color: #8a857a; text-transform: uppercase; letter-spacing: .04em; }
+    .est-cardio-barras { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; margin-bottom: 14px; }
+    .est-cardio-dia { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.72rem; color: #8a857a; }
+    .est-cardio-dia.is-hoje span { color: #1F7A8C; font-weight: 700; }
+    .est-cardio-barra-wrap { height: 72px; width: 100%; max-width: 28px; background: rgba(31, 122, 140, 0.08); border-radius: 6px; display: flex; align-items: flex-end; overflow: hidden; }
+    .est-cardio-barra { width: 100%; background: #1F7A8C; border-radius: 6px; }
+    .est-cardio-recentes-titulo { font-size: 0.75rem; font-weight: 700; color: #8a857a; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+    .est-cardio-recentes { list-style: none; padding: 0; margin: 0; }
+    .est-cardio-recentes li { display: flex; align-items: baseline; gap: 8px; padding: 7px 0; border-top: 1px solid #f0ece4; font-size: 0.88rem; }
+    .est-cardio-nome { font-weight: 600; }
+    .est-cardio-resumo { color: #555; flex: 1; }
+    .est-cardio-data { color: #8a857a; font-size: 0.8rem; }
 </style>
 
 <!-- Cabeçalho com destaque -->
@@ -544,6 +560,45 @@
         </div>
     </div>
 </div>
+
+<!-- Cardio (semana corrente; services/cardio.resumo_cardio_semana).
+     Só aparece pra quem já registrou cardio. Não segue o filtro de
+     período acima: é sempre a semana atual, de segunda a domingo. -->
+{% if cardio_semana %}
+<div class="card est-card mb-3 est-cardio" id="cardioSemana">
+    <div class="card-header bg-white border-0 pb-0">
+        <h6 class="fw-bold mb-0">
+            <i class="bi bi-heart-pulse-fill me-1" style="color: #1F7A8C;"></i>Cardio
+            <span class="fw-normal text-muted" style="font-size: 0.8rem;">(esta semana)</span>
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="est-cardio-kpis">
+            <div><div class="est-cardio-valor">{{ cardio_semana.minutos }}</div><div class="est-cardio-rotulo">minutos</div></div>
+            <div><div class="est-cardio-valor">{{ ('%g'|format(cardio_semana.km)).replace('.', ',') }}</div><div class="est-cardio-rotulo">km</div></div>
+            <div><div class="est-cardio-valor">{{ cardio_semana.sessoes }}</div><div class="est-cardio-rotulo">sess{{ 'ão' if cardio_semana.sessoes == 1 else 'ões' }}</div></div>
+        </div>
+        <div class="est-cardio-barras" role="img" aria-label="Minutos de cardio por dia nesta semana">
+            {% for d in cardio_semana.dias %}
+            <div class="est-cardio-dia{% if d.hoje %} is-hoje{% endif %}" title="{{ d.rotulo }}: {{ d.minutos }} min">
+                <div class="est-cardio-barra-wrap"><div class="est-cardio-barra" style="height: {{ [d.pct, 4 if d.minutos else 0]|max }}%;"></div></div>
+                <span>{{ d.rotulo }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="est-cardio-recentes-titulo">Sessões recentes</div>
+        <ul class="est-cardio-recentes">
+            {% for r in cardio_semana.recentes %}
+            <li>
+                <span class="est-cardio-nome">{{ r.nome }}</span>
+                <span class="est-cardio-resumo">{{ r.resumo }}</span>
+                <span class="est-cardio-data">{{ r.data.strftime('%d/%m') }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
 
 <!-- Recordes Pessoais -->
 <div class="card est-card mb-3" id="recordesPessoais">
