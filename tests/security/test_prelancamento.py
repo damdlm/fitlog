@@ -20,11 +20,14 @@ def _form_cadastro(**extra):
     return dados
 
 
-def _criar_usuario(username='ana', senha='SenhaForte123!', verificado=True):
-    user = User(username=username, email=f'{username}@teste.com', tipo_usuario='aluno', ativo=True)
+def _criar_usuario(username='ana', senha='SenhaForte123!', verificado=True, criado_ha_dias=30):
+    """criado_ha_dias=30 por padrão: conta já fora da carência de 7 dias
+    da confirmação de e-mail (ver EmailVerificacaoService.CARENCIA_DIAS)."""
+    from datetime import datetime, timedelta, timezone
+    user = User(username=username, email=f'{username}@teste.com', tipo_usuario='aluno', ativo=True,
+                created_at=datetime.now(timezone.utc) - timedelta(days=criado_ha_dias))
     user.set_password(senha)
     if verificado:
-        from datetime import datetime, timezone
         user.email_verificado_em = datetime.now(timezone.utc)
     db.session.add(user)
     db.session.commit()
@@ -204,8 +207,11 @@ class TestPoliticaDeSenha:
 
     def test_senha_com_username_ou_email_e_recusada(self):
         from utils.validators import validar_senha
-        assert validar_senha('carlos2026X', username='carlos')[0] is False
+        # E-mail: sempre. Nome de usuário: só na regra rígida (admin) -- nas
+        # contas comuns ele é gerado sozinho e a pessoa nem o escolhe.
         assert validar_senha('maria.silva9', email='maria.silva@x.com')[0] is False
+        assert validar_senha('carlos2026X', username='carlos', rigida=True)[0] is False
+        assert validar_senha('carlos2026X', username='carlos')[0] is True
 
     def test_senha_boa_passa(self):
         from utils.validators import validar_senha

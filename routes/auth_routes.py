@@ -5,7 +5,7 @@ from extensions import limiter   # <-- importa de extensions, nunca de app
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse, urljoin
 import logging
-from utils.validators import erros_senha, validar_email, validar_senha
+from utils.validators import erros_senha, gerar_username, validar_email, validar_senha, validar_username
 from utils.email_utils import enviar_email
 from utils.genero_utils import resolver_genero
 from utils.mensagens_boas_vindas import gerar_mensagem_boas_vindas
@@ -96,6 +96,33 @@ def _build_trusted_url(endpoint, **values):
     return url_for(endpoint, _external=True, **values)
 
 
+def _buscar_usuario_para_login(identificador):
+    """Login aceita o e-mail OU o nome de usuário. Com "@" é e-mail
+    (sem diferenciar maiúsculas); nome de usuário nunca tem "@" (ver
+    USERNAME_REGEX)."""
+    if not identificador:
+        return None
+    if '@' in identificador:
+        return (User.query
+                .filter(db.func.lower(User.email) == identificador.lower())
+                .order_by(User.id)
+                .first())
+    return User.query.filter_by(username=identificador).first()
+
+
+def _efetivar_login(user, remember):
+    """Abre a sessão do usuário (login normal e logo após o cadastro)."""
+    user.last_login = datetime.now(timezone.utc)
+    user.falhas_login = 0
+    user.login_bloqueado_ate = None
+    db.session.commit()
+    # Sem session.permanent o cookie de sessão morre quando o PWA é
+    # encerrado; com ele, dura PERMANENT_SESSION_LIFETIME (config.py).
+    session.permanent = remember
+    login_user(user, remember=remember)
+    session['sv'] = user.session_version
+
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 @limiter.limit("10 per minute")
 def login():
@@ -108,7 +135,7 @@ def login():
         password = request.form.get('password', '')
         remember = bool(request.form.get('remember'))
 
-        user = User.query.filter_by(username=username).first()
+        user = _buscar_usuario_para_login(username)
         agora = datetime.now(timezone.utc)
 
         # Bloqueio temporário por conta: depois de MAX_FALHAS_LOGIN senhas
@@ -145,17 +172,8 @@ def login():
             flash('Usuário inativo. Contate o administrador.', 'danger')
             return redirect(url_for('auth.login'))
 
-        user.last_login = datetime.now(timezone.utc)
-        user.falhas_login = 0
-        user.login_bloqueado_ate = None
-        db.session.commit()
         CacheService.invalidate(chave_falhas)
-
-        # Sem session.permanent o cookie de sessão morre quando o PWA é
-        # encerrado; com ele, dura PERMANENT_SESSION_LIFETIME (config.py).
-        session.permanent = remember
-        login_user(user, remember=remember)
-        session['sv'] = user.session_version
+        _efetivar_login(user, remember)
         logger.info(f"Login OK -- usuario ID {user.id} ({user.tipo_usuario})")
         nome_exibicao = user.nome_completo or user.username
         genero = resolver_genero(user)
@@ -243,7 +261,7 @@ def reset_password(token):
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
 
-        ok_senha, msg_senha = validar_senha(password, username=user.username, email=user.email)
+        ok_senha, msg_senha = validar_senha(password, username=user.username, email=user.email, rigida=user.is_admin)
         if not ok_senha:
             flash(msg_senha, 'danger')
             return render_template('auth/reset_password.html', token=token)
@@ -273,8 +291,8 @@ def _enviar_email_verificacao(user):
     url = _build_trusted_url('auth.verificar_email', token=token)
     corpo_texto = (
         f"Olá, {user.nome_completo or user.username}!\n\n"
-        f"Falta só um passo para começar a usar o FitLog: confirme seu e-mail "
-        f"clicando no link abaixo (válido por 48 horas):\n\n{url}\n\n"
+        f"Confirme seu e-mail clicando no link abaixo (válido por 48 horas). "
+        f"Assim você garante a recuperação da senha e libera o FitBot:\n\n{url}\n\n"
         f"Se você não criou uma conta no FitLog, pode ignorar este e-mail."
     )
     return enviar_email(user.email, 'FitLog — Confirme seu e-mail', corpo_texto)
@@ -339,6 +357,9 @@ def reenviar_verificacao():
         flash('Enviamos um novo link para o seu e-mail.', 'success')
     else:
         flash('Não conseguimos enviar o e-mail agora. Tente novamente em alguns minutos.', 'danger')
+    # Da faixa do topo (carência) volta para a mesma página.
+    if request.form.get('next') and EmailVerificacaoService.em_carencia(current_user):
+        return redirect(_safe_next_url(request.form.get('next')))
     return redirect(url_for('auth.verificar_email_pendente'))
 
 
@@ -374,7 +395,7 @@ def check_username():
     return jsonify({'exists': existe})
 
 
-CAMPOS_FORM_CADASTRO = ('username', 'email', 'nome_completo', 'telefone', 'genero', 'tipo_usuario')
+CAMPOS_FORM_CADASTRO = ('email', 'nome_completo', 'tipo_usuario')
 
 
 def _voltar_ao_cadastro(*mensagens):
@@ -409,10 +430,16 @@ def register():
         return redirect(url_for('main.index'))
 
     if request.method == 'POST':
+        # Cadastro enxuto: tipo de conta, nome, e-mail, senha e aceite.
+        # Nome de usuário é gerado a partir do nome (editável no perfil);
+        # "confirmar senha", gênero e telefone saíram do formulário (os
+        # dois últimos ficam no perfil). Os campos antigos continuam
+        # aceitos se vierem (ex.: cliente desatualizado), mas não são
+        # exigidos.
         username = request.form.get('username', '').strip()
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
-        confirm_password = request.form.get('confirm_password', '')
+        confirm_password = request.form.get('confirm_password')
         tipo_usuario = request.form.get('tipo_usuario', 'aluno')
         if tipo_usuario not in ('aluno', 'professor'):
             # O formulário só envia 'aluno' ou 'professor' (radio buttons),
@@ -428,17 +455,17 @@ def register():
         genero = request.form.get('genero', '').strip().upper()
         genero = genero if genero in ('M', 'F') else None
 
-        if not username or not email or not password:
-            return _voltar_ao_cadastro('Todos os campos são obrigatórios')
+        if not nome_completo or not email or not password:
+            return _voltar_ao_cadastro('Preencha nome, e-mail e senha.')
 
         if not request.form.get('aceite_termos'):
             return _voltar_ao_cadastro('É preciso ler e aceitar os Termos de Uso e a Política de Privacidade para criar uma conta.')
 
-        if len(username) < 3:
+        if username and len(username) < 3:
             return _voltar_ao_cadastro('Usuário deve ter pelo menos 3 caracteres')
 
-        erros_da_senha = erros_senha(password, username=username, email=email)
-        if password != confirm_password:
+        erros_da_senha = erros_senha(password, username=username or None, email=email)
+        if confirm_password is not None and password != confirm_password:
             erros_da_senha.append('As senhas não coincidem')
         if erros_da_senha:
             return _voltar_ao_cadastro(*erros_da_senha)
@@ -447,11 +474,17 @@ def register():
         if not ok_email:
             return _voltar_ao_cadastro(msg_email)
 
-        if User.query.filter_by(username=username).first():
-            return _voltar_ao_cadastro('Nome de usuário já existe')
+        if User.query.filter(db.func.lower(User.email) == email.lower()).first():
+            return _voltar_ao_cadastro('Este e-mail já tem conta. Faça login ou recupere a senha.')
 
-        if User.query.filter_by(email=email).first():
-            return _voltar_ao_cadastro('E-mail já cadastrado')
+        if username:
+            if User.query.filter_by(username=username).first():
+                return _voltar_ao_cadastro('Nome de usuário já existe')
+        else:
+            username = gerar_username(
+                nome_completo, email,
+                lambda candidato: User.query.filter_by(username=candidato).first() is not None,
+            )
 
         # Cadastro é UMA transação só: User + trial + aceite de Termos/
         # Política. Se qualquer etapa falhar, nada é confirmado -- sem
@@ -513,12 +546,16 @@ def register():
             )
             return _voltar_ao_cadastro('Não foi possível criar sua conta agora. Tente novamente.')
 
-        if user.tipo_usuario == 'aluno':
-            flash('Conta criada! Enviamos um link de confirmação para o seu e-mail.' if EmailVerificacaoService.obrigatoria() else 'Conta criada com sucesso!', 'success')
+        # Já entra direto (sem passar de novo pela tela de login). A
+        # confirmação do e-mail tem carência: a faixa no topo lembra.
+        _efetivar_login(user, remember=True)
+        if EmailVerificacaoService.obrigatoria():
+            flash('Conta criada! Enviamos um link para confirmar seu e-mail. '
+                  'Você já pode usar o FitLog enquanto isso.', 'success')
         else:
-            flash('Conta de professor criada! Enviamos um link de confirmação para o seu e-mail.' if EmailVerificacaoService.obrigatoria() else 'Conta de professor criada com sucesso!', 'success')
+            flash('Conta criada! Bem-vindo(a) ao FitLog.', 'success')
 
-        logger.info(f"Novo usuario: {username} ({tipo_usuario})")
+        logger.info(f"Novo usuario: ID {user.id} ({tipo_usuario})")
         g.cadastro_criado = True  # consome a cota de contas criadas (ver decorators)
 
         # Link de confirmação de e-mail (best-effort: se falhar, o usuário
@@ -531,7 +568,7 @@ def register():
         # duas vezes pelo mesmo cadastro (ver services/analytics_service.py).
         AnalyticsService.track('sign_up', method='email')
 
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('main.index'))
 
     return render_template('auth/register.html', form=session.pop('cadastro_form', {}))
 
@@ -584,6 +621,18 @@ def update_profile():
         if not email:
             flash('E-mail é obrigatório', 'danger')
             return redirect(url_for('auth.profile'))
+
+        # Nome de usuário agora é gerado no cadastro e pode ser trocado aqui.
+        novo_username = (request.form.get('username') or '').strip().lower()
+        if novo_username and novo_username != current_user.username:
+            ok_username, msg_username = validar_username(novo_username)
+            if not ok_username:
+                flash(msg_username, 'danger')
+                return redirect(url_for('auth.profile'))
+            if User.query.filter_by(username=novo_username).first():
+                flash('Este nome de usuário já está em uso.', 'danger')
+                return redirect(url_for('auth.profile'))
+            current_user.username = novo_username
 
         email_antigo = current_user.email
         trocou_email = email != email_antigo
@@ -666,7 +715,8 @@ def change_password():
         flash('As senhas não coincidem', 'danger')
         return redirect(url_for('auth.profile'))
 
-    ok_nova, msg_nova = validar_senha(new_password, username=current_user.username, email=current_user.email)
+    ok_nova, msg_nova = validar_senha(new_password, username=current_user.username, email=current_user.email,
+                                       rigida=current_user.is_admin)
     if not ok_nova:
         flash(msg_nova, 'danger')
         return redirect(url_for('auth.profile'))

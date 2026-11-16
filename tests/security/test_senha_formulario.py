@@ -20,9 +20,9 @@ def _cadastrar(client, senha, confirmacao=None, **extra):
 
 class TestErrosDaSenha:
     def test_lista_todos_os_problemas_de_uma_vez(self):
-        erros = erros_senha('abc')
+        erros = erros_senha('aaa')
         assert 'Senha deve ter pelo menos 8 caracteres' in erros
-        assert 'Senha deve conter pelo menos um número' in erros
+        assert 'Essa senha é muito comum ou previsível. Escolha outra.' in erros
         assert len(erros) == 2
 
     def test_senha_valida_nao_tem_erros(self):
@@ -34,18 +34,15 @@ class TestErrosDaSenha:
 
 class TestCadastroMantemOsCampos:
     def test_erro_de_senha_volta_com_campos_preenchidos_e_sem_a_senha(self, client):
-        resp = _cadastrar(client, 'abc')
+        resp = _cadastrar(client, 'aaa')
         assert resp.status_code == 302
         html = client.get('/auth/register').get_data(as_text=True)
-        assert 'value="maria_teste"' in html
         assert 'value="maria.teste@exemplo.com"' in html
         assert 'value="Maria da Silva"' in html
-        assert 'value="(47) 99999-1234"' in html
-        assert 'abc' not in html.split('name="password"')[1].split('>')[0]
+        assert 'aaa' not in html.split('name="password"')[1].split('>')[0]
         # todos os problemas, de uma vez, e as escolhas do formulário preservadas
-        assert 'pelo menos 8 caracteres' in html and 'pelo menos um número' in html
+        assert 'pelo menos 8 caracteres' in html and 'previsível' in html
         assert 'id="tipo_professor" value="professor" checked' in html
-        assert 'value="F" selected' in html
         assert 'name="aceite_termos" required checked' in html
 
     def test_senhas_diferentes_somam_ao_erro_da_senha(self, client):
@@ -73,7 +70,9 @@ class TestCadastroMantemOsCampos:
     def test_formulario_mostra_as_regras_reais(self, client):
         html = client.get('/auth/register').get_data(as_text=True)
         assert 'Pelo menos 8 caracteres' in html
-        assert 'Pelo menos uma letra' in html and 'Pelo menos um número' in html
+        assert 'Nada óbvio' in html and 'antes do @' in html
+        # Regra de composição saiu para contas comuns.
+        assert 'Pelo menos uma letra' not in html and 'Pelo menos um número' not in html
         assert 'minlength="8"' in html
         assert '6 caracteres' not in html and 'minlength="6"' not in html
 
@@ -111,7 +110,7 @@ class TestFormulariosDoProfessor:
         html = client.get('/professor/aluno/novo').get_data(as_text=True)
         assert 'value="joao_novo"' in html and 'value="joao@exemplo.com"' in html
         assert 'value="João Novo"' in html and 'value="(47) 98888-0000"' in html
-        assert 'pelo menos 8 caracteres' in html and 'pelo menos um número' in html
+        assert 'pelo menos 8 caracteres' in html and 'previsível' in html
         assert '6 caracteres' not in html
 
     def test_editar_aluno_recusa_senha_fraca_mas_salva_o_resto(self, client, app):

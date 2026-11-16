@@ -445,11 +445,29 @@ def create_app(config_class=None):
         endpoint = flask_request.endpoint or ''
         if endpoint in ('static', 'health', 'health_db') or endpoint.startswith('privacidade.') or endpoint.startswith('auth.'):
             return None
-        if not EmailVerificacaoService.precisa_verificar(flask_current_user):
+        # Conta nova tem CARENCIA_DIAS para confirmar: usa o app na hora e
+        # só FitBot/assinatura ficam travados (ver email_verificacao_service).
+        if not EmailVerificacaoService.bloqueia_endpoint(flask_current_user, endpoint):
             return None
         if flask_request.method == 'GET' and not flask_request.path.startswith('/api/'):
             return flask_redirect(flask_url_for('auth.verificar_email_pendente'))
-        return flask_jsonify({'erro': 'Confirme seu e-mail para continuar.'}), 403
+        mensagem = 'Confirme seu e-mail para usar este recurso. Enviamos o link quando você criou a conta.'
+        # "resposta"/"ok" para o chat do FitBot exibir a mensagem.
+        return flask_jsonify({'erro': mensagem, 'resposta': mensagem, 'ok': False}), 403
+
+    @app.context_processor
+    def _aviso_confirmar_email():
+        """Faixa "confirme seu e-mail" no topo durante a carência."""
+        from flask_login import current_user as flask_current_user
+        from services.email_verificacao_service import EmailVerificacaoService
+        try:
+            if (flask_current_user.is_authenticated
+                    and EmailVerificacaoService.precisa_verificar(flask_current_user)
+                    and EmailVerificacaoService.em_carencia(flask_current_user)):
+                return {'confirmar_email_dias': EmailVerificacaoService.dias_restantes_carencia(flask_current_user)}
+        except Exception:
+            app.logger.exception("Falha ao montar o aviso de confirmação de e-mail")
+        return {'confirmar_email_dias': None}
 
     # =============================================================
     # Financeiro do admin -- desbloqueio cai ao sair da área

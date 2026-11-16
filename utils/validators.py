@@ -123,20 +123,56 @@ SENHAS_COMUNS = frozenset({
 })
 
 
+# Senhas sem número que também são óbvias (agora que letra + número não é
+# mais exigido para contas comuns). Comparação em minúsculas.
+SENHAS_COMUNS_SEM_NUMERO = frozenset({
+    'password', 'senhasenha', 'minhasenha', 'senhaforte', 'iloveyou', 'princesa',
+    'flamengo', 'corinthians', 'palmeiras', 'saopaulo', 'academia', 'treinando',
+    'qwertyui', 'qwertyuiop', 'asdfghjk', 'asdfghjkl', 'zxcvbnm', 'abcdefgh',
+    'abcdefghij', 'fitlogfitlog', 'brasilbrasil', 'trocarsenha', 'mudarsenha',
+    'bemvindo', 'welcome', 'sunshine', 'football', 'baseball', 'superman',
+    'batman', 'starwars', 'pokemon', 'dragonball', 'naruto', 'futebol', 'jesuscristo',
+    'deusefiel', 'amorzinho', 'meuamor', 'teamo', 'teamomuito', 'gabriela', 'fernanda',
+})
+
+# Sequências de teclado/alfabeto/números: qualquer trecho de 8+ delas
+# (ex.: 12345678, 87654321, abcdefgh, qwertyui) é previsível.
+_SEQUENCIAS = ('0123456789', 'abcdefghijklmnopqrstuvwxyz', 'qwertyuiop', 'asdfghjkl', 'zxcvbnm')
+
+
+def _senha_previsivel(senha):
+    sl = senha.lower()
+    if sl in SENHAS_COMUNS or sl in SENHAS_COMUNS_SEM_NUMERO:
+        return True
+    if len(set(sl)) <= 2:
+        return True
+    # Repetição de um bloco curto: 12341234, abcabcab, haha haha...
+    for tam in range(1, 5):
+        bloco = sl[:tam]
+        if bloco and (bloco * (len(sl) // tam + 1))[:len(sl)] == sl:
+            return True
+    for seq in _SEQUENCIAS:
+        if sl in seq or sl in seq[::-1]:
+            return True
+    return False
+
+
+# Texto exibido ao usuário (cadastro, troca e recuperação de senha).
 REQUISITOS_SENHA = (
     "Pelo menos 8 caracteres",
-    "Pelo menos uma letra",
-    "Pelo menos um número",
-    "Não ser uma senha comum (ex.: senha123)",
-    "Não conter seu usuário nem a parte do e-mail antes do @",
+    "Não ser uma senha óbvia (ex.: 12345678, senha123)",
+    "Não conter a parte do e-mail antes do @",
 )
 
 
-def erros_senha(senha, username=None, email=None):
+def erros_senha(senha, username=None, email=None, rigida=False):
     """Lista TODOS os motivos pelos quais a senha é recusada ([] = válida).
 
-    Serve para mostrar ao usuário tudo o que falta de uma vez, em vez de
-    descobrir uma regra por tentativa. A ordem é a mesma de validar_senha.
+    Regra comum (alunos e professores) segue a recomendação atual (NIST
+    SP 800-63B): tamanho mínimo + bloquear senhas óbvias, sem exigir
+    "letra e número" (regra de composição que irrita e pouco protege).
+    rigida=True (contas admin) mantém as exigências antigas: letra,
+    número e não conter o nome de usuário.
     """
     if not senha:
         return ["Senha é obrigatória"]
@@ -144,29 +180,79 @@ def erros_senha(senha, username=None, email=None):
     erros = []
     if len(senha) < 8:
         erros.append("Senha deve ter pelo menos 8 caracteres")
-    if not re.search(r'[A-Za-z]', senha):
-        erros.append("Senha deve conter pelo menos uma letra")
-    if not re.search(r'[0-9]', senha):
-        erros.append("Senha deve conter pelo menos um número")
-    if senha.lower() in SENHAS_COMUNS or len(set(senha.lower())) <= 2:
+    if rigida:
+        if not re.search(r'[A-Za-z]', senha):
+            erros.append("Senha deve conter pelo menos uma letra")
+        if not re.search(r'[0-9]', senha):
+            erros.append("Senha deve conter pelo menos um número")
+    if _senha_previsivel(senha):
         erros.append("Essa senha é muito comum ou previsível. Escolha outra.")
-    if username and len(username) >= 3 and username.lower() in senha.lower():
+    if rigida and username and len(username) >= 3 and username.lower() in senha.lower():
         erros.append("A senha não pode conter o seu nome de usuário")
     if email and len(email.split('@')[0]) >= 4 and email.split('@')[0].lower() in senha.lower():
         erros.append("A senha não pode conter o seu e-mail")
     return erros
 
 
-def validar_senha(senha, username=None, email=None):
+def validar_senha(senha, username=None, email=None, rigida=False):
     """
     Valida se a senha atende aos requisitos mínimos.
     Retorna (bool, mensagem_erro ou valor validado). Em caso de vários
     problemas devolve o primeiro; use erros_senha() para obter todos.
     """
-    erros = erros_senha(senha, username=username, email=email)
+    erros = erros_senha(senha, username=username, email=email, rigida=rigida)
     if erros:
         return False, erros[0]
     return True, senha
+
+
+# Nome de usuário escolhido/editado pela pessoa: minúsculas, números,
+# ponto e sublinhado. Nunca "@" -- o login trata "@" como e-mail.
+USERNAME_REGEX = re.compile(r'^[a-z0-9._]{3,30}$')
+
+
+def validar_username(username):
+    """(ok, mensagem) para um nome de usuário novo ou editado."""
+    if not username:
+        return False, 'Informe um nome de usuário.'
+    if not USERNAME_REGEX.match(username):
+        return False, ('O nome de usuário deve ter de 3 a 30 caracteres: letras '
+                       'minúsculas sem acento, números, ponto ou sublinhado.')
+    return True, username
+
+
+def gerar_username(nome, email, existe):
+    """Gera um nome de usuário a partir do NOME (não do e-mail: o usuário
+    aparece para outras pessoas, ex.: no ranking, quando não há nome).
+    "Maria José Souza" -> "maria.souza"; se ocupado, "maria.souza2", ...
+    `existe(candidato) -> bool` consulta a unicidade."""
+    import unicodedata
+
+    def limpar(texto):
+        texto = unicodedata.normalize('NFKD', texto or '')
+        texto = ''.join(c for c in texto if not unicodedata.combining(c)).lower()
+        return re.sub(r'[^a-z0-9]+', ' ', texto).split()
+
+    partes = limpar(nome)
+    if len(partes) >= 2:
+        base = f'{partes[0]}.{partes[-1]}'
+    elif partes:
+        base = partes[0]
+    else:
+        base = ''.join(limpar((email or '').split('@')[0])) or 'usuario'
+    base = base[:24].strip('.') or 'usuario'
+    if len(base) < 3:
+        base = (base + 'fit')[:24]
+
+    if not existe(base):
+        return base
+    for sufixo in range(2, 10000):
+        candidato = f'{base}{sufixo}'
+        if not existe(candidato):
+            return candidato
+    import secrets
+    return f'{base}{secrets.randbelow(10**6)}'
+
 
 def corpo_json_objeto():
     """Corpo JSON da requisição como dict -- {} quando ausente, inválido ou

@@ -12,6 +12,7 @@ def test_primeiro_usuario_registrado_nao_vira_admin(client, db):
     o primeiro cadastro feito pela tela pública (o app já cria um admin
     de bootstrap via ADMIN_PASSWORD na inicialização -- ver app.py)."""
     response = client.post('/auth/register', data={
+        'nome_completo': 'Fulano Teste',
         'username': 'primeirousuario',
         'email': 'primeiro@teste.com',
         'password': 'Treino#Forte9',
@@ -30,6 +31,7 @@ def test_primeiro_usuario_registrado_como_aluno_nao_vira_professor(client, db):
     """O tipo de usuário escolhido no cadastro deve ser respeitado,
     mesmo sendo o primeiro registro do banco."""
     response = client.post('/auth/register', data={
+        'nome_completo': 'Fulano Teste',
         'username': 'alunoum',
         'email': 'alunoum@teste.com',
         'password': 'Treino#Forte9',
@@ -50,12 +52,14 @@ def test_multiplos_registros_nenhum_vira_admin(client, db):
     -- nenhum deve receber is_admin=True."""
     for i in range(3):
         client.post('/auth/register', data={
+            'nome_completo': 'Fulano Teste',
             'username': f'usuario{i}',
             'email': f'usuario{i}@teste.com',
             'password': 'Treino#Forte9',
             'confirm_password': 'Treino#Forte9',
             'aceite_termos': 'on',
         }, follow_redirects=True)
+        client.get('/auth/logout')  # o cadastro já entra na conta
 
     usuarios_publicos = User.query.filter(User.username.in_(
         ['usuario0', 'usuario1', 'usuario2']

@@ -33,13 +33,15 @@ def test_erros_de_validacao_nao_gastam_a_cota_de_contas(client):
         assert client.get('/auth/register').status_code == 200
     # depois de 12 erros (e 12 recargas) o cadastro válido ainda funciona
     resp = client.post('/auth/register', data=_dados(99))
-    assert resp.status_code == 302 and '/auth/login' in resp.headers['Location']
+    # Cadastro válido já entra na conta e vai para o início.
+    assert resp.status_code == 302 and resp.headers['Location'] == '/'
 
 
 def test_so_contas_criadas_consomem_a_cota(client):
     for i in range(5):
         resp = client.post('/auth/register', data=_dados(i))
-        assert resp.status_code == 302 and '/auth/login' in resp.headers['Location'], i
+        assert resp.status_code == 302 and resp.headers['Location'] == '/', i
+        client.get('/auth/logout')  # o cadastro já entra na conta
     assert client.post('/auth/register', data=_dados(5)).status_code == 429
 
 

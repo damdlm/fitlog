@@ -54,6 +54,7 @@ class TestSignUpNoCadastro:
         app.config['ANALYTICS_ENABLED'] = True
 
         resp = client.post('/auth/register', data={
+            'nome_completo': 'Fulano Teste',
             'username': 'novo_usuario_analytics',
             'email': 'novo_usuario_analytics@teste.com',
             'password': 'Treino#Forte9',
@@ -72,6 +73,7 @@ class TestSignUpNoCadastro:
         app.config['ANALYTICS_ENABLED'] = True
 
         client.post('/auth/register', data={
+            'nome_completo': 'Fulano Teste',
             'username': 'ab',  # username curto demais -- falha de validação
             'email': 'invalido@teste.com',
             'password': 'Treino#Forte9',

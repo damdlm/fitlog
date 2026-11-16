@@ -217,6 +217,7 @@ class TestCadastroAplicaPlanoPadrao:
 
     def _registrar(self, client, username, tipo='aluno'):
         return client.post('/auth/register', data={
+            'nome_completo': 'Fulano Teste',
             'username': username, 'email': f'{username}@t.com',
             'password': SENHA, 'confirm_password': SENHA,
             'tipo_usuario': tipo, 'aceite_termos': 'on',
@@ -370,6 +371,7 @@ class TestAdminCadastraTreinosModelo:
 
             client.get('/auth/logout')
             client.post('/auth/register', data={
+                'nome_completo': 'Fulano Teste',
                 'username': 'aluno_novo_fluxo', 'email': 'aluno_novo_fluxo@t.com',
                 'password': SENHA, 'confirm_password': SENHA,
                 'tipo_usuario': 'aluno', 'aceite_termos': 'on',

@@ -54,11 +54,12 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
                 <div class="login-field">
-                    <label for="loginUsername">Usuário</label>
+                    <label for="loginUsername">E-mail ou usuário</label>
                     <div class="login-input-group">
                         <i class="bi bi-person login-input-icon"></i>
                         <input type="text" id="loginUsername" name="username"
-                               placeholder="Digite seu usuário" required autofocus autocomplete="username">
+                               placeholder="Digite seu e-mail ou usuário" required autofocus autocomplete="username"
+                               autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="email">
                     </div>
                 </div>
 

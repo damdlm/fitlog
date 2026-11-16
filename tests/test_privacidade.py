@@ -91,6 +91,7 @@ class TestAceiteTermosNoCadastro:
 
     def test_registro_sem_marcar_checkbox_nao_cria_conta(self, client, db):
         client.post('/auth/register', data={
+            'nome_completo': 'Fulano Teste',
             'username': 'semcheckbox', 'email': 'semcheckbox@t.com',
             'password': 'Treino#Forte9', 'confirm_password': 'Treino#Forte9',
         }, follow_redirects=True)
@@ -99,6 +100,7 @@ class TestAceiteTermosNoCadastro:
 
     def test_novo_usuario_aceite_e_versao_registrados(self, client, db):
         resp = client.post('/auth/register', data={
+            'nome_completo': 'Fulano Teste',
             'username': 'novoaluno', 'email': 'novoaluno@t.com',
             'password': 'Treino#Forte9', 'confirm_password': 'Treino#Forte9',
             'aceite_termos': 'on',
@@ -131,6 +133,7 @@ class TestCadastroTransacional:
         )
 
         client.post('/auth/register', data={
+            'nome_completo': 'Fulano Teste',
             'username': 'vaifalhar', 'email': 'vaifalhar@t.com',
             'password': 'Treino#Forte9', 'confirm_password': 'Treino#Forte9',
             'aceite_termos': 'on',
@@ -145,6 +148,7 @@ class TestCadastroTransacional:
         from models import Assinatura
 
         client.post('/auth/register', data={
+            'nome_completo': 'Fulano Teste',
             'username': 'vaifuncionar', 'email': 'vaifuncionar@t.com',
             'password': 'Treino#Forte9', 'confirm_password': 'Treino#Forte9',
             'aceite_termos': 'on',

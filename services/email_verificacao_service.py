@@ -7,7 +7,8 @@ deixam de valer; reabrir o mesmo link depois de verificado é inofensivo
 (idempotente). Expira em 48 horas -- o usuário pede outro na tela de
 pendência.
 """
-from datetime import datetime, timezone
+import math
+from datetime import datetime, timedelta, timezone
 
 from flask import current_app
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
@@ -17,6 +18,15 @@ from models import User
 
 SALT = 'fitlog-email-verify-v1'
 VALIDADE_SEGUNDOS = 48 * 3600
+
+# Conta nova usa o app na hora, sem confirmar o e-mail, por estes dias
+# (com um aviso no topo). Durante a carência só ficam travadas as áreas
+# que custam dinheiro ou dependem do e-mail ser da pessoa: FitBot (IA) e
+# assinatura/pagamento. Passou a carência sem confirmar -> app inteiro
+# travado, como antes. Troca de e-mail numa conta antiga trava na hora
+# (a conta já passou da carência).
+CARENCIA_DIAS = 7
+PREFIXOS_TRAVADOS_NA_CARENCIA = ('fitbot.', 'billing.')
 
 
 class EmailVerificacaoService:
@@ -63,3 +73,30 @@ class EmailVerificacaoService:
         if getattr(user, 'is_admin', False):
             return False
         return getattr(user, 'email_verificado_em', None) is None
+
+    @staticmethod
+    def dias_restantes_carencia(user) -> int:
+        """Dias (arredondados para cima) que faltam da carência; 0 = acabou."""
+        criado = getattr(user, 'created_at', None)
+        if criado is None:
+            return 0
+        if criado.tzinfo is None:
+            criado = criado.replace(tzinfo=timezone.utc)
+        restante = criado + timedelta(days=CARENCIA_DIAS) - datetime.now(timezone.utc)
+        if restante.total_seconds() <= 0:
+            return 0
+        return math.ceil(restante.total_seconds() / 86400)
+
+    @staticmethod
+    def em_carencia(user) -> bool:
+        return EmailVerificacaoService.dias_restantes_carencia(user) > 0
+
+    @staticmethod
+    def bloqueia_endpoint(user, endpoint: str) -> bool:
+        """True se este endpoint deve ser barrado agora por falta de
+        confirmação do e-mail."""
+        if not EmailVerificacaoService.precisa_verificar(user):
+            return False
+        if not EmailVerificacaoService.em_carencia(user):
+            return True
+        return (endpoint or '').startswith(PREFIXOS_TRAVADOS_NA_CARENCIA)

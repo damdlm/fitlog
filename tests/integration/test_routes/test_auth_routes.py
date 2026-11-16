@@ -31,7 +31,7 @@ def test_register_page_titulo_do_form_so_aparece_no_desktop(client):
     response = client.get('/auth/register')
     html = response.data.decode('utf-8')
     assert 'login-form-header d-none d-lg-block' in html
-    assert 'Leva menos de um minuto' in html
+    assert 'Você já entra em seguida' in html
 
 def test_login_page_mantem_seu_proprio_cabecalho_de_formulario(client):
     """login.html compartilha a classe .login-form-header com
@@ -55,6 +55,7 @@ def test_register_user(client, db):
     # caracteres, com letra e número — ver utils/validators.validar_senha),
     # então o registro falhava silenciosamente e nunca criava o usuário.
     response = client.post('/auth/register', data={
+        'nome_completo': 'Fulano Teste',
         'username': 'testuser',
         'email': 'test@test.com',
         'password': 'Treino#Forte9',
@@ -78,6 +79,7 @@ def test_login_user(client, db):
     """Testa login de usuário"""
     # Primeiro registra (mesma observação sobre senha do teste acima)
     client.post('/auth/register', data={
+        'nome_completo': 'Fulano Teste',
         'username': 'logintest',
         'email': 'login@test.com',
         'password': 'Treino#Forte9',

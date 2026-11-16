@@ -93,8 +93,9 @@
                                     
                                     <div class="mb-3">
                                         <label class="form-label fw-bold">Usuário</label>
-                                        <input type="text" class="form-control" value="{{ user.username }}" disabled readonly>
-                                        <small class="text-muted">O nome de usuário não pode ser alterado</small>
+                                        <input type="text" name="username" class="form-control" value="{{ user.username }}"
+                                               minlength="3" maxlength="30" pattern="[a-z0-9._]{3,30}" autocapitalize="none" autocorrect="off" spellcheck="false">
+                                        <small class="text-muted">Você pode entrar com ele ou com o e-mail. Letras minúsculas, números, ponto ou sublinhado.</small>
                                     </div>
                                     
                                     <div class="mb-3">

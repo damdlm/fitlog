@@ -23,7 +23,7 @@
                só existe em telas pequenas (d-lg-none). #}
             <div class="login-form-header d-none d-lg-block">
                 <h1><i class="bi bi-person-plus"></i> Criar conta</h1>
-                <p>Leva menos de um minuto pra começar a treinar com o FitLog.</p>
+                <p>Só nome, e-mail e senha. Você já entra em seguida.</p>
             </div>
 
             {% set form = form|default({}) %}
@@ -31,7 +31,7 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
                 <div class="login-field">
-                    <label>Tipo de Usuário</label>
+                    <label>Você é</label>
                     <div class="tipo-usuario-group" role="group">
                         <input type="radio" class="btn-check" name="tipo_usuario" id="tipo_aluno" value="aluno" {% if form.get('tipo_usuario') != 'professor' %}checked{% endif %}>
                         <label class="btn btn-outline-primary d-flex align-items-center justify-content-center" for="tipo_aluno">
@@ -50,40 +50,12 @@
                 </div>
 
                 <div class="login-field">
-                    <label for="regNomeCompleto">Nome Completo</label>
+                    <label for="regNomeCompleto">Seu nome</label>
                     <div class="login-input-group">
                         <i class="bi bi-person login-input-icon"></i>
                         <input type="text" id="regNomeCompleto" name="nome_completo"
-                               placeholder="Digite seu nome completo" value="{{ form.get('nome_completo', '') }}">
-                    </div>
-                </div>
-
-                <div class="login-field">
-                    <label for="regGenero">Gênero (opcional)</label>
-                    <div class="login-input-group">
-                        <i class="bi bi-person-vcard login-input-icon"></i>
-                        <select id="regGenero" name="genero" class="form-select">
-                            <option value="">Prefiro não informar</option>
-                            <option value="M" {% if form.get('genero') == 'M' %}selected{% endif %}>Masculino</option>
-                            <option value="F" {% if form.get('genero') == 'F' %}selected{% endif %}>Feminino</option>
-                        </select>
-                    </div>
-                    <span class="login-field-hint">Usado só para personalizar sua mensagem de boas-vindas</span>
-                </div>
-
-                <div class="login-field">
-                    <label for="regUsername">Usuário</label>
-                    <div class="login-input-group">
-                        <i class="bi bi-at login-input-icon"></i>
-                        <input type="text" id="regUsername" name="username"
-                               placeholder="Escolha um nome de usuário" required {% if not form %}autofocus{% endif %}
-                               minlength="3" maxlength="80" value="{{ form.get('username', '') }}">
-                    </div>
-                    <span class="login-field-hint">Mínimo 3 caracteres</span>
-                    <div id="usernameFeedback" class="register-email-alert d-flex align-items-center gap-2 mt-2 mb-0 py-2 px-3 d-none"
-                         style="animation: fitlogFadeIn 0.2s ease-out;">
-                        <i class="bi bi-exclamation-circle-fill"></i>
-                        <span>Este nome de usuário já está em uso. Escolha outro.</span>
+                               placeholder="Como você se chama?" required maxlength="200" autocomplete="name"
+                               {% if not form %}autofocus{% endif %} value="{{ form.get('nome_completo', '') }}">
                     </div>
                 </div>
 
@@ -91,22 +63,14 @@
                     <label for="emailInput">E-mail</label>
                     <div class="login-input-group">
                         <i class="bi bi-envelope login-input-icon"></i>
-                        <input type="email" name="email" id="emailInput"
-                               placeholder="Digite seu e-mail" required value="{{ form.get('email', '') }}">
+                        <input type="email" name="email" id="emailInput" autocomplete="email"
+                               autocapitalize="none" autocorrect="off" spellcheck="false"
+                               placeholder="seu@email.com" required value="{{ form.get('email', '') }}">
                     </div>
                     <div id="emailFeedback" class="register-email-alert d-flex align-items-center gap-2 mt-2 mb-0 py-2 px-3 d-none"
                          style="animation: fitlogFadeIn 0.2s ease-out;">
                         <i class="bi bi-exclamation-circle-fill"></i>
-                        <span>Este e-mail já está cadastrado. Use outro e-mail ou faça login.</span>
-                    </div>
-                </div>
-
-                <div class="login-field">
-                    <label for="regTelefone">Telefone (opcional)</label>
-                    <div class="login-input-group">
-                        <i class="bi bi-telephone login-input-icon"></i>
-                        <input type="text" id="regTelefone" name="telefone"
-                               placeholder="(11) 99999-9999" value="{{ form.get('telefone', '') }}">
+                        <span>Este e-mail já tem conta. <a href="{{ url_for('auth.login') }}">Fazer login</a></span>
                     </div>
                 </div>
 
@@ -115,25 +79,17 @@
                     <div class="login-input-group">
                         <i class="bi bi-lock login-input-icon"></i>
                         <input type="password" id="regPassword" name="password"
-                               placeholder="Digite sua senha" required minlength="8" autocomplete="new-password" {% if form %}autofocus{% endif %}>
+                               placeholder="Crie uma senha" required minlength="8" autocomplete="new-password" {% if form %}autofocus{% endif %}>
+                        <button type="button" class="login-toggle-senha" id="regSenhaOlho"
+                                aria-label="Mostrar senha" aria-pressed="false">
+                            <i class="bi bi-eye"></i>
+                        </button>
                     </div>
                     <ul id="senhaRegras" class="list-unstyled small mb-0 mt-2">
                         <li data-regra="tamanho"><i class="bi bi-circle"></i> Pelo menos 8 caracteres</li>
-                        <li data-regra="letra"><i class="bi bi-circle"></i> Pelo menos uma letra</li>
-                        <li data-regra="numero"><i class="bi bi-circle"></i> Pelo menos um número</li>
-                        <li data-regra="pessoal"><i class="bi bi-circle"></i> Não conter seu usuário nem a parte do e-mail antes do @</li>
+                        <li data-regra="obvia"><i class="bi bi-circle"></i> Nada óbvio, como 12345678 ou senha123</li>
+                        <li data-regra="pessoal"><i class="bi bi-circle"></i> Sem a parte do e-mail antes do @</li>
                     </ul>
-                    <span class="login-field-hint">Evite senhas comuns, como &quot;senha123&quot;.</span>
-                </div>
-
-                <div class="login-field">
-                    <label for="regConfirmPassword">Confirmar Senha</label>
-                    <div class="login-input-group">
-                        <i class="bi bi-lock-fill login-input-icon"></i>
-                        <input type="password" id="regConfirmPassword" name="confirm_password"
-                               placeholder="Digite a senha novamente" required autocomplete="new-password">
-                    </div>
-                    <span id="senhaIgual" class="login-field-hint"></span>
                 </div>
 
                 <div class="register-info-box mb-3" id="infoAluno" style="display: block;">
@@ -208,128 +164,103 @@
         radioProfessor.addEventListener('change', atualizarInfo);
         atualizarInfo();
 
-        // --- Validação de usuário/e-mail já cadastrados ---
-        // Os dois campos usam o mesmo mecanismo: ao sair do campo (blur),
-        // consulta o backend; se já existir, mostra o aviso, marca o campo
-        // e devolve o foco pra ele -- tudo client-side, sem recarregar a
-        // página, então os outros campos já preenchidos nunca são limpos.
+        // --- E-mail já cadastrado ---
+        // Ao sair do campo consulta o backend; se já existir, mostra o aviso
+        // (com link para o login) sem recarregar nem limpar o formulário.
         const form = document.querySelector('form');
         const submitBtnCadastro = form.querySelector('button[type="submit"]');
         const submitBtnCadastroHtmlOriginal = submitBtnCadastro.innerHTML;
+        const emailInput = document.getElementById('emailInput');
+        const emailFeedback = document.getElementById('emailFeedback');
+        const emailGrupo = emailInput.closest('.login-input-group');
+        let ultimaChecagem = 0;
 
-        function criarValidadorDeCampo({ input, feedback, endpoint, param }) {
-            const grupo = input.closest('.login-input-group');
-            let ultimaChecagem = 0; // evita que uma resposta atrasada sobreponha uma mais nova
-
-            function mostrarFeedback() {
-                feedback.classList.remove('d-none');
-                input.classList.add('is-invalid');
-                if (grupo) grupo.classList.add('is-invalid-group');
-            }
-
-            function esconderFeedback() {
-                feedback.classList.add('d-none');
-                input.classList.remove('is-invalid');
-                if (grupo) grupo.classList.remove('is-invalid-group');
-            }
-
-            async function jaExiste(valor) {
-                const resp = await fetch(`${endpoint}?${param}=` + encodeURIComponent(valor));
-                const dados = await resp.json();
-                return dados.exists;
-            }
-
-            function focarEDestacar() {
-                input.classList.add('fitlog-shake');
-                setTimeout(() => input.classList.remove('fitlog-shake'), 400);
-                input.focus();
-                input.select();
-            }
-
-            input.addEventListener('blur', async function() {
-                const valor = input.value.trim();
-                esconderFeedback();
-                if (!valor) return;
-                const minhaChecagem = ++ultimaChecagem;
-                try {
-                    const existe = await jaExiste(valor);
-                    // Se o usuário já mudou o campo ou saiu de novo enquanto
-                    // a requisição estava em voo, essa resposta é descartada.
-                    if (minhaChecagem !== ultimaChecagem) return;
-                    if (existe) {
-                        mostrarFeedback();
-                        // Devolve o foco ao campo com problema, sem tocar
-                        // nos demais campos do formulário.
-                        focarEDestacar();
-                    }
-                } catch (erro) {
-                    console.error(`Erro ao verificar ${param}:`, erro);
-                }
-            });
-
-            input.addEventListener('input', esconderFeedback);
-
-            return { jaExiste, mostrarFeedback, focarEDestacar };
+        function mostrarFeedback() {
+            emailFeedback.classList.remove('d-none');
+            emailInput.classList.add('is-invalid');
+            if (emailGrupo) emailGrupo.classList.add('is-invalid-group');
+        }
+        function esconderFeedback() {
+            emailFeedback.classList.add('d-none');
+            emailInput.classList.remove('is-invalid');
+            if (emailGrupo) emailGrupo.classList.remove('is-invalid-group');
+        }
+        async function emailJaExiste(valor) {
+            const resp = await fetch('/auth/check-email?email=' + encodeURIComponent(valor));
+            const dados = await resp.json();
+            return dados.exists;
+        }
+        function focarEDestacar() {
+            emailInput.classList.add('fitlog-shake');
+            setTimeout(() => emailInput.classList.remove('fitlog-shake'), 400);
+            emailInput.focus();
         }
 
-        const validadorUsername = criarValidadorDeCampo({
-            input: document.getElementById('regUsername'),
-            feedback: document.getElementById('usernameFeedback'),
-            endpoint: '/auth/check-username',
-            param: 'username',
+        emailInput.addEventListener('blur', async function() {
+            const valor = emailInput.value.trim();
+            esconderFeedback();
+            if (!valor) return;
+            const minhaChecagem = ++ultimaChecagem;
+            try {
+                const existe = await emailJaExiste(valor);
+                if (minhaChecagem !== ultimaChecagem) return;
+                if (existe) mostrarFeedback();
+            } catch (erro) {
+                console.error('Erro ao verificar e-mail:', erro);
+            }
         });
-
-        const validadorEmail = criarValidadorDeCampo({
-            input: document.getElementById('emailInput'),
-            feedback: document.getElementById('emailFeedback'),
-            endpoint: '/auth/check-email',
-            param: 'email',
-        });
+        emailInput.addEventListener('input', esconderFeedback);
 
         form.addEventListener('submit', async function(evento) {
             evento.preventDefault();
-            const usernameInput = document.getElementById('regUsername');
-            const emailInput = document.getElementById('emailInput');
-
             submitBtnCadastro.disabled = true;
-            submitBtnCadastro.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Verificando...';
-
+            submitBtnCadastro.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Criando conta...';
             try {
-                // Usuário é checado primeiro -- se os dois já existirem, o
-                // foco fica no primeiro campo do formulário (username).
-                if (await validadorUsername.jaExiste(usernameInput.value.trim())) {
-                    validadorUsername.mostrarFeedback();
-                    validadorUsername.focarEDestacar();
+                if (await emailJaExiste(emailInput.value.trim())) {
+                    mostrarFeedback();
+                    focarEDestacar();
+                    submitBtnCadastro.disabled = false;
+                    submitBtnCadastro.innerHTML = submitBtnCadastroHtmlOriginal;
                     return;
                 }
-                if (await validadorEmail.jaExiste(emailInput.value.trim())) {
-                    validadorEmail.mostrarFeedback();
-                    validadorEmail.focarEDestacar();
-                    return;
-                }
-                form.submit();
             } catch (erro) {
-                console.error('Erro ao verificar usuário/e-mail:', erro);
-                form.submit();
-            } finally {
-                submitBtnCadastro.disabled = false;
-                submitBtnCadastro.innerHTML = submitBtnCadastroHtmlOriginal;
+                console.error('Erro ao verificar e-mail:', erro);
             }
+            form.submit();
         });
     });
 </script>
 
 <script>
-    // Regras da senha em tempo real. É só apoio visual: quem decide é o
-    // servidor (utils/validators.py), que também recusa senhas comuns.
+    // Regras da senha em tempo real + mostrar/esconder. É só apoio
+    // visual: quem decide é o servidor (utils/validators.py:erros_senha).
     (function () {
         var senha = document.getElementById('regPassword');
-        var confirma = document.getElementById('regConfirmPassword');
-        var usuario = document.getElementById('regUsername');
         var email = document.getElementById('emailInput');
-        var igual = document.getElementById('senhaIgual');
+        var olho = document.getElementById('regSenhaOlho');
         var itens = {};
         document.querySelectorAll('#senhaRegras li').forEach(function (li) { itens[li.dataset.regra] = li; });
+
+        var OBVIAS = ['senha123', 'senha1234', 'password', 'password1', 'abc12345', 'abcd1234',
+            'qwerty123', 'senhasenha', 'minhasenha', 'flamengo', 'corinthians', 'palmeiras',
+            'iloveyou', 'princesa', 'academia', 'fitlog123', 'brasil123', 'admin123', 'teste123'];
+        var SEQUENCIAS = ['0123456789', 'abcdefghijklmnopqrstuvwxyz', 'qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
+
+        function previsivel(s) {
+            if (!s) return true;
+            var sl = s.toLowerCase();
+            if (OBVIAS.indexOf(sl) !== -1) return true;
+            if (new Set(sl).size <= 2) return true;
+            for (var tam = 1; tam <= 4; tam++) {
+                var bloco = sl.slice(0, tam);
+                if (bloco.repeat(Math.ceil(sl.length / tam)).slice(0, sl.length) === sl) return true;
+            }
+            for (var i = 0; i < SEQUENCIAS.length; i++) {
+                var seq = SEQUENCIAS[i];
+                if (seq.indexOf(sl) !== -1 || seq.split('').reverse().join('').indexOf(sl) !== -1) return true;
+            }
+            return false;
+        }
 
         function marcar(li, ok) {
             li.className = ok ? 'text-success' : 'text-muted';
@@ -338,25 +269,22 @@
 
         function avaliar() {
             var s = senha.value, sl = s.toLowerCase();
-            var u = usuario.value.trim().toLowerCase();
             var local = email.value.split('@')[0].trim().toLowerCase();
-            var contemPessoal = (u.length >= 3 && sl.indexOf(u) !== -1) || (local.length >= 4 && sl.indexOf(local) !== -1);
+            var contemEmail = local.length >= 4 && sl.indexOf(local) !== -1;
             marcar(itens.tamanho, s.length >= 8);
-            marcar(itens.letra, /[A-Za-z]/.test(s));
-            marcar(itens.numero, /[0-9]/.test(s));
-            marcar(itens.pessoal, s.length > 0 && !contemPessoal);
-            if (!confirma.value) {
-                igual.textContent = '';
-            } else if (confirma.value === s) {
-                igual.textContent = 'As senhas coincidem';
-                igual.className = 'login-field-hint text-success';
-            } else {
-                igual.textContent = 'As senhas não coincidem';
-                igual.className = 'login-field-hint text-danger';
-            }
+            marcar(itens.obvia, s.length > 0 && !previsivel(s));
+            marcar(itens.pessoal, s.length > 0 && !contemEmail);
         }
 
-        [senha, confirma, usuario, email].forEach(function (campo) { campo.addEventListener('input', avaliar); });
+        olho.addEventListener('click', function () {
+            var mostrar = senha.type === 'password';
+            senha.type = mostrar ? 'text' : 'password';
+            olho.setAttribute('aria-pressed', mostrar ? 'true' : 'false');
+            olho.setAttribute('aria-label', mostrar ? 'Esconder senha' : 'Mostrar senha');
+            olho.querySelector('i').className = mostrar ? 'bi bi-eye-slash' : 'bi bi-eye';
+        });
+
+        [senha, email].forEach(function (campo) { campo.addEventListener('input', avaliar); });
         avaliar();
     })();
 </script>

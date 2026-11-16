@@ -264,15 +264,22 @@ class TestValidarSenha:
         assert ok is False
         assert '8 caracteres' in msg
 
-    def test_sem_letra_invalida(self):
+    def test_sequencia_numerica_e_previsivel(self):
         ok, msg = validar_senha('12345678')
         assert ok is False
-        assert 'letra' in msg
+        assert 'previsível' in msg
 
-    def test_sem_numero_invalida(self):
-        ok, msg = validar_senha('abcdefgh')
+    def test_so_letras_valida_para_conta_comum(self):
+        # Sem regra de composição (NIST): frase longa só com letras passa.
+        assert validar_senha('cachorrofeliz')[0] is True
+
+    def test_conta_admin_exige_letra_e_numero(self):
+        ok, msg = validar_senha('cachorrofeliz', rigida=True)
         assert ok is False
         assert 'número' in msg
+        ok, msg = validar_senha('98765432109', rigida=True)
+        assert ok is False
+        assert 'letra' in msg
 
     def test_limite_minimo_valido(self):
         ok, valor = validar_senha('xk4mz9qp')

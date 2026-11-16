@@ -6,7 +6,7 @@ verificação do e-mail e avisa o endereço anterior. Antes desta correção, um
 sessão roubada (ou um XSS) trocava o e-mail sem senha e a conta continuava
 "verificada".
 """
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import pytest
@@ -19,7 +19,9 @@ URL = '/auth/profile/update'
 
 
 def _criar_usuario(username='ana', verificado=True):
-    user = User(username=username, email=f'{username}@teste.com', tipo_usuario='aluno', ativo=True)
+    # Conta antiga (fora da carência de 7 dias): trocar o e-mail trava na hora.
+    user = User(username=username, email=f'{username}@teste.com', tipo_usuario='aluno', ativo=True,
+                created_at=datetime.now(timezone.utc) - timedelta(days=30))
     user.set_password(SENHA)
     if verificado:
         user.email_verificado_em = datetime.now(timezone.utc)
