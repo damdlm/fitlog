@@ -255,6 +255,11 @@
     .exercise-row--cardio { border-left-color: #1F7A8C; }
     .exercise-row--cardio .dash-registro-icon { color: #1F7A8C; background: rgba(31, 122, 140, 0.10); }
     .exercicio-valores-grid--cardio { grid-template-rows: auto auto auto; }
+    /* Minutos e km são números curtos; a intensidade ("Moderada") precisa
+       de mais espaço que o "N séries" da força -- colunas 3/3/8 em vez de
+       4/3/6. Mesmo seletor mais específico vale no mobile. */
+    .exercicio-valores-grid--cardio .inputs-row-labels,
+    .exercicio-valores-grid--cardio .inputs-row { grid-template-columns: 3fr 3fr 8fr; }
     .exercicio-valores-grid--cardio .cardio-tipo-wrap { grid-column: 2; grid-row: 1; margin-bottom: 6px; }
     .exercicio-valores-grid--cardio .inputs-row-labels { grid-row: 2; }
     .exercicio-valores-grid--cardio .exercicio-switch-wrap,
@@ -5506,6 +5511,7 @@ window.FitLogCardio = (function () {
         ligarLinhaAvulsa(wrap);
         const row = wrap.querySelector('.exercise-row');
         atualizarNomeAvulso(row);
+        ajustarRotuloIntensidade();
         if (typeof atualizarResumo === 'function') atualizarResumo();
         return row;
     }
@@ -5674,6 +5680,18 @@ window.FitLogCardio = (function () {
     // cardio do usuário (ou Esteira 20 min / 2,5 km / moderada) -- igual aos
     // exercícios, que abrem com os valores da última sessão. Os detalhes
     // (tipos em grade, velocidade) continuam no modal, pela seta da linha.
+    // Telas abaixo de 360px (ex.: iPhone SE 1ª geração): "Moderada" não
+    // cabe nem com as colunas 3/3/8 -- mostra "Média" (o valor enviado
+    // continua 'moderada').
+    function ajustarRotuloIntensidade() {
+        const curto = window.innerWidth < 360;
+        document.querySelectorAll('.cardio-intensidade option[value="moderada"]').forEach(function (o) {
+            o.textContent = curto ? 'Média' : 'Moderada';
+        });
+    }
+    window.addEventListener('resize', ajustarRotuloIntensidade);
+    ajustarRotuloIntensidade();
+
     function adicionarCardio() {
         let inicial = null;
         try {
