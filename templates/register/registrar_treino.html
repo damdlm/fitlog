@@ -266,11 +266,22 @@
     .exercicio-valores-grid--cardio .inputs-row,
     .exercicio-valores-grid--cardio .exercicio-marcar-feito-wrap { grid-row: 3; }
     .cardio-tipo-wrap .form-select {
-        height: 30px; padding: 3px 28px 3px 10px; font-size: 0.9rem; font-weight: 700;
+        height: 30px !important; padding: 3px 24px 3px 8px !important; font-size: 0.85rem !important; font-weight: 700;
         border: 2px solid rgba(31, 122, 140, 0.30); border-radius: var(--radius-sm); box-shadow: none;
+    }
+    @media (max-width: 767.98px) {
+        .cardio-tipo-wrap .form-select {
+            height: 27px !important; padding: 2px 20px 2px 6px !important; font-size: 0.82rem !important;
+            background-position: right 6px center; background-size: 12px 10px;
+        }
     }
     .cardio-tipo-wrap .form-select:focus { border-color: #1F7A8C; box-shadow: 0 0 0 3px rgba(31, 122, 140, 0.12); }
     .dash-badge--cardio-tag { background: rgba(31, 122, 140, 0.12); color: #1F7A8C; font-weight: 700; }
+    /* Selo "Cardio" na linha do título, no canto direito (antes do X do
+       avulso): o nome encolhe com reticências em vez de empurrar o selo. */
+    .exercise-row--cardio .dash-registro-top { flex-wrap: nowrap; }
+    .exercise-row--cardio .dash-registro-top .dash-registro-exercicio { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .exercise-row--cardio .dash-registro-top .dash-badge--cardio-tag { margin-left: auto; flex-shrink: 0; }
     .cardio-tipo-wrap .form-select { font-weight: 600; color: #1F7A8C; border-color: rgba(31, 122, 140, 0.35); }
     .acoes-adicionar { display: flex; gap: 10px; }
     .acoes-adicionar .btn-adicionar-avulso { flex: 1 1 0; }
@@ -4140,8 +4151,6 @@
                         <div class="dash-registro-info">
                             <div class="dash-registro-top">
                                 <span class="dash-registro-exercicio exercicio-nome-trunc" data-full-nome="Cardio">Cardio</span>
-                            </div>
-                            <div class="dash-registro-badges">
                                 <span class="dash-badge dash-badge--cardio-tag">Cardio</span>
                             </div>
                         </div>
@@ -4583,7 +4592,7 @@
                                  data-musculos-secundarios="{{ ex.musculos_secundarios_lista|join(', ') if ex.musculos_secundarios_lista else '' }}">
                                 <div class="dash-registro-top">
                                     <span class="dash-registro-exercicio exercicio-nome-trunc" data-full-nome="{{ ex.nome }}">{{ ex.nome }}</span>
-                                    {% if ex.avulso and not eh_cardio_ex %}<span class="dash-badge avulso-badge">Avulso</span>{% endif %}
+                                    {% if eh_cardio_ex %}<span class="dash-badge dash-badge--cardio-tag">Cardio</span>{% elif ex.avulso %}<span class="dash-badge avulso-badge">Avulso</span>{% endif %}
                                 </div>
                                 {% if ex.observacao_treino %}
                                 <div class="dash-registro-obs">
@@ -4591,10 +4600,9 @@
                                     <span>{{ ex.observacao_treino }}</span>
                                 </div>
                                 {% endif %}
-                                {% if eh_cardio_ex %}
+                                {% if eh_cardio_ex and ultimas and ultimas[0].duracao_segundos %}
                                 <div class="dash-registro-badges">
-                                    <span class="dash-badge dash-badge--cardio-tag">Cardio</span>
-                                    {% if ultimas and ultimas[0].duracao_segundos %}<span class="dash-badge dash-badge--cardio">Última: {{ '%g'|format(((ultimas[0].duracao_segundos / 60)|round(1))) }} min{% if ultimas[0].distancia_km %} · {{ '%g'|format(ultimas[0].distancia_km) }} km{% endif %}</span>{% endif %}
+                                    <span class="dash-badge dash-badge--cardio">Última: {{ '%g'|format(((ultimas[0].duracao_segundos / 60)|round(1))) }} min{% if ultimas[0].distancia_km %} · {{ '%g'|format(ultimas[0].distancia_km) }} km{% endif %}</span>
                                 </div>
                                 {% elif ultimas and not eh_cardio_ex %}
                                 <div class="dash-registro-badges">
