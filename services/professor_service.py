@@ -161,7 +161,7 @@ class ProfessorService(BaseService):
             if 'telefone' in dados:
                 professor.telefone = dados['telefone']
             if 'email' in dados and dados['email'] != professor.email:
-                if User.query.filter_by(email=dados['email']).first():
+                if User.buscar_por_email(dados['email'], exceto_id=professor.id):
                     logger.warning(f"Email {dados['email']} já está em uso")
                     return None
                 professor.email = dados['email']

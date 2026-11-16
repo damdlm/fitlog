@@ -5,7 +5,8 @@ from extensions import limiter   # <-- importa de extensions, nunca de app
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse, urljoin
 import logging
-from utils.validators import erros_senha, gerar_username, validar_email, validar_senha, validar_username
+from utils.validators import (erro_tamanho_campos, erros_senha, gerar_username, validar_email, validar_senha,
+                              validar_username)
 from utils.email_utils import enviar_email
 from utils.genero_utils import resolver_genero
 from utils.mensagens_boas_vindas import gerar_mensagem_boas_vindas
@@ -103,11 +104,17 @@ def _buscar_usuario_para_login(identificador):
     if not identificador:
         return None
     if '@' in identificador:
-        return (User.query
-                .filter(db.func.lower(User.email) == identificador.lower())
-                .order_by(User.id)
-                .first())
-    return User.query.filter_by(username=identificador).first()
+        return User.buscar_por_email(identificador)
+    exato = User.query.filter_by(username=identificador).first()
+    if exato:
+        return exato
+    # Sem diferenciar maiúsculas (ex.: teclado do celular que capitalizou
+    # "Maria.souza", ou conta antiga "Joao" digitada "joao") -- só quando
+    # a correspondência é única.
+    candidatos = (User.query
+                  .filter(db.func.lower(User.username) == identificador.lower())
+                  .limit(2).all())
+    return candidatos[0] if len(candidatos) == 1 else None
 
 
 def _efetivar_login(user, remember):
@@ -194,7 +201,7 @@ def reset_password_request():
 
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
-        user = User.query.filter_by(email=email).first() if email else None
+        user = User.buscar_por_email(email)
 
         # Mensagem sempre igual, exista ou não a conta com esse e-mail —
         # evita que alguém use este formulário para descobrir quais
@@ -376,7 +383,7 @@ def check_email():
     email = request.args.get('email', '').strip()
     if not email:
         return jsonify({'exists': False})
-    existe = User.query.filter_by(email=email).first() is not None
+    existe = User.buscar_por_email(email) is not None
     return jsonify({'exists': existe})
 
 
@@ -461,6 +468,10 @@ def register():
         if not request.form.get('aceite_termos'):
             return _voltar_ao_cadastro('É preciso ler e aceitar os Termos de Uso e a Política de Privacidade para criar uma conta.')
 
+        erro_tamanho = erro_tamanho_campos(nome_completo=nome_completo, telefone=telefone)
+        if erro_tamanho:
+            return _voltar_ao_cadastro(erro_tamanho)
+
         if username and len(username) < 3:
             return _voltar_ao_cadastro('Usuário deve ter pelo menos 3 caracteres')
 
@@ -474,17 +485,14 @@ def register():
         if not ok_email:
             return _voltar_ao_cadastro(msg_email)
 
-        if User.query.filter(db.func.lower(User.email) == email.lower()).first():
+        if User.buscar_por_email(email):
             return _voltar_ao_cadastro('Este e-mail já tem conta. Faça login ou recupere a senha.')
 
         if username:
-            if User.query.filter_by(username=username).first():
+            if User.username_em_uso(username):
                 return _voltar_ao_cadastro('Nome de usuário já existe')
         else:
-            username = gerar_username(
-                nome_completo, email,
-                lambda candidato: User.query.filter_by(username=candidato).first() is not None,
-            )
+            username = gerar_username(nome_completo, email, User.username_em_uso)
 
         # Cadastro é UMA transação só: User + trial + aceite de Termos/
         # Política. Se qualquer etapa falhar, nada é confirmado -- sem
@@ -622,14 +630,23 @@ def update_profile():
             flash('E-mail é obrigatório', 'danger')
             return redirect(url_for('auth.profile'))
 
+        erro_tamanho = erro_tamanho_campos(nome_completo=nome_completo, telefone=telefone, email=email)
+        if erro_tamanho:
+            flash(erro_tamanho, 'danger')
+            return redirect(url_for('auth.profile'))
+
         # Nome de usuário agora é gerado no cadastro e pode ser trocado aqui.
-        novo_username = (request.form.get('username') or '').strip().lower()
-        if novo_username and novo_username != current_user.username:
+        # Só valida quando a pessoa MUDOU o campo: contas antigas podem ter
+        # usuário fora da regra nova (maiúsculas, acento, espaço, hífen) e
+        # precisam continuar salvando o resto do perfil sem perder o usuário.
+        enviado = (request.form.get('username') or '').strip()
+        novo_username = enviado.lower()
+        if enviado and enviado != current_user.username:
             ok_username, msg_username = validar_username(novo_username)
             if not ok_username:
                 flash(msg_username, 'danger')
                 return redirect(url_for('auth.profile'))
-            if User.query.filter_by(username=novo_username).first():
+            if User.username_em_uso(novo_username, exceto_id=current_user.id):
                 flash('Este nome de usuário já está em uso.', 'danger')
                 return redirect(url_for('auth.profile'))
             current_user.username = novo_username
@@ -656,7 +673,7 @@ def update_profile():
                 flash('Para alterar o e-mail, informe sua senha atual corretamente.', 'danger')
                 return redirect(url_for('auth.profile'))
 
-            if User.query.filter_by(email=email).first():
+            if User.buscar_por_email(email, exceto_id=current_user.id):
                 flash('Este e-mail já está em uso', 'danger')
                 return redirect(url_for('auth.profile'))
 

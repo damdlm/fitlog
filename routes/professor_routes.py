@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, abort, session
-from utils.validators import erros_senha
+from utils.validators import erro_tamanho_campos, erros_senha, validar_email
 from flask_login import login_required, current_user
 from models import db, User, AlunoProfessor, RegistroTreino, SolicitacaoVinculo, VersaoGlobal, HistoricoTreino, TreinoVersao
 from services.base_service import BaseService
@@ -159,17 +159,29 @@ def novo_aluno():
         
         if len(username) < 3:
             return _voltar_ao_novo_aluno('Usuário deve ter pelo menos 3 caracteres')
+
+        if len(username) > 80:
+            return _voltar_ao_novo_aluno('Usuário muito longo (máximo 80 caracteres)')
+
+        email = email.strip()
+        ok_email, msg_email = validar_email(email)
+        if not ok_email:
+            return _voltar_ao_novo_aluno(msg_email)
+
+        erro_tamanho = erro_tamanho_campos(nome_completo=nome_completo, telefone=telefone)
+        if erro_tamanho:
+            return _voltar_ao_novo_aluno(erro_tamanho)
         
-        # Mesma política do cadastro público (8+ caracteres, letra e número,
-        # fora da lista de senhas comuns). Antes aqui bastavam 6 caracteres.
+        # Mesma política do cadastro público (8+ caracteres e fora da lista
+        # de senhas óbvias -- utils/validators.py:erros_senha).
         erros_da_senha = erros_senha(password, username=username, email=email)
         if erros_da_senha:
             return _voltar_ao_novo_aluno(*erros_da_senha)
         
-        if User.query.filter_by(username=username).first():
+        if User.username_em_uso(username):
             return _voltar_ao_novo_aluno('Nome de usuário já existe')
         
-        if User.query.filter_by(email=email).first():
+        if User.buscar_por_email(email):
             return _voltar_ao_novo_aluno('E-mail já cadastrado')
         
         aluno = User(
@@ -316,8 +328,14 @@ def editar_aluno(aluno_id):
             flash('Informe o e-mail do aluno.', 'danger')
             return redirect(url_for('professor.editar_aluno', aluno_id=aluno.id))
 
+        ok_email, msg_email = validar_email(email)
+        erro_tamanho = None if not ok_email else erro_tamanho_campos(nome_completo=nome_completo, telefone=telefone)
+        if not ok_email or erro_tamanho:
+            flash(msg_email if not ok_email else erro_tamanho, 'danger')
+            return redirect(url_for('professor.editar_aluno', aluno_id=aluno.id))
+
         if email != aluno.email:
-            existing_user = User.query.filter_by(email=email).first()
+            existing_user = User.buscar_por_email(email, exceto_id=aluno.id)
             if existing_user:
                 flash('Este e-mail já está em uso por outro usuário.', 'danger')
                 return redirect(url_for('professor.editar_aluno', aluno_id=aluno.id))

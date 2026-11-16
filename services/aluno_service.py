@@ -257,7 +257,7 @@ class AlunoService(BaseService):
                 aluno.telefone = dados['telefone']
             if 'email' in dados and dados['email'] != aluno.email:
                 # Verificar se email já existe
-                if User.query.filter_by(email=dados['email']).first():
+                if User.buscar_por_email(dados['email'], exceto_id=aluno.id):
                     logger.warning(f"Email {dados['email']} já está em uso")
                     return None
                 aluno.email = dados['email']

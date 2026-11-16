@@ -211,6 +211,28 @@ class User(UserMixin, db.Model):
             return partes[0][0].upper()
         return (partes[0][0] + partes[-1][0]).upper()
 
+    @classmethod
+    def buscar_por_email(cls, email, exceto_id=None):
+        """Conta com este e-mail, sem diferenciar maiúsculas (o login, o
+        cadastro e a recuperação de senha tratam Ana@x.com = ana@x.com).
+        exceto_id: ignora a própria conta (ex.: trocar só a capitalização)."""
+        email = (email or '').strip()
+        if not email:
+            return None
+        consulta = cls.query.filter(db.func.lower(cls.email) == email.lower())
+        if exceto_id is not None:
+            consulta = consulta.filter(cls.id != exceto_id)
+        return consulta.order_by(cls.id).first()
+
+    @classmethod
+    def username_em_uso(cls, username, exceto_id=None):
+        """True se já existe conta com este nome de usuário, sem diferenciar
+        maiúsculas (o login aceita "joao" para a conta "Joao")."""
+        consulta = cls.query.filter(db.func.lower(cls.username) == (username or '').strip().lower())
+        if exceto_id is not None:
+            consulta = consulta.filter(cls.id != exceto_id)
+        return db.session.query(consulta.exists()).scalar()
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
         # CORREÇÃO 10 (hardening de segurança): incrementa a versão da

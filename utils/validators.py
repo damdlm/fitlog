@@ -99,11 +99,31 @@ def validar_email(email):
     if not email:
         return False, "Email é obrigatório"
     
+    if len(email) > TAMANHO_MAX['email']:
+        return False, f"E-mail muito longo (máximo {TAMANHO_MAX['email']} caracteres)"
+
     padrao = re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email)
     if not padrao:
         return False, "Email inválido"
     
     return True, email
+
+
+# Tamanho das colunas de users (models.py). O SQLite dos testes não aplica
+# esse limite, mas o Postgres de produção sim: sem checar antes, um valor
+# maior virava erro 500 (DataError) em vez de mensagem no formulário.
+TAMANHO_MAX = {'email': 120, 'nome_completo': 200, 'telefone': 20}
+_ROTULOS = {'nome_completo': 'Nome', 'telefone': 'Telefone', 'email': 'E-mail'}
+
+
+def erro_tamanho_campos(**campos):
+    """Mensagem para o primeiro campo acima do tamanho da coluna, ou None.
+    Ex.: erro_tamanho_campos(nome_completo=nome, telefone=tel)."""
+    for campo, valor in campos.items():
+        limite = TAMANHO_MAX.get(campo)
+        if limite and valor and len(valor) > limite:
+            return f"{_ROTULOS.get(campo, campo)} muito longo (máximo {limite} caracteres)"
+    return None
 
 # Senhas mais usadas (pt-BR e globais) que passariam nas regras de
 # tamanho/letra/número. Comparação em minúsculas.
