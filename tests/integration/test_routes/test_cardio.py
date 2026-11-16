@@ -281,6 +281,31 @@ class TestRegistrarCardio:
                                          'duracao_min': 35.0, 'distancia_km': 12.0, 'intensidade': 'forte'}
 
 
+    def test_mais_cardio_nao_herda_tipo_que_deixou_de_ser_cardio(self, client, app):
+        """Último cardio num exercício próprio que depois virou "carga": o
+        tipo recusado pelo servidor não pode vir no "+ Cardio"."""
+        with app.app_context():
+            ctx = _montar('cardio_tipo_invalido')
+            corda = ExercicioUsuario(usuario_id=ctx['user_id'], nome='Corda', modo_registro='tempo')
+            db.session.add(corda)
+            db.session.commit()
+            corda_id = corda.id
+        _login(client, 'cardio_tipo_invalido')
+        client.post('/registrar/registrar-treino', data=MultiDict([
+            ('treino', str(ctx['treino_id'])), ('data', DATA),
+            ('avulso_cardio[]', 'cardio1'), ('cardio_tipo_cardio1', f'u_{corda_id}'),
+            ('duracao_cardio1', '12'), ('intensidade_cardio1', 'forte'),
+        ]))
+        with app.app_context():
+            assert cardio.cardio_inicial(ctx['user_id'])['tipo'] == f'u_{corda_id}'
+            ExercicioUsuario.query.get(corda_id).modo_registro = 'carga'
+            db.session.commit()
+            inicial = cardio.cardio_inicial(ctx['user_id'])
+            assert (inicial['tipo'], inicial['nome'], inicial['duracao_min'], inicial['intensidade']) \
+                == (ctx['esteira'], 'Esteira', 12.0, 'forte')
+            assert 'tipo_valido' not in inicial
+
+
 # ---------------------------------------------------------------- calendário
 
 class TestCalendarioCardio:

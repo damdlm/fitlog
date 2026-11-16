@@ -268,6 +268,7 @@ def ultimo_cardio(user_id):
     return {
         'tipo': tipo,
         'nome': ex.nome if ex else 'Cardio',
+        'tipo_valido': ex is not None and getattr(ex, 'modo_registro', None) == MODO_TEMPO,
         'duracao_min': round(serie.duracao_segundos / 60, 1),
         'distancia_km': float(serie.distancia_km) if serie.distancia_km is not None else None,
         'intensidade': serie.intensidade or '',
@@ -277,12 +278,17 @@ def ultimo_cardio(user_id):
 def cardio_inicial(user_id, opcoes=None):
     """Valores da linha criada pelo "+ Cardio": o último cardio do usuário
     ou, se não houver, Esteira 20 min / 2,5 km / moderada."""
-    ultimo = ultimo_cardio(user_id)
-    if ultimo:
-        return ultimo
     opcoes = opcoes if opcoes is not None else opcoes_tipo_cardio()
     chave = next((c for rotulo, c in opcoes if rotulo == CARDIO_PADRAO['tipo_rotulo']),
                  opcoes[0][1] if opcoes else '')
+    ultimo = ultimo_cardio(user_id)
+    if ultimo:
+        if not ultimo.pop('tipo_valido', True):
+            # Exercício do último cardio foi excluído ou deixou de ser
+            # cardio: o servidor recusaria esse tipo e o cardio sumiria ao
+            # salvar. Mantém tempo/km/intensidade e usa o tipo padrão.
+            ultimo['tipo'], ultimo['nome'] = chave, CARDIO_PADRAO['tipo_rotulo']
+        return ultimo
     return {
         'tipo': chave,
         'nome': CARDIO_PADRAO['tipo_rotulo'],
