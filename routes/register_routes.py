@@ -5,7 +5,7 @@ from services.versao_service import VersaoService
 from services.exercicio_service import ExercicioService
 from services.registro_service import RegistroService
 from services.notificacao_service import NotificacaoService
-from services.cardio import MODO_TEMPO, ler_cardio_do_formulario, opcoes_tipo_cardio
+from services.cardio import MODO_TEMPO, cardio_inicial, ler_cardio_do_formulario, opcoes_tipo_cardio
 from utils.date_utils import data_para_periodo, data_para_semana, formatar_data_br, validar_data
 from utils.format_utils import data_atual_iso, _agora_brasil
 import logging
@@ -230,6 +230,7 @@ def registrar_treino():
                 # cadastrar_treinos.html pro mesmo tipo de busca/seleção.
                 exercicios_catalogo = ExercicioService.get_exercicios_completos(user_id=current_user.id)
     
+    opcoes_cardio = opcoes_tipo_cardio() if treino_selecionado else []
     return render_template(
         "register/registrar_treino.html",
         treinos_disponiveis=treinos_disponiveis,
@@ -243,7 +244,9 @@ def registrar_treino():
         erro_versao=erro_versao,
         exercicios_catalogo=exercicios_catalogo,
         # Combo "tipo de cardio" e modal "Cardio" (services/cardio.py).
-        opcoes_cardio=opcoes_tipo_cardio() if treino_selecionado else [],
+        opcoes_cardio=opcoes_cardio,
+        # Linha nova do "+ Cardio" já vem preenchida (último cardio ou padrão).
+        cardio_inicial=cardio_inicial(current_user.id, opcoes_cardio) if opcoes_cardio else None,
         cardios_salvos=cardios_salvos,
     )
 

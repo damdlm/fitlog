@@ -239,3 +239,54 @@ def resumo_cardio_semana(user_id, hoje=None, recentes=5):
             for s in ultimas
         ],
     }
+
+
+# Valores da linha nova do "+ Cardio" para quem nunca registrou cardio.
+CARDIO_PADRAO = {'tipo_rotulo': 'Esteira', 'duracao_min': 20, 'distancia_km': 2.5, 'intensidade': 'moderada'}
+
+
+def ultimo_cardio(user_id):
+    """Último cardio registrado pelo usuário (qualquer tipo/treino), para
+    o "+ Cardio" já criar a linha preenchida -- igual aos exercícios de
+    força, que abrem com a carga/reps da última sessão. None se nunca
+    registrou cardio."""
+    from models import HistoricoTreino, RegistroTreino
+
+    serie = (HistoricoTreino.query
+             .join(RegistroTreino, HistoricoTreino.registro_id == RegistroTreino.id)
+             .filter(RegistroTreino.user_id == user_id,
+                     HistoricoTreino.duracao_segundos.isnot(None))
+             .order_by(RegistroTreino.data_registro.desc(), HistoricoTreino.id.desc())
+             .first())
+    if serie is None:
+        return None
+    reg = serie.registro_ref
+    if reg.exercicio_usuario_id is not None:
+        tipo, ex = f'u_{reg.exercicio_usuario_id}', reg.exercicio
+    else:
+        tipo, ex = f'b_{reg.exercicio_base_id}', reg.exercicio_base
+    return {
+        'tipo': tipo,
+        'nome': ex.nome if ex else 'Cardio',
+        'duracao_min': round(serie.duracao_segundos / 60, 1),
+        'distancia_km': float(serie.distancia_km) if serie.distancia_km is not None else None,
+        'intensidade': serie.intensidade or '',
+    }
+
+
+def cardio_inicial(user_id, opcoes=None):
+    """Valores da linha criada pelo "+ Cardio": o último cardio do usuário
+    ou, se não houver, Esteira 20 min / 2,5 km / moderada."""
+    ultimo = ultimo_cardio(user_id)
+    if ultimo:
+        return ultimo
+    opcoes = opcoes if opcoes is not None else opcoes_tipo_cardio()
+    chave = next((c for rotulo, c in opcoes if rotulo == CARDIO_PADRAO['tipo_rotulo']),
+                 opcoes[0][1] if opcoes else '')
+    return {
+        'tipo': chave,
+        'nome': CARDIO_PADRAO['tipo_rotulo'],
+        'duracao_min': CARDIO_PADRAO['duracao_min'],
+        'distancia_km': CARDIO_PADRAO['distancia_km'],
+        'intensidade': CARDIO_PADRAO['intensidade'],
+    }

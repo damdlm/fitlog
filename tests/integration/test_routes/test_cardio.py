@@ -253,6 +253,34 @@ class TestRegistrarCardio:
                            'distancia_km': 1.5, 'intensidade': 'leve'}]
 
 
+    def test_mais_cardio_vem_com_padrao_e_depois_com_o_ultimo_cardio(self, client, app):
+        """O "+ Cardio" cria a linha já preenchida: Esteira 20 min / 2,5 km /
+        moderada para quem nunca fez cardio; depois, o último cardio feito."""
+        import json
+        import re
+        with app.app_context():
+            ctx = _montar('cardio_inicial')
+            assert cardio.ultimo_cardio(ctx['user_id']) is None
+        _login(client, 'cardio_inicial')
+
+        def inicial(data):
+            html = client.get(f'/registrar/registrar-treino?data={data}&treino={ctx["treino_id"]}').get_data(as_text=True)
+            return json.loads(re.search(r'id="cardioInicialJson">(.*?)</script>', html, re.S).group(1))
+
+        padrao = inicial(DATA)
+        assert (padrao['nome'], padrao['duracao_min'], padrao['distancia_km'], padrao['intensidade']) \
+            == ('Esteira', 20, 2.5, 'moderada')
+        assert padrao['tipo'] == ctx['esteira']
+
+        client.post('/registrar/registrar-treino', data=MultiDict([
+            ('treino', str(ctx['treino_id'])), ('data', DATA),
+            ('avulso_cardio[]', 'cardio1'), ('cardio_tipo_cardio1', ctx['bike']),
+            ('duracao_cardio1', '35'), ('distancia_cardio1', '12'), ('intensidade_cardio1', 'forte'),
+        ]))
+        assert inicial('2026-01-07') == {'tipo': ctx['bike'], 'nome': 'Bicicleta ergométrica',
+                                         'duracao_min': 35.0, 'distancia_km': 12.0, 'intensidade': 'forte'}
+
+
 # ---------------------------------------------------------------- calendário
 
 class TestCalendarioCardio:

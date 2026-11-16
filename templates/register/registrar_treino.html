@@ -4116,6 +4116,7 @@
      a chave cardioN (o backend lê avulso_cardio[] e resolve o exercício
      pelo combo cardio_tipo_<chave>, ver routes/register_routes.py). -->
 <script type="application/json" id="cardiosSalvosJson">{{ cardios_salvos|tojson }}</script>
+<script type="application/json" id="cardioInicialJson">{{ cardio_inicial|tojson }}</script>
 <template id="tplCardioAvulso">
     <div class="exercise-row-wrap">
         <input type="hidden" name="avulso_cardio[]" class="avulso-marker" value="__K__">
@@ -4798,8 +4799,7 @@
                     <i class="bi bi-plus-lg"></i> Exercício
                 </button>
                 {% if opcoes_cardio %}
-                <button type="button" class="btn-adicionar-avulso btn-adicionar-cardio" id="btnAdicionarCardio"
-                        data-bs-toggle="modal" data-bs-target="#modalCardio">
+                <button type="button" class="btn-adicionar-avulso btn-adicionar-cardio" id="btnAdicionarCardio">
                     <i class="bi bi-plus-lg"></i> Cardio
                 </button>
                 {% endif %}
@@ -5638,23 +5638,54 @@ window.FitLogCardio = (function () {
         } catch (e) { salvos = []; }
         (salvos || []).forEach(function (c) {
             const row = criarLinhaAvulsa();
-            if (!row) return;
-            const sel = row.querySelector('.cardio-tipo');
-            if (sel && !Array.from(sel.options).some(function (o) { return o.value === c.tipo; })) {
-                const opt = document.createElement('option');
-                opt.value = c.tipo;
-                opt.textContent = c.nome;
-                sel.insertBefore(opt, sel.firstChild);
-            }
-            if (sel) sel.value = c.tipo;
-            row.querySelector('.cardio-duracao').value = c.duracao_min;
-            row.querySelector('.cardio-distancia').value = c.distancia_km == null ? '' : c.distancia_km;
-            row.querySelector('.cardio-intensidade').value = c.intensidade || '';
-            atualizarNomeAvulso(row);
+            if (row) preencherLinha(row, c);
         });
         if (salvos && salvos.length && typeof atualizarResumo === 'function') atualizarResumo();
     }
+
+    // Preenche uma linha de cardio com {tipo, nome, duracao_min,
+    // distancia_km, intensidade}; tipo fora do combo (ex.: exercício
+    // próprio de cardio) entra como opção.
+    function preencherLinha(row, c) {
+        if (!c) return;
+        const sel = row.querySelector('.cardio-tipo');
+        if (sel && c.tipo && !Array.from(sel.options).some(function (o) { return o.value === c.tipo; })) {
+            const opt = document.createElement('option');
+            opt.value = c.tipo;
+            opt.textContent = c.nome || 'Cardio';
+            sel.insertBefore(opt, sel.firstChild);
+        }
+        if (sel && c.tipo) sel.value = c.tipo;
+        row.querySelector('.cardio-duracao').value = c.duracao_min == null ? '' : c.duracao_min;
+        row.querySelector('.cardio-distancia').value = c.distancia_km == null ? '' : c.distancia_km;
+        row.querySelector('.cardio-intensidade').value = c.intensidade || '';
+        atualizarNomeAvulso(row);
+    }
     recriarSalvos();
+
+    // "+ Cardio": cria a linha direto na lista, já preenchida com o último
+    // cardio do usuário (ou Esteira 20 min / 2,5 km / moderada) -- igual aos
+    // exercícios, que abrem com os valores da última sessão. Os detalhes
+    // (tipos em grade, velocidade) continuam no modal, pela seta da linha.
+    function adicionarCardio() {
+        let inicial = null;
+        try {
+            const el = document.getElementById('cardioInicialJson');
+            inicial = el ? JSON.parse(el.textContent || 'null') : null;
+        } catch (e) { inicial = null; }
+        const row = criarLinhaAvulsa();
+        if (!row) return;
+        preencherLinha(row, inicial);
+        if (typeof atualizarResumo === 'function') atualizarResumo();
+        avisarMudanca(row.querySelector('.cardio-duracao'), 'input'); // rascunho
+        // No modo treino em tela cheia a lista da esquerda é outra (mt3):
+        // ela se atualiza pelo 'fitlog:cardio-adicionado'.
+        document.dispatchEvent(new CustomEvent('fitlog:cardio-adicionado', { detail: { row: row } }));
+        const wrap = row.closest('.exercise-row-wrap') || row;
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    const btnAdicionar = document.getElementById('btnAdicionarCardio');
+    if (btnAdicionar) btnAdicionar.addEventListener('click', adicionarCardio);
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', inicializarModal);
@@ -6425,6 +6456,12 @@ function inicializarPainelTresColunas() {
             renderLista();
         }).observe(form, { attributes: true, attributeFilter: ['class'], subtree: true, childList: true });
     }
+    // "+ Cardio" em tela cheia: já abre o cardio novo no painel central.
+    document.addEventListener('fitlog:cardio-adicionado', function (evt) {
+        const row = evt.detail && evt.detail.row;
+        if (!row || !listaEl || !overlay.classList.contains('mt3-ativo')) return;
+        selecionar(row.dataset.exercicioId);
+    });
     atualizar();
 }
 
