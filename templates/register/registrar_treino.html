@@ -285,9 +285,24 @@
     .cardio-tipo-wrap .form-select { font-weight: 600; color: #1F7A8C; border-color: rgba(31, 122, 140, 0.35); }
     .acoes-adicionar { display: flex; gap: 10px; }
     .acoes-adicionar .btn-adicionar-avulso { flex: 1 1 0; }
-    .btn-adicionar-cardio { color: #1F7A8C; border-color: rgba(31, 122, 140, 0.45); }
-    .btn-adicionar-cardio:hover,
-    .btn-adicionar-cardio:focus-visible { color: #1F7A8C; border-color: #1F7A8C; background: rgba(31, 122, 140, 0.06); }
+    /* "+ Exercício" / "+ Cardio": neutros (fundo branco, borda fina), só o
+       ícone na cor do tipo -- o mesmo ícone/cor dos cards (bi-activity
+       laranja na força, bi-heart-pulse teal no cardio). */
+    .acoes-adicionar .btn-adicionar-avulso {
+        border: 1px solid var(--border-soft);
+        background: var(--surface, #fff);
+        color: #5F5E5A;
+    }
+    .acoes-adicionar .btn-adicionar-avulso i { font-size: 1.05rem; color: var(--primary-orange); }
+    .acoes-adicionar .btn-adicionar-cardio i { color: #1F7A8C; }
+    .acoes-adicionar .btn-adicionar-avulso:hover,
+    .acoes-adicionar .btn-adicionar-avulso:focus-visible {
+        border-color: var(--primary-orange); color: #2D2D2D; background: rgba(242, 140, 51, 0.04);
+    }
+    .acoes-adicionar .btn-adicionar-cardio:hover,
+    .acoes-adicionar .btn-adicionar-cardio:focus-visible {
+        border-color: #1F7A8C; background: rgba(31, 122, 140, 0.04);
+    }
     .resumo-cardio-valor { color: #1F7A8C; }
     .exercise-row--avulso .dash-registro-top { padding-right: 30px; }
 
@@ -4816,11 +4831,11 @@
                  (template #tplCardioAvulso, chave cardioN, avulso_cardio[]). -->
             <div class="acoes-adicionar">
                 <button type="button" class="btn-adicionar-avulso" data-bs-toggle="modal" data-bs-target="#modalAdicionarAvulso">
-                    <i class="bi bi-plus-lg"></i> Exercício
+                    <i class="bi bi-activity" aria-hidden="true"></i> Exercício
                 </button>
                 {% if opcoes_cardio %}
                 <button type="button" class="btn-adicionar-avulso btn-adicionar-cardio" id="btnAdicionarCardio">
-                    <i class="bi bi-plus-lg"></i> Cardio
+                    <i class="bi bi-heart-pulse" aria-hidden="true"></i> Cardio
                 </button>
                 {% endif %}
             </div>
@@ -6179,7 +6194,13 @@ function inicializarPainelTresColunas() {
             item.appendChild(el('span', 'mt3-num', feito(row) ? '✓' : String(i + 1)));
             const txt = el('span', 'mt3-item-nome', nomeDe(row));
             item.appendChild(txt);
-            if (row.classList.contains('exercise-row--avulso')) item.appendChild(el('span', 'mt3-tag', 'Avulso'));
+            if (row.classList.contains('exercise-row--cardio')) {
+                const tag = el('span', 'mt3-tag', 'Cardio');
+                tag.style.cssText = 'background: rgba(31,122,140,.12); color: #1F7A8C;';
+                item.appendChild(tag);
+            } else if (row.classList.contains('exercise-row--avulso')) {
+                item.appendChild(el('span', 'mt3-tag', 'Avulso'));
+            }
             item.addEventListener('click', function () { selecionar(exId); });
             lista.appendChild(item);
         });
@@ -6282,7 +6303,7 @@ function inicializarPainelTresColunas() {
 
         const grade = el('div', 'mt3-cardio');
         grade.style.cssText = 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;max-width:520px;';
-        [['.cardio-tipo', 'Tipo'], ['.cardio-duracao', 'Tempo (min)'],
+        [['.cardio-tipo', 'Tipo'], ['.cardio-duracao', 'Minutos'],
          ['.cardio-distancia', 'Distância (km)'], ['.cardio-intensidade', 'Intensidade']].forEach(function (cfg) {
             const orig = row.querySelector(cfg[0]);
             if (!orig) return;
@@ -6291,6 +6312,9 @@ function inicializarPainelTresColunas() {
             const copia = orig.cloneNode(true);
             copia.removeAttribute('name');
             copia.removeAttribute('id');
+            // Sem as classes cardio-* (estilo compacto do card e seletores
+            // da validação/resumo, que só devem enxergar o campo original).
+            copia.className = copia.tagName === 'SELECT' ? 'form-select' : 'form-control';
             copia.value = orig.value;
             copia.disabled = orig.disabled;
             copia.addEventListener(copia.tagName === 'SELECT' ? 'change' : 'input', function () {
