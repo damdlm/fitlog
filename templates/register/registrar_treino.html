@@ -260,9 +260,13 @@
     .exercicio-valores-grid--cardio .exercicio-switch-wrap,
     .exercicio-valores-grid--cardio .inputs-row,
     .exercicio-valores-grid--cardio .exercicio-marcar-feito-wrap { grid-row: 3; }
-    .cardio-tipo-wrap .form-select { padding-top: .3rem; padding-bottom: .3rem; }
+    .cardio-tipo-wrap .form-select {
+        height: 30px; padding: 3px 28px 3px 10px; font-size: 0.9rem; font-weight: 700;
+        border: 2px solid rgba(31, 122, 140, 0.30); border-radius: var(--radius-sm); box-shadow: none;
+    }
+    .cardio-tipo-wrap .form-select:focus { border-color: #1F7A8C; box-shadow: 0 0 0 3px rgba(31, 122, 140, 0.12); }
+    .dash-badge--cardio-tag { background: rgba(31, 122, 140, 0.12); color: #1F7A8C; font-weight: 700; }
     .cardio-tipo-wrap .form-select { font-weight: 600; color: #1F7A8C; border-color: rgba(31, 122, 140, 0.35); }
-    .exercicio-valores-grid--cardio .inputs-row .form-select { padding-right: 1.6rem; }
     .acoes-adicionar { display: flex; gap: 10px; }
     .acoes-adicionar .btn-adicionar-avulso { flex: 1 1 0; }
     .btn-adicionar-cardio { color: #1F7A8C; border-color: rgba(31, 122, 140, 0.45); }
@@ -820,7 +824,7 @@
 
     /* Campos de carga/reps/séries: mesma borda, fonte e altura reduzida
        para os três, sem botões de passo, otimizando espaço na tela. */
-    .carga-input, .reps-input {
+    .carga-input, .reps-input, .cardio-duracao, .cardio-distancia {
         width: 100%;
         min-width: 0;
         text-align: center;
@@ -834,7 +838,7 @@
         background: var(--surface);
         transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .carga-input:focus, .reps-input:focus {
+    .carga-input:focus, .reps-input:focus, .cardio-duracao:focus, .cardio-distancia:focus {
         outline: none;
         border-color: var(--primary-orange) !important;
         box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12) !important;
@@ -867,7 +871,7 @@
        naturalmente pequena e os campos precisam aproveitar cada pixel
        disponível como touch target. */
     @media (min-width: 768px) {
-        .carga-input, .reps-input, .inputs-row .form-select {
+        .carga-input, .reps-input, .cardio-duracao, .cardio-distancia, .inputs-row .form-select {
             max-width: 110px;
             margin-left: auto;
             margin-right: auto;
@@ -1781,7 +1785,7 @@
             gap: 6px;
         }
 
-        .carga-input, .reps-input, .inputs-row .form-select {
+        .carga-input, .reps-input, .cardio-duracao, .cardio-distancia, .inputs-row .form-select {
             height: 27px !important;
             padding: 2px 4px !important;
             font-size: 0.82rem !important;
@@ -4131,7 +4135,9 @@
                         <div class="dash-registro-info">
                             <div class="dash-registro-top">
                                 <span class="dash-registro-exercicio exercicio-nome-trunc" data-full-nome="Cardio">Cardio</span>
-                                <span class="dash-badge avulso-badge">Avulso</span>
+                            </div>
+                            <div class="dash-registro-badges">
+                                <span class="dash-badge dash-badge--cardio-tag">Cardio</span>
                             </div>
                         </div>
                     </div>
@@ -4146,7 +4152,7 @@
                             </select>
                         </div>
                         <div class="inputs-row-labels">
-                            <span class="inputs-row-label">Tempo (min)</span>
+                            <span class="inputs-row-label">Minutos</span>
                             <span class="inputs-row-label">Km</span>
                             <span class="inputs-row-label">Intensidade</span>
                         </div>
@@ -4572,7 +4578,7 @@
                                  data-musculos-secundarios="{{ ex.musculos_secundarios_lista|join(', ') if ex.musculos_secundarios_lista else '' }}">
                                 <div class="dash-registro-top">
                                     <span class="dash-registro-exercicio exercicio-nome-trunc" data-full-nome="{{ ex.nome }}">{{ ex.nome }}</span>
-                                    {% if ex.avulso %}<span class="dash-badge avulso-badge">Avulso</span>{% endif %}
+                                    {% if ex.avulso and not eh_cardio_ex %}<span class="dash-badge avulso-badge">Avulso</span>{% endif %}
                                 </div>
                                 {% if ex.observacao_treino %}
                                 <div class="dash-registro-obs">
@@ -4580,9 +4586,10 @@
                                     <span>{{ ex.observacao_treino }}</span>
                                 </div>
                                 {% endif %}
-                                {% if ultimas and eh_cardio_ex and ultimas[0].duracao_segundos %}
+                                {% if eh_cardio_ex %}
                                 <div class="dash-registro-badges">
-                                    <span class="dash-badge dash-badge--cardio">Última: {{ '%g'|format(((ultimas[0].duracao_segundos / 60)|round(1))) }} min{% if ultimas[0].distancia_km %} · {{ '%g'|format(ultimas[0].distancia_km) }} km{% endif %}</span>
+                                    <span class="dash-badge dash-badge--cardio-tag">Cardio</span>
+                                    {% if ultimas and ultimas[0].duracao_segundos %}<span class="dash-badge dash-badge--cardio">Última: {{ '%g'|format(((ultimas[0].duracao_segundos / 60)|round(1))) }} min{% if ultimas[0].distancia_km %} · {{ '%g'|format(ultimas[0].distancia_km) }} km{% endif %}</span>{% endif %}
                                 </div>
                                 {% elif ultimas and not eh_cardio_ex %}
                                 <div class="dash-registro-badges">
@@ -4681,7 +4688,7 @@
                                 </select>
                             </div>
                             <div class="inputs-row-labels">
-                                <span class="inputs-row-label">Tempo (min)</span>
+                                <span class="inputs-row-label">Minutos</span>
                                 <span class="inputs-row-label">Km</span>
                                 <span class="inputs-row-label">Intensidade</span>
                             </div>
