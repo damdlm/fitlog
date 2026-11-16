@@ -101,6 +101,55 @@ def _cardios_fora_da_ficha(exercicios, registros_map, chaves_oficiais):
     ]
 
 
+def _mapa_registros(registros):
+    """Registros do dia indexados pela chave prefixada do exercício
+    ("u_5"/"b_5"): exercicios_usuario e exercicios_sistema têm sequências
+    de ID independentes, então o ID puro colidiria entre as duas tabelas."""
+    mapa = {}
+    for r in registros:
+        if r.exercicio_usuario_id is not None:
+            mapa[f"u_{r.exercicio_usuario_id}"] = r
+        elif r.exercicio_base_id is not None:
+            mapa[f"b_{r.exercicio_base_id}"] = r
+    return mapa
+
+
+@register_bp.route("/linha-avulsa", methods=["GET"])
+@login_required
+def linha_avulsa():
+    """Card de UM exercício avulso, para o "+ Exercício" inserir na lista
+    sem recarregar a página (antes recarregava com ?avulso=<chave>, e no
+    modo treino parecia que o app fechava e abria de novo). Mesmas regras
+    da página: versão ativa na data, treino dessa versão e exercício do
+    próprio usuário ou do catálogo (buscar_por_chaves)."""
+    data_valida, data_obj = validar_data(request.args.get("data") or data_atual_iso())
+    if not data_valida:
+        return "", 400
+    treino_id = request.args.get("treino", "")
+    chave = request.args.get("chave", "")
+
+    versao_ativa = VersaoService.get_ativa_por_data(data_obj)
+    if not versao_ativa or _versao_finalizada_para(versao_ativa, data_obj):
+        return "", 404
+    treinos = VersaoService.get_treinos_para_registro(versao_ativa.id)
+    if not any(str(t["id"]) == str(treino_id) for t in treinos):
+        return "", 404
+
+    ex = ExercicioService.buscar_por_chaves([chave], current_user.id).get(chave)
+    if ex is None:
+        return "", 404
+
+    registros = RegistroService.get_by_data(treino_id=treino_id, versao_id=versao_ativa.id, data=data_obj)
+    historico_series = ExercicioService.get_ultima_sessao_series_em_lote([ex], versao_id=versao_ativa.id)
+    return render_template(
+        "register/_linha_exercicio.html",
+        ex=ex,
+        registros=_mapa_registros(registros),
+        historico_series=historico_series,
+        opcoes_cardio=opcoes_tipo_cardio(),
+    )
+
+
 @register_bp.route("/registrar-treino", methods=["GET"])
 @login_required
 def registrar_treino():
@@ -185,12 +234,7 @@ def registrar_treino():
                 # e exercicios_base têm sequências de ID independentes, então o mesmo número
                 # pode existir nas duas tabelas — usar só o ID causava colisão entre exercícios
                 # diferentes (dados de um "vazando"/sobrescrevendo o outro).
-                registros_map = {}
-                for r in registros:
-                    if r.exercicio_usuario_id is not None:
-                        registros_map[f"u_{r.exercicio_usuario_id}"] = r
-                    elif r.exercicio_base_id is not None:
-                        registros_map[f"b_{r.exercicio_base_id}"] = r
+                registros_map = _mapa_registros(registros)
 
                 # Exercícios AVULSOS: lançados nesta sessão específica (ver
                 # Exercícios AVULSOS: lançados só nesta sessão específica

@@ -285,6 +285,7 @@
     .cardio-tipo-wrap .form-select { font-weight: 600; color: #1F7A8C; border-color: rgba(31, 122, 140, 0.35); }
     .acoes-adicionar { display: flex; gap: 10px; }
     .acoes-adicionar .btn-adicionar-avulso { flex: 1 1 0; }
+    .avulso-picker-item.is-carregando { opacity: .55; pointer-events: none; }
     /* "+ Exercício" / "+ Cardio": neutros (fundo branco, borda fina), só o
        ícone na cor do tipo -- o mesmo ícone/cor dos cards (bi-activity
        laranja na força, bi-heart-pulse teal no cardio). */
@@ -4555,266 +4556,7 @@
             </div>
 
             {% for ex in exercicios %}
-            {% set chave_ex = ex.prefixo ~ ex.id %}
-            {% set eh_cardio_ex = ex.modo_registro == 'tempo' %}
-            {% set registro_atual = registros.get(chave_ex) %}
-            {% set ultimas = historico_series.get(chave_ex, []) %}
-            {% set ultima_carga = ultimas[0].carga if (ultimas and ultimas[0].carga is not none) else '' %}
-            {% set ultimas_reps = ultimas[0].repeticoes if (ultimas and ultimas[0].repeticoes is not none) else '' %}
-            {% set ultimas_series = ultimas|length if ultimas else 3 %}
-            {% set series_selecionadas = registro_atual.series|length if (registro_atual and registro_atual.series) else ultimas_series %}
-            
-            <!-- O select de séries agora vai até 10 -->
-            {% set max_opcoes = [6, series_selecionadas]|max %}
-            {% set series_atual = registro_atual.series if (registro_atual and registro_atual.series) else [] %}
-            {% set cargas_distintas = series_atual|map(attribute='carga')|unique|list %}
-            {% set reps_distintas = series_atual|map(attribute='repeticoes')|unique|list %}
-            {% set modo_inicial = 'individual' if (series_atual and (cargas_distintas|length > 1 or reps_distintas|length > 1)) else 'uniforme' %}
-            
-            <div class="exercise-row-wrap">
-            {% if ex.avulso %}
-            <!-- Exercício avulso: lançado só nesta sessão específica (ver
-                 botão "Adicionar exercício" mais abaixo), nunca faz parte
-                 da lista oficial do treino -- por isso o backend só sabe
-                 que existe através desta chave marcada aqui. -->
-            <input type="hidden" name="avulso_exercicios[]" class="avulso-marker" value="{{ chave_ex }}">
-            {% endif %}
-            <div class="exercise-row{% if ex.avulso %} exercise-row--avulso{% endif %}{% if eh_cardio_ex %} exercise-row--cardio{% endif %}" data-exercicio-id="{{ chave_ex }}" 
-                 data-ultima-carga="{{ ultima_carga }}"
-                 data-ultimas-reps="{{ ultimas_reps }}"
-                 data-ultimas-series="{{ ultimas_series }}">
-                {% if ex.avulso %}
-                <button type="button" class="btn-remover-avulso" data-exercicio-id="{{ chave_ex }}"
-                        aria-label="Remover {{ ex.nome }} desta sessão">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-                {% endif %}
-                
-                <div class="row align-items-center">
-                    <div class="col-12 col-md-6">
-                        <!-- Mesma estrutura visual do card "Último Treino" do dashboard -->
-                        <div class="dash-registro-item" style="padding: 0; border-bottom: none; align-items: flex-start;">
-                            <div class="dash-registro-icon" {% if not ex.gif_url %}aria-hidden="true"{% endif %}>
-                                {% if ex.gif_url %}
-                                    {{ botao_imagens_exercicio(ex) }}
-                                {% else %}
-                                    <i class="bi bi-activity"></i>
-                                {% endif %}
-                            </div>
-                            <div class="dash-registro-info exercicio-info-trigger"
-                                 role="button" tabindex="0"
-                                 data-musculo-principal="{{ ex.musculo or '' }}"
-                                 data-musculos-secundarios="{{ ex.musculos_secundarios_lista|join(', ') if ex.musculos_secundarios_lista else '' }}">
-                                <div class="dash-registro-top">
-                                    <span class="dash-registro-exercicio exercicio-nome-trunc" data-full-nome="{{ ex.nome }}">{{ ex.nome }}</span>
-                                    {% if eh_cardio_ex %}<span class="dash-badge dash-badge--cardio-tag">Cardio</span>{% elif ex.avulso %}<span class="dash-badge avulso-badge">Avulso</span>{% endif %}
-                                </div>
-                                {% if ex.observacao_treino %}
-                                <div class="dash-registro-obs">
-                                    <i class="bi bi-chat-left-text"></i>
-                                    <span>{{ ex.observacao_treino }}</span>
-                                </div>
-                                {% endif %}
-                                {% if eh_cardio_ex and ultimas and ultimas[0].duracao_segundos %}
-                                <div class="dash-registro-badges">
-                                    <span class="dash-badge dash-badge--cardio">Última: {{ '%g'|format(((ultimas[0].duracao_segundos / 60)|round(1))) }} min{% if ultimas[0].distancia_km %} · {{ '%g'|format(ultimas[0].distancia_km) }} km{% endif %}</span>
-                                </div>
-                                {% elif ultimas and not eh_cardio_ex %}
-                                <div class="dash-registro-badges">
-                                    <span class="dash-badge">{{ ultimas[0].carga }}kg</span>
-                                    <span class="dash-badge">{{ ultimas[0].repeticoes }}x</span>
-                                    <span class="dash-badge">{{ ultimas|length }} série{{ 's' if ultimas|length != 1 }}</span>
-                                </div>
-                                {% endif %}
-                            </div>
-                            {% if ex.passos_pt %}
-                            <div class="dash-registro-icon">
-                                {{ botao_instrucoes_exercicio(ex) }}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    {% if not eh_cardio_ex %}
-                    <!-- Carga / Reps / Séries -->
-                    <div class="col-12 col-md-6">
-                        <div class="exercicio-valores-grid">
-                            <div class="inputs-row-labels">
-                                <span class="inputs-row-label">Carga</span>
-                                <span class="inputs-row-label">Repetições</span>
-                                <span class="inputs-row-label">Séries</span>
-                            </div>
-                            <div class="exercicio-switch-wrap">
-                                <div class="form-check mb-0">
-                                    <input class="form-check-input exercicio-switch" type="checkbox"
-                                           id="ativo-{{ chave_ex }}"
-                                           data-target-exercicio="{{ chave_ex }}"
-                                           checked
-                                           aria-label="Vou treinar {{ ex.nome }} hoje">
-                                </div>
-                            </div>
-                            <div class="inputs-row">
-                                <div>
-                                    <input type="number" name="carga_{{ chave_ex }}"
-                                           class="form-control carga-input"
-                                           placeholder="0"
-                                           step="0.5" min="0"
-                                           inputmode="decimal"
-                                           aria-label="Carga em quilos"
-                                           value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].carga }}{% elif ultima_carga %}{{ ultima_carga }}{% endif %}">
-                                    </div>
-
-                                    <div>
-                                        <input type="number" name="reps_{{ chave_ex }}"
-                                               class="form-control reps-input"
-                                               placeholder="0"
-                                               min="0" max="100"
-                                               inputmode="numeric"
-                                               aria-label="Repetições"
-                                               value="{% if registro_atual and registro_atual.series %}{{ registro_atual.series[0].repeticoes }}{% elif ultimas_reps %}{{ ultimas_reps }}{% endif %}">
-                                    </div>
-
-                                    <div>
-                                        <select name="num_series_{{ chave_ex }}" id="series-select-{{ chave_ex }}" 
-                                                class="form-select">
-                                            {% for n in range(1, max_opcoes + 1) %}
-                                            <option value="{{ n }}" {% if series_selecionadas == n %}selected{% endif %}>{{ n }} série{{ 's' if n != 1 }}</option>
-                                            {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                        <div class="exercicio-marcar-feito-wrap">
-                            <button type="button" class="btn-marcar-feito"
-                                    data-target-exercicio="{{ chave_ex }}"
-                                    aria-pressed="false"
-                                    aria-label="Marcar {{ ex.nome }} como feito">
-                                <i class="bi bi-check-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-                    {% else %}
-                    <!-- CARDIO (modo_registro='tempo', services/cardio.py): tipo,
-                         tempo, km e intensidade no lugar de carga/reps/séries. -->
-                    {% set serie_cardio = registro_atual.series[0] if (registro_atual and registro_atual.series and registro_atual.series[0].eh_cardio) else none %}
-                    {% set ultima_cardio = ultimas[0] if (ultimas and ultimas[0].duracao_segundos) else none %}
-                    {% set fonte_cardio = serie_cardio or ultima_cardio %}
-                    {% set cardio_min = ('%g'|format(((fonte_cardio.duracao_segundos / 60)|round(1)))) if fonte_cardio else '' %}
-                    {% set cardio_km = ('%g'|format(fonte_cardio.distancia_km|float)) if (fonte_cardio and fonte_cardio.distancia_km) else '' %}
-                    {% set cardio_int = (fonte_cardio.intensidade or '') if fonte_cardio else '' %}
-                    <div class="col-12 col-md-6">
-                        <div class="exercicio-valores-grid exercicio-valores-grid--cardio">
-                            <div class="cardio-tipo-wrap">
-                                <label class="visually-hidden" for="cardio-tipo-{{ chave_ex }}">Tipo de cardio</label>
-                                <select class="form-select cardio-campo cardio-tipo" id="cardio-tipo-{{ chave_ex }}" name="cardio_tipo_{{ chave_ex }}">
-                                    {% set chaves_opcoes = opcoes_cardio|map(attribute=1)|list %}
-                                    {% set tipo_sel = ex.cardio_tipo_salvo or chave_ex %}
-                                    {% if chave_ex not in chaves_opcoes %}<option value="{{ chave_ex }}" {% if tipo_sel == chave_ex %}selected{% endif %}>{{ ex.nome }}</option>{% endif %}
-                                    {% if tipo_sel != chave_ex and tipo_sel not in chaves_opcoes %}<option value="{{ tipo_sel }}" selected>{{ ex.cardio_tipo_nome }}</option>{% endif %}
-                                    {% for rotulo, chave_opcao in opcoes_cardio %}
-                                    <option value="{{ chave_opcao }}" {% if chave_opcao == tipo_sel %}selected{% endif %}>{{ rotulo }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="inputs-row-labels">
-                                <span class="inputs-row-label">Minutos</span>
-                                <span class="inputs-row-label">Km</span>
-                                <span class="inputs-row-label">Intensidade</span>
-                            </div>
-                            <div class="exercicio-switch-wrap">
-                                <div class="form-check mb-0">
-                                    <input class="form-check-input exercicio-switch" type="checkbox"
-                                           id="ativo-{{ chave_ex }}"
-                                           data-target-exercicio="{{ chave_ex }}"
-                                           checked
-                                           aria-label="Vou fazer {{ ex.nome }} hoje">
-                                </div>
-                            </div>
-                            <div class="inputs-row">
-                                <div>
-                                    <input type="number" name="duracao_{{ chave_ex }}"
-                                           class="form-control cardio-campo cardio-duracao"
-                                           placeholder="0" step="1" min="0" max="600" inputmode="decimal"
-                                           aria-label="Tempo em minutos" value="{{ cardio_min }}">
-                                </div>
-                                <div>
-                                    <input type="number" name="distancia_{{ chave_ex }}"
-                                           class="form-control cardio-campo cardio-distancia"
-                                           placeholder="—" step="0.1" min="0" max="500" inputmode="decimal"
-                                           aria-label="Distância em km (opcional)" value="{{ cardio_km }}">
-                                </div>
-                                <div>
-                                    <select name="intensidade_{{ chave_ex }}" class="form-select cardio-campo cardio-intensidade"
-                                            aria-label="Intensidade (opcional)">
-                                        <option value="" {% if not cardio_int %}selected{% endif %}>—</option>
-                                        <option value="leve" {% if cardio_int == 'leve' %}selected{% endif %}>Leve</option>
-                                        <option value="moderada" {% if cardio_int == 'moderada' %}selected{% endif %}>Moderada</option>
-                                        <option value="forte" {% if cardio_int == 'forte' %}selected{% endif %}>Forte</option>
-                                    </select>
-                                </div>
-                            </div>
-                        <div class="exercicio-marcar-feito-wrap">
-                            <button type="button" class="btn-marcar-feito"
-                                    data-target-exercicio="{{ chave_ex }}"
-                                    aria-pressed="false"
-                                    aria-label="Marcar {{ ex.nome }} como feito">
-                                <i class="bi bi-check-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-                    {% endif %}
-                    </div>
-                </div>
-
-                {% if not eh_cardio_ex %}
-                <!-- Flag que diz se esse exercício usa valores individuais por
-                     série (tabela abaixo) ou o valor único de sempre -- só
-                     muda pra "individual" se o usuário editar alguma célula
-                     da tabela; até lá o backend usa carga_/reps_ únicos
-                     (multiplicados pela contagem de séries), como sempre
-                     funcionou. -->
-                <input type="hidden" name="modo_series_{{ chave_ex }}" class="modo-series-flag" value="{{ modo_inicial }}">
-
-                <!-- Valores por série (carga/repetições individuais) -- só usados
-                     quando o modal de séries individuais é aberto; até lá ficam
-                     vazios e o backend usa carga_/reps_ únicos (multiplicados
-                     pela contagem de séries), como sempre funcionou. -->
-                <div class="series-individuais-inputs d-none" data-exercicio-id="{{ chave_ex }}">
-                    {% for n in range(1, max_opcoes + 1) %}
-                    <input type="number" step="0.5" min="0"
-                           name="carga_{{ chave_ex }}_{{ n }}" class="carga-serie-input" data-serie="{{ n }}"
-                           value="{% if series_atual|length >= n %}{{ series_atual[n-1].carga }}{% endif %}">
-                    <input type="number" min="0" max="100"
-                           name="reps_{{ chave_ex }}_{{ n }}" class="reps-serie-input" data-serie="{{ n }}"
-                           value="{% if series_atual|length >= n %}{{ series_atual[n-1].repeticoes }}{% endif %}">
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </div>
-            {% if not eh_cardio_ex %}
-            <button type="button" class="btn-abrir-series-modal"
-                    data-bs-toggle="modal" data-bs-target="#modalSeriesIndividuais"
-                    data-exercicio-id="{{ chave_ex }}"
-                    data-exercicio-nome="{{ ex.nome }}"
-                    data-exercicio-musculo="{{ ex.musculo or '' }}"
-                    data-exercicio-musculos-secundarios="{{ ex.musculos_secundarios_lista|join(', ') if ex.musculos_secundarios_lista else '' }}"
-                    data-gif-url="{{ ex.gif_url or '' }}"
-                    data-instrucoes-nome="{{ ex.nome }}"
-                    data-instrucoes-passos="{% if ex.passos_pt %}{{ ex.passos_pt | tojson | forceescape }}{% endif %}"
-                    data-ultima-carga="{{ ultima_carga }}"
-                    data-ultimas-reps="{{ ultimas_reps }}"
-                    data-ultimas-series="{{ ultimas_series }}"
-                    aria-label="Lançar séries com valores individuais de {{ ex.nome }}">
-                <i class="bi bi-chevron-right"></i>
-            </button>
-            {% else %}
-            <button type="button" class="btn-abrir-series-modal btn-abrir-cardio-modal"
-                    data-bs-toggle="modal" data-bs-target="#modalCardio"
-                    data-exercicio-id="{{ chave_ex }}"
-                    aria-label="Detalhes do cardio {{ ex.nome }}">
-                <i class="bi bi-chevron-right"></i>
-            </button>
-            {% endif %}
-            </div>
+                {% include 'register/_linha_exercicio.html' %}
 {% endfor %}
 
             {% if treino_selecionado %}
@@ -5493,6 +5235,7 @@ window.FitLogCardio = (function () {
         const row = wrap.querySelector('.exercise-row');
         const remover = wrap.querySelector('.btn-remover-avulso');
         if (remover) {
+            remover.dataset.removerLigado = '1'; // não ligar de novo em ligarRemoverAvulso
             remover.addEventListener('click', function () {
                 const form = wrap.closest('form');
                 wrap.remove();
@@ -6064,11 +5807,63 @@ function inicializarModalSeriesIndividuais() {
 }
 
 /* Exercício avulso: seletor (busca + clique adiciona) e botão de
-   remover nos cards já avulsos. Adicionar recarrega a página com
-   ?avulso=<chave> -- mesmo padrão de navegação que trocar treino/data
-   já usa nesta tela (ver #formBusca), então o novo card vem pronto,
-   renderizado pelo servidor com a mesma estrutura de sempre, sem
-   precisar montar HTML complexo via JS. */
+   remover nos cards já avulsos. Adicionar busca o card pronto no
+   servidor (/registrar/linha-avulsa, mesmo template do loop da página:
+   register/_linha_exercicio.html) e insere na lista SEM recarregar --
+   antes recarregava a página inteira com ?avulso=<chave>, e no modo
+   treino parecia que o app fechava e abria de novo. A chave continua indo
+   pra URL (replaceState), então atualizar a página mantém o card. Se a
+   busca falhar, cai no recarregamento antigo. */
+function ligarRemoverAvulso(btn) {
+    if (!btn || btn.dataset.removerLigado) return;
+    btn.dataset.removerLigado = '1';
+    btn.addEventListener('click', function () {
+        const chave = this.dataset.exercicioId;
+        const wrap = this.closest('.exercise-row-wrap');
+        const form = wrap ? wrap.closest('form') : null;
+        if (wrap) wrap.remove();
+
+        // Tira o ?avulso=<chave> da URL (se veio de lá) pra não
+        // reaparecer numa atualização da página -- se já tinha
+        // registro salvo de antes, sair sem essa chave no próximo
+        // "Salvar" já é suficiente pra remover de vez (o save
+        // substitui a sessão inteira, ver RegistroService.salvar_registros).
+        const url = new URL(window.location.href);
+        const valores = url.searchParams.getAll('avulso').filter(v => v !== chave);
+        url.searchParams.delete('avulso');
+        valores.forEach(v => url.searchParams.append('avulso', v));
+        window.history.replaceState(null, '', url.toString());
+        if (typeof atualizarResumo === 'function') atualizarResumo();
+        if (form) form.dispatchEvent(new Event('change', { bubbles: true })); // rascunho
+    });
+}
+
+/* Liga num card inserido depois do carregamento o que a página liga card
+   a card ao abrir (switch "vou fazer", seleção ao focar, remover, feito,
+   nome truncado, popover de músculos). Resumo e rascunho escutam o
+   formulário inteiro e já enxergam o card novo sozinhos. */
+function ligarLinhaExercicio(wrap) {
+    const row = wrap.querySelector('.exercise-row');
+    if (!row) return;
+    const sw = row.querySelector('.exercicio-switch');
+    if (sw) {
+        aplicarEstadoExercicio(row, sw.checked);
+        sw.addEventListener('change', function () {
+            aplicarEstadoExercicio(row, this.checked);
+            atualizarResumo();
+        });
+    }
+    row.querySelectorAll('.carga-input, .reps-input, .cardio-duracao, .cardio-distancia').forEach(function (input) {
+        input.addEventListener('focus', function () { this.select(); });
+        input.addEventListener('mouseup', function (e) { if (document.activeElement === this) e.preventDefault(); });
+    });
+    wrap.querySelectorAll('.btn-remover-avulso').forEach(ligarRemoverAvulso);
+    inicializarBotoesMarcarFeito();
+    inicializarTruncamentoNomesExercicio();
+    inicializarPopoverDescricaoExercicio();
+    atualizarResumo();
+}
+
 function inicializarAvulsoExercicio() {
     const buscaInput = document.getElementById('avulsoPickerBusca');
     const lista = document.getElementById('avulsoPickerLista');
@@ -6086,33 +5881,67 @@ function inicializarAvulsoExercicio() {
             if (vazioEl) vazioEl.classList.toggle('d-none', algumVisivel);
         });
 
-        lista.addEventListener('click', function (evt) {
+        let adicionando = false;
+        lista.addEventListener('click', async function (evt) {
             const item = evt.target.closest('.avulso-picker-item');
-            if (!item) return;
-            const url = new URL(window.location.href);
-            url.searchParams.append('avulso', item.dataset.chave);
-            window.location.href = url.toString();
+            if (!item || adicionando) return;
+            const chave = item.dataset.chave;
+            const modalEl = document.getElementById('modalAdicionarAvulso');
+            const fecharModal = function () {
+                if (modalEl && window.bootstrap) bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+            };
+            const urlRecarregar = new URL(window.location.href);
+            urlRecarregar.searchParams.append('avulso', chave);
+
+            // Já está na lista (da ficha ou adicionado antes): só mostra.
+            const existente = document.querySelector('.exercise-row[data-exercicio-id="' + CSS.escape(chave) + '"]');
+            if (existente) {
+                fecharModal();
+                (existente.closest('.exercise-row-wrap') || existente).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                document.dispatchEvent(new CustomEvent('fitlog:linha-adicionada', { detail: { row: existente } }));
+                return;
+            }
+
+            const form = document.getElementById('registroForm');
+            const treino = form && form.querySelector('input[name="treino"]');
+            const data = form && form.querySelector('input[name="data"]');
+            const ancora = document.querySelector('.acoes-adicionar');
+            if (!form || !treino || !data || !ancora) { window.location.href = urlRecarregar.toString(); return; }
+
+            adicionando = true;
+            item.classList.add('is-carregando');
+            item.setAttribute('aria-busy', 'true');
+            try {
+                const params = new URLSearchParams({ treino: treino.value, data: data.value, chave: chave });
+                const resp = await fetch('/registrar/linha-avulsa?' + params.toString(), {
+                    credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' }
+                });
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                const tmp = document.createElement('div');
+                tmp.innerHTML = (await resp.text()).trim();
+                const wrap = tmp.querySelector('.exercise-row-wrap');
+                if (!wrap) throw new Error('card vazio');
+
+                ancora.parentNode.insertBefore(wrap, ancora);
+                ligarLinhaExercicio(wrap);
+                window.history.replaceState(null, '', urlRecarregar.toString());
+                fecharModal();
+                form.dispatchEvent(new Event('change', { bubbles: true })); // rascunho
+                const row = wrap.querySelector('.exercise-row');
+                document.dispatchEvent(new CustomEvent('fitlog:linha-adicionada', { detail: { row: row } }));
+                wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } catch (e) {
+                // Sem rede ou erro no servidor: comportamento antigo.
+                window.location.href = urlRecarregar.toString();
+            } finally {
+                adicionando = false;
+                item.classList.remove('is-carregando');
+                item.removeAttribute('aria-busy');
+            }
         });
     }
 
-    document.querySelectorAll('.btn-remover-avulso').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            const chave = this.dataset.exercicioId;
-            const wrap = this.closest('.exercise-row-wrap');
-            if (wrap) wrap.remove();
-
-            // Tira o ?avulso=<chave> da URL (se veio de lá) pra não
-            // reaparecer numa atualização da página -- se já tinha
-            // registro salvo de antes, sair sem essa chave no próximo
-            // "Salvar" já é suficiente pra remover de vez (o save
-            // substitui a sessão inteira, ver RegistroService.salvar_registros).
-            const url = new URL(window.location.href);
-            const valores = url.searchParams.getAll('avulso').filter(v => v !== chave);
-            url.searchParams.delete('avulso');
-            valores.forEach(v => url.searchParams.append('avulso', v));
-            window.history.replaceState(null, '', url.toString());
-        });
-    });
+    document.querySelectorAll('.btn-remover-avulso').forEach(ligarRemoverAvulso);
 }
 
 /* ================= TREINO EM ANDAMENTO -- 3 PAINÉIS (DESKTOP) =================
@@ -6513,7 +6342,13 @@ function inicializarPainelTresColunas() {
             renderLista();
         }).observe(form, { attributes: true, attributeFilter: ['class'], subtree: true, childList: true });
     }
-    // "+ Cardio" em tela cheia: já abre o cardio novo no painel central.
+    // "+ Cardio" / "+ Exercício" em tela cheia: já abre o card novo no
+    // painel central.
+    document.addEventListener('fitlog:linha-adicionada', function (evt) {
+        const row = evt.detail && evt.detail.row;
+        if (!row || !listaEl || !overlay.classList.contains('mt3-ativo')) return;
+        selecionar(row.dataset.exercicioId);
+    });
     document.addEventListener('fitlog:cardio-adicionado', function (evt) {
         const row = evt.detail && evt.detail.row;
         if (!row || !listaEl || !overlay.classList.contains('mt3-ativo')) return;
