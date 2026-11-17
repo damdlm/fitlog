@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, abort, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, abort, session, make_response
 from utils.validators import erro_tamanho_campos, erros_senha, validar_email
 from flask_login import login_required, current_user
 from models import db, User, AlunoProfessor, RegistroTreino, SolicitacaoVinculo, VersaoGlobal, HistoricoTreino, TreinoVersao
@@ -990,6 +990,28 @@ def clonar_minha_versao_aluno(aluno_id):
     )
 
 
+@professor_bp.route('/aluno/<int:aluno_id>/catalogo-exercicios/cards')
+@login_required
+@professor_acesso_alunos_required
+def catalogo_cards_aluno(aluno_id):
+    """Cartões do catálogo do aluno para o modal "Editar treino" da versão
+    dele -- mesmo papel de aluno.catalogo_cards (ver lá), com a checagem
+    de posse do aluno. Chamada por fetch: acesso negado vira 403, sem
+    redirect/flash."""
+    aluno = db.session.get(User, aluno_id)
+    if not aluno or not (current_user.is_admin or (
+            current_user.is_professor() and aluno.get_professor()
+            and aluno.get_professor().id == current_user.id)):
+        return '', 403
+    resp = make_response(render_template(
+        'aluno/_etv_cards.html',
+        exercicios_catalogo=ExercicioService.get_exercicios_completos(user_id=aluno.id),
+        novo_exercicio_url=url_for('professor.novo_exercicio_aluno', aluno_id=aluno.id),
+    ))
+    resp.headers['Cache-Control'] = 'private, no-store'
+    return resp
+
+
 @professor_bp.route('/aluno/<int:aluno_id>/versao/<int:versao_id>')
 @login_required
 @professor_acesso_alunos_required
@@ -1052,6 +1074,7 @@ def ver_versao_aluno(aluno_id, versao_id):
         salvar_treino_url=lambda tv_id: url_for('professor.versao_salvar_treino_aluno', aluno_id=aluno.id, versao_id=versao.id, treino_versao_id=tv_id),
         remover_treino_url=lambda tv_id: url_for('professor.versao_remover_treino_aluno', aluno_id=aluno.id, versao_id=versao.id, treino_versao_id=tv_id),
         novo_exercicio_url=url_for('professor.novo_exercicio_aluno', aluno_id=aluno.id),
+        catalogo_url=url_for('professor.catalogo_cards_aluno', aluno_id=aluno.id),
         reordenar_url=url_for('professor.reordenar_exercicios_aluno', aluno_id=aluno.id),
     )
 

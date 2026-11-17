@@ -101,6 +101,8 @@ def cadastrar_treinos():
         treino_exercicios_map=treino_exercicios_map,
         treino_observacoes_map=treino_observacoes_map,
         max_treinos=VersaoService.MAX_TREINOS_POR_VERSAO,
+        catalogo_url=url_for('aluno.catalogo_cards') if versao_ativa else None,
+        novo_exercicio_url=url_for('aluno.novo_exercicio'),
     )
 
 

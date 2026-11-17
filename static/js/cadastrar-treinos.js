@@ -140,6 +140,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 modalInstance.show(btn);
             };
+            // O catálogo de exercícios chega sob demanda (ver
+            // editar-treino-versao.js) e normalmente já foi baixado em
+            // segundo plano. Se ainda não, o clique adianta o download; o
+            // modal mostra "Carregando exercícios…" e marca os exercícios
+            // do treino quando a lista chega (evento 'etv:carregado').
+            window.FitLogCatalogoEtv?.carregar().catch(function () {});
             if (modalFechando) {
                 // Ainda terminando de fechar (Cancelar/troca rápida de
                 // treino) -- espera terminar antes de reabrir com os
@@ -280,6 +286,33 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         chipTodos?.click();
 
+        selecaoAtual = treinoVersaoId;
+        aplicarSelecao(treinoVersaoId);
+
+        // Restaura o botão que abriu o modal ao estado normal -- o
+        // spinner (ver listener de 'click' acima) já cumpriu seu papel.
+        // (a rede de segurança em 'hidden.bs.modal' cobre os casos em
+        // que este evento não dispara.)
+        if (trigger.classList.contains('ct-btn-editar-exercicios')) {
+            if (trigger.dataset.htmlOriginal) {
+                trigger.innerHTML = trigger.dataset.htmlOriginal;
+                delete trigger.dataset.htmlOriginal;
+            }
+            trigger.classList.remove('ct-is-loading');
+        }
+    });
+
+    // Treino cujos exercícios estão marcados no modal agora (null: modal
+    // fechado). Se o catálogo chegar com o modal já aberto (abertura que
+    // não passou pela espera do botão, ou "Tentar de novo" depois de uma
+    // falha), a marcação é refeita -- antes disso a grade estava vazia.
+    let selecaoAtual = null;
+    modalExercicios.addEventListener('hidden.bs.modal', function () { selecaoAtual = null; });
+    grid?.addEventListener('etv:carregado', function () {
+        if (selecaoAtual !== null) aplicarSelecao(selecaoAtual);
+    });
+
+    function aplicarSelecao(treinoVersaoId) {
         const mapa = window.CT_TREINO_EXERCICIOS || {};
         const mapaObs = window.CT_TREINO_OBSERVACOES || {};
         const idsOrdem = mapa[treinoVersaoId] || [];
@@ -330,17 +363,5 @@ document.addEventListener('DOMContentLoaded', function () {
         // editar-treino-versao.js.
         grid?.dispatchEvent(new CustomEvent('etv:contador'));
         grid?.dispatchEvent(new CustomEvent('etv:reordenar', { detail: { ordemIds: idsOrdem } }));
-
-        // Restaura o botão que abriu o modal ao estado normal -- o
-        // spinner (ver listener de 'click' acima) já cumpriu seu papel.
-        // (a rede de segurança em 'hidden.bs.modal' cobre os casos em
-        // que este evento não dispara.)
-        if (trigger.classList.contains('ct-btn-editar-exercicios')) {
-            if (trigger.dataset.htmlOriginal) {
-                trigger.innerHTML = trigger.dataset.htmlOriginal;
-                delete trigger.dataset.htmlOriginal;
-            }
-            trigger.classList.remove('ct-is-loading');
-        }
-    });
+    }
 });

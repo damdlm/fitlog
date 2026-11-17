@@ -15,7 +15,7 @@ continuam aplicadas pelo service independente disso.
 import logging
 from collections import Counter
 
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, make_response
 from flask_login import login_required, current_user
 
 from . import aluno_bp
@@ -118,8 +118,27 @@ def ver_versao(versao_id):
         salvar_treino_url=lambda tv_id: url_for('aluno.versao_salvar_treino', versao_id=versao.id, treino_versao_id=tv_id),
         remover_treino_url=lambda tv_id: url_for('aluno.versao_remover_treino', versao_id=versao.id, treino_versao_id=tv_id),
         novo_exercicio_url=url_for('aluno.novo_exercicio'),
+        catalogo_url=url_for('aluno.catalogo_cards'),
         reordenar_url=url_for('api.api_reordenar_exercicios'),
     )
+
+
+@aluno_bp.route('/catalogo-exercicios/cards')
+@login_required
+def catalogo_cards():
+    """Cartões do catálogo para o modal "Editar treino" (ficha ativa e
+    detalhe de versão). Vem à parte porque são ~1.350 exercícios: as
+    telas abrem sem eles e o navegador busca esta lista em segundo
+    plano (static/js/editar-treino-versao.js)."""
+    if not current_user.pode_gerenciar_treino_proprio():
+        return '', 403  # chamada por fetch: sem redirect/flash
+    resp = make_response(render_template(
+        'aluno/_etv_cards.html',
+        exercicios_catalogo=ExercicioService.get_exercicios_completos(user_id=current_user.id),
+        novo_exercicio_url=url_for('aluno.novo_exercicio'),
+    ))
+    resp.headers['Cache-Control'] = 'private, no-store'
+    return resp
 
 
 @aluno_bp.route('/versao/<int:versao_id>/editar', methods=['POST'])

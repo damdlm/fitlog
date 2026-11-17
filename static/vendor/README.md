@@ -31,6 +31,28 @@ Antes: Bootstrap CSS/JS e Bootstrap Icons vinham do CDN externo
   tela Registrar Treino (`static/js/registrar-treino-tour.js`). Global exposto:
   `window.driver.js.driver`.
 
+- `chartjs/` — Chart.js **4.5.1** (MIT), `chart.umd.min.js` (+ `.map`) + `LICENSE`,
+  do pacote npm `chart.js@4.5.1` (pasta `dist/`). Gráficos de Progresso, painel,
+  calendário e telas do professor. Global: `window.Chart`.
+
+- `fullcalendar/` — FullCalendar **5.11.3** (MIT), `main.min.js`, `main.min.css`,
+  `locales/pt-br.js` + `LICENSE`, do pacote npm `fullcalendar@5.11.3`. Usado no
+  calendário (`templates/calendar/calendario.html`). Global: `window.FullCalendar`.
+
+- `html2canvas/` — html2canvas **1.4.1** (MIT), `html2canvas.min.js` + `LICENSE`,
+  do pacote npm `html2canvas@1.4.1` (pasta `dist/`). Imagem de compartilhar do
+  Registrar Treino.
+
+- `sortablejs/` — SortableJS **1.15.7** (MIT), `Sortable.min.js` + `LICENSE`, do
+  pacote npm `sortablejs@1.15.7`. Arrastar para reordenar exercícios nas telas de
+  ficha (`cadastrar_treinos.html`, `ver_versao.html`).
+
+Esses quatro vinham de `cdn.jsdelivr.net` (com reserva no `cdnjs`); os arquivos
+daqui são byte a byte os mesmos (hash SHA-384 igual ao `integrity` que as
+páginas usavam). Servidos localmente, deixam de falhar quando o CDN é bloqueado
+ou lento na rede do aluno, e as páginas usam `static_v()` para trocar o cache a
+cada deploy.
+
 ## Como atualizar a versão no futuro
 
 ```bash

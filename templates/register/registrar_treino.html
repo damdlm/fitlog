@@ -286,6 +286,10 @@
     .acoes-adicionar { display: flex; gap: 10px; }
     .acoes-adicionar .btn-adicionar-avulso { flex: 1 1 0; }
     .avulso-picker-item.is-carregando { opacity: .55; pointer-events: none; }
+    /* R8: lista do "+ Exercício" chega sob demanda (_avulso_lista.html) */
+    .avulso-picker-item.is-no-treino { display: none !important; }
+    .avulso-picker-carregando { display: flex; align-items: center; justify-content: center; padding: 32px 0; color: var(--text-muted, #6c757d); font-size: .9rem; }
+    .avulso-picker-carregando.is-erro { color: var(--danger, #dc3545); }
     /* "+ Exercício" / "+ Cardio": neutros (fundo branco, borda fina), só o
        ícone na cor do tipo -- o mesmo ícone/cor dos cards (bi-activity
        laranja na força, bi-heart-pulse teal no cardio). */
@@ -4081,8 +4085,6 @@
      inteiro (próprios + globais), já sem os que estão no treino agora
      (oficiais ou avulsos já adicionados), com busca client-side por
      nome/músculo. Escolher um recarrega a página com ?avulso=<chave>. -->
-{% set chaves_no_treino = [] %}
-{% for ex in exercicios %}{% set _ = chaves_no_treino.append(ex.prefixo ~ ex.id) %}{% endfor %}
 <div class="modal fade" id="modalAdicionarAvulso" tabindex="-1" aria-labelledby="avulsoPickerTitulo" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
@@ -4098,20 +4100,10 @@
                     <i class="bi bi-search"></i>
                     <input type="text" id="avulsoPickerBusca" placeholder="Buscar por nome ou músculo...">
                 </div>
-                <div class="avulso-picker-lista" id="avulsoPickerLista">
-                    {% for ex in exercicios_catalogo %}
-                    {% set chave_cat = ex.prefixo ~ ex.id %}
-                    {% if chave_cat not in chaves_no_treino %}
-                    <button type="button" class="avulso-picker-item"
-                            data-chave="{{ chave_cat }}"
-                            data-nome="{{ ex.nome|lower }}"
-                            data-apelidos="{{ (ex.nicknames|join(' '))|lower if ex.nicknames else '' }}"
-                            data-musculo="{{ (ex.musculo or '')|lower }}">
-                        <span class="avulso-picker-nome">{{ ex.nome }}</span>
-                        {% if ex.musculo %}<span class="avulso-picker-musculo">{{ ex.musculo }}</span>{% endif %}
-                    </button>
-                    {% endif %}
-                    {% endfor %}
+                <div class="avulso-picker-lista" id="avulsoPickerLista" data-url="{{ url_for('register.catalogo_avulso') }}">
+                    <div class="avulso-picker-carregando" data-avulso-carregando role="status">
+                        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Carregando exercícios…
+                    </div>
                 </div>
                 <p class="text-muted small text-center py-3 d-none" id="avulsoPickerVazio">
                     Nenhum exercício encontrado.
@@ -5904,7 +5896,52 @@ function inicializarAvulsoExercicio() {
             return (t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
         };
         let indice = null;
+
+        // R8: a lista chega quando o modal abre (rota catalogo_avulso).
+        // Os que já estão no treino ficam escondidos (is-no-treino) --
+        // recalculado a cada abertura, porque avulsos entram e saem.
+        let listaPromessa = null;
+        let listaPronta = false;
+        const carregandoHtml = '<div class="avulso-picker-carregando" data-avulso-carregando role="status">' +
+            '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Carregando exercícios…</div>';
+        const ocultarJaNoTreino = function () {
+            const noTreino = new Set(Array.from(document.querySelectorAll('.exercise-row[data-exercicio-id]'))
+                .map(function (r) { return r.dataset.exercicioId; }));
+            lista.querySelectorAll('.avulso-picker-item').forEach(function (item) {
+                item.classList.toggle('is-no-treino', noTreino.has(item.dataset.chave));
+            });
+        };
+        const carregarLista = function () {
+            if (listaPronta) return Promise.resolve();
+            if (listaPromessa) return listaPromessa;
+            listaPromessa = fetch(lista.dataset.url, { credentials: 'same-origin' })
+                .then(function (resp) {
+                    if (!resp.ok || resp.redirected) throw new Error('HTTP ' + resp.status);
+                    return resp.text();
+                })
+                .then(function (html) {
+                    lista.innerHTML = html;
+                    listaPronta = true;
+                    indice = null;
+                    ocultarJaNoTreino();
+                    if (buscaInput.value.trim()) buscaInput.dispatchEvent(new Event('input'));
+                })
+                .catch(function () {
+                    listaPromessa = null;
+                    lista.innerHTML = '<div class="avulso-picker-carregando is-erro" data-avulso-carregando>' +
+                        'Não foi possível carregar os exercícios.' +
+                        ' <button type="button" class="btn btn-link btn-sm p-0 ms-1" data-avulso-recarregar>Tentar de novo</button></div>';
+                });
+            return listaPromessa;
+        };
+        const modalAvulsoEl = document.getElementById('modalAdicionarAvulso');
+        modalAvulsoEl?.addEventListener('show.bs.modal', function () {
+            if (listaPronta) ocultarJaNoTreino();
+            else carregarLista();
+        });
+
         buscaInput.addEventListener('input', function () {
+            if (!listaPronta) return;
             if (!indice) {
                 indice = Array.from(lista.querySelectorAll('.avulso-picker-item')).map(function (item) {
                     return { item: item, texto: semAcento([item.dataset.nome, item.dataset.apelidos, item.dataset.musculo].join(' ')) };
@@ -5915,13 +5952,18 @@ function inicializarAvulsoExercicio() {
             indice.forEach(function (i) {
                 const bate = !palavras.length || palavras.every(function (p) { return i.texto.includes(p); });
                 i.item.classList.toggle('d-none', !bate);
-                if (bate) algumVisivel = true;
+                if (bate && !i.item.classList.contains('is-no-treino')) algumVisivel = true;
             });
             if (vazioEl) vazioEl.classList.toggle('d-none', algumVisivel);
         });
 
         let adicionando = false;
         lista.addEventListener('click', async function (evt) {
+            if (evt.target.closest('[data-avulso-recarregar]')) {
+                lista.innerHTML = carregandoHtml;
+                carregarLista();
+                return;
+            }
             const item = evt.target.closest('.avulso-picker-item');
             if (!item || adicionando) return;
             const chave = item.dataset.chave;
@@ -7296,7 +7338,7 @@ function tocarBipe() {
 </script>
 
 <!-- html2canvas: usado só para gerar a imagem do resumo do treino para compartilhar -->
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
+<script src="{{ static_v('vendor/html2canvas/html2canvas.min.js') }}"></script>
 
 <script>
 /* ====== Modal de resumo do treino: montagem do card + compartilhamento ====== */

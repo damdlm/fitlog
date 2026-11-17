@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, make_response
 from flask_login import login_required, current_user
 from datetime import datetime, timezone
 from services.versao_service import VersaoService
@@ -114,6 +114,21 @@ def _mapa_registros(registros):
     return mapa
 
 
+@register_bp.route("/catalogo-avulso", methods=["GET"])
+@login_required
+def catalogo_avulso():
+    """Lista do "+ Exercício" (catálogo completo: próprios + globais),
+    buscada pelo modal só quando ele abre. Antes vinha embutida em toda
+    tela de registro (~900 KB de HTML, ~1.350 itens) mesmo sem ninguém
+    tocar no botão."""
+    resp = make_response(render_template(
+        "register/_avulso_lista.html",
+        exercicios_catalogo=ExercicioService.get_exercicios_completos(user_id=current_user.id),
+    ))
+    resp.headers['Cache-Control'] = 'private, no-store'
+    return resp
+
+
 @register_bp.route("/linha-avulsa", methods=["GET"])
 @login_required
 def linha_avulsa():
@@ -217,7 +232,6 @@ def registrar_treino():
     versao_info = None
     erro_versao = None
     treinos_disponiveis = []
-    exercicios_catalogo = []
     cardios_salvos = []
     
     # Validar a data e converter para objeto date
@@ -321,10 +335,8 @@ def registrar_treino():
                     versao_id=versao_ativa.id
                 )
 
-                # Catálogo completo (próprios + globais) pro seletor do botão
-                # "Adicionar exercício" -- mesma função já usada em
-                # cadastrar_treinos.html pro mesmo tipo de busca/seleção.
-                exercicios_catalogo = ExercicioService.get_exercicios_completos(user_id=current_user.id)
+                # O catálogo do "+ Exercício" não vem mais aqui: o modal
+                # busca a lista quando abre (catalogo_avulso, abaixo).
     
     opcoes_cardio = opcoes_tipo_cardio() if treino_selecionado else []
     return render_template(
@@ -338,7 +350,6 @@ def registrar_treino():
         historico_series=historico_series,
         versao_info=versao_info,
         erro_versao=erro_versao,
-        exercicios_catalogo=exercicios_catalogo,
         # Combo "tipo de cardio" e modal "Cardio" (services/cardio.py).
         opcoes_cardio=opcoes_cardio,
         # Linha nova do "+ Cardio" já vem preenchida (último cardio ou padrão).

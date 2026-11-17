@@ -69,7 +69,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const etvOcultosPorId = new Map();
     let etvMaterializado = !grid?.classList.contains('etv-grid-static');
 
-    if (!etvMaterializado) {
+    function etvGuardarExcedentes() {
+        if (etvMaterializado) return;
         itens().slice(ETV_LOTE_INICIAL).forEach(function (card) {
             const id = card.dataset.valor;
             if (!id) return;
@@ -210,7 +211,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         if (semResultados) {
-            semResultados.classList.toggle('d-none', visiveis !== 0);
+            // Lista ainda chegando (ou falhou): o aviso de lá já explica.
+            semResultados.classList.toggle('d-none', visiveis !== 0 || !catalogoPronto);
         }
     }
 
@@ -293,9 +295,97 @@ document.addEventListener('DOMContentLoaded', function () {
         atualizarContador();
     }
 
-    checkboxes().forEach(cb => {
-        cb.addEventListener('change', () => onCheckboxChange(cb));
+    // Prepara os cards que estão na grade: guarda o excedente (ver acima)
+    // e liga o 'change' dos que ficaram no DOM. Roda uma vez -- no
+    // carregamento da página quando os cards vêm no HTML, ou quando a
+    // lista do catálogo chega (carregarCatalogo, abaixo).
+    function etvPrepararGrade() {
+        etvGuardarExcedentes();
+        checkboxes().forEach(cb => {
+            cb.addEventListener('change', () => onCheckboxChange(cb));
+        });
+    }
+
+    // -----------------------------------------------------
+    // Catálogo sob demanda
+    // -----------------------------------------------------
+    // Nas fichas (cadastrar_treinos.html / ver_versao.html) o grid vem
+    // vazio, com data-catalogo-url: são ~1.350 exercícios (~4,5 MB de
+    // HTML) que só servem quando o modal "Editar treino" abre. A lista é
+    // buscada em segundo plano logo depois que a página termina de
+    // carregar, e cadastrar-treinos.js espera por ela antes de abrir o
+    // modal (window.FitLogCatalogoEtv.carregar). Sem data-catalogo-url
+    // (tela antiga do professor), os cards vêm no HTML como antes.
+    const catalogoUrl = grid?.dataset.catalogoUrl || '';
+    let catalogoPromessa = null;
+    let catalogoPronto = !catalogoUrl;
+
+    function mostrarErroCatalogo() {
+        const aviso = grid?.querySelector('[data-etv-carregando]');
+        if (!aviso) return;
+        aviso.classList.add('is-erro');
+        aviso.innerHTML = 'Não foi possível carregar os exercícios.' +
+            ' <button type="button" class="btn btn-link btn-sm p-0 ms-1" data-etv-recarregar>Tentar de novo</button>';
+    }
+
+    function carregarCatalogo() {
+        if (catalogoPronto) return Promise.resolve();
+        if (catalogoPromessa) return catalogoPromessa;
+        catalogoPromessa = fetch(catalogoUrl, { credentials: 'same-origin' })
+            .then(function (resp) {
+                // redirected: sessão expirada (login) ou acesso bloqueado
+                // -- nunca colocar uma página inteira dentro da grade.
+                if (!resp.ok || resp.redirected) throw new Error('HTTP ' + resp.status);
+                return resp.text();
+            })
+            .then(function (html) {
+                grid.innerHTML = html;
+                catalogoPronto = true;
+                etvPrepararGrade();
+                atualizarContador();
+                filtrar();
+                grid.dispatchEvent(new CustomEvent('etv:carregado'));
+            })
+            .catch(function (err) {
+                catalogoPromessa = null;
+                mostrarErroCatalogo();
+                throw err;
+            });
+        return catalogoPromessa;
+    }
+
+    window.FitLogCatalogoEtv = {
+        carregar: carregarCatalogo,
+        pronto: function () { return catalogoPronto; }
+    };
+
+    grid?.addEventListener('click', function (e) {
+        const btn = e.target.closest('[data-etv-recarregar]');
+        if (!btn) return;
+        e.preventDefault();
+        const aviso = grid.querySelector('[data-etv-carregando]');
+        if (aviso) {
+            aviso.classList.remove('is-erro');
+            aviso.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Carregando exercícios…';
+        }
+        carregarCatalogo().catch(function () {});
     });
+
+    if (catalogoUrl) {
+        // Busca em segundo plano, sem disputar com o carregamento da tela.
+        const preCarregar = function () { carregarCatalogo().catch(function () {}); };
+        const agendar = function () {
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(preCarregar, { timeout: 3000 });
+            } else {
+                window.setTimeout(preCarregar, 1000);
+            }
+        };
+        if (document.readyState === 'complete') agendar();
+        else window.addEventListener('load', agendar, { once: true });
+    } else {
+        etvPrepararGrade();
+    }
 
     // O card inteiro é um <label for="..."> (facilita o alvo de toque),
     // mas o comportamento padrão do label é repassar QUALQUER clique
@@ -449,9 +539,17 @@ document.addEventListener('DOMContentLoaded', function () {
                         nome, musculo, descricao
                     });
                     if (resp && resp.success) {
-                        const card = montarCardNovoExercicio(resp.id, nome, musculo);
-                        grid?.prepend(card);
-                        etvPrepararCardNovo(card);
+                        // Com o catálogo sob demanda, a lista pode chegar
+                        // depois -- e já trazendo o exercício recém-criado.
+                        // Espera por ela e reaproveita o card se ele veio.
+                        await carregarCatalogo().catch(function () {});
+                        etvMaterializarPorIds(['u_' + resp.id]);
+                        let card = grid?.querySelector('.etv-card[data-valor="u_' + resp.id + '"]');
+                        if (!card) {
+                            card = montarCardNovoExercicio(resp.id, nome, musculo);
+                            grid?.prepend(card);
+                            etvPrepararCardNovo(card);
+                        }
                         const cb = card.querySelector('.etv-checkbox');
                         if (cb) {
                             cb.checked = true;

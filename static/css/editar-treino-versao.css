@@ -333,6 +333,19 @@
     cursor: not-allowed;
 }
 
+/* Catálogo carregado sob demanda (templates/aluno/_etv_cards.html):
+   aviso enquanto a lista chega -- ocupa a linha inteira da grade. */
+.etv-carregando {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    color: var(--text-muted, #6c757d);
+    font-size: 0.9rem;
+}
+.etv-carregando.is-erro { color: var(--danger, #dc3545); }
+
 .etv-empty-state {
     text-align: center;
     color: #6c757d;

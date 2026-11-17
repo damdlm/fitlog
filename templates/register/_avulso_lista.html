@@ -1,0 +1,8 @@
+{#- Lista do "+ Exercício" do Registrar Treino (catálogo completo: próprios
+    + globais). Servida à parte pela rota register.catalogo_avulso e buscada
+    só quando o modal abre -- ~1.350 itens (~900 KB de HTML) que quase nunca
+    são usados num treino. Os que já estão no treino são escondidos no
+    navegador (classe is-no-treino). Recebe: exercicios_catalogo. -#}
+{%- for ex in exercicios_catalogo %}
+<button type="button" class="avulso-picker-item" data-chave="{{ ex.prefixo ~ ex.id }}" data-nome="{{ ex.nome|lower }}" data-apelidos="{{ (ex.nicknames|join(' '))|lower if ex.nicknames else '' }}" data-musculo="{{ (ex.musculo or '')|lower }}"><span class="avulso-picker-nome">{{ ex.nome }}</span>{% if ex.musculo %}<span class="avulso-picker-musculo">{{ ex.musculo }}</span>{% endif %}</button>
+{%- endfor %}
