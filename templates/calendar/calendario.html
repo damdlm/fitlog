@@ -435,13 +435,33 @@
     /* Mesma cor azul do badge "Avulso" da tela de registro
        (registrar_treino.html: .avulso-badge) -- consistência entre as
        duas telas que mostram esse tipo de exercício. */
+    /* Selo "Cardio": mesmo formato e posição (à direita do nome) do
+       "Avulso" -- no cardio ele substitui o "Avulso", como na tela de
+       registro. */
     .editar-registro-badge-cardio {
-        font-size: 0.68rem; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
-        color: #1F7A8C; background: #DDF0F3; border-radius: 6px; padding: 2px 7px; margin-right: 6px;
+        flex-shrink: 0;
+        font-size: .65rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+        color: #1F7A8C; background: rgba(31, 122, 140, 0.12);
+        padding: 3px 8px; border-radius: 999px; white-space: nowrap;
     }
     .editar-registro-card--cardio { border-left: 4px solid #1F7A8C; }
-    .editar-registro-card--cardio select {
-        width: 100%; border: 1px solid #dee2e6; border-radius: 8px; padding: 6px 4px; background: #fff;
+    /* Minutos/km/intensidade: colunas 3/3/8 (a intensidade "Moderada"
+       precisa de mais espaço que o "N séries" da força) e os campos com
+       o mesmo visual de carga/repetições. */
+    .editar-registro-card--cardio .editar-registro-labels,
+    .editar-registro-card--cardio .editar-registro-inputs { grid-template-columns: 3fr 3fr 8fr; }
+    .editar-registro-card--cardio .editar-registro-inputs input,
+    .editar-registro-card--cardio .editar-registro-inputs select {
+        width: 100%; min-width: 0; height: 40px; font-weight: 700; font-size: 1.05rem;
+        border: 2px solid var(--border-subtle); border-radius: 10px; box-shadow: none;
+        background-color: var(--surface); color: var(--text-primary);
+        transition: border-color .2s, box-shadow .2s;
+    }
+    .editar-registro-card--cardio .editar-registro-inputs input { text-align: center; padding: 3px; }
+    .editar-registro-card--cardio .editar-registro-inputs select { padding: 3px 4px; font-size: .95rem; }
+    .editar-registro-card--cardio .editar-registro-inputs input:focus,
+    .editar-registro-card--cardio .editar-registro-inputs select:focus {
+        outline: none; border-color: #1F7A8C; box-shadow: 0 0 0 3px rgba(31, 122, 140, 0.12);
     }
     .editar-registro-badge-avulso {
         flex-shrink: 0;
@@ -2527,13 +2547,12 @@
             ${marcador}
             <input type="hidden" name="cardio_tipo_${escapeHtml(k)}" value="${escapeHtml(ex.cardio_tipo || k)}">
             <div class="editar-registro-top">
-                <span class="editar-registro-badge-cardio">Cardio</span>
                 <div class="editar-registro-nome">${escapeHtml(ex.nome)}</div>
-                ${ex.avulso ? '<span class="editar-registro-badge-avulso">Avulso</span>' : ''}
                 ${vazio ? '<span class="editar-registro-badge-vazio">Não apontado</span>' : ''}
+                <span class="editar-registro-badge-cardio">Cardio</span>
             </div>
             <div class="editar-registro-labels">
-                <span>Tempo (min)</span>
+                <span>Minutos</span>
                 <span>Km</span>
                 <span>Intensidade</span>
             </div>
