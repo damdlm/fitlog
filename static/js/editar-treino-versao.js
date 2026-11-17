@@ -105,6 +105,53 @@ document.addEventListener('DOMContentLoaded', function () {
     // Traz só IDs específicos de volta, no INÍCIO da lista -- usado pra
     // garantir que os exercícios já marcados num treino apareçam (e
     // fiquem marcados) mesmo que ainda não tivessem sido renderizados.
+    // Desempenho no celular: materializar os ~1.300 cards de uma vez
+    // travava a tela por quase 1 s. Rolando até o fim, eles chegam em lotes
+    // (na ordem do catálogo); a busca materializa só os que batem
+    // (etvIdsOcultosQueBatem, abaixo).
+    const ETV_LOTE_ROLAGEM = 120;
+    function etvMaterializarLote(n) {
+        if (etvMaterializado) return;
+        const tmp = document.createElement('div');
+        const novos = [];
+        let k = 0;
+        for (const [id, html] of etvOcultosPorId) {
+            if (k++ >= n) break;
+            tmp.innerHTML = html;
+            const card = tmp.firstElementChild;
+            etvPrepararCardNovo(card);
+            novos.push(card);
+            etvOcultosPorId.delete(id);
+            etvIndiceOculto.delete(id);
+        }
+        if (!novos.length) { etvMaterializado = true; return; }
+        // Cards que uma busca anterior já trouxe (e que não estão marcados)
+        // voltam pro lugar deles na ordem do catálogo, junto com o lote.
+        const ordem = function (c) { return Number(c.dataset.i); };
+        const primeiro = ordem(novos[0]);
+        const adiantados = itens().filter(function (c) {
+            const cb = c.querySelector('input[type="checkbox"]');
+            return !(cb && cb.checked) && ordem(c) > primeiro;
+        });
+        const frag = document.createDocumentFragment();
+        novos.concat(adiantados).sort(function (a, b) { return ordem(a) - ordem(b); })
+            .forEach(function (c) { frag.appendChild(c); });
+        grid.appendChild(frag);
+        if (!etvOcultosPorId.size) etvMaterializado = true;
+    }
+
+    // Dados de busca dos cards guardados como texto, lidos dos atributos
+    // sem montar DOM (data-nome, data-apelidos, data-musculo, data-i).
+    const etvIndiceOculto = new Map();
+    function etvDesescapar(t) {
+        return (t || '').replace(/&#39;/g, "'").replace(/&#34;|&quot;/g, '"')
+            .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+    }
+    function etvAtributo(html, nome) {
+        const m = new RegExp(' ' + nome + '="([^"]*)"').exec(html);
+        return m ? etvDesescapar(m[1]) : '';
+    }
+
     function etvMaterializarPorIds(ids) {
         if (etvMaterializado || !ids || !ids.length) return;
         const frag = document.createDocumentFragment();
@@ -118,9 +165,11 @@ document.addEventListener('DOMContentLoaded', function () {
             etvPrepararCardNovo(card);
             frag.appendChild(card);
             etvOcultosPorId.delete(id);
+            etvIndiceOculto.delete(id);
             alguma = true;
         });
         if (alguma) grid.prepend(frag);
+        if (!etvOcultosPorId.size) etvMaterializado = true;
     }
 
     // cadastrar-treinos.js dispara isso antes de marcar os checkboxes do
@@ -137,7 +186,9 @@ document.addEventListener('DOMContentLoaded', function () {
     etvScrollContainer?.addEventListener('scroll', function () {
         if (etvMaterializado) return;
         const restante = etvScrollContainer.scrollHeight - etvScrollContainer.scrollTop - etvScrollContainer.clientHeight;
-        if (restante < 600) etvMaterializarTodos();
+        // Com busca ativa, tudo o que bate já está na tela.
+        if (busca && busca.value.trim()) return;
+        if (restante < 600) etvMaterializarLote(ETV_LOTE_ROLAGEM);
     }, { passive: true });
 
     // -----------------------------------------------------
@@ -226,9 +277,28 @@ document.addEventListener('DOMContentLoaded', function () {
         reordenarSelecionados(ultimaOrdemIds);
     }
 
+    function etvIdsOcultosQueBatem(termo) {
+        const ids = [];
+        etvOcultosPorId.forEach(function (html, id) {
+            let d = etvIndiceOculto.get(id);
+            if (!d) {
+                d = {
+                    nome: normalizarBusca(etvAtributo(html, 'data-nome')),
+                    apelidos: etvAtributo(html, 'data-apelidos').split('|').filter(Boolean).map(normalizarBusca),
+                    musculo: normalizarBusca(etvAtributo(html, 'data-musculo'))
+                };
+                etvIndiceOculto.set(id, d);
+            }
+            const nota = U.pontuarBusca ? U.pontuarBusca(termo, d.nome, d.apelidos, d.musculo)
+                : ((d.nome + ' ' + d.apelidos.join(' ')).includes(termo) ? 0 : null);
+            if (nota !== null) ids.push(id);
+        });
+        return ids;
+    }
+
     function filtrar() {
         const termo = normalizarBusca(busca?.value || '');
-        if (termo) etvMaterializarTodos();
+        if (termo && !etvMaterializado) etvMaterializarPorIds(etvIdsOcultosQueBatem(termo));
         let visiveis = 0;
         const achados = [];
 
@@ -393,7 +463,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 return resp.text();
             })
             .then(function (html) {
-                grid.innerHTML = html;
+                if (!etvMaterializado) {
+                    // Só os primeiros ETV_LOTE_INICIAL viram DOM; o resto já é
+                    // guardado como texto, sem passar pelo parser do navegador
+                    // (montar tudo e depois guardar travava o celular ~1 s).
+                    const partes = html.split(/(?=<label class="etv-card")/);
+                    const cabeca = partes.length && partes[0].indexOf('<label class="etv-card"') !== 0 ? partes.shift() : '';
+                    grid.innerHTML = cabeca + partes.slice(0, ETV_LOTE_INICIAL).join('');
+                    partes.slice(ETV_LOTE_INICIAL).forEach(function (h) {
+                        const id = etvAtributo(h, 'data-valor');
+                        if (id) etvOcultosPorId.set(id, h.trim());
+                    });
+                    if (!etvOcultosPorId.size) etvMaterializado = true;
+                } else {
+                    grid.innerHTML = html;
+                }
                 catalogoPronto = true;
                 etvPrepararGrade();
                 atualizarContador();

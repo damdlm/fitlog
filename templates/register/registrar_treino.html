@@ -421,6 +421,10 @@
         text-align: left;
         cursor: pointer;
         transition: background-color 0.15s ease;
+        /* ~1.350 itens: o navegador só calcula layout dos que aparecem
+           (abrir a lista travava o celular). */
+        content-visibility: auto;
+        contain-intrinsic-size: auto 46px;
     }
     .avulso-picker-item:hover,
     .avulso-picker-item:focus-visible {
@@ -5947,7 +5951,14 @@ function inicializarAvulsoExercicio() {
         const U = window.FitLogUtils || {};
         const norm = U.normalizarBusca || semAcento;
         let ordenadoPorBusca = false;
+        // Espera uma pausa na digitação: recalcular e reordenar ~1.350 itens
+        // a cada letra pesava no celular.
+        let buscaTimer = null;
         buscaInput.addEventListener('input', function () {
+            window.clearTimeout(buscaTimer);
+            buscaTimer = window.setTimeout(buscarAvulso, 120);
+        });
+        function buscarAvulso() {
             if (!listaPronta) return;
             if (!indice) {
                 indice = Array.from(lista.querySelectorAll('.avulso-picker-item')).map(function (item) {
@@ -5960,7 +5971,7 @@ function inicializarAvulsoExercicio() {
                     };
                 });
             }
-            const termo = norm(this.value);
+            const termo = norm(buscaInput.value);
             const achados = [];
             let jaNoTreino = 0;
             indice.forEach(function (i) {
@@ -5989,7 +6000,7 @@ function inicializarAvulsoExercicio() {
                 vazioEl.textContent = jaNoTreino ? 'Já está no treino de hoje.' : 'Nenhum exercício encontrado.';
                 vazioEl.classList.toggle('d-none', achados.length > 0);
             }
-        });
+        }
 
         let adicionando = false;
         lista.addEventListener('click', async function (evt) {
