@@ -921,15 +921,19 @@
         appearance: textfield;
     }
 
-    /* Nome do exercício: trunca conforme a largura disponível (que varia
-       com o dispositivo/tela) e mostra o nome completo num popover ao
-       tocar/focar, só quando realmente não coube. */
+    /* Nome do exercício: até 2 linhas (R4 -- os nomes do catálogo são
+       longos e quase todos cortavam em 1 linha); só o que passar disso
+       termina em "…" e mostra o nome completo num popover ao tocar/focar. */
     .exercicio-nome-trunc {
-        display: block;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
         max-width: 100%;
         overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.25;
     }
     .exercicio-nome-trunc.is-truncado {
         cursor: pointer;
@@ -1015,6 +1019,15 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    /* R1: próximo treino da sequência e quando cada um foi feito. */
+    .dash-badge--ultima { font-weight: 600; }
+    .treino-picker-sugerido {
+        display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px;
+        background: rgba(242, 140, 51, 0.14); color: #C96A14;
+        font-size: 0.68rem; font-weight: 700; letter-spacing: .02em; vertical-align: 2px;
+    }
+    .treino-picker-item.is-sugerido:not(.is-selected) { border-color: rgba(242, 140, 51, 0.55); }
+    .treino-picker-ultimo { display: block; font-size: 0.74rem; color: #7a756c; margin-top: 1px; }
     .treino-picker-desc {
         font-size: 0.78rem;
         color: #8a8a8a;
@@ -2040,17 +2053,27 @@
     }
 
     /* Vermelho -- ação de descartar o treino (semáforo: cancelar = vermelho) */
+    /* R5: Cancelar discreto (contorno, e só o ícone no celular) -- o
+       vermelho cheio ao lado do Salvar atraía o toque. A confirmação
+       "Cancelar treino?" continua igual. */
     #top-save-bar .btn-cancel-treino {
-        background: var(--bs-danger, #dc3545);
-        color: #fff;
-        box-shadow: 0 4px 14px rgba(220, 53, 69, 0.28);
+        background: transparent;
+        color: var(--bs-danger, #dc3545);
+        border: 1.5px solid rgba(220, 53, 69, 0.45);
+        box-shadow: none;
     }
 
     #top-save-bar .btn-cancel-treino:hover,
     #top-save-bar .btn-cancel-treino:focus {
-        filter: brightness(1.08);
-        color: #fff;
-        box-shadow: 0 6px 18px rgba(220, 53, 69, 0.38);
+        background: rgba(220, 53, 69, 0.08);
+        color: var(--bs-danger, #dc3545);
+        border-color: var(--bs-danger, #dc3545);
+        box-shadow: none;
+    }
+
+    @media (max-width: 575.98px) {
+        #top-save-bar .btn-cancel-treino .btn-cancel-texto { display: none; }
+        #top-save-bar .top-save-bar-actions .btn-cancel-treino { flex: 0 0 44px !important; width: 44px !important; min-width: 44px; padding: 0 !important; }
     }
 
     #top-save-bar .btn-cancel-treino:active {
@@ -3984,8 +4007,8 @@
             <span class="top-save-bar-crono-value" id="cronoTreinoDisplay">00:00</span>
         </div>
         <div class="top-save-bar-actions">
-            <button type="button" id="btnCancelarTreino" class="btn btn-cancel-treino">
-                <i class="bi bi-x-circle"></i>Cancelar
+            <button type="button" id="btnCancelarTreino" class="btn btn-cancel-treino" aria-label="Cancelar treino" title="Cancelar treino">
+                <i class="bi bi-x-lg"></i><span class="btn-cancel-texto">Cancelar</span>
             </button>
             <button type="submit" name="salvar" form="registroForm" class="btn btn-save" data-fl-no-transition>
                 <i class="bi bi-check-circle"></i>Salvar
@@ -4082,6 +4105,7 @@
                     <button type="button" class="avulso-picker-item"
                             data-chave="{{ chave_cat }}"
                             data-nome="{{ ex.nome|lower }}"
+                            data-apelidos="{{ (ex.nicknames|join(' '))|lower if ex.nicknames else '' }}"
                             data-musculo="{{ (ex.musculo or '')|lower }}">
                         <span class="avulso-picker-nome">{{ ex.nome }}</span>
                         {% if ex.musculo %}<span class="avulso-picker-musculo">{{ ex.musculo }}</span>{% endif %}
@@ -4337,16 +4361,17 @@
                 <div class="treino-picker" id="treinoPicker" role="listbox" aria-label="Selecione o treino">
                     {% for t in treinos_disponiveis %}
                     <button type="button"
-                            class="treino-picker-item {% if treino_selecionado == t.id|string %}is-selected{% endif %}"
+                            class="treino-picker-item {% if treino_selecionado == t.id|string %}is-selected{% endif %}{% if t.sugerido %} is-sugerido{% endif %}"
                             data-treino-id="{{ t.id }}"
                             role="option"
                             aria-selected="{{ 'true' if treino_selecionado == t.id|string else 'false' }}">
                         <span class="treino-picker-badge">{{ t.codigo }}</span>
                         <span class="treino-picker-texto">
-                            <span class="treino-picker-nome">{{ t.nome }}</span>
-                            {% if t.descricao %}
+                            <span class="treino-picker-nome">{{ t.nome }}{% if t.sugerido %} <span class="treino-picker-sugerido">Sugerido</span>{% endif %}</span>
+                            {% if t.descricao and t.descricao != t.nome %}
                             <span class="treino-picker-desc">{{ t.descricao }}</span>
                             {% endif %}
+                            <span class="treino-picker-ultimo">{{ ('Último: ' ~ t.ultimo_texto) if t.ultimo_texto else 'Ainda não feito nesta ficha' }}</span>
                         </span>
                         <span class="treino-picker-check"><i class="bi bi-check-circle-fill"></i></span>
                     </button>
@@ -5103,7 +5128,7 @@ function inicializarTruncamentoNomesExercicio() {
         const instanciaAnterior = window.bootstrap && bootstrap.Popover.getInstance(el);
         if (instanciaAnterior) instanciaAnterior.dispose();
 
-        const estaTruncado = el.scrollWidth > el.clientWidth + 1;
+        const estaTruncado = el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1;
         el.classList.toggle('is-truncado', estaTruncado);
 
         if (estaTruncado) {
@@ -5870,12 +5895,26 @@ function inicializarAvulsoExercicio() {
     const vazioEl = document.getElementById('avulsoPickerVazio');
 
     if (buscaInput && lista) {
+        // R7: sem acento ("extensao" acha "Extensão") e também pelos
+        // apelidos do catálogo -- igual à busca da montagem de ficha
+        // (static/js/editar-treino-versao.js). Cada palavra digitada
+        // precisa aparecer (em qualquer ordem): "rosca halter" acha
+        // "Rosca alternada com halteres".
+        const semAcento = function (t) {
+            return (t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        };
+        let indice = null;
         buscaInput.addEventListener('input', function () {
-            const termo = this.value.trim().toLowerCase();
+            if (!indice) {
+                indice = Array.from(lista.querySelectorAll('.avulso-picker-item')).map(function (item) {
+                    return { item: item, texto: semAcento([item.dataset.nome, item.dataset.apelidos, item.dataset.musculo].join(' ')) };
+                });
+            }
+            const palavras = semAcento(this.value.trim()).split(/\s+/).filter(Boolean);
             let algumVisivel = false;
-            lista.querySelectorAll('.avulso-picker-item').forEach(function (item) {
-                const bate = !termo || item.dataset.nome.includes(termo) || item.dataset.musculo.includes(termo);
-                item.classList.toggle('d-none', !bate);
+            indice.forEach(function (i) {
+                const bate = !palavras.length || palavras.every(function (p) { return i.texto.includes(p); });
+                i.item.classList.toggle('d-none', !bate);
                 if (bate) algumVisivel = true;
             });
             if (vazioEl) vazioEl.classList.toggle('d-none', algumVisivel);

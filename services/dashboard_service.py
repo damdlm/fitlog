@@ -284,7 +284,7 @@ class DashboardService(BaseService):
                                    func.count(RegistroTreino.id).label('exercicios'))
                   .filter(RegistroTreino.user_id.in_(aluno_ids))
                   .group_by(RegistroTreino.user_id, RegistroTreino.treino_versao_id, dia)
-                  .order_by(dia.desc(), func.max(RegistroTreino.created_at).desc())
+                  .order_by(dia.desc(), func.max(RegistroTreino.created_at).desc().nullslast())
                   .limit(LIMITE_ATIVIDADE_RECENTE)
                   .all())
         if not linhas:

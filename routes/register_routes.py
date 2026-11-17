@@ -150,6 +150,49 @@ def linha_avulsa():
     )
 
 
+def _anotar_sugestao_treino(treinos, user_id, data_obj):
+    """R1: marca em cada treino da ficha quando foi feito por último e qual
+    é o sugerido para hoje -- o seguinte ao último feito, na ordem dos
+    códigos (A, B, C, volta ao A). Nunca feito nenhum: sugere o primeiro.
+    Considera sessões até a data escolhida (inclusive): quem já fez o A
+    hoje vê o B sugerido e o A marcado como "hoje". Só anota; a escolha
+    continua livre."""
+    if not treinos:
+        return treinos
+    from datetime import timedelta
+    from sqlalchemy import func
+    from models import RegistroTreino, db
+
+    ids = [t['id'] for t in treinos]
+    limite = datetime.combine(data_obj + timedelta(days=1), datetime.min.time())
+    ultimos = dict(
+        db.session.query(RegistroTreino.treino_versao_id, func.max(RegistroTreino.data_registro))
+        .filter(RegistroTreino.user_id == user_id,
+                RegistroTreino.treino_versao_id.in_(ids),
+                RegistroTreino.data_registro < limite)
+        .group_by(RegistroTreino.treino_versao_id)
+        .all()
+    )
+
+    idx_ultimo, data_ultimo = None, None
+    for i, t in enumerate(treinos):
+        quando = ultimos.get(t['id'])
+        t['sugerido'] = False
+        t['ultimo_texto'] = None
+        if quando is None:
+            continue
+        dias = (data_obj - quando.date()).days
+        t['ultimo_texto'] = 'hoje' if dias <= 0 else ('ontem' if dias == 1 else f'há {dias} dias')
+        # o mais recente; empate no mesmo dia fica com o de código maior
+        if data_ultimo is None or quando.date() >= data_ultimo:
+            idx_ultimo, data_ultimo = i, quando.date()
+
+    proximo = 0 if idx_ultimo is None else (idx_ultimo + 1) % len(treinos)
+    if len(treinos) > 1 or idx_ultimo is None:
+        treinos[proximo]['sugerido'] = True
+    return treinos
+
+
 @register_bp.route("/registrar-treino", methods=["GET"])
 @login_required
 def registrar_treino():
@@ -192,7 +235,8 @@ def registrar_treino():
         logger.warning(f"Tentativa de registro sem versão ativa para data {data_obj}")
     else:
         # Buscar treinos disponíveis nesta versão
-        treinos_disponiveis = VersaoService.get_treinos_para_registro(versao_ativa.id)
+        treinos_disponiveis = _anotar_sugestao_treino(
+            VersaoService.get_treinos_para_registro(versao_ativa.id), current_user.id, data_obj)
         
         versao_info = {
             'id': versao_ativa.id,

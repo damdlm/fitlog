@@ -69,10 +69,14 @@
                                     <span class="dash-badge dash-badge--cardio">Última: {{ '%g'|format(((ultimas[0].duracao_segundos / 60)|round(1))) }} min{% if ultimas[0].distancia_km %} · {{ '%g'|format(ultimas[0].distancia_km) }} km{% endif %}</span>
                                 </div>
                                 {% elif ultimas and not eh_cardio_ex %}
+                                {# R3: um selo só. Os campos abaixo já vêm preenchidos com
+                                   esses valores; três selos repetiam a informação. Séries
+                                   diferentes entre si: mostra a maior carga. #}
+                                {% set cargas_ult = ultimas|map(attribute='carga')|reject('none')|list %}
+                                {% set reps_ult = ultimas|map(attribute='repeticoes')|reject('none')|list %}
+                                {% set carga_unica = (cargas_ult|unique|list|length == 1) %}
                                 <div class="dash-registro-badges">
-                                    <span class="dash-badge">{{ ultimas[0].carga|kg }}</span>
-                                    <span class="dash-badge">{{ ultimas[0].repeticoes }}x</span>
-                                    <span class="dash-badge">{{ ultimas|length }} série{{ 's' if ultimas|length != 1 }}</span>
+                                    <span class="dash-badge dash-badge--ultima">Última: {% if carga_unica %}{{ cargas_ult[0]|kg }}{% if reps_ult %} × {{ reps_ult|min }}{% if reps_ult|max != reps_ult|min %}–{{ reps_ult|max }}{% endif %}{% endif %}{% elif cargas_ult %}até {{ cargas_ult|max|kg }}{% endif %} · {{ ultimas|length }} série{{ 's' if ultimas|length != 1 }}</span>
                                 </div>
                                 {% endif %}
                             </div>

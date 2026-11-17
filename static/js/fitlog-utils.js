@@ -12,16 +12,16 @@ const FitLogUtils = (function() {
         if (!container) {
             container = document.createElement('div');
             container.id = 'toast-container';
-            container.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 9999;
-            `;
+            // Posição no CSS abaixo (embaixo, não em cima): no topo o aviso
+            // cobria os botões do cabeçalho -- ex.: Pausar/Salvar do modo treino.
+            container.setAttribute('aria-live', 'polite');
             document.body.appendChild(container);
         }
         
         // Criar toast
+        // 'danger' (Bootstrap) é usado em vários lugares; era tratado como
+        // tipo desconhecido e saía azul, sem ícone.
+        if (type === 'danger') type = 'error';
         const toast = document.createElement('div');
         toast.className = `toast-notification toast-${type}`;
         toast.style.cssText = `
@@ -307,23 +307,50 @@ const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
         from {
-            transform: translateX(100%);
+            transform: translateY(16px);
             opacity: 0;
         }
         to {
-            transform: translateX(0);
+            transform: translateY(0);
             opacity: 1;
         }
     }
     
     @keyframes slideOut {
         from {
-            transform: translateX(0);
+            transform: translateY(0);
             opacity: 1;
         }
         to {
-            transform: translateX(100%);
+            transform: translateY(16px);
             opacity: 0;
+        }
+    }
+
+    /* Avisos embaixo: canto inferior direito no desktop; no celular,
+       largura toda logo acima da barra inferior; no modo treino, acima
+       do cronômetro de descanso. */
+    #toast-container {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        pointer-events: none;
+    }
+    #toast-container > * { pointer-events: auto; }
+    @media (max-width: 991.98px) {
+        #toast-container {
+            left: 12px;
+            right: 12px;
+            bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+            align-items: stretch;
+        }
+        #toast-container .toast-notification { min-width: 0 !important; }
+        body.fl-modo-treino-ativo #toast-container {
+            bottom: calc(150px + env(safe-area-inset-bottom, 0px));
         }
     }
 `;
