@@ -4,7 +4,7 @@
 {% block page_title %}Registrar Treino{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/flatpickr/flatpickr.min.css') }}">
+<link rel="stylesheet" href="{{ static_v('vendor/flatpickr/flatpickr.min.css') }}">
 <link rel="stylesheet" href="{{ static_v('vendor/driverjs/driver.css') }}">
 <link rel="stylesheet" href="{{ static_v('css/registrar-treino-tour.css') }}">
 {% endblock %}
@@ -4645,8 +4645,8 @@
 
 {% block scripts %}
 <script src="{{ static_v('vendor/driverjs/driver.js.iife.js') }}"></script>
-<script src="{{ url_for('static', filename='vendor/flatpickr/flatpickr.min.js') }}"></script>
-<script src="{{ url_for('static', filename='vendor/flatpickr/l10n/pt.js') }}"></script>
+<script src="{{ static_v('vendor/flatpickr/flatpickr.min.js') }}"></script>
+<script src="{{ static_v('vendor/flatpickr/l10n/pt.js') }}"></script>
 <script>
 // Calendário estilizado (flatpickr) no campo Data -- troca o seletor nativo
 // do navegador por um calendário com as cores do app. Mantém o valor real

@@ -95,10 +95,10 @@
     
     <!-- Bootstrap CSS (servido localmente — ver static/vendor/README.md
          sobre por que trocamos o CDN pelo self-host) -->
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ static_v('vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
     
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ static_v('vendor/bootstrap-icons/font/bootstrap-icons.min.css') }}">
     <link rel="stylesheet" href="{{ static_v('css/page-transition.css') }}">
     <link rel="stylesheet" href="{{ static_v('css/fitbot-chat.css') }}">
     <!-- Fora do if de usuário logado: o aviso da fila offline também aparece
@@ -2496,7 +2496,7 @@
 
     <!-- Scripts -->
     <!-- Bootstrap JS (servido localmente) -->
-    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ static_v('vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     
     <!-- Utilitário Global -->
     <script src="{{ static_v('js/fitlog-utils.js') }}"></script>

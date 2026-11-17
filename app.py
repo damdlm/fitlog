@@ -275,14 +275,48 @@ def create_app(config_class=None):
     # cache-miss, sem precisar renomear nada nem esperar expirar.
     # Uso no template: {{ static_v('js/admin-monitoramento.js') }}
     # em vez de {{ url_for('static', filename='js/admin-monitoramento.js') }}.
+    #
+    # A versão é um hash do CONTEÚDO, não o mtime: no build do Railway
+    # todos os arquivos ganham o mesmo mtime, então cada deploy mudava a
+    # URL de TODOS os estáticos e o celular baixava tudo de novo (~25
+    # arquivos), travando a primeira tela por segundos. Com o hash, só o
+    # que mudou de verdade é baixado de novo. O hash fica em memória,
+    # recalculado só se o mtime/tamanho mudar.
+    _versoes_estaticos = {}
+
+    # Arquivo estático não grava nem renova o cookie de sessão. O
+    # Flask-Login lê a sessão em todo pedido (_update_remember_cookie),
+    # o que fazia CSS/JS saírem com "Vary: Cookie" e às vezes Set-Cookie:
+    # com isso o Cloudflare não guardava os estáticos e cada arquivo ia
+    # até o servidor. A sessão continua sendo renovada pelas páginas.
+    from flask.sessions import SecureCookieSessionInterface
+
+    class _SessaoSemEstaticos(SecureCookieSessionInterface):
+        def save_session(self, app_, session, response):
+            if request.endpoint == 'static':
+                return
+            return super().save_session(app_, session, response)
+
+    app.session_interface = _SessaoSemEstaticos()
+
+    def _versao_estatico(caminho_completo):
+        try:
+            st = os.stat(caminho_completo)
+        except OSError:
+            return '0'  # arquivo não encontrado -- não quebra o template
+        chave = (caminho_completo, st.st_mtime_ns, st.st_size)
+        versao = _versoes_estaticos.get(chave)
+        if versao is None:
+            import hashlib
+            with open(caminho_completo, 'rb') as f:
+                versao = hashlib.md5(f.read(), usedforsecurity=False).hexdigest()[:10]
+            _versoes_estaticos[chave] = versao
+        return versao
+
     def static_v(filename):
         from flask import url_for
         caminho_completo = os.path.join(app.static_folder, filename)
-        try:
-            versao = int(os.path.getmtime(caminho_completo))
-        except OSError:
-            versao = 0  # arquivo não encontrado -- não quebra o template
-        return f"{url_for('static', filename=filename)}?v={versao}"
+        return f"{url_for('static', filename=filename)}?v={_versao_estatico(caminho_completo)}"
 
     app.jinja_env.globals['static_v'] = static_v
 
@@ -408,11 +442,13 @@ def create_app(config_class=None):
 
         if flask_request.method != 'GET':
             return None
-        if not flask_current_user.is_authenticated:
-            return None
-
+        # Endpoint antes do current_user: carregar o usuário bate no banco e
+        # mexe na sessão (Set-Cookie), e isso rodava para CADA arquivo
+        # estático -- o Cloudflare não guarda resposta com Set-Cookie.
         endpoint = flask_request.endpoint or ''
         if endpoint in ('static', 'health', 'health_db') or endpoint.startswith('privacidade.') or endpoint.startswith('auth.'):
+            return None
+        if not flask_current_user.is_authenticated:
             return None
 
         chave_atual = PrivacidadeService.chave_versoes_atuais()
@@ -440,10 +476,10 @@ def create_app(config_class=None):
         from flask_login import current_user as flask_current_user
         from services.email_verificacao_service import EmailVerificacaoService
 
-        if not flask_current_user.is_authenticated:
-            return None
         endpoint = flask_request.endpoint or ''
         if endpoint in ('static', 'health', 'health_db') or endpoint.startswith('privacidade.') or endpoint.startswith('auth.'):
+            return None
+        if not flask_current_user.is_authenticated:
             return None
         # Conta nova tem CARENCIA_DIAS para confirmar: usa o app na hora e
         # só FitBot/assinatura ficam travados (ver email_verificacao_service).
@@ -1141,6 +1177,12 @@ def create_app(config_class=None):
     def _pwa_sem_cache(response):
         if request.path in _SEM_CACHE_PWA:
             response.headers["Cache-Control"] = "no-cache, max-age=0, must-revalidate"
+            response.headers.pop("Expires", None)
+        elif (request.endpoint == 'static' and response.status_code == 200
+              and request.args.get('v', '0') != '0'):
+            # ?v=<hash do conteúdo> (static_v): a URL muda quando o arquivo
+            # muda, então navegador e Cloudflare podem guardar por 1 ano.
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
             response.headers.pop("Expires", None)
         return response
 

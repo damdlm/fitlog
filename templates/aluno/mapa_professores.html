@@ -4,7 +4,7 @@
 {% block page_title %}Buscar Professores{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">
+<link rel="stylesheet" href="{{ static_v('vendor/leaflet/leaflet.css') }}">
 <style>
     /* Mesmo visual do cluster padrão do plugin Leaflet.markercluster
        (usado em github.com/damdlm/mach) -- cores/tamanhos oficiais,
@@ -419,7 +419,7 @@
     </div>
 </div>
 
-<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+<script src="{{ static_v('vendor/leaflet/leaflet.js') }}"></script>
 <script src="{{ static_v('js/mapa_professores.js') }}?v=9"></script>
 
 {# O modal da página do professor recebe o botão "Solicitar vínculo" no
