@@ -33,8 +33,8 @@
             {
                 element: '.ct-hero',
                 popover: {
-                    title: 'Resumo da versão',
-                    description: 'Uma versão é uma fase do treino ' + (doProfessor ? 'do aluno' : 'que você segue')
+                    title: 'Resumo da ficha',
+                    description: 'Uma ficha é uma fase do treino ' + (doProfessor ? 'do aluno' : 'que você segue')
                         + '. Aqui ficam o nome, se está <b>Ativa</b> ou <b>Finalizada</b>, o início, '
                         + 'quantos treinos e quantos exercícios ela tem.',
                     side: 'bottom',
@@ -44,8 +44,8 @@
             {
                 element: '.ct-hero-desc-edit',
                 popover: {
-                    title: 'Editar a versão',
-                    description: 'Muda o nome da versão e permite <b>finalizá-la</b> quando essa fase '
+                    title: 'Editar a ficha',
+                    description: 'Muda o nome da ficha e permite <b>finalizá-la</b> quando essa fase '
                         + 'acabar. Finalizada, ela vira histórico e pode ser clonada.',
                     side: 'bottom',
                     align: 'start'
@@ -54,9 +54,9 @@
             {
                 element: '.ct-hero-actions .btn-outline-primary',
                 popover: {
-                    title: 'Clonar a versão',
-                    description: 'Cria uma nova versão ativa com os mesmos treinos e exercícios. '
-                        + 'Só dá para clonar se não houver outra versão ativa ' + (doProfessor ? 'para o aluno.' : 'no momento.'),
+                    title: 'Clonar a ficha',
+                    description: 'Cria uma nova ficha ativa com os mesmos treinos e exercícios. '
+                        + 'Só dá para clonar se não houver outra ficha ativa ' + (doProfessor ? 'para o aluno.' : 'no momento.'),
                     side: 'bottom',
                     align: 'start'
                 }
@@ -64,7 +64,7 @@
             {
                 element: '.ct-hero-actions .btn-outline-danger',
                 popover: {
-                    title: 'Excluir a versão',
+                    title: 'Excluir a ficha',
                     description: 'Só é possível se nenhum treino dela já foi registrado. '
                         + 'O app pede confirmação antes de apagar.',
                     side: 'bottom',
@@ -98,7 +98,7 @@
                 element: '.ct-treino-card .ct-btn-excluir-treino',
                 popover: {
                     title: 'Excluir o treino',
-                    description: 'Remove o treino e seus exercícios desta versão, com confirmação. '
+                    description: 'Remove o treino e seus exercícios desta ficha, com confirmação. '
                         + 'Se o treino já foi registrado alguma vez, a remoção é bloqueada '
                         + 'para não perder o histórico.',
                     side: 'bottom',
@@ -119,7 +119,7 @@
                 element: '.ct-add-treino-btn',
                 popover: {
                     title: 'Adicionar treino',
-                    description: 'Cria o próximo treino da versão (B, C...). '
+                    description: 'Cria o próximo treino da ficha (B, C...). '
                         + 'O contador mostra quantos já existem e o limite.',
                     side: 'top',
                     align: 'center'

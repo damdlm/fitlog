@@ -60,7 +60,7 @@
                 element: alvo('#pdRevisao'),
                 popover: {
                     title: 'Treinos aguardando revisão',
-                    description: 'Alunos cuja versão de treino está ativa há 60 dias ou mais sem troca. Hora de pensar numa evolução.',
+                    description: 'Alunos cuja ficha de treino está ativa há 60 dias ou mais sem troca. Hora de pensar numa evolução.',
                     side: 'top', align: 'center'
                 }
             },

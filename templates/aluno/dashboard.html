@@ -178,6 +178,24 @@
         .dash-ultimo-body .dash-registro-exercicio { font-size: 1rem; }
         .dash-ultimo-body .dash-badge { background: #fff; border: 1px solid rgba(20, 20, 20, 0.07); }
     }
+    /* D1: últimos treinos por sessão */
+    .dash-sessoes { display: flex; flex-direction: column; gap: 10px; }
+    .dash-sessao { border: 1px solid rgba(20, 20, 20, .08); border-radius: 14px; background: #fff; overflow: hidden; }
+    .dash-sessao-resumo { list-style: none; display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; min-height: 56px; }
+    .dash-sessao-resumo::-webkit-details-marker { display: none; }
+    .dash-sessao-codigo { flex: 0 0 38px; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: rgba(242, 140, 51, .14); color: #b85c0e; font-weight: 800; }
+    .dash-sessao-info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+    .dash-sessao-nome { font-weight: 700; color: #2d2d2d; font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dash-sessao-meta { font-size: .8rem; color: #5f6368; }
+    .dash-sessao-seta { color: #8a8f98; transition: transform .2s ease; }
+    .dash-sessao[open] .dash-sessao-seta { transform: rotate(180deg); }
+    .dash-sessao-lista { list-style: none; margin: 0; padding: 0 14px 10px; }
+    .dash-sessao-lista li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(20, 20, 20, .06); font-size: .85rem; }
+    .dash-sessao-ex { color: #2d2d2d; min-width: 0; overflow-wrap: anywhere; }
+    .dash-sessao-ex-resumo { flex: 0 0 auto; color: #5f6368; white-space: nowrap; }
+    .dash-proximo-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 48px; margin-top: 14px; border-radius: 12px; background: #F28C33; color: #fff; font-weight: 700; border: 0; }
+    .dash-proximo-btn:hover, .dash-proximo-btn:focus-visible { background: #e07a1f; color: #fff; }
+    .dash-proximo-btn.is-secundario { background: transparent; color: #b85c0e; border: 1.5px solid rgba(242, 140, 51, .5); }
 </style>
 
 <!-- Cabeçalho com saudação -->
@@ -188,6 +206,8 @@
         {{ dias_treinados_semana }} de 7 dias treinados nesta semana
     </span>
 </div>
+
+{% include "_comece_por_aqui.html" %}
 
 <div class="row mb-4 g-3">
     <!-- Gráfico de constância semanal -->
@@ -206,70 +226,52 @@
     </div>
 </div>
 
-<!-- Últimos Registros -->
+<!-- Últimos treinos (D1): um cartão por sessão (dia + treino); toque abre os exercícios -->
 <div class="card dash-ultimo-card">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
             <i class="bi bi-clock-history me-2" style="color: #F28C33;"></i>
-            Último Treino
+            Últimos treinos
         </h5>
-        {% if tempo_ultimo_treino %}
-        <span class="dash-badge">
-            <i class="bi bi-stopwatch me-1"></i>{{ tempo_ultimo_treino }}
-        </span>
-        {% endif %}
     </div>
     <div class="card-body dash-ultimo-body">
-        {% if ultimos_registros %}
-            {% for registro in ultimos_registros %}
-            {% set nome_exercicio = (registro.exercicio.nome if registro.exercicio else registro.exercicio_base.nome if registro.exercicio_base else 'Exercício') %}
-            <div class="dash-registro-item{{ ' dash-registro-item-clicavel' if nome_exercicio|length > 20 else '' }}"
-                 {% if nome_exercicio|length > 20 %}
-                 tabindex="0"
-                 role="button"
-                 data-bs-toggle="popover"
-                 data-bs-trigger="focus"
-                 data-bs-placement="top"
-                 data-bs-content="{{ nome_exercicio }}"
-                 {% endif %}>
-                <div class="dash-registro-icon">
-                    <i class="bi bi-check2"></i>
-                </div>
-                <div class="dash-registro-info">
-                    <div class="dash-registro-top">
-                        <span class="dash-registro-exercicio d-lg-none{{ ' dash-registro-exercicio-trunc' if nome_exercicio|length > 20 else '' }}">
-                            {{ nome_exercicio[:20] }}{{ '...' if nome_exercicio|length > 20 else '' }}
+        {% if ultimas_sessoes %}
+            <div class="dash-sessoes">
+            {% for s in ultimas_sessoes %}
+            <details class="dash-sessao"{% if loop.first %} open{% endif %}>
+                <summary class="dash-sessao-resumo">
+                    <span class="dash-sessao-codigo">{{ s.codigo or '•' }}</span>
+                    <span class="dash-sessao-info">
+                        <span class="dash-sessao-nome">{{ ('Treino ' ~ s.codigo) if s.codigo else 'Treino' }}{% if s.nome and s.nome != ('Treino ' ~ s.codigo) %} · {{ s.nome }}{% endif %}</span>
+                        <span class="dash-sessao-meta">
+                            {{ s.data.strftime('%d/%m') }} · {{ s.exercicios|length }} exercício{{ 's' if s.exercicios|length != 1 }}{% if s.volume %} · {{ s.volume|kg(0) }}{% endif %}{% if s.tempo %} · <i class="bi bi-stopwatch"></i> {{ s.tempo }}{% endif %}
                         </span>
-                        <span class="dash-registro-exercicio d-none d-lg-inline">{{ nome_exercicio }}</span>
-                        <span class="dash-registro-meta">
-                            {{ registro.data_registro.strftime('%d/%m/%Y') }}
-                            {% if registro.treino_ref %} · {{ registro.treino_ref.codigo }}{% endif %}
-                        </span>
-                    </div>
-                    <div class="dash-registro-badges">
-                        {% if registro.series and registro.series[0].eh_cardio %}
-                            <span class="dash-badge dash-badge--cardio">{{ registro.series[0].resumo_cardio }}</span>
-                        {% else %}
-                        {% if registro.series and registro.series|length > 0 %}
-                            <span class="dash-badge">{{ registro.series[0].carga|kg }}</span>
-                            <span class="dash-badge">{{ registro.series[0].repeticoes }}x</span>
-                        {% endif %}
-                        <span class="dash-badge">{{ registro.series|length }} séries</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
+                    </span>
+                    <i class="bi bi-chevron-down dash-sessao-seta" aria-hidden="true"></i>
+                </summary>
+                <ul class="dash-sessao-lista">
+                    {% for ex in s.exercicios %}
+                    <li><span class="dash-sessao-ex">{{ ex.nome }}</span><span class="dash-sessao-ex-resumo">{{ ex.resumo }}</span></li>
+                    {% endfor %}
+                </ul>
+            </details>
             {% endfor %}
+            </div>
         {% else %}
             <div class="dash-empty">
                 <i class="bi bi-clipboard-x"></i>
                 Nenhum registro ainda. Que tal registrar seu primeiro treino?
-                <div class="mt-3">
-                    <a href="{{ url_for('register.registrar_treino') }}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Registrar Treino
-                    </a>
-                </div>
             </div>
+        {% endif %}
+        {% if proximo_treino %}
+        <a class="btn dash-proximo-btn" href="{{ url_for('register.registrar_treino', treino=proximo_treino.id) }}">
+            <i class="bi bi-play-circle"></i>
+            Registrar {{ 'próximo treino' if ultimas_sessoes else 'primeiro treino' }}: {{ proximo_treino.codigo }}{% if proximo_treino.nome and proximo_treino.nome != ('Treino ' ~ proximo_treino.codigo) %} · {{ proximo_treino.nome }}{% endif %}
+        </a>
+        {% else %}
+        <a class="btn dash-proximo-btn is-secundario" href="{{ url_for('register.registrar_treino') if ultimas_sessoes else url_for('aluno.cadastrar_treinos') }}">
+            <i class="bi bi-plus-circle"></i> {{ 'Registrar treino' if ultimas_sessoes else 'Montar minha ficha' }}
+        </a>
         {% endif %}
     </div>
 </div>

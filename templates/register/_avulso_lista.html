@@ -4,5 +4,5 @@
     são usados num treino. Os que já estão no treino são escondidos no
     navegador (classe is-no-treino). Recebe: exercicios_catalogo. -#}
 {%- for ex in exercicios_catalogo %}
-<button type="button" class="avulso-picker-item" data-chave="{{ ex.prefixo ~ ex.id }}" data-nome="{{ ex.nome|lower }}" data-apelidos="{{ (ex.nicknames|join(' '))|lower if ex.nicknames else '' }}" data-musculo="{{ (ex.musculo or '')|lower }}"><span class="avulso-picker-nome">{{ ex.nome }}</span>{% if ex.musculo %}<span class="avulso-picker-musculo">{{ ex.musculo }}</span>{% endif %}</button>
+<button type="button" class="avulso-picker-item" data-chave="{{ ex.prefixo ~ ex.id }}" data-nome="{{ ex.nome|lower }}" data-apelidos="{{ (ex.nicknames|join('|'))|lower if ex.nicknames else '' }}" data-i="{{ loop.index0 }}" data-musculo="{{ (ex.musculo or '')|lower }}"><span class="avulso-picker-nome">{{ ex.nome }}</span>{% if ex.musculo %}<span class="avulso-picker-musculo">{{ ex.musculo }}</span>{% endif %}</button>
 {%- endfor %}

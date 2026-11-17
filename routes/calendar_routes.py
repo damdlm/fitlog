@@ -339,7 +339,7 @@ def api_evento_dados_edicao():
 
     versao_ativa = VersaoService.get_ativa_por_data(data_obj)
     if not versao_ativa:
-        return jsonify({"erro": f"Não há versão ativa para {data_obj.strftime('%d/%m/%Y')}."}), 404
+        return jsonify({"erro": f"Não há ficha ativa para {data_obj.strftime('%d/%m/%Y')}."}), 404
 
     treinos_disponiveis = VersaoService.get_treinos_para_registro(versao_ativa.id)
     treino_codigo = None
@@ -350,7 +350,7 @@ def api_evento_dados_edicao():
             treino_nome = t.get('nome')
             break
     if not treino_codigo:
-        return jsonify({"erro": "Treino não encontrado na versão ativa para esta data."}), 404
+        return jsonify({"erro": "Treino não encontrado na ficha ativa para esta data."}), 404
 
     exercicios = VersaoService.get_exercicios(versao_ativa.id, treino_codigo)
 

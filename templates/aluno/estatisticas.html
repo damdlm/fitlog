@@ -487,6 +487,12 @@
     .est-cardio-nome { font-weight: 600; }
     .est-cardio-resumo { color: #555; flex: 1; }
     .est-cardio-data { color: #8a857a; font-size: 0.8rem; }
+    .est-inicio-vazio { text-align: center; background: #fff; border-radius: 16px; border: 1px solid rgba(20, 20, 20, .08); padding: 36px 20px; margin-top: 8px; }
+    .est-inicio-vazio > i { font-size: 2.4rem; color: #F28C33; }
+    .est-inicio-vazio h2 { font-size: 1.15rem; font-weight: 700; margin: 10px 0 6px; color: #2d2d2d; }
+    .est-inicio-vazio p { color: #5f6368; font-size: .92rem; max-width: 420px; margin: 0 auto 18px; }
+    .est-inicio-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 22px; border-radius: 12px; background: #F28C33; color: #fff; font-weight: 700; border: 0; }
+    .est-inicio-btn:hover, .est-inicio-btn:focus-visible { background: #e07a1f; color: #fff; }
 </style>
 
 <!-- Cabeçalho com destaque -->
@@ -503,13 +509,26 @@
             <p class="est-hero-destaque">Registre seus treinos para ver suas estatísticas aqui 📊</p>
             {% endif %}
         </div>
+        {% if tem_registros %}
         <button type="button" class="btn btn-sm" id="btnCompartilharEstatisticas"
                 style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); color: white; white-space: nowrap; position: relative;">
             <i class="bi bi-share-fill"></i> Compartilhar
         </button>
+        {% endif %}
     </div>
 </div>
 
+{% if not tem_registros %}
+<!-- E4: antes do primeiro treino, um aviso só (em vez de seis cartões vazios) -->
+<div class="est-inicio-vazio">
+    <i class="bi bi-graph-up-arrow"></i>
+    <h2>Seu progresso aparece aqui</h2>
+    <p>Depois do primeiro treino registrado você vê recordes, força, volume por músculo e cardio.</p>
+    <a class="btn est-inicio-btn" href="{{ url_for('register.registrar_treino') }}">
+        <i class="bi bi-plus-circle"></i> Registrar meu primeiro treino
+    </a>
+</div>
+{% else %}
 <div class="d-flex justify-content-end mb-2">
     <button type="button" class="rt-tour-ajuda" id="btnTourEstatisticas">
         <i class="bi bi-question-circle"></i> Tutorial
@@ -768,9 +787,15 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
+<script>
+    // "Comece por aqui" (templates/_comece_por_aqui.html): abrir o Progresso conclui o passo 3
+    try { window.localStorage.setItem('fitlog:comece:progresso:{{ current_user.id }}', '1'); } catch (e) { /* sem storage */ }
+</script>
+{% if tem_registros %}
 <script src="{{ static_v('vendor/chartjs/chart.umd.min.js') }}"></script>
 <script>
     // muscleData alimenta o card "Compartilhar" no fim da página (imagem
@@ -1554,4 +1579,5 @@
 <script src="{{ static_v('js/fl-tour-core.js') }}"></script>
 <script src="{{ static_v('js/estatisticas-tour.js') }}"
         data-user-id="{{ current_user.id if current_user.is_authenticated else 'anon' }}"></script>
+{% endif %}
 {% endblock %}

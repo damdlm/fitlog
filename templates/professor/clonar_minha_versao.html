@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block page_icon %}<i class="bi bi-copy" style="color: #F28C33;"></i>{% endblock %}
-{% block page_title %}Clonar versão{% endblock %}
+{% block page_title %}Clonar ficha{% endblock %}
 
 {% block content %}
 <style>
@@ -111,10 +111,10 @@
     <a href="{{ url_for('professor.nova_versao_aluno', aluno_id=aluno.id) }}" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Voltar
     </a>
-    <h1><i class="bi bi-copy me-1" style="color:#F28C33;"></i> Clonar versão</h1>
+    <h1><i class="bi bi-copy me-1" style="color:#F28C33;"></i> Clonar ficha</h1>
 </div>
 <p class="cv-subtitulo">
-    Escolha uma das suas versões de treino para usar como ponto de partida para
+    Escolha uma das suas fichas de treino para usar como ponto de partida para
     <strong>{{ aluno.nome_completo or aluno.username }}</strong>. Os treinos e exercícios são copiados;
     o histórico de registros não é copiado.
 </p>
@@ -122,7 +122,7 @@
 {% if not minhas_versoes %}
 <div class="cv-empty-card">
     <div class="cv-empty-icon"><i class="bi bi-layers"></i></div>
-    <h2>Você ainda não tem versões próprias</h2>
+    <h2>Você ainda não tem fichas próprias</h2>
     <p>Cadastre seus próprios treinos em "Cadastrar Treinos" para depois poder cloná-los para seus alunos.</p>
 </div>
 {% else %}
@@ -152,11 +152,11 @@
             <div class="input-group input-group-sm" style="width: 150px;">
                 <input type="number" name="validade_meses" class="form-control" min="1" max="24" step="1"
                        inputmode="numeric" placeholder="{{ v.validade_meses or 'Sem prazo' }}"
-                       title="Validade em meses pra essa cópia (em branco = mantém a validade desta versão)">
+                       title="Validade em meses pra essa cópia (em branco = mantém a validade desta ficha)">
                 <span class="input-group-text">meses</span>
             </div>
             <button type="submit" class="btn cv-btn-clonar"
-                    data-confirm-title="Clonar esta versão para {{ aluno.nome_completo or aluno.username }}?"
+                    data-confirm-title="Clonar esta ficha para {{ aluno.nome_completo or aluno.username }}?"
                     data-confirm-icon="bi-copy"
                     data-confirm-label="Sim, clonar">
                 <i class="bi bi-copy"></i> Clonar para {{ (aluno.nome_completo or aluno.username).split()[0] }}

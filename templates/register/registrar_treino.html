@@ -4345,7 +4345,7 @@
                         {{ t.codigo }} - {{ t.nome }}
                     </option>
                     {% else %}
-                    <option value="" disabled>Nenhum treino disponível nesta versão</option>
+                    <option value="" disabled>Nenhum treino disponível nesta ficha</option>
                     {% endfor %}
                 </select>
 
@@ -4371,7 +4371,7 @@
                 </div>
                 {% else %}
                 <div class="treino-picker-vazio">
-                    <i class="bi bi-info-circle"></i> Nenhum treino disponível nesta versão
+                    <i class="bi bi-info-circle"></i> Nenhum treino disponível nesta ficha
                 </div>
                 {% endif %}
             </div>
@@ -4382,8 +4382,8 @@
 {% if erro_versao %}
 <div class="rt-versao-empty mb-4">
     <div class="rt-versao-empty-icon"><i class="bi bi-layers"></i></div>
-    <h2>Nenhuma versão ativa</h2>
-    <p>{{ erro_versao }}. Cadastre uma versão de treino ou escolha outra data.</p>
+    <h2>Nenhuma ficha ativa</h2>
+    <p>{{ erro_versao }}. Cadastre uma ficha de treino ou escolha outra data.</p>
     <a href="{{ url_for('aluno.cadastrar_treinos') }}" class="btn rt-versao-empty-btn">
         <i class="bi bi-check-circle"></i> Ir para Cadastrar Treinos
     </a>
@@ -5940,21 +5940,55 @@ function inicializarAvulsoExercicio() {
             else carregarLista();
         });
 
+        // T3: mesma busca da montagem de ficha (FitLogUtils.pontuarBusca):
+        // cada palavra no nome, apelidos ou músculo, em qualquer ordem, e
+        // resultados por relevância (nome/apelido igual ao termo primeiro).
+        // Busca vazia volta à ordem original (data-i).
+        const U = window.FitLogUtils || {};
+        const norm = U.normalizarBusca || semAcento;
+        let ordenadoPorBusca = false;
         buscaInput.addEventListener('input', function () {
             if (!listaPronta) return;
             if (!indice) {
                 indice = Array.from(lista.querySelectorAll('.avulso-picker-item')).map(function (item) {
-                    return { item: item, texto: semAcento([item.dataset.nome, item.dataset.apelidos, item.dataset.musculo].join(' ')) };
+                    return {
+                        item: item,
+                        nome: norm(item.dataset.nome),
+                        apelidos: (item.dataset.apelidos || '').split('|').filter(Boolean).map(norm),
+                        musculo: norm(item.dataset.musculo),
+                        ordem: Number(item.dataset.i || 0)
+                    };
                 });
             }
-            const palavras = semAcento(this.value.trim()).split(/\s+/).filter(Boolean);
-            let algumVisivel = false;
+            const termo = norm(this.value);
+            const achados = [];
+            let jaNoTreino = 0;
             indice.forEach(function (i) {
-                const bate = !palavras.length || palavras.every(function (p) { return i.texto.includes(p); });
+                const nota = !termo ? 0 : (U.pontuarBusca ? U.pontuarBusca(termo, i.nome, i.apelidos, i.musculo)
+                    : (termo.split(' ').every(function (p) { return (i.nome + ' ' + i.apelidos.join(' ') + ' ' + i.musculo).includes(p); }) ? 0 : null));
+                const bate = nota !== null;
                 i.item.classList.toggle('d-none', !bate);
-                if (bate && !i.item.classList.contains('is-no-treino')) algumVisivel = true;
+                if (bate && i.item.classList.contains('is-no-treino')) jaNoTreino++;
+                else if (bate) achados.push({ i: i, nota: nota });
             });
-            if (vazioEl) vazioEl.classList.toggle('d-none', algumVisivel);
+            if (termo && achados.length) {
+                achados.sort(function (a, b) {
+                    return (a.nota - b.nota) || (a.i.nome.length - b.i.nome.length) || (a.i.ordem - b.i.ordem);
+                });
+                lista.prepend.apply(lista, achados.map(function (a) { return a.i.item; }));
+                ordenadoPorBusca = true;
+            } else if (!termo && ordenadoPorBusca) {
+                const frag = document.createDocumentFragment();
+                indice.slice().sort(function (a, b) { return a.ordem - b.ordem; })
+                    .forEach(function (i) { frag.appendChild(i.item); });
+                lista.appendChild(frag);
+                ordenadoPorBusca = false;
+            }
+            if (vazioEl) {
+                // o que procurou já está na lista de hoje (fica escondido aqui)
+                vazioEl.textContent = jaNoTreino ? 'Já está no treino de hoje.' : 'Nenhum exercício encontrado.';
+                vazioEl.classList.toggle('d-none', achados.length > 0);
+            }
         });
 
         let adicionando = false;

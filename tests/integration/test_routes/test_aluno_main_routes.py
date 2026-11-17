@@ -112,10 +112,14 @@ class TestDashboard:
         _login(client, 'am_dash_tempo')
         resp = client.get('/aluno/dashboard')
         assert resp.status_code == 200
-        # 2700s = 00:45 -- deve mostrar o tempo da sessão mais recente
-        assert b'00:45' in resp.data
-        # Não deve mostrar o tempo da sessão antiga (00:10)
-        assert b'00:10' not in resp.data
+        # Uma sessão por cartão (lote 4, D1): as duas do dia aparecem, a
+        # mais recente (B, 2700s = 00:45) primeiro e aberta; a antiga
+        # (A, 00:10) depois.
+        html = resp.get_data(as_text=True)
+        assert '00:45' in html and '00:10' in html
+        assert html.index('00:45') < html.index('00:10')
+        primeira = html.split('<details class="dash-sessao"', 2)[1]
+        assert primeira.startswith(' open') and 'Treino B' in primeira
 
     def test_professor_acessa_o_proprio_dashboard(self, client, app):
         with app.app_context():

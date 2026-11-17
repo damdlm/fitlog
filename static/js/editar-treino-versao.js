@@ -187,28 +187,82 @@ document.addEventListener('DOMContentLoaded', function () {
     // local a este closure). detail.ordemIds, quando informado, é a
     // ordem real e salva do treino (ver comentário acima).
     grid?.addEventListener('etv:reordenar', function (e) {
-        reordenarSelecionados(e.detail?.ordemIds);
+        ultimaOrdemIds = e.detail?.ordemIds || null;
+        reordenarSelecionados(ultimaOrdemIds);
     });
 
     // -----------------------------------------------------
     // Filtro (texto + músculo)
     // -----------------------------------------------------
+    // Busca (T3): cada palavra digitada precisa aparecer no nome, nos
+    // apelidos ou no músculo, em qualquer ordem ("extensao perna",
+    // "cadeira extensora"), e os resultados vêm por relevância -- nome ou
+    // apelido igual ao termo primeiro (FitLogUtils.pontuarBusca). Limpar a
+    // busca devolve a ordem original do catálogo (data-i), com os
+    // exercícios marcados no topo, na ordem salva do treino.
+    const U = window.FitLogUtils || {};
+    const normalizarBusca = U.normalizarBusca || function (t) { return normalizarTexto((t || '').toLowerCase()).trim(); };
+    let ordenadoPorBusca = false;
+    let ultimaOrdemIds = null;
+
+    function dadosBusca(item) {
+        if (!item._busca) {
+            item._busca = {
+                nome: normalizarBusca(item.dataset.nome || ''),
+                apelidos: (item.dataset.apelidos || '').split('|').filter(Boolean).map(normalizarBusca),
+                musculo: normalizarBusca(item.dataset.musculo || ''),
+                ordem: item.dataset.i !== undefined ? Number(item.dataset.i) : -1
+            };
+        }
+        return item._busca;
+    }
+
+    function restaurarOrdemOriginal() {
+        const todos = itens().sort(function (a, b) { return dadosBusca(a).ordem - dadosBusca(b).ordem; });
+        const frag = document.createDocumentFragment();
+        todos.forEach(function (c) { frag.appendChild(c); });
+        grid.appendChild(frag);
+        ordenadoPorBusca = false;
+        reordenarSelecionados(ultimaOrdemIds);
+    }
+
     function filtrar() {
-        const termo = normalizarTexto((busca?.value || '').toLowerCase().trim());
+        const termo = normalizarBusca(busca?.value || '');
         if (termo) etvMaterializarTodos();
         let visiveis = 0;
+        const achados = [];
 
         itens().forEach(item => {
-            const nome = normalizarTexto(item.dataset.nome || '');
             const musculo = item.dataset.musculo || '';
             let mostrar = true;
+            let nota = 0;
 
-            if (termo && !nome.includes(termo)) mostrar = false;
+            if (termo) {
+                const d = dadosBusca(item);
+                nota = U.pontuarBusca ? U.pontuarBusca(termo, d.nome, d.apelidos, d.musculo)
+                    : ((d.nome + ' ' + d.apelidos.join(' ')).includes(termo) ? 0 : null);
+                if (nota === null) mostrar = false;
+            }
             if (musculoAtivo && musculo !== musculoAtivo) mostrar = false;
 
             item.classList.toggle('d-none', !mostrar);
-            if (mostrar) visiveis++;
+            if (mostrar) {
+                visiveis++;
+                if (termo) achados.push({ item: item, nota: nota });
+            }
         });
+
+        if (termo && achados.length) {
+            achados.sort(function (a, b) {
+                return (a.nota - b.nota)
+                    || (dadosBusca(a.item).nome.length - dadosBusca(b.item).nome.length)
+                    || (dadosBusca(a.item).ordem - dadosBusca(b.item).ordem);
+            });
+            grid.prepend(...achados.map(function (a) { return a.item; }));
+            ordenadoPorBusca = true;
+        } else if (!termo && ordenadoPorBusca) {
+            restaurarOrdemOriginal();
+        }
 
         if (semResultados) {
             // Lista ainda chegando (ou falhou): o aviso de lá já explica.

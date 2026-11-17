@@ -138,7 +138,7 @@
                 element: '#eventoDetalhes .btn-editar-registro',
                 popover: {
                     title: 'Editar este treino',
-                    description: 'Corrija cargas, repetições, séries ou a data, mesmo que a versão '
+                    description: 'Corrija cargas, repetições, séries ou a data, mesmo que a ficha '
                         + 'do treino já esteja finalizada.',
                     side: 'top', align: 'center'
                 }

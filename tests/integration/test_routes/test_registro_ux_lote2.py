@@ -171,7 +171,7 @@ class TestCardDoExercicio:
         assert "normalize('NFD')" in html
         # a lista vem à parte, quando o modal abre (lote 3, R8)
         lista = client.get('/registrar/catalogo-avulso').get_data(as_text=True)
-        assert 'data-apelidos="cadeira extensora extensora"' in lista
+        assert 'data-apelidos="cadeira extensora|extensora"' in lista
 
 
 class TestAvisos:

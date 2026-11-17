@@ -1,0 +1,119 @@
+{#- Cartão "Comece por aqui" (lote 4, E1) -- incluído na tela inicial e no
+    painel do aluno. Recebe `comece` (services/onboarding_service.py):
+    passos 1 e 2 vêm do servidor; o 3 ("Veja seu progresso") é marcado no
+    navegador pela tela Progresso (chave fitlog:comece:progresso:<id>). O
+    cartão some quando os três estão feitos ou com "Ocultar". -#}
+{% if comece and comece_compacto %}
+{#- Tela inicial: só uma faixa com o próximo passo (o cartão completo fica no Início) -#}
+{% set prox_url = url_for('aluno.cadastrar_treinos') if not comece.ficha else (url_for('register.registrar_treino') if not comece.registro else url_for('aluno.estatisticas')) %}
+{% set prox_txt = 'Monte sua ficha' if not comece.ficha else ('Registre o primeiro treino' if not comece.registro else 'Veja seu progresso') %}
+<a class="comece-mini" id="comeceCard" data-uid="{{ current_user.id }}" data-feitos="{{ comece.feitos_servidor }}"
+   data-progresso-url="{{ url_for('aluno.estatisticas') }}" href="{{ prox_url }}">
+    <span class="comece-mini-icone" aria-hidden="true"><i class="bi bi-flag"></i></span>
+    <span class="comece-mini-texto"><strong>Comece por aqui</strong><span>Próximo: <span data-comece-proximo>{{ prox_txt }}</span></span></span>
+    <span class="comece-contagem" data-comece-contagem>{{ comece.feitos_servidor }} de 3</span>
+    <i class="bi bi-chevron-right comece-mini-seta" aria-hidden="true"></i>
+</a>
+<style>
+    .comece-mini { position: relative; z-index: 3; display: flex; align-items: center; gap: 10px; margin: 0 0 12px; padding: 10px 12px; background: #fff; border: 1px solid rgba(242, 140, 51, .3); border-radius: 14px; box-shadow: 0 6px 18px rgba(242, 140, 51, .12); text-decoration: none; color: #2d2d2d; min-height: 56px; }
+    .comece-mini-icone { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: rgba(242, 140, 51, .14); color: #F28C33; }
+    .comece-mini-texto { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; font-size: .82rem; color: #5f6368; }
+    .comece-mini-texto strong { font-size: .92rem; color: #2d2d2d; }
+    .comece-mini .comece-contagem { font-size: .75rem; font-weight: 700; color: #b85c0e; background: rgba(242, 140, 51, .12); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+    .comece-mini-seta { color: #8a8f98; }
+</style>
+<script>
+(function () {
+    var faixa = document.getElementById('comeceCard');
+    if (!faixa) return;
+    var uid = faixa.dataset.uid;
+    function ler(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+    if (ler('fitlog:comece:oculto:' + uid) === '1') { faixa.remove(); return; }
+    var feitos = Number(faixa.dataset.feitos || 0);
+    var viuProgresso = ler('fitlog:comece:progresso:' + uid) === '1';
+    if (viuProgresso) feitos += 1;
+    if (feitos >= 3) { faixa.remove(); return; }
+    faixa.querySelector('[data-comece-contagem]').textContent = feitos + ' de 3';
+})();
+</script>
+{% elif comece %}
+<section class="comece-card" id="comeceCard" data-uid="{{ current_user.id }}"
+         data-feitos="{{ comece.feitos_servidor }}" aria-labelledby="comeceTitulo">
+    <div class="comece-topo">
+        <h5 class="comece-titulo" id="comeceTitulo"><i class="bi bi-flag"></i> Comece por aqui</h5>
+        <span class="comece-contagem" data-comece-contagem>{{ comece.feitos_servidor }} de 3</span>
+    </div>
+    <ol class="comece-passos">
+        <li class="comece-passo{{ ' is-feito' if comece.ficha }}">
+            <span class="comece-check" aria-hidden="true"><i class="bi {{ 'bi-check-lg' if comece.ficha else 'bi-1-circle' }}"></i></span>
+            <div class="comece-texto">
+                <strong>Monte sua ficha</strong>
+                <span>{% if comece.ficha %}Pronta. Dá para ajustar quando quiser.{% elif comece.tem_professor %}Seu professor pode montar para você, ou monte agora.{% else %}Escolha os treinos (A, B, C…) e os exercícios de cada um.{% endif %}</span>
+            </div>
+            {% if not comece.ficha %}<a class="comece-acao" href="{{ url_for('aluno.cadastrar_treinos') }}">Montar</a>{% endif %}
+        </li>
+        <li class="comece-passo{{ ' is-feito' if comece.registro }}">
+            <span class="comece-check" aria-hidden="true"><i class="bi {{ 'bi-check-lg' if comece.registro else 'bi-2-circle' }}"></i></span>
+            <div class="comece-texto">
+                <strong>Registre o primeiro treino</strong>
+                <span>{% if comece.registro %}Feito!{% else %}Marque cargas e repetições enquanto treina.{% endif %}</span>
+            </div>
+            {% if not comece.registro %}<a class="comece-acao{{ ' is-secundaria' if not comece.ficha }}" href="{{ url_for('register.registrar_treino') }}">Registrar</a>{% endif %}
+        </li>
+        <li class="comece-passo" data-comece-progresso>
+            <span class="comece-check" aria-hidden="true"><i class="bi bi-3-circle"></i></span>
+            <div class="comece-texto">
+                <strong>Veja seu progresso</strong>
+                <span data-comece-progresso-texto>Recordes, força e volume por músculo.</span>
+            </div>
+            <a class="comece-acao{{ ' is-secundaria' if not comece.registro }}" href="{{ url_for('aluno.estatisticas') }}" data-comece-progresso-acao>Ver</a>
+        </li>
+    </ol>
+    <button type="button" class="comece-ocultar" data-comece-ocultar>Ocultar</button>
+</section>
+<style>
+    .comece-card { position: relative; background: #fff; border: 1px solid rgba(242, 140, 51, .28); border-radius: 16px; padding: 16px 16px 12px; margin: 0 0 16px; box-shadow: 0 6px 18px rgba(242, 140, 51, .10); }
+    .comece-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+    .comece-titulo { margin: 0; font-size: 1.02rem; font-weight: 700; color: #2d2d2d; }
+    .comece-titulo i { color: #F28C33; margin-right: 4px; }
+    .comece-contagem { font-size: .78rem; font-weight: 700; color: #b85c0e; background: rgba(242, 140, 51, .12); border-radius: 999px; padding: 3px 10px; }
+    .comece-passos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+    .comece-passo { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; background: #faf7f4; }
+    .comece-check { flex: 0 0 32px; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #fff; color: #F28C33; border: 1.5px solid rgba(242, 140, 51, .45); font-size: 1rem; }
+    .comece-passo.is-feito .comece-check { background: #2e9d5b; border-color: #2e9d5b; color: #fff; }
+    .comece-texto { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+    .comece-texto strong { font-size: .92rem; color: #2d2d2d; }
+    .comece-texto span { font-size: .8rem; color: #5f6368; }
+    .comece-passo.is-feito .comece-texto strong { color: #5f6368; text-decoration: line-through; text-decoration-color: rgba(0, 0, 0, .25); }
+    .comece-acao { flex: 0 0 auto; min-height: 36px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: 10px; background: #F28C33; color: #fff; font-weight: 600; font-size: .85rem; text-decoration: none; }
+    .comece-acao:hover, .comece-acao:focus-visible { background: #e07a1f; color: #fff; }
+    .comece-acao.is-secundaria { background: transparent; color: #b85c0e; border: 1.5px solid rgba(242, 140, 51, .5); }
+    .comece-ocultar { display: block; margin: 8px 0 0 auto; min-height: 32px; padding: 0 6px; border: 0; background: transparent; color: #5f6368; font-size: .8rem; text-decoration: underline; }
+</style>
+<script>
+(function () {
+    var card = document.getElementById('comeceCard');
+    if (!card) return;
+    var uid = card.dataset.uid;
+    function ler(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+    function gravar(k) { try { window.localStorage.setItem(k, '1'); } catch (e) { /* sem storage */ } }
+    if (ler('fitlog:comece:oculto:' + uid) === '1') { card.remove(); return; }
+    var feitos = Number(card.dataset.feitos || 0);
+    if (ler('fitlog:comece:progresso:' + uid) === '1') {
+        feitos += 1;
+        var passo = card.querySelector('[data-comece-progresso]');
+        passo.classList.add('is-feito');
+        passo.querySelector('.comece-check i').className = 'bi bi-check-lg';
+        passo.querySelector('[data-comece-progresso-texto]').textContent = 'Feito!';
+        var acao = passo.querySelector('[data-comece-progresso-acao]');
+        if (acao) acao.remove();
+    }
+    if (feitos >= 3) { card.remove(); return; }
+    card.querySelector('[data-comece-contagem]').textContent = feitos + ' de 3';
+    card.querySelector('[data-comece-ocultar]').addEventListener('click', function () {
+        gravar('fitlog:comece:oculto:' + uid);
+        card.remove();
+    });
+})();
+</script>
+{% endif %}

@@ -83,7 +83,7 @@
                     element: '.ga-btn-ver',
                     popover: {
                         title: 'Abrir o aluno',
-                        description: 'Abre a ficha dele: versões de treino, estatísticas, calendário '
+                        description: 'Abre a página dele: fichas de treino, estatísticas, calendário '
                             + 'e o que ele registrou.',
                         side: 'top',
                         align: 'end'

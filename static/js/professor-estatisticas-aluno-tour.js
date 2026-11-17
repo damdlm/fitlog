@@ -22,7 +22,7 @@
                 popover: {
                     title: 'Estatísticas do aluno',
                     description: 'Aqui você acompanha a evolução do aluno: o <b>grupo muscular que mais treina</b> '
-                        + 'aparece ao lado do nome. <b>Voltar</b> leva para a ficha dele.',
+                        + 'aparece ao lado do nome. <b>Voltar</b> leva para a página dele.',
                     side: 'bottom', align: 'center'
                 }
             },
@@ -68,7 +68,7 @@
                 popover: {
                     title: 'Desempenho por treino',
                     description: 'Abaixo, um cartão por treino (A, B, C...) com exercícios, registros e volume. '
-                        + 'No seletor <b>Versão</b> você escolhe a versão do treino (abre com a ativa) '
+                        + 'No seletor <b>Ficha</b> você escolhe a ficha do treino (abre com a ativa) '
                         + 'ou todas; o período do filtro de cima é mantido.',
                     side: 'bottom', align: 'start'
                 }

@@ -55,7 +55,7 @@ def _edicao_de_sessao_existente(veio_do_calendario, data_original, treino_id):
 
 def _msg_versao_finalizada(versao):
     return (
-        f"A versão {versao.numero_versao} foi finalizada em "
+        f"A ficha {versao.numero_versao} foi finalizada em "
         f"{versao.data_fim.strftime('%d/%m/%Y')}"
     )
 
@@ -253,7 +253,7 @@ def registrar_treino():
         )
         versao_ativa = None
     elif not versao_ativa:
-        erro_versao = f"Não há versão ativa para {data_obj.strftime('%d/%m/%Y')}"
+        erro_versao = f"Não há ficha ativa para {data_obj.strftime('%d/%m/%Y')}"
         logger.warning(f"Tentativa de registro sem versão ativa para data {data_obj}")
     else:
         # Buscar treinos disponíveis nesta versão
@@ -279,7 +279,7 @@ def registrar_treino():
                     break
             
             if not treino_valido:
-                flash(f"Treino não encontrado na versão ativa para esta data!", "warning")
+                flash(f"Treino não encontrado na ficha ativa para esta data!", "warning")
                 treino_selecionado = None
             else:
                 # Buscar exercícios do treino nesta versão usando o CÓDIGO
@@ -429,7 +429,7 @@ def salvar_registro():
     versao_ativa = VersaoService.get_ativa_por_data(data_obj)
     
     if not versao_ativa:
-        flash(f"Não há versão ativa para {data_obj.strftime('%d/%m/%Y')}", "danger")
+        flash(f"Não há ficha ativa para {data_obj.strftime('%d/%m/%Y')}", "danger")
         return _redirect_apos_salvar(sucesso=False, data_para_exibir=data_obj.isoformat())
     
     # Versão finalizada bloqueia só o registro NOVO. Editar pelo calendário
@@ -437,7 +437,7 @@ def salvar_registro():
     # original) é sempre permitido, inclusive no dia da finalização.
     if not _edicao_de_sessao_existente(veio_do_calendario, data_original, treino_id) \
             and _versao_finalizada_para(versao_ativa, data_obj):
-        flash(f"{_msg_versao_finalizada(versao_ativa)}. Cadastre uma nova versão para registrar treinos.", "danger")
+        flash(f"{_msg_versao_finalizada(versao_ativa)}. Cadastre uma nova ficha para registrar treinos.", "danger")
         return _redirect_apos_salvar(sucesso=False, data_para_exibir=data_obj.isoformat())
     
     # Verificar se o treino pertence à versão ativa
@@ -453,7 +453,7 @@ def salvar_registro():
             break
     
     if not treino_valido:
-        flash(f"Treino não encontrado na versão ativa!", "danger")
+        flash(f"Treino não encontrado na ficha ativa!", "danger")
         return _redirect_apos_salvar(sucesso=False, data_para_exibir=data_obj.isoformat())
     
     # Calcular período e semana a partir da data
@@ -651,13 +651,13 @@ def api_treinos_por_data():
         if not versao_ativa:
             return jsonify({
                 "success": False, 
-                "error": f"Não há versão ativa para {data_obj.strftime('%d/%m/%Y')}"
+                "error": f"Não há ficha ativa para {data_obj.strftime('%d/%m/%Y')}"
             }), 404
 
         if _versao_finalizada_para(versao_ativa, data_obj):
             return jsonify({
                 "success": False,
-                "error": f"{_msg_versao_finalizada(versao_ativa)}. Cadastre uma nova versão para registrar treinos."
+                "error": f"{_msg_versao_finalizada(versao_ativa)}. Cadastre uma nova ficha para registrar treinos."
             }), 404
         
         # Buscar treinos disponíveis nesta versão

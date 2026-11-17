@@ -3489,7 +3489,9 @@
     "nicknames": [
       "Bench press com barra",
       "Supino com barra",
-      "Supino reto com barra livre"
+      "Supino reto com barra livre",
+      "Supino reto",
+      "Supino reto barra"
     ],
     "category": "Peito",
     "body_part": "Peito",
@@ -3597,7 +3599,8 @@
     "nicknames": [
       "Bent over row com barra",
       "Remada curvado com barra",
-      "Remada curvada com barra livre"
+      "Remada curvada com barra livre",
+      "Remada curvada"
     ],
     "category": "Costas",
     "body_part": "Costas",
@@ -3779,7 +3782,9 @@
     "id": "0031",
     "name": "Rosca direta com barra",
     "nicknames": [
-      "Rosca direta com barra livre"
+      "Rosca direta com barra livre",
+      "Rosca direta",
+      "Rosca direta barra reta"
     ],
     "category": "Braços",
     "body_part": "Braços",
@@ -3815,7 +3820,9 @@
       "Terra com barra",
       "Deadlift com barra",
       "Levantamento de terra com barra",
-      "Levantamento terra com barra livre"
+      "Levantamento terra com barra livre",
+      "Levantamento terra",
+      "Terra"
     ],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
@@ -3850,7 +3857,9 @@
     "name": "Supino declinado com barra",
     "nicknames": [
       "Decline bench com barra",
-      "Supino declinado com barra livre"
+      "Supino declinado com barra livre",
+      "Supino declinado",
+      "Supino declinado barra"
     ],
     "category": "Peito",
     "body_part": "Peito",
@@ -4264,7 +4273,10 @@
     "name": "Agachamento completo com barra",
     "nicknames": [
       "Squat completo com barra",
-      "Agachamento completo com barra livre"
+      "Agachamento completo com barra livre",
+      "Agachamento livre",
+      "Agachamento livre com barra",
+      "Agachamento costas"
     ],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
@@ -4419,7 +4431,9 @@
     "id": "1409",
     "name": "Elevação pélvica com barra",
     "nicknames": [
-      "Elevação pélvica com barra livre"
+      "Elevação pélvica com barra livre",
+      "Elevação pélvica",
+      "Hip thrust"
     ],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
@@ -4630,7 +4644,9 @@
     "nicknames": [
       "Incline bench com barra",
       "Supino inclinado com peito alto com barra",
-      "Supino inclinado com barra livre"
+      "Supino inclinado com barra livre",
+      "Supino inclinado",
+      "Supino inclinado barra"
     ],
     "category": "Peito",
     "body_part": "Peito",
@@ -4984,7 +5000,8 @@
     "nicknames": [
       "Lunge com barra",
       "Passada com barra",
-      "Avanço com barra livre"
+      "Avanço com barra livre",
+      "Afundo com barra"
     ],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
@@ -5227,7 +5244,9 @@
     "nicknames": [
       "Tríceps testa deitado com barra",
       "Triceps extension deitado com barra",
-      "Extensão de tríceps deitado com barra livre"
+      "Extensão de tríceps deitado com barra livre",
+      "Tríceps testa",
+      "Tríceps testa com barra"
     ],
     "category": "Braços",
     "body_part": "Braços",
@@ -5582,7 +5601,9 @@
     "nicknames": [
       "Rosca de pulso palmas para cima sobre banco com barra",
       "Wrist curl palmas para cima sobre banco com barra",
-      "Rosca de punho palmas para cima sobre banco com barra livre"
+      "Rosca de punho palmas para cima sobre banco com barra livre",
+      "Rosca punho",
+      "Rosca de punho"
     ],
     "category": "Antebraços",
     "body_part": "Antebraços",
@@ -5688,7 +5709,8 @@
     "nicknames": [
       "Scott curl com barra",
       "Preacher curl com barra",
-      "Rosca scott com barra livre"
+      "Rosca scott com barra livre",
+      "Rosca scott"
     ],
     "category": "Braços",
     "body_part": "Braços",
@@ -6811,7 +6833,8 @@
     "nicknames": [
       "Shrug com barra",
       "Encolhimento de trapézio com barra",
-      "Encolhimento com barra livre"
+      "Encolhimento com barra livre",
+      "Encolhimento"
     ],
     "category": "Costas",
     "body_part": "Costas",
@@ -7451,7 +7474,8 @@
       "Military press pegada fechada em pé com barra",
       "Overhead press pegada fechada em pé com barra",
       "Desenvolvimento militar pegada fechada em pé com barra livre",
-      "Desenvolvimento militar pegada fechada de pé com barra"
+      "Desenvolvimento militar pegada fechada de pé com barra",
+      "Desenvolvimento militar"
     ],
     "category": "Ombros",
     "body_part": "Ombros",
@@ -7878,7 +7902,8 @@
       "Terra pernas retas com barra",
       "Stiff com barra",
       "Levantamento terra pernas retas com barra livre",
-      "Deadlift pernas retas com barra"
+      "Deadlift pernas retas com barra",
+      "Stiff"
     ],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
@@ -7987,7 +8012,8 @@
     "name": "Remada alta com barra",
     "nicknames": [
       "Row alta com barra",
-      "Remada alta com barra livre"
+      "Remada alta com barra livre",
+      "Remada alta"
     ],
     "category": "Ombros",
     "body_part": "Ombros",
@@ -9826,7 +9852,10 @@
     "nicknames": [
       "Variação cruzada na polia",
       "Variação cruzada no cabo",
-      "Variação cruzada no pulley"
+      "Variação cruzada no pulley",
+      "Crossover",
+      "Cross over",
+      "Crossover na polia"
     ],
     "category": "Peito",
     "body_part": "Peito",
@@ -10886,7 +10915,10 @@
       "Puxada lateral com barra em v na polia",
       "Puxada lateral com barra em v no cabo",
       "Puxada lateral com barra em v no pulley",
-      "Puxada lateral com barra livre em v com cabo"
+      "Puxada lateral com barra livre em v com cabo",
+      "Puxada triângulo",
+      "Puxada com triângulo",
+      "Puxada fechada no triângulo"
     ],
     "category": "Costas",
     "body_part": "Costas",
@@ -11001,7 +11033,9 @@
       "Remada baixa sentado na polia",
       "Remada baixa sentado no cabo",
       "Remada baixa sentado no pulley",
-      "Row baixa sentado com cabo"
+      "Row baixa sentado com cabo",
+      "Remada baixa",
+      "Remada sentada no triângulo"
     ],
     "category": "Costas",
     "body_part": "Costas",
@@ -12100,7 +12134,12 @@
       "Puxador com cabo",
       "Puxada na polia",
       "Puxada no cabo",
-      "Puxada no pulley"
+      "Puxada no pulley",
+      "Puxada frontal",
+      "Puxada alta",
+      "Puxada aberta",
+      "Puxada frente",
+      "Pulldown frente"
     ],
     "category": "Costas",
     "body_part": "Costas",
@@ -12216,7 +12255,11 @@
       "Triceps extension com cabo",
       "Extensão de tríceps na polia",
       "Extensão de tríceps no cabo",
-      "Extensão de tríceps no pulley"
+      "Extensão de tríceps no pulley",
+      "Tríceps pulley",
+      "Tríceps polia",
+      "Tríceps na polia",
+      "Tríceps barra reta"
     ],
     "category": "Braços",
     "body_part": "Braços",
@@ -12292,7 +12335,10 @@
       "Triceps extension com cabo (com corda)",
       "Extensão de tríceps na polia (com corda)",
       "Extensão de tríceps no cabo (com corda)",
-      "Extensão de tríceps no pulley (com corda)"
+      "Extensão de tríceps no pulley (com corda)",
+      "Tríceps corda",
+      "Tríceps polia com corda",
+      "Tríceps pulley com corda"
     ],
     "category": "Braços",
     "body_part": "Braços",
@@ -14068,7 +14114,11 @@
       "Extensão de quadril em pé na polia",
       "Extensão de quadril em pé no cabo",
       "Extensão de quadril em pé no pulley",
-      "Extensão de quadril de pé com cabo"
+      "Extensão de quadril de pé com cabo",
+      "Glúteo na polia",
+      "Glúteo no cabo",
+      "Coice na polia",
+      "Glúteo em pé na polia"
     ],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
@@ -15014,7 +15064,8 @@
       "Puxador supinado com cabo",
       "Puxada pegada supinada na polia",
       "Puxada pegada supinada no cabo",
-      "Puxada pegada supinada no pulley"
+      "Puxada pegada supinada no pulley",
+      "Puxada supinada"
     ],
     "category": "Costas",
     "body_part": "Costas",
@@ -15462,7 +15513,9 @@
     "name": "Mergulho de peito",
     "nicknames": [
       "Dips de peito",
-      "Paralelas de peito"
+      "Paralelas de peito",
+      "Paralelas",
+      "Mergulho nas paralelas"
     ],
     "category": "Peito",
     "body_part": "Peito",
@@ -16208,7 +16261,11 @@
   {
     "id": "2331",
     "name": "Bicicleta elíptica",
-    "nicknames": [],
+    "nicknames": [
+      "Elíptico",
+      "Transport",
+      "Transport elíptico"
+    ],
     "category": "Cardio",
     "body_part": "Cardio",
     "equipment": "Máquina de alavanca",
@@ -17479,7 +17536,8 @@
     "id": "0297",
     "name": "Rosca concentrada com halter",
     "nicknames": [
-      "Concentration curl com halter"
+      "Concentration curl com halter",
+      "Rosca concentrada"
     ],
     "category": "Braços",
     "body_part": "Braços",
@@ -18082,7 +18140,9 @@
       "Fly com halteres",
       "Voador com halteres",
       "Crucifixo com halter",
-      "Crucifixo com dumbbell"
+      "Crucifixo com dumbbell",
+      "Crucifixo reto",
+      "Crucifixo reto com halteres"
     ],
     "category": "Peito",
     "body_part": "Peito",
@@ -18194,7 +18254,8 @@
       "Front raise com halteres",
       "Elevação frontal de ombro com halteres",
       "Elevação frontal com halter",
-      "Elevação frontal com dumbbell"
+      "Elevação frontal com dumbbell",
+      "Elevação frontal"
     ],
     "category": "Ombros",
     "body_part": "Ombros",
@@ -18334,7 +18395,8 @@
     "nicknames": [
       "Hammer curl com halteres",
       "Rosca martelo com halter",
-      "Rosca martelo com dumbbell"
+      "Rosca martelo com dumbbell",
+      "Rosca martelo"
     ],
     "category": "Braços",
     "body_part": "Braços",
@@ -19771,7 +19833,8 @@
       "Lateral raise com halteres",
       "Voador lateral com halteres",
       "Elevação lateral com halter",
-      "Elevação lateral com dumbbell"
+      "Elevação lateral com dumbbell",
+      "Elevação lateral"
     ],
     "category": "Ombros",
     "body_part": "Ombros",
@@ -19844,7 +19907,9 @@
       "Lunge com halteres",
       "Passada com halteres",
       "Avanço com halter",
-      "Avanço com dumbbell"
+      "Avanço com dumbbell",
+      "Afundo",
+      "Afundo com halteres"
     ],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
@@ -20829,7 +20894,11 @@
     "name": "Remada curvada um braço com halter",
     "nicknames": [
       "Bent over row um braço com halter",
-      "Remada curvado um braço com halter"
+      "Remada curvado um braço com halter",
+      "Serrote",
+      "Remada serrote",
+      "Remada unilateral",
+      "Remada unilateral com halter"
     ],
     "category": "Costas",
     "body_part": "Costas",
@@ -24304,7 +24373,9 @@
       "Shoulder press sentado com halteres",
       "Press de ombro sentado com halteres",
       "Desenvolvimento sentado com halter",
-      "Desenvolvimento sentado com dumbbell"
+      "Desenvolvimento sentado com dumbbell",
+      "Desenvolvimento com halteres",
+      "Desenvolvimento halteres"
     ],
     "category": "Ombros",
     "body_part": "Ombros",
@@ -32537,7 +32608,10 @@
       "Pull-up assistida na máquina de alavanca",
       "Barra assistida na máquina de alavanca",
       "Barra fixa assistida na máquina",
-      "Barra fixa assistida na aparelho"
+      "Barra fixa assistida na aparelho",
+      "Graviton",
+      "Gravitron",
+      "Barra fixa no graviton"
     ],
     "category": "Costas",
     "body_part": "Costas",
@@ -33375,7 +33449,10 @@
     "name": "Extensão de perna na máquina de alavanca",
     "nicknames": [
       "Extensão de perna na máquina",
-      "Extensão de perna na aparelho"
+      "Extensão de perna na aparelho",
+      "Cadeira extensora",
+      "Extensora",
+      "Cadeira de extensão"
     ],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
@@ -33409,7 +33486,10 @@
     "name": "Flexão de perna deitado na máquina de alavanca",
     "nicknames": [
       "Flexão de perna deitado na máquina",
-      "Flexão de perna deitado na aparelho"
+      "Flexão de perna deitado na aparelho",
+      "Mesa flexora",
+      "Flexora deitada",
+      "Flexora deitado"
     ],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
@@ -34104,7 +34184,10 @@
       "Calf raise sentado na máquina de alavanca",
       "Elevação de panturrilhas sentado na máquina de alavanca",
       "Elevação de panturrilha sentado na máquina",
-      "Elevação de panturrilha sentado na aparelho"
+      "Elevação de panturrilha sentado na aparelho",
+      "Panturrilha sentado",
+      "Panturrilha sentada",
+      "Sóleo sentado"
     ],
     "category": "Pernas inferiores",
     "body_part": "Pernas inferiores",
@@ -34284,7 +34367,12 @@
       "Fly sentado na máquina de alavanca",
       "Voador sentado na máquina de alavanca",
       "Crucifixo sentado na máquina",
-      "Crucifixo sentado na aparelho"
+      "Crucifixo sentado na aparelho",
+      "Peck deck",
+      "Pec deck",
+      "Voador",
+      "Crucifixo máquina",
+      "Voador peitoral"
     ],
     "category": "Peito",
     "body_part": "Peito",
@@ -34355,7 +34443,10 @@
     "name": "Abdução de quadril sentado na máquina de alavanca",
     "nicknames": [
       "Abdução de quadril sentado na máquina",
-      "Abdução de quadril sentado na aparelho"
+      "Abdução de quadril sentado na aparelho",
+      "Cadeira abdutora",
+      "Abdutora",
+      "Abdução na máquina"
     ],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
@@ -34390,7 +34481,10 @@
     "name": "Adução de quadril sentado na máquina de alavanca",
     "nicknames": [
       "Adução de quadril sentado na máquina",
-      "Adução de quadril sentado na aparelho"
+      "Adução de quadril sentado na aparelho",
+      "Cadeira adutora",
+      "Adutora",
+      "Adução na máquina"
     ],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
@@ -34424,7 +34518,10 @@
     "name": "Flexão de perna sentado na máquina de alavanca",
     "nicknames": [
       "Flexão de perna sentado na máquina",
-      "Flexão de perna sentado na aparelho"
+      "Flexão de perna sentado na aparelho",
+      "Cadeira flexora",
+      "Flexora sentada",
+      "Flexora sentado"
     ],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
@@ -34495,7 +34592,10 @@
       "Fly invertido sentado na máquina de alavanca",
       "Voador invertido sentado na máquina de alavanca",
       "Crucifixo invertido sentado na máquina",
-      "Crucifixo invertido sentado na aparelho"
+      "Crucifixo invertido sentado na aparelho",
+      "Peck deck invertido",
+      "Voador invertido",
+      "Crucifixo invertido máquina"
     ],
     "category": "Ombros",
     "body_part": "Ombros",
@@ -34787,7 +34887,10 @@
       "Elevação de panturrilhas em pé na máquina de alavanca",
       "Elevação de panturrilha em pé na máquina",
       "Elevação de panturrilha em pé na aparelho",
-      "Elevação de panturrilha de pé na máquina de alavanca"
+      "Elevação de panturrilha de pé na máquina de alavanca",
+      "Panturrilha em pé",
+      "Gêmeos em pé",
+      "Panturrilha em pé na máquina"
     ],
     "category": "Pernas inferiores",
     "body_part": "Pernas inferiores",
@@ -34858,7 +34961,10 @@
     "nicknames": [
       "Row barra t na máquina de alavanca",
       "Remada barra t na máquina",
-      "Remada barra t na aparelho"
+      "Remada barra t na aparelho",
+      "Remada cavalinho",
+      "Cavalinho",
+      "Remada no cavalinho"
     ],
     "category": "Costas",
     "body_part": "Costas",
@@ -37138,7 +37244,9 @@
     "nicknames": [
       "Flexão",
       "Push-up",
-      "Flexão de braços"
+      "Flexão de braços",
+      "Flexão de solo",
+      "Apoio de frente"
     ],
     "category": "Peito",
     "body_part": "Peito",
@@ -38052,7 +38160,10 @@
     "id": "0872",
     "name": "Abdominal invertido",
     "nicknames": [
-      "Crunch abdominal invertido"
+      "Crunch abdominal invertido",
+      "Abdominal infra",
+      "Abdominal inferior",
+      "Infra"
     ],
     "category": "Cintura",
     "body_part": "Cintura",
@@ -40287,7 +40398,9 @@
     "id": "0739",
     "name": "Leg press 45° no sled",
     "nicknames": [
-      "Prensa de pernas 45° no sled"
+      "Prensa de pernas 45° no sled",
+      "Leg press",
+      "Leg press 45"
     ],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
@@ -40533,7 +40646,10 @@
     "id": "0743",
     "name": "Agachamento hack no sled",
     "nicknames": [
-      "Hack squat no sled"
+      "Hack squat no sled",
+      "Hack",
+      "Hack machine",
+      "Agachamento hack"
     ],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
@@ -43747,7 +43863,9 @@
     "name": "Mergulho de tríceps",
     "nicknames": [
       "Dips de tríceps",
-      "Paralelas de tríceps"
+      "Paralelas de tríceps",
+      "Tríceps banco",
+      "Tríceps no banco"
     ],
     "category": "Braços",
     "body_part": "Braços",
@@ -46690,7 +46808,10 @@
     "name": "Extensão de quadril em quatro apoios",
     "nicknames": [
       "Donkey kick",
-      "Coice de glúteo em quatro apoios"
+      "Coice de glúteo em quatro apoios",
+      "Glúteo 4 apoios",
+      "Glúteo quatro apoios",
+      "Coice de glúteo"
     ],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",

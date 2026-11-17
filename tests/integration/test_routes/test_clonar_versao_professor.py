@@ -203,14 +203,14 @@ class TestServicoClonar:
         alheia = _versao(outro.id)
         _treino(alheia)
 
-        with pytest.raises(ValueError, match='Versão não encontrada'):
+        with pytest.raises(ValueError, match='Ficha não encontrada'):
             VersaoService.clonar_versao_de_professor(alheia, prof, aluno)
 
         assert VersaoGlobal.query.filter_by(user_id=aluno).count() == 0
 
     def test_versao_inexistente(self, cenario):
         prof, aluno = cenario
-        with pytest.raises(ValueError, match='Versão não encontrada'):
+        with pytest.raises(ValueError, match='Ficha não encontrada'):
             VersaoService.clonar_versao_de_professor(99999, prof, aluno)
 
     @pytest.mark.parametrize('prof_id,aluno_id', [(None, 1), (1, None), (0, 1), (None, None)])
@@ -223,7 +223,7 @@ class TestServicoClonar:
         _versao(aluno, 'em andamento')
         origem = _versao(prof)
 
-        with pytest.raises(ValueError, match='já tem uma versão ativa'):
+        with pytest.raises(ValueError, match='já tem uma ficha ativa'):
             VersaoService.clonar_versao_de_professor(origem, prof, aluno)
 
         assert VersaoGlobal.query.filter_by(user_id=aluno).count() == 1
@@ -431,7 +431,7 @@ class TestRota:
 
         resp = _post(client, aluno, versao_id=str(alheia))
 
-        assert 'Versão não encontrada.' in resp.get_data(as_text=True)
+        assert 'Ficha não encontrada.' in resp.get_data(as_text=True)
         assert VersaoGlobal.query.filter_by(user_id=aluno).count() == 0
 
     def test_aluno_com_versao_ativa_e_redirecionado_com_aviso(self, client, cenario):
@@ -443,7 +443,7 @@ class TestRota:
         resp = _post(client, aluno, versao_id=str(origem))
 
         assert resp.status_code == 302 and resp.headers['Location'].endswith(f'/versao/{ativa}')
-        assert any(c == 'info' and 'já tem uma versão ativa' in m for c, m in _flashes(client))
+        assert any(c == 'info' and 'já tem uma ficha ativa' in m for c, m in _flashes(client))
         assert VersaoGlobal.query.filter_by(user_id=aluno).count() == 1
 
     def test_professor_nao_clona_para_aluno_de_outro_professor(self, client, cenario):

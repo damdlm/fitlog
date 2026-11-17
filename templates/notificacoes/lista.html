@@ -199,7 +199,7 @@
     <a href="{{ url_for('notificacao.listar', categoria='treinos', aluno_id=remetente_ativo or none) }}"
        class="n-tab {{ 'n-tab-active' if categoria_ativa == 'treinos' else '' }}">Treinos</a>
     <a href="{{ url_for('notificacao.listar', categoria='versoes', aluno_id=remetente_ativo or none) }}"
-       class="n-tab {{ 'n-tab-active' if categoria_ativa == 'versoes' else '' }}">Versões</a>
+       class="n-tab {{ 'n-tab-active' if categoria_ativa == 'versoes' else '' }}">Fichas</a>
 </div>
 
 {% if remetentes %}

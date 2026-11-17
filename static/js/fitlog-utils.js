@@ -282,6 +282,49 @@ const FitLogUtils = (function() {
     }
     
     // =============================================
+    // BUSCA DE EXERCÍCIOS (montagem de ficha e "+ Exercício")
+    // =============================================
+    // Sem acento, minúsculas e espaços simples: "Extensão  de Perna" ->
+    // "extensao de perna".
+    function normalizarBusca(texto) {
+        return (texto || '')
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase().replace(/\s+/g, ' ').trim();
+    }
+
+    // Nota de relevância de um exercício para o termo digitado (todos já
+    // normalizados). Menor = mais relevante; null = não bate. Toda palavra
+    // digitada precisa aparecer (em qualquer ordem) no nome, nos apelidos
+    // ou em "extra" (ex.: o músculo). Níveis: igual ao termo ("rosca
+    // martelo"), começa com ele, contém a frase, contém todas as palavras;
+    // em cada nível o nome vale mais que um apelido.
+    function pontuarBusca(termo, nome, apelidos, extra) {
+        if (!termo) return 0;
+        nome = nome || '';
+        apelidos = apelidos || [];
+        const palavras = termo.split(' ');
+        const tudo = nome + ' ' + apelidos.join(' ') + ' ' + (extra || '');
+        if (!palavras.every(function (p) { return tudo.includes(p); })) return null;
+        function nivel(t) {
+            if (t === termo) return 0;
+            if (t.startsWith(termo + ' ')) return 1;
+            if (t.startsWith(termo)) return 2;
+            if ((' ' + t).includes(' ' + termo)) return 3;
+            if (t.includes(termo)) return 4;
+            if (palavras.every(function (p) { return t.includes(p); })) return 5;
+            return null;
+        }
+        let melhor = 12;  // palavras espalhadas entre nome, apelidos e músculo
+        const n = nivel(nome);
+        if (n !== null) melhor = n * 2;
+        apelidos.forEach(function (a) {
+            const v = nivel(a);
+            if (v !== null && v * 2 + 1 < melhor) melhor = v * 2 + 1;
+        });
+        return melhor;
+    }
+
+    // =============================================
     // EXPORTAR FUNÇÕES PÚBLICAS
     // =============================================
     return {
@@ -294,6 +337,8 @@ const FitLogUtils = (function() {
         formatWeight,
         formatarNumero,
         formatarKg,
+        normalizarBusca,
+        pontuarBusca,
         validateEmail,
         validatePhone,
         confirmAction,

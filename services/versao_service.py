@@ -618,7 +618,7 @@ class VersaoService(BaseService):
 
         descricao = (descricao or '').strip()
         if not descricao:
-            raise ValueError("Descrição da versão é obrigatória.")
+            raise ValueError("Descrição da ficha é obrigatória.")
         if len(descricao) > 200:
             raise ValueError("Descrição deve ter no máximo 200 caracteres.")
 
@@ -627,7 +627,7 @@ class VersaoService(BaseService):
         versao_atual = VersaoService.get_ativa(user_id=user_id)
         if versao_atual:
             raise ValueError(
-                f"Já existe uma versão ativa (v{versao_atual.numero_versao} - "
+                f"Já existe uma ficha ativa (v{versao_atual.numero_versao} - "
                 f"{versao_atual.descricao}). Finalize-a antes de criar outra."
             )
 
@@ -651,7 +651,7 @@ class VersaoService(BaseService):
         except Exception:
             db.session.rollback()
             logger.exception(f"Erro ao criar versão livre para usuário {user_id}")
-            raise ValueError("Não foi possível criar a versão.")
+            raise ValueError("Não foi possível criar a ficha.")
 
     @staticmethod
     def _get_versao_editavel(versao_id, user_id, permitir_finalizada=False):
@@ -667,9 +667,9 @@ class VersaoService(BaseService):
         independente deste parâmetro."""
         versao = VersaoGlobal.query.filter_by(id=versao_id, user_id=user_id).first()
         if not versao:
-            raise ValueError("Versão não encontrada.")
+            raise ValueError("Ficha não encontrada.")
         if versao.data_fim is not None and not permitir_finalizada:
-            raise ValueError("Esta versão já foi finalizada e não pode mais ser alterada.")
+            raise ValueError("Esta ficha já foi finalizada e não pode mais ser alterada.")
         return versao
 
     @staticmethod
@@ -685,7 +685,7 @@ class VersaoService(BaseService):
 
         nova_descricao = (nova_descricao or '').strip()
         if not nova_descricao:
-            raise ValueError("Descrição da versão é obrigatória.")
+            raise ValueError("Descrição da ficha é obrigatória.")
         if len(nova_descricao) > 200:
             raise ValueError("Descrição deve ter no máximo 200 caracteres.")
 
@@ -735,7 +735,7 @@ class VersaoService(BaseService):
         treinos_atuais = TreinoVersao.query.filter_by(versao_id=versao_id).count()
         if treinos_atuais >= VersaoService.MAX_TREINOS_POR_VERSAO:
             raise ValueError(
-                f"Limite de {VersaoService.MAX_TREINOS_POR_VERSAO} treinos por versão atingido."
+                f"Limite de {VersaoService.MAX_TREINOS_POR_VERSAO} treinos por ficha atingido."
             )
 
         codigos_em_uso = {
@@ -802,7 +802,7 @@ class VersaoService(BaseService):
             id=treino_versao_id, versao_id=versao_id
         ).first()
         if not treino_versao:
-            raise ValueError("Treino não encontrado nesta versão.")
+            raise ValueError("Treino não encontrado nesta ficha.")
         return versao, treino_versao
 
     @staticmethod
@@ -921,7 +921,7 @@ class VersaoService(BaseService):
 
         treinos = TreinoVersao.query.filter_by(versao_id=versao_id).all()
         if not treinos:
-            raise ValueError("Adicione pelo menos um treino antes de finalizar a versão.")
+            raise ValueError("Adicione pelo menos um treino antes de finalizar a ficha.")
 
         treinos_sem_exercicio = [
             t.codigo for t in treinos if not t.exercicios
@@ -940,7 +940,7 @@ class VersaoService(BaseService):
         except Exception:
             db.session.rollback()
             logger.exception(f"Erro ao finalizar versão {versao_id}")
-            raise ValueError("Não foi possível finalizar a versão.")
+            raise ValueError("Não foi possível finalizar a ficha.")
 
     @staticmethod
     def clonar_versao(versao_id, user_id=None):
@@ -959,12 +959,12 @@ class VersaoService(BaseService):
 
         origem = VersaoGlobal.query.filter_by(id=versao_id, user_id=user_id).first()
         if not origem:
-            raise ValueError("Versão não encontrada.")
+            raise ValueError("Ficha não encontrada.")
 
         versao_atual = VersaoService.get_ativa(user_id=user_id)
         if versao_atual:
             raise ValueError(
-                f"Já existe uma versão ativa (v{versao_atual.numero_versao} - "
+                f"Já existe uma ficha ativa (v{versao_atual.numero_versao} - "
                 f"{versao_atual.descricao}). Finalize-a antes de clonar outra."
             )
 
@@ -1022,7 +1022,7 @@ class VersaoService(BaseService):
         except Exception:
             db.session.rollback()
             logger.exception(f"Erro ao clonar versão {versao_id}")
-            raise ValueError("Não foi possível clonar a versão.")
+            raise ValueError("Não foi possível clonar a ficha.")
 
     @staticmethod
     def clonar_versao_de_professor(versao_id, professor_id, aluno_id, validade_meses='__manter__'):
@@ -1058,7 +1058,7 @@ class VersaoService(BaseService):
 
         origem = VersaoGlobal.query.filter_by(id=versao_id, user_id=professor_id).first()
         if not origem:
-            raise ValueError("Versão não encontrada.")
+            raise ValueError("Ficha não encontrada.")
 
         if validade_meses == '__manter__':
             validade_meses = origem.validade_meses
@@ -1068,7 +1068,7 @@ class VersaoService(BaseService):
         versao_atual_aluno = VersaoService.get_ativa(user_id=aluno_id)
         if versao_atual_aluno:
             raise ValueError(
-                f"O aluno já tem uma versão ativa (v{versao_atual_aluno.numero_versao} - "
+                f"O aluno já tem uma ficha ativa (v{versao_atual_aluno.numero_versao} - "
                 f"{versao_atual_aluno.descricao}). Finalize-a antes de clonar outra."
             )
 
@@ -1144,7 +1144,7 @@ class VersaoService(BaseService):
             logger.exception(
                 f"Erro ao clonar versão {versao_id} do professor {professor_id} para o aluno {aluno_id}"
             )
-            raise ValueError("Não foi possível clonar a versão para o aluno.")
+            raise ValueError("Não foi possível clonar a ficha para o aluno.")
 
     @staticmethod
     def _resolver_exercicio_do_aluno(exercicio_professor_id, professor_id, aluno_id, cache):
@@ -1331,17 +1331,17 @@ class VersaoService(BaseService):
 
         versao = VersaoGlobal.query.filter_by(id=versao_id, user_id=user_id).first()
         if not versao:
-            raise ValueError("Versão não encontrada.")
+            raise ValueError("Ficha não encontrada.")
 
         if versao.data_fim is None:
-            raise ValueError("Não é possível excluir a versão ativa. Finalize-a primeiro.")
+            raise ValueError("Não é possível excluir a ficha ativa. Finalize-a primeiro.")
 
         tem_registros = db.session.query(RegistroTreino.id).filter_by(
             versao_id=versao_id
         ).first() is not None
         if tem_registros:
             raise ValueError(
-                "Esta versão tem treinos já registrados e não pode ser excluída, "
+                "Esta ficha tem treinos já registrados e não pode ser excluída, "
                 "para não perder seu histórico."
             )
 
@@ -1353,7 +1353,7 @@ class VersaoService(BaseService):
         except Exception:
             db.session.rollback()
             logger.exception(f"Erro ao excluir versão {versao_id}")
-            raise ValueError("Não foi possível excluir a versão.")
+            raise ValueError("Não foi possível excluir a ficha.")
 
     # Quantos dias antes do vencimento o alerta de expiração dispara
     # (ver alertar_expiracoes). Uma janela só, não é obrigatório rodar o
@@ -1417,8 +1417,8 @@ class VersaoService(BaseService):
                     destinatario_id=dono.id,
                     remetente_id=None,
                     tipo='versao_expirando',
-                    titulo='Sua versão de treino está expirando',
-                    mensagem=f"Sua versão v{versao.numero_versao} ({versao.descricao}) {prazo_txt}.",
+                    titulo='Sua ficha de treino está expirando',
+                    mensagem=f"Sua ficha v{versao.numero_versao} ({versao.descricao}) {prazo_txt}.",
                     url=url_versao,
                     chave_agrupamento=f"versao_expirando:{versao.id}",
                 )
@@ -1432,8 +1432,8 @@ class VersaoService(BaseService):
                         destinatario_id=professor.id,
                         remetente_id=None,
                         tipo='versao_expirando',
-                        titulo='Versão de um aluno está expirando',
-                        mensagem=f"A versão v{versao.numero_versao} de {nome_dono} {prazo_txt}.",
+                        titulo='Ficha de um aluno está expirando',
+                        mensagem=f"A ficha v{versao.numero_versao} de {nome_dono} {prazo_txt}.",
                         url=f"/professor/aluno/{dono.id}/versao/{versao.id}",
                         chave_agrupamento=f"versao_expirando_professor:{versao.id}",
                     )

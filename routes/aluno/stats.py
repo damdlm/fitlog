@@ -11,6 +11,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def _tem_registros(user_id):
+    """E4: sem nenhum treino registrado, o Progresso mostra um aviso só."""
+    from models import RegistroTreino, db
+    return db.session.query(RegistroTreino.id).filter(RegistroTreino.user_id == user_id).first() is not None
+
+
 @aluno_bp.route('/estatisticas')
 @login_required
 @acesso_premium_required('estatisticas')
@@ -55,7 +61,8 @@ def estatisticas():
                          musculo_destaque=musculo_destaque,
                          volume_maximo_musculo=volume_maximo_musculo,
                          exercicios_selecionaveis=exercicios_selecionaveis,
-                         cardio_semana=resumo_cardio_semana(current_user.id))
+                         cardio_semana=resumo_cardio_semana(current_user.id),
+                         tem_registros=_tem_registros(current_user.id))
 
 @aluno_bp.route('/api/buscar-professores')
 @login_required

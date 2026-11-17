@@ -77,7 +77,7 @@ class TestListarVersoes:
     def test_lista_vazia_quando_nao_ha_versoes(self, aluno_client):
         resp = aluno_client.get('/aluno/versoes')
         assert resp.status_code == 200
-        assert 'Nenhuma versão ainda' in resp.get_data(as_text=True)
+        assert 'Nenhuma ficha ainda' in resp.get_data(as_text=True)
 
     def test_lista_versao_ativa_e_finalizada(self, aluno_client, app, aluno):
         with app.app_context():
@@ -103,11 +103,11 @@ class TestVerVersao:
         with app.app_context():
             versao_id = _criar_versao_finalizada(outro_aluno)
         resp = aluno_client.get(f'/aluno/versao/{versao_id}', follow_redirects=True)
-        assert 'Versão não encontrada' in resp.get_data(as_text=True)
+        assert 'Ficha não encontrada' in resp.get_data(as_text=True)
 
     def test_versao_inexistente_redireciona_com_flash(self, aluno_client):
         resp = aluno_client.get('/aluno/versao/99999', follow_redirects=True)
-        assert 'Versão não encontrada' in resp.get_data(as_text=True)
+        assert 'Ficha não encontrada' in resp.get_data(as_text=True)
 
     def test_mostra_treinos_e_exercicios_de_versao_finalizada(self, aluno_client, app, aluno):
         with app.app_context():
@@ -243,7 +243,7 @@ class TestClonarVersao:
         aluno_client.post('/aluno/cadastrar-treinos/versao', data={'descricao': 'Já ativa'})
 
         resp = aluno_client.post(f'/aluno/versao/{versao_id}/clonar', follow_redirects=True)
-        assert 'Já existe uma versão ativa' in resp.get_data(as_text=True)
+        assert 'Já existe uma ficha ativa' in resp.get_data(as_text=True)
         with app.app_context():
             assert VersaoGlobal.query.filter_by(user_id=aluno).count() == 2
 

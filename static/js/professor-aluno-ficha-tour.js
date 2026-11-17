@@ -19,7 +19,7 @@
             {
                 element: '.va-profile-card',
                 popover: {
-                    title: 'Ficha do aluno',
+                    title: 'Página do aluno',
                     description: 'Nome, situação (<b>Ativo</b> ou <b>Inativo</b>) e contato do aluno, '
                         + 'além de desde quando ele está na plataforma.',
                     side: 'bottom', align: 'center'
@@ -36,8 +36,8 @@
             {
                 element: '.va-actions-pair .va-btn-solid',
                 popover: {
-                    title: 'Versões de treino',
-                    description: 'Abre as <b>versões</b> do treino deste aluno: a ativa e o histórico. '
+                    title: 'Fichas de treino',
+                    description: 'Abre as <b>fichas</b> do treino deste aluno: a ativa e o histórico. '
                         + 'É por lá que você monta e edita os treinos dele.',
                     side: 'bottom', align: 'end'
                 }
@@ -45,8 +45,8 @@
             {
                 element: '.va-actions > a.va-btn-ghost',
                 popover: {
-                    title: 'Nova versão',
-                    description: 'Aparece quando o aluno <b>não tem versão ativa</b>. '
+                    title: 'Nova ficha',
+                    description: 'Aparece quando o aluno <b>não tem ficha ativa</b>. '
                         + 'Cria a próxima fase de treino para ele.',
                     side: 'bottom', align: 'end'
                 }

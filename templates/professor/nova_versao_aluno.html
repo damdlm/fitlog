@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block page_icon %}<i class="bi bi-plus-circle" style="color: #F28C33;"></i>{% endblock %}
-{% block page_title %}Nova Versão para {{ aluno.nome_completo or aluno.username }}{% endblock %}
+{% block page_title %}Nova Ficha para {{ aluno.nome_completo or aluno.username }}{% endblock %}
 
 {% block content %}
 <style>
@@ -45,7 +45,7 @@
 <div class="nv-header">
     <h1 class="d-none d-md-block">
         <i class="bi bi-plus-circle me-2" style="color: #F28C33;"></i>
-        Nova Versão para {{ aluno.nome_completo or aluno.username }}
+        Nova Ficha para {{ aluno.nome_completo or aluno.username }}
     </h1>
     <a href="{{ url_for('professor.versoes_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Voltar
@@ -54,12 +54,12 @@
 
 <div class="nv-card">
     <div class="nv-icon"><i class="bi bi-flag"></i></div>
-    <h2>Comece uma nova versão</h2>
+    <h2>Comece uma nova ficha</h2>
     <p>Dê um nome pra essa fase do treino de {{ aluno.nome_completo or aluno.username }}. A data de início é hoje, e vocês adicionam os treinos depois.</p>
     <form method="post" class="nv-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="mb-3">
-            <label for="descricao" class="form-label fw-bold">Descrição da versão</label>
+            <label for="descricao" class="form-label fw-bold">Descrição da ficha</label>
             <input type="text" id="descricao" name="descricao" class="form-control form-control-lg"
                    placeholder="Ex: Foco em hipertrofia - Setembro" maxlength="200" required autofocus>
         </div>
@@ -71,12 +71,12 @@
                 <span class="input-group-text">meses</span>
             </div>
             <div class="form-text">
-                Deixe em branco pra versão sem prazo. Se preenchido, {{ aluno.nome_completo or aluno.username }}
+                Deixe em branco pra ficha sem prazo. Se preenchido, {{ aluno.nome_completo or aluno.username }}
                 e você recebem um aviso quando estiver perto de vencer.
             </div>
         </div>
         <button type="submit" class="btn btn-lg w-100" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
-            <i class="bi bi-check-circle"></i> Criar versão
+            <i class="bi bi-check-circle"></i> Criar ficha
         </button>
     </form>
     <div class="d-flex align-items-center gap-2 my-3" style="max-width: 420px; margin: 0 auto;">
@@ -84,7 +84,7 @@
     </div>
     <a href="{{ url_for('professor.clonar_minha_versao_aluno', aluno_id=aluno.id) }}"
        class="btn btn-outline-secondary" style="max-width: 420px; width: 100%; border-radius: 10px;">
-        <i class="bi bi-copy"></i> Clonar uma das minhas versões
+        <i class="bi bi-copy"></i> Clonar uma das minhas fichas
     </a>
 </div>
 {% endblock %}

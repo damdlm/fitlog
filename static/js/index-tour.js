@@ -84,7 +84,7 @@
                 element: ['a.mega-trigger[title="Cadastrar Treinos"]'],
                 popover: {
                     title: 'Cadastrar treinos',
-                    description: 'Aqui você monta as versões do seu treino (A, B, C...) e escolhe os exercícios.',
+                    description: 'Aqui você monta as fichas do seu treino (A, B, C...) e escolhe os exercícios.',
                     side: 'bottom', align: 'center'
                 }
             },

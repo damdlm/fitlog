@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block page_icon %}<i class="bi bi-layers" style="color: #F28C33;"></i>{% endblock %}
-{% block page_title %}Minhas Versões{% endblock %}
+{% block page_title %}Minhas Fichas{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ static_v('vendor/driverjs/driver.css') }}">
@@ -107,7 +107,12 @@
     .v-status-pill.ativa .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
     .v-status-pill.finalizada { background: var(--v-bg-soft); color: var(--v-muted); }
 
-    .v-card-actions { display: flex; align-items: center; gap: 8px; }
+    .v-card-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+    /* T5: texto ocupa o espaço e a seta fica sempre à direita, centrada --
+       antes o flex-wrap do cartão jogava a seta da ficha encerrada (que tem
+       a linha extra "Encerrada em") para baixo, à esquerda. */
+    .v-card { flex-wrap: nowrap; }
+    .v-card > div:first-child { flex: 1 1 auto; min-width: 0; }
 
     /* ==========================================================
        DESKTOP (>= 992px) -- cabeçalho em linha única e versões em
@@ -169,11 +174,11 @@
     <a href="{{ voltar_url }}" class="btn btn-sm btn-outline-secondary v-voltar-btn">
         <i class="bi bi-arrow-left"></i> Voltar
     </a>
-    <h1><i class="bi bi-layers me-1" style="color:#F28C33;"></i> {{ titulo or 'Minhas Versões' }}</h1>
+    <h1><i class="bi bi-layers me-1" style="color:#F28C33;"></i> {{ titulo or 'Minhas Fichas' }}</h1>
     {% set tem_versao_ativa = versoes|selectattr('data_fim', 'none')|list|length > 0 %}
     {% if criar_versao_url and versoes and not tem_versao_ativa %}
     <a href="{{ criar_versao_url }}" class="btn btn-sm" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
-        <i class="bi bi-plus-circle"></i> Nova versão
+        <i class="bi bi-plus-circle"></i> Nova ficha
     </a>
     {% endif %}
 </div>
@@ -181,10 +186,10 @@
 {% if not versoes %}
 <div class="v-empty-card">
     <div class="v-empty-icon"><i class="bi bi-layers"></i></div>
-    <h2>Nenhuma versão ainda</h2>
-    <p>{{ vazio_texto or 'Vá em "Cadastrar Treinos" para criar a primeira versão de treino.' }}</p>
+    <h2>Nenhuma ficha ainda</h2>
+    <p>{{ vazio_texto or 'Vá em "Cadastrar Treinos" para criar a primeira ficha de treino.' }}</p>
     <a href="{{ criar_versao_url or voltar_url }}" class="btn" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
-        <i class="bi bi-check-circle"></i> {{ 'Criar versão' if criar_versao_url else 'Começar agora' }}
+        <i class="bi bi-check-circle"></i> {{ 'Criar ficha' if criar_versao_url else 'Começar agora' }}
     </a>
 </div>
 {% else %}

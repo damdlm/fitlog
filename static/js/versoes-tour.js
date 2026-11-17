@@ -20,10 +20,10 @@
             {
                 element: '.v-empty-card',
                 popover: {
-                    title: 'Nenhuma versão ainda',
+                    title: 'Nenhuma ficha ainda',
                     description: doProfessor
-                        ? 'Este aluno ainda não tem versão de treino. Toque em <b>Criar versão</b> para montar a primeira.'
-                        : 'Você ainda não tem versão de treino. Toque no botão para <b>criar a primeira</b> e montar os seus treinos.',
+                        ? 'Este aluno ainda não tem ficha de treino. Toque em <b>Criar ficha</b> para montar a primeira.'
+                        : 'Você ainda não tem ficha de treino. Toque no botão para <b>criar a primeira</b> e montar os seus treinos.',
                     side: 'top', align: 'center'
                 }
             },
@@ -32,7 +32,7 @@
                 popover: {
                     title: 'Voltar',
                     description: doProfessor
-                        ? 'Volta para a ficha do aluno.'
+                        ? 'Volta para a página do aluno.'
                         : 'Volta para a tela de Cadastrar treinos.',
                     side: 'bottom', align: 'start'
                 }
@@ -40,8 +40,8 @@
             {
                 element: '.v-header a.btn:not(.v-voltar-btn)',
                 popover: {
-                    title: 'Nova versão',
-                    description: 'Aparece quando não há nenhuma versão <b>ativa</b>. '
+                    title: 'Nova ficha',
+                    description: 'Aparece quando não há nenhuma ficha <b>ativa</b>. '
                         + 'Cria a próxima fase de treino'
                         + (doProfessor ? ' para o aluno.' : '.'),
                     side: 'bottom', align: 'end'
@@ -50,7 +50,7 @@
             {
                 element: '.v-card',
                 popover: {
-                    title: 'Uma versão por cartão',
+                    title: 'Uma ficha por cartão',
                     description: 'Cada cartão é uma fase do treino: número, nome, data de início e '
                         + 'quantos treinos ela tem. A mais recente fica no topo. '
                         + 'Toque no cartão para abrir' + (doProfessor ? ' e editar.' : '.'),
@@ -61,7 +61,7 @@
                 element: '.v-card .v-status-pill',
                 popover: {
                     title: 'Ativa ou finalizada',
-                    description: '<b>Ativa</b> é a versão em uso agora (só pode haver uma). '
+                    description: '<b>Ativa</b> é a ficha em uso agora (só pode haver uma). '
                         + '<b>Finalizada</b> vira histórico: guarda o que foi feito e pode ser clonada '
                         + 'para começar uma nova fase.',
                     side: 'bottom', align: 'start'

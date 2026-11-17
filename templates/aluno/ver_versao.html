@@ -580,7 +580,7 @@
             <span><i class="bi bi-list-check"></i> {{ total_ex.value }} exercício{{ 's' if total_ex.value != 1 else '' }}</span>
         </div>
         {% if esta_ativa %}
-        <button type="button" class="btn btn-sm ct-btn-treino ct-btn-editar-treino ct-hero-desc-edit" data-bs-toggle="modal" data-bs-target="#modalEditarVersao" title="Editar descrição da versão">
+        <button type="button" class="btn btn-sm ct-btn-treino ct-btn-editar-treino ct-hero-desc-edit" data-bs-toggle="modal" data-bs-target="#modalEditarVersao" title="Editar descrição da ficha">
             <span class="ct-btn-treino-icon"><i class="bi bi-pencil-fill"></i></span> Editar
         </button>
         {% endif %}
@@ -589,8 +589,8 @@
     <div class="ct-hero-actions">
         <button type="button" class="btn btn-sm btn-outline-primary"
                 data-confirm-url="{{ clonar_url }}"
-                data-confirm-title="Clonar esta versão?"
-                data-confirm-text="Cria uma nova versão ativa com os mesmos treinos e exercícios desta. Só é possível se você não tiver nenhuma versão ativa no momento."
+                data-confirm-title="Clonar esta ficha?"
+                data-confirm-text="Cria uma nova ficha ativa com os mesmos treinos e exercícios desta. Só é possível se você não tiver nenhuma ficha ativa no momento."
                 data-confirm-variant="primary"
                 data-confirm-icon="bi-copy"
                 data-confirm-label="Sim, clonar">
@@ -598,8 +598,8 @@
         </button>
         <button type="button" class="btn btn-sm btn-outline-danger"
                 data-confirm-url="{{ excluir_url }}"
-                data-confirm-title="Excluir esta versão?"
-                data-confirm-text="Essa ação não pode ser desfeita. Só é possível excluir se nenhum treino desta versão já tiver sido registrado."
+                data-confirm-title="Excluir esta ficha?"
+                data-confirm-text="Essa ação não pode ser desfeita. Só é possível excluir se nenhum treino desta ficha já tiver sido registrado."
                 data-confirm-variant="danger"
                 data-confirm-icon="bi-trash"
                 data-confirm-label="Sim, excluir">
@@ -611,12 +611,12 @@
 
 {% if total_treinos >= max_treinos %}
 <div class="ct-finalizar-hint text-center" style="margin-bottom: 20px;">
-    <i class="bi bi-info-circle"></i> Limite de {{ max_treinos }} treinos por versão atingido.
+    <i class="bi bi-info-circle"></i> Limite de {{ max_treinos }} treinos por ficha atingido.
 </div>
 {% endif %}
 
 <div class="ct-section-title">
-    <h2><i class="bi bi-trophy" style="color:#F28C33;"></i> Treinos desta versão</h2>
+    <h2><i class="bi bi-trophy" style="color:#F28C33;"></i> Treinos desta ficha</h2>
     <button type="button" class="rt-tour-ajuda" id="btnTourVersaoLista">
         <i class="bi bi-question-circle"></i> Tutorial
     </button>
@@ -629,7 +629,7 @@
         <i class="bi bi-trophy"></i>
     </div>
     <h2 style="font-size:1.2rem;font-weight:700;color:var(--ct-ink);margin-bottom:6px;">Nenhum treino ainda</h2>
-    <p style="color:var(--ct-muted);font-size:0.92rem;margin-bottom:0;">Adicione o primeiro treino desta versão (ex: "Treino A - Peito e Tríceps").</p>
+    <p style="color:var(--ct-muted);font-size:0.92rem;margin-bottom:0;">Adicione o primeiro treino desta ficha (ex: "Treino A - Peito e Tríceps").</p>
 </div>
 {% else %}
     {% for tv in treinos_versao %}
@@ -660,7 +660,7 @@
                 <button type="button" class="btn btn-sm ct-btn-treino ct-btn-excluir-treino"
                         data-confirm-url="{{ remover_treino_url(tv.id) }}"
                         data-confirm-title="Remover o treino {{ codigo }}?"
-                        data-confirm-text="&quot;{{ tv.nome_treino }}&quot; e todos os seus exercícios associados serão removidos desta versão. Essa ação não pode ser desfeita. Se este treino já tiver sido registrado alguma vez, a remoção será bloqueada para não perder o histórico."
+                        data-confirm-text="&quot;{{ tv.nome_treino }}&quot; e todos os seus exercícios associados serão removidos desta ficha. Essa ação não pode ser desfeita. Se este treino já tiver sido registrado alguma vez, a remoção será bloqueada para não perder o histórico."
                         data-confirm-variant="danger"
                         data-confirm-icon="bi-trash"
                         data-confirm-label="Sim, remover">
@@ -697,7 +697,7 @@
             {% if esta_ativa %}
             Sem exercícios ainda — clique em "Editar" para adicionar.
             {% else %}
-            Sem exercícios registrados nesta versão.
+            Sem exercícios registrados nesta ficha.
             {% endif %}
         </div>
         {% endif %}
@@ -720,14 +720,14 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
-                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Versão</h5>
+                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Ficha</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="post" action="{{ editar_descricao_url }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-1">
-                        <label class="form-label fw-bold">Descrição da versão</label>
+                        <label class="form-label fw-bold">Descrição da ficha</label>
                         <input type="text" name="descricao" class="form-control form-control-lg"
                                value="{{ versao.descricao }}" maxlength="200" required autofocus>
                     </div>
@@ -736,7 +736,7 @@
                     {% if esta_ativa %}
                     <button type="button" class="btn btn-danger"
                             data-confirm-url="{{ finalizar_url }}"
-                            data-confirm-title="Finalizar esta versão?"
+                            data-confirm-title="Finalizar esta ficha?"
                             data-confirm-text="Depois de finalizada, ela sai do modo de edição rápida e passa a fazer parte do seu histórico. Você ainda pode editá-la por aqui depois, se precisar."
                             data-confirm-variant="danger"
                             data-confirm-icon="bi-flag"
@@ -905,7 +905,7 @@
 
 <div class="text-center mt-4">
     <a href="{{ voltar_url }}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left"></i> Voltar para {{ voltar_label or 'Minhas Versões' }}
+        <i class="bi bi-arrow-left"></i> Voltar para {{ voltar_label or 'Minhas Fichas' }}
     </a>
 </div>
 {% endblock %}

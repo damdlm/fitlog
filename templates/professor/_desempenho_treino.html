@@ -11,14 +11,14 @@
             <form method="get" id="estFiltroVersao" class="d-flex align-items-center gap-2 mb-0">
                 <input type="hidden" name="inicio" value="{{ data_inicio_sel.isoformat() }}">
                 <input type="hidden" name="fim" value="{{ data_fim_sel.isoformat() }}">
-                <label for="estFiltroVersaoSel" class="small text-muted mb-0">Versão</label>
+                <label for="estFiltroVersaoSel" class="small text-muted mb-0">Ficha</label>
                 <select id="estFiltroVersaoSel" name="versao" class="form-select form-select-sm w-auto">
                     {% for v in versoes %}
                     <option value="{{ v.id }}" {% if not versao_todas and v.id == versao_sel_id %}selected{% endif %}>
                         V{{ v.numero_versao }} · {{ v.descricao }}{% if v.id == versao_ativa_id %} (ativa){% endif %}
                     </option>
                     {% endfor %}
-                    <option value="todas" {% if versao_todas %}selected{% endif %}>Todas as versões</option>
+                    <option value="todas" {% if versao_todas %}selected{% endif %}>Todas as fichas</option>
                 </select>
                 <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Filtrar</button></noscript>
             </form>
@@ -52,7 +52,7 @@
         {% else %}
         <div class="est-empty">
             <i class="bi bi-clipboard-x"></i>
-            {% if versoes %}Esta versão não tem treinos cadastrados.{% else %}Este aluno ainda não tem treinos cadastrados.{% endif %}
+            {% if versoes %}Esta ficha não tem treinos cadastrados.{% else %}Este aluno ainda não tem treinos cadastrados.{% endif %}
         </div>
         {% endif %}
     </div>

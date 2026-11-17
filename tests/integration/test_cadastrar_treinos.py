@@ -53,7 +53,7 @@ class TestCriarVersaoLivre:
     def test_get_sem_versao_ativa_mostra_estado_vazio(self, aluno_client):
         resp = aluno_client.get('/aluno/cadastrar-treinos')
         assert resp.status_code == 200
-        assert 'Comece uma nova vers' in resp.get_data(as_text=True)
+        assert 'Comece uma nova ficha' in resp.get_data(as_text=True)
 
     def test_criar_versao_define_data_inicio_hoje_sem_data_fim(self, aluno_client, app, aluno):
         aluno_client.post('/aluno/cadastrar-treinos/versao', data={'descricao': 'Foco em hipertrofia'})
@@ -94,7 +94,7 @@ class TestCriarVersaoLivre:
 
 class TestAdicionarTreinoLivre:
     def _criar_versao(self, client):
-        client.post('/aluno/cadastrar-treinos/versao', data={'descricao': 'Minha versão'})
+        client.post('/aluno/cadastrar-treinos/versao', data={'descricao': 'Minha ficha'})
 
     def test_primeiro_treino_recebe_codigo_a(self, aluno_client, app, aluno):
         self._criar_versao(aluno_client)
@@ -152,7 +152,7 @@ class TestAdicionarTreinoLivre:
     ):
         with app.app_context():
             versao_outro = VersaoGlobal(
-                numero_versao=1, descricao='Versão do outro usuário', divisao='LIVRE',
+                numero_versao=1, descricao='Ficha do outro usuário', divisao='LIVRE',
                 data_inicio=date.today(), user_id=outro_aluno
             )
             db.session.add(versao_outro)

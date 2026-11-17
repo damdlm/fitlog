@@ -4,11 +4,119 @@ from . import aluno_bp
 from models import db, User, AlunoProfessor, SolicitacaoVinculo, TreinoVersao, VersaoGlobal, ExercicioCustomizado, RegistroTreino
 from utils.decorators import acesso_premium_required
 from services.avaliacao_professor_service import AvaliacaoProfessorService
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, timezone, timedelta
+
+from sqlalchemy import func
+from sqlalchemy.orm import selectinload
+
+from services.onboarding_service import passos_comece_por_aqui
+from utils.format_utils import formatar_kg
 from zoneinfo import ZoneInfo
 import logging
 
 logger = logging.getLogger(__name__)
+
+def _resumo_series(series):
+    """ "32,5 kg × 8–10 · 3 séries" (mesma leitura do selo "Última" do
+    registro); peso corporal/sem carga mostra só as repetições."""
+    if not series:
+        return ''
+    if series[0].eh_cardio:
+        return series[0].resumo_cardio
+    cargas = [s.carga for s in series if s.carga is not None and s.carga > 0]
+    reps = [s.repeticoes for s in series if s.repeticoes is not None]
+    faixa = ''
+    if reps:
+        faixa = str(min(reps)) if min(reps) == max(reps) else f'{min(reps)}–{max(reps)}'
+    if len(set(cargas)) == 1:
+        texto = formatar_kg(cargas[0]) + (f' × {faixa}' if faixa else '')
+    elif cargas:
+        texto = f'até {formatar_kg(max(cargas))}'
+    else:
+        texto = f'{faixa} reps' if faixa else ''
+    n = len(series)
+    return (texto + ' · ' if texto else '') + f'{n} série' + ('s' if n != 1 else '')
+
+
+def _ultimas_sessoes(user_id, limite=3):
+    """As `limite` sessões mais recentes (dia + treino), cada uma com os
+    exercícios, o volume (carga × repetições) e o tempo do cronômetro."""
+    dia = func.date(RegistroTreino.data_registro)
+    chaves = db.session.query(
+        dia.label('dia'), RegistroTreino.treino_versao_id, func.max(RegistroTreino.created_at)
+    ).filter(
+        RegistroTreino.user_id == user_id
+    ).group_by(
+        dia, RegistroTreino.treino_versao_id
+    ).order_by(
+        dia.desc(), func.max(RegistroTreino.created_at).desc().nullslast()
+    ).limit(limite).all()
+    if not chaves:
+        return []
+
+    def _como_data(valor):
+        return valor if isinstance(valor, date) else date.fromisoformat(str(valor)[:10])
+
+    ordem = [(_como_data(d), tv) for d, tv, _ in chaves]
+    inicio = min(d for d, _ in ordem)
+    fim = max(d for d, _ in ordem) + timedelta(days=1)
+    registros = RegistroTreino.query.options(
+        selectinload(RegistroTreino.series),
+        selectinload(RegistroTreino.exercicio),
+        selectinload(RegistroTreino.exercicio_base),
+        selectinload(RegistroTreino.treino_ref),
+    ).filter(
+        RegistroTreino.user_id == user_id,
+        RegistroTreino.treino_versao_id.in_({tv for _, tv in ordem}),
+        RegistroTreino.data_registro >= datetime.combine(inicio, datetime.min.time()),
+        RegistroTreino.data_registro < datetime.combine(fim, datetime.min.time()),
+    ).order_by(RegistroTreino.created_at.asc().nullsfirst(), RegistroTreino.id.asc()).all()
+
+    por_sessao = {}
+    for r in registros:
+        por_sessao.setdefault((r.data_registro.date(), r.treino_versao_id), []).append(r)
+
+    sessoes = []
+    for chave in ordem:
+        regs = por_sessao.get(chave, [])
+        if not regs:
+            continue
+        treino = regs[0].treino_ref
+        volume = 0.0
+        tempo = None
+        exercicios = []
+        for r in regs:
+            series = sorted(r.series or [], key=lambda s: (s.ordem or 0))
+            for s in series:
+                if not s.eh_cardio and s.carga and s.repeticoes:
+                    volume += float(s.carga) * s.repeticoes
+                if s.tempo_treino and (tempo is None or s.tempo_treino > tempo):
+                    tempo = s.tempo_treino
+            ex = r.exercicio or r.exercicio_base
+            exercicios.append({'nome': ex.nome if ex else 'Exercício', 'resumo': _resumo_series(series)})
+        sessoes.append({
+            'data': chave[0],
+            'codigo': treino.codigo if treino else '',
+            'nome': (treino.nome_treino if treino else '') or '',
+            'exercicios': exercicios,
+            'volume': volume,
+            'tempo': f"{tempo // 3600:02d}:{(tempo % 3600) // 60:02d}" if tempo else None,
+        })
+    return sessoes
+
+
+def _proximo_treino(user_id):
+    """Treino sugerido para hoje (R1) na ficha ativa, para o botão
+    "Registrar próximo treino"; None sem ficha ativa com treinos."""
+    from routes.register_routes import _anotar_sugestao_treino
+    from services.versao_service import VersaoService
+    hoje = datetime.now(ZoneInfo('America/Sao_Paulo')).date()
+    versao = VersaoService.get_ativa(user_id=user_id)
+    if not versao or versao.data_fim:
+        return None
+    treinos = _anotar_sugestao_treino(VersaoService.get_treinos_para_registro(versao.id), user_id, hoje)
+    return next((t for t in treinos if t.get('sugerido')), treinos[0] if treinos else None)
+
 
 @aluno_bp.route('/dashboard')
 @login_required
@@ -27,42 +135,12 @@ def dashboard():
     total_versoes = VersaoGlobal.query.filter_by(user_id=current_user.id).count()
     total_registros = RegistroTreino.query.filter_by(user_id=current_user.id).count()
     
-    # Último treino: uma "sessão" é identificada por treino_id + período +
-    # semana + versão (é essa combinação que o registro_service usa pra
-    # saber quais linhas substituir ao salvar). Antes pegávamos só os
-    # últimos 5 registros por data, o que podia misturar exercícios de
-    # sessões diferentes — agora buscamos o registro mais recente e todos
-    # os outros que pertencem à mesma sessão dele.
-    #
-    # data_registro guarda só o DIA escolhido no formulário (sem hora --
-    # é um date puro, não um timestamp), então duas sessões diferentes
-    # registradas no mesmo dia (dois treinos no mesmo dia, por exemplo)
-    # empatam nesse critério. Sem um desempate, ".first()" podia devolver
-    # a sessão errada (não necessariamente a última salva de fato), o que
-    # fazia o tempo mostrado no dashboard não bater com o último treino
-    # real. created_at tem timestamp completo (é preenchido automaticamente
-    # no insert) e resolve esse empate de forma determinística.
-    ultimo_registro = RegistroTreino.query.filter_by(user_id=current_user.id)\
-        .order_by(RegistroTreino.data_registro.desc(), RegistroTreino.created_at.desc())\
-        .first()
-
-    ultimos_registros = []
-    tempo_ultimo_treino = None
-    if ultimo_registro:
-        ultimos_registros = RegistroTreino.query.filter_by(
-            user_id=current_user.id,
-            treino_versao_id=ultimo_registro.treino_versao_id,
-            periodo=ultimo_registro.periodo,
-            semana=ultimo_registro.semana,
-            versao_id=ultimo_registro.versao_id
-        ).order_by(RegistroTreino.data_registro.desc(), RegistroTreino.created_at.desc()).all()
-
-        for registro in ultimos_registros:
-            if registro.series:
-                tt = registro.series[0].tempo_treino
-                if tt is not None:
-                    tempo_ultimo_treino = f"{tt // 3600:02d}:{(tt % 3600) // 60:02d}"
-                    break
+    # Últimos treinos (D1): uma sessão = dia + treino (mesma regra da
+    # contagem de "Treinos realizados", ver estatistica_service). Antes a
+    # sessão era treino + período + semana, e dois dias do mesmo treino na
+    # mesma semana viravam uma lista só de exercícios misturados.
+    ultimas_sessoes = _ultimas_sessoes(current_user.id, limite=3)
+    proximo_treino = _proximo_treino(current_user.id)
 
     # Atividade dos últimos 7 dias (para o gráfico de constância)
     hoje = datetime.now(timezone.utc).date()
@@ -114,8 +192,9 @@ def dashboard():
                          total_exercicios=total_exercicios,
                          total_versoes=total_versoes,
                          total_registros=total_registros,
-                         ultimos_registros=ultimos_registros,
-                         tempo_ultimo_treino=tempo_ultimo_treino,
+                         ultimas_sessoes=ultimas_sessoes,
+                         proximo_treino=proximo_treino,
+                         comece=passos_comece_por_aqui(current_user),
                          dias_semana_labels=dias_semana_labels,
                          dias_semana_valores=dias_semana_valores,
                          dias_semana_detalhes=dias_semana_detalhes,

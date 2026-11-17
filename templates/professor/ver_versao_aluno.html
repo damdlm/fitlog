@@ -90,7 +90,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>
         <i class="bi bi-pencil-square me-2" style="color: #F28C33;"></i>
-        Versão {{ versao.numero_versao }} de {{ aluno.nome_completo or aluno.username }}
+        Ficha {{ versao.numero_versao }} de {{ aluno.nome_completo or aluno.username }}
     </h2>
     <div>
         <a href="{{ url_for('professor.versoes_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary me-2">
@@ -182,7 +182,7 @@
 <div class="edit-section">
     <h5 class="mb-3">
         <i class="bi bi-tag" style="color: #F28C33;"></i> 
-        Editar Dados da Versão
+        Editar Dados da Ficha
     </h5>
     <form method="post">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -213,50 +213,50 @@
                 <label class="form-label fw-bold">Data de Fim</label>
                 <input type="date" name="data_fim" class="form-control" 
                        value="{{ versao.data_fim or '' }}">
-                <small class="text-muted">Deixe em branco se for a versão atual</small>
+                <small class="text-muted">Deixe em branco se for a ficha atual</small>
             </div>
         </div>
         <div class="mt-2">
             <button type="submit" class="btn btn-primary">
-                <i class="bi bi-save"></i> Salvar Alterações da Versão
+                <i class="bi bi-save"></i> Salvar Alterações da Ficha
             </button>
             
             {% if not versao.data_fim %}
             <button type="button" class="btn btn-warning"
                     data-confirm-url="{{ url_for('professor.finalizar_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}"
-                    data-confirm-title="Finalizar esta versão?"
+                    data-confirm-title="Finalizar esta ficha?"
                     data-confirm-text="Depois de finalizada, ela não poderá mais ser usada para novos registros."
                     data-confirm-variant="warning"
                     data-confirm-icon="bi-calendar-x"
                     data-confirm-label="Sim, finalizar">
-                <i class="bi bi-calendar-x"></i> Finalizar Versão
+                <i class="bi bi-calendar-x"></i> Finalizar Ficha
             </button>
             {% endif %}
 
             <button type="button" class="btn btn-info"
                     data-confirm-url="{{ url_for('professor.clonar_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}"
-                    data-confirm-title="Clonar esta versão?"
-                    data-confirm-text="Cria uma nova versão com os mesmos treinos e exercícios desta."
+                    data-confirm-title="Clonar esta ficha?"
+                    data-confirm-text="Cria uma nova ficha com os mesmos treinos e exercícios desta."
                     data-confirm-variant="info"
                     data-confirm-icon="bi-copy"
                     data-confirm-label="Sim, clonar">
-                <i class="bi bi-copy"></i> Clonar Versão
+                <i class="bi bi-copy"></i> Clonar Ficha
             </button>
 
             <button type="button" class="btn btn-danger"
                     data-confirm-url="{{ url_for('professor.excluir_versao_aluno', aluno_id=aluno.id, versao_id=versao.id, confirmar='true') }}"
-                    data-confirm-title="Excluir esta versão?"
+                    data-confirm-title="Excluir esta ficha?"
                     data-confirm-text="Esta ação não pode ser desfeita."
                     data-confirm-icon="bi-trash"
-                    data-confirm-label="Sim, excluir versão">
-                <i class="bi bi-trash"></i> Excluir Versão
+                    data-confirm-label="Sim, excluir ficha">
+                <i class="bi bi-trash"></i> Excluir Ficha
             </button>
         </div>
     </form>
 </div>
 <h4 class="mb-3">
     <i class="bi bi-trophy me-2" style="color: #F28C33;"></i>
-    Treinos da Versão ({{ total_treinos }})
+    Treinos da Ficha ({{ total_treinos }})
 </h4>
 
 {% if treinos %}
@@ -285,8 +285,8 @@
                       treino_codigo=treino_id) }}"
                       class="d-inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <button type="submit" class="btn btn-sm btn-danger" title="Remover da versão"
-                            data-confirm-title="Remover este treino da versão?"
+                    <button type="submit" class="btn btn-sm btn-danger" title="Remover da ficha"
+                            data-confirm-title="Remover este treino da ficha?"
                             data-confirm-text="Os exercícios não serão excluídos do catálogo."
                             data-confirm-icon="bi-trash"
                             data-confirm-label="Sim, remover">
@@ -294,7 +294,7 @@
                     </button>
                 </form>
                 {% else %}
-                <span class="badge bg-secondary" title="Versão arquivada: somente leitura">
+                <span class="badge bg-secondary" title="Ficha arquivada: somente leitura">
                     <i class="bi bi-lock"></i> Arquivada
                 </span>
                 {% endif %}
@@ -349,7 +349,7 @@
 {% else %}
 <div class="alert alert-info">
     <i class="bi bi-info-circle me-2"></i>
-    Nenhum treino cadastrado nesta versão.
+    Nenhum treino cadastrado nesta ficha.
     <a href="{{ url_for('professor.novo_treino_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" class="alert-link">
         Adicionar primeiro treino
     </a>
@@ -363,7 +363,7 @@
             <div class="card-header bg-white">
                 <h5 class="mb-0">
                     <i class="bi bi-bar-chart me-2" style="color: #F28C33;"></i>
-                    Resumo da Versão
+                    Resumo da Ficha
                 </h5>
             </div>
             <div class="card-body">
@@ -415,7 +415,7 @@
     <div class="col-12">
         <div class="d-flex gap-2 justify-content-center">
             <a href="{{ url_for('professor.versoes_aluno', aluno_id=aluno.id) }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Todas as Versões
+                <i class="bi bi-arrow-left"></i> Todas as Fichas
             </a>
             <a href="{{ url_for('professor.novo_treino_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" 
                class="btn btn-success">
@@ -440,7 +440,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Tem certeza que deseja excluir esta versão?</p>
+                <p>Tem certeza que deseja excluir esta ficha?</p>
                 <p class="text-danger">
                     <i class="bi bi-info-circle"></i>
                     Esta ação não pode ser desfeita!

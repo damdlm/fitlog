@@ -420,7 +420,7 @@ class TestRemoverTreinoVersaoAtiva:
         c = cenario
         resp = client.post(_url_salvar(c) + '/remover', follow_redirects=True)
 
-        assert 'Treino removido da versão.' in _flashes(resp)
+        assert 'Treino removido da ficha.' in _flashes(resp)
         with app.app_context():
             assert db.session.get(TreinoVersao, c['tv_id']) is None
             assert VersaoExercicio.query.filter_by(treino_versao_id=c['tv_id']).count() == 0
@@ -469,7 +469,7 @@ class TestFinalizarVersao:
         c = cenario
         resp = client.post(self._url(c), follow_redirects=True)
 
-        assert 'Versão 1 finalizada!' in _flashes(resp)
+        assert 'Ficha 1 finalizada!' in _flashes(resp)
         with app.app_context():
             versao = db.session.get(VersaoGlobal, c['versao_id'])
             assert versao.data_fim == datetime.now(timezone.utc).date()
@@ -496,7 +496,7 @@ class TestFinalizarVersao:
 
         resp = client.post(f'/aluno/versao/{versao_id}/finalizar', follow_redirects=True)
 
-        assert 'Adicione pelo menos um treino antes de finalizar a versão.' in _flashes(resp)
+        assert 'Adicione pelo menos um treino antes de finalizar a ficha.' in _flashes(resp)
         with app.app_context():
             assert db.session.get(VersaoGlobal, versao_id).data_fim is None
 
@@ -535,7 +535,7 @@ class TestFinalizarVersao:
 
         resp = client.post(f'/aluno/versao/{versao_alheia}/finalizar', follow_redirects=True)
 
-        assert 'Versão não encontrada.' in _flashes(resp)
+        assert 'Ficha não encontrada.' in _flashes(resp)
         with app.app_context():
             assert db.session.get(VersaoGlobal, versao_alheia).data_fim is None
 

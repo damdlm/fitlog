@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block page_icon %}<i class="bi bi-plus-circle" style="color: #F28C33;"></i>{% endblock %}
-{% block page_title %}Adicionar Treino à Versão {{ versao.numero_versao }}{% endblock %}
+{% block page_title %}Adicionar Treino à Ficha {{ versao.numero_versao }}{% endblock %}
 
 {% block content %}
 <style>
@@ -159,7 +159,7 @@
 <div class="nt-header">
     <h1 class="d-none d-md-block">
         <i class="bi bi-plus-circle me-2" style="color: #F28C33;"></i>
-        Adicionar Treino à Versão {{ versao.numero_versao }}
+        Adicionar Treino à Ficha {{ versao.numero_versao }}
     </h1>
     <a href="{{ url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Voltar
@@ -211,17 +211,17 @@
                     </div>
                     {% endfor %}
                 </div>
-                <small>Letras disponíveis na divisão {{ versao.divisao }} que ainda não foram usadas nesta versão.</small>
+                <small>Letras disponíveis na divisão {{ versao.divisao }} que ainda não foram usadas nesta ficha.</small>
                 {% if not letras %}
                 <div class="nt-info-box mt-2">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <span>Todas as letras da divisão {{ versao.divisao }} já foram usadas nesta versão.</span>
+                    <span>Todas as letras da divisão {{ versao.divisao }} já foram usadas nesta ficha.</span>
                 </div>
                 {% endif %}
             </div>
 
             <div class="nt-field">
-                <label>Nome do treino na versão</label>
+                <label>Nome do treino na ficha</label>
                 <input type="text" name="nome_treino" class="form-control form-control-lg"
                        placeholder="Ex: Treino A - Costas" required>
                 <small>Pode ser diferente do nome original do treino</small>
@@ -235,12 +235,12 @@
 
             <div class="nt-info-box">
                 <i class="bi bi-info-circle"></i>
-                <span><strong>Importante:</strong> ao adicionar este treino à versão, todos os exercícios atualmente associados a ele serão incluídos automaticamente.</span>
+                <span><strong>Importante:</strong> ao adicionar este treino à ficha, todos os exercícios atualmente associados a ele serão incluídos automaticamente.</span>
             </div>
 
             <div class="nt-actions">
                 <button type="submit" class="btn btn-success btn-lg" {% if not letras %}disabled{% endif %}>
-                    <i class="bi bi-check-circle"></i> Adicionar à versão
+                    <i class="bi bi-check-circle"></i> Adicionar à ficha
                 </button>
                 <a href="{{ url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao.id) }}" class="btn btn-outline-secondary btn-lg">
                     Cancelar

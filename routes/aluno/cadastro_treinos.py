@@ -118,7 +118,7 @@ def cadastrar_treinos_criar_versao():
     validade_meses = request.form.get('validade_meses') or None
     try:
         VersaoService.create_livre(descricao, user_id=current_user.id, validade_meses=validade_meses)
-        flash('Versão criada! Agora adicione os treinos.', 'success')
+        flash('Ficha criada! Agora adicione os treinos.', 'success')
     except ValueError as e:
         flash(str(e), 'danger')
     except Exception:
@@ -138,12 +138,12 @@ def cadastrar_treinos_editar_versao(versao_id):
     descricao = request.form.get('descricao', '')
     try:
         VersaoService.editar_descricao_livre(versao_id, descricao, user_id=current_user.id)
-        flash('Versão atualizada!', 'success')
+        flash('Ficha atualizada!', 'success')
         NotificacaoService.notificar_professor(
             current_user,
             tipo='versao_editada',
-            titulo='Aluno editou uma versão de treino',
-            mensagem=f'{current_user.nome_completo or current_user.username} atualizou a descrição de uma versão de treino.',
+            titulo='Aluno editou uma ficha de treino',
+            mensagem=f'{current_user.nome_completo or current_user.username} atualizou a descrição de uma ficha de treino.',
             url=url_for('professor.ver_versao_aluno', aluno_id=current_user.id, versao_id=versao_id),
             chave_agrupamento=f'versao_editar:{versao_id}',
         )
@@ -274,12 +274,12 @@ def cadastrar_treinos_remover_treino(versao_id, treino_versao_id):
 
     try:
         VersaoService.remover_treino_livre(versao_id, treino_versao_id, user_id=current_user.id)
-        flash('Treino removido da versão.', 'success')
+        flash('Treino removido da ficha.', 'success')
         NotificacaoService.notificar_professor(
             current_user,
             tipo='treino_excluido',
             titulo='Aluno excluiu um treino',
-            mensagem=f'{current_user.nome_completo or current_user.username} removeu um treino de uma versão.',
+            mensagem=f'{current_user.nome_completo or current_user.username} removeu um treino de uma ficha.',
             url=url_for('professor.ver_versao_aluno', aluno_id=current_user.id, versao_id=versao_id),
             chave_agrupamento=f'treino_remover:{treino_versao_id}',
         )
@@ -301,12 +301,12 @@ def cadastrar_treinos_finalizar(versao_id):
 
     try:
         versao = VersaoService.finalizar_livre(versao_id, user_id=current_user.id)
-        flash(f'Versão {versao.numero_versao} finalizada! Crie uma nova versão quando quiser.', 'success')
+        flash(f'Ficha {versao.numero_versao} finalizada! Crie uma nova ficha quando quiser.', 'success')
         NotificacaoService.notificar_professor(
             current_user,
             tipo='versao_finalizada',
-            titulo='Aluno finalizou uma versão',
-            mensagem=f'{current_user.nome_completo or current_user.username} finalizou a versão {versao.numero_versao}.',
+            titulo='Aluno finalizou uma ficha',
+            mensagem=f'{current_user.nome_completo or current_user.username} finalizou a ficha {versao.numero_versao}.',
             url=url_for('professor.ver_versao_aluno', aluno_id=current_user.id, versao_id=versao_id),
             chave_agrupamento=f'versao_finalizar:{versao_id}',
         )

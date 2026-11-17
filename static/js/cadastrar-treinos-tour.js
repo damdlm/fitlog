@@ -28,8 +28,8 @@
             {
                 element: '#descricao',
                 popover: {
-                    title: 'Dê um nome à versão',
-                    description: 'Uma versão é uma fase do seu treino (ex: "Hipertrofia - Agosto"). '
+                    title: 'Dê um nome à ficha',
+                    description: 'Uma ficha é uma fase do seu treino (ex: "Hipertrofia - Agosto"). '
                         + 'Ela guarda seus treinos A, B, C... enquanto estiver valendo.',
                     side: 'bottom',
                     align: 'center'
@@ -39,7 +39,7 @@
                 element: '#validade_meses',
                 popover: {
                     title: 'Validade (opcional)',
-                    description: 'Se quiser, informe por quantos meses a versão vale e o FitLog '
+                    description: 'Se quiser, informe por quantos meses a ficha vale e o FitLog '
                         + 'avisa quando estiver perto de vencer. Em branco, ela não tem prazo.',
                     side: 'top',
                     align: 'center'
@@ -63,10 +63,10 @@
             {
                 element: '.ct-hero',
                 popover: {
-                    title: 'Sua versão em edição',
+                    title: 'Sua ficha em edição',
                     description: 'Aqui está o resumo: início, quantos treinos e quantos '
                         + 'exercícios já foram cadastrados. Toque em <b>Editar</b> para mudar o nome '
-                        + 'ou finalizar a versão.',
+                        + 'ou finalizar a ficha.',
                     side: 'bottom',
                     align: 'center'
                 }
@@ -98,7 +98,7 @@
                 element: '.ct-treino-card .ct-btn-excluir-treino',
                 popover: {
                     title: 'Excluir o treino',
-                    description: 'Remove o treino e seus exercícios desta versão. '
+                    description: 'Remove o treino e seus exercícios desta ficha. '
                         + 'O app pede confirmação antes de apagar.',
                     side: 'bottom',
                     align: 'end'
@@ -118,7 +118,7 @@
                 element: '.ct-add-treino-btn',
                 popover: {
                     title: 'Adicionar treino',
-                    description: 'Cria o próximo treino da versão (B, C...). '
+                    description: 'Cria o próximo treino da ficha (B, C...). '
                         + 'O contador mostra quantos você já tem e o limite.',
                     side: 'top',
                     align: 'center'

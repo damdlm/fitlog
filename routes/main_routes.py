@@ -23,7 +23,8 @@ def index():
 
     treinos = TreinoService.get_da_versao_ativa()
 
-    return render_template("index.html", treinos=treinos)
+    from services.onboarding_service import passos_comece_por_aqui
+    return render_template("index.html", treinos=treinos, comece=passos_comece_por_aqui(current_user))
 
 
 @main_bp.route("/precos")

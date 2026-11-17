@@ -892,10 +892,10 @@ def versoes_aluno(aluno_id):
     return render_template(
         'aluno/versoes.html',
         versoes=todas_versoes,
-        titulo=f'Versões de {nome_aluno}',
+        titulo=f'Fichas de {nome_aluno}',
         voltar_url=url_for('professor.visualizar_aluno', aluno_id=aluno.id),
         voltar_label='Voltar ao aluno',
-        vazio_texto=f'{nome_aluno} ainda não tem nenhuma versão de treino.',
+        vazio_texto=f'{nome_aluno} ainda não tem nenhuma ficha de treino.',
         ver_versao_url=lambda vid: url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=vid),
         pagina_inicial_url=url_for('professor.visualizar_aluno', aluno_id=aluno.id),
         pagina_inicial_label='Voltar ao aluno',
@@ -922,7 +922,7 @@ def nova_versao_aluno(aluno_id):
 
     versao_ativa = VersaoService.get_ativa(user_id=aluno.id)
     if versao_ativa:
-        flash(f'{aluno.nome_completo or aluno.username} já tem uma versão ativa (v{versao_ativa.numero_versao}). '
+        flash(f'{aluno.nome_completo or aluno.username} já tem uma ficha ativa (v{versao_ativa.numero_versao}). '
               'Finalize-a antes de criar outra.', 'info')
         return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_ativa.id))
 
@@ -931,7 +931,7 @@ def nova_versao_aluno(aluno_id):
         validade_meses = request.form.get('validade_meses') or None
         try:
             nova_versao = VersaoService.create_livre(descricao, user_id=aluno.id, validade_meses=validade_meses)
-            flash('Versão criada!', 'success')
+            flash('Ficha criada!', 'success')
             return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=nova_versao.id))
         except ValueError as e:
             flash(str(e), 'danger')
@@ -959,7 +959,7 @@ def clonar_minha_versao_aluno(aluno_id):
 
     versao_ativa = VersaoService.get_ativa(user_id=aluno.id)
     if versao_ativa:
-        flash(f'{aluno.nome_completo or aluno.username} já tem uma versão ativa (v{versao_ativa.numero_versao}). '
+        flash(f'{aluno.nome_completo or aluno.username} já tem uma ficha ativa (v{versao_ativa.numero_versao}). '
               'Finalize-a antes de clonar outra.', 'info')
         return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao_ativa.id))
 
@@ -974,7 +974,7 @@ def clonar_minha_versao_aluno(aluno_id):
                 versao_id=versao_id, professor_id=current_user.id, aluno_id=aluno.id,
                 validade_meses=validade_meses,
             )
-            flash(f'Sua versão foi clonada para {aluno.nome_completo or aluno.username} como v{nova_versao.numero_versao}!', 'success')
+            flash(f'Sua ficha foi clonada para {aluno.nome_completo or aluno.username} como v{nova_versao.numero_versao}!', 'success')
             return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=nova_versao.id))
         except ValueError as e:
             flash(str(e), 'danger')
@@ -1023,7 +1023,7 @@ def ver_versao_aluno(aluno_id, versao_id):
 
     versao = VersaoService.get_by_id(versao_id, user_id=aluno.id, load_relations=True)
     if not versao:
-        flash('Versão não encontrada!', 'danger')
+        flash('Ficha não encontrada!', 'danger')
         return redirect(url_for('professor.versoes_aluno', aluno_id=aluno.id))
 
     treinos_versao = sorted(versao.treinos, key=lambda tv: tv.ordem or 0)
@@ -1065,7 +1065,7 @@ def ver_versao_aluno(aluno_id, versao_id):
         max_treinos=VersaoService.MAX_TREINOS_POR_VERSAO,
         titulo_sufixo=f' — {nome_aluno}',
         voltar_url=url_for('professor.versoes_aluno', aluno_id=aluno.id),
-        voltar_label=f'Versões de {nome_aluno}',
+        voltar_label=f'Fichas de {nome_aluno}',
         finalizar_url=url_for('professor.versao_finalizar_aluno', aluno_id=aluno.id, versao_id=versao.id),
         clonar_url=url_for('professor.versao_clonar_aluno', aluno_id=aluno.id, versao_id=versao.id),
         excluir_url=url_for('professor.versao_excluir_aluno', aluno_id=aluno.id, versao_id=versao.id),
@@ -1129,12 +1129,12 @@ def versao_editar_descricao_aluno(aluno_id, versao_id):
         VersaoService.editar_descricao_livre(
             versao_id, descricao, user_id=aluno.id, permitir_finalizada=False
         )
-        flash('Versão atualizada!', 'success')
+        flash('Ficha atualizada!', 'success')
         NotificacaoService.notificar_aluno(
             aluno.id, current_user,
             tipo='versao_editada',
-            titulo='Seu professor atualizou uma versão',
-            mensagem=f'{current_user.nome_completo or current_user.username} atualizou a descrição de uma versão de treino.',
+            titulo='Seu professor atualizou uma ficha',
+            mensagem=f'{current_user.nome_completo or current_user.username} atualizou a descrição de uma ficha de treino.',
             url=url_for('aluno.ver_versao', versao_id=versao_id),
             chave_agrupamento=f'versao_editar:{versao_id}',
         )
@@ -1270,12 +1270,12 @@ def versao_remover_treino_aluno(aluno_id, versao_id, treino_versao_id):
         VersaoService.remover_treino_livre(
             versao_id, treino_versao_id, user_id=aluno.id, permitir_finalizada=False
         )
-        flash('Treino removido da versão.', 'success')
+        flash('Treino removido da ficha.', 'success')
         NotificacaoService.notificar_aluno(
             aluno.id, current_user,
             tipo='treino_excluido',
             titulo='Seu professor excluiu um treino',
-            mensagem=f'{current_user.nome_completo or current_user.username} removeu um treino de uma versão.',
+            mensagem=f'{current_user.nome_completo or current_user.username} removeu um treino de uma ficha.',
             url=url_for('aluno.ver_versao', versao_id=versao_id),
             chave_agrupamento=f'treino_remover:{treino_versao_id}',
         )
@@ -1299,12 +1299,12 @@ def versao_finalizar_aluno(aluno_id, versao_id):
 
     try:
         versao = VersaoService.finalizar_livre(versao_id, user_id=aluno.id)
-        flash(f'Versão {versao.numero_versao} finalizada!', 'success')
+        flash(f'Ficha {versao.numero_versao} finalizada!', 'success')
         NotificacaoService.notificar_aluno(
             aluno.id, current_user,
             tipo='versao_finalizada',
-            titulo='Seu professor finalizou uma versão',
-            mensagem=f'{current_user.nome_completo or current_user.username} finalizou a versão {versao.numero_versao}.',
+            titulo='Seu professor finalizou uma ficha',
+            mensagem=f'{current_user.nome_completo or current_user.username} finalizou a ficha {versao.numero_versao}.',
             url=url_for('aluno.ver_versao', versao_id=versao_id),
             chave_agrupamento=f'versao_finalizar:{versao_id}',
         )
@@ -1328,7 +1328,7 @@ def versao_clonar_aluno(aluno_id, versao_id):
 
     try:
         nova_versao = VersaoService.clonar_versao(versao_id, user_id=aluno.id)
-        flash(f'Versão clonada como v{nova_versao.numero_versao}!', 'success')
+        flash(f'Ficha clonada como v{nova_versao.numero_versao}!', 'success')
         return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=nova_versao.id))
     except ValueError as e:
         flash(str(e), 'danger')
@@ -1352,15 +1352,15 @@ def versao_excluir_aluno(aluno_id, versao_id):
         versao_obj = VersaoGlobal.query.filter_by(id=versao_id, user_id=aluno.id).first()
         numero_versao = versao_obj.numero_versao if versao_obj else None
         VersaoService.excluir_versao(versao_id, user_id=aluno.id)
-        flash('Versão excluída com sucesso!', 'success')
+        flash('Ficha excluída com sucesso!', 'success')
         NotificacaoService.notificar_aluno(
             aluno.id, current_user,
             tipo='versao_excluida',
-            titulo='Seu professor excluiu uma versão',
+            titulo='Seu professor excluiu uma ficha',
             mensagem=(
-                f'{current_user.nome_completo or current_user.username} excluiu a versão {numero_versao}.'
+                f'{current_user.nome_completo or current_user.username} excluiu a ficha {numero_versao}.'
                 if numero_versao else
-                f'{current_user.nome_completo or current_user.username} excluiu uma versão de treino.'
+                f'{current_user.nome_completo or current_user.username} excluiu uma ficha de treino.'
             ),
             url=url_for('aluno.versoes'),
         )

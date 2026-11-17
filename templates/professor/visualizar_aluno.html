@@ -172,12 +172,12 @@
                         <i class="bi bi-arrow-left"></i> Voltar
                     </a>
                     <a href="{{ url_for('professor.versoes_aluno', aluno_id=aluno.id) }}" class="btn va-btn-modern va-btn-solid">
-                        <i class="bi bi-layers"></i> Ver Versões
+                        <i class="bi bi-layers"></i> Ver Fichas
                     </a>
                 </div>
                 {% if not versao_ativa %}
                 <a href="{{ url_for('professor.nova_versao_aluno', aluno_id=aluno.id) }}" class="btn va-btn-modern va-btn-ghost">
-                    <i class="bi bi-plus-circle"></i> Nova versão
+                    <i class="bi bi-plus-circle"></i> Nova ficha
                 </a>
                 {% endif %}
                 {% if pode_gerenciar %}
@@ -315,7 +315,7 @@
         </div>
         <form action="{{ url_for('professor.remover_vinculo', aluno_id=aluno.id) }}" method="post"
               class="va-confirm-form flex-shrink-0"
-              data-confirm-text="Você vai perder acesso aos treinos, versões e histórico de {{ nome_exibicao }} até que um novo vínculo seja aceito. Os dados do aluno não são apagados, só a conexão com você.">
+              data-confirm-text="Você vai perder acesso aos treinos, fichas e histórico de {{ nome_exibicao }} até que um novo vínculo seja aceito. Os dados do aluno não são apagados, só a conexão com você.">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <button type="submit" class="btn btn-outline-danger">
                 <i class="bi bi-link-45deg"></i> Remover vínculo

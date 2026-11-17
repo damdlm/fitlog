@@ -40,14 +40,14 @@ class TestNovaVersaoAluno:
 
         _login(client, username)
         resp = client.post(f'/professor/aluno/{aluno_id}/versao/nova',
-                            data={'descricao': 'Versão Inicial'}, follow_redirects=True)
+                            data={'descricao': 'Ficha Inicial'}, follow_redirects=True)
         assert resp.status_code == 200
-        assert 'Versão criada'.encode() in resp.data
+        assert 'Ficha criada'.encode() in resp.data
 
         with app.app_context():
             versoes = VersaoGlobal.query.filter_by(user_id=aluno_id).all()
             assert len(versoes) == 1
-            assert versoes[0].descricao == 'Versão Inicial'
+            assert versoes[0].descricao == 'Ficha Inicial'
             assert versoes[0].numero_versao == 1
             assert versoes[0].data_fim is None
 
@@ -91,7 +91,7 @@ class TestNovaVersaoAluno:
         _login(client, username)
         resp = client.get(f'/professor/aluno/{aluno_id}/versao/nova', follow_redirects=True)
         assert resp.status_code == 200
-        assert 'já tem uma versão ativa'.encode() in resp.data
+        assert 'já tem uma ficha ativa'.encode() in resp.data
 
         with app.app_context():
             assert VersaoGlobal.query.filter_by(user_id=aluno_id).count() == 1

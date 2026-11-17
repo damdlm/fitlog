@@ -592,7 +592,7 @@
 {# ================= ESTADO A: sem versão ativa ================= #}
 <div class="ct-empty-card">
     <div class="ct-empty-icon"><i class="bi bi-flag"></i></div>
-    <h2>Comece uma nova versão</h2>
+    <h2>Comece uma nova ficha</h2>
     <button type="button" class="rt-tour-ajuda mb-2" id="btnTourCadastrarSemVersao">
         <i class="bi bi-question-circle"></i> Tutorial
     </button>
@@ -600,7 +600,7 @@
     <form method="post" action="{{ url_for('aluno.cadastrar_treinos_criar_versao') }}" class="ct-empty-form text-start">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="mb-3">
-            <label for="descricao" class="form-label fw-bold">Descrição da versão</label>
+            <label for="descricao" class="form-label fw-bold">Descrição da ficha</label>
             <input type="text" id="descricao" name="descricao" class="form-control form-control-lg"
                    placeholder="Ex: Foco em hipertrofia - Agosto" maxlength="200" required autofocus>
         </div>
@@ -611,10 +611,10 @@
                        placeholder="Sem prazo" min="1" max="24" step="1" inputmode="numeric">
                 <span class="input-group-text">meses</span>
             </div>
-            <div class="form-text">Deixe em branco pra versão sem prazo. Se preenchido, você recebe um aviso quando estiver perto de vencer.</div>
+            <div class="form-text">Deixe em branco pra ficha sem prazo. Se preenchido, você recebe um aviso quando estiver perto de vencer.</div>
         </div>
         <button type="submit" class="btn btn-lg w-100" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white; border: none;">
-            <i class="bi bi-check-circle"></i> Criar versão e começar
+            <i class="bi bi-check-circle"></i> Criar ficha e começar
         </button>
     </form>
 </div>
@@ -638,7 +638,7 @@
             <span><i class="bi bi-trophy"></i> {{ total_treinos }}/{{ max_treinos }} treinos</span>
             <span><i class="bi bi-list-check"></i> {{ total_ex.value }} exercício{{ 's' if total_ex.value != 1 else '' }}</span>
         </div>
-        <button type="button" class="btn btn-sm ct-btn-treino ct-btn-editar-treino ct-hero-desc-edit" data-bs-toggle="modal" data-bs-target="#modalEditarVersao" title="Editar descrição da versão">
+        <button type="button" class="btn btn-sm ct-btn-treino ct-btn-editar-treino ct-hero-desc-edit" data-bs-toggle="modal" data-bs-target="#modalEditarVersao" title="Editar descrição da ficha">
             <span class="ct-btn-treino-icon"><i class="bi bi-pencil-fill"></i></span> Editar
         </button>
     </div>
@@ -646,12 +646,12 @@
 
 {% if total_treinos >= max_treinos %}
 <div class="ct-finalizar-hint text-center" style="margin-bottom: 20px;">
-    <i class="bi bi-info-circle"></i> Limite de {{ max_treinos }} treinos por versão atingido.
+    <i class="bi bi-info-circle"></i> Limite de {{ max_treinos }} treinos por ficha atingido.
 </div>
 {% endif %}
 
 <div class="ct-section-title">
-    <h2><i class="bi bi-trophy" style="color:#F28C33;"></i> Treinos desta versão</h2>
+    <h2><i class="bi bi-trophy" style="color:#F28C33;"></i> Treinos desta ficha</h2>
     <button type="button" class="rt-tour-ajuda" id="btnTourCadastrarLista">
         <i class="bi bi-question-circle"></i> Tutorial
     </button>
@@ -662,7 +662,7 @@
 <div class="ct-empty-card" style="margin: 0 0 20px;">
     <div class="ct-empty-icon"><i class="bi bi-trophy"></i></div>
     <h2>Nenhum treino ainda</h2>
-    <p>Adicione o primeiro treino desta versão (ex: "Treino A - Peito e Tríceps").</p>
+    <p>Adicione o primeiro treino desta ficha (ex: "Treino A - Peito e Tríceps").</p>
 </div>
 {% else %}
     {% for tv in treinos_versao %}
@@ -692,7 +692,7 @@
                 <button type="button" class="btn btn-sm ct-btn-treino ct-btn-excluir-treino"
                         data-confirm-url="{{ url_for('aluno.cadastrar_treinos_remover_treino', versao_id=versao.id, treino_versao_id=tv.id) }}"
                         data-confirm-title="Remover o treino {{ codigo }}?"
-                        data-confirm-text="&quot;{{ tv.nome_treino }}&quot; e todos os seus exercícios associados serão removidos desta versão. Essa ação não pode ser desfeita."
+                        data-confirm-text="&quot;{{ tv.nome_treino }}&quot; e todos os seus exercícios associados serão removidos desta ficha. Essa ação não pode ser desfeita."
                         data-confirm-variant="danger"
                         data-confirm-icon="bi-trash"
                         data-confirm-label="Sim, remover">
@@ -747,14 +747,14 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
-                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Versão</h5>
+                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Ficha</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="post" action="{{ url_for('aluno.cadastrar_treinos_editar_versao', versao_id=versao.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-1">
-                        <label class="form-label fw-bold">Descrição da versão</label>
+                        <label class="form-label fw-bold">Descrição da ficha</label>
                         <input type="text" name="descricao" class="form-control form-control-lg"
                                value="{{ versao.descricao }}" maxlength="200" required autofocus>
                     </div>
@@ -762,7 +762,7 @@
                 <div class="modal-footer justify-content-center">
                     <button type="button" class="btn btn-danger"
                             data-confirm-url="{{ url_for('aluno.cadastrar_treinos_finalizar', versao_id=versao.id) }}"
-                            data-confirm-title="Finalizar esta versão?"
+                            data-confirm-title="Finalizar esta ficha?"
                             data-confirm-text="Depois de finalizada, ela sai do modo de edição rápida e passa a fazer parte do seu histórico. Você ainda pode editá-la por aqui depois, se precisar."
                             data-confirm-variant="danger"
                             data-confirm-icon="bi-flag"
@@ -911,7 +911,7 @@
 
 <div class="text-center mt-4 d-flex justify-content-center gap-2 flex-wrap">
     <a href="{{ url_for('aluno.versoes') }}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-layers"></i> Ver Versões
+        <i class="bi bi-layers"></i> Ver Fichas
     </a>
     <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-house"></i> Voltar ao início

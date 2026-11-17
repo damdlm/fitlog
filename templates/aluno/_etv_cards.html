@@ -6,8 +6,7 @@
 {% from "macros/exercicio_tooltip.html" import tooltip_nome_exercicio %}
 {%- for ex in exercicios_catalogo %}
 {%- set musculo_nome = ex.musculo_nome or ex.musculo or 'N/A' %}
-{%- set apelidos = ex.nicknames|join(', ') if ex.nicknames else '' %}
-<label class="etv-card" for="ex_{{ ex.tipo }}_{{ ex.id }}" data-nome="{{ (ex.nome ~ ' ' ~ apelidos)|lower }}" data-nome-display="{{ ex.nome }}" data-musculo="{{ musculo_nome }}" data-valor="{{ ex.prefixo }}{{ ex.id }}">
+<label class="etv-card" for="ex_{{ ex.tipo }}_{{ ex.id }}" data-nome="{{ ex.nome|lower }}" data-apelidos="{{ (ex.nicknames|join('|'))|lower if ex.nicknames else '' }}" data-i="{{ loop.index0 }}" data-nome-display="{{ ex.nome }}" data-musculo="{{ musculo_nome }}" data-valor="{{ ex.prefixo }}{{ ex.id }}">
 <input class="etv-checkbox" type="checkbox" name="exercicios[]" value="{{ ex.prefixo }}{{ ex.id }}" id="ex_{{ ex.tipo }}_{{ ex.id }}">
 <div class="etv-card-body">
 <div class="etv-card-nome" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="etv-tooltip-nomes" title="{{ tooltip_nome_exercicio(ex) }}">{{ ex.nome }}</div>
