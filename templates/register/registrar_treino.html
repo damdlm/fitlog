@@ -5543,7 +5543,7 @@ function atualizarResumo() {
 
     const resumoElement = document.getElementById('resumo-volume');
     if (resumoElement) {
-        resumoElement.textContent = volumeTotal + ' kg';
+        resumoElement.textContent = FitLogUtils.formatarKg(volumeTotal, { casas: 0 });
     }
     const qtdEl = document.getElementById('resumo-qtd-exercicios');
     if (qtdEl) qtdEl.textContent = document.querySelectorAll('.exercise-row[data-exercicio-id]').length;
@@ -5775,7 +5775,7 @@ function inicializarModalSeriesIndividuais() {
         let subinfoHtml = '';
         if (musculo) subinfoHtml += `<span class="dash-badge"><i class="bi bi-tag-fill"></i> ${escaparHtmlSeriesModal(musculo)}</span>`;
         if (ultimaCarga) {
-            subinfoHtml += `<span class="dash-badge">${ultimaCarga}kg</span>`;
+            subinfoHtml += `<span class="dash-badge">${FitLogUtils.formatarKg(ultimaCarga)}</span>`;
             subinfoHtml += `<span class="dash-badge">${ultimasReps}x</span>`;
             subinfoHtml += `<span class="dash-badge">${ultimasSeries} série${ultimasSeries != 1 ? 's' : ''}</span>`;
         }
@@ -6185,7 +6185,7 @@ function inicializarPainelTresColunas() {
         esq.appendChild(el('h2', 'mt3-nome', nome));
         if (ultCarga || ultReps) {
             esq.appendChild(el('div', 'mt3-sub',
-                'Último treino: ' + (ultCarga || '—') + ' kg × ' + (ultReps || '—') + ' · ' + ultSeries + ' série' + (ultSeries === '1' ? '' : 's')));
+                'Último treino: ' + (ultCarga ? FitLogUtils.formatarKg(ultCarga) : '—') + ' × ' + (ultReps || '—') + ' · ' + ultSeries + ' série' + (ultSeries === '1' ? '' : 's')));
         }
         topo.appendChild(esq);
 
@@ -6243,7 +6243,7 @@ function inicializarPainelTresColunas() {
 
             const tr = el('tr', feita ? 'is-feita' : '');
             const tdN = el('td'); tdN.appendChild(el('span', 'mt3-num', String(n))); tr.appendChild(tdN);
-            tr.appendChild(el('td', 'mt3-ant', (ultCarga || ultReps) ? (ultCarga || '—') + ' kg × ' + (ultReps || '—') : '—'));
+            tr.appendChild(el('td', 'mt3-ant', (ultCarga || ultReps) ? (ultCarga ? FitLogUtils.formatarKg(ultCarga) : '—') + ' × ' + (ultReps || '—') : '—'));
 
             const tdC = el('td');
             const iC = el('input', 'mt3-in mt3-carga');
@@ -7364,7 +7364,7 @@ function tocarBipe() {
         document.getElementById('shareCardSubtitle').textContent = `${resumo.treino} • ${resumo.dataExtenso}`;
         document.getElementById('shareCardTempo').textContent = resumo.tempo;
         document.getElementById('shareCardQtdExercicios').textContent = resumo.exercicios.length;
-        document.getElementById('shareCardVolume').textContent = `${resumo.volumeTotal} kg`;
+        document.getElementById('shareCardVolume').textContent = FitLogUtils.formatarKg(resumo.volumeTotal, { casas: 0 });
 
         const listaEl = document.getElementById('shareCardExercicios');
         listaEl.innerHTML = '';
@@ -7383,7 +7383,7 @@ function tocarBipe() {
                 tags.push(`<span class="share-card-exercicio-tag"><i class="bi bi-arrow-repeat"></i>${escapeHtml(ex.reps)} ${ex.reps == 1 ? 'repetição' : 'repetições'}</span>`);
             }
             if (ex.carga !== '') {
-                tags.push(`<span class="share-card-exercicio-tag"><i class="bi bi-speedometer2"></i>${escapeHtml(ex.carga)} kg</span>`);
+                tags.push(`<span class="share-card-exercicio-tag"><i class="bi bi-speedometer2"></i>${escapeHtml(FitLogUtils.formatarKg(ex.carga))}</span>`);
             }
             item.innerHTML = `
                 <span class="share-card-exercicio-nome">${escapeHtml(ex.nome)}</span>
@@ -7573,7 +7573,7 @@ function tocarBipe() {
                     baixarBlob(blob, 'fitlog-treino.png');
                     const resumo = montarResumoTreino();
                     const texto = encodeURIComponent(
-                        `Treino finalizado no FitLog! 💪\n${resumo.treino} - ${resumo.dataExtenso}\nTempo: ${resumo.tempo} | Volume: ${resumo.volumeTotal}kg`
+                        `Treino finalizado no FitLog! 💪\n${resumo.treino} - ${resumo.dataExtenso}\nTempo: ${resumo.tempo} | Volume: ${FitLogUtils.formatarKg(resumo.volumeTotal, { casas: 0 })}`
                     );
                     window.open(`https://wa.me/?text=${texto}`, '_blank');
                     mostrarToast('Imagem baixada! Anexe ela na conversa do WhatsApp.', 'success');

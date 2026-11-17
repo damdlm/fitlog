@@ -205,7 +205,7 @@
     <div class="col-md-4">
         <div class="est-stat" style="background: #2D2D2D; color: white;">
             <div class="est-stat-icon"><i class="bi bi-lightning-charge"></i></div>
-            <div class="est-stat-value">{{ musculo_stats.values()|sum(attribute='volume_total')|int }}kg</div>
+            <div class="est-stat-value">{{ musculo_stats.values()|sum(attribute='volume_total')|kg(0) }}</div>
             <div class="est-stat-label">Volume Total</div>
         </div>
     </div>
@@ -216,7 +216,7 @@
                 {% set total_vol = musculo_stats.values()|sum(attribute='volume_total') %}
                 {% set total_reg = musculo_stats.values()|sum(attribute='qtd_registros') %}
                 {% if total_reg and total_reg > 0 %}
-                    {{ (total_vol / total_reg)|int }}kg
+                    {{ (total_vol / total_reg)|kg(0) }}
                 {% else %}
                     0kg
                 {% endif %}
@@ -255,7 +255,7 @@
                 <div class="est-ranking-item">
                     <div class="est-ranking-top">
                         <span class="est-ranking-nome">{{ musculo }}</span>
-                        <span class="est-ranking-valor">{{ stats.volume_total|int }}kg · {{ stats.qtd_registros }} registros</span>
+                        <span class="est-ranking-valor">{{ stats.volume_total|kg(0) }} · {{ stats.qtd_registros }} registros</span>
                     </div>
                     <div class="est-ranking-bar-bg">
                         <div class="est-ranking-bar-fill" style="width: {{ ((stats.volume_total / volume_maximo_musculo * 100) if volume_maximo_musculo > 0 else 0)|round(1) }}%;"></div>
@@ -292,7 +292,7 @@
                     </div>
                     <div class="est-treino-metric">
                         <span class="text-muted">Volume Total</span>
-                        <strong style="color: var(--primary-color);">{{ stats.volume_total|int }}kg</strong>
+                        <strong style="color: var(--primary-color);">{{ stats.volume_total|kg(0) }}</strong>
                     </div>
                 </div>
             </div>
@@ -359,7 +359,7 @@
                             const value = context.raw || 0;
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                            return `${label}: ${value.toFixed(0)}kg (${percentage}%)`;
+                            return `${label}: ${FitLogUtils.formatarKg(value, { casas: 0 })} (${percentage}%)`;
                         }
                     }
                 }

@@ -70,7 +70,7 @@
                                 </div>
                                 {% elif ultimas and not eh_cardio_ex %}
                                 <div class="dash-registro-badges">
-                                    <span class="dash-badge">{{ ultimas[0].carga }}kg</span>
+                                    <span class="dash-badge">{{ ultimas[0].carga|kg }}</span>
                                     <span class="dash-badge">{{ ultimas[0].repeticoes }}x</span>
                                     <span class="dash-badge">{{ ultimas|length }} série{{ 's' if ultimas|length != 1 }}</span>
                                 </div>

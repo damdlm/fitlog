@@ -467,7 +467,7 @@
             ctx.textAlign = 'right';
             ctx.font = '600 27px Arial, sans-serif';
             ctx.fillStyle = 'rgba(255,255,255,0.6)';
-            ctx.fillText(Math.round(m.volume) + ' kg', W - 64, yList);
+            ctx.fillText((window.FitLogUtils ? FitLogUtils.formatarKg(m.volume, { casas: 0 }) : Math.round(m.volume) + ' kg'), W - 64, yList);
             ctx.textAlign = 'left';
 
             ctx.fillStyle = 'rgba(255,255,255,0.08)';

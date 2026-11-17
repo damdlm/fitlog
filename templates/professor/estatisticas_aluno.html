@@ -437,7 +437,7 @@
     <div class="col-4">
         <div class="est-stat" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
             <div class="est-stat-icon"><i class="bi bi-bar-chart"></i></div>
-            <div class="est-stat-value">{{ musculo_stats.values()|sum(attribute='volume_total')|int }}kg</div>
+            <div class="est-stat-value">{{ musculo_stats.values()|sum(attribute='volume_total')|kg(0) }}</div>
             <div class="est-stat-label">Volume Total</div>
         </div>
     </div>
@@ -486,7 +486,7 @@
                 <div class="est-ranking-item">
                     <div class="est-ranking-top">
                         <span class="est-ranking-nome">{{ musculo }}</span>
-                        <span class="est-ranking-valor">{{ stats.volume_total|int }}kg · {{ stats.qtd_registros }} registros</span>
+                        <span class="est-ranking-valor">{{ stats.volume_total|kg(0) }} · {{ stats.qtd_registros }} registros</span>
                     </div>
                     <div class="est-ranking-bar-bg">
                         <div class="est-ranking-bar-fill" style="width: {{ ((stats.volume_total / volume_maximo_musculo * 100) if volume_maximo_musculo > 0 else 0)|round(1) }}%;"></div>
@@ -588,7 +588,7 @@
                             const value = context.raw || 0;
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                            return `${label}: ${value.toFixed(0)}kg (${percentage}%)`;
+                            return `${label}: ${FitLogUtils.formatarKg(value, { casas: 0 })} (${percentage}%)`;
                         }
                     }
                 }

@@ -92,7 +92,7 @@ class TestFiltroPeriodo:
         assert f'value="{primeiro_dia}"' in html, \
             'campo "Data inicial" deveria vir com o 1º dia do mês corrente'
         assert 'value="' + date.today().isoformat() not in html or True  # ver asserts de fim abaixo
-        assert '1000kg' in html or '1000.0kg' in html, \
+        assert '1.000 kg' in html, \
             'card Volume Total deveria mostrar 100 x 10 = 1000kg (registro de hoje, dentro do mês corrente)'
         assert '>1<' in html, 'card Total de Registros deveria mostrar 1'
 
@@ -113,18 +113,18 @@ class TestFiltroPeriodo:
         resp = client.get(f'/professor/aluno/{aluno_id}/estatisticas?inicio=2026-02-01&fim=2026-02-28')
         assert resp.status_code == 200
         html = resp.data.decode('utf-8')
-        assert '0kg' in html, 'Volume Total deveria ser 0kg (nenhum registro em fevereiro)'
+        assert '>0 kg<' in html, 'Volume Total deveria ser 0 kg (nenhum registro em fevereiro)'
 
         # filtra só janeiro/2026 -- só o registro de 50x10=500kg deveria entrar
         resp = client.get(f'/professor/aluno/{aluno_id}/estatisticas?inicio=2026-01-01&fim=2026-01-31')
         html = resp.data.decode('utf-8')
-        assert '500kg' in html
-        assert '2000kg' not in html
+        assert '>500 kg<' in html
+        assert '2.000 kg' not in html
 
         # filtra janeiro+março (intervalo cobrindo os dois) -- 500+2000=2500kg
         resp = client.get(f'/professor/aluno/{aluno_id}/estatisticas?inicio=2026-01-01&fim=2026-03-31')
         html = resp.data.decode('utf-8')
-        assert '2500kg' in html
+        assert '2.500 kg' in html
 
     def test_data_final_e_inclusiva_ate_23h59(self, client, app):
         with app.app_context():
@@ -141,7 +141,7 @@ class TestFiltroPeriodo:
         _login(client, username)
         resp = client.get(f'/professor/aluno/{aluno_id}/estatisticas?inicio=2026-05-01&fim=2026-05-31')
         html = resp.data.decode('utf-8')
-        assert '100kg' in html, 'registro às 23:30 do dia final selecionado deveria contar (fim é o dia inteiro)'
+        assert '>100 kg<' in html, 'registro às 23:30 do dia final selecionado deveria contar (fim é o dia inteiro)'
 
     def test_data_inicial_maior_que_final_e_trocada_automaticamente(self, client, app):
         with app.app_context():
@@ -158,7 +158,7 @@ class TestFiltroPeriodo:
         resp = client.get(f'/professor/aluno/{aluno_id}/estatisticas?inicio=2026-06-30&fim=2026-06-01')
         assert resp.status_code == 200
         html = resp.data.decode('utf-8')
-        assert '300kg' in html
+        assert '>300 kg<' in html
         assert 'value="2026-06-01"' in html
         assert 'value="2026-06-30"' in html
 

@@ -28,6 +28,29 @@ def formatar_datahora_br(valor, formato='%d/%m/%Y %H:%M'):
     return valor.astimezone(FUSO_BRASIL).strftime(formato)
 
 
+def formatar_numero_br(valor, casas=1):
+    """Número no formato brasileiro: milhar com ponto, decimal com vírgula,
+    até `casas` casas decimais e sem zeros sobrando à direita.
+    104025 -> "104.025" · 32.5 -> "32,5" · 40.0 -> "40". Vazio -> "—"."""
+    if valor is None or valor == '':
+        return '\u2014'
+    try:
+        numero = round(float(valor), casas)
+    except (TypeError, ValueError):
+        return str(valor)
+    texto = f"{numero:,.{casas}f}" if casas > 0 else f"{numero:,.0f}"
+    if casas > 0:
+        texto = texto.rstrip('0').rstrip('.')
+    # 1,234.5 (formato en) -> 1.234,5 (formato pt-BR)
+    return texto.replace(',', '\x00').replace('.', ',').replace('\x00', '.')
+
+
+def formatar_kg(valor, casas=1):
+    """Peso para exibição: "104.025 kg", "32,5 kg"."""
+    texto = formatar_numero_br(valor, casas)
+    return texto if texto == '\u2014' else f"{texto} kg"
+
+
 def formatar_data(data_str):
     """
     Converte data do formato YYYY-MM-DD para DD/MM/AAAA

@@ -178,14 +178,20 @@ class EstatisticaService(BaseService):
                 if inicio is not None:
                     filtros.append(RegistroTreino.data_registro >= inicio)
                 row = db.session.query(
-                    db.func.count(db.distinct(RegistroTreino.id)).label('treinos'),
                     db.func.count(HistoricoTreino.carga).label('series'),
                     db.func.coalesce(db.func.sum(HistoricoTreino.carga * HistoricoTreino.repeticoes), 0).label('volume')
                 ).select_from(RegistroTreino)\
                  .outerjoin(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
                  .filter(*filtros).first()
+                # Treino = sessão (um treino num dia), não registro: cada
+                # exercício salvo é um RegistroTreino, então contar
+                # registros mostrava ~5x mais "treinos" do que os feitos.
+                # Mesma chave de sessão de get_atividade_geral.
+                pares = db.session.query(RegistroTreino.data_registro, RegistroTreino.treino_versao_id)\
+                    .filter(*filtros).distinct().all()
+                treinos = len({(d.date(), t) for d, t in pares})
                 return {
-                    'treinos': row.treinos or 0,
+                    'treinos': treinos,
                     'series': row.series or 0,
                     'volume': float(row.volume or 0)
                 }

@@ -274,38 +274,57 @@ class DashboardService(BaseService):
         if not aluno_ids:
             return []
 
-        linhas = (db.session.query(RegistroTreino, User, TreinoVersao)
-                  .join(User, User.id == RegistroTreino.user_id)
-                  .join(TreinoVersao, TreinoVersao.id == RegistroTreino.treino_versao_id)
+        # Uma linha por SESSÃO (aluno + treino + dia): cada exercício salvo
+        # é um RegistroTreino, então listar registros repetia o mesmo
+        # treino uma vez por exercício. Agrupa no banco e conta os
+        # exercícios de cada sessão.
+        dia = func.date(RegistroTreino.data_registro)
+        linhas = (db.session.query(RegistroTreino.user_id, RegistroTreino.treino_versao_id, dia.label('dia'),
+                                   func.max(RegistroTreino.data_registro).label('quando'),
+                                   func.count(RegistroTreino.id).label('exercicios'))
                   .filter(RegistroTreino.user_id.in_(aluno_ids))
-                  .order_by(RegistroTreino.data_registro.desc(), RegistroTreino.created_at.desc())
+                  .group_by(RegistroTreino.user_id, RegistroTreino.treino_versao_id, dia)
+                  .order_by(dia.desc(), func.max(RegistroTreino.created_at).desc())
                   .limit(LIMITE_ATIVIDADE_RECENTE)
                   .all())
+        if not linhas:
+            return []
+        usuarios = {u.id: u for u in User.query.filter(User.id.in_({l.user_id for l in linhas})).all()}
+        treinos = {t.id: t for t in TreinoVersao.query.filter(TreinoVersao.id.in_({l.treino_versao_id for l in linhas})).all()}
 
-        return [{
-            'aluno_nome': u.nome_completo or u.username,
-            'treino_nome': t.nome_treino,
-            'treino_codigo': t.codigo,
-            'quando': r.data_registro,
-        } for r, u, t in linhas]
+        itens = []
+        for l in linhas:
+            u, t = usuarios.get(l.user_id), treinos.get(l.treino_versao_id)
+            if not u or not t:
+                continue
+            itens.append({
+                'aluno_nome': u.nome_completo or u.username,
+                'treino_nome': t.nome_treino,
+                'treino_codigo': t.codigo,
+                'quando': l.quando,
+                'exercicios': l.exercicios,
+            })
+        return itens
 
     @staticmethod
     def _grafico_30_dias(aluno_ids, hoje):
-        """Contagem de registros/dia dos alunos do professor, últimos
-        30 dias -- para o gráfico opcional de evolução."""
+        """Treinos (sessões: aluno + treino + dia) por dia dos alunos do
+        professor, últimos 30 dias -- para o gráfico "Treinos nos últimos
+        30 dias". Contava registros (um por exercício), o que multiplicava
+        cada treino pelo número de exercícios."""
         labels = []
         valores_por_dia = {}
         inicio = hoje - timedelta(days=29)
 
         if aluno_ids:
-            contagem = (db.session.query(
-                            RegistroTreino.data_registro,
-                            func.count(func.distinct(RegistroTreino.id)))
-                        .filter(RegistroTreino.user_id.in_(aluno_ids),
-                                RegistroTreino.data_registro >= inicio)
-                        .group_by(RegistroTreino.data_registro)
-                        .all())
-            valores_por_dia = {d.date(): c for d, c in contagem}
+            sessoes = (db.session.query(RegistroTreino.data_registro, RegistroTreino.user_id,
+                                        RegistroTreino.treino_versao_id)
+                       .filter(RegistroTreino.user_id.in_(aluno_ids),
+                               RegistroTreino.data_registro >= inicio)
+                       .distinct()
+                       .all())
+            for d, user_id, treino_id in {(d.date(), u, t) for d, u, t in sessoes}:
+                valores_por_dia[d] = valores_por_dia.get(d, 0) + 1
 
         valores = []
         for i in range(30):

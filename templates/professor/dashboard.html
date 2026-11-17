@@ -305,7 +305,7 @@
                 {% for a in dados.atividade_recente %}
                 <div class="pd-lista-item">
                     <span class="pd-lista-nome">{{ a.aluno_nome }}</span>
-                    <span class="pd-lista-meta">Treino {{ a.treino_codigo }} · {{ a.quando.strftime('%d/%m/%Y') }}</span>
+                    <span class="pd-lista-meta">Treino {{ a.treino_codigo }}{% if a.exercicios %} · {{ a.exercicios }} exercício{{ 's' if a.exercicios != 1 }}{% endif %} · {{ a.quando.strftime('%d/%m/%Y') }}</span>
                 </div>
                 {% endfor %}
             {% else %}

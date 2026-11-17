@@ -248,7 +248,7 @@
                                         </span>
                                     {% elif ultimo_registro and ultimo_registro.series|length > 0 %}
                                         <span class="badge-carga">
-                                            <i class="bi bi-bar-chart"></i> {{ ultimo_registro.series[0].carga }}kg
+                                            <i class="bi bi-bar-chart"></i> {{ ultimo_registro.series[0].carga|kg }}
                                         </span>
                                     {% else %}
                                         <span class="text-muted">-</span>

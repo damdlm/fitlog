@@ -896,7 +896,7 @@
         .then(r => r.json())
         .then(k => {
             if (meu !== reqPeriodo) return;
-            document.getElementById('kpiVolume').textContent = Math.round(k.volume_total) + 'kg';
+            document.getElementById('kpiVolume').textContent = FitLogUtils.formatarKg(k.volume_total, { casas: 0 });
             formatarTrend(document.getElementById('kpiVolumeTrend'), k.volume_variacao);
             document.getElementById('kpiTreinos').textContent = k.treinos_realizados;
             formatarTrend(document.getElementById('kpiTreinosTrend'), k.treinos_variacao);
@@ -968,7 +968,7 @@
                                 const value = context.raw || 0;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                return `${label}: ${value.toFixed(0)}kg (${pct}%)`;
+                                return `${label}: ${FitLogUtils.formatarKg(value, { casas: 0 })} (${pct}%)`;
                             }
                         }
                     }
@@ -998,7 +998,7 @@
                 <div class="est-ranking-item">
                     <div class="est-ranking-top">
                         <span class="est-ranking-nome">${escapeHtml(nome)}</span>
-                        <span class="est-ranking-valor">${Math.round(s.volume_total)}kg · ${s.qtd_registros} registros</span>
+                        <span class="est-ranking-valor">${FitLogUtils.formatarKg(s.volume_total, { casas: 0 })} · ${s.qtd_registros} registros</span>
                     </div>
                     <div class="est-ranking-bar-bg">
                         <div class="est-ranking-bar-fill" style="width: ${largura}%;"></div>
@@ -1081,8 +1081,8 @@
                 <div class="est-pr-card">
                     <div class="est-pr-badge"><i class="bi bi-trophy-fill"></i> PR</div>
                     <div class="est-pr-nome">${escapeHtml(pr.nome)}</div>
-                    <div class="est-pr-valor">${pr.carga}kg <span class="unidade">× ${pr.reps}</span></div>
-                    <div class="est-pr-data">~${pr.rm_estimado}kg de 1RM estimado · ${pr.data}</div>
+                    <div class="est-pr-valor">${FitLogUtils.formatarKg(pr.carga)} <span class="unidade">× ${pr.reps}</span></div>
+                    <div class="est-pr-data">~${FitLogUtils.formatarKg(pr.rm_estimado)} de 1RM estimado · ${pr.data}</div>
                 </div>
             `).join('');
         })
@@ -1140,7 +1140,7 @@
                                 cornerRadius: 8,
                                 displayColors: false,
                                 callbacks: {
-                                    label: ctx => `${ctx.parsed.y.toFixed(3)} kg (1RM est.)`
+                                    label: ctx => `${FitLogUtils.formatarKg(ctx.parsed.y)} (1RM est.)`
                                 }
                             }
                         },
@@ -1148,7 +1148,7 @@
                             x: { grid: { display: false }, ticks: { color: '#8a8a8a', font: { size: 11 } } },
                             y: {
                                 grid: { color: 'rgba(0,0,0,0.05)' },
-                                ticks: { color: '#8a8a8a', font: { size: 11 }, callback: v => `${Number(v).toFixed(3)}kg` }
+                                ticks: { color: '#8a8a8a', font: { size: 11 }, callback: v => FitLogUtils.formatarKg(v) }
                             }
                         }
                     }
@@ -1551,9 +1551,7 @@
             FitLogShare.compartilharEstatisticas({
                 nomeUsuario: NOME_USUARIO_EXIBICAO,
                 musculos: musculos,
-                volumeTotalFormatado: volumeTotal >= 1000
-                    ? (volumeTotal / 1000).toFixed(1).replace('.0', '') + 'k'
-                    : Math.round(volumeTotal).toString()
+                volumeTotalFormatado: FitLogUtils.formatarKg(volumeTotal, { abreviar: true, semUnidade: true, casas: 0 })
             }).catch(function () {
                 if (window.FitLogUtils) FitLogUtils.showToast('Não consegui gerar a imagem. Tenta de novo.', 'danger');
             }).finally(function () {

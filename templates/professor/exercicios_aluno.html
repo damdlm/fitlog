@@ -82,7 +82,7 @@
                         </td>
                         <td>
                             {% if ultimas_cargas.get(exercicio.id) %}
-                                <span class="badge bg-success">{{ ultimas_cargas[exercicio.id] }} kg</span>
+                                <span class="badge bg-success">{{ ultimas_cargas[exercicio.id]|kg }}</span>
                             {% else %}
                                 <span class="text-muted">-</span>
                             {% endif %}

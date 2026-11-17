@@ -2270,8 +2270,8 @@
     }
 
     function formatarVolumeCompacto(kg) {
-        if (kg >= 1000) return (kg / 1000).toFixed(1).replace('.0', '') + 'k';
-        return kg.toFixed(0);
+        // "59,6 mil" (o rótulo embaixo já diz "kg no mês").
+        return FitLogUtils.formatarKg(kg, { abreviar: true, semUnidade: true, casas: 0 });
     }
 
     function calcularSequenciaAtual() {
@@ -2778,7 +2778,7 @@
                                 <i class="bi bi-trophy-fill"></i>
                                 Treino ${codigoSeguro}${grupo.nome && grupo.nome !== 'Treino' ? ` · ${nomeSeguro}` : ''}
                             </span>
-                            <span class="grupo-treino-volume">${grupo.volume.toFixed(0)} kg</span>
+                            <span class="grupo-treino-volume">${FitLogUtils.formatarKg(grupo.volume, { casas: 0 })}</span>
                         </div>
                 `;
                 
@@ -2786,7 +2786,7 @@
                     const chips = (ex.series || [])
                         .map(s => s.cardio
                             ? `<span class="serie-chip serie-chip--cardio"><b>${escapeHtml(s.resumo)}</b></span>`
-                            : `<span class="serie-chip"><b>${escapeHtml(s.carga)}kg</b> × ${escapeHtml(s.repeticoes)}</span>`)
+                            : `<span class="serie-chip"><b>${escapeHtml(FitLogUtils.formatarKg(s.carga))}</b> × ${escapeHtml(s.repeticoes)}</span>`)
                         .join('');
                     html += `
                         <div class="exercicio-card">
@@ -2815,7 +2815,7 @@
                 <div class="dia-total-strip">
                     <div class="dia-total-item">
                         <span class="label"><i class="bi bi-graph-up"></i>Total do dia</span>
-                        <span class="valor">${event.extendedProps.volume.toFixed(0)} kg</span>
+                        <span class="valor">${FitLogUtils.formatarKg(event.extendedProps.volume, { casas: 0 })}</span>
                     </div>
                     <div class="dia-total-item">
                         <span class="label"><i class="bi bi-stopwatch"></i>Tempo de treino</span>
@@ -3111,13 +3111,12 @@
                             afterBody: function(items) {
                                 if (!items.length) return [];
                                 const det = detalhesGrafico[items[0].dataIndex] || [];
-                                return det.map(d => `${d.codigo}: ${Math.round(d.volume * 100) / 100} kg`);
+                                return det.map(d => `${d.codigo}: ${FitLogUtils.formatarKg(d.volume, { casas: 0 })}`);
                             },
                             label: function(context) {
                                 let label = context.dataset.label || '';
                                 if (label) label += ': ';
-                                const valor = Math.round((context.raw + Number.EPSILON) * 1000) / 1000;
-                                label += valor + ' kg';
+                                label += FitLogUtils.formatarKg(context.raw);
                                 return label;
                             }
                         }

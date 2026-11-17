@@ -251,7 +251,7 @@
                             <span class="dash-badge dash-badge--cardio">{{ registro.series[0].resumo_cardio }}</span>
                         {% else %}
                         {% if registro.series and registro.series|length > 0 %}
-                            <span class="dash-badge">{{ registro.series[0].carga }}kg</span>
+                            <span class="dash-badge">{{ registro.series[0].carga|kg }}</span>
                             <span class="dash-badge">{{ registro.series[0].repeticoes }}x</span>
                         {% endif %}
                         <span class="dash-badge">{{ registro.series|length }} séries</span>

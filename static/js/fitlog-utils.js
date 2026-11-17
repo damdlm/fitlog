@@ -171,6 +171,30 @@ const FitLogUtils = (function() {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     }
     
+    // Números e pesos no formato brasileiro (mesma regra de
+    // utils/format_utils.py: formatar_numero_br/formatar_kg). Até `casas`
+    // casas decimais, sem zeros sobrando: 104025 -> "104.025",
+    // 32.5 -> "32,5", 40 -> "40". `abreviar`: 59600 -> "59,6 mil".
+    const _fmtCache = {};
+    function formatarNumero(valor, casas = 1) {
+        const n = Number(valor);
+        if (valor === null || valor === undefined || valor === '' || !isFinite(n)) return '\u2014';
+        if (!_fmtCache[casas]) {
+            _fmtCache[casas] = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: casas });
+        }
+        return _fmtCache[casas].format(n);
+    }
+
+    function formatarKg(valor, opcoes = {}) {
+        const n = Number(valor);
+        if (valor === null || valor === undefined || valor === '' || !isFinite(n)) return '\u2014';
+        if (opcoes.abreviar && Math.abs(n) >= 1000) {
+            return formatarNumero(n / 1000, 1) + ' mil' + (opcoes.semUnidade ? '' : ' kg');
+        }
+        const texto = formatarNumero(n, opcoes.casas === undefined ? 1 : opcoes.casas);
+        return opcoes.semUnidade ? texto : texto + ' kg';
+    }
+
     function formatWeight(weight) {
         return weight ? weight.toFixed(1).replace('.', ',') + ' kg' : '-';
     }
@@ -268,6 +292,8 @@ const FitLogUtils = (function() {
         formatDate,
         formatNumber,
         formatWeight,
+        formatarNumero,
+        formatarKg,
         validateEmail,
         validatePhone,
         confirmAction,

@@ -816,6 +816,10 @@ def create_app(config_class=None):
 
     from utils.format_utils import formatar_datahora_br
     app.add_template_filter(formatar_datahora_br, 'datahora_br')
+    # Números e pesos no formato brasileiro (P3): {{ x|num_br }}, {{ x|kg }}.
+    from utils.format_utils import formatar_kg, formatar_numero_br
+    app.add_template_filter(formatar_numero_br, 'num_br')
+    app.add_template_filter(formatar_kg, 'kg')
 
     @app.context_processor
     def utility_processor():
