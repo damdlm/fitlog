@@ -489,7 +489,27 @@ document.addEventListener('DOMContentLoaded', function () {
             erroBox.classList.remove('d-none');
         }
 
-        modalNovoExEl.addEventListener('hidden.bs.modal', novoExercicioLimpar);
+        // "+ Novo" abre por JS, não por data-bs-toggle: o atalho do
+        // Bootstrap 5.3 fecha o modal aberto antes de abrir outro -- o
+        // "Editar treino" sumia e o exercício criado (já marcado na grade)
+        // ficava fora do treino. Aberto assim, ele empilha por cima (ver
+        // "Empilhamento de modais" acima) e o de baixo continua aberto.
+        document.querySelectorAll('[data-etv-novo]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                modalNovoEx.show(btn);
+            });
+        });
+
+        modalNovoExEl.addEventListener('hidden.bs.modal', function () {
+            novoExercicioLimpar();
+            // Fechar o modal de cima faz o Bootstrap liberar a rolagem da
+            // página, mesmo com o "Editar treino" ainda aberto embaixo.
+            if (document.querySelector('.modal.show')) {
+                document.body.classList.add('modal-open');
+                document.body.style.overflow = 'hidden';
+            }
+        });
         modalNovoExEl.addEventListener('shown.bs.modal', function () { nomeInput?.focus(); });
 
         function montarCardNovoExercicio(id, nome, musculo) {

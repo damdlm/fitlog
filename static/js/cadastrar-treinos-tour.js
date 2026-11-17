@@ -222,7 +222,10 @@
             // do modal abre sozinho quando a lista de exercícios já existe.
             modal.addEventListener('shown.bs.modal', function () {
                 tour.iniciarAposAtraso('modal', 350, function () {
-                    return !!document.querySelector('#modalExercicios .modal-body');
+                    // a lista do catálogo chega sob demanda (editar-treino-versao.js):
+                    // sem ela, os passos dos cartões seriam pulados
+                    return !!document.querySelector('#modalExercicios .modal-body')
+                        && (!window.FitLogCatalogoEtv || window.FitLogCatalogoEtv.pronto());
                 });
             });
             modal.addEventListener('hide.bs.modal', tour.destruir);

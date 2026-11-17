@@ -145,3 +145,26 @@ class TestBibliotecasLocais:
         for arq in ('vendor/fullcalendar/main.min.js', 'vendor/fullcalendar/main.min.css',
                     'vendor/fullcalendar/locales/pt-br.js', 'vendor/chartjs/chart.umd.min.js'):
             assert f'/static/{arq}?v=' in html, arq
+
+
+class TestNovoExercicioDentroDoModal:
+    def test_mais_novo_nao_fecha_o_editar_treino(self, client, app):
+        # data-bs-toggle num botão dentro de um modal aberto faz o Bootstrap
+        # 5.3 fechar o modal de baixo; o "+ Novo" abre por JS (data-etv-novo)
+        with app.app_context():
+            _u, v, _tv, _ex = _ficha('novo_no_modal')
+            vid = v.id
+        _login(client, 'novo_no_modal')
+        for url in ('/aluno/cadastrar-treinos', f'/aluno/versao/{vid}'):
+            html = client.get(url).get_data(as_text=True)
+            assert 'data-etv-novo' in html, url
+            assert 'data-bs-target="#modalCriarExercicio"' not in html, url
+        with open('static/js/editar-treino-versao.js', encoding='utf-8') as f:
+            js = f.read()
+        assert "querySelectorAll('[data-etv-novo]')" in js and 'modalNovoEx.show(btn)' in js
+        assert "document.body.classList.add('modal-open')" in js
+
+    def test_tour_do_modal_espera_a_lista(self):
+        for p in ('static/js/cadastrar-treinos-tour.js', 'static/js/ver-versao-tour.js'):
+            with open(p, encoding='utf-8') as f:
+                assert 'window.FitLogCatalogoEtv.pronto()' in f.read(), p
