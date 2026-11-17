@@ -216,3 +216,28 @@ class TestSetaDaFichaEncerrada:
         with open('templates/aluno/versoes.html', encoding='utf-8') as f:
             css = f.read()
         assert '.v-card { flex-wrap: nowrap; }' in css and '.v-card > div:first-child { flex: 1 1 auto; min-width: 0; }' in css
+
+
+class TestNomeDoTreinoSemRepetirCodigo:
+    def test_tira_o_prefixo_treino_x(self):
+        from routes.aluno.main import _nome_sem_codigo
+        assert _nome_sem_codigo('Treino C - Braços', 'C') == 'Braços'
+        assert _nome_sem_codigo('Treino D – Pernas', 'D') == 'Pernas'
+        assert _nome_sem_codigo('treino b: costas', 'B') == 'costas'
+        assert _nome_sem_codigo('Treino A', 'A') == ''
+        assert _nome_sem_codigo('Treino A1 - x', 'A') == 'Treino A1 - x'
+        assert _nome_sem_codigo('Peito e tríceps', 'A') == 'Peito e tríceps'
+
+    def test_painel_nao_repete(self, client, app):
+        from tests.integration.test_routes.test_registro_ux_lote2 import _ficha_abc, _sessao
+        from models import TreinoVersao
+        with app.app_context():
+            u, v, ids, ex = _ficha_abc('d1_nome')
+            db.session.get(TreinoVersao, ids['A']).nome_treino = 'Treino A - Costas'
+            db.session.get(TreinoVersao, ids['B']).nome_treino = 'Treino B - Peito'
+            db.session.commit()
+            _sessao(u, v, ids['A'], ex, date.today())
+        _login(client, 'd1_nome')
+        html = client.get('/aluno/dashboard').get_data(as_text=True)
+        assert 'Treino A · Costas' in html and 'Treino A · Treino A' not in html
+        assert 'Registrar próximo treino: B · Peito' in html

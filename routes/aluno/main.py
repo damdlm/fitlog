@@ -13,6 +13,7 @@ from services.onboarding_service import passos_comece_por_aqui
 from utils.format_utils import formatar_kg
 from zoneinfo import ZoneInfo
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,17 @@ def _resumo_series(series):
         texto = f'{faixa} reps' if faixa else ''
     n = len(series)
     return (texto + ' · ' if texto else '') + f'{n} série' + ('s' if n != 1 else '')
+
+
+def _nome_sem_codigo(nome, codigo):
+    """ "Treino C - Braços" -> "Braços" quando o código já aparece ao lado
+    ("Treino C · Braços"); nome igual a "Treino C" -> "" (nada a repetir)."""
+    nome = (nome or '').strip()
+    if codigo:
+        m = re.match(r'^treino\s+' + re.escape(codigo) + r'\b\s*[-–—:·.]?\s*', nome, re.I)
+        if m:
+            nome = nome[m.end():].strip()
+    return nome
 
 
 def _ultimas_sessoes(user_id, limite=3):
@@ -97,7 +109,7 @@ def _ultimas_sessoes(user_id, limite=3):
         sessoes.append({
             'data': chave[0],
             'codigo': treino.codigo if treino else '',
-            'nome': (treino.nome_treino if treino else '') or '',
+            'nome': _nome_sem_codigo(treino.nome_treino if treino else '', treino.codigo if treino else ''),
             'exercicios': exercicios,
             'volume': volume,
             'tempo': f"{tempo // 3600:02d}:{(tempo % 3600) // 60:02d}" if tempo else None,
@@ -115,7 +127,10 @@ def _proximo_treino(user_id):
     if not versao or versao.data_fim:
         return None
     treinos = _anotar_sugestao_treino(VersaoService.get_treinos_para_registro(versao.id), user_id, hoje)
-    return next((t for t in treinos if t.get('sugerido')), treinos[0] if treinos else None)
+    escolhido = next((t for t in treinos if t.get('sugerido')), treinos[0] if treinos else None)
+    if escolhido:
+        escolhido = dict(escolhido, nome_curto=_nome_sem_codigo(escolhido.get('nome'), escolhido.get('codigo')))
+    return escolhido
 
 
 @aluno_bp.route('/dashboard')

@@ -242,7 +242,7 @@
                 <summary class="dash-sessao-resumo">
                     <span class="dash-sessao-codigo">{{ s.codigo or '•' }}</span>
                     <span class="dash-sessao-info">
-                        <span class="dash-sessao-nome">{{ ('Treino ' ~ s.codigo) if s.codigo else 'Treino' }}{% if s.nome and s.nome != ('Treino ' ~ s.codigo) %} · {{ s.nome }}{% endif %}</span>
+                        <span class="dash-sessao-nome">{{ ('Treino ' ~ s.codigo) if s.codigo else 'Treino' }}{% if s.nome %} · {{ s.nome }}{% endif %}</span>
                         <span class="dash-sessao-meta">
                             {{ s.data.strftime('%d/%m') }} · {{ s.exercicios|length }} exercício{{ 's' if s.exercicios|length != 1 }}{% if s.volume %} · {{ s.volume|kg(0) }}{% endif %}{% if s.tempo %} · <i class="bi bi-stopwatch"></i> {{ s.tempo }}{% endif %}
                         </span>
@@ -266,7 +266,7 @@
         {% if proximo_treino %}
         <a class="btn dash-proximo-btn" href="{{ url_for('register.registrar_treino', treino=proximo_treino.id) }}">
             <i class="bi bi-play-circle"></i>
-            Registrar {{ 'próximo treino' if ultimas_sessoes else 'primeiro treino' }}: {{ proximo_treino.codigo }}{% if proximo_treino.nome and proximo_treino.nome != ('Treino ' ~ proximo_treino.codigo) %} · {{ proximo_treino.nome }}{% endif %}
+            Registrar {{ 'próximo treino' if ultimas_sessoes else 'primeiro treino' }}: {{ proximo_treino.codigo }}{% if proximo_treino.nome_curto %} · {{ proximo_treino.nome_curto }}{% endif %}
         </a>
         {% else %}
         <a class="btn dash-proximo-btn is-secundario" href="{{ url_for('register.registrar_treino') if ultimas_sessoes else url_for('aluno.cadastrar_treinos') }}">
