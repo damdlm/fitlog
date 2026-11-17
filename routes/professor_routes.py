@@ -109,7 +109,8 @@ def listar_alunos():
     # está parado. Duas queries para a lista inteira (sem N+1).
     atividade = _atividade_dos_alunos([d['aluno'].id for d in alunos_data])
     for d in alunos_data:
-        d.update(atividade.get(d['aluno'].id, {'ultimo': None, 'dias_sem': None, 'por_semana': 0, 'parado': False}))
+        d.update(atividade.get(d['aluno'].id, {'ultimo': None, 'dias_sem': None, 'dias_4sem': 0,
+                                               'por_semana': 0, 'parado': False}))
 
     from services.billing_service import BillingService
     return render_template('professor/alunos.html',
@@ -145,6 +146,7 @@ def _atividade_dos_alunos(aluno_ids):
         saida[aid] = {
             'ultimo': ultimo_dia,
             'dias_sem': max(dias_sem, 0) if dias_sem is not None else None,
+            'dias_4sem': dias.get(aid) or 0,
             'por_semana': round((dias.get(aid) or 0) / 4, 1),
             'parado': dias_sem is not None and dias_sem > DIAS_PARADO,
         }

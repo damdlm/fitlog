@@ -13,7 +13,8 @@
 {% macro atividade(item) -%}
 {%- if item.ultimo -%}
 <span class="ga-ativ-ultimo">Último treino {% if item.dias_sem == 0 %}hoje{% elif item.dias_sem == 1 %}ontem{% else %}há {{ item.dias_sem }} dias{% endif %}</span>
-{%- if item.por_semana %}<span class="ga-ativ-freq"> · {{ item.por_semana|num_br }}× por semana</span>{% endif %}
+{%- if item.dias_4sem >= 4 %}<span class="ga-ativ-freq"> · {{ item.por_semana|num_br }}× por semana</span>
+{%- elif item.dias_4sem %}<span class="ga-ativ-freq"> · {{ item.dias_4sem }} treino{{ 's' if item.dias_4sem > 1 }} em 4 semanas</span>{% endif %}
 {%- if item.parado %} <span class="ga-selo-parado">Parado há {{ item.dias_sem }} dias</span>{% endif %}
 {%- else -%}
 <span class="ga-ativ-ultimo text-muted">Ainda não treinou</span>

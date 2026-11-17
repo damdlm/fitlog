@@ -1,4 +1,3 @@
-
 """Lote 5 da análise de UX: área do professor.
 
 Pr1: barra inferior própria do professor. Pr3: lista de alunos com o
@@ -186,3 +185,16 @@ class TestAjustesFinais:
         assert 'Ficha v1' in html
         html = client.get(f'/professor/aluno/{aid}/estatisticas?parcial=1').get_data(as_text=True)
         assert 'Ficha v1' not in html  # só na visão "Todas as fichas"
+
+
+class TestFrequenciaBaixa:
+    def test_menos_de_uma_vez_por_semana(self, client, app):
+        with app.app_context():
+            prof = _professor('pr3_raro')
+            al, v, ids, ex = _ficha_abc('pr3_raro_al')
+            _sessao(al, v, ids['A'], ex, HOJE - timedelta(days=2))
+            _sessao(al, v, ids['B'], ex, HOJE - timedelta(days=9))
+            _vincular(db.session.get(User, al.id), prof)
+        _login(client, 'pr3_raro')
+        html = client.get('/professor/alunos').get_data(as_text=True)
+        assert '2 treinos em 4 semanas' in html and '0,5× por semana' not in html
