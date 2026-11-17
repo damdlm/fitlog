@@ -26,7 +26,10 @@ env:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    # Runner fixo (não ubuntu-latest): o ubuntu-latest passou para o 26.04,
+    # que não tem build do Python 3.12.8 -- a versão da produção
+    # (runtime.txt). Ao subir o Python do projeto, pode voltar ao latest.
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
@@ -57,7 +60,7 @@ jobs:
           flake8 . --count --exit-zero --max-line-length=120 --statistics
 
   testes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       # Um grupo falhar não cancela os outros: o resultado mostra tudo de uma vez.
       fail-fast: false
@@ -120,7 +123,7 @@ jobs:
     # Junta a cobertura dos 4 grupos de testes e falha se o total cair
     # abaixo do mínimo -- protege o ganho de cobertura contra regressões.
     needs: testes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
