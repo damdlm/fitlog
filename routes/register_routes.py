@@ -165,27 +165,35 @@ def _anotar_sugestao_treino(treinos, user_id, data_obj):
 
     ids = [t['id'] for t in treinos]
     limite = datetime.combine(data_obj + timedelta(days=1), datetime.min.time())
-    ultimos = dict(
-        db.session.query(RegistroTreino.treino_versao_id, func.max(RegistroTreino.data_registro))
+    linhas = (
+        db.session.query(RegistroTreino.treino_versao_id, RegistroTreino.data_registro,
+                         func.max(RegistroTreino.created_at))
         .filter(RegistroTreino.user_id == user_id,
                 RegistroTreino.treino_versao_id.in_(ids),
                 RegistroTreino.data_registro < limite)
-        .group_by(RegistroTreino.treino_versao_id)
+        .group_by(RegistroTreino.treino_versao_id, RegistroTreino.data_registro)
         .all()
     )
+    # por treino: (dia da sessão mais recente, hora em que foi registrada)
+    ultimos = {}
+    for treino_id, quando, criado in linhas:
+        chave = (quando.date(), criado.timestamp() if criado else -1.0)
+        if treino_id not in ultimos or chave > ultimos[treino_id]:
+            ultimos[treino_id] = chave
 
-    idx_ultimo, data_ultimo = None, None
+    idx_ultimo, chave_ultimo = None, None
     for i, t in enumerate(treinos):
-        quando = ultimos.get(t['id'])
+        chave = ultimos.get(t['id'])
         t['sugerido'] = False
         t['ultimo_texto'] = None
-        if quando is None:
+        if chave is None:
             continue
-        dias = (data_obj - quando.date()).days
+        dias = (data_obj - chave[0]).days
         t['ultimo_texto'] = 'hoje' if dias <= 0 else ('ontem' if dias == 1 else f'há {dias} dias')
-        # o mais recente; empate no mesmo dia fica com o de código maior
-        if data_ultimo is None or quando.date() >= data_ultimo:
-            idx_ultimo, data_ultimo = i, quando.date()
+        # o mais recente; dois no mesmo dia: o registrado por último (sem
+        # hora de registro, o de código maior)
+        if chave_ultimo is None or chave >= chave_ultimo:
+            idx_ultimo, chave_ultimo = i, chave
 
     proximo = 0 if idx_ultimo is None else (idx_ultimo + 1) % len(treinos)
     if len(treinos) > 1 or idx_ultimo is None:

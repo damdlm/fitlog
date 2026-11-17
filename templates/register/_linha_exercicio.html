@@ -72,11 +72,12 @@
                                 {# R3: um selo só. Os campos abaixo já vêm preenchidos com
                                    esses valores; três selos repetiam a informação. Séries
                                    diferentes entre si: mostra a maior carga. #}
-                                {% set cargas_ult = ultimas|map(attribute='carga')|reject('none')|list %}
+                                {# carga 0 = peso corporal: o selo mostra só as repetições #}
+                                {% set cargas_ult = ultimas|map(attribute='carga')|reject('none')|select('gt', 0)|list %}
                                 {% set reps_ult = ultimas|map(attribute='repeticoes')|reject('none')|list %}
-                                {% set carga_unica = (cargas_ult|unique|list|length == 1) %}
+                                {% set faixa_reps %}{% if reps_ult %}{{ reps_ult|min }}{% if reps_ult|max != reps_ult|min %}–{{ reps_ult|max }}{% endif %}{% endif %}{% endset %}
                                 <div class="dash-registro-badges">
-                                    <span class="dash-badge dash-badge--ultima">Última: {% if carga_unica %}{{ cargas_ult[0]|kg }}{% if reps_ult %} × {{ reps_ult|min }}{% if reps_ult|max != reps_ult|min %}–{{ reps_ult|max }}{% endif %}{% endif %}{% elif cargas_ult %}até {{ cargas_ult|max|kg }}{% endif %} · {{ ultimas|length }} série{{ 's' if ultimas|length != 1 }}</span>
+                                    <span class="dash-badge dash-badge--ultima">Última: {% if cargas_ult|unique|list|length == 1 %}{{ cargas_ult[0]|kg }}{% if faixa_reps %} × {{ faixa_reps }}{% endif %} · {% elif cargas_ult %}até {{ cargas_ult|max|kg }} · {% elif faixa_reps %}{{ faixa_reps }} reps · {% endif %}{{ ultimas|length }} série{{ 's' if ultimas|length != 1 }}</span>
                                 </div>
                                 {% endif %}
                             </div>

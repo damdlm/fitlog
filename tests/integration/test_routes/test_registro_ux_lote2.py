@@ -75,6 +75,24 @@ class TestSugestaoProximoTreino:
             assert ts[2]['ultimo_texto'] is None
             assert [t['sugerido'] for t in ts] == [False, True, False]
 
+    def test_dois_no_mesmo_dia_vale_o_registrado_por_ultimo(self, app):
+        with app.app_context():
+            u, v, ids, ex = _ficha_abc('sug_mesmo_dia')
+            _sessao(u, v, ids['C'], ex, DATA)
+            _sessao(u, v, ids['A'], ex, DATA)  # C e depois A, no mesmo dia
+            ts = _anotar_sugestao_treino(_treinos(ids), u.id, DATA)
+            assert [t['sugerido'] for t in ts] == [False, True, False]
+            assert [t['ultimo_texto'] for t in ts] == ['hoje', None, 'hoje']
+
+    def test_ficha_nova_comeca_pelo_primeiro(self, app):
+        with app.app_context():
+            u, v, ids, ex = _ficha_abc('sug_ficha_nova')
+            _sessao(u, v, ids['B'], ex, DATA - timedelta(days=1))
+            outra_ficha = [dict(t, id=t['id'] + 1000) for t in _treinos(ids)]
+            ts = _anotar_sugestao_treino(outra_ficha, u.id, DATA)
+            assert [t['sugerido'] for t in ts] == [True, False, False]
+            assert all(t['ultimo_texto'] is None for t in ts)
+
     def test_ficha_de_um_treino_so_nao_marca_sugerido_depois_de_feito(self, app):
         with app.app_context():
             u, v, ids, ex = _ficha_abc('sug_um')
@@ -120,6 +138,19 @@ class TestCardDoExercicio:
                     db.session.get(ExercicioUsuario, exid), DATA, series=((32.5, 8), (32.5, 12), (32.5, 10)))
         amanha = f'/registrar/registrar-treino?data={(DATA + timedelta(days=1)).isoformat()}&treino={ids["A"]}'
         assert 'Última: 32,5 kg × 8–12 · 3 séries' in client.get(amanha).get_data(as_text=True)
+
+    def test_selo_sem_carga_mostra_repeticoes(self, client, app):
+        casos = (('selo_corporal', ((0, 12), (0, 10), (0, 8)), 'Última: 8–12 reps · 3 séries'),
+                 ('selo_sem_carga', ((None, 15), (None, 15)), 'Última: 15 reps · 2 séries'))
+        for nome, series, esperado in casos:
+            with app.app_context():
+                u, v, ids, ex = _ficha_abc(nome)
+                _sessao(u, v, ids['A'], ex, DATA - timedelta(days=2), series=series)
+            _login(client, nome)
+            html = client.get(f'/registrar/registrar-treino?data={DATA.isoformat()}&treino={ids["A"]}'
+                              ).get_data(as_text=True)
+            assert esperado in html and 'Última: ·' not in html and '0 kg ×' not in html
+            client.get('/auth/logout')
 
     def test_cancelar_discreto_e_nome_em_duas_linhas(self, client, app):
         with app.app_context():
