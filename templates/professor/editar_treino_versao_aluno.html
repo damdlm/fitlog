@@ -4,7 +4,7 @@
 {% block page_title %}Editar Treino {{ treino_id }}{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/editar-treino-versao.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/editar-treino-versao.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -167,5 +167,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/editar-treino-versao.js') }}"></script>
+<script src="{{ static_v('js/editar-treino-versao.js') }}"></script>
 {% endblock %}

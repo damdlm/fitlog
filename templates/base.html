@@ -99,13 +99,13 @@
     
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/page-transition.css') }}">
+    <link rel="stylesheet" href="{{ static_v('css/page-transition.css') }}">
     <link rel="stylesheet" href="{{ static_v('css/fitbot-chat.css') }}">
     <!-- Fora do if de usuário logado: o aviso da fila offline também aparece
          deslogado ("entre na sua conta para enviar"). -->
     <link rel="stylesheet" href="{{ static_v('css/fila-offline.css') }}">
     {% if current_user.is_authenticated %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/pwa-install.css') }}">
+    <link rel="stylesheet" href="{{ static_v('css/pwa-install.css') }}">
     <link rel="stylesheet" href="{{ static_v('css/notificacoes.css') }}">
     {% endif %}
     
@@ -2462,13 +2462,13 @@
     <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     
     <!-- Utilitário Global -->
-    <script src="{{ url_for('static', filename='js/fitlog-utils.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/page-transition.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/modules/header-title-center.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/fl-confirm.js') }}"></script>
+    <script src="{{ static_v('js/fitlog-utils.js') }}"></script>
+    <script src="{{ static_v('js/page-transition.js') }}"></script>
+    <script src="{{ static_v('js/modules/header-title-center.js') }}"></script>
+    <script src="{{ static_v('js/fl-confirm.js') }}"></script>
     
     <!-- CSRF Protection -->
-    <script src="{{ url_for('static', filename='js/modules/csrf.js') }}"></script>
+    <script src="{{ static_v('js/modules/csrf.js') }}"></script>
 
     <!-- Fila offline de treinos: guarda no aparelho o treino que não
          conseguiu ser enviado por falta de internet e reenvia sozinho
@@ -2481,15 +2481,15 @@
     <script src="{{ static_v('js/modules/chart-tooltip-dismiss.js') }}"></script>
 
     <!-- Modal de imagens do exercício -->
-    <script src="{{ url_for('static', filename='js/modules/exercicio-imagens.js') }}"></script>
+    <script src="{{ static_v('js/modules/exercicio-imagens.js') }}"></script>
     <script src="{{ static_v('js/modules/fitbot-chat.js') }}"></script>
 
     <!-- Instalação do PWA (banner Android/Desktop + tutorial iOS) --
          só carrega/roda com usuário logado (login, cadastro, landing
          page etc. não devem sugerir instalação). -->
     {% if current_user.is_authenticated %}
-    <script src="{{ url_for('static', filename='js/modules/pwa-install.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/modules/notificacoes.js') }}"></script>
+    <script src="{{ static_v('js/modules/pwa-install.js') }}"></script>
+    <script src="{{ static_v('js/modules/notificacoes.js') }}"></script>
     {% endif %}
     
     <!-- Bloco para scripts específicos de cada página -->

@@ -4,7 +4,7 @@
 {% block page_title %}Minha Assinatura{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/billing.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/billing.css') }}">
 
 {% macro cartao_salvo(assinatura) %}
     {% if assinatura and assinatura.forma_pagamento == 'cartao' and assinatura.cartao_ultimos_digitos %}
