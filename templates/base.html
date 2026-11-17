@@ -1829,9 +1829,8 @@
                     </button>
                     <!-- Mesmo motivo do badge do sino acima: fica fora do <button> pra não
                          ser cortado pelo overflow:hidden do ripple em page-transition.css. -->
-                    {% if current_user.is_professor() and not current_user.is_admin and current_user.solicitacoes_pendentes_count > 0 %}
-                        <span class="badge rounded-pill bg-danger bottom-nav-badge d-lg-none">{{ current_user.solicitacoes_pendentes_count }}</span>
-                    {% endif %}
+                    {# Solicitações pendentes do professor: no celular o número fica em
+                       "Alunos", na barra inferior (Pr1); o menu continua com o item. #}
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><h6 class="dropdown-header">{{ current_user.username }}</h6></li>
                         <li>
@@ -2207,6 +2206,38 @@
             <span>Logs</span>
         </a>
     </nav>
+    {% elif current_user.is_professor() %}
+    {#- Pr1: barra do professor -- gestão dos alunos à mão; o treino próprio
+        continua a um toque em "Meu treino" (Calendário e Progresso próprios
+        ficam em Ajustes). O número de solicitações pendentes vai em Alunos. -#}
+    {% set em_painel = request.endpoint == 'professor.dashboard' %}
+    {% set em_alunos = request.blueprint == 'professor' and not em_painel %}
+    {% set em_meu_treino = request.endpoint in ('aluno.dashboard', 'aluno.estatisticas') or request.blueprint == 'calendar' %}
+    <nav class="bottom-nav d-lg-none" aria-label="Navegação principal">
+        <a href="{{ url_for('professor.dashboard') }}" class="bottom-nav-item {{ 'active' if em_painel else '' }}" data-fl-click-feedback>
+            <i class="bi bi-speedometer2"></i>
+            <span>Painel</span>
+        </a>
+        <a href="{{ url_for('professor.listar_alunos') }}" class="bottom-nav-item {{ 'active' if em_alunos else '' }}" data-fl-click-feedback
+           {% if current_user.solicitacoes_pendentes_count > 0 %}aria-label="Alunos ({{ current_user.solicitacoes_pendentes_count }} solicitações pendentes)"{% endif %}>
+            <i class="bi bi-people{{ '-fill' if em_alunos else '' }}"></i>
+            <span>Alunos</span>
+            {% if current_user.solicitacoes_pendentes_count > 0 %}
+            <span class="badge rounded-pill bg-danger bottom-nav-badge" aria-hidden="true">{{ current_user.solicitacoes_pendentes_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{{ url_for('register.registrar_treino') }}" class="bottom-nav-cta" aria-label="Registrar meu treino" data-fl-click-feedback>
+            <i class="bi bi-plus-lg"></i>
+        </a>
+        <a href="{{ url_for('aluno.dashboard') }}" class="bottom-nav-item {{ 'active' if em_meu_treino else '' }}" data-fl-click-feedback>
+            <i class="bi bi-person-arms-up"></i>
+            <span>Meu treino</span>
+        </a>
+        <button type="button" class="bottom-nav-item" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMais" aria-controls="offcanvasMais">
+            <i class="bi bi-gear"></i>
+            <span>Ajustes</span>
+        </button>
+    </nav>
     {% else %}
     <nav class="bottom-nav d-lg-none" aria-label="Navegação principal">
         <a href="{{ url_for('aluno.dashboard') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'aluno.dashboard' else '' }}" data-fl-click-feedback>
@@ -2240,6 +2271,12 @@
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
         </div>
         <div class="offcanvas-body">
+            {% if current_user.is_professor() and not current_user.is_admin %}
+            <div class="mais-section">
+                <a class="mais-link" href="{{ url_for('calendar.calendario') }}"><i class="bi bi-calendar"></i> Meu calendário</a>
+                <a class="mais-link" href="{{ url_for('aluno.estatisticas') }}"><i class="bi bi-graph-up-arrow"></i> Meu progresso</a>
+            </div>
+            {% endif %}
             {% if not current_user.is_admin %}
             <div class="mais-section">
             <!-- <span class="mais-section-label">Treino</span> -->

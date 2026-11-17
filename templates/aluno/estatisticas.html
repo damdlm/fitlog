@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block page_icon %}<i class="bi bi-graph-up" style="color: #F28C33;"></i>{% endblock %}
-{% block page_title %}Estatísticas{% endblock %}
+{% block page_title %}{% if aluno_alvo %}Progresso do aluno{% else %}Estatísticas{% endif %}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ static_v('vendor/driverjs/driver.css') }}">
@@ -495,21 +495,28 @@
     .est-inicio-btn:hover, .est-inicio-btn:focus-visible { background: #e07a1f; color: #fff; }
 </style>
 
+{% set nome_alvo = (aluno_alvo.nome_completo or aluno_alvo.username) if aluno_alvo else '' %}
+{% if aluno_alvo %}
+<!-- Pr4: professor vendo o Progresso do aluno (só leitura) -->
+<a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno_alvo.id) }}" class="btn btn-sm btn-outline-secondary mb-3 est-voltar-aluno">
+    <i class="bi bi-arrow-left"></i> Voltar para {{ nome_alvo }}
+</a>
+{% endif %}
 <!-- Cabeçalho com destaque -->
 <div class="est-hero">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
         <div>
-            <div class="est-hero-title">Resumo da sua evolução</div>
+            <div class="est-hero-title">{% if aluno_alvo %}Evolução de {{ nome_alvo }}{% else %}Resumo da sua evolução{% endif %}</div>
             {% if musculo_destaque %}
             <p class="est-hero-destaque">
-                Seu grupo muscular mais treinado é
+                {% if aluno_alvo %}O grupo muscular mais treinado é{% else %}Seu grupo muscular mais treinado é{% endif %}
                 <span class="highlight">{{ musculo_destaque }}</span> 💪
             </p>
             {% else %}
-            <p class="est-hero-destaque">Registre seus treinos para ver suas estatísticas aqui 📊</p>
+            <p class="est-hero-destaque">{% if aluno_alvo %}Os gráficos aparecem quando {{ nome_alvo }} registrar treinos.{% else %}Registre seus treinos para ver suas estatísticas aqui 📊{% endif %}</p>
             {% endif %}
         </div>
-        {% if tem_registros %}
+        {% if tem_registros and not aluno_alvo %}
         <button type="button" class="btn btn-sm" id="btnCompartilharEstatisticas"
                 style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); color: white; white-space: nowrap; position: relative;">
             <i class="bi bi-share-fill"></i> Compartilhar
@@ -522,18 +529,25 @@
 <!-- E4: antes do primeiro treino, um aviso só (em vez de seis cartões vazios) -->
 <div class="est-inicio-vazio">
     <i class="bi bi-graph-up-arrow"></i>
+    {% if aluno_alvo %}
+    <h2>{{ nome_alvo }} ainda não registrou treinos</h2>
+    <p>Recordes, força, volume por músculo e cardio aparecem aqui a partir do primeiro treino.</p>
+    {% else %}
     <h2>Seu progresso aparece aqui</h2>
     <p>Depois do primeiro treino registrado você vê recordes, força, volume por músculo e cardio.</p>
     <a class="btn est-inicio-btn" href="{{ url_for('register.registrar_treino') }}">
         <i class="bi bi-plus-circle"></i> Registrar meu primeiro treino
     </a>
+    {% endif %}
 </div>
 {% else %}
+{% if not aluno_alvo %}
 <div class="d-flex justify-content-end mb-2">
     <button type="button" class="rt-tour-ajuda" id="btnTourEstatisticas">
         <i class="bi bi-question-circle"></i> Tutorial
     </button>
 </div>
+{% endif %}
 
 <!-- Filtro de período: vale pra todas as seções abaixo -->
 <div class="est-periodo-bar" id="barraPeriodo">
@@ -787,14 +801,28 @@
         </div>
     </div>
 </div>
+{% if aluno_alvo %}
+<!-- Pr4: Desempenho por Treino (da antiga tela do professor), acompanha o
+     período da página e a ficha escolhida -- ?parcial=1 na rota do professor -->
+<div id="estDesempenhoTreino" class="mt-4"
+     data-url="{{ url_for('professor.estatisticas_aluno', aluno_id=aluno_alvo.id) }}">
+    {% with versoes=desempenho.versoes, versao_sel_id=desempenho.versao_sel_id, versao_todas=desempenho.versao_todas,
+            versao_ativa_id=desempenho.versao_ativa_id, treino_stats=desempenho.treino_stats,
+            data_inicio_sel=desempenho.data_inicio_sel, data_fim_sel=desempenho.data_fim_sel %}
+    {% include "professor/_desempenho_treino.html" %}
+    {% endwith %}
+</div>
+{% endif %}
 {% endif %}
 {% endblock %}
 
 {% block scripts %}
+{% if not aluno_alvo %}
 <script>
     // "Comece por aqui" (templates/_comece_por_aqui.html): abrir o Progresso conclui o passo 3
     try { window.localStorage.setItem('fitlog:comece:progresso:{{ current_user.id }}', '1'); } catch (e) { /* sem storage */ }
 </script>
+{% endif %}
 {% if tem_registros %}
 <script src="{{ static_v('vendor/chartjs/chart.umd.min.js') }}"></script>
 <script>
@@ -802,6 +830,13 @@
     // com o ranking de músculos) -- usa o histórico completo, independente
     // do filtro de período do quadro Volume/Ranking por Músculo acima.
     const muscleData = {{ musculo_stats|tojson }};
+
+    // Pr4: na visão do professor, toda API desta tela recebe ?aluno_id=
+    const ALUNO_ALVO = {{ (aluno_alvo.id if aluno_alvo else none)|tojson }};
+    function comAluno(url) {
+        if (!ALUNO_ALVO) return url;
+        return url + (url.indexOf('?') === -1 ? '?' : '&') + 'aluno_id=' + ALUNO_ALVO;
+    }
 
     // ===== Filtro de período (vale pra página inteira) =====
     // Cada seção lê periodoAtual.query (dias=N | tudo=1 | inicio=..&fim=..) e
@@ -876,7 +911,32 @@
         sincronizarFiltroEvolucao();
         carregarEvolucao(treinoEvolucao, codigoTreinoEvolucao, null);
         carregarAtividade();
+        carregarDesempenho();
     }
+
+    // Pr4: "Desempenho por Treino" (só na visão do professor) segue o
+    // período da página e a ficha escolhida no próprio card.
+    let reqDesempenho = 0;
+    function carregarDesempenho() {
+        const caixa = document.getElementById('estDesempenhoTreino');
+        if (!caixa) return;
+        const sel = document.getElementById('estFiltroVersaoSel');
+        let url = caixa.dataset.url + '?parcial=1&' + periodoAtual.query;
+        if (sel) url += '&versao=' + encodeURIComponent(sel.value);
+        const minha = ++reqDesempenho;
+        caixa.style.opacity = '0.55';
+        fetch(url, { credentials: 'same-origin' })
+            .then(r => { if (!r.ok || r.redirected) throw new Error('HTTP ' + r.status); return r.text(); })
+            .then(html => { if (minha === reqDesempenho) caixa.innerHTML = html; })
+            .catch(() => { if (window.FitLogUtils) FitLogUtils.showToast('Não foi possível atualizar o desempenho por treino.', 'danger'); })
+            .finally(() => { if (minha === reqDesempenho) caixa.style.opacity = ''; });
+    }
+    document.addEventListener('change', function (e) {
+        if (e.target && e.target.id === 'estFiltroVersaoSel') carregarDesempenho();
+    });
+    document.addEventListener('submit', function (e) {
+        if (e.target && e.target.id === 'estFiltroVersao') { e.preventDefault(); carregarDesempenho(); }
+    });
 
     // Marca no filtro do gráfico o botão do período que ele está usando
     // (e preenche as datas quando o período é personalizado).
@@ -905,7 +965,7 @@
 
     function carregarKpis() {
       const meu = reqPeriodo;
-      fetch(`/api/kpis?${periodoAtual.query}`)
+      fetch(comAluno(`/api/kpis?${periodoAtual.query}`))
         .then(r => r.json())
         .then(k => {
             if (meu !== reqPeriodo) return;
@@ -1030,7 +1090,7 @@
 
     function carregarMusculoStats(params) {
         const meu = reqPeriodo;
-        fetch('/api/musculo-stats' + (params ? `?${params}` : ''))
+        fetch(comAluno('/api/musculo-stats' + (params ? `?${params}` : '')))
             .then(r => r.json())
             .then(data => {
                 if (meu !== reqPeriodo) return;
@@ -1077,7 +1137,7 @@
     // ===== Recordes Pessoais =====
     function carregarRecordes() {
       const meu = reqPeriodo;
-      fetch(`/api/recordes-pessoais?${periodoAtual.query}`)
+      fetch(comAluno(`/api/recordes-pessoais?${periodoAtual.query}`))
         .then(r => r.json())
         .then(recordes => {
             if (meu !== reqPeriodo) return;
@@ -1112,7 +1172,7 @@
     function carregarProgressaoForca(chaveExercicio) {
         if (!chaveExercicio) return;
         const meu = reqPeriodo;
-        fetch(`/api/progressao-forca?exercicio=${encodeURIComponent(chaveExercicio)}&${periodoAtual.query}`)
+        fetch(comAluno(`/api/progressao-forca?exercicio=${encodeURIComponent(chaveExercicio)}&${periodoAtual.query}`))
             .then(r => r.json())
             .then(data => {
                 if (meu !== reqPeriodo) return;
@@ -1192,7 +1252,7 @@
 
     function carregarExerciciosDaForca() {
         const meu = reqPeriodo;
-        fetch(`/api/progressao-forca/exercicios?${periodoAtual.query}`)
+        fetch(comAluno(`/api/progressao-forca/exercicios?${periodoAtual.query}`))
             .then(r => r.json())
             .then(data => {
                 if (meu !== reqPeriodo) return;
@@ -1282,7 +1342,7 @@
         // Contador próprio: trocar treino/modo/período rápido não deixa uma
         // resposta antiga sobrescrever a mais nova.
         const meu = ++reqEvolucao;
-        fetch(`/api/progresso?${params.toString()}`)
+        fetch(comAluno(`/api/progresso?${params.toString()}`))
             .then(r => r.json())
             .then(data => {
                 if (meu !== reqEvolucao) return;
@@ -1489,7 +1549,7 @@
     let dadosAtividade = null;
     function carregarAtividade() {
       const meu = reqPeriodo;
-      fetch(`/api/atividade-geral?${periodoAtual.query}`)
+      fetch(comAluno(`/api/atividade-geral?${periodoAtual.query}`))
         .then(r => r.json())
         .then(data => {
             if (meu !== reqPeriodo) return;
@@ -1575,9 +1635,11 @@
     }
 </script>
 <script src="{{ static_v('js/fitlog-share.js') }}"></script>
+{% if not aluno_alvo %}
 <script src="{{ static_v('vendor/driverjs/driver.js.iife.js') }}"></script>
 <script src="{{ static_v('js/fl-tour-core.js') }}"></script>
 <script src="{{ static_v('js/estatisticas-tour.js') }}"
         data-user-id="{{ current_user.id if current_user.is_authenticated else 'anon' }}"></script>
+{% endif %}
 {% endif %}
 {% endblock %}

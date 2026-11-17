@@ -18,7 +18,7 @@ from services.professor_perfil_service import (
 from services.avaliacao_professor_service import AvaliacaoProfessorService
 from utils.decorators import professor_acesso_alunos_required, professor_acesso_tela_required
 from extensions import limiter
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
@@ -63,7 +63,9 @@ def dashboard():
     else:
         saudacao = 'Boa noite'
 
-    return render_template('professor/dashboard.html', dados=dados, saudacao=saudacao)
+    from services.billing_service import BillingService
+    return render_template('professor/dashboard.html', dados=dados, saudacao=saudacao,
+                           limite_alunos=BillingService.limite_alunos_info(current_user))
 
 
 # =============================================
@@ -102,20 +104,51 @@ def listar_alunos():
     
     alunos_data.sort(key=lambda d: (d['aluno'].nome_completo or d['aluno'].username).lower())
     
-    # Contagem de registros por aluno em uma única query (sem N+1 no template)
-    registros_por_aluno = {}
-    aluno_ids = [d['aluno'].id for d in alunos_data]
-    if aluno_ids:
-        contagem = (db.session.query(RegistroTreino.user_id, func.count(RegistroTreino.id))
-                    .filter(RegistroTreino.user_id.in_(aluno_ids))
-                    .group_by(RegistroTreino.user_id)
-                    .all())
-        registros_por_aluno = dict(contagem)
-    
-    return render_template('professor/alunos.html', 
+    # Pr3: em vez de "154 registro(s)", quando foi o último treino, a média
+    # de treinos por semana (dias treinados nas últimas 4 semanas) e quem
+    # está parado. Duas queries para a lista inteira (sem N+1).
+    atividade = _atividade_dos_alunos([d['aluno'].id for d in alunos_data])
+    for d in alunos_data:
+        d.update(atividade.get(d['aluno'].id, {'ultimo': None, 'dias_sem': None, 'por_semana': 0, 'parado': False}))
+
+    from services.billing_service import BillingService
+    return render_template('professor/alunos.html',
                          alunos_data=alunos_data,
-                         registros_por_aluno=registros_por_aluno,
-                         busca=busca)
+                         busca=busca,
+                         limite_alunos=BillingService.limite_alunos_info(current_user))
+
+
+# Sem treinar há mais que isso: selo "Parado há N dias" na lista de alunos.
+DIAS_PARADO = 7
+
+
+def _atividade_dos_alunos(aluno_ids):
+    """{aluno_id: {'ultimo': date|None, 'dias_sem': int|None,
+    'por_semana': float, 'parado': bool}} -- último dia treinado e média
+    de dias treinados por semana nas últimas 4 semanas."""
+    if not aluno_ids:
+        return {}
+    hoje = datetime.now(ZoneInfo('America/Sao_Paulo')).date()
+    ultimos = dict(db.session.query(RegistroTreino.user_id, func.max(RegistroTreino.data_registro))
+                   .filter(RegistroTreino.user_id.in_(aluno_ids))
+                   .group_by(RegistroTreino.user_id).all())
+    inicio = datetime.combine(hoje - timedelta(days=27), datetime.min.time())
+    dias = dict(db.session.query(RegistroTreino.user_id,
+                                 func.count(func.distinct(func.date(RegistroTreino.data_registro))))
+                .filter(RegistroTreino.user_id.in_(aluno_ids), RegistroTreino.data_registro >= inicio)
+                .group_by(RegistroTreino.user_id).all())
+    saida = {}
+    for aid in aluno_ids:
+        ultimo = ultimos.get(aid)
+        ultimo_dia = ultimo.date() if hasattr(ultimo, 'date') else ultimo
+        dias_sem = (hoje - ultimo_dia).days if ultimo_dia else None
+        saida[aid] = {
+            'ultimo': ultimo_dia,
+            'dias_sem': max(dias_sem, 0) if dias_sem is not None else None,
+            'por_semana': round((dias.get(aid) or 0) / 4, 1),
+            'parado': dias_sem is not None and dias_sem > DIAS_PARADO,
+        }
+    return saida
 
 
 def _voltar_ao_novo_aluno(*mensagens):
@@ -648,25 +681,28 @@ def estatisticas_aluno(aluno_id):
         flash('Você não tem permissão para ver as estatísticas deste aluno.', 'danger')
         return redirect(url_for('professor.listar_alunos'))
 
-    # --- Filtro de período (padrão: mês corrente em America/Sao_Paulo) ---
-    # Datas vêm de <input type="date"> (?inicio=&fim=), mesmo formato usado
-    # em /api/musculo-stats. data_registro é DateTime "naive" gravado à
-    # meia-noite do dia escolhido (ver RegistroService.buscar_por_data),
-    # então os limites aqui também são naive -- comparar com um datetime
-    # ciente de timezone quebraria a query no Postgres (produção).
+    # --- Período (Pr4): o mesmo filtro da tela Progresso -- ?dias=N,
+    # ?tudo=1 ou ?inicio=&fim= (padrão: últimos 30 dias). data_registro é
+    # DateTime "naive" gravado à meia-noite do dia escolhido (ver
+    # RegistroService.buscar_por_data), então os limites aqui também são
+    # naive -- comparar com um datetime ciente de timezone quebraria a
+    # query no Postgres (produção).
     hoje = datetime.now(ZoneInfo('America/Sao_Paulo')).date()
-    primeiro_dia_mes = hoje.replace(day=1)
-    proximo_mes = (primeiro_dia_mes.replace(day=28) + timedelta(days=4)).replace(day=1)
-    ultimo_dia_mes = proximo_mes - timedelta(days=1)
 
-    def _parse_data(valor, padrao):
+    def _parse_data(valor):
         try:
-            return datetime.strptime(valor, '%Y-%m-%d').date() if valor else padrao
+            return datetime.strptime(valor, '%Y-%m-%d').date() if valor else None
         except ValueError:
-            return padrao
+            return None
 
-    data_inicio_sel = _parse_data(request.args.get('inicio'), primeiro_dia_mes)
-    data_fim_sel = _parse_data(request.args.get('fim'), ultimo_dia_mes)
+    data_inicio_sel = _parse_data(request.args.get('inicio'))
+    data_fim_sel = _parse_data(request.args.get('fim'))
+    if request.args.get('tudo'):
+        data_inicio_sel, data_fim_sel = date(2000, 1, 1), hoje
+    elif not (data_inicio_sel and data_fim_sel):
+        dias = request.args.get('dias', type=int) or 30
+        dias = max(1, min(dias, 3650))
+        data_inicio_sel, data_fim_sel = hoje - timedelta(days=dias - 1), hoje
     if data_inicio_sel > data_fim_sel:
         data_inicio_sel, data_fim_sel = data_fim_sel, data_inicio_sel
 
@@ -722,6 +758,7 @@ def estatisticas_aluno(aluno_id):
 
         treino_stats[t.id] = {
             "codigo": t.codigo,
+            "versao_numero": versoes_por_id[t.versao_id].numero_versao if t.versao_id in versoes_por_id else None,
             "nome": t.nome,
             "descricao": t.descricao,
             "qtd_exercicios": len(exercicios_ids),
@@ -752,12 +789,31 @@ def estatisticas_aluno(aluno_id):
                     # botões de treino do gráfico "Evolução do Volume" (versão ativa)
                     treinos_evolucao=TreinoService.get_da_versao_ativa(user_id=aluno.id))
 
-    # Troca de versão no card "Desempenho por Treino": o front pede só o
-    # trecho do card (?parcial=1) em vez de recarregar a página inteira.
+    # Troca de ficha ou de período no card "Desempenho por Treino": o
+    # front pede só o trecho do card (?parcial=1).
     if request.args.get('parcial') == '1':
         return render_template('professor/_desempenho_treino.html', **contexto)
 
-    return render_template('professor/estatisticas_aluno.html', **contexto)
+    # Pr4: o professor vê a mesma tela Progresso do aluno, só leitura (as
+    # APIs recebem ?aluno_id=, ver api_routes.estatisticas_do_alvo), com o
+    # "Desempenho por Treino" no fim.
+    from services.cardio import resumo_cardio_semana
+    from services.exercicio_service import ExercicioService
+    musculo_stats_total = EstatisticaService.calcular_por_musculo(user_id=aluno.id)
+    com_volume = {k: v for k, v in musculo_stats_total.items() if v['volume_total'] > 0}
+    return render_template(
+        'aluno/estatisticas.html',
+        aluno_alvo=aluno,
+        musculo_stats=musculo_stats_total,
+        treinos_versao_ativa=TreinoService.get_da_versao_ativa(user_id=aluno.id),
+        musculo_destaque=max(com_volume, key=lambda k: com_volume[k]['volume_total']) if com_volume else None,
+        volume_maximo_musculo=max((v['volume_total'] for v in musculo_stats_total.values()), default=0),
+        exercicios_selecionaveis=sorted(ExercicioService.get_exercicios_dos_treinos(user_id=aluno.id),
+                                        key=lambda ex: ex.nome),
+        cardio_semana=resumo_cardio_semana(aluno.id),
+        tem_registros=db.session.query(RegistroTreino.id).filter(RegistroTreino.user_id == aluno.id).first() is not None,
+        desempenho=contexto,
+    )
 
 
 @professor_bp.route('/aluno/<int:aluno_id>/progresso')

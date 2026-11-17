@@ -451,6 +451,25 @@ class BillingService:
         return False, f'Para cadastrar mais alunos, faça upgrade para o {plano_necessario.nome}.'
 
     @staticmethod
+    def limite_alunos_info(professor: User) -> dict:
+        """Pr5: o que o botão "Novo aluno" mostra -- {'total', 'limite'
+        (None = sem limite), 'pode_cadastrar', 'mensagem'}. O limite é o
+        que cobre o professor hoje: a faixa grátis (até 2) ou o máximo do
+        Plano Pró/Premium ativo. pode_cadastrar/mensagem vêm de
+        pode_cadastrar_aluno, a mesma regra que barra o cadastro."""
+        from services.configuracao_service import ConfiguracaoService
+        total = BillingService.contar_alunos_ativos(professor)
+        if professor.is_admin or not ConfiguracaoService.cobranca_ativa():
+            return {'total': total, 'limite': None, 'pode_cadastrar': True, 'mensagem': None}
+        pode, mensagem = BillingService.pode_cadastrar_aluno(professor)
+        limite = LIMITE_ALUNOS_GRATIS
+        assinatura = professor.assinatura
+        if (assinatura is not None and assinatura.status == 'active' and assinatura.plano is not None
+                and assinatura.plano.codigo in PLANOS_GESTAO_PROFESSOR):
+            limite = assinatura.plano.max_alunos
+        return {'total': total, 'limite': limite, 'pode_cadastrar': pode, 'mensagem': mensagem}
+
+    @staticmethod
     def professor_acesso_alunos_liberado(professor: User) -> bool:
         """True se o professor pode acessar as telas de gerenciamento/
         visualização dos alunos já vinculados. Só fica bloqueado quando

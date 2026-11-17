@@ -72,9 +72,9 @@
                 {
                     element: '.ga-registros',
                     popover: {
-                        title: 'Treinos registrados',
-                        description: 'Quantos treinos o aluno já registrou. Dá para ver de relance '
-                            + 'quem está treinando e quem sumiu.',
+                        title: 'Como o aluno está treinando',
+                        description: 'Quando foi o último treino e quantas vezes por semana, em média, '
+                            + 'nas últimas 4 semanas. O selo vermelho avisa quem está parado há mais de 7 dias.',
                         side: 'top',
                         align: 'center'
                     }
@@ -109,7 +109,7 @@
                     title: 'Solicitações',
                     description: 'Reúne os pedidos de alunos que querem treinar com você. '
                         + 'O número vermelho mostra quantos estão esperando resposta.',
-                    side: 'top',
+                    side: 'bottom',
                     align: 'center'
                 }
             },
@@ -118,8 +118,8 @@
                 popover: {
                     title: 'Cadastrar um aluno novo',
                     description: 'Cria o acesso do aluno e já vincula a você. '
-                        + 'Respeita o limite de alunos do seu plano.',
-                    side: 'top',
+                        + 'Embaixo aparece quantos alunos o seu plano comporta; no limite, o botão leva para ampliar o plano.',
+                    side: 'bottom',
                     align: 'center'
                 }
             }

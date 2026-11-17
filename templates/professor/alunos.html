@@ -9,7 +9,32 @@
 {% endblock %}
 
 {% block content %}
+{#- Pr3: atividade do aluno no lugar de "N registro(s)" -#}
+{% macro atividade(item) -%}
+{%- if item.ultimo -%}
+<span class="ga-ativ-ultimo">Último treino {% if item.dias_sem == 0 %}hoje{% elif item.dias_sem == 1 %}ontem{% else %}há {{ item.dias_sem }} dias{% endif %}</span>
+{%- if item.por_semana %}<span class="ga-ativ-freq"> · {{ item.por_semana|num_br }}× por semana</span>{% endif %}
+{%- if item.parado %} <span class="ga-selo-parado">Parado há {{ item.dias_sem }} dias</span>{% endif %}
+{%- else -%}
+<span class="ga-ativ-ultimo text-muted">Ainda não treinou</span>
+{%- endif -%}
+{%- endmacro %}
 <style>
+    /* Pr3/Pr5: ações no topo, nas cores do app */
+    .ga-topo-acoes { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .ga-topo-acoes .btn { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; border-radius: 12px; font-weight: 600; }
+    .ga-btn-novo { background: #F28C33; border: 0; color: #fff; flex-direction: column; align-items: flex-start !important; justify-content: center; gap: 0 !important; line-height: 1.15; padding: 6px 16px; }
+    .ga-btn-novo:hover, .ga-btn-novo:focus-visible { background: #e07a1f; color: #fff; }
+    .ga-btn-novo .ga-btn-novo-titulo { display: inline-flex; align-items: center; gap: 6px; }
+    .ga-btn-novo .ga-limite { font-size: .72rem; font-weight: 600; opacity: .92; }
+    .ga-btn-novo.is-no-limite { background: #fff; color: #b85c0e; border: 1.5px solid rgba(242, 140, 51, .55); }
+    .ga-btn-solicitacoes { background: #fff; color: #2d2d2d; border: 1.5px solid #e2e5ea; }
+    .ga-btn-solicitacoes:hover { border-color: #F28C33; color: #b85c0e; }
+    .ga-btn-ver { color: #b85c0e !important; border-color: rgba(242, 140, 51, .55) !important; background: #fff; }
+    .ga-btn-ver:hover, .ga-btn-ver:focus-visible { background: #F28C33 !important; border-color: #F28C33 !important; color: #fff !important; }
+    .ga-registros { font-size: .82rem; color: #5f6368; line-height: 1.35; }
+    .ga-ativ-ultimo { font-weight: 600; color: #2d2d2d; }
+    .ga-selo-parado { display: inline-block; margin-top: 2px; font-size: .72rem; font-weight: 700; color: #b42318; background: #fde8e7; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
     /* Rodapé com as ações principais -- mesmo padrão de
        aluno/versoes.html (.vc-footer-actions) e aluno/ver_versao.html
        (.vv-footer-actions): container flex + classes .btn padrão do
@@ -95,6 +120,27 @@
 </div>
 {% endif %}
 
+<div class="ga-topo-acoes">
+    {% set lim = limite_alunos %}
+    {% if lim and lim.limite is not none and not lim.pode_cadastrar %}
+    <a href="{{ url_for('billing.minha_assinatura') }}" class="btn ga-btn-novo is-no-limite" id="gaBtnNovoAluno">
+        <span class="ga-btn-novo-titulo"><i class="bi bi-person-plus"></i> Novo aluno</span>
+        <span class="ga-limite">{% if lim.total > lim.limite %}Acima do limite de {{ lim.limite }}{% else %}{{ lim.total }} de {{ lim.limite }} alunos{% endif %} · ampliar plano</span>
+    </a>
+    {% else %}
+    <a href="{{ url_for('professor.novo_aluno') }}" class="btn ga-btn-novo" id="gaBtnNovoAluno">
+        <span class="ga-btn-novo-titulo"><i class="bi bi-person-plus"></i> Novo aluno</span>
+        {% if lim and lim.limite is not none %}<span class="ga-limite">{{ lim.total }} de {{ lim.limite }} alunos</span>{% endif %}
+    </a>
+    {% endif %}
+    <a href="{{ url_for('professor.solicitacoes') }}" class="btn ga-btn-solicitacoes" id="gaBtnSolicitacoes">
+        <i class="bi bi-envelope"></i> Solicitações
+        {% if current_user.solicitacoes_pendentes_count > 0 %}
+        <span class="badge rounded-pill bg-danger">{{ current_user.solicitacoes_pendentes_count }}</span>
+        {% endif %}
+    </a>
+</div>
+
 <div class="d-flex justify-content-end mb-1">
     <button type="button" class="rt-tour-ajuda" id="btnTourProfessorAlunos">
         <i class="bi bi-question-circle"></i> Tutorial
@@ -134,7 +180,7 @@
                         <th class="ps-3">Aluno</th>
                         <th>Contato</th>
                         <th>Vinculado desde</th>
-                        <th class="text-center">Registros</th>
+                        <th>Treinos</th>
                         <th class="text-end pe-3">Ações</th>
                     </tr>
                 </thead>
@@ -162,15 +208,13 @@
                             <div class="text-muted small">{{ aluno.telefone or '-' }}</div>
                         </td>
                         <td class="small text-muted">{{ formatar_data(item.vinculado_desde) }}</td>
-                        <td class="text-center">
-                            <span class="badge bg-light text-dark border ga-registros">
-                                {{ registros_por_aluno.get(aluno.id, 0) }}
-                            </span>
+                        <td>
+                            <div class="ga-registros">{{ atividade(item) }}</div>
                         </td>
                         <td class="text-end pe-3">
                             <div class="btn-group btn-group-sm">
                                 <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}"
-                                   class="btn btn-outline-info ga-btn-ver" title="Visualizar" aria-label="Visualizar {{ nome_exibicao }}">
+                                   class="btn ga-btn-ver" title="Visualizar" aria-label="Visualizar {{ nome_exibicao }}">
                                     <i class="bi bi-eye"></i>
                                 </a>
                                 {% if current_user.is_admin %}
@@ -249,14 +293,12 @@
             {% if aluno.telefone %}
             <div class="small text-muted mb-1"><i class="bi bi-telephone me-1"></i>{{ aluno.telefone }}</div>
             {% endif %}
-            <div class="d-flex gap-3 small text-muted mb-3">
-                <span><i class="bi bi-calendar3 me-1"></i>Desde {{ formatar_data(item.vinculado_desde) }}</span>
-                <span class="ga-registros"><i class="bi bi-clipboard-data me-1"></i>{{ registros_por_aluno.get(aluno.id, 0) }} registro(s)</span>
-            </div>
+            <div class="ga-registros mb-1">{{ atividade(item) }}</div>
+            <div class="small text-muted mb-3"><i class="bi bi-calendar3 me-1"></i>Aluno desde {{ formatar_data(item.vinculado_desde) }}</div>
             <div class="d-flex gap-2">
                 <a href="{{ url_for('professor.visualizar_aluno', aluno_id=aluno.id) }}"
-                   class="btn btn-sm btn-outline-info flex-fill ga-btn-ver">
-                    <i class="bi bi-eye"></i> Ver
+                   class="btn btn-sm flex-fill ga-btn-ver">
+                    <i class="bi bi-eye"></i> Ver aluno
                 </a>
                 {% if current_user.is_admin %}
                 <a href="{{ url_for('professor.editar_aluno', aluno_id=aluno.id) }}"
@@ -308,17 +350,6 @@
     {% endfor %}
 </div>
 
-<div class="ga-footer-actions">
-    <a href="{{ url_for('professor.solicitacoes') }}" class="btn btn-outline-secondary" id="gaBtnSolicitacoes">
-        <i class="bi bi-envelope"></i> Solicitações
-        {% if current_user.solicitacoes_pendentes_count > 0 %}
-        <span class="badge rounded-pill bg-danger">{{ current_user.solicitacoes_pendentes_count }}</span>
-        {% endif %}
-    </a>
-    <a href="{{ url_for('professor.novo_aluno') }}" class="btn btn-success" id="gaBtnNovoAluno">
-        <i class="bi bi-person-plus"></i> Novo Aluno
-    </a>
-</div>
 {% endblock %}
 
 {% block scripts %}

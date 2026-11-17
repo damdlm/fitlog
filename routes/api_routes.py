@@ -1,4 +1,6 @@
-from flask import Blueprint, jsonify, request
+from functools import wraps
+
+from flask import Blueprint, g, jsonify, request
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta, timezone, date
 from services.exercicio_service import ExercicioService
@@ -15,6 +17,39 @@ from utils.validators import corpo_json_objeto
 
 api_bp = Blueprint('api', __name__)
 logger = logging.getLogger(__name__)
+
+
+def estatisticas_do_alvo(f):
+    """Pr4: as APIs da tela Progresso servem o usuário logado (exigem o
+    plano dele, como sempre) ou, com ?aluno_id=N, um aluno do professor
+    logado -- a mesma regra da antiga tela de estatísticas do aluno
+    (professor dono do vínculo ou admin, e acesso aos alunos liberado),
+    sem exigir plano do professor. Sem permissão: 403 em JSON. O id
+    resolvido fica em g.estatisticas_user_id (ver _uid_alvo)."""
+    com_plano = acesso_premium_required('estatisticas')(f)
+
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        aluno_id = request.args.get('aluno_id', type=int)
+        if not aluno_id or aluno_id == current_user.id:
+            g.estatisticas_user_id = current_user.id
+            return com_plano(*args, **kwargs)
+        from models import User, db
+        from services.billing_service import BillingService
+        aluno = db.session.get(User, aluno_id)
+        professor = aluno.get_professor() if aluno else None
+        dono = current_user.is_professor() and professor is not None and professor.id == current_user.id
+        if not aluno or not (current_user.is_admin or dono):
+            return jsonify({'erro': 'Sem permissão para ver este aluno.'}), 403
+        if dono and not current_user.is_admin and not BillingService.professor_acesso_alunos_liberado(current_user):
+            return jsonify({'erro': 'Acesso aos alunos bloqueado: regularize a assinatura.'}), 403
+        g.estatisticas_user_id = aluno.id
+        return f(*args, **kwargs)
+    return wrapper
+
+
+def _uid_alvo():
+    return getattr(g, 'estatisticas_user_id', None) or current_user.id
 
 
 # ============================================================================
@@ -73,7 +108,7 @@ def _periodo_da_requisicao():
 
 @api_bp.route("/progresso")
 @login_required
-@acesso_premium_required('estatisticas')
+@estatisticas_do_alvo
 def api_progresso():
     """
     API de dados de progresso para o gráfico de evolução.
@@ -87,7 +122,7 @@ def api_progresso():
         periodo, erro = _periodo_da_requisicao()
         if erro:
             return erro
-        return _api_progresso_agregado(treino, modo, periodo)
+        return _api_progresso_agregado(treino, modo, periodo, user_id=_uid_alvo())
 
     vazio = {"semanas": [], "volumes": [], "cargas_medias": []}
 
@@ -108,7 +143,7 @@ def api_progresso():
         # usuário, senão o gráfico soma o histórico de versões já
         # encerradas junto com a atual (ver EstatisticaService.
         # get_progresso_ultimos_30_dias).
-        versao_ativa = VersaoService.get_ativa()
+        versao_ativa = VersaoService.get_ativa(user_id=_uid_alvo())
         versao_id = versao_ativa.id if versao_ativa else None
         if versao_id is None:
             # Sem versão ativa no momento -- não há "corrente" pra
@@ -117,7 +152,7 @@ def api_progresso():
             return jsonify(vazio)
 
     dados = EstatisticaService.get_progresso_ultimos_30_dias(
-        treino_id, versao_id=versao_id
+        treino_id, user_id=_uid_alvo(), versao_id=versao_id
     )
 
     if not dados:
@@ -235,7 +270,7 @@ def api_progresso_exercicios():
 
 @api_bp.route("/kpis")
 @login_required
-@acesso_premium_required('estatisticas')
+@estatisticas_do_alvo
 def api_kpis():
     """KPIs do período (volume, treinos, séries) com variação % vs. o
     período anterior de mesmo tamanho -- alimenta a faixa de destaque no
@@ -245,14 +280,14 @@ def api_kpis():
         return erro
     dias = request.args.get('dias', type=int, default=30)
     if periodo is None:
-        kpis = EstatisticaService.calcular_kpis_periodo(dias=dias)
+        kpis = EstatisticaService.calcular_kpis_periodo(user_id=_uid_alvo(), dias=dias)
     elif periodo['tudo']:
-        kpis = EstatisticaService.calcular_kpis_periodo(todo_periodo=True)
+        kpis = EstatisticaService.calcular_kpis_periodo(user_id=_uid_alvo(), todo_periodo=True)
     elif periodo['dias']:
-        kpis = EstatisticaService.calcular_kpis_periodo(dias=periodo['dias'])
+        kpis = EstatisticaService.calcular_kpis_periodo(user_id=_uid_alvo(), dias=periodo['dias'])
     else:
         kpis = EstatisticaService.calcular_kpis_periodo(
-            data_inicio=periodo['inicio'], data_fim=periodo['fim']
+            user_id=_uid_alvo(), data_inicio=periodo['inicio'], data_fim=periodo['fim']
         )
     if not kpis:
         return jsonify({
@@ -265,7 +300,7 @@ def api_kpis():
 
 @api_bp.route("/musculo-stats")
 @login_required
-@acesso_premium_required('estatisticas')
+@estatisticas_do_alvo
 def api_musculo_stats():
     """
     Volume total e ranking por músculo, com filtro de período opcional --
@@ -293,7 +328,8 @@ def api_musculo_stats():
         except ValueError:
             return jsonify({"error": "Datas inválidas, use o formato AAAA-MM-DD"}), 400
 
-    musculo_stats = EstatisticaService.calcular_por_musculo(data_inicio=data_inicio, data_fim=data_fim)
+    musculo_stats = EstatisticaService.calcular_por_musculo(
+        user_id=_uid_alvo(), data_inicio=data_inicio, data_fim=data_fim)
     volume_maximo = max((v['volume_total'] for v in musculo_stats.values()), default=0)
 
     return jsonify({
@@ -304,7 +340,7 @@ def api_musculo_stats():
 
 @api_bp.route("/progressao-forca")
 @login_required
-@acesso_premium_required('estatisticas')
+@estatisticas_do_alvo
 def api_progressao_forca():
     """1RM estimado (Epley) ao longo do tempo para um exercício específico.
 
@@ -322,7 +358,7 @@ def api_progressao_forca():
     if erro:
         return erro
     pontos = EstatisticaService.progressao_forca_exercicio(
-        tipo, int(id_str),
+        tipo, int(id_str), user_id=_uid_alvo(),
         data_inicio=periodo['inicio'] if periodo else None,
         data_fim=periodo['fim'] if periodo else None
     )
@@ -334,7 +370,7 @@ def api_progressao_forca():
 
 @api_bp.route("/progressao-forca/exercicios")
 @login_required
-@acesso_premium_required('estatisticas')
+@estatisticas_do_alvo
 def api_progressao_forca_exercicios():
     """Exercícios (chaves '<tipo>_<id>') com treino apontado no período.
 
@@ -347,7 +383,7 @@ def api_progressao_forca_exercicios():
     if erro:
         return erro
     chaves = EstatisticaService.exercicios_com_registro_no_periodo(
-        data_inicio=periodo['inicio'] if periodo else None,
+        user_id=_uid_alvo(), data_inicio=periodo['inicio'] if periodo else None,
         data_fim=periodo['fim'] if periodo else None
     )
     return jsonify({"exercicios": chaves})
@@ -355,17 +391,17 @@ def api_progressao_forca_exercicios():
 
 @api_bp.route("/recordes-pessoais")
 @login_required
-@acesso_premium_required('estatisticas')
+@estatisticas_do_alvo
 def api_recordes_pessoais():
     """Feed dos PRs (recordes pessoais de 1RM estimado) batidos recentemente."""
     periodo, erro = _periodo_da_requisicao()
     if erro:
         return erro
     if periodo is None:
-        recordes = EstatisticaService.calcular_recordes_pessoais()
+        recordes = EstatisticaService.calcular_recordes_pessoais(user_id=_uid_alvo())
     else:
         recordes = EstatisticaService.calcular_recordes_pessoais(
-            data_inicio=periodo['inicio'], data_fim=periodo['fim'],
+            user_id=_uid_alvo(), data_inicio=periodo['inicio'], data_fim=periodo['fim'],
             todo_periodo=periodo['tudo']
         )
     return jsonify([{
@@ -379,7 +415,7 @@ def api_recordes_pessoais():
 
 @api_bp.route("/atividade-geral")
 @login_required
-@acesso_premium_required('estatisticas')
+@estatisticas_do_alvo
 def api_atividade_geral():
     """
     Números concretos de atividade dos últimos 30 dias: treinos
@@ -390,14 +426,14 @@ def api_atividade_geral():
     if erro:
         return erro
     if periodo is None:
-        dados = EstatisticaService.get_atividade_geral(dias=30)
+        dados = EstatisticaService.get_atividade_geral(user_id=_uid_alvo(), dias=30)
     elif periodo['tudo']:
-        dados = EstatisticaService.get_atividade_geral(todo_periodo=True)
+        dados = EstatisticaService.get_atividade_geral(user_id=_uid_alvo(), todo_periodo=True)
     elif periodo['dias']:
-        dados = EstatisticaService.get_atividade_geral(dias=periodo['dias'])
+        dados = EstatisticaService.get_atividade_geral(user_id=_uid_alvo(), dias=periodo['dias'])
     else:
         dados = EstatisticaService.get_atividade_geral(
-            data_inicio=periodo['inicio'], data_fim=periodo['fim']
+            user_id=_uid_alvo(), data_inicio=periodo['inicio'], data_fim=periodo['fim']
         )
     if not dados:
         return jsonify({

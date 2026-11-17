@@ -32,6 +32,7 @@
             <div class="col-md-4">
                 <div class="est-treino-card">
                     <div class="est-treino-codigo">{{ stats.codigo }}</div>
+                    {% if versao_todas and stats.versao_numero %}<span class="badge bg-light text-dark border float-end">Ficha v{{ stats.versao_numero }}</span>{% endif %}
                     <div class="fw-bold mb-2">{{ stats.nome }}</div>
                     <div class="est-treino-metric">
                         <span class="text-muted">Exercícios</span>

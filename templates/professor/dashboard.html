@@ -143,6 +143,9 @@
         .dash-hero { padding: 22px 20px; }
         .pd-quick-grid { grid-template-columns: repeat(2, 1fr); }
     }
+    /* Pr5: limite do plano no atalho "Adicionar aluno" */
+    .dash-quick-tile .pd-limite { font-size: .72rem; font-weight: 700; color: #5f6368; background: #f3f4f6; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+    .dash-quick-tile .pd-limite.is-no-limite { color: #b85c0e; background: rgba(242, 140, 51, .14); }
 </style>
 
 <!-- Saudação -->
@@ -330,8 +333,11 @@
 <div class="pd-card" id="pdAcoesRapidas">
     <div class="pd-card-title"><i class="bi bi-lightning-charge" style="color: #F28C33;"></i> Ações rápidas</div>
     <div class="pd-quick-grid">
-        <a href="{{ url_for('professor.novo_aluno') }}" class="dash-quick-tile">
+        {% set lim = limite_alunos %}
+        {% set no_limite = lim and lim.limite is not none and not lim.pode_cadastrar %}
+        <a href="{{ url_for('billing.minha_assinatura') if no_limite else url_for('professor.novo_aluno') }}" class="dash-quick-tile">
             <i class="bi bi-person-plus"></i> Adicionar aluno
+            {% if lim and lim.limite is not none %}<span class="pd-limite{{ ' is-no-limite' if no_limite }}">{% if lim.total > lim.limite %}Acima de {{ lim.limite }}{% else %}{{ lim.total }} de {{ lim.limite }}{% endif %}{{ ' · ampliar plano' if no_limite }}</span>{% endif %}
         </a>
         <a href="{{ url_for('professor.listar_alunos') }}" class="dash-quick-tile">
             <i class="bi bi-people"></i> Meus alunos

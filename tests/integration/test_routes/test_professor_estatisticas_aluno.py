@@ -1,6 +1,8 @@
 """Testes de integração para a tela de estatísticas do aluno vista pelo
-professor (routes/professor_routes.py:estatisticas_aluno), com foco no
-filtro de período (data inicial/final) adicionado à página.
+professor (routes/professor_routes.py:estatisticas_aluno). Desde o lote 4
+da análise de UX (Pr4) ela é a mesma tela Progresso do aluno, só leitura,
+com o "Desempenho por Treino" no fim; o período padrão é o da tela
+Progresso (últimos 30 dias).
 """
 from datetime import date, datetime, timedelta
 
@@ -72,7 +74,7 @@ class TestFiltroPeriodo:
         resp = client.get('/professor/aluno/1/estatisticas')
         assert resp.status_code == 302
 
-    def test_sem_parametros_usa_mes_corrente_e_inclui_registro_de_hoje(self, client, app):
+    def test_sem_parametros_usa_ultimos_30_dias_e_inclui_registro_de_hoje(self, client, app):
         with app.app_context():
             prof = _criar_usuario('est_prof_1', tipo_usuario='professor')
             aluno = _criar_usuario('est_aluno_1')
@@ -88,13 +90,11 @@ class TestFiltroPeriodo:
         assert resp.status_code == 200
         html = resp.data.decode('utf-8')
 
-        primeiro_dia = date.today().replace(day=1).isoformat()
-        assert f'value="{primeiro_dia}"' in html, \
-            'campo "Data inicial" deveria vir com o 1º dia do mês corrente'
-        assert 'value="' + date.today().isoformat() not in html or True  # ver asserts de fim abaixo
-        assert '1.000 kg' in html, \
-            'card Volume Total deveria mostrar 100 x 10 = 1000kg (registro de hoje, dentro do mês corrente)'
-        assert '>1<' in html, 'card Total de Registros deveria mostrar 1'
+        assert f'const ALUNO_ALVO = {aluno_id};' in html  # Progresso do aluno, via ?aluno_id=
+        desempenho = html.split('id="estDesempenhoTreino"', 1)[1]
+        inicio = (date.today() - timedelta(days=29)).isoformat()
+        assert f'name="inicio" value="{inicio}"' in desempenho
+        assert '1.000 kg' in desempenho, 'volume do treino A: 100 x 10 = 1000 kg (registro de hoje)'
 
     def test_registro_fora_do_periodo_selecionado_nao_entra_no_total(self, client, app):
         with app.app_context():
@@ -174,8 +174,12 @@ class TestFiltroPeriodo:
         _login(client, username)
         resp = client.get(f'/professor/aluno/{aluno_id}/estatisticas?inicio=lixo&fim=2026-99-99')
         assert resp.status_code == 200
-        primeiro_dia = date.today().replace(day=1).isoformat()
-        assert f'value="{primeiro_dia}"' in resp.data.decode('utf-8')
+        assert 'ainda não registrou treinos' in resp.data.decode('utf-8')  # aluno sem registros
+        with app.app_context():
+            _montar_aluno_com_registro(aluno_id, datetime.combine(date.today(), datetime.min.time()))
+        parcial = client.get(f'/professor/aluno/{aluno_id}/estatisticas?parcial=1&inicio=lixo&fim=2026-99-99')
+        inicio = (date.today() - timedelta(days=29)).isoformat()
+        assert f'name="inicio" value="{inicio}"' in parcial.get_data(as_text=True)
 
     def test_treino_stats_tambem_respeita_o_periodo(self, client, app):
         """Os cards por treino (ranking), não só o resumo geral, também
@@ -191,7 +195,10 @@ class TestFiltroPeriodo:
 
         _login(client, username)
         resp = client.get(f'/professor/aluno/{aluno_id}/estatisticas?inicio=2026-01-01&fim=2026-01-31')
-        assert b'999.0' not in resp.data and b'999x1' not in resp.data
+        desempenho = resp.get_data(as_text=True).split('id="estDesempenhoTreino"', 1)[1]
+        assert '999 kg' not in desempenho and '>0 kg<' in desempenho
+        parcial = client.get(f'/professor/aluno/{aluno_id}/estatisticas?parcial=1&inicio=2026-04-01&fim=2026-04-30')
+        assert '999 kg' in parcial.get_data(as_text=True)
 
     def test_outro_professor_nao_acessa(self, client, app):
         with app.app_context():
@@ -329,7 +336,7 @@ class TestFiltroVersaoDesempenhoPorTreino:
 
         html = self._get(client, aluno_id, f'?versao={ids[1]}')
 
-        assert f'<input type="hidden" name="versao" value="{ids[1]}">' in html
+        assert f'<option value="{ids[1]}" selected' in html.split('id="estDesempenhoTreino"', 1)[1]
 
 
 class TestEvolucaoDoVolumeDoAluno:
@@ -357,11 +364,9 @@ class TestEvolucaoDoVolumeDoAluno:
         assert 'id="evolucaoChart"' in html
         assert 'id="filtroPeriodoEvolucao"' in html and 'id="filtrosModoEvolucao"' in html
         assert f'data-treino="{tv_ativo}"' in html
-        assert f'data-treino="{tv_antigo}"' not in html  # versão encerrada fica fora
-        assert f'/professor/aluno/{aluno_id}/progresso' in html
-        # período do gráfico começa igual ao do filtro da página
-        assert 'id="periodoEvolucaoInicio" value="2026-01-01"' in html
-        assert 'id="periodoEvolucaoFim" value="2026-01-31"' in html
+        assert f'data-treino="{tv_antigo}"' not in html  # ficha encerrada fica fora
+        # dados do gráfico: /api/progresso com ?aluno_id= (comAluno)
+        assert f'const ALUNO_ALVO = {aluno_id};' in html and "comAluno(`/api/progresso?" in html
 
     def test_semana_na_versao_ativa_soma_so_o_que_o_aluno_treinou(self, client, app):
         with app.app_context():
