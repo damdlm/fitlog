@@ -26,9 +26,21 @@
     function passosSemVersao() {
         return [
             {
+                // E2: só aparece quando há fichas prontas na tela
+                element: '#fichasProntas .fp-card',
+                popover: {
+                    title: 'Comece com uma ficha pronta',
+                    description: 'Escolha um modelo e toque em "Usar esta ficha": os treinos já vêm '
+                        + 'com exercícios e metas. "Ver exercícios" mostra tudo antes, e depois '
+                        + 'você troca o que quiser.',
+                    side: 'bottom',
+                    align: 'center'
+                }
+            },
+            {
                 element: '#descricao',
                 popover: {
-                    title: 'Dê um nome à ficha',
+                    title: (document.getElementById('fichasProntas') ? 'Ou monte do zero: dê' : 'Dê') + ' um nome à ficha',
                     description: 'Uma ficha é uma fase do seu treino (ex: "Hipertrofia - Agosto"). '
                         + 'Ela guarda seus treinos A, B, C... enquanto estiver valendo.',
                     side: 'bottom',

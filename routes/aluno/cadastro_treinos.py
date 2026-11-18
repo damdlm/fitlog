@@ -110,7 +110,30 @@ def cadastrar_treinos():
         max_treinos=VersaoService.MAX_TREINOS_POR_VERSAO,
         catalogo_url=url_for('aluno.catalogo_cards') if versao_ativa else None,
         novo_exercicio_url=url_for('aluno.novo_exercicio'),
+        # E2: modelos prontos, só na tela de quem ainda não tem ficha
+        fichas_prontas=None if versao_ativa else VersaoService.fichas_prontas_para_tela(),
+        ficha_pronta_url=url_for('aluno.cadastrar_treinos_ficha_pronta'),
     )
+
+
+@aluno_bp.route('/cadastrar-treinos/ficha-pronta', methods=['POST'])
+@login_required
+@limiter.limit("20 per hour", key_func=_chave_por_usuario)
+def cadastrar_treinos_ficha_pronta():
+    """E2: cria a ficha a partir de um modelo pronto (data/fichas_prontas.py)."""
+    if not current_user.pode_gerenciar_treino_proprio():
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('main.index'))
+    try:
+        versao = VersaoService.criar_de_modelo(request.form.get('modelo'), user_id=current_user.id)
+        flash(f'Ficha "{versao.descricao}" criada! Já dá para registrar o primeiro treino, '
+              'e você pode trocar exercícios e metas quando quiser.', 'success')
+    except ValueError as e:
+        flash(str(e), 'danger')
+    except Exception:
+        logger.exception("Erro inesperado ao criar ficha pronta")
+        flash('Não foi possível concluir a operação.', 'danger')
+    return redirect(url_for('aluno.cadastrar_treinos'))
 
 
 @aluno_bp.route('/cadastrar-treinos/versao', methods=['POST'])

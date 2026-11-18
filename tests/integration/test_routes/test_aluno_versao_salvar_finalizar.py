@@ -20,6 +20,7 @@ from models import (
     db, User, AlunoProfessor, VersaoGlobal, TreinoVersao, VersaoExercicio,
     ExercicioUsuario, ExercicioSistema, Notificacao,
 )
+from utils.format_utils import data_atual
 
 
 # ------------------------------------------------------------------
@@ -472,7 +473,7 @@ class TestFinalizarVersao:
         assert 'Ficha 1 finalizada!' in _flashes(resp)
         with app.app_context():
             versao = db.session.get(VersaoGlobal, c['versao_id'])
-            assert versao.data_fim == datetime.now(timezone.utc).date()
+            assert versao.data_fim == data_atual()  # Brasília
             n = Notificacao.query.filter_by(destinatario_id=c['professor_id']).one()
             assert n.tipo == 'versao_finalizada'
             assert n.chave_agrupamento == f"versao_finalizar:{c['versao_id']}"
@@ -486,7 +487,7 @@ class TestFinalizarVersao:
 
         with app.app_context():
             versao = db.session.get(VersaoGlobal, c['versao_id'])
-            assert versao.data_fim == datetime.now(timezone.utc).date()
+            assert versao.data_fim == data_atual()  # Brasília
 
     def test_sem_nenhum_treino_nao_finaliza(self, client, app):
         with app.app_context():

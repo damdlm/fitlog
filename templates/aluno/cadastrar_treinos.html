@@ -73,6 +73,9 @@
         font-size: 1.7rem;
         margin-bottom: 16px;
     }
+    /* E2: fichas prontas acima do "montar do zero" */
+    .ct-sem-ficha { max-width: 880px; margin: 16px auto 40px; }
+    .ct-sem-ficha .ct-empty-card { margin: 0 auto; }
     .ct-empty-card h2 { font-size: 1.2rem; font-weight: 700; color: var(--ct-ink); margin-bottom: 6px; }
     .ct-empty-card p { color: var(--ct-muted); font-size: 0.92rem; margin-bottom: 22px; }
     .ct-empty-form .form-control { border-radius: 10px; padding: 0.7rem 1rem; }
@@ -608,9 +611,11 @@
 
 {% if not versao %}
 {# ================= ESTADO A: sem versão ativa ================= #}
+<div class="ct-sem-ficha">
+{% include "_fichas_prontas.html" %}
 <div class="ct-empty-card">
     <div class="ct-empty-icon"><i class="bi bi-flag"></i></div>
-    <h2>Comece uma nova ficha</h2>
+    <h2>{{ 'Montar do zero' if fichas_prontas else 'Comece uma nova ficha' }}</h2>
     <button type="button" class="rt-tour-ajuda mb-2" id="btnTourCadastrarSemVersao" data-tour-pagina>
         <i class="bi bi-question-circle"></i> Tutorial
     </button>
@@ -620,7 +625,7 @@
         <div class="mb-3">
             <label for="descricao" class="form-label fw-bold">Descrição da ficha</label>
             <input type="text" id="descricao" name="descricao" class="form-control form-control-lg"
-                   placeholder="Ex: Foco em hipertrofia - Agosto" maxlength="200" required autofocus>
+                   placeholder="Ex: Foco em hipertrofia - Agosto" maxlength="200" required{% if not fichas_prontas %} autofocus{% endif %}>
         </div>
         <div class="mb-3">
             <label for="validade_meses" class="form-label fw-bold">Validade (opcional)</label>
@@ -635,6 +640,7 @@
             <i class="bi bi-check-circle"></i> Criar ficha e começar
         </button>
     </form>
+</div>
 </div>
 
 {% else %}

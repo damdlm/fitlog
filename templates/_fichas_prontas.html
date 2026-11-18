@@ -1,0 +1,86 @@
+{#- E2: fichas prontas para começar. Usado na tela de ficha do aluno (sem
+    ficha ativa) e na "Nova ficha" do professor para um aluno.
+    Recebe: fichas_prontas (VersaoService.fichas_prontas_para_tela()),
+    ficha_pronta_url (POST com o campo "modelo"), fp_para (opcional: nome
+    do aluno, quando é o professor quem cria). -#}
+{% if fichas_prontas %}
+<style>
+    .fp { margin-bottom: 8px; }
+    .fp-titulo { font-size: 1.1rem; font-weight: 700; color: var(--secondary-color, #212529); margin: 0 0 4px; }
+    .fp-sub { color: #5c636a; font-size: 0.9rem; margin: 0 0 14px; }
+    .fp-lista { display: grid; gap: 12px; grid-template-columns: 1fr; }
+    @media (min-width: 768px) { .fp-lista { grid-template-columns: 1fr 1fr; } }
+    .fp-card {
+        background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: 16px;
+        padding: 16px; display: flex; flex-direction: column; gap: 10px; text-align: left;
+    }
+    .fp-card h3 { font-size: 1.05rem; font-weight: 700; color: var(--secondary-color, #212529); margin: 0; }
+    .fp-detalhe { display: block; color: #a8560c; font-size: 0.8rem; font-weight: 600; margin-top: 2px; }
+    .fp-resumo { color: #4f565d; font-size: 0.88rem; margin: 0; }
+    .fp-treinos { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+    .fp-treinos li { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: #343a40; }
+    .fp-letra {
+        flex: 0 0 auto; width: 24px; height: 24px; border-radius: 7px; background: rgba(242,140,51,0.14);
+        color: #a8560c; font-weight: 700; font-size: 0.78rem; display: inline-flex; align-items: center; justify-content: center;
+    }
+    .fp-qtd { margin-left: auto; color: #5c636a; font-size: 0.8rem; white-space: nowrap; }
+    .fp-ver summary {
+        cursor: pointer; color: #a8560c; font-weight: 600; font-size: 0.88rem; list-style: none;
+        min-height: 44px; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .fp-ver summary::-webkit-details-marker { display: none; }
+    .fp-ver summary .bi { transition: transform .15s ease; }
+    .fp-ver[open] summary .bi { transform: rotate(180deg); }
+    .fp-ver-treino { margin: 0 0 10px; }
+    .fp-ver-treino h4 { font-size: 0.82rem; font-weight: 700; color: #343a40; margin: 0 0 4px; }
+    .fp-ver-treino ol { margin: 0; padding-left: 1.2rem; }
+    .fp-ver-treino li { font-size: 0.84rem; color: #343a40; padding: 2px 0; }
+    .fp-ver-meta { color: #a8560c; font-weight: 600; white-space: nowrap; }
+    .fp-usar {
+        width: 100%; min-height: 44px; border: none; border-radius: 12px; font-weight: 600;
+        background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: #fff;
+    }
+    .fp-usar:focus-visible { outline: 3px solid rgba(242,140,51,0.45); outline-offset: 2px; }
+    .fp-ou { display: flex; align-items: center; gap: 12px; color: #5c636a; font-size: 0.85rem; margin: 18px 0 14px; }
+    .fp-ou::before, .fp-ou::after { content: ''; flex: 1; height: 1px; background: rgba(0,0,0,0.12); }
+</style>
+<section class="fp" aria-labelledby="fpTitulo" id="fichasProntas">
+    <h2 class="fp-titulo" id="fpTitulo">Comece com uma ficha pronta</h2>
+    <p class="fp-sub">{% if fp_para %}Escolha um modelo para {{ fp_para }} e ajuste exercícios e metas depois.{% else %}Escolha um modelo e já registre o primeiro treino. Exercícios e metas podem ser trocados depois.{% endif %}</p>
+    <div class="fp-lista">
+        {% for f in fichas_prontas %}
+        <article class="fp-card" data-modelo="{{ f.slug }}">
+            <div>
+                <h3>{{ f.nome }}</h3>
+                <span class="fp-detalhe">{{ f.detalhe }}</span>
+            </div>
+            <p class="fp-resumo">{{ f.resumo }}</p>
+            <ul class="fp-treinos">
+                {% for t in f.treinos %}
+                <li><span class="fp-letra" aria-hidden="true">{{ t.codigo }}</span><span>Treino {{ t.codigo }}: {{ t.nome }}</span><span class="fp-qtd">{{ t.exercicios|length }} exercícios</span></li>
+                {% endfor %}
+            </ul>
+            <details class="fp-ver">
+                <summary>Ver exercícios <i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+                {% for t in f.treinos %}
+                <div class="fp-ver-treino">
+                    <h4>Treino {{ t.codigo }}: {{ t.nome }}</h4>
+                    <ol>
+                        {% for ex in t.exercicios %}
+                        <li>{{ ex.nome }}{% if ex.meta %} · <span class="fp-ver-meta">{{ ex.meta }}</span>{% endif %}</li>
+                        {% endfor %}
+                    </ol>
+                </div>
+                {% endfor %}
+            </details>
+            <form method="post" action="{{ ficha_pronta_url }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="modelo" value="{{ f.slug }}">
+                <button type="submit" class="fp-usar">Usar esta ficha<span class="visually-hidden">: {{ f.nome }}</span></button>
+            </form>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+<div class="fp-ou" role="separator">ou monte do zero</div>
+{% endif %}

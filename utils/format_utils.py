@@ -14,6 +14,13 @@ def _agora_brasil():
     return datetime.now(FUSO_BRASIL)
 
 
+def data_atual():
+    """Data de hoje em Brasília (date). Use no lugar de
+    datetime.now(timezone.utc).date(), que das 21h à meia-noite já é o
+    dia seguinte."""
+    return _agora_brasil().date()
+
+
 def formatar_datahora_br(valor, formato='%d/%m/%Y %H:%M'):
     """Formata um datetime guardado em UTC no horário de Brasília.
 

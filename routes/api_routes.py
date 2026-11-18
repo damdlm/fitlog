@@ -14,6 +14,7 @@ from utils.exercise_utils import buscar_musculo_no_catalogo
 from services.geolocalizacao_service import GeolocalizacaoService, ZOOM_MINIMO_PONTOS_INDIVIDUAIS
 import logging
 from utils.validators import corpo_json_objeto
+from utils.format_utils import data_atual
 
 api_bp = Blueprint('api', __name__)
 logger = logging.getLogger(__name__)
@@ -168,7 +169,7 @@ def api_progresso():
         chave = item.dia if isinstance(item.dia, date) else datetime.strptime(str(item.dia), "%Y-%m-%d").date()
         por_dia[chave] = item
 
-    hoje = datetime.now(timezone.utc).date()
+    hoje = data_atual()  # Brasília: em UTC, à noite o último dia do gráfico era amanhã
     dias_janela = [hoje - timedelta(days=i) for i in range(29, -1, -1)]
 
     semanas = []

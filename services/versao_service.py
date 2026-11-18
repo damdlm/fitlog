@@ -7,6 +7,7 @@ from sqlalchemy.orm.attributes import set_committed_value
 from .base_service import BaseService
 from .exercicio_service import ExercicioService
 from utils.date_utils import converter_periodo_para_data
+from utils.format_utils import data_atual
 import logging
 from datetime import datetime, timezone
 
@@ -655,7 +656,7 @@ class VersaoService(BaseService):
             )
 
         try:
-            data_inicio = datetime.now(timezone.utc).date()
+            data_inicio = data_atual()
             ultima_versao = db.session.query(func.max(VersaoGlobal.numero_versao)) \
                 .filter_by(user_id=user_id).scalar() or 0
             nova_versao = VersaoGlobal(
@@ -674,6 +675,123 @@ class VersaoService(BaseService):
         except Exception:
             db.session.rollback()
             logger.exception(f"Erro ao criar versão livre para usuário {user_id}")
+            raise ValueError("Não foi possível criar a ficha.")
+
+    # ------------------------------------------------------------------
+    # Fichas prontas (lote 6c, E2) -- modelos em data/fichas_prontas.py
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _catalogo_dos_modelos(com_nome=False):
+        """id_original -> id (ou (id, nome)) dos exercícios usados pelos
+        modelos, numa consulta só. Cardio fica de fora (os modelos não
+        usam, mas o catálogo pode mudar)."""
+        from models import ExercicioSistema
+        from data.fichas_prontas import FICHAS_PRONTAS
+        ids = {e[0] for f in FICHAS_PRONTAS for t in f['treinos'] for e in t['exercicios']}
+        linhas = db.session.query(
+            ExercicioSistema.id_original, ExercicioSistema.id, ExercicioSistema.nome
+        ).filter(
+            ExercicioSistema.id_original.in_(ids),
+            ExercicioSistema.modo_registro != 'tempo',
+        ).all()
+        return {o: ((i, n) if com_nome else i) for o, i, n in linhas}
+
+    @staticmethod
+    def fichas_prontas_para_tela():
+        """Modelos com o nome de cada exercício e a meta formatada, para a
+        prévia ("Ver exercícios"). Exercício fora do catálogo não aparece;
+        modelo sem nenhum exercício válido também não."""
+        from data.fichas_prontas import FICHAS_PRONTAS
+        from utils.meta_treino import formatar_meta
+        catalogo = VersaoService._catalogo_dos_modelos(com_nome=True)
+        fichas = []
+        for modelo in FICHAS_PRONTAS:
+            treinos = []
+            for treino in modelo['treinos']:
+                exercicios = [
+                    {'nome': catalogo[o][1], 'meta': formatar_meta(s, rmin, rmax)}
+                    for o, s, rmin, rmax in treino['exercicios'] if o in catalogo
+                ]
+                if exercicios:
+                    treinos.append({
+                        'codigo': VersaoService._CODIGOS_AUTO[len(treinos)],
+                        'nome': treino['nome'],
+                        'exercicios': exercicios,
+                    })
+            if treinos:
+                fichas.append({
+                    'slug': modelo['slug'], 'nome': modelo['nome'],
+                    'detalhe': modelo['detalhe'], 'resumo': modelo['resumo'],
+                    'treinos': treinos,
+                })
+        return fichas
+
+    @staticmethod
+    def criar_de_modelo(slug, user_id):
+        """Cria a ficha ativa do usuário a partir de um modelo pronto:
+        ficha, treinos (A, B, C...), exercícios e metas, tudo numa
+        transação só (ou nada fica criado). Mesmas regras de create_livre:
+        início hoje (Brasília) e só sem ficha ativa. Devolve a ficha."""
+        from data.fichas_prontas import FICHAS_POR_SLUG
+        from utils.meta_treino import normalizar_meta
+
+        if not user_id:
+            raise ValueError("Usuário não autenticado.")
+        modelo = FICHAS_POR_SLUG.get(slug or '')
+        if not modelo:
+            raise ValueError("Ficha pronta não encontrada.")
+
+        versao_atual = VersaoService.get_ativa(user_id=user_id)
+        if versao_atual:
+            raise ValueError(
+                f"Já existe uma ficha ativa (v{versao_atual.numero_versao} - "
+                f"{versao_atual.descricao}). Finalize-a antes de criar outra."
+            )
+
+        catalogo = VersaoService._catalogo_dos_modelos()
+        treinos = []
+        for treino in modelo['treinos']:
+            itens = [(catalogo[o], s, rmin, rmax) for o, s, rmin, rmax in treino['exercicios'] if o in catalogo]
+            if itens:
+                treinos.append((treino['nome'], itens[:VersaoService.MAX_EXERCICIOS_POR_TREINO]))
+        if not treinos:
+            raise ValueError("Não foi possível montar esta ficha agora. Tente montar do zero.")
+
+        try:
+            ultima_versao = db.session.query(func.max(VersaoGlobal.numero_versao)) \
+                .filter_by(user_id=user_id).scalar() or 0
+            versao = VersaoGlobal(
+                numero_versao=ultima_versao + 1,
+                descricao=modelo['nome'],
+                divisao='LIVRE',
+                data_inicio=data_atual(),
+                data_fim=None,
+                user_id=user_id,
+            )
+            db.session.add(versao)
+            db.session.flush()
+            for ordem, (nome_treino, itens) in enumerate(treinos[:VersaoService.MAX_TREINOS_POR_VERSAO]):
+                tv = TreinoVersao(
+                    versao_id=versao.id,
+                    codigo=VersaoService._CODIGOS_AUTO[ordem],
+                    nome_treino=nome_treino,
+                    descricao_treino='',
+                    ordem=ordem,
+                )
+                db.session.add(tv)
+                db.session.flush()
+                for pos, (ex_id, s, rmin, rmax) in enumerate(itens):
+                    meta_s, meta_min, meta_max = normalizar_meta(s, rmin, rmax)
+                    db.session.add(VersaoExercicio(
+                        treino_versao_id=tv.id, exercicio_base_id=ex_id, ordem=pos,
+                        meta_series=meta_s, meta_reps_min=meta_min, meta_reps_max=meta_max,
+                    ))
+            db.session.commit()
+            logger.info(f"Ficha pronta '{slug}' criada (v{versao.numero_versao}) para usuário {user_id}")
+            return versao
+        except Exception:
+            db.session.rollback()
+            logger.exception(f"Erro ao criar ficha pronta '{slug}' para usuário {user_id}")
             raise ValueError("Não foi possível criar a ficha.")
 
     @staticmethod
@@ -956,7 +1074,7 @@ class VersaoService(BaseService):
             )
 
         try:
-            versao.data_fim = datetime.now(timezone.utc).date()
+            versao.data_fim = data_atual()
             db.session.commit()
             logger.info(f"Versão {versao_id} finalizada (cadastro livre) pelo usuário {user_id}")
             return versao
@@ -992,7 +1110,7 @@ class VersaoService(BaseService):
             )
 
         try:
-            data_inicio = datetime.now(timezone.utc).date()
+            data_inicio = data_atual()
             ultima_versao = db.session.query(func.max(VersaoGlobal.numero_versao)) \
                 .filter_by(user_id=user_id).scalar() or 0
 
@@ -1099,7 +1217,7 @@ class VersaoService(BaseService):
             )
 
         try:
-            data_inicio = datetime.now(timezone.utc).date()
+            data_inicio = data_atual()
             ultima_versao = db.session.query(func.max(VersaoGlobal.numero_versao)) \
                 .filter_by(user_id=aluno_id).scalar() or 0
 
@@ -1280,7 +1398,7 @@ class VersaoService(BaseService):
                     numero_versao=ultima_versao + 1,
                     descricao=origem.descricao[:200],
                     divisao='LIVRE',
-                    data_inicio=datetime.now(timezone.utc).date(),
+                    data_inicio=data_atual(),
                     data_fim=None,
                     user_id=aluno_id,
                     validade_meses=origem.validade_meses,

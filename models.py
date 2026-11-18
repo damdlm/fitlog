@@ -1064,8 +1064,8 @@ class VersaoGlobal(db.Model):
         data_exp = self.data_expiracao
         if data_exp is None:
             return None
-        from datetime import date
-        return (data_exp - date.today()).days
+        from utils.format_utils import data_atual  # data de Brasília (date.today() é UTC no servidor)
+        return (data_exp - data_atual()).days
 
 
 class TreinoVersao(db.Model):

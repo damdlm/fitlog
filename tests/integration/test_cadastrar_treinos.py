@@ -13,6 +13,7 @@ import pytest
 from datetime import date, timedelta
 
 from models import db, User, VersaoGlobal, TreinoVersao, ExercicioUsuario
+from utils.format_utils import data_atual
 
 
 def _criar_aluno(username='aluno1', email='aluno1@teste.com'):
@@ -61,7 +62,7 @@ class TestCriarVersaoLivre:
             versao = VersaoGlobal.query.filter_by(user_id=aluno).first()
             assert versao is not None
             assert versao.descricao == 'Foco em hipertrofia'
-            assert versao.data_inicio == date.today()
+            assert versao.data_inicio == data_atual()  # Brasília (date.today() é UTC)
             assert versao.data_fim is None
             assert versao.divisao == 'LIVRE'
             assert versao.numero_versao == 1
@@ -76,7 +77,7 @@ class TestCriarVersaoLivre:
         })
         with app.app_context():
             versao = VersaoGlobal.query.filter_by(user_id=aluno).first()
-            assert versao.data_inicio == date.today()
+            assert versao.data_inicio == data_atual()  # Brasília (date.today() é UTC)
 
     def test_descricao_vazia_e_rejeitada(self, aluno_client, app, aluno):
         aluno_client.post('/aluno/cadastrar-treinos/versao', data={'descricao': '   '})
@@ -446,7 +447,7 @@ class TestFinalizarVersaoLivre:
         aluno_client.post(f'/aluno/cadastrar-treinos/{versao_id}/finalizar')
         with app.app_context():
             versao = db.session.get(VersaoGlobal, versao_id)
-            assert versao.data_fim == date.today()
+            assert versao.data_fim == data_atual()  # Brasília (date.today() é UTC)
 
     def test_apos_finalizar_permite_criar_nova_versao(self, aluno_client, app, aluno):
         self._preparar(aluno_client, app, aluno, com_exercicio=True)

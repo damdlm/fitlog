@@ -998,7 +998,34 @@ def nova_versao_aluno(aluno_id):
             logger.exception(f"Erro inesperado ao criar versão para aluno {aluno_id}")
             flash('Não foi possível concluir a operação.', 'danger')
 
-    return render_template('professor/nova_versao_aluno.html', aluno=aluno)
+    return render_template(
+        'professor/nova_versao_aluno.html', aluno=aluno,
+        fichas_prontas=VersaoService.fichas_prontas_para_tela(),  # E2
+        ficha_pronta_url=url_for('professor.ficha_pronta_aluno', aluno_id=aluno.id),
+    )
+
+
+@professor_bp.route('/aluno/<int:aluno_id>/versao/ficha-pronta', methods=['POST'])
+@login_required
+@professor_acesso_alunos_required
+@limiter.limit("10 per hour", key_func=_chave_por_professor)
+def ficha_pronta_aluno(aluno_id):
+    """E2: o professor cria a ficha do aluno a partir de um modelo pronto
+    (data/fichas_prontas.py) e depois ajusta na tela da ficha."""
+    aluno, negado = _aluno_ou_negar(aluno_id)
+    if negado:
+        return negado
+    try:
+        versao = VersaoService.criar_de_modelo(request.form.get('modelo'), user_id=aluno.id)
+        flash(f'Ficha "{versao.descricao}" criada para {aluno.nome_completo or aluno.username}. '
+              'Ajuste exercícios e metas como preferir.', 'success')
+        return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao.id))
+    except ValueError as e:
+        flash(str(e), 'danger')
+    except Exception:
+        logger.exception(f"Erro inesperado ao criar ficha pronta para aluno {aluno_id}")
+        flash('Não foi possível concluir a operação.', 'danger')
+    return redirect(url_for('professor.nova_versao_aluno', aluno_id=aluno.id))
 
 
 @professor_bp.route('/aluno/<int:aluno_id>/versao/clonar-minha', methods=['GET', 'POST'])

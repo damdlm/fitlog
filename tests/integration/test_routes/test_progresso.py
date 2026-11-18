@@ -1,6 +1,13 @@
 from datetime import datetime, timedelta, timezone
 from models import db, User, TreinoVersao, VersaoGlobal, RegistroTreino, HistoricoTreino, Musculo, ExercicioUsuario
 from services.billing_service import BillingService
+from utils.format_utils import data_atual
+
+
+def _meio_dia_br():
+    """Meio-dia de hoje (data de Brasília): o registro é lançado com a data
+    local do aluno; em UTC, das 21h à meia-noite "hoje" já seria amanhã."""
+    return datetime.combine(data_atual(), datetime.min.time()).replace(hour=12)
 
 
 def _login(client, user):
@@ -47,7 +54,7 @@ def test_progresso_ultimos_30_dias_com_registro(client, app):
 
         versao = VersaoGlobal(
             numero_versao=1, descricao='v1', divisao='A',
-            data_inicio=datetime.now(timezone.utc).date(),
+            data_inicio=data_atual(),
             user_id=u.id
         )
         db.session.add(versao)
@@ -57,7 +64,7 @@ def test_progresso_ultimos_30_dias_com_registro(client, app):
         db.session.add(treino)
         db.session.commit()
 
-        hoje = datetime.now(timezone.utc)
+        hoje = _meio_dia_br()
         for dias_atras in [0, 5, 40]:  # 40 deve ficar fora da janela
             r = RegistroTreino(
                 treino_versao_id=treino.id, versao_id=versao.id, periodo='Julho/2026', semana=1,
@@ -99,7 +106,7 @@ def test_progresso_todos_ignora_versoes_encerradas(client, app):
         db.session.add(ex)
         db.session.commit()
 
-        hoje = datetime.now(timezone.utc)
+        hoje = _meio_dia_br()
 
         # Versão ENCERRADA (data_fim preenchida) -- não pode entrar no "Todos"
         versao_antiga = VersaoGlobal(
@@ -177,7 +184,7 @@ def _montar_versao_abcd(app, username):
 
         versao = VersaoGlobal(
             numero_versao=1, descricao='v1', divisao='ABCD',
-            data_inicio=datetime.now(timezone.utc).date(), user_id=u.id
+            data_inicio=data_atual(), user_id=u.id
         )
         db.session.add(versao)
         db.session.commit()
@@ -259,7 +266,7 @@ def test_progresso_agregado_inclui_versao_encerrada_dentro_dos_30_dias(client, a
     """Troca de versão no meio da janela: treinos da versão anterior continuam contando."""
     uid, vid2, ex, t2 = _montar_versao_abcd(app, 'troca_versao_pt')
     with app.app_context():
-        hoje = datetime.now(timezone.utc).date()
+        hoje = data_atual()
         v1 = VersaoGlobal(numero_versao=0, descricao='v0', divisao='AB', user_id=uid,
                           data_inicio=hoje - timedelta(days=60), data_fim=hoje - timedelta(days=10))
         db.session.add(v1)
