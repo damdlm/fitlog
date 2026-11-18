@@ -1905,7 +1905,7 @@
     /* Amarelo -- ação de pausar o cronômetro (semáforo: pausar = amarelo).
        É o MESMO botão #cronoTreinoBtnIniciar que existe antes de o treino
        começar (lá com o visual grande de "Iniciar treino") -- ao iniciar,
-       o JS o move pra cá, entre Cancelar e Finalizar, e essa classe some
+       o JS o move pra cá, antes de Salvar (Pausar · Salvar · Cancelar), e essa classe some
        do estilo grande e passa a usar este aqui. */
     #top-save-bar .top-save-bar-actions .btn-pausar-treino {
         flex: 0 0 auto;
@@ -3805,11 +3805,11 @@
             <span class="top-save-bar-crono-value" id="cronoTreinoDisplay">00:00</span>
         </div>
         <div class="top-save-bar-actions">
-            <button type="button" id="btnCancelarTreino" class="btn btn-cancel-treino" aria-label="Cancelar treino" title="Cancelar treino">
-                <i class="bi bi-x-lg"></i><span class="btn-cancel-texto">Cancelar</span>
-            </button>
             <button type="submit" name="salvar" form="registroForm" class="btn btn-save" data-fl-no-transition>
                 <i class="bi bi-check-circle"></i>Salvar
+            </button>
+            <button type="button" id="btnCancelarTreino" class="btn btn-cancel-treino" aria-label="Cancelar treino" title="Cancelar treino">
+                <i class="bi bi-x-lg"></i><span class="btn-cancel-texto">Cancelar</span>
             </button>
         </div>
     </div>
@@ -6442,7 +6442,8 @@ function tocarBipe() {
 
             // Move o próprio botão de Iniciar/Pausar (mesmo elemento, mesmos
             // listeners -- só muda de lugar e de estilo) pra dentro da barra
-            // de ações, entre Cancelar e Finalizar. Assim o cronômetro
+            // de ações, antes de Salvar: Pausar · Salvar · Cancelar, com
+            // Cancelar na ponta, ao lado do Salvar. Assim o cronômetro
             // principal e os 3 botões ficam todos na mesma linha, alinhados.
             var acoesTopBar = topSaveBar ? topSaveBar.querySelector('.top-save-bar-actions') : null;
             var btnFinalizarEl = topSaveBar ? topSaveBar.querySelector('.btn-save') : null;

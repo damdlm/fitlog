@@ -63,7 +63,7 @@
             {
                 element: '#top-save-bar .top-save-bar-actions',
                 popover: {
-                    title: 'Cancelar, pausar e salvar',
+                    title: 'Pausar, salvar e cancelar',
                     description: '<b>Pausar</b> para o cronômetro quando você descansar mais. '
                         + '<b>Salvar</b> grava o treino ao terminar. '
                         + '<b>Cancelar</b> descarta tudo o que foi digitado.',
