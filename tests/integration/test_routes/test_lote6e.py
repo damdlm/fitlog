@@ -81,10 +81,13 @@ class TestBase:
         assert "localStorage.getItem('fitlog:tema')" in html
         assert "document.documentElement.setAttribute('data-bs-theme', escuro ? 'dark' : 'light')" in html
         assert '/static/css/tema-escuro.' in html and '/static/js/tema.' in html
-        # seletor no menu do avatar e no painel "Ajustes"
-        assert html.count('role="radiogroup" aria-label="Tema do app"') == 2
+        # seletor só no menu do avatar (saiu do painel "Ajustes")
+        assert html.count('role="radiogroup" aria-label="Tema do app"') == 1
         for opcao in ('claro', 'escuro'):
-            assert html.count(f'data-tema-opcao="{opcao}"') == 2
+            assert html.count(f'data-tema-opcao="{opcao}"') == 1
+        assert 'mais-tema' not in html
+        avatar = html.split('class="dropdown-tema"')[1].split('auth/logout')[0]
+        assert 'aria-label="Tema do app"' in avatar
         assert 'data-tema-opcao="sistema"' not in html and '<span>Do sistema</span>' not in html
         # quem escolheu "Do sistema" antes de a opção sair fica com a cor do aparelho
         assert "if (pref === 'sistema') {" in html

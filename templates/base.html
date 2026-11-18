@@ -2438,12 +2438,6 @@
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
         </div>
         <div class="offcanvas-body">
-            {% if not tema_sempre_claro %}
-            <div class="mais-section mais-tema">
-                <span class="mais-section-label" aria-hidden="true">Tema</span>
-                {% include "_tema_seletor.html" %}
-            </div>
-            {% endif %}
             {% if current_user.is_professor() and not current_user.is_admin %}
             <div class="mais-section">
                 <a class="mais-link" href="{{ url_for('calendar.calendario') }}"><i class="bi bi-calendar"></i> Meu calendário</a>
