@@ -1221,7 +1221,7 @@
         /* C2 (lote 6e): seletor de tema (_tema_seletor.html) */
         .tema-seletor {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 4px;
             padding: 4px;
             border-radius: 12px;
@@ -1248,7 +1248,7 @@
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
         }
         .tema-opcao:focus-visible { outline: 3px solid rgba(242, 140, 51, 0.5); outline-offset: 1px; }
-        .dropdown-tema { padding: 4px 12px 6px; min-width: 280px; }
+        .dropdown-tema { padding: 4px 12px 6px; min-width: 220px; }
         .dropdown-tema-rotulo {
             display: block;
             font-size: 0.72rem;
@@ -1827,26 +1827,30 @@
     </style>
     
     {% block extra_css %}{% endblock %}
-    {#- C2 (lote 6e): tema claro/escuro/do sistema, escolhido em Ajustes e
+    {#- C2 (lote 6e): tema claro ou escuro, escolhido em Ajustes e
         guardado no aparelho (localStorage "fitlog:tema"; padrão: claro).
         Só na área logada: landing, login, preços etc. têm visual próprio
         (a página pode ligar tema_sempre_claro). Aplicado aqui, antes da
         primeira pintura, para não piscar o claro; static/js/tema.js
-        cuida do seletor e de "do sistema" mudando com a página aberta. -#}
+        cuida do seletor. -#}
     {% if current_user.is_authenticated and not tema_sempre_claro %}
     <link rel="stylesheet" href="{{ static_v('css/tema-escuro.css') }}">
     <script>
         (function () {
             try {
                 var pref = localStorage.getItem('fitlog:tema');
-                if (pref !== 'claro' && pref !== 'escuro' && pref !== 'sistema') {
+                if (pref === 'sistema') {
+                    // "Do sistema" saiu do seletor: fica a cor que o aparelho usa agora.
+                    pref = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'escuro' : 'claro';
+                    localStorage.setItem('fitlog:tema', pref);
+                }
+                if (pref !== 'claro' && pref !== 'escuro') {
                     // Quem tinha escolhido o escuro no interruptor do calendário
                     // (removido no lote 6e) continua no escuro, agora no app todo.
                     pref = localStorage.getItem('fitlog_calendar_theme') === 'dark' ? 'escuro' : 'claro';
                     localStorage.setItem('fitlog:tema', pref);
                 }
-                var escuro = pref === 'escuro' || (pref === 'sistema' && window.matchMedia
-                    && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                var escuro = pref === 'escuro';
                 document.documentElement.setAttribute('data-bs-theme', escuro ? 'dark' : 'light');
             } catch (e) { /* sem storage: fica no claro */ }
         })();

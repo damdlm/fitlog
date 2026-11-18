@@ -1,6 +1,6 @@
 """Lote 6e da análise de UX.
 
-C2: tema claro / escuro / do sistema no app todo, escolhido em Ajustes
+C2: tema claro ou escuro no app todo, escolhido em Ajustes
 (menu do avatar e painel "Ajustes" do celular) e guardado no aparelho.
 Padrão: claro. O interruptor próprio do calendário saiu; o calendário
 segue o tema do app.
@@ -83,8 +83,11 @@ class TestBase:
         assert '/static/css/tema-escuro.' in html and '/static/js/tema.' in html
         # seletor no menu do avatar e no painel "Ajustes"
         assert html.count('role="radiogroup" aria-label="Tema do app"') == 2
-        for opcao in ('claro', 'escuro', 'sistema'):
+        for opcao in ('claro', 'escuro'):
             assert html.count(f'data-tema-opcao="{opcao}"') == 2
+        assert 'data-tema-opcao="sistema"' not in html and '<span>Do sistema</span>' not in html
+        # quem escolheu "Do sistema" antes de a opção sair fica com a cor do aparelho
+        assert "if (pref === 'sistema') {" in html
         # quem tinha o calendário escuro continua no escuro
         assert "localStorage.getItem('fitlog_calendar_theme') === 'dark' ? 'escuro' : 'claro'" in html
 
@@ -99,6 +102,15 @@ class TestBase:
         _login(client, 'tema_publico' + url.strip('/'))
         html = client.get(url).get_data(as_text=True)
         assert 'fitlog:tema' not in html and 'data-tema-opcao' not in html
+
+
+class TestLogoEscura:
+    def test_marca_dagua_do_inicio_usa_a_logo_transparente(self):
+        css = _ler('static/css/tema-escuro.css')
+        assert '[data-bs-theme="dark"] .watermark {' in css
+        assert 'url("../images/fitlog-logo-b.png")' in css
+        import os
+        assert os.path.exists('static/images/fitlog-logo-b.png')
 
 
 class TestCalendario:
@@ -122,8 +134,9 @@ class TestScripts:
     def test_tema_js(self):
         js = _ler('static/js/tema.js')
         assert "var CHAVE = 'fitlog:tema';" in js
+        assert "var VALIDAS = ['claro', 'escuro'];" in js
         assert "return VALIDAS.indexOf(p) !== -1 ? p : 'claro';" in js  # padrão claro
-        assert "midia.addEventListener('change', aoMudarSistema)" in js
+        assert "'sistema'" not in js and 'prefers-color-scheme' not in js
         assert "new CustomEvent('fitlog:tema'" in js
         assert 'window.FitLogTema' in js
 

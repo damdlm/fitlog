@@ -166,3 +166,8 @@ html[data-bs-theme="dark"] {
     --bs-btn-active-bg: #2f343c;
     --bs-btn-active-color: #fff;
 }
+/* Início (index.html): marca d'água com a logo de letras brancas e fundo
+   transparente -- a fitlog-logo.png tem fundo branco opaco. */
+[data-bs-theme="dark"] .watermark {
+    background-image: url("../images/fitlog-logo-b.png") !important;
+}
