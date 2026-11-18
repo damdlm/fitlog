@@ -1655,6 +1655,18 @@
 
 {% block content %}
 <div class="calendar-page" id="calendarPage" data-theme="light">
+<script>
+    // Aplica o tema do app (data-bs-theme do <html>, já definido no <head>
+    // por base.html) antes do primeiro quadro: sem isso a página nascia
+    // clara e só escurecia no fim do carregamento (piscada no tema escuro).
+    // sincronizarTema(), mais abaixo, segue cuidando das trocas de tema.
+    (function () {
+        var page = document.getElementById('calendarPage');
+        var tema = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'dark' : 'light';
+        page.setAttribute('data-theme', tema);
+        page.setAttribute('data-bs-theme', tema);
+    })();
+</script>
 <div class="row mb-3{{ '' if aluno else ' d-none d-md-flex' }}">
     <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
         <h2 class="d-none d-md-block mb-0">

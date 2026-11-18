@@ -129,6 +129,20 @@ class TestCalendario:
         estilo = html.split('.btn-compartilhar-calendario {')[1].split('}')[0]
         assert 'background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);' in estilo
 
+    def test_tema_aplicado_antes_do_primeiro_quadro(self, client, app):
+        # sem piscar claro no tema escuro: o tema vai para a página logo
+        # na abertura do bloco, não no fim do carregamento
+        with app.app_context():
+            _criar_usuario('tema_cal_flash')
+        _login(client, 'tema_cal_flash')
+        html = client.get('/calendar/calendario').get_data(as_text=True)
+        abertura = '<div class="calendar-page" id="calendarPage" data-theme="light">'
+        inicio = html.split(abertura)[1].split('</script>')[0]
+        assert inicio.lstrip().startswith('<script>')
+        assert "var page = document.getElementById('calendarPage');" in inicio
+        assert "page.setAttribute('data-theme', tema);" in inicio
+        assert "page.setAttribute('data-bs-theme', tema);" in inicio
+
     def test_tutorial_do_calendario_sem_o_interruptor(self):
         assert '#themeToggle' not in _ler('static/js/calendario-tour.js')
 
