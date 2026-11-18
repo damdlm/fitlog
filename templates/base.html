@@ -586,6 +586,75 @@
             display: none; /* remove a setinha padrão do Bootstrap */
         }
 
+        /* X6: "?" do cabeçalho -- abre o tutorial da tela atual. Discreto
+           (sem borda) para não disputar espaço com o título no celular; a
+           área de toque continua em 40px. */
+        .fl-ajuda-tela {
+            width: 34px; height: 40px;
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 0; border: 0; background: transparent;
+            color: #6b6b6b; font-size: 1.25rem; cursor: pointer;
+            border-radius: 50%;
+        }
+        .fl-ajuda-tela[hidden] { display: none !important; }
+        .fl-ajuda-titulo {
+            border: 0; background: transparent; padding: 0 2px;
+            color: #6b6b6b; font-size: 0.95rem; line-height: 1;
+            align-self: center; cursor: pointer;
+            /* área de toque maior que o desenho */
+            margin: -14px -6px -14px 0; min-height: 44px; min-width: 28px;
+        }
+        .fl-ajuda-titulo:focus { outline: none; }
+        .fl-ajuda-titulo:focus-visible { color: #F28C33; outline: 2px solid rgba(242, 140, 51, 0.45); outline-offset: -6px; border-radius: 10px; }
+        .fl-ajuda-tela:hover, .fl-ajuda-tela:focus-visible { color: #F28C33; }
+        /* O botão "Tutorial" da própria tela fica só como gatilho do tour. */
+        [data-tour-pagina] { display: none !important; }
+
+        /* X1: texto dos botões contornados do Bootstrap um tom mais escuro
+           (o cinza #6c757d e o vermelho #dc3545 ficavam abaixo de 4,5:1 sobre
+           o fundo cinza-claro da página). Borda e hover seguem iguais. */
+        .btn-outline-secondary { --bs-btn-color: #5c636a; }
+        .btn-outline-danger { --bs-btn-color: #b02a37; }
+
+        /* X3: área de toque de ~44px nos controles pequenos, sem mudar o
+           desenho -- um ::before invisível estica só a área clicável
+           (mesma técnica do .rt-tour-ajuda). Vertical só nas pílulas que
+           ficam lado a lado, pra não roubar o toque da vizinha. */
+        .est-pill, .dash-filter-pill, .dash-mode-pill, .btn-sm,
+        .ct-btn-treino, .est-atalho, .fc .fc-button,
+        .fitbot-toggle-btn, .btn-avatar {
+            position: relative;
+        }
+        .est-pill::before, .dash-filter-pill::before, .dash-mode-pill::before,
+        .btn-sm::before, .ct-btn-treino::before, .fc .fc-button::before {
+            content: "";
+            position: absolute;
+            inset: -9px -2px;
+        }
+        .est-atalho::before, .fitbot-toggle-btn::before, .btn-avatar::before {
+            content: "";
+            position: absolute;
+            inset: -4px;
+        }
+        /* Links soltos de texto (rodapé da página inicial, login) e o
+           "Lembrar-me": a área cresce para cima e para baixo; no
+           "Lembrar-me" também para a esquerda, cobrindo a caixinha. */
+        .landing-footer-links a, .login-options-row > a, .login-terms a,
+        .login-options-row .form-check-label {
+            position: relative;
+        }
+        .landing-footer-links a::before, .login-options-row > a::before,
+        .login-terms a::before {
+            content: "";
+            position: absolute;
+            inset: -15px -4px;
+        }
+        .login-options-row .form-check-label::before {
+            content: "";
+            position: absolute;
+            inset: -12px -6px -12px -30px;
+        }
+
         /* Badge de notificação sobre o avatar (ex: solicitações pendentes).
            Mesma fórmula de static/css/notificacoes.css (.notif-bell-badge)
            -- os dois badges (sino e avatar) precisam ficar padronizados.
@@ -955,7 +1024,7 @@
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.06em;
-            color: #9aa0a6;
+            color: #5f6368;
             font-weight: 700;
             margin-bottom: 0.4rem;
             padding-left: 0.35rem;
@@ -1008,7 +1077,7 @@
         .mega-desc {
             display: block;
             font-size: 0.75rem;
-            color: #8a8f98;
+            color: #5f6670;
             margin-top: 1px;
             line-height: 1.25;
         }
@@ -1038,7 +1107,7 @@
             flex: 1;
             background: none;
             border: none;
-            color: #8a8f98;
+            color: #5f6670;
             text-decoration: none;
             font-size: 0.66rem;
             font-weight: 600;
@@ -1051,6 +1120,11 @@
         }
 
         .bottom-nav-item.active {
+            /* X1: rótulo no laranja escuro (contraste 5,2:1); o ícone segue no laranja da marca. */
+            color: #a8560c;
+        }
+        .bottom-nav-item.active i,
+        .bottom-nav-item.active svg {
             color: var(--primary-color);
         }
 
@@ -1104,7 +1178,7 @@
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.06em;
-            color: #9aa0a6;
+            color: #5f6368;
             font-weight: 700;
             margin-bottom: 0.4rem;
             padding-left: 0.25rem;
@@ -1200,7 +1274,7 @@
         }
         .dash-registro-meta {
             font-size: 0.8rem;
-            color: #8a8a8a;
+            color: #6b6b6b;
             white-space: nowrap;
         }
         .dash-registro-badges {
@@ -1226,7 +1300,7 @@
         .dash-empty {
             text-align: center;
             padding: 40px 20px;
-            color: #999;
+            color: #6b6b6b;
         }
         .dash-empty i {
             font-size: 2.4rem;
@@ -1782,6 +1856,11 @@
                     <span class="btn-registrar-label">Registrar treino</span>
                 </a>
                 {% endif %}
+                <!-- X6: tutorial da tela atual (aparece só onde a tela tem um
+                     botão [data-tour-pagina]; ver script no fim do base). -->
+                <button type="button" id="flAjudaTela" class="fl-ajuda-tela d-none d-lg-inline-flex" hidden title="Como usar esta tela" aria-label="Ver o tutorial desta tela">
+                    <i class="bi bi-question-circle" aria-hidden="true"></i>
+                </button>
                 <button type="button" id="pwaHeaderInstallBtn" class="pwa-header-install-btn" style="display: none;" title="Instalar aplicativo" aria-label="Instalar aplicativo FitLog">
                     <i class="bi bi-download" aria-hidden="true"></i>
                 </button>
@@ -2318,6 +2397,9 @@
     
     <!-- Conteúdo Principal -->
     <main class="container my-4">
+        {#- X2: título principal para leitores de tela (o visível fica no cabeçalho).
+            Telas que já têm o próprio <h1> esvaziam este bloco. -#}
+        {% block h1_tela %}{% set _h1_tela = self.page_title()|striptags|trim %}{% if _h1_tela and _h1_tela != 'FitLog' %}<h1 class="visually-hidden">{{ _h1_tela }}</h1>{% endif %}{% endblock %}
         {% if confirmar_email_dias %}
         {# Carência da confirmação de e-mail (ver services/email_verificacao_service.py). #}
         <div class="aviso-confirmar-email d-flex align-items-start gap-2" role="status">
@@ -2453,11 +2535,11 @@
                             <button type="button" class="btn btn-sm btn-link text-danger ms-auto" id="fitbotImageRemoveBtn">Remover</button>
                         </div>
                         <form id="fitbotForm" class="fitbot-input-row">
-                            <input type="file" accept="image/*" capture="environment" id="fitbotImageInput" class="d-none">
+                            <input aria-label="Enviar imagem para o FitBot" type="file" accept="image/*" capture="environment" id="fitbotImageInput" class="d-none">
                             <button type="button" class="fitbot-btn-icon" id="fitbotImageBtn" title="Enviar foto do equipamento" aria-label="Enviar foto do equipamento">
                                 <i class="bi bi-camera" aria-hidden="true"></i>
                             </button>
-                            <textarea id="fitbotTextarea" class="form-control" rows="2" placeholder="Pergunte sobre treino, execução de exercícios..."></textarea>
+                            <textarea aria-label="Mensagem para o FitBot" id="fitbotTextarea" class="form-control" rows="2" placeholder="Pergunte sobre treino, execução de exercícios..."></textarea>
                             <button type="submit" class="fitbot-btn-icon fitbot-btn-send" id="fitbotSendBtn" title="Enviar" aria-label="Enviar mensagem" data-fl-no-transition>
                                 <i class="bi bi-send-fill" aria-hidden="true"></i>
                             </button>
@@ -2531,6 +2613,37 @@
     
     <!-- Bloco para scripts específicos de cada página -->
     {% block scripts %}{% endblock %}
+    <script>
+    /* X6: o "Tutorial" de cada tela virou o "?" do cabeçalho. O botão da
+       própria tela continua no HTML (escondido, [data-tour-pagina]) e é ele
+       que liga o tour (fl-tour-core.js -> ligarBotao); o "?" só o aciona. */
+    (function () {
+        var alvo = document.querySelector('[data-tour-pagina]');
+        if (!alvo) return;
+        function abrir() { alvo.click(); }
+        // Desktop: botão no cabeçalho, ao lado do FitBot.
+        var ajuda = document.getElementById('flAjudaTela');
+        if (ajuda) {
+            ajuda.hidden = false;
+            ajuda.addEventListener('click', abrir);
+        }
+        // Celular: o "?" entra no lugar do ícone decorativo do título, depois
+        // do nome -- um botão a mais no cabeçalho espremia o título em 360px.
+        var titulo = document.querySelector('.navbar-brand-title');
+        if (titulo) {
+            var icone = titulo.querySelector(':scope > i.bi');
+            if (icone) icone.classList.add('d-none');
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'fl-ajuda-titulo';
+            b.title = 'Como usar esta tela';
+            b.setAttribute('aria-label', 'Ver o tutorial desta tela');
+            b.innerHTML = '<i class="bi bi-question-circle" aria-hidden="true"></i>';
+            b.addEventListener('click', abrir);
+            titulo.appendChild(b);
+        }
+    })();
+    </script>
     
     <!-- Script para controlar o loader global -->
     <script>

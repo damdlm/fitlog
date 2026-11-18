@@ -91,7 +91,7 @@
     }
     .est-ranking-valor {
         font-size: 0.85rem;
-        color: #8a8a8a;
+        color: #6b6b6b;
         white-space: nowrap;
     }
     .est-ranking-bar-bg {
@@ -126,7 +126,7 @@
         height: 36px;
         border-radius: 10px;
         background: rgba(242, 140, 51, 0.12);
-        color: var(--primary-color);
+        color: #a8560c;
         font-weight: 700;
         font-size: 0.85rem;
         margin-bottom: 10px;
@@ -150,7 +150,7 @@
     .est-pill {
         border: 1px solid rgba(242, 140, 51, 0.3);
         background: white;
-        color: var(--primary-color);
+        color: #a8560c;
         border-radius: 999px;
         padding: 5px 14px;
         font-size: 0.82rem;
@@ -170,7 +170,7 @@
     .est-empty {
         text-align: center;
         padding: 40px 20px;
-        color: #999;
+        color: #6b6b6b;
     }
     .est-empty i {
         font-size: 2.4rem;
@@ -328,6 +328,7 @@
 
 {% block scripts %}
 <script src="{{ static_v('vendor/chartjs/chart.umd.min.js') }}"></script>
+<script src="{{ static_v('js/chart-ptbr.js') }}"></script>
 <script>
     // Dados do gráfico de pizza
     const muscleData = {{ musculo_stats|tojson }};

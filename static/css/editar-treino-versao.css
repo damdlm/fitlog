@@ -21,7 +21,7 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #9a9a9a;
+    color: #6b6b6b;
     margin-bottom: 2px;
 }
 
@@ -67,7 +67,7 @@
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #9a9a9a;
+    color: #6b6b6b;
     margin-bottom: 6px;
     display: block;
 }
@@ -280,7 +280,7 @@
 }
 
 .etv-obs-input::placeholder {
-    color: #adb5bd;
+    color: #6c757d;
 }
 
 .etv-obs-input:focus {

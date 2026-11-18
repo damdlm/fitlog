@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block h1_tela %}{% endblock %}
 
 {% block page_icon %}<i class="bi bi-plus-circle" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Nova Ficha para {{ aluno.nome_completo or aluno.username }}{% endblock %}
@@ -36,7 +37,7 @@
         margin: 0 auto 14px;
     }
     .nv-card h2 { font-size: 1.15rem; font-weight: 700; color: var(--secondary-color); margin-bottom: 6px; }
-    .nv-card p { color: #8a8a8a; font-size: 0.9rem; margin-bottom: 22px; }
+    .nv-card p { color: #6b6b6b; font-size: 0.9rem; margin-bottom: 22px; }
     .nv-form { max-width: 420px; margin: 0 auto; text-align: left; }
     .nv-form .form-control { border-radius: 10px; padding: 0.7rem 1rem; }
     .nv-form .form-control:focus { border-color: #F28C33; box-shadow: 0 0 0 3px rgba(242,140,51,0.12); }

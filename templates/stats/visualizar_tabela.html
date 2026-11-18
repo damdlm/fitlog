@@ -1,29 +1,10 @@
 {% extends "base.html" %}
 
-{% block page_icon %}<i class="bi bi-table" style="color: #808080;"></i>{% endblock %}
+{% block page_icon %}<i class="bi bi-table" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}Tabela de Progresso{% endblock %}
 
 {% block extra_css %}
 <style>
-    @font-face {
-        font-family: 'Patrick Hand';
-        font-style: normal;
-        font-weight: 400;
-        font-display: swap;
-        src: url("{{ static_v('vendor/patrick-hand/patrick-hand-latin-400-normal.woff2') }}") format('woff2'),
-             url("{{ static_v('vendor/patrick-hand/patrick-hand-latin-400-normal.woff') }}") format('woff');
-        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-    }
-    @font-face {
-        font-family: 'Patrick Hand';
-        font-style: normal;
-        font-weight: 400;
-        font-display: swap;
-        src: url("{{ static_v('vendor/patrick-hand/patrick-hand-latin-ext-400-normal.woff2') }}") format('woff2'),
-             url("{{ static_v('vendor/patrick-hand/patrick-hand-latin-ext-400-normal.woff') }}") format('woff');
-        unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
-    }
-
     .prog-header {
         display: flex;
         justify-content: center;
@@ -33,9 +14,10 @@
     /* ===== Filtro por versão ===== */
     .prog-filtro select {
         font-family: inherit;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        padding: 6px 10px;
+        border: 1px solid rgba(0,0,0,0.12);
+        border-radius: 12px;
+        padding: 8px 12px;
+        min-height: 44px;
         background: #fff;
         color: #333;
         text-align: center;
@@ -68,10 +50,21 @@
        tem o mesmo risco de vazamento porque não há rolagem VERTICAL
        nesta caixa (só horizontal), então nada desliza por essa faixa de
        baixo como acontecia nas laterais. */
+    /* P4: cartão do app em volta da tabela. O arredondamento fica no
+       cartão (fora da caixa de rolagem), não no .prog-tabela-wrap -- ver
+       abaixo por que a caixa que rola não pode ter cantos nem padding
+       lateral. */
+    .prog-card {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.06);
+        border-radius: 16px;
+        padding: 6px 8px 4px;
+        box-shadow: 0 4px 16px rgba(20, 20, 20, 0.04);
+    }
     .prog-tabela-wrap {
         overflow-x: auto;
-        border: 2px solid #808080;
-        background: #808080;
+        border: 0;
+        background: #fff;
         padding: 0 0 8px 0;
         /* width:100% explícito (com box-sizing:border-box) em vez de
            confiar no auto-width padrão de um bloco -- em pelo menos um
@@ -117,8 +110,9 @@
            deixava de ser respeitada). Sem width aqui, a tabela usa a soma
            exata das larguras do colgroup, então "rolar até o fim" mostra
            exatamente as últimas 3 semanas, nem mais nem menos. */
-        font-family: 'Patrick Hand', 'Comic Sans MS', cursive, sans-serif;
-        font-size: 1rem;
+        font-family: inherit;
+        font-size: 0.9rem;
+        font-variant-numeric: tabular-nums;
         background: #fff;
         table-layout: fixed;
     }
@@ -149,57 +143,74 @@
        planilha de referência (uma linha cinza a cada 2 colunas). */
     #progressTable th.col-exercicio,
     #progressTable td.col-exercicio {
-        border-right: 3px solid #808080;
+        border-right: 1px solid #ececec;
     }
     #progressTable th.semana-inicio,
     #progressTable td.semana-inicio {
-        border-left: 3px solid #808080;
+        border-left: 1px solid #f1ece6;
     }
 
     /* ===== Cabeçalho ("Exercício" / "Nª Semana-Mês" / "Carga" / "Rep.") ===== */
     #progressTable thead th {
-        background: #808080;
-        color: #fff;
+        background: #fff;
+        color: #5f5f5f;
         font-weight: 700;
-        padding: 5px 10px;
+        font-size: 0.78rem;
+        padding: 6px 10px;
+    }
+    #progressTable thead tr:last-child th {
+        border-bottom: 1px solid #ececec;
+        font-weight: 600;
+        color: #6b6b6b;
     }
     #progressTable thead th.col-exercicio {
         text-align: left;
     }
     #progressTable thead th.th-semana {
-        font-style: italic;
-        font-weight: 400;
+        color: #2d2d2d;
+        font-weight: 700;
+        font-size: 0.72rem;
         line-height: 1.15;
         padding: 4px 2px 2px;
     }
     #progressTable thead th.th-semana .semana-mes {
         display: block;
         font-size: 0.9em;
+        font-weight: 500;
+        color: #6b6b6b;
     }
 
     /* ===== Zebra por BLOCO de treino (não por linha) ===== */
+    /* Fundo opaco também na coluna fixa: ela cobre o que rola por baixo. */
     #progressTable tbody tr.bloco-azul td.td-dado,
     #progressTable tbody tr.bloco-azul td.col-exercicio {
-        background: linear-gradient(to bottom, #E0EDF7 0%, #ADCBE4 100%);
+        background: #fff;
     }
     #progressTable tbody tr.bloco-pessego td.td-dado,
     #progressTable tbody tr.bloco-pessego td.col-exercicio {
-        background: linear-gradient(to bottom, #FDEDE3 0%, #F2D3BF 100%);
+        background: #fff8f2;
     }
     #progressTable tbody td {
         color: #262626;
+        border-bottom: 1px solid #f4f1ee;
     }
     #progressTable tbody td.col-exercicio {
         text-align: left;
     }
 
-    /* Linha espaçadora cinza entre um treino e o próximo (mesmo cinza da
-       moldura/cabeçalho -- antes estava branca, destoando do resto). */
-    #progressTable tr.linha-espacadora td {
-        background: #808080;
-        padding: 0;
-        height: 6px;
+    /* Linha com o nome do treino no início de cada bloco (no lugar da
+       faixa cinza que só separava os blocos). */
+    #progressTable tr.linha-grupo td {
+        background: #fff;
+        padding: 10px 10px 4px;
         border: none;
+        border-bottom: 1px solid #ececec;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #a8560c;
+        text-align: left;
     }
 
     /* ===== Coluna "Exercício" fixa ao rolar horizontalmente ===== */
@@ -221,7 +232,7 @@
         max-width: var(--prog-w-exercicio, 180px);
     }
     #progressTable thead .col-exercicio { z-index: 3; }
-    #progressTable tr.linha-espacadora .col-exercicio {
+    #progressTable tr.linha-grupo .col-exercicio {
         position: -webkit-sticky;
         position: sticky;
         left: 0;
@@ -239,11 +250,25 @@
     #progressTable td.exercicio-cell[data-truncado="1"] {
         cursor: pointer;
     }
-    #progressTable .exercicio-texto {
+    /* Nome em até 2 linhas antes de cortar (mesma ideia do R4). */
+    #progressTable td.exercicio-cell {
+        white-space: normal;
+    }
+    #progressTable .exercicio-unid {
         display: block;
+        font-size: 0.72rem;
+        color: #1F7A8C;
+        font-weight: 600;
+    }
+    #progressTable .exercicio-texto {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
         overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        white-space: normal;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
     }
 
     /* Colunas de dado (Carga/Rep.) e a coluna Exercício -- largura
@@ -262,8 +287,8 @@
         max-width: 260px;
         background: #333;
         color: #fff;
-        font-family: 'Patrick Hand', 'Comic Sans MS', cursive, sans-serif;
-        font-size: 0.95rem;
+        font-family: inherit;
+        font-size: 0.85rem;
         line-height: 1.3;
         padding: 6px 10px;
         border-radius: 6px;
@@ -283,7 +308,7 @@
     .prog-empty {
         text-align: center;
         padding: 48px 20px;
-        color: #999;
+        color: #6b6b6b;
     }
     .prog-empty i {
         font-size: 2.6rem;
@@ -293,7 +318,7 @@
     }
 
     @media (max-width: 767.98px) {
-        #progressTable { font-size: 0.76rem; }
+        #progressTable { font-size: 0.8rem; }
         #progressTable th, #progressTable td { padding: 4px 6px; }
     }
 
@@ -312,7 +337,7 @@
 {% if versoes %}
 <div class="prog-header">
     <form method="get" class="prog-filtro">
-        <select name="versao_id" onchange="this.form.submit()">
+        <select aria-label="Ficha" name="versao_id" onchange="this.form.submit()">
             <option value="todas" {{ 'selected' if versao_selecionada == 'todas' }}>Todas as fichas</option>
             {% for v in versoes %}
             <option value="{{ v.id }}" {{ 'selected' if versao_selecionada == v.id|string }}>
@@ -325,6 +350,7 @@
 {% endif %}
 
 {% if grupos_treino %}
+<div class="prog-card">
 <div class="prog-tabela-wrap" id="progWrap">
     <table id="progressTable" data-total-semanas="{{ semanas|length }}">
         <colgroup>
@@ -345,8 +371,8 @@
             </tr>
             <tr>
                 {% for semana in semanas %}
-                <th class="semana-inicio">Carga</th>
-                <th>Rep.</th>
+                <th class="semana-inicio" title="Carga (ou minutos, no cardio)">kg</th>
+                <th title="Repetições (ou distância, no cardio)">reps</th>
                 {% endfor %}
             </tr>
         </thead>
@@ -355,6 +381,14 @@
             {% for grupo in grupos_treino %}
                 {% set bloco.i = bloco.i + 1 %}
                 {% set cor_bloco = 'bloco-azul' if bloco.i is odd else 'bloco-pessego' %}
+                {% if grupo.codigo %}
+                <tr class="linha-grupo">
+                    <td class="col-exercicio">Treino {{ grupo.codigo }}</td>
+                    {% for semana in semanas %}
+                    <td></td><td></td>
+                    {% endfor %}
+                </tr>
+                {% endif %}
                 {% for exercicio in grupo.exercicios %}
                     <tr class="{{ cor_bloco }}">
                         <td class="col-exercicio exercicio-cell"
@@ -362,24 +396,18 @@
                             data-truncado="0"
                             title="{{ exercicio.nome }}">
                             <span class="exercicio-texto">{{ exercicio.nome }}</span>
+                            {% if exercicio.cardio %}<span class="exercicio-unid">min · km</span>{% endif %}
                         </td>
                         {% for s in exercicio.semanas %}
-                        <td class="td-dado semana-inicio">{{ s.carga if s.carga is not none else '' }}</td>
+                        <td class="td-dado semana-inicio">{{ s.carga|num_br(2) if s.carga is not none else '' }}</td>
                         <td class="td-dado">{{ s.repeticoes if s.repeticoes is not none else '' }}</td>
                         {% endfor %}
                     </tr>
                 {% endfor %}
-                {% if not loop.last %}
-                <tr class="linha-espacadora">
-                    <td class="col-exercicio"></td>
-                    {% for semana in semanas %}
-                    <td></td><td></td>
-                    {% endfor %}
-                </tr>
-                {% endif %}
             {% endfor %}
         </tbody>
     </table>
+</div>
 </div>
 {% else %}
 <div class="prog-empty">
@@ -397,7 +425,7 @@
         if (!wrap || !table) return;
 
         var N_SEMANAS_VISIVEIS = 3; // 6 colunas de dado (Carga+Rep. x3)
-        var PCT_EXERCICIO = 0.48;   // ~48% da tela p/ "Exercício" (era 0.38 -- aumentado para deixar Carga/Rep. mais estreitas)
+        var PCT_EXERCICIO = 0.42;   // ~42% da tela p/ "Exercício" (o nome agora quebra em até 2 linhas; sobra espaço p/ "3,2km" do cardio)
         var MIN_EXERCICIO = 90;
         var MAX_EXERCICIO = 220;
         var MIN_DADO = 34;          // pequena folga a mais p/ "Carga" caber com padding mínimo
@@ -443,7 +471,7 @@
             celulasExercicio.forEach(function (celula) {
                 var span = celula.querySelector('.exercicio-texto');
                 if (!span) return;
-                var cortado = span.scrollWidth > span.clientWidth + 1;
+                var cortado = span.scrollHeight > span.clientHeight + 1 || span.scrollWidth > span.clientWidth + 1;
                 celula.setAttribute('data-truncado', cortado ? '1' : '0');
             });
         }

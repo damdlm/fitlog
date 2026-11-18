@@ -55,7 +55,39 @@
     .est-card {
         border-radius: 16px;
         border: 1px solid rgba(0,0,0,0.06);
+        /* Atalhos (P5) param a seção abaixo do cabeçalho fixo. */
+        scroll-margin-top: 84px;
     }
+
+    /* P5: atalhos para as seções -- a página passa de 2.900 px no celular. */
+    .est-atalhos {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        margin: -8px 0 16px;
+        padding-bottom: 2px;
+    }
+    .est-atalhos::-webkit-scrollbar { display: none; }
+    .est-atalho {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: white;
+        border: 1px solid rgba(0,0,0,0.08);
+        color: #444;
+        font-size: 0.84rem;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .est-atalho i { color: var(--primary-color); }
+    .est-atalho.is-cardio i { color: #1F7A8C; }
+    .est-atalho:active { background: rgba(242, 140, 51, 0.08); }
 
     .est-ranking-item {
         margin-bottom: 16px;
@@ -76,7 +108,7 @@
     }
     .est-ranking-valor {
         font-size: 0.85rem;
-        color: #8a8a8a;
+        color: #6b6b6b;
         white-space: nowrap;
     }
     .est-ranking-bar-bg {
@@ -111,7 +143,7 @@
         height: 36px;
         border-radius: 10px;
         background: rgba(242, 140, 51, 0.12);
-        color: var(--primary-color);
+        color: #a8560c;
         font-weight: 700;
         font-size: 0.85rem;
         margin-bottom: 10px;
@@ -124,7 +156,7 @@
     .est-pill {
         border: 1px solid rgba(242, 140, 51, 0.3);
         background: white;
-        color: var(--primary-color);
+        color: #a8560c;
         border-radius: 999px;
         padding: 5px 14px;
         font-size: 0.82rem;
@@ -144,7 +176,7 @@
     .est-empty {
         text-align: center;
         padding: 40px 20px;
-        color: #999;
+        color: #6b6b6b;
     }
 
     .est-chart-toolbar {
@@ -156,7 +188,7 @@
     }
     .est-chart-hint {
         font-size: 0.78rem;
-        color: #8a8a8a;
+        color: #6b6b6b;
         text-align: center;
         margin: 0;
     }
@@ -231,11 +263,11 @@
     .est-pr-valor .unidade {
         font-size: 0.75rem;
         font-weight: 600;
-        color: #8a8a8a;
+        color: #6b6b6b;
     }
     .est-pr-data {
         font-size: 0.74rem;
-        color: #8a8a8a;
+        color: #6b6b6b;
         margin-top: 2px;
     }
     .est-1rm-select {
@@ -430,11 +462,11 @@
     .est-tempo-stat-num .unidade {
         font-size: 0.95rem;
         font-weight: 600;
-        color: #8a8a8a;
+        color: #6b6b6b;
     }
     .est-tempo-stat-label {
         font-size: 0.8rem;
-        color: #8a8a8a;
+        color: #6b6b6b;
         margin-top: 2px;
     }
     .est-tempo-distribuicao {
@@ -457,7 +489,7 @@
         gap: 16px;
         margin-top: 10px;
         font-size: 0.78rem;
-        color: #8a8a8a;
+        color: #6b6b6b;
         flex-wrap: wrap;
     }
     .est-tempo-legenda span {
@@ -475,18 +507,18 @@
     .est-cardio { border-left: 4px solid #1F7A8C; }
     .est-cardio-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; margin-bottom: 14px; }
     .est-cardio-valor { font-size: 1.5rem; font-weight: 800; color: #1F7A8C; line-height: 1.1; }
-    .est-cardio-rotulo { font-size: 0.75rem; color: #8a857a; text-transform: uppercase; letter-spacing: .04em; }
+    .est-cardio-rotulo { font-size: 0.75rem; color: #6b665c; text-transform: uppercase; letter-spacing: .04em; }
     .est-cardio-barras { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; margin-bottom: 14px; }
-    .est-cardio-dia { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.72rem; color: #8a857a; }
+    .est-cardio-dia { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.72rem; color: #6b665c; }
     .est-cardio-dia.is-hoje span { color: #1F7A8C; font-weight: 700; }
     .est-cardio-barra-wrap { height: 72px; width: 100%; max-width: 28px; background: rgba(31, 122, 140, 0.08); border-radius: 6px; display: flex; align-items: flex-end; overflow: hidden; }
     .est-cardio-barra { width: 100%; background: #1F7A8C; border-radius: 6px; }
-    .est-cardio-recentes-titulo { font-size: 0.75rem; font-weight: 700; color: #8a857a; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+    .est-cardio-recentes-titulo { font-size: 0.75rem; font-weight: 700; color: #6b665c; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
     .est-cardio-recentes { list-style: none; padding: 0; margin: 0; }
     .est-cardio-recentes li { display: flex; align-items: baseline; gap: 8px; padding: 7px 0; border-top: 1px solid #f0ece4; font-size: 0.88rem; }
     .est-cardio-nome { font-weight: 600; }
     .est-cardio-resumo { color: #555; flex: 1; }
-    .est-cardio-data { color: #8a857a; font-size: 0.8rem; }
+    .est-cardio-data { color: #6b665c; font-size: 0.8rem; }
     .est-inicio-vazio { text-align: center; background: #fff; border-radius: 16px; border: 1px solid rgba(20, 20, 20, .08); padding: 36px 20px; margin-top: 8px; }
     .est-inicio-vazio > i { font-size: 2.4rem; color: #F28C33; }
     .est-inicio-vazio h2 { font-size: 1.15rem; font-weight: 700; margin: 10px 0 6px; color: #2d2d2d; }
@@ -542,11 +574,7 @@
 </div>
 {% else %}
 {% if not aluno_alvo %}
-<div class="d-flex justify-content-end mb-2">
-    <button type="button" class="rt-tour-ajuda" id="btnTourEstatisticas">
-        <i class="bi bi-question-circle"></i> Tutorial
-    </button>
-</div>
+<button type="button" class="rt-tour-ajuda" id="btnTourEstatisticas" data-tour-pagina>Tutorial</button>
 {% endif %}
 
 <!-- Filtro de período: vale pra todas as seções abaixo -->
@@ -559,9 +587,9 @@
         <button type="button" class="est-pill" data-dias="custom">Personalizado</button>
     </div>
     <div class="est-periodo-custom" id="periodoCustom" style="display: none;">
-        <input type="date" class="form-control form-control-sm" id="periodoInicio">
+        <input aria-label="Data inicial do período" type="date" class="form-control form-control-sm" id="periodoInicio">
         <span class="text-muted" style="font-size: 0.82rem;">até</span>
-        <input type="date" class="form-control form-control-sm" id="periodoFim">
+        <input aria-label="Data final do período" type="date" class="form-control form-control-sm" id="periodoFim">
         <button type="button" class="btn btn-sm btn-primary" id="periodoAplicar">Aplicar</button>
     </div>
 </div>
@@ -593,6 +621,16 @@
         </div>
     </div>
 </div>
+
+<!-- P5: atalhos para as seções, na ordem em que aparecem -->
+<nav class="est-atalhos" aria-label="Ir para a seção">
+    {% if cardio_semana %}<a class="est-atalho is-cardio" href="#cardioSemana"><i class="bi bi-heart-pulse-fill"></i>Cardio</a>{% endif %}
+    <a class="est-atalho" href="#recordesPessoais"><i class="bi bi-trophy-fill"></i>Recordes</a>
+    <a class="est-atalho" href="#progressaoForca"><i class="bi bi-graph-up-arrow"></i>Força</a>
+    <a class="est-atalho" href="#volumeMusculo"><i class="bi bi-bar-chart-steps"></i>Músculos</a>
+    <a class="est-atalho" href="#evolucaoVolume"><i class="bi bi-graph-up"></i>Volume</a>
+    <a class="est-atalho" href="#atividade"><i class="bi bi-lightning-charge-fill"></i>Atividade</a>
+</nav>
 
 <!-- Cardio (semana corrente; services/cardio.resumo_cardio_semana).
      Só aparece pra quem já registrou cardio. Não segue o filtro de
@@ -651,14 +689,14 @@
 </div>
 
 <!-- Progressão de Força (1RM estimado) -->
-<div class="card est-card mb-3">
+<div class="card est-card mb-3" id="progressaoForca">
     <div class="card-header bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 pb-0">
         <h6 class="fw-bold mb-0">
             <i class="bi bi-graph-up-arrow me-1" style="color: #F28C33;"></i>Progressão de Força
             <span class="fw-normal text-muted" style="font-size: 0.8rem;">(1RM estimado)</span>
         </h6>
         {% if exercicios_selecionaveis %}
-        <select class="est-1rm-select" id="seletor1RM">
+        <select aria-label="Exercício do gráfico de força" class="est-1rm-select" id="seletor1RM">
             {% for ex in exercicios_selecionaveis %}
             <option value="{{ ex.tipo }}_{{ ex.id }}">{{ ex.nome }}</option>
             {% endfor %}
@@ -700,7 +738,7 @@
 </div>
 
 <!-- Gráfico de Evolução -->
-<div class="card est-card">
+<div class="card est-card" id="evolucaoVolume">
     <div class="card-header bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 pb-0">
         <h6 class="fw-bold mb-0">
             <i class="bi bi-graph-up me-1" style="color: #F28C33;"></i>Evolução do Volume
@@ -723,9 +761,9 @@
                 <button type="button" class="est-pill" data-dias="custom">Personalizado</button>
             </div>
             <div class="est-periodo-custom" id="periodoEvolucaoCustom" style="display: none;">
-                <input type="date" class="form-control form-control-sm" id="periodoEvolucaoInicio">
+                <input aria-label="Data inicial da evolução" type="date" class="form-control form-control-sm" id="periodoEvolucaoInicio">
                 <span class="text-muted" style="font-size: 0.82rem;">até</span>
-                <input type="date" class="form-control form-control-sm" id="periodoEvolucaoFim">
+                <input aria-label="Data final da evolução" type="date" class="form-control form-control-sm" id="periodoEvolucaoFim">
                 <button type="button" class="btn btn-sm btn-primary" id="periodoEvolucaoAplicar">Aplicar</button>
             </div>
         </div>
@@ -748,7 +786,7 @@
 </div>
 
 <!-- Atividade -->
-<div class="card est-card mt-3">
+<div class="card est-card mt-3" id="atividade">
     <div class="card-header bg-white border-0 pb-0">
         <h6 class="fw-bold mb-0">
             <i class="bi bi-lightning-charge-fill me-1" style="color: #F28C33;"></i>Atividade <span class="fw-normal text-muted" style="font-size: 0.8rem;" id="atividadePeriodo">(últimos 30 dias)</span>
@@ -825,6 +863,7 @@
 {% endif %}
 {% if tem_registros %}
 <script src="{{ static_v('vendor/chartjs/chart.umd.min.js') }}"></script>
+<script src="{{ static_v('js/chart-ptbr.js') }}"></script>
 <script>
     // muscleData alimenta o card "Compartilhar" no fim da página (imagem
     // com o ranking de músculos) -- usa o histórico completo, independente
@@ -960,7 +999,7 @@
         el.classList.remove('down', 'flat');
         if (valor < 0) el.classList.add('down');
         else if (valor === 0) el.classList.add('flat');
-        el.textContent = `${seta} ${Math.abs(valor)}%`;
+        el.textContent = `${seta} ${FitLogUtils.formatarNumero(Math.abs(valor), 1)}%`;
     }
 
     function carregarKpis() {
@@ -1218,10 +1257,10 @@
                             }
                         },
                         scales: {
-                            x: { grid: { display: false }, ticks: { color: '#8a8a8a', font: { size: 11 } } },
+                            x: { grid: { display: false }, ticks: { color: '#6b6b6b', font: { size: 11 } } },
                             y: {
                                 grid: { color: 'rgba(0,0,0,0.05)' },
-                                ticks: { color: '#8a8a8a', font: { size: 11 }, callback: v => FitLogUtils.formatarKg(v) }
+                                ticks: { color: '#6b6b6b', font: { size: 11 }, callback: v => FitLogUtils.formatarKg(v) }
                             }
                         }
                     }
@@ -1438,7 +1477,7 @@
                         plugins: {
                             legend: {
                                 position: 'bottom',
-                                labels: { boxWidth: 12, font: { size: 11 }, color: '#8a8a8a' }
+                                labels: { boxWidth: 12, font: { size: 11 }, color: '#6b6b6b' }
                             },
                             tooltip: {
                                 backgroundColor: '#1a1a1a',
@@ -1460,7 +1499,7 @@
                             x: {
                                 grid: { display: false },
                                 ticks: {
-                                    maxRotation: 0, autoSkip: true, maxTicksLimit: 8, color: '#8a8a8a', font: { size: 11 },
+                                    maxRotation: 0, autoSkip: true, maxTicksLimit: 8, color: '#6b6b6b', font: { size: 11 },
                                     // "02/09–06/09" vira duas linhas (data
                                     // inicial em cima, final embaixo) -- uma
                                     // linha só ficava apertada com o filtro
@@ -1477,7 +1516,7 @@
                                 // Rótulo do eixo: plugin 'rotulosEixos' acima.
                                 grid: { color: 'rgba(0,0,0,0.05)' },
                                 ticks: {
-                                    color: '#8a8a8a',
+                                    color: '#6b6b6b',
                                     font: { size: 11 },
                                     maxTicksLimit: isMobile ? 5 : 8
                                 }
@@ -1487,7 +1526,7 @@
                                 position: 'right',
                                 grid: { drawOnChartArea: false },
                                 ticks: {
-                                    color: '#8a8a8a',
+                                    color: '#6b6b6b',
                                     font: { size: 11 },
                                     maxTicksLimit: isMobile ? 5 : 8
                                 }

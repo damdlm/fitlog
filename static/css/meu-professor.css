@@ -133,7 +133,7 @@
 }
 
 .mp-rating-empty {
-    color: #9a9a9a;
+    color: #6b6b6b;
     font-size: 0.85rem;
     font-style: italic;
 }
@@ -166,7 +166,7 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: #9a9a9a;
+    color: #6b6b6b;
     margin-bottom: 2px;
 }
 

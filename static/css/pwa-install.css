@@ -334,7 +334,7 @@
 
 .pwa-step-text small {
     font-size: 0.76rem;
-    color: #adb5bd;
+    color: #6c757d;
 }
 
 .btn-pwa-entendi {
@@ -356,7 +356,7 @@
     border-radius: 50%;
     font-size: 1.25rem;
     line-height: 1;
-    color: #adb5bd;
+    color: #6c757d;
     cursor: pointer;
     width: 44px;
     height: 44px;
@@ -505,7 +505,7 @@
 .btn-pwa-dismiss-link {
     background: transparent;
     border: none;
-    color: #adb5bd;
+    color: #6c757d;
     font-size: 0.82rem;
     font-weight: 600;
     padding: 10px;

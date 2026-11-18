@@ -33,7 +33,7 @@
     --primary-gradient: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
     --black: #080808;
     --black-2: #121212;
-    --muted: #9b9b9b;
+    --muted: #6b6b6b;
     --line: rgba(255, 255, 255, .20);
 
     position: relative;
@@ -264,7 +264,7 @@
     position: relative;
     z-index: 3;
     margin-top: 12px;
-    color: #999;
+    color: #6b6b6b;
     text-align: center;
     font-size: .73rem;
     font-weight: 700;
@@ -320,7 +320,7 @@
 
 .pp-service p {
     margin: 9px 0 0;
-    color: #999;
+    color: #6b6b6b;
     font-size: .66rem;
     line-height: 1.45;
 }
@@ -370,7 +370,7 @@
 .pp-rating-count {
     padding-left: 9px;
     border-left: 1px solid #3a3a3a;
-    color: #999;
+    color: #6b6b6b;
     font-size: .7rem;
     font-weight: 600;
     line-height: 1;

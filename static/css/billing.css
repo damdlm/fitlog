@@ -62,7 +62,7 @@
 }
 
 .ma-price { font-size: 2rem; font-weight: 800; color: #222; }
-.ma-price small { font-size: 1rem; font-weight: 600; color: #888; }
+.ma-price small { font-size: 1rem; font-weight: 600; color: #6b6b6b; }
 
 .ma-btn-assinar {
     border: none;
@@ -111,9 +111,9 @@
 }
 .ma-plano-card input[type="radio"] { position: absolute; top: 10px; right: 10px; }
 .ma-plano-card .nome { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
-.ma-plano-card .faixa { font-size: 0.78rem; color: #888; margin-bottom: 8px; }
+.ma-plano-card .faixa { font-size: 0.78rem; color: #6b6b6b; margin-bottom: 8px; }
 .ma-plano-card .preco { font-size: 1.3rem; font-weight: 800; color: #222; }
-.ma-plano-card .preco small { font-size: 0.75rem; font-weight: 600; color: #888; }
+.ma-plano-card .preco small { font-size: 0.75rem; font-weight: 600; color: #6b6b6b; }
 .ma-plano-card .badge-atual {
     position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
     background: #1a8a4a; color: #fff; font-size: 0.68rem; font-weight: 700;

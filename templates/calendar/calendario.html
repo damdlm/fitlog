@@ -19,7 +19,7 @@
         --surface-raised: #fbfbfb;
         --border-subtle: rgba(20,20,20,0.07);
         --text-primary: #1f1f1f;
-        --text-muted: #8a8a8a;
+        --text-muted: #6b6b6b;
         --shadow-elev: 0 16px 44px rgba(20,20,20,0.08);
         transition: color 0.25s ease;
     }
@@ -29,7 +29,7 @@
         --surface-raised: #212129;
         --border-subtle: rgba(255,255,255,0.07);
         --text-primary: #f2f2f5;
-        --text-muted: #91919c;
+        --text-muted: #6a6a75;
         --shadow-elev: 0 20px 50px rgba(0,0,0,0.45);
     }
 
@@ -117,6 +117,11 @@
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 100%;
+    }
+
+    /* Celular estreito: os rótulos ("dias seguidos") cabem sem cortar. */
+    @media (max-width: 380px) {
+        .month-summary-label { letter-spacing: 0; }
     }
 
     .month-summary-divider {
@@ -425,7 +430,7 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: .03em;
-        color: #adb5bd;
+        color: #6c757d;
         background: rgba(173, 181, 189, 0.15);
         padding: 3px 8px;
         border-radius: 999px;
@@ -492,7 +497,7 @@
     .editar-registro-labels span {
         font-size: .68rem;
         line-height: 1;
-        color: #adb5bd;
+        color: #6c757d;
         text-transform: uppercase;
         letter-spacing: .04em;
         font-weight: 700;
@@ -997,7 +1002,7 @@
         .fc-col-header-cell-cushion {
             font-size: 0.68rem;
             font-weight: 600;
-            color: #9a9a9a;
+            color: #6b6b6b;
             padding: 6px 2px !important;
             text-transform: uppercase;
         }
@@ -1183,7 +1188,7 @@
 
     .theme-toggle-icon-moon {
         right: 7px;
-        color: #9a9a9a;
+        color: #6b6b6b;
         opacity: 0.5;
     }
 
@@ -1293,7 +1298,7 @@
     }
 
     .calendar-page[data-theme="dark"] .fc-col-header-cell-cushion {
-        color: #8a8a8a !important;
+        color: #6b6b6b !important;
     }
 
     .calendar-page[data-theme="dark"] .modal-content {
@@ -1770,13 +1775,13 @@
         <div class="month-summary-tile">
             <div class="month-summary-icon"><i class="bi bi-trophy-fill"></i></div>
             <div class="month-summary-value" id="statDias">–</div>
-        <div class="month-summary-label">dias treinados</div>
+        <div class="month-summary-label">dias no mês</div>
     </div>
     <div class="month-summary-divider"></div>
     <div class="month-summary-tile">
         <div class="month-summary-icon"><i class="bi bi-fire"></i></div>
         <div class="month-summary-value" id="statSequencia">–</div>
-        <div class="month-summary-label">sequência atual</div>
+        <div class="month-summary-label" title="Dias seguidos com treino até hoje">sequência</div>
     </div>
     <div class="month-summary-divider"></div>
         <div class="month-summary-tile">
@@ -1799,11 +1804,7 @@
     </button>
 </div>
 
-<div class="d-flex justify-content-end mb-2">
-    <button type="button" class="rt-tour-ajuda" id="btnTourCalendario">
-        <i class="bi bi-question-circle"></i> Tutorial
-    </button>
-</div>
+<button type="button" class="rt-tour-ajuda" id="btnTourCalendario" data-tour-pagina>Tutorial</button>
 
 <!-- Calendário -->
 <div class="card">
@@ -2250,7 +2251,8 @@
 
         document.getElementById('statDias').textContent = diasTreinados;
         document.getElementById('statVolume').textContent = formatarVolumeCompacto(volumeMes);
-        document.getElementById('statSequencia').textContent = calcularSequenciaAtual();
+        const sequencia = calcularSequenciaAtual();
+        document.getElementById('statSequencia').textContent = sequencia + (sequencia === 1 ? ' dia' : ' dias');
     }
 
     function formatarDataLocal(date) {
@@ -2921,6 +2923,7 @@
 </script>
 {% if aluno or not current_user.is_admin %}
 <script src="{{ static_v('vendor/chartjs/chart.umd.min.js') }}"></script>
+<script src="{{ static_v('js/chart-ptbr.js') }}"></script>
 <script>
     // ---------- Gráfico "Acompanhe sua evolução" ----------
     // Movido da página inicial. Mesma lógica de antes (API /api/progresso,

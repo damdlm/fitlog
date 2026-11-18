@@ -211,7 +211,7 @@
 }
 
 .login-input-group i.login-input-icon {
-    color: #adb5bd;
+    color: #6c757d;
     font-size: 1rem;
     flex-shrink: 0;
     transition: color 0.15s ease;
@@ -235,7 +235,7 @@
 .login-toggle-senha {
     border: none;
     background: transparent;
-    color: #adb5bd;
+    color: #6c757d;
     padding: 8px;
     display: flex;
     align-items: center;
@@ -261,7 +261,7 @@
 }
 
 .login-options-row a {
-    color: var(--primary-color, #F28C33);
+    color: #a8560c;
     text-decoration: none;
     font-weight: 600;
 }
@@ -301,7 +301,7 @@
     align-items: center;
     gap: 12px;
     margin: 26px 0 20px;
-    color: #adb5bd;
+    color: #6c757d;
     font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -318,7 +318,7 @@
 .btn-login-register {
     width: 100%;
     border: 1.5px solid var(--primary-color, #F28C33);
-    color: var(--primary-color, #F28C33);
+    color: #a8560c;
     background: transparent;
     border-radius: 14px;
     padding: 11px;
@@ -340,13 +340,13 @@
 .login-terms {
     text-align: center;
     font-size: 0.76rem;
-    color: #adb5bd;
+    color: #6c757d;
     margin: 22px 0 0;
     line-height: 1.5;
 }
 
 .login-terms a {
-    color: #868e96;
+    color: #5f6670;
 }
 
 @media (min-width: 992px) {

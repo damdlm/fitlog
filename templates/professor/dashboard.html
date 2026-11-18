@@ -68,16 +68,16 @@
         font-weight: 700;
         letter-spacing: 0.03em;
         text-transform: uppercase;
-        color: #8a8a8a;
+        color: #6b6b6b;
         margin-top: 4px;
     }
     .pd-stat-sub {
         font-size: 0.8rem;
-        color: #b0b0b0;
+        color: #6b6b6b;
         margin-top: 2px;
     }
-    .pd-stat-sub.pd-up { color: #2e9e5b; }
-    .pd-stat-sub.pd-down { color: #d9534f; }
+    .pd-stat-sub.pd-up { color: #1f7a45; }
+    .pd-stat-sub.pd-down { color: #b9372f; }
     .pd-stat-alerta .pd-stat-value { color: #d9534f; }
 
     .pd-card {
@@ -130,7 +130,7 @@
     }
     .pd-lista-meta {
         font-size: 0.78rem;
-        color: #999;
+        color: #6b6b6b;
     }
 
     .pd-quick-grid {
@@ -145,7 +145,7 @@
     }
     /* Pr5: limite do plano no atalho "Adicionar aluno" */
     .dash-quick-tile .pd-limite { font-size: .72rem; font-weight: 700; color: #5f6368; background: #f3f4f6; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
-    .dash-quick-tile .pd-limite.is-no-limite { color: #b85c0e; background: rgba(242, 140, 51, .14); }
+    .dash-quick-tile .pd-limite.is-no-limite { color: #9c4a06; background: rgba(242, 140, 51, .14); }
 </style>
 
 <!-- Saudação -->
@@ -155,11 +155,7 @@
     <p class="dash-hero-subtitle">Aqui está um resumo do que merece sua atenção hoje.</p>
 </div>
 
-<div class="d-flex justify-content-end mb-2">
-    <button type="button" class="rt-tour-ajuda" id="btnTourPainel">
-        <i class="bi bi-question-circle"></i> Tutorial
-    </button>
-</div>
+<button type="button" class="rt-tour-ajuda" id="btnTourPainel" data-tour-pagina>Tutorial</button>
 
 <!-- Indicadores principais -->
 <div class="row g-3 mb-4" id="pdIndicadores">
@@ -352,6 +348,7 @@
 </div>
 
 <script src="{{ static_v('vendor/chartjs/chart.umd.min.js') }}"></script>
+<script src="{{ static_v('js/chart-ptbr.js') }}"></script>
 <script src="{{ static_v('vendor/driverjs/driver.js.iife.js') }}"></script>
 <script src="{{ static_v('js/fl-tour-core.js') }}"></script>
 <script src="{{ static_v('js/professor-dashboard-tour.js') }}"

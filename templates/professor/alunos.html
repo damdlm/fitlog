@@ -28,10 +28,10 @@
     .ga-btn-novo:hover, .ga-btn-novo:focus-visible { background: #e07a1f; color: #fff; }
     .ga-btn-novo .ga-btn-novo-titulo { display: inline-flex; align-items: center; gap: 6px; }
     .ga-btn-novo .ga-limite { font-size: .72rem; font-weight: 600; opacity: .92; }
-    .ga-btn-novo.is-no-limite { background: #fff; color: #b85c0e; border: 1.5px solid rgba(242, 140, 51, .55); }
+    .ga-btn-novo.is-no-limite { background: #fff; color: #a8560c; border: 1.5px solid rgba(242, 140, 51, .55); }
     .ga-btn-solicitacoes { background: #fff; color: #2d2d2d; border: 1.5px solid #e2e5ea; }
-    .ga-btn-solicitacoes:hover { border-color: #F28C33; color: #b85c0e; }
-    .ga-btn-ver { color: #b85c0e !important; border-color: rgba(242, 140, 51, .55) !important; background: #fff; }
+    .ga-btn-solicitacoes:hover { border-color: #F28C33; color: #a8560c; }
+    .ga-btn-ver { color: #a8560c !important; border-color: rgba(242, 140, 51, .55) !important; background: #fff; }
     .ga-btn-ver:hover, .ga-btn-ver:focus-visible { background: #F28C33 !important; border-color: #F28C33 !important; color: #fff !important; }
     .ga-registros { font-size: .82rem; color: #5f6368; line-height: 1.35; }
     .ga-ativ-ultimo { font-weight: 600; color: #2d2d2d; }
@@ -78,7 +78,7 @@
             font-weight: 700;
             letter-spacing: 0.06em;
             text-transform: uppercase;
-            color: #8A8F98;
+            color: #5f6670;
             padding-top: 16px;
             padding-bottom: 14px;
             background: #FAFAFB;
@@ -142,11 +142,7 @@
     </a>
 </div>
 
-<div class="d-flex justify-content-end mb-1">
-    <button type="button" class="rt-tour-ajuda" id="btnTourProfessorAlunos">
-        <i class="bi bi-question-circle"></i> Tutorial
-    </button>
-</div>
+<button type="button" class="rt-tour-ajuda" id="btnTourProfessorAlunos" data-tour-pagina>Tutorial</button>
 
 <!-- Filtros -->
 <div class="card mb-4 ga-filtros">
@@ -154,7 +150,7 @@
         <form method="get" class="d-flex gap-2 align-items-center">
             <div class="input-group">
                 <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-                <input type="text" name="busca" id="gaBusca" class="form-control"
+                <input aria-label="Buscar aluno" type="text" name="busca" id="gaBusca" class="form-control"
                        placeholder="Nome, usuário ou e-mail..." value="{{ busca or '' }}">
             </div>
             <button type="submit" class="btn btn-primary flex-shrink-0">

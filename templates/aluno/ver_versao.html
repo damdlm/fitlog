@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block h1_tela %}{% endblock %}
 
 {% block page_icon %}<i class="bi bi-layers" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}{{ versao.descricao }}{% endblock %}
@@ -82,7 +83,7 @@
         border-radius: 999px;
         vertical-align: middle;
     }
-    .ct-status-pill.ativa { background: #E9F9EF; color: #16A34A; }
+    .ct-status-pill.ativa { background: #E9F9EF; color: #15803d; }
     .ct-status-pill.ativa .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
     .ct-status-pill.finalizada { background: var(--ct-bg-soft); color: var(--ct-muted); }
     .ct-hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -139,6 +140,8 @@
         border-radius: 999px;
         background: var(--accent-soft, var(--ct-bg-soft));
         color: var(--accent, var(--ct-ink));
+        /* X1: a cor do treino um tom mais escura no texto (contraste). */
+        color: color-mix(in srgb, var(--accent, var(--ct-ink)) 62%, #000);
         white-space: nowrap;
     }
     .ct-count-chip.is-empty { background: #FEF2F2; color: #DC2626; }
@@ -174,7 +177,7 @@
     .ct-btn-editar-treino {
         background: rgba(242, 140, 51, 0.1);
         border-color: rgba(242, 140, 51, 0.35);
-        color: var(--ct-orange);
+        color: #a8560c;
     }
     .ct-btn-editar-treino .ct-btn-treino-icon { background: var(--ct-orange); }
     .ct-btn-editar-treino:hover {
@@ -185,7 +188,7 @@
     .ct-btn-excluir-treino {
         background: rgba(220, 53, 69, 0.08);
         border-color: rgba(220, 53, 69, 0.3);
-        color: #dc3545;
+        color: #b02a37;
     }
     .ct-btn-excluir-treino .ct-btn-treino-icon { background: #dc3545; }
     .ct-btn-excluir-treino:hover {
@@ -353,7 +356,7 @@
     #modalExercicios .etv-search-icon {
         position: absolute;
         left: 11px;
-        color: #adb5bd;
+        color: #6c757d;
         font-size: .78rem;
         pointer-events: none;
     }
@@ -405,7 +408,7 @@
         flex: 0 0 auto;
         border: none;
         background: none;
-        color: #adb5bd;
+        color: #6c757d;
         font-size: .68rem;
         font-weight: 600;
         padding: 2px 4px;
@@ -617,7 +620,7 @@
 
 <div class="ct-section-title">
     <h2><i class="bi bi-trophy" style="color:#F28C33;"></i> Treinos desta ficha</h2>
-    <button type="button" class="rt-tour-ajuda" id="btnTourVersaoLista">
+    <button type="button" class="rt-tour-ajuda" id="btnTourVersaoLista" data-tour-pagina>
         <i class="bi bi-question-circle"></i> Tutorial
     </button>
 </div>
@@ -728,7 +731,7 @@
                 <div class="modal-body">
                     <div class="mb-1">
                         <label class="form-label fw-bold">Descrição da ficha</label>
-                        <input type="text" name="descricao" class="form-control form-control-lg"
+                        <input aria-label="Descrição da ficha" type="text" name="descricao" class="form-control form-control-lg"
                                value="{{ versao.descricao }}" maxlength="200" required autofocus>
                     </div>
                 </div>
@@ -768,7 +771,7 @@
                     <div class="row g-2 ct-modal-dados-treino">
                         <div class="col-12">
                             <label class="etv-field-label">Nome do treino</label>
-                            <input type="text" name="nome_treino" id="ctInputNome" class="form-control" maxlength="100" required>
+                            <input aria-label="Nome do treino" type="text" name="nome_treino" id="ctInputNome" class="form-control" maxlength="100" required>
                         </div>
                     </div>
 
@@ -785,7 +788,7 @@
                         <div class="etv-toolbar-row">
                             <div class="etv-search-wrap" id="etvSearchWrap">
                                 <i class="bi bi-search etv-search-icon"></i>
-                                <input type="text" id="etvBusca" class="etv-search-input"
+                                <input aria-label="Buscar exercício" type="text" id="etvBusca" class="etv-search-input"
                                        placeholder="Buscar exercício..." autocomplete="off">
                                 <button type="button" id="etvLimparFiltro" class="etv-search-clear" title="Limpar busca">
                                     <i class="bi bi-x-circle-fill"></i>
@@ -848,11 +851,11 @@
                 <div id="novoExercicioErro" class="alert alert-danger py-2 d-none" role="alert"></div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Nome do exercício</label>
-                    <input type="text" id="novoExercicioNome" class="form-control form-control-lg" maxlength="120" required>
+                    <input aria-label="Nome do exercício" type="text" id="novoExercicioNome" class="form-control form-control-lg" maxlength="120" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Músculo</label>
-                    <select id="novoExercicioMusculo" class="form-select">
+                    <select aria-label="Músculo principal" id="novoExercicioMusculo" class="form-select">
                         {% for musculo in musculos_catalogo %}
                         <option value="{{ musculo }}">{{ musculo }}</option>
                         {% endfor %}
@@ -860,7 +863,7 @@
                 </div>
                 <div class="mb-1">
                     <label class="form-label fw-bold">Descrição <span class="text-muted fw-normal">(opcional)</span></label>
-                    <textarea id="novoExercicioDescricao" class="form-control" rows="2" maxlength="500"></textarea>
+                    <textarea aria-label="Descrição do exercício" id="novoExercicioDescricao" class="form-control" rows="2" maxlength="500"></textarea>
                 </div>
             </div>
             <div class="modal-footer justify-content-center">

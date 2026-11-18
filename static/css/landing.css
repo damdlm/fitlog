@@ -124,15 +124,22 @@
 .landing-footer-links {
     text-align: center;
     padding: 16px 0 32px;
-    color: #777;
+    color: #5f5f5f;
     font-size: 0.9rem;
 }
 
 .landing-footer-links a {
-    color: #777;
+    color: #5f5f5f;
     text-decoration: none;
 }
 
 .landing-footer-links a:hover {
     text-decoration: underline;
+}
+
+/* X1: link da seção de privacidade no laranja escuro do app (o azul
+   padrão do Bootstrap ficava abaixo do contraste mínimo aqui). */
+.landing-privacy a {
+    color: #a8560c;
+    font-weight: 600;
 }

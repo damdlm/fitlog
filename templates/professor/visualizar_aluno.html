@@ -136,11 +136,7 @@
 {% set iniciais = (partes[0][0] ~ (partes[1][0] if partes|length > 1 else ''))|upper %}
 {% set pode_gerenciar = current_user.is_admin %}
 
-<div class="d-flex justify-content-end mb-2">
-    <button type="button" class="rt-tour-ajuda" id="btnTourAlunoFicha">
-        <i class="bi bi-question-circle"></i> Tutorial
-    </button>
-</div>
+<button type="button" class="rt-tour-ajuda" id="btnTourAlunoFicha" data-tour-pagina>Tutorial</button>
 <!-- Cabeçalho do perfil -->
 <div class="card va-profile-card mb-4">
     <div class="card-body">

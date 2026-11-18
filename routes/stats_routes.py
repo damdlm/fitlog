@@ -204,18 +204,22 @@ def visualizar_tabela():
             registros_ex = dados_tabela['registros_por_exercicio'].get(chave_exercicio, {})
 
             semanas_ex = []
+            cardio = False
             for semana in semanas:
                 registro = registros_ex.get(semana['key'])
                 if registro and registro.get('series'):
                     primeira_serie = registro['series'][0]
                     if primeira_serie.get('cardio'):
                         # Cardio: minutos na coluna da carga e km na das
-                        # repetições (services/cardio.py).
+                        # repetições (services/cardio.py). As unidades vão
+                        # uma vez só, embaixo do nome ("min · km"): "3,2km"
+                        # não cabia na coluna no celular.
+                        cardio = True
                         minutos = round(primeira_serie['duracao_segundos'] / 60)
                         km = primeira_serie.get('distancia_km')
                         semanas_ex.append({
                             'carga': f"{minutos}'",
-                            'repeticoes': (f"{km:g}".replace('.', ',') + 'km') if km else '',
+                            'repeticoes': f"{km:g}".replace('.', ',') if km else '',
                         })
                     else:
                         semanas_ex.append({
@@ -225,9 +229,9 @@ def visualizar_tabela():
                 else:
                     semanas_ex.append({'carga': None, 'repeticoes': None})
 
-            exercicios_grupo.append({'nome': ex.nome, 'semanas': semanas_ex})
+            exercicios_grupo.append({'nome': ex.nome, 'semanas': semanas_ex, 'cardio': cardio})
 
-        grupos_treino.append({'exercicios': exercicios_grupo})
+        grupos_treino.append({'codigo': codigo, 'exercicios': exercicios_grupo})
 
     return render_template("stats/visualizar_tabela.html",
                          semanas=semanas,

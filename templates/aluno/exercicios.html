@@ -39,7 +39,7 @@
     .exs-filtros .form-label {
         font-size: 0.78rem;
         font-weight: 700;
-        color: #8a8a8a;
+        color: #6b6b6b;
         text-transform: uppercase;
         letter-spacing: .02em;
         margin-bottom: 4px;
@@ -63,7 +63,7 @@
     }
     .exs-contador {
         font-size: 0.82rem;
-        color: #8a8a8a;
+        color: #6b6b6b;
     }
     .exs-contador strong { color: var(--secondary-color); }
 
@@ -78,7 +78,7 @@
         font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: .03em;
-        color: #8a8a8a;
+        color: #6b6b6b;
         font-weight: 700;
         background: #fafafa;
     }
@@ -145,7 +145,7 @@
     .exs-empty {
         text-align: center;
         padding: 48px 20px;
-        color: #999;
+        color: #6b6b6b;
     }
     .exs-empty i {
         font-size: 2.6rem;
@@ -241,12 +241,12 @@
                 <label class="form-label">Buscar</label>
                 <div class="exs-filtro-busca">
                     <i class="bi bi-search"></i>
-                    <input type="text" id="filtroNome" class="form-control" placeholder="Nome do exercício...">
+                    <input aria-label="Buscar exercício pelo nome" type="text" id="filtroNome" class="form-control" placeholder="Nome do exercício...">
                 </div>
             </div>
             <div class="col-md-6">
                 <label class="form-label">Músculo</label>
-                <select id="filtroMusculo" class="form-select">
+                <select aria-label="Filtrar por músculo" id="filtroMusculo" class="form-select">
                     <option value="">Todos os músculos</option>
                     {% set musculos_vistos = [] %}
                     {% for exercicio in exercicios %}

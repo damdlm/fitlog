@@ -129,7 +129,7 @@
                                     </div>
 
                                     <div>
-                                        <select name="num_series_{{ chave_ex }}" id="series-select-{{ chave_ex }}" 
+                                        <select aria-label="Número de séries" name="num_series_{{ chave_ex }}" id="series-select-{{ chave_ex }}" 
                                                 class="form-select">
                                             {% for n in range(1, max_opcoes + 1) %}
                                             <option value="{{ n }}" {% if series_selecionadas == n %}selected{% endif %}>{{ n }} série{{ 's' if n != 1 }}</option>
