@@ -398,7 +398,49 @@ document.addEventListener('DOMContentLoaded', function () {
         // desabilita (e não envia valor) quando o card é desmarcado.
         const obsInput = card?.querySelector('.etv-obs-input');
         if (obsInput) obsInput.disabled = !checkbox.checked;
+        // T4: idem para a meta (séries × repetições) -- criada só quando o
+        // exercício é marcado (ver etvGarantirMeta).
+        if (checkbox.checked && card) etvGarantirMeta(card);
+        card?.querySelectorAll('.etv-meta-input').forEach(function (i) { i.disabled = !checkbox.checked; });
     }
+
+    // T4: linha "Meta [séries] × [reps] a [máx]" do card. Não vem no HTML do
+    // catálogo (~1.360 cards: seria +1 MB e ~9.500 elementos a mais); é
+    // montada aqui só para os exercícios marcados, que são os únicos
+    // enviados no formulário.
+    function etvGarantirMeta(card) {
+        let linha = card.querySelector('.etv-meta-row');
+        if (linha) return linha;
+        const valor = card.dataset.valor || card.querySelector('.etv-checkbox')?.value;
+        if (!valor) return null;
+        linha = document.createElement('div');
+        linha.className = 'etv-meta-row';
+        linha.addEventListener('click', function (e) { e.stopPropagation(); });
+        const campo = function (cls, nome, max, ph, rotulo) {
+            const i = document.createElement('input');
+            i.type = 'number';
+            i.className = 'etv-meta-input ' + cls;
+            i.name = nome + valor;
+            i.min = '1';
+            i.max = String(max);
+            i.inputMode = 'numeric';
+            i.placeholder = ph;
+            i.setAttribute('aria-label', rotulo);
+            return i;
+        };
+        const txt = function (cls, t) { const s = document.createElement('span'); s.className = cls; s.textContent = t; return s; };
+        linha.appendChild(txt('etv-meta-rot', 'Meta'));
+        linha.appendChild(campo('etv-meta-series', 'meta_series_', 10, 'séries', 'Séries da meta'));
+        linha.appendChild(txt('etv-meta-x', '×'));
+        linha.appendChild(campo('etv-meta-reps-min', 'meta_reps_min_', 100, 'reps', 'Repetições da meta (mínimo)'));
+        linha.appendChild(txt('etv-meta-x', 'a'));
+        linha.appendChild(campo('etv-meta-reps-max', 'meta_reps_max_', 100, 'máx', 'Repetições da meta (máximo, opcional)'));
+        const obs = card.querySelector('.etv-obs-input');
+        if (obs) obs.parentNode.insertBefore(linha, obs);
+        else card.querySelector('.etv-card-body')?.appendChild(linha);
+        return linha;
+    }
+    window.FitLogEtvMeta = { garantir: etvGarantirMeta };
 
     function atualizarContador() {
         const total = checkboxes().filter(cb => cb.checked).length;
@@ -665,9 +707,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     '<div class="etv-card-nome">' + nome + '</div>' +
                     '<div class="etv-card-row2">' +
                         '<span class="badge etv-card-musculo">' + musculo + '</span>' +
-                        '<button type="button" class="etv-obs-toggle" title="Adicionar observação" ' +
+                        '<button type="button" class="etv-obs-toggle" title="Meta de séries × repetições e observação" ' +
                             'onclick="event.preventDefault(); event.stopPropagation(); this.closest(\'.etv-card\').classList.toggle(\'etv-obs-open\');">' +
-                            'Observação <i class="bi bi-chevron-down"></i>' +
+                            'Meta e obs. <i class="bi bi-chevron-down"></i>' +
                         '</button>' +
                     '</div>' +
                     '<input type="text" class="etv-obs-input" name="observacao_' + valor + '" maxlength="60" ' +

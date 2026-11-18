@@ -315,9 +315,11 @@ document.addEventListener('DOMContentLoaded', function () {
     function aplicarSelecao(treinoVersaoId) {
         const mapa = window.CT_TREINO_EXERCICIOS || {};
         const mapaObs = window.CT_TREINO_OBSERVACOES || {};
+        const mapaMetas = window.CT_TREINO_METAS || {};  // T4
         const idsOrdem = mapa[treinoVersaoId] || [];
         const selecionados = new Set(idsOrdem);
         const observacoes = mapaObs[treinoVersaoId] || {};
+        const metas = mapaMetas[treinoVersaoId] || {};
 
         // A grade grande (~1300 itens) só mantém uma parte no DOM por
         // padrão (ver editar-treino-versao.js) -- garante que os
@@ -348,10 +350,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 obsInput.value = deveEstarMarcado ? (observacoes[cb.value] || '') : '';
             }
 
+            // T4: meta salva (séries × repetições) deste exercício.
+            const meta = deveEstarMarcado ? (metas[cb.value] || null) : null;
+            if (deveEstarMarcado && card && window.FitLogEtvMeta) window.FitLogEtvMeta.garantir(card);
+            [['.etv-meta-series', 's'], ['.etv-meta-reps-min', 'min'], ['.etv-meta-reps-max', 'max']].forEach(function (cfg) {
+                const inp = card?.querySelector(cfg[0]);
+                if (!inp) return;
+                inp.disabled = !deveEstarMarcado;
+                let v = meta ? meta[cfg[1]] : null;
+                // número fixo ("4 × 10") vem com min = max: mostra só o mínimo
+                if (cfg[1] === 'max' && meta && meta.max === meta.min) v = null;
+                inp.value = (v === null || v === undefined) ? '' : String(v);
+            });
+
             // Campo de observação vem fechado por padrão (mais compacto) --
-            // só abre sozinho se este exercício já tinha uma observação
-            // salva, pra ela não ficar escondida sem indicação nenhuma.
-            if (card) card.classList.toggle('etv-obs-open', deveEstarMarcado && !!(observacoes[cb.value] || '').trim());
+            // só abre sozinho se este exercício já tinha uma observação ou
+            // meta salva, pra ela não ficar escondida sem indicação nenhuma.
+            if (card) card.classList.toggle('etv-obs-open', deveEstarMarcado && (!!(observacoes[cb.value] || '').trim() || !!meta));
         });
 
         // Recalcula o contador (1 vez só) e traz os exercícios já

@@ -5,6 +5,7 @@ from datetime import datetime, timezone, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.ext.hybrid import hybrid_property
 import hashlib
+from utils.meta_treino import formatar_meta
 import secrets
 
 db = SQLAlchemy()
@@ -1125,6 +1126,19 @@ class VersaoExercicio(db.Model):
     # ExercicioUsuario.observacoes, que é sobre o exercício em si e vale
     # para todos os treinos onde ele aparece.
     observacao = db.Column(db.String(60))
+
+    # Meta deste exercício neste treino (T4): "4 × 10–12" = meta_series 4,
+    # meta_reps_min 10, meta_reps_max 12; número fixo grava min = max.
+    # Tudo opcional -- aparece na tela de registro (séries iniciais, selo
+    # "Meta" e dica de progressão). Validação em parse_meta_form.
+    meta_series = db.Column(db.SmallInteger)
+    meta_reps_min = db.Column(db.SmallInteger)
+    meta_reps_max = db.Column(db.SmallInteger)
+
+    @property
+    def meta_texto(self):
+        """'4 × 10–12', '4 séries', '10–12 reps' ou '' (sem meta)."""
+        return formatar_meta(self.meta_series, self.meta_reps_min, self.meta_reps_max)
 
     # Relacionamentos
     treino_versao = db.relationship('TreinoVersao', back_populates='exercicios')

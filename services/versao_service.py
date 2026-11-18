@@ -211,16 +211,19 @@ class VersaoService(BaseService):
             base_ids = []
             ordem_map = {}
             observacao_map = {}
+            meta_map = {}  # T4: (series, reps_min, reps_max) da ficha
             
             for idx, ve in enumerate(ve_list):
                 if ve.exercicio_usuario_id is not None:
                     usuario_ids.append(ve.exercicio_usuario_id)
                     ordem_map[('usuario', ve.exercicio_usuario_id)] = idx
                     observacao_map[('usuario', ve.exercicio_usuario_id)] = ve.observacao
+                    meta_map[('usuario', ve.exercicio_usuario_id)] = (ve.meta_series, ve.meta_reps_min, ve.meta_reps_max)
                 elif ve.exercicio_base_id is not None:
                     base_ids.append(ve.exercicio_base_id)
                     ordem_map[('base', ve.exercicio_base_id)] = idx
                     observacao_map[('base', ve.exercicio_base_id)] = ve.observacao
+                    meta_map[('base', ve.exercicio_base_id)] = (ve.meta_series, ve.meta_reps_min, ve.meta_reps_max)
             
             exercicios = []
 
@@ -256,6 +259,7 @@ class VersaoService(BaseService):
                         ex.musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
                         ex.musculo = ex.musculo_nome
                         ex.observacao_treino = observacao_map.get(('usuario', ex.id))
+                        ex.meta_treino = meta_map.get(('usuario', ex.id), (None, None, None))
                         # Normalizado com ex_base abaixo para o tooltip da tela de
                         # registrar treino: descricao_completa junta o texto livre
                         # cadastrado; exercícios de usuário não têm músculos
@@ -289,6 +293,7 @@ class VersaoService(BaseService):
                         # musculo_nome já é property (= grupo_muscular)
                         ex.musculo = ex.grupo_muscular or 'N/A'
                         ex.observacao_treino = observacao_map.get(('base', ex.id))
+                        ex.meta_treino = meta_map.get(('base', ex.id), (None, None, None))
                         # instrucao_pt é o texto livre de descrição do exercício
                         # (equivalente ao "descricao" de ExercicioUsuario);
                         # musculos_secundarios já vem como lista no JSON.
@@ -426,7 +431,8 @@ class VersaoService(BaseService):
 
     @staticmethod
     @staticmethod
-    def adicionar_exercicios_a_treino_versao(treino_versao_id, usuarios_ids, bases_ids, observacoes=None, ordem_chaves=None):
+    def adicionar_exercicios_a_treino_versao(treino_versao_id, usuarios_ids, bases_ids, observacoes=None, ordem_chaves=None,
+                                             metas=None):
         """
         Substitui todos os exercícios de um treino na versão.
 
@@ -444,6 +450,7 @@ class VersaoService(BaseService):
         usuarios_ids = usuarios_ids or []
         bases_ids = bases_ids or []
         observacoes = observacoes or {}
+        metas = metas or {}  # T4: {chave: (series, reps_min, reps_max)} já validado (parse_meta_form)
         
       #  if not usuarios_ids and not bases_ids:
       #      raise ValueError("Pelo menos um exercício é obrigatório")
@@ -465,6 +472,7 @@ class VersaoService(BaseService):
             ve.exercicio_base_id = ex_id if tipo == 'b' else None
             ve.ordem = ordem
             ve.observacao = obs
+            ve.meta_series, ve.meta_reps_min, ve.meta_reps_max = metas.get(f"{tipo}_{ex_id}", (None, None, None))
             db.session.add(ve)
         
         db.session.flush()
@@ -701,7 +709,7 @@ class VersaoService(BaseService):
 
     @staticmethod
     def adicionar_treino_livre(versao_id, nome_treino, descricao_treino, user_id=None,
-                                permitir_finalizada=False, exercicios_raw=None, observacoes=None):
+                                permitir_finalizada=False, exercicios_raw=None, observacoes=None, metas=None):
         """
         Adiciona um novo treino à versão "livre", sem pedir letra/código
         do usuário: o código (A, B, C...) é escolhido automaticamente pelo
@@ -774,7 +782,7 @@ class VersaoService(BaseService):
                 db.session.flush()  # garante treino_versao.id antes de associar exercícios
                 VersaoService.adicionar_exercicios_a_treino_versao(
                     treino_versao.id, usuarios_ids_validos, bases_ids_validos, observacoes=observacoes,
-                    ordem_chaves=VersaoService.chaves_na_ordem_enviada(exercicios_raw),
+                    ordem_chaves=VersaoService.chaves_na_ordem_enviada(exercicios_raw), metas=metas,
                 )
             db.session.commit()
             logger.info(
@@ -807,7 +815,7 @@ class VersaoService(BaseService):
 
     @staticmethod
     def salvar_treino_livre(versao_id, treino_versao_id, nome_treino, descricao_treino,
-                             exercicios_raw, user_id=None, observacoes=None, permitir_finalizada=False):
+                             exercicios_raw, user_id=None, observacoes=None, permitir_finalizada=False, metas=None):
         """Atualiza nome/descrição de um treino da versão e substitui a
         lista de exercícios associados (mesma semântica de
         adicionar_exercicios_a_treino_versao: a lista enviada substitui a
@@ -851,7 +859,7 @@ class VersaoService(BaseService):
             treino_versao.descricao_treino = descricao_treino
             VersaoService.adicionar_exercicios_a_treino_versao(
                 treino_versao.id, usuarios_ids_validos, bases_ids_validos, observacoes=observacoes,
-                ordem_chaves=VersaoService.chaves_na_ordem_enviada(exercicios_raw),
+                ordem_chaves=VersaoService.chaves_na_ordem_enviada(exercicios_raw), metas=metas,
             )
             db.session.commit()
             logger.info(f"Treino {treino_versao.id} (versão {versao_id}) salvo via cadastro livre")
@@ -1011,6 +1019,9 @@ class VersaoService(BaseService):
                         exercicio_base_id=ve.exercicio_base_id,
                         ordem=ve.ordem,
                         observacao=ve.observacao,
+                        meta_series=ve.meta_series,
+                        meta_reps_min=ve.meta_reps_min,
+                        meta_reps_max=ve.meta_reps_max,
                     ))
 
             db.session.commit()
@@ -1128,6 +1139,9 @@ class VersaoService(BaseService):
                         exercicio_base_id=ve.exercicio_base_id,
                         ordem=ve.ordem,
                         observacao=ve.observacao,
+                        meta_series=ve.meta_series,
+                        meta_reps_min=ve.meta_reps_min,
+                        meta_reps_max=ve.meta_reps_max,
                     ))
 
             db.session.commit()

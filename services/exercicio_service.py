@@ -65,6 +65,7 @@ class ExercicioService(BaseService):
                     ex.musculo_nome = ex.musculo_ref.nome_exibicao if ex.musculo_ref else 'N/A'
                     ex.musculo = ex.musculo_nome
                     ex.observacao_treino = None
+                    ex.meta_treino = (None, None, None)  # avulso: fora da ficha, sem meta
                     ex.descricao_completa = (ex.descricao or '').strip()
                     ex.musculos_secundarios_lista = []
                     ex.avulso = True
@@ -80,6 +81,7 @@ class ExercicioService(BaseService):
                     ex.prefixo = 'b_'
                     ex.musculo = ex.grupo_muscular or 'N/A'
                     ex.observacao_treino = None
+                    ex.meta_treino = (None, None, None)  # avulso: fora da ficha, sem meta
                     ex.descricao_completa = (ex.instrucao_pt or '').strip()
                     ex.musculos_secundarios_lista = ex.musculos_secundarios or []
                     ex.avulso = True

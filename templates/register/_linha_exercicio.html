@@ -10,7 +10,10 @@
             {% set ultimas = historico_series.get(chave_ex, []) %}
             {% set ultima_carga = ultimas[0].carga if (ultimas and ultimas[0].carga is not none) else '' %}
             {% set ultimas_reps = ultimas[0].repeticoes if (ultimas and ultimas[0].repeticoes is not none) else '' %}
-            {% set ultimas_series = ultimas|length if ultimas else 3 %}
+            {#- T4: meta da ficha (séries, reps mín., reps máx.); avulso não tem -#}
+            {% set meta_s, meta_rmin, meta_rmax = ex.meta_treino if ex.meta_treino is defined and ex.meta_treino else (none, none, none) %}
+            {% set meta_txt = formatar_meta(meta_s, meta_rmin, meta_rmax) %}
+            {% set ultimas_series = ultimas|length if ultimas else (meta_s or 3) %}
             {% set series_selecionadas = registro_atual.series|length if (registro_atual and registro_atual.series) else ultimas_series %}
             
             <!-- O select de séries agora vai até 10 -->
@@ -31,7 +34,9 @@
             <div class="exercise-row{% if ex.avulso %} exercise-row--avulso{% endif %}{% if eh_cardio_ex %} exercise-row--cardio{% endif %}" data-exercicio-id="{{ chave_ex }}" 
                  data-ultima-carga="{{ ultima_carga }}"
                  data-ultimas-reps="{{ ultimas_reps }}"
-                 data-ultimas-series="{{ ultimas_series }}">
+                 data-ultimas-series="{{ ultimas_series }}"
+                 data-meta-texto="{{ meta_txt if not eh_cardio_ex else '' }}"
+                 data-meta-reps-max="{{ meta_rmax or '' }}">
                 {% if ex.avulso %}
                 <button type="button" class="btn-remover-avulso" data-exercicio-id="{{ chave_ex }}"
                         aria-label="Remover {{ ex.nome }} desta sessão">
@@ -76,8 +81,16 @@
                                 {% set cargas_ult = ultimas|map(attribute='carga')|reject('none')|select('gt', 0)|list %}
                                 {% set reps_ult = ultimas|map(attribute='repeticoes')|reject('none')|list %}
                                 {% set faixa_reps %}{% if reps_ult %}{{ reps_ult|min }}{% if reps_ult|max != reps_ult|min %}–{{ reps_ult|max }}{% endif %}{% endif %}{% endset %}
+                                {% set incremento = sugestao_progressao(ultimas, meta_rmin, meta_rmax) if meta_txt else none %}
                                 <div class="dash-registro-badges">
+                                    {% if meta_txt %}<span class="dash-badge dash-badge--meta">Meta: {{ meta_txt }}</span>{% endif %}
+                                    {% if incremento %}<span class="dash-badge dash-badge--progressao" title="Na última vez, todas as séries chegaram ao topo da meta">Bateu a meta: tente +{{ incremento|num_br(1) }} kg</span>{% endif %}
                                     <span class="dash-badge dash-badge--ultima">Última: {% if cargas_ult|unique|list|length == 1 %}{{ cargas_ult[0]|kg }}{% if faixa_reps %} × {{ faixa_reps }}{% endif %} · {% elif cargas_ult %}até {{ cargas_ult|max|kg }} · {% elif faixa_reps %}{{ faixa_reps }} reps · {% endif %}{{ ultimas|length }} série{{ 's' if ultimas|length != 1 }}</span>
+                                </div>
+                                {% elif meta_txt and not eh_cardio_ex %}
+                                {#- T4: ainda sem histórico -- só a meta -#}
+                                <div class="dash-registro-badges">
+                                    <span class="dash-badge dash-badge--meta">Meta: {{ meta_txt }}</span>
                                 </div>
                                 {% endif %}
                             </div>
@@ -121,7 +134,7 @@
                                     <div>
                                         <input type="number" name="reps_{{ chave_ex }}"
                                                class="form-control reps-input"
-                                               placeholder="0"
+                                               placeholder="{% if meta_rmin %}{{ meta_rmin }}{% if meta_rmax and meta_rmax != meta_rmin %}–{{ meta_rmax }}{% endif %}{% else %}0{% endif %}"
                                                min="0" max="100"
                                                inputmode="numeric"
                                                aria-label="Repetições"
@@ -245,19 +258,11 @@
                 {% endif %}
             </div>
             {% if not eh_cardio_ex %}
-            <button type="button" class="btn-abrir-series-modal"
-                    data-bs-toggle="modal" data-bs-target="#modalSeriesIndividuais"
+            {#- R2: abre a tabela de séries dentro do card (inicializarSeriesNoCard) -#}
+            <button type="button" class="btn-abrir-series-modal btn-series-toggle"
                     data-exercicio-id="{{ chave_ex }}"
-                    data-exercicio-nome="{{ ex.nome }}"
-                    data-exercicio-musculo="{{ ex.musculo or '' }}"
-                    data-exercicio-musculos-secundarios="{{ ex.musculos_secundarios_lista|join(', ') if ex.musculos_secundarios_lista else '' }}"
-                    data-gif-url="{{ ex.gif_url or '' }}"
-                    data-instrucoes-nome="{{ ex.nome }}"
-                    data-instrucoes-passos="{% if ex.passos_pt %}{{ ex.passos_pt | tojson | forceescape }}{% endif %}"
-                    data-ultima-carga="{{ ultima_carga }}"
-                    data-ultimas-reps="{{ ultimas_reps }}"
-                    data-ultimas-series="{{ ultimas_series }}"
-                    aria-label="Lançar séries com valores individuais de {{ ex.nome }}">
+                    aria-expanded="false"
+                    aria-label="Séries uma a uma de {{ ex.nome }}">
                 <i class="bi bi-chevron-right"></i>
             </button>
             {% else %}

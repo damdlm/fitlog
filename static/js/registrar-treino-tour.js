@@ -123,11 +123,11 @@
                 }
             },
             {
-                element: '#registroForm .btn-abrir-series-modal',
+                element: '#registroForm .btn-series-toggle',
                 popover: {
-                    title: 'Valores diferentes por série',
+                    title: 'Série por série',
                     description: 'Usou cargas ou repetições diferentes em cada série? '
-                        + 'Toque na seta para lançar uma série por vez.',
+                        + 'Toque na seta: a tabela abre aqui mesmo, e você marca cada série feita.',
                     side: 'left',
                     align: 'center'
                 }

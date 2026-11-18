@@ -170,9 +170,9 @@
             {
                 element: '#etvGrid .etv-obs-toggle',
                 popover: {
-                    title: 'Observação',
-                    description: 'Quer lembrar de algo, como "pegada fechada"? '
-                        + 'Abra e escreva uma observação curta para este exercício.',
+                    title: 'Meta e observação',
+                    description: 'Defina a meta (ex.: 4 séries de 10 a 12) e, se quiser, '
+                        + 'uma observação curta como "pegada fechada". A meta aparece no registro do treino.',
                     side: 'top',
                     align: 'start'
                 }

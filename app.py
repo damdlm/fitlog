@@ -320,6 +320,11 @@ def create_app(config_class=None):
 
     app.jinja_env.globals['static_v'] = static_v
 
+    # T4: meta de séries × repetições da ficha (tela de registro)
+    from utils.meta_treino import formatar_meta, sugestao_progressao
+    app.jinja_env.globals['formatar_meta'] = formatar_meta
+    app.jinja_env.globals['sugestao_progressao'] = sugestao_progressao
+
     # SEO: URL absoluta e canônica da página atual (ou de um caminho
     # explícito). Usa APP_BASE_URL (config.py) como origem confiável em
     # vez do header Host recebido -- mesmo motivo de segurança já

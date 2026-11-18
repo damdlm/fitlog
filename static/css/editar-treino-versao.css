@@ -268,6 +268,40 @@
     font-size: .68rem;
 }
 
+/* T4: meta "séries × repetições" do exercício neste treino (aparece junto
+   com a observação, no "Meta e obs." do card). */
+.etv-meta-row {
+    margin-top: 6px;
+    align-items: center;
+    gap: 5px;
+    font-size: .78rem;
+    color: #495057;
+}
+.etv-meta-rot {
+    font-weight: 700;
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #5c636a;
+    margin-right: 2px;
+}
+.etv-meta-x { color: #5c636a; }
+.etv-meta-input {
+    width: 3.6rem;
+    min-width: 0;
+    font-size: .78rem;
+    padding: 4px 6px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    color: #495057;
+    background: #fff;
+    text-align: center;
+    -moz-appearance: textfield;
+}
+.etv-meta-input::-webkit-outer-spin-button,
+.etv-meta-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.etv-meta-input::placeholder { color: #6c757d; font-size: .7rem; }
+
 .etv-obs-input {
     margin-top: 4px;
     width: 100%;

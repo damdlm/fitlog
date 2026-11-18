@@ -239,6 +239,19 @@
         padding: 7px 12px;
         border-radius: 10px;
     }
+    /* T4: meta do exercício ("4 × 10–12") à direita do nome */
+    .ct-ex-meta {
+        margin-left: auto;
+        flex: 0 0 auto;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #a8560c;
+        background: rgba(242, 140, 51, 0.1);
+        border-radius: 999px;
+        padding: 2px 8px;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
     .ct-ex-drag-handle {
         cursor: grab;
         color: #B0B5BD;
@@ -421,8 +434,10 @@
     #modalExercicios .etv-obs-toggle i { transition: transform .15s ease; font-size: .8rem; }
     #modalExercicios .etv-card.etv-obs-open .etv-obs-toggle { color: var(--primary-orange); }
     #modalExercicios .etv-card.etv-obs-open .etv-obs-toggle i { transform: rotate(180deg); }
-    #modalExercicios .etv-obs-input { display: none; }
+    #modalExercicios .etv-obs-input,
+    #modalExercicios .etv-meta-row { display: none; }
     #modalExercicios .etv-card.etv-obs-open .etv-obs-input { display: block; }
+    #modalExercicios .etv-card.etv-obs-open .etv-meta-row { display: flex; }
 
 
     /* ==========================================================
@@ -690,6 +705,7 @@
             <div class="ct-ex-item" data-exercicio-id="{{ chave }}">
                 {% if esta_ativa and qtd_ex > 1 %}<span class="ct-ex-drag-handle"><i class="bi bi-grip-vertical"></i></span>{% endif %}
                 <span class="ct-ex-nome">{{ ex.nome }}</span>
+                {% if ve.meta_texto %}<span class="ct-ex-meta" title="Meta">{{ ve.meta_texto }}</span>{% endif %}
             </div>
             {% endif %}
             {% endfor %}
@@ -884,6 +900,7 @@
     // abaixo são compartilhados entre as duas telas.
     window.CT_TREINO_EXERCICIOS = {{ treino_exercicios_map|tojson }};
     window.CT_TREINO_OBSERVACOES = {{ treino_observacoes_map|tojson }};
+    window.CT_TREINO_METAS = {{ (treino_metas_map or {})|tojson }};
     window.CT_VERSAO_ID = {{ versao.id }};
     window.CT_REORDENAR_URL = {{ (reordenar_url or url_for('api.api_reordenar_exercicios'))|tojson }};
 

@@ -12,7 +12,7 @@
 <div class="etv-card-nome" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="etv-tooltip-nomes" title="{{ tooltip_nome_exercicio(ex) }}">{{ ex.nome }}</div>
 <div class="etv-card-row2">
 <span class="badge etv-card-musculo">{{ musculo_nome }}</span>
-<button type="button" class="etv-obs-toggle" title="Adicionar observação" onclick="event.preventDefault(); event.stopPropagation(); this.closest('.etv-card').classList.toggle('etv-obs-open');">Observação <i class="bi bi-chevron-down"></i></button>
+<button type="button" class="etv-obs-toggle" title="Meta de séries × repetições e observação" onclick="event.preventDefault(); event.stopPropagation(); this.closest('.etv-card').classList.toggle('etv-obs-open');">Meta e obs. <i class="bi bi-chevron-down"></i></button>
 </div>
 <input type="text" class="etv-obs-input" name="observacao_{{ ex.prefixo }}{{ ex.id }}" maxlength="60" placeholder="Observação (opcional)" value="" onclick="event.stopPropagation()" disabled>
 </div>

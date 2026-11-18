@@ -31,6 +31,7 @@ from services.exercicio_service import ExercicioService
 from services.musculo_service import MusculoService
 from services.notificacao_service import NotificacaoService
 from models import TreinoVersao
+from utils.meta_treino import meta_para_json, parse_meta_form
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ def cadastrar_treinos():
     contagem_musculos = {}
     treino_exercicios_map = {}
     treino_observacoes_map = {}
+    treino_metas_map = {}  # T4: {tv.id: {chave: {s, min, max}}}
 
     if versao_ativa:
         # load_relations=True traz treinos + exercícios em poucas queries
@@ -78,6 +80,7 @@ def cadastrar_treinos():
         for tv in treinos_versao:
             ids_prefixados = []
             observacoes_tv = {}
+            metas_tv = {}
             for ve in tv.exercicios:
                 if ve.exercicio_usuario_id is not None:
                     chave = f"u_{ve.exercicio_usuario_id}"
@@ -88,8 +91,11 @@ def cadastrar_treinos():
                 ids_prefixados.append(chave)
                 if ve.observacao:
                     observacoes_tv[chave] = ve.observacao
+                if ve.meta_series or ve.meta_reps_min:
+                    metas_tv[chave] = meta_para_json(ve.meta_series, ve.meta_reps_min, ve.meta_reps_max)
             treino_exercicios_map[tv.id] = ids_prefixados
             treino_observacoes_map[tv.id] = observacoes_tv
+            treino_metas_map[tv.id] = metas_tv
 
     return render_template(
         'aluno/cadastrar_treinos.html',
@@ -100,6 +106,7 @@ def cadastrar_treinos():
         contagem_musculos=contagem_musculos,
         treino_exercicios_map=treino_exercicios_map,
         treino_observacoes_map=treino_observacoes_map,
+        treino_metas_map=treino_metas_map,
         max_treinos=VersaoService.MAX_TREINOS_POR_VERSAO,
         catalogo_url=url_for('aluno.catalogo_cards') if versao_ativa else None,
         novo_exercicio_url=url_for('aluno.novo_exercicio'),
@@ -174,10 +181,11 @@ def cadastrar_treinos_adicionar_treino(versao_id):
         chave: request.form.get(f'observacao_{chave}', '').strip()[:60]
         for chave in exercicios_raw if chave and chave.strip()
     }
+    metas = parse_meta_form(request.form, [c for c in exercicios_raw if c and c.strip()])  # T4
     try:
         VersaoService.adicionar_treino_livre(
             versao_id, nome_treino, descricao_treino, user_id=current_user.id,
-            exercicios_raw=exercicios_raw, observacoes=observacoes
+            exercicios_raw=exercicios_raw, observacoes=observacoes, metas=metas
         )
         if exercicios_raw:
             flash('Treino adicionado com sucesso!', 'success')
@@ -216,6 +224,7 @@ def cadastrar_treinos_salvar_treino(versao_id, treino_versao_id):
         chave: request.form.get(f'observacao_{chave}', '').strip()[:60]
         for chave in exercicios_raw if chave and chave.strip()
     }
+    metas = parse_meta_form(request.form, [c for c in exercicios_raw if c and c.strip()])  # T4
 
     # Nomes ANTES de salvar -- usados só pra montar um diff legível na
     # notificação pro professor (ver NotificacaoService.montar_diff_exercicios).
@@ -232,7 +241,7 @@ def cadastrar_treinos_salvar_treino(versao_id, treino_versao_id):
     try:
         VersaoService.salvar_treino_livre(
             versao_id, treino_versao_id, nome_treino, descricao_treino,
-            exercicios_raw, user_id=current_user.id, observacoes=observacoes
+            exercicios_raw, user_id=current_user.id, observacoes=observacoes, metas=metas
         )
         flash('Treino salvo com sucesso!', 'success')
 

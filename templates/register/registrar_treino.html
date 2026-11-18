@@ -249,6 +249,73 @@
         opacity: 0.4;
     }
 
+    /* R2: tabela de séries aberta dentro do card (seta ›) -- ocupa a
+       linha inteira embaixo do card; a seta gira para baixo. */
+    /* Quebra de linha só para a tabela: o card cresce a partir de 0
+       (flex-basis 0), então card + seta continuam lado a lado. */
+    .exercise-row-wrap { flex-wrap: wrap; }
+    .exercise-row-wrap > .exercise-row { flex-basis: 0; }
+    .btn-series-toggle i { transition: transform .15s ease; }
+    .btn-series-toggle[aria-expanded="true"] i { transform: rotate(90deg); }
+    .btn-series-toggle[aria-expanded="true"] { color: var(--primary-orange); }
+    .series-inline {
+        flex: 0 0 100%;
+        margin-top: 6px;
+    }
+    .series-inline[hidden] { display: none; }
+    .series-inline .mt3-card {
+        background: #fff;
+        border: 1px solid var(--border-soft, #ececec);
+        border-radius: 14px;
+        padding: 4px 8px 6px;
+    }
+    .series-inline .mt3-card.is-off { opacity: .55; }
+    .series-inline .mt3-tabela { width: 100%; border-collapse: collapse; }
+    .series-inline .mt3-tabela th {
+        text-align: center; font-size: .68rem; color: #6b6b6b; font-weight: 700;
+        padding: 8px 2px 6px; text-transform: uppercase; letter-spacing: .03em;
+    }
+    .series-inline .mt3-tabela th:nth-child(2) { text-align: left; }
+    .mt3-th-curto { display: none; }
+    .series-inline .mt3-th-longo { display: none; }
+    .series-inline .mt3-th-curto { display: inline; }
+    .series-inline .mt3-tabela td {
+        padding: 5px 2px; border-top: 1px solid #f0f1f4; vertical-align: middle; text-align: center;
+    }
+    .series-inline .mt3-tabela tr.is-feita td { background: #f1faf4; }
+    .series-inline .mt3-num {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 26px; height: 26px; border-radius: 50%;
+        background: #eceef1; color: #2D2D2D; font-size: .8rem; font-weight: 700;
+    }
+    .series-inline .mt3-ant {
+        color: #6b6b6b; font-size: .74rem; text-align: left; line-height: 1.2;
+        white-space: normal; max-width: 76px;
+    }
+    .series-inline .mt3-in {
+        width: 100%; max-width: 72px; min-width: 52px; height: 42px;
+        border: 2px solid #dfe2e7; border-radius: 10px;
+        text-align: center; font-size: 1rem; font-weight: 700; color: #2D2D2D; background: #fff;
+        -moz-appearance: textfield;
+    }
+    .series-inline .mt3-in::-webkit-outer-spin-button,
+    .series-inline .mt3-in::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .series-inline .mt3-in:focus { outline: none; border-color: #F28C33; box-shadow: 0 0 0 3px rgba(242,140,51,.2); }
+    .series-inline .mt3-in.is-invalid { border-color: #dc3545; }
+    .series-inline .mt3-feita {
+        width: 42px; height: 42px; border-radius: 12px; border: 2px solid #d5d9e0; background: #fff;
+        color: transparent; font-size: 1.15rem; cursor: pointer; transition: all .15s;
+    }
+    .series-inline .mt3-feita.is-on { background: #2e9e5b; border-color: #2e9e5b; color: #fff; }
+    .series-inline .mt3-rodape { display: flex; gap: 8px; margin-top: 8px; }
+    .series-inline .mt3-btn {
+        flex: 1 1 0; min-height: 40px;
+        border: 1px dashed #F28C33; background: #fff8f0; color: #a8560c; font-weight: 700; font-size: .85rem;
+        border-radius: 12px; padding: 6px 10px; cursor: pointer;
+    }
+    .series-inline .mt3-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .series-inline .mt3-btn-sec { border-color: #cfd3da; background: #fff; color: #5f5f5f; }
+
     /* ================= CARDIO (modo_registro='tempo') =================
        Linha de cardio: mesmo card dos exercícios de força, com o teal do
        cardio (#1F7A8C) na borda e nos destaques no lugar do laranja. */
@@ -446,272 +513,6 @@
         padding: 3px 9px;
         border-radius: 999px;
         white-space: nowrap;
-    }
-
-    /* Modal de séries individuais -- tabela com carga/repetições por
-       número de série, em vez de um valor único multiplicado pela
-       contagem de séries. Fica acima do modo treino em tela cheia
-       (mesmo motivo do bloco de z-index mais abaixo, junto dos outros
-       modais dessa tela). */
-    .detalhe-series-header-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
-    }
-    .detalhe-series-icone {
-        /* Mesmo tamanho/raio do ícone do card NESTA tela (.exercise-row
-           .dash-registro-icon, 30px/radius-sm) -- não o padrão global de
-           .dash-registro-icon (40px/10px) do base.html, que é o que
-           antes deixava esse botão maior que o do card. */
-        width: 30px;
-        height: 30px;
-        min-width: 30px;
-        border-radius: var(--radius-sm);
-        background: rgba(242, 140, 51, 0.12);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        overflow: hidden;
-        color: var(--primary-color);
-        font-size: 1rem;
-    }
-    /* Quando o exercício tem gif, o ícone vira um botão (mesmo padrão
-       do botao_imagens_exercicio do card) que abre o modal de imagens
-       -- nunca a tag <img> direto aqui dentro, que é o que causava o
-       ícone de imagem quebrada quando o gif falhava ao carregar.
-       Borda de 2px igual ao .btn-imagens-exercicio/.btn-instrucoes-
-       exercicio do card -- sem ela o botão parece "menor" mesmo com a
-       mesma caixa de 30px, por não ter contorno próprio (mesmo motivo
-       documentado na regra do card, mais acima). */
-    .detalhe-series-icone .btn-imagens-exercicio-modal {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 2px solid var(--border-soft);
-        border-radius: var(--radius-sm);
-        background: transparent;
-        color: inherit;
-        font-size: inherit;
-        padding: 0;
-        cursor: pointer;
-    }
-    .detalhe-series-icone .btn-imagens-exercicio-modal:hover {
-        background: rgba(242, 140, 51, 0.22);
-        border-color: var(--primary-orange);
-        color: var(--primary-orange);
-    }
-    /* Botão (i) de instruções do modal (#seriesModalBtnInfoWrap) usa a
-       classe global .dash-registro-icon (40px, do base.html) porque é
-       compartilhada com outras telas -- aqui, escopado só a este modal,
-       sobrescrevemos pro mesmo 30px/radius-sm do card desta tela, senão
-       ele fica maior que o ícone de imagem ao lado (que já usa
-       .detalhe-series-icone, 30px) e que o (i) do card. */
-    #modalSeriesIndividuais .dash-registro-icon {
-        width: 30px;
-        height: 30px;
-        min-width: 30px;
-        border-radius: var(--radius-sm);
-    }
-    .detalhe-series-titulo {
-        font-weight: 600;
-        color: var(--secondary-color);
-        flex: 1 1 auto;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        /* Mesmo afordance do .exercicio-info-trigger do card: cursor e
-           destaque leve ao passar o mouse/focar, já que agora também
-           abre popover com nome completo + músculos ao clicar. */
-        cursor: pointer;
-        border-radius: 8px;
-        margin: -4px -6px;
-        padding: 4px 6px;
-        transition: background-color 0.15s ease;
-    }
-    .detalhe-series-titulo:hover,
-    .detalhe-series-titulo:focus-visible {
-        background-color: rgba(242, 140, 51, 0.06);
-        outline: none;
-    }
-    /* Botão (i) de instruções: nada de estilo próprio aqui -- reaproveita
-       .dash-registro-icon + .btn-instrucoes-exercicio (mesmas classes
-       globais do card, já estilizadas no CSS geral da tela/base.html)
-       pra ficar pixel a pixel igual. */
-    /* Tag do músculo + últimos valores registrados (carga/reps/séries),
-       centralizados logo abaixo do título -- mesmos badges cinza
-       (.dash-badge) usados nesses mesmos dados dentro do card, em vez
-       do chip pill/texto corrido que o modal usava antes. */
-    .detalhe-series-subinfo {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-bottom: 14px;
-    }
-    .detalhe-series-select-wrap {
-        text-align: center;
-        margin-bottom: 16px;
-    }
-    .detalhe-series-select-wrap label {
-        display: block;
-        font-size: 0.72rem;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-        color: #6b665c;
-        font-weight: 700;
-        margin-bottom: 6px;
-    }
-    /* Select "Séries" com a formatação idêntica ao .form-select do
-       card (.inputs-row .form-select): mesma borda grossa, altura,
-       negrito e brilho laranja no foco -- só centralizado, já que
-       aqui não está lado a lado com outros campos. */
-    .detalhe-series-select-wrap select {
-        width: 100%;
-        max-width: 220px;
-        margin: 0 auto;
-        height: 30px !important;
-        padding: 3px 24px 3px 8px !important;
-        font-size: 0.85rem !important;
-        font-weight: 700 !important;
-        font-family: inherit !important;
-        color: var(--dark-bg) !important;
-        border: 2px solid var(--border-soft) !important;
-        border-radius: var(--radius-sm) !important;
-        box-shadow: none !important;
-        background-color: var(--surface) !important;
-        text-align: center;
-        text-align-last: center;
-    }
-    .detalhe-series-select-wrap select:focus {
-        outline: none;
-        border-color: var(--primary-orange) !important;
-        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12) !important;
-    }
-    .detalhe-series-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0 8px;
-        margin-bottom: 8px;
-        table-layout: fixed;
-    }
-    .detalhe-series-table th {
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-        color: #6b665c;
-        font-weight: 700;
-        text-align: center;
-        padding-bottom: 2px;
-    }
-    .detalhe-series-table th:last-child {
-        width: 46px;
-    }
-    .detalhe-series-table td {
-        text-align: center;
-        padding: 0 4px;
-    }
-    /* Inputs de carga/repetições com a formatação idêntica aos
-       .carga-input/.reps-input do card (mesma borda grossa, altura,
-       negrito e brilho laranja no foco) -- não mais o pill fino de
-       antes. */
-    .detalhe-series-table td input {
-        width: 100%;
-        min-width: 0;
-        text-align: center;
-        font-weight: 700;
-        font-size: 0.9rem !important;
-        padding: 3px !important;
-        height: 30px !important;
-        border: 2px solid var(--border-soft) !important;
-        border-radius: var(--radius-sm) !important;
-        box-shadow: none !important;
-        background: var(--surface);
-        transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .detalhe-series-table td input:focus {
-        outline: none;
-        border-color: var(--primary-orange) !important;
-        box-shadow: 0 0 0 3px rgba(242, 140, 51, 0.12) !important;
-    }
-    .detalhe-series-numero {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        background: var(--surface-muted);
-        font-weight: 700;
-        color: #6a6963;
-        font-size: 0.85rem;
-    }
-    /* Mesmo espaçamento do card: switch laranja numa ponta, botão
-       "marcar feito" verde na ponta OPOSTA (no card, a distância entre
-       os dois é o próprio campo de Carga/Repetições/Séries no meio --
-       aqui, sem esses campos no rodapé, space-between reproduz a mesma
-       posição nas pontas em vez dos dois ficarem colados). */
-    .detalhe-series-footer-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-top: 8px;
-    }
-
-    /* Botão "OK" -- agora NA MESMA linha do switch/marcar-feito (meio
-       dos três, com space-between cuidando de deixá-lo entre os dois
-       nas pontas), compacto e do tamanho dos outros dois em vez de uma
-       faixa larga numa linha própria embaixo. */
-    .btn-ok-series {
-        min-width: 72px;
-        height: 30px;
-        padding: 0 18px;
-        border: none;
-        border-radius: 999px;
-        background: var(--primary-orange);
-        color: #fff;
-        font-weight: 700;
-        font-size: 0.85rem;
-        letter-spacing: 0.02em;
-        box-shadow: var(--shadow-sm);
-        cursor: pointer;
-    }
-    .btn-ok-series:hover,
-    .btn-ok-series:focus-visible {
-        filter: brightness(1.06);
-        outline: none;
-    }
-    .btn-ok-series:active {
-        filter: brightness(0.94);
-    }
-
-    /* Telas estreitas: reduz espaçamento e fonte do modal pra tudo
-       caber sem cortar/quebrar feio -- mesmo critério já usado no resto
-       da tela pra telas <= 380px. */
-    @media (max-width: 380px) {
-        .detalhe-series-titulo {
-            font-size: 0.92rem;
-        }
-        .detalhe-series-subinfo {
-            gap: 4px;
-        }
-        .detalhe-series-table th {
-            font-size: 0.62rem;
-        }
-        .detalhe-series-table td input {
-            padding: 3px !important;
-            font-size: 0.85rem !important;
-        }
-        .detalhe-series-numero {
-            width: 22px;
-            height: 22px;
-            font-size: 0.78rem;
-        }
     }
 
     .exercicio-switch-label {
@@ -1029,6 +830,17 @@
     }
     /* R1: próximo treino da sequência e quando cada um foi feito. */
     .dash-badge--ultima { font-weight: 600; }
+    /* T4: meta da ficha e dica de progressão (R3) */
+    .dash-badge--meta {
+        font-weight: 700;
+        color: #a8560c;
+        background: rgba(242, 140, 51, 0.1);
+    }
+    .dash-badge--progressao {
+        font-weight: 700;
+        color: #1f6f43;
+        background: rgba(31, 122, 69, 0.1);
+    }
     .treino-picker-sugerido {
         display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px;
         background: rgba(242, 140, 51, 0.14); color: #9c4a06;
@@ -1393,6 +1205,8 @@
         line-height: 1.3;
     }
 
+    /* T4: meta da ficha ao lado do músculo ("Peito · 4 × 10–12") */
+    #preInicioTreinoOverlay .pre-inicio-item-meta { color: #a8560c; font-weight: 700; }
     #preInicioTreinoOverlay .pre-inicio-item-musculo {
         font-size: 0.8rem;
         color: #6b6b6b;
@@ -2404,20 +2218,9 @@
     #modalResumoTreino,
     #modalImagensExercicio,
     #modalInstrucoesExercicio,
-    #modalSeriesIndividuais,
     #modalAdicionarAvulso,
     #modalCardio {
         z-index: 2000;
-    }
-
-    /* Bordinha laranja em volta do modal, igual ao contorno do card
-       (.exercise-row): mesma cor/raio, só que nas 4 bordas (no card é
-       só a esquerda, mais grossa, porque a borda das outras 3 é a cor
-       neutra --border-soft; aqui, sem coluna lateral pra "gastar" a
-       cor, a borda inteira fica laranja). */
-    #modalSeriesIndividuais .modal-content {
-        border: 2px solid var(--primary-orange);
-        border-radius: var(--radius-md);
     }
 
     /* Vídeo/gif de demonstração do exercício ~30% menor, só nesta tela.
@@ -2444,19 +2247,6 @@
         #modalImagensExercicio .exmodal-media-frame img,
         #modalImagensExercicio .exmodal-media-frame video {
             max-height: 34vh;
-        }
-        /* Mesmo breakpoint/tamanho do ícone do card nesta tela
-           (.exercise-row .dash-registro-icon, 27px -- ver regra mais
-           acima). Antes o ícone do modal só encolhia em <=380px pra
-           36px, então em celulares comuns (390-430px de largura) ele
-           ficava perceptivelmente maior que o do card, que já estava
-           em 27px nessa faixa. */
-        .detalhe-series-icone,
-        #modalSeriesIndividuais .dash-registro-icon {
-            width: 27px;
-            height: 27px;
-            min-width: 27px;
-            font-size: 0.92rem;
         }
     }
 
@@ -4239,60 +4029,6 @@
 </template>
 {% endif %}
 
-<div class="modal fade" id="modalSeriesIndividuais" tabindex="-1" aria-labelledby="seriesModalTitulo" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-body p-3">
-                <div class="detalhe-series-header-row">
-                    <div class="detalhe-series-icone" id="seriesModalIcone"><i class="bi bi-activity"></i></div>
-                    <span class="detalhe-series-titulo" id="seriesModalTitulo">Exercício</span>
-                    <!-- Mesmo padrão do (i) do card: um .dash-registro-icon
-                         (a caixa laranja clarinha) envolvendo o botão
-                         .btn-instrucoes-exercicio (borda 2px, ícone
-                         bi-info-lg) -- reaproveitando as mesmas classes
-                         globais, não uma cópia própria do modal. -->
-                    <div class="dash-registro-icon d-none" id="seriesModalBtnInfoWrap">
-                        <button type="button" class="btn btn-sm btn-outline-secondary btn-instrucoes-exercicio"
-                                id="seriesModalBtnInfo" title="Ver passo a passo do exercício" aria-label="Ver instruções">
-                            <i class="bi bi-info-lg"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="detalhe-series-subinfo d-none" id="seriesModalSubinfo"></div>
-
-                <div class="detalhe-series-select-wrap">
-                    <label for="seriesModalSelect">Séries</label>
-                    <select class="form-select" id="seriesModalSelect"></select>
-                </div>
-
-                <table class="detalhe-series-table">
-                    <thead>
-                        <tr><th>Carga</th><th>Repetições</th><th>Série</th></tr>
-                    </thead>
-                    <tbody id="seriesModalBody"></tbody>
-                </table>
-
-                <!-- OK fica DENTRO da mesma linha do switch/marcar-feito
-                     (compacto, no meio) em vez de uma linha própria
-                     embaixo -- alinhado com os outros dois botões. -->
-                <div class="detalhe-series-footer-row">
-                    <div class="exercicio-switch-wrap">
-                        <div class="form-check mb-0">
-                            <input class="form-check-input" type="checkbox" id="seriesModalSwitch" aria-label="Vou treinar esse exercício hoje">
-                        </div>
-                    </div>
-                    <button type="button" class="btn-ok-series" data-bs-dismiss="modal">OK</button>
-                    <button type="button" class="btn-marcar-feito" id="seriesModalBtnFeito"
-                            aria-pressed="false" aria-label="Marcar exercício como feito">
-                        <i class="bi bi-check-lg"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="row mb-4 d-none d-md-flex">
     <div class="col-12">
         <h2 class="display-6 fw-bold">
@@ -4531,7 +4267,8 @@
             </div>
             <div class="pre-inicio-item-info">
                 <span class="pre-inicio-item-nome">{{ ex.nome }}</span>
-                {% if ex.musculo %}<span class="pre-inicio-item-musculo">{{ ex.musculo }}</span>{% endif %}
+                {% set _meta_pre = formatar_meta(*ex.meta_treino) if (ex.meta_treino is defined and ex.meta_treino and ex.modo_registro != 'tempo') else '' %}
+                {% if ex.musculo or _meta_pre %}<span class="pre-inicio-item-musculo">{{ ex.musculo or '' }}{% if ex.musculo and _meta_pre %} · {% endif %}{% if _meta_pre %}<strong class="pre-inicio-item-meta">{{ _meta_pre }}</strong>{% endif %}</span>{% endif %}
             </div>
         </div>
         {% endfor %}
@@ -4792,7 +4529,7 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarBotoesMarcarFeito();
 
     // Modal de séries com valores individuais (seta no canto do card)
-    inicializarModalSeriesIndividuais();
+    inicializarSeriesNoCard();
 
     // Desktop (>=992px): treino em andamento em 3 painéis
     inicializarPainelTresColunas();
@@ -5589,249 +5326,6 @@ function atualizarResumo() {
    campo oculto correspondente do card (sem precisar de um botão
    "salvar" dentro do modal -- mesmo padrão dos outros controles da
    tela, tudo já fica no form). */
-function inicializarModalSeriesIndividuais() {
-    const modalEl = document.getElementById('modalSeriesIndividuais');
-    if (!modalEl || typeof bootstrap === 'undefined') return;
-
-    const iconeEl = document.getElementById('seriesModalIcone');
-    const tituloEl = document.getElementById('seriesModalTitulo');
-    const infoBtnEl = document.getElementById('seriesModalBtnInfo');
-    const infoBtnWrapEl = document.getElementById('seriesModalBtnInfoWrap');
-    const subinfoEl = document.getElementById('seriesModalSubinfo');
-    const selectEl = document.getElementById('seriesModalSelect');
-    const bodyEl = document.getElementById('seriesModalBody');
-    const switchEl = document.getElementById('seriesModalSwitch');
-    const btnFeitoEl = document.getElementById('seriesModalBtnFeito');
-    let exIdAtual = null;
-
-    function contexto(exId) {
-        const row = document.querySelector(`.exercise-row[data-exercicio-id="${exId}"]`);
-        if (!row) return null;
-        return {
-            row: row,
-            modoFlag: row.querySelector('.modo-series-flag'),
-            switchReal: row.querySelector('.exercicio-switch'),
-            seriesSelect: document.getElementById(`series-select-${exId}`),
-            cargaInput: row.querySelector('.carga-input'),
-            repsInput: row.querySelector('.reps-input'),
-            cargasSerie: row.querySelectorAll('.carga-serie-input'),
-            repsSerie: row.querySelectorAll('.reps-serie-input'),
-            btnFeito: row.querySelector('.btn-marcar-feito')
-        };
-    }
-
-    function pegarSerie(nodeList, n) {
-        for (const el of nodeList) {
-            if (parseInt(el.dataset.serie) === n) return el;
-        }
-        return null;
-    }
-
-    function montarTabela(exId) {
-        const ctx = contexto(exId);
-        if (!ctx) return;
-
-        const numSeries = parseInt(ctx.seriesSelect?.value) || 3;
-        const valorPadraoCarga = ctx.cargaInput?.value || '';
-        const valorPadraoReps = ctx.repsInput?.value || '';
-
-        bodyEl.innerHTML = '';
-        for (let n = 1; n <= numSeries; n++) {
-            const cargaOculto = pegarSerie(ctx.cargasSerie, n);
-            const repsOculto = pegarSerie(ctx.repsSerie, n);
-            const valorCarga = (cargaOculto && cargaOculto.value !== '') ? cargaOculto.value : valorPadraoCarga;
-            const valorReps = (repsOculto && repsOculto.value !== '') ? repsOculto.value : valorPadraoReps;
-
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><input type="number" step="0.5" min="0" inputmode="decimal" placeholder="0" class="form-control series-modal-carga" data-serie="${n}" value="${valorCarga}"></td>
-                <td><input type="number" min="0" max="100" inputmode="numeric" placeholder="0" class="form-control series-modal-reps" data-serie="${n}" value="${valorReps}"></td>
-                <td><span class="detalhe-series-numero">${n}</span></td>
-            `;
-            bodyEl.appendChild(tr);
-        }
-
-        bodyEl.querySelectorAll('input').forEach(input => {
-            input.addEventListener('input', () => sincronizarLinha(exId, input));
-            // Mesmo comportamento dos inputs de carga/reps do card: ao
-            // focar, seleciona todo o texto (digita por cima direto, sem
-            // precisar apagar o valor anterior primeiro).
-            input.addEventListener('focus', function () { this.select(); });
-            input.addEventListener('mouseup', function (e) {
-                if (document.activeElement === this) e.preventDefault();
-            });
-        });
-    }
-
-    function sincronizarLinha(exId, inputAlterado) {
-        const ctx = contexto(exId);
-        if (!ctx) return;
-
-        // A partir do primeiro campo editado, o exercício passa a usar
-        // valores individuais por série (em vez do valor único * contagem).
-        if (ctx.modoFlag) ctx.modoFlag.value = 'individual';
-
-        const n = parseInt(inputAlterado.dataset.serie);
-        const ehCarga = inputAlterado.classList.contains('series-modal-carga');
-        const oculto = pegarSerie(ehCarga ? ctx.cargasSerie : ctx.repsSerie, n);
-        if (oculto) oculto.value = inputAlterado.value;
-
-        if (typeof atualizarResumo === 'function') atualizarResumo();
-        if (window.FitLogTreinoAutoSave) window.FitLogTreinoAutoSave.salvar();
-    }
-
-    infoBtnEl.addEventListener('click', function () {
-        if (typeof abrirModalInstrucoesExercicio === 'function' && this.dataset.passos) {
-            abrirModalInstrucoesExercicio(this);
-        }
-    });
-
-    // Popover com nome completo + músculos ao clicar no título -- mesmo
-    // conteúdo/padrão do popover .exercicio-info-trigger do card (ver
-    // inicializarPopoverDescricaoExercicio), só que fixo no nome do
-    // modal em vez de precisar detectar truncamento.
-    function escaparHtmlSeriesModal(valor) {
-        const div = document.createElement('div');
-        div.textContent = valor === undefined || valor === null ? '' : String(valor);
-        return div.innerHTML;
-    }
-    tituloEl.setAttribute('tabindex', '0');
-    tituloEl.setAttribute('role', 'button');
-
-    selectEl.addEventListener('change', function () {
-        if (!exIdAtual) return;
-        const ctx = contexto(exIdAtual);
-        if (ctx && ctx.seriesSelect) {
-            ctx.seriesSelect.value = this.value;
-            ctx.seriesSelect.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-        montarTabela(exIdAtual);
-        if (typeof atualizarResumo === 'function') atualizarResumo();
-    });
-
-    switchEl.addEventListener('change', function () {
-        if (!exIdAtual) return;
-        const ctx = contexto(exIdAtual);
-        if (ctx && ctx.switchReal) {
-            ctx.switchReal.checked = this.checked;
-            ctx.switchReal.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-    });
-
-    btnFeitoEl.addEventListener('click', function () {
-        if (!exIdAtual) return;
-        const ctx = contexto(exIdAtual);
-        if (ctx && ctx.btnFeito) {
-            ctx.btnFeito.click();
-            const feito = ctx.row.classList.contains('is-feito');
-            btnFeitoEl.classList.toggle('is-ativo', feito);
-            btnFeitoEl.setAttribute('aria-pressed', String(feito));
-        }
-    });
-
-    modalEl.addEventListener('show.bs.modal', function (evt) {
-        const gatilho = evt.relatedTarget;
-        if (!gatilho) return;
-        exIdAtual = gatilho.dataset.exercicioId;
-
-        const nome = gatilho.dataset.exercicioNome || 'Exercício';
-        const musculo = gatilho.dataset.exercicioMusculo || '';
-        const musculosSecundarios = gatilho.dataset.exercicioMusculosSecundarios || '';
-        const gifUrl = gatilho.dataset.gifUrl;
-        const ultimaCarga = gatilho.dataset.ultimaCarga || '';
-        const ultimasReps = gatilho.dataset.ultimasReps || '';
-        const ultimasSeries = gatilho.dataset.ultimasSeries || '';
-        const instrucoesNome = gatilho.dataset.instrucoesNome || '';
-        const instrucoesPassos = gatilho.dataset.instrucoesPassos || '';
-
-        tituloEl.textContent = nome;
-        tituloEl.title = nome;
-
-        if (window.bootstrap) {
-            const popoverAnterior = bootstrap.Popover.getInstance(tituloEl);
-            if (popoverAnterior) popoverAnterior.dispose();
-            if (musculo || musculosSecundarios) {
-                const partes = ['<p class="mb-2">' + escaparHtmlSeriesModal(nome) + '</p>'];
-                if (musculo) partes.push('<div class="popover-musculo-linha"><strong>Músculo principal:</strong> ' + escaparHtmlSeriesModal(musculo) + '</div>');
-                if (musculosSecundarios) partes.push('<div class="popover-musculo-linha"><strong>Músculos secundários:</strong> ' + escaparHtmlSeriesModal(musculosSecundarios) + '</div>');
-                new bootstrap.Popover(tituloEl, {
-                    trigger: 'focus',
-                    placement: 'bottom',
-                    html: true,
-                    content: partes.join(''),
-                    container: 'body',
-                    customClass: 'popover-descricao-exercicio'
-                });
-            }
-        }
-
-        // Mesmo padrão do ícone do card (botao_imagens_exercicio): um
-        // botão que abre o modal de imagens quando há gif, nunca a
-        // tag <img> direto aqui dentro -- essa era a causa do ícone
-        // de imagem quebrada quando o gif falhava ao carregar.
-        if (gifUrl) {
-            // Montado pelo DOM (e não por string HTML): `nome` pode conter aspas
-            // e escapar do atributo data-nome (XSS). dataset.* é sempre seguro.
-            const btnNovoImg = document.createElement('button');
-            btnNovoImg.type = 'button';
-            btnNovoImg.className = 'btn-imagens-exercicio-modal';
-            btnNovoImg.dataset.nome = nome;
-            btnNovoImg.dataset.gif = gifUrl;
-            btnNovoImg.setAttribute('aria-label', 'Ver gif do exercício');
-            btnNovoImg.innerHTML = '<i class="bi bi-images"></i>';
-            iconeEl.replaceChildren(btnNovoImg);
-            const btnImg = iconeEl.querySelector('.btn-imagens-exercicio-modal');
-            if (btnImg) {
-                btnImg.addEventListener('click', function () {
-                    if (typeof abrirModalImagensExercicio === 'function') abrirModalImagensExercicio(this);
-                });
-            }
-        } else {
-            iconeEl.innerHTML = '<i class="bi bi-activity"></i>';
-        }
-        infoBtnWrapEl.classList.toggle('d-none', !instrucoesPassos);
-        if (instrucoesPassos) {
-            infoBtnEl.dataset.nome = instrucoesNome;
-            infoBtnEl.dataset.passos = instrucoesPassos;
-        }
-
-        // Mesmos badges cinza (.dash-badge) que o card usa pros
-        // últimos valores registrados -- em vez do chip/texto corrido
-        // que o modal usava antes.
-        let subinfoHtml = '';
-        if (musculo) subinfoHtml += `<span class="dash-badge"><i class="bi bi-tag-fill"></i> ${escaparHtmlSeriesModal(musculo)}</span>`;
-        if (ultimaCarga) {
-            subinfoHtml += `<span class="dash-badge">${FitLogUtils.formatarKg(ultimaCarga)}</span>`;
-            subinfoHtml += `<span class="dash-badge">${ultimasReps}x</span>`;
-            subinfoHtml += `<span class="dash-badge">${ultimasSeries} série${ultimasSeries != 1 ? 's' : ''}</span>`;
-        }
-        subinfoEl.innerHTML = subinfoHtml;
-        subinfoEl.classList.toggle('d-none', !subinfoHtml);
-
-        const ctx = contexto(exIdAtual);
-        if (!ctx) return;
-
-        const numSeriesAtual = parseInt(ctx.seriesSelect?.value) || 3;
-        const maxOpcoes = Math.max(ctx.seriesSelect ? ctx.seriesSelect.options.length : 6, numSeriesAtual);
-        selectEl.innerHTML = '';
-        for (let n = 1; n <= maxOpcoes; n++) {
-            const opt = document.createElement('option');
-            opt.value = n;
-            opt.textContent = `${n} série${n !== 1 ? 's' : ''}`;
-            if (n === numSeriesAtual) opt.selected = true;
-            selectEl.appendChild(opt);
-        }
-
-        montarTabela(exIdAtual);
-
-        if (ctx.switchReal) switchEl.checked = ctx.switchReal.checked;
-
-        const feito = ctx.row.classList.contains('is-feito');
-        btnFeitoEl.classList.toggle('is-ativo', feito);
-        btnFeitoEl.setAttribute('aria-pressed', String(feito));
-    });
-}
-
 /* Exercício avulso: seletor (busca + clique adiciona) e botão de
    remover nos cards já avulsos. Adicionar busca o card pronto no
    servidor (/registrar/linha-avulsa, mesmo template do loop da página:
@@ -6075,6 +5569,267 @@ function inicializarAvulsoExercicio() {
     document.querySelectorAll('.btn-remover-avulso').forEach(ligarRemoverAvulso);
 }
 
+/* ================= SÉRIES UMA A UMA (desktop e celular) =================
+   Tabela Série · Anterior · Carga · Reps · Feita. Usada no painel central
+   do modo treino em tela cheia (desktop, inicializarPainelTresColunas) e,
+   no celular, aberta dentro do próprio card pela seta › (R2,
+   inicializarSeriesNoCard). Cada célula escreve nos mesmos campos ocultos
+   de sempre (carga_<id>_<n> / reps_<id>_<n> + flag modo_series_<id>), então
+   salvar, auto-save, volume e resumo continuam iguais. O modo rápido
+   (carga × reps × séries iguais) segue sendo o padrão: a flag só vira
+   "individual" quando uma célula é editada. */
+window.FitLogSeries = (function () {
+    const feitas = {}; // exId -> Set de números de série marcadas (compartilhado desktop/celular)
+
+    function el(tag, cls, texto) {
+        const e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (texto !== undefined && texto !== null) e.textContent = texto;
+        return e;
+    }
+    function numSeries(row) {
+        const sel = row.querySelector('select[name^="num_series_"]');
+        return parseInt(sel && sel.value) || 3;
+    }
+    function feito(row) { return row.classList.contains('is-feito'); }
+    function conjunto(row) {
+        const exId = row.dataset.exercicioId;
+        return feitas[exId] || (feitas[exId] = new Set());
+    }
+
+    function sincronizarCelula(row, input) {
+        const modoFlag = row.querySelector('.modo-series-flag');
+        const n = parseInt(input.dataset.serie);
+        const ehCarga = input.classList.contains('mt3-carga');
+
+        if (parseFloat(input.value) < 0) { input.classList.add('is-invalid'); return; }
+        input.classList.remove('is-invalid');
+
+        if (modoFlag) modoFlag.value = 'individual';
+
+        const ocultos = row.querySelectorAll(ehCarga ? '.carga-serie-input' : '.reps-serie-input');
+        ocultos.forEach(function (o) { if (parseInt(o.dataset.serie) === n) o.value = input.value; });
+
+        // O valor único (carga/reps do card) também é usado na validação
+        // de "salvar" e como valor padrão das séries que não foram
+        // tocadas -- se ainda estiver vazio, herda o primeiro valor digitado.
+        const unico = row.querySelector(ehCarga ? '.carga-input' : '.reps-input');
+        if (unico && unico.value === '' && input.value !== '') unico.value = input.value;
+
+        if (typeof atualizarResumo === 'function') atualizarResumo();
+        if (window.FitLogTreinoAutoSave) window.FitLogTreinoAutoSave.salvar();
+    }
+
+    // Todas as séries marcadas = exercício feito (e vice-versa), pelo
+    // mesmo botão "feito" do card.
+    function sincronizarFeito(row) {
+        const num = numSeries(row);
+        let marcadas = 0;
+        conjunto(row).forEach(function (n) { if (n <= num) marcadas++; });
+        const todas = marcadas >= num;
+        const btn = row.querySelector('.btn-marcar-feito');
+        if (btn && todas !== feito(row)) btn.click();
+        return todas;
+    }
+
+    // Devolve true quando esta marcação completou o exercício.
+    function alternarSerie(row, n) {
+        const set = conjunto(row);
+        const estavaFeito = feito(row);
+        if (set.has(n)) set.delete(n); else set.add(n);
+        const todas = sincronizarFeito(row);
+        return todas && !estavaFeito;
+    }
+
+    function mudarNumSeries(row, delta) {
+        const sel = row.querySelector('select[name^="num_series_"]');
+        if (!sel) return;
+        const novo = sel.selectedIndex + delta;
+        if (novo < 0 || novo > sel.options.length - 1) return;
+        sel.selectedIndex = novo;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        sincronizarFeito(row);
+        if (typeof atualizarResumo === 'function') atualizarResumo();
+        if (window.FitLogTreinoAutoSave) window.FitLogTreinoAutoSave.salvar();
+    }
+
+    /* Tabela + botões de série. opts.onMudou(): redesenhar quem a mostra;
+       opts.onCompletou(): todas as séries acabaram de ser marcadas. */
+    function montarTabela(row, opts) {
+        opts = opts || {};
+        const mudou = function () { if (opts.onMudou) opts.onMudou(); };
+        const ultCarga = row.dataset.ultimaCarga || '';
+        const ultReps = row.dataset.ultimasReps || '';
+        const desativado = row.classList.contains('is-desativado');
+        const num = numSeries(row);
+        const cargaUnica = (row.querySelector('.carga-input') || {}).value || '';
+        const repsUnica = (row.querySelector('.reps-input') || {}).value || '';
+        const anterior = (ultCarga || ultReps)
+            ? (ultCarga ? FitLogUtils.formatarKg(ultCarga) : '—') + ' × ' + (ultReps || '—') : '—';
+
+        const frag = document.createDocumentFragment();
+        const card = el('div', 'mt3-card' + (desativado ? ' is-off' : ''));
+        const tabela = el('table', 'mt3-tabela');
+        const cab = el('thead');
+        const trc = el('tr');
+        [['Série'], ['Anterior'], ['Carga (kg)', 'kg'], ['Reps'], ['Feita', '✓']].forEach(function (t) {
+            const th = el('th', null, null);
+            th.appendChild(el('span', 'mt3-th-longo', t[0]));
+            th.appendChild(el('span', 'mt3-th-curto', t[1] || t[0]));
+            trc.appendChild(th);
+        });
+        cab.appendChild(trc);
+        tabela.appendChild(cab);
+
+        const corpo = el('tbody');
+        const set = conjunto(row);
+        if (feito(row)) {
+            for (let k = 1; k <= num; k++) set.add(k);
+        } else {
+            // Exercício desmarcado pelo botão "feito" do card com todas as
+            // séries marcadas: as séries voltam a ficar desmarcadas.
+            let marcadas = 0;
+            set.forEach(function (k) { if (k <= num) marcadas++; });
+            if (marcadas >= num) set.clear();
+        }
+
+        for (let n = 1; n <= num; n++) {
+            const cOc = Array.from(row.querySelectorAll('.carga-serie-input')).find(function (x) { return parseInt(x.dataset.serie) === n; });
+            const rOc = Array.from(row.querySelectorAll('.reps-serie-input')).find(function (x) { return parseInt(x.dataset.serie) === n; });
+            const vCarga = (cOc && cOc.value !== '') ? cOc.value : cargaUnica;
+            const vReps = (rOc && rOc.value !== '') ? rOc.value : repsUnica;
+            const feita = set.has(n);
+
+            const tr = el('tr', feita ? 'is-feita' : '');
+            const tdN = el('td'); tdN.appendChild(el('span', 'mt3-num', String(n))); tr.appendChild(tdN);
+            tr.appendChild(el('td', 'mt3-ant', anterior));
+
+            const tdC = el('td');
+            const iC = el('input', 'mt3-in mt3-carga');
+            iC.type = 'number'; iC.step = '0.5'; iC.min = '0'; iC.placeholder = '0';
+            iC.setAttribute('inputmode', 'decimal'); iC.setAttribute('aria-label', 'Carga da série ' + n);
+            iC.dataset.serie = String(n); iC.value = vCarga; iC.disabled = desativado;
+            tdC.appendChild(iC); tr.appendChild(tdC);
+
+            const tdR = el('td');
+            const iR = el('input', 'mt3-in mt3-reps');
+            iR.type = 'number'; iR.min = '0'; iR.max = '100';
+            iR.placeholder = (row.querySelector('.reps-input') || {}).placeholder || '0';
+            iR.setAttribute('inputmode', 'numeric'); iR.setAttribute('aria-label', 'Repetições da série ' + n);
+            iR.dataset.serie = String(n); iR.value = vReps; iR.disabled = desativado;
+            tdR.appendChild(iR); tr.appendChild(tdR);
+
+            [iC, iR].forEach(function (inp) {
+                inp.addEventListener('input', function () { sincronizarCelula(row, inp); });
+                inp.addEventListener('focus', function () { this.select(); });
+                inp.addEventListener('mouseup', function (e) { if (document.activeElement === this) e.preventDefault(); });
+            });
+
+            const tdF = el('td');
+            const bf = el('button', 'mt3-feita' + (feita ? ' is-on' : ''));
+            bf.type = 'button'; bf.disabled = desativado;
+            bf.setAttribute('aria-pressed', String(feita));
+            bf.setAttribute('aria-label', 'Marcar série ' + n + ' como feita');
+            bf.appendChild(el('i', 'bi bi-check-lg'));
+            bf.addEventListener('click', function () {
+                const completou = alternarSerie(row, n);
+                mudou();
+                if (completou && opts.onCompletou) opts.onCompletou();
+            });
+            tdF.appendChild(bf); tr.appendChild(tdF);
+            corpo.appendChild(tr);
+        }
+        tabela.appendChild(corpo);
+        card.appendChild(tabela);
+        frag.appendChild(card);
+
+        const sel = row.querySelector('select[name^="num_series_"]');
+        const rodape = el('div', 'mt3-rodape');
+        const bAdd = el('button', 'mt3-btn', '+ Adicionar série');
+        bAdd.type = 'button';
+        bAdd.disabled = desativado || !sel || sel.selectedIndex >= sel.options.length - 1;
+        bAdd.addEventListener('click', function () { mudarNumSeries(row, 1); mudou(); });
+        rodape.appendChild(bAdd);
+        if (num > 1) {
+            const bRem = el('button', 'mt3-btn mt3-btn-sec', '− Remover última');
+            bRem.type = 'button';
+            bRem.disabled = desativado;
+            bRem.addEventListener('click', function () { mudarNumSeries(row, -1); mudou(); });
+            rodape.appendChild(bRem);
+        }
+        frag.appendChild(rodape);
+        return frag;
+    }
+
+    return {
+        montarTabela: montarTabela,
+        sincronizarFeito: sincronizarFeito,
+        mudarNumSeries: mudarNumSeries,
+        numSeries: numSeries
+    };
+})();
+
+/* R2: no celular (e no desktop fora da tela cheia), a seta › do card abre
+   a tabela de séries ali mesmo, embaixo do exercício -- antes era um
+   modal separado. Fechada por padrão: o modo rápido continua o normal. */
+function inicializarSeriesNoCard() {
+    function painelDe(wrap) { return wrap.querySelector(':scope > .series-inline'); }
+
+    function desenhar(row, painel) {
+        painel.replaceChildren(window.FitLogSeries.montarTabela(row, {
+            onMudou: function () { desenhar(row, painel); }
+        }));
+    }
+
+    function alternar(btn) {
+        const wrap = btn.closest('.exercise-row-wrap');
+        const row = wrap && wrap.querySelector('.exercise-row');
+        if (!row) return;
+        let painel = painelDe(wrap);
+        const abrir = !painel || painel.hidden;
+        if (abrir) {
+            if (!painel) {
+                painel = document.createElement('div');
+                painel.className = 'series-inline';
+                painel.id = 'series-inline-' + row.dataset.exercicioId;
+                wrap.appendChild(painel);
+            }
+            desenhar(row, painel);
+            painel.hidden = false;
+        } else {
+            painel.hidden = true;
+        }
+        wrap.classList.toggle('series-aberta', abrir);
+        btn.setAttribute('aria-expanded', String(abrir));
+        btn.setAttribute('aria-controls', painel.id);
+    }
+
+    // Delegado: vale também para cards que chegam depois ("+ Exercício").
+    document.addEventListener('click', function (evt) {
+        const btn = evt.target.closest('.btn-series-toggle');
+        if (btn) alternar(btn);
+    });
+
+    // Mudou carga/reps/séries rápidas, ligou/desligou ou marcou feito com a
+    // tabela aberta: redesenha com os valores novos.
+    function redesenharSeAberto(evt) {
+        const row = evt.target.closest && evt.target.closest('.exercise-row');
+        const wrap = row && row.closest('.exercise-row-wrap');
+        const painel = wrap && painelDe(wrap);
+        if (painel && !painel.hidden) desenhar(row, painel);
+    }
+    const form = document.getElementById('registroForm') || document;
+    form.addEventListener('input', redesenharSeAberto);
+    form.addEventListener('change', redesenharSeAberto);
+    // Botão "feito" do card (clique, não input/change): redesenha depois
+    // que o handler dele trocar a classe is-feito. Na captura, porque o
+    // handler do botão para a propagação (stopPropagation).
+    document.addEventListener('click', function (evt) {
+        const b = evt.target.closest && evt.target.closest('.exercise-row .btn-marcar-feito');
+        if (b) setTimeout(function () { redesenharSeAberto({ target: b }); }, 0);
+    }, true);
+}
+
 /* ================= TREINO EM ANDAMENTO -- 3 PAINÉIS (DESKTOP) =================
    Só entra em cena em telas >= 992px, com o modo treino em tela cheia
    aberto. Monta dois painéis NOVOS (lista de exercícios à esquerda e
@@ -6092,7 +5847,6 @@ function inicializarPainelTresColunas() {
     let listaEl = null;
     let centroEl = null;
     let selecionado = null;
-    const seriesFeitas = {}; // exId -> Set de números de série marcadas
 
     function linhas() {
         return Array.from(document.querySelectorAll('.exercise-row[data-exercicio-id]'));
@@ -6113,10 +5867,6 @@ function inicializarPainelTresColunas() {
         if (cls) e.className = cls;
         if (texto !== undefined && texto !== null) e.textContent = texto;
         return e;
-    }
-    function numSeriesDe(row) {
-        const sel = row.querySelector('select[name^="num_series_"]');
-        return parseInt(sel && sel.value) || 3;
     }
     function feito(row) { return row.classList.contains('is-feito'); }
 
@@ -6183,109 +5933,8 @@ function inicializarPainelTresColunas() {
     }
 
     /* ---------- painel central ---------- */
-    function sincronizarCelula(row, input) {
-        const exId = row.dataset.exercicioId;
-        const modoFlag = row.querySelector('.modo-series-flag');
-        const n = parseInt(input.dataset.serie);
-        const ehCarga = input.classList.contains('mt3-carga');
-
-        if (parseFloat(input.value) < 0) { input.classList.add('is-invalid'); return; }
-        input.classList.remove('is-invalid');
-
-        if (modoFlag) modoFlag.value = 'individual';
-
-        const ocultos = row.querySelectorAll(ehCarga ? '.carga-serie-input' : '.reps-serie-input');
-        ocultos.forEach(function (o) { if (parseInt(o.dataset.serie) === n) o.value = input.value; });
-
-        // O valor único (carga/reps do card) também é usado na validação
-        // de "salvar" e como valor padrão das séries que não foram
-        // tocadas -- se ainda estiver vazio, herda o primeiro valor digitado.
-        const unico = row.querySelector(ehCarga ? '.carga-input' : '.reps-input');
-        if (unico && unico.value === '' && input.value !== '') unico.value = input.value;
-
-        if (typeof atualizarResumo === 'function') atualizarResumo();
-        if (window.FitLogTreinoAutoSave) window.FitLogTreinoAutoSave.salvar();
-        void exId;
-    }
-
-    function sincronizarFeito(row) {
-        const exId = row.dataset.exercicioId;
-        const num = numSeriesDe(row);
-        const set = seriesFeitas[exId] || new Set();
-        let marcadas = 0;
-        set.forEach(function (n) { if (n <= num) marcadas++; });
-        const todas = marcadas >= num;
-        const btn = row.querySelector('.btn-marcar-feito');
-        if (btn && todas !== feito(row)) btn.click();
-        return todas;
-    }
-
-    function alternarSerie(row, n) {
-        const exId = row.dataset.exercicioId;
-        const set = seriesFeitas[exId] || (seriesFeitas[exId] = new Set());
-        const estavaFeito = feito(row);
-        if (set.has(n)) set.delete(n); else set.add(n);
-        const todas = sincronizarFeito(row);
-        renderCentro();
-        renderLista();
-        if (todas && !estavaFeito) {
-            const proximo = linhas().find(function (r) { return !feito(r) && !r.classList.contains('is-desativado'); });
-            if (proximo) setTimeout(function () { selecionar(proximo.dataset.exercicioId); }, 450);
-        }
-    }
-
-    function mudarNumSeries(row, delta) {
-        const sel = row.querySelector('select[name^="num_series_"]');
-        if (!sel) return;
-        const novo = sel.selectedIndex + delta;
-        if (novo < 0 || novo > sel.options.length - 1) return;
-        sel.selectedIndex = novo;
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
-        sincronizarFeito(row);
-        if (typeof atualizarResumo === 'function') atualizarResumo();
-        if (window.FitLogTreinoAutoSave) window.FitLogTreinoAutoSave.salvar();
-        renderCentro();
-        renderLista();
-    }
-
-    // Cardio no painel central: espelha os 4 campos da linha (tipo, tempo,
-    // km, intensidade); cada mudança escreve no campo original e dispara
-    // 'input' nele, pra resumo e rascunho seguirem funcionando igual.
-    function renderCentroCardio(row) {
-        const topo = el('div', 'mt3-topo');
-        const esq = el('div', 'mt3-topo-txt');
-        const pill = el('span', 'mt3-pill', 'Cardio');
-        pill.style.cssText = 'background: rgba(31,122,140,.12); color: #1F7A8C;';
-        esq.appendChild(pill);
-        esq.appendChild(el('h2', 'mt3-nome', nomeDe(row)));
-        topo.appendChild(esq);
-        centroEl.appendChild(topo);
-
-        const grade = el('div', 'mt3-cardio');
-        grade.style.cssText = 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;max-width:520px;';
-        [['.cardio-tipo', 'Tipo'], ['.cardio-duracao', 'Minutos'],
-         ['.cardio-distancia', 'Distância (km)'], ['.cardio-intensidade', 'Intensidade']].forEach(function (cfg) {
-            const orig = row.querySelector(cfg[0]);
-            if (!orig) return;
-            const bloco = el('label', 'd-block');
-            bloco.appendChild(el('span', 'd-block small text-muted mb-1', cfg[1]));
-            const copia = orig.cloneNode(true);
-            copia.removeAttribute('name');
-            copia.removeAttribute('id');
-            // Sem as classes cardio-* (estilo compacto do card e seletores
-            // da validação/resumo, que só devem enxergar o campo original).
-            copia.className = copia.tagName === 'SELECT' ? 'form-select' : 'form-control';
-            copia.value = orig.value;
-            copia.disabled = orig.disabled;
-            copia.addEventListener(copia.tagName === 'SELECT' ? 'change' : 'input', function () {
-                orig.value = copia.value;
-                orig.dispatchEvent(new Event(copia.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true }));
-            });
-            bloco.appendChild(copia);
-            grade.appendChild(bloco);
-        });
-        centroEl.appendChild(grade);
-    }
+    // Tabela de séries e suas ações: window.FitLogSeries (acima), a mesma
+    // usada dentro do card no celular.
 
     function renderCentro() {
         if (!centroEl) return;
@@ -6298,16 +5947,12 @@ function inicializarPainelTresColunas() {
             return;
         }
 
-        const exId = row.dataset.exercicioId;
         const nome = nomeDe(row);
         const musculo = musculoDe(row);
         const ultCarga = row.dataset.ultimaCarga || '';
         const ultReps = row.dataset.ultimasReps || '';
         const ultSeries = row.dataset.ultimasSeries || '';
-        const desativado = row.classList.contains('is-desativado');
-        const num = numSeriesDe(row);
-        const cargaUnica = (row.querySelector('.carga-input') || {}).value || '';
-        const repsUnica = (row.querySelector('.reps-input') || {}).value || '';
+        const metaTexto = row.dataset.metaTexto || '';  // T4
 
         // Cabeçalho do exercício
         const topo = el('div', 'mt3-topo');
@@ -6318,6 +5963,7 @@ function inicializarPainelTresColunas() {
             esq.appendChild(el('div', 'mt3-sub',
                 'Último treino: ' + (ultCarga ? FitLogUtils.formatarKg(ultCarga) : '—') + ' × ' + (ultReps || '—') + ' · ' + ultSeries + ' série' + (ultSeries === '1' ? '' : 's')));
         }
+        if (metaTexto) esq.appendChild(el('div', 'mt3-sub mt3-meta', 'Meta da ficha: ' + metaTexto));
         topo.appendChild(esq);
 
         const acoes = el('div', 'mt3-topo-acoes');
@@ -6352,80 +5998,15 @@ function inicializarPainelTresColunas() {
         topo.appendChild(acoes);
         centroEl.appendChild(topo);
 
-        // Tabela de séries
-        const card = el('div', 'mt3-card' + (desativado ? ' is-off' : ''));
-        const tabela = el('table', 'mt3-tabela');
-        const cab = el('thead');
-        const trc = el('tr');
-        ['Série', 'Anterior', 'Carga (kg)', 'Reps', 'Feita'].forEach(function (t) { trc.appendChild(el('th', null, t)); });
-        cab.appendChild(trc);
-        tabela.appendChild(cab);
-
-        const corpo = el('tbody');
-        const set = seriesFeitas[exId] || (seriesFeitas[exId] = new Set());
-        if (feito(row)) { for (let k = 1; k <= num; k++) set.add(k); }
-
-        for (let n = 1; n <= num; n++) {
-            const cOc = Array.from(row.querySelectorAll('.carga-serie-input')).find(function (x) { return parseInt(x.dataset.serie) === n; });
-            const rOc = Array.from(row.querySelectorAll('.reps-serie-input')).find(function (x) { return parseInt(x.dataset.serie) === n; });
-            const vCarga = (cOc && cOc.value !== '') ? cOc.value : cargaUnica;
-            const vReps = (rOc && rOc.value !== '') ? rOc.value : repsUnica;
-            const feita = set.has(n);
-
-            const tr = el('tr', feita ? 'is-feita' : '');
-            const tdN = el('td'); tdN.appendChild(el('span', 'mt3-num', String(n))); tr.appendChild(tdN);
-            tr.appendChild(el('td', 'mt3-ant', (ultCarga || ultReps) ? (ultCarga ? FitLogUtils.formatarKg(ultCarga) : '—') + ' × ' + (ultReps || '—') : '—'));
-
-            const tdC = el('td');
-            const iC = el('input', 'mt3-in mt3-carga');
-            iC.type = 'number'; iC.step = '0.5'; iC.min = '0'; iC.placeholder = '0';
-            iC.setAttribute('inputmode', 'decimal'); iC.setAttribute('aria-label', 'Carga da série ' + n);
-            iC.dataset.serie = String(n); iC.value = vCarga; iC.disabled = desativado;
-            tdC.appendChild(iC); tr.appendChild(tdC);
-
-            const tdR = el('td');
-            const iR = el('input', 'mt3-in mt3-reps');
-            iR.type = 'number'; iR.min = '0'; iR.max = '100'; iR.placeholder = '0';
-            iR.setAttribute('inputmode', 'numeric'); iR.setAttribute('aria-label', 'Repetições da série ' + n);
-            iR.dataset.serie = String(n); iR.value = vReps; iR.disabled = desativado;
-            tdR.appendChild(iR); tr.appendChild(tdR);
-
-            [iC, iR].forEach(function (inp) {
-                inp.addEventListener('input', function () { sincronizarCelula(row, inp); });
-                inp.addEventListener('focus', function () { this.select(); });
-                inp.addEventListener('mouseup', function (e) { if (document.activeElement === this) e.preventDefault(); });
-            });
-
-            const tdF = el('td');
-            const bf = el('button', 'mt3-feita' + (feita ? ' is-on' : ''));
-            bf.type = 'button'; bf.disabled = desativado;
-            bf.setAttribute('aria-pressed', String(feita));
-            bf.setAttribute('aria-label', 'Marcar série ' + n + ' como feita');
-            bf.appendChild(el('i', 'bi bi-check-lg'));
-            bf.addEventListener('click', function () { alternarSerie(row, n); });
-            tdF.appendChild(bf); tr.appendChild(tdF);
-            corpo.appendChild(tr);
-        }
-        tabela.appendChild(corpo);
-        card.appendChild(tabela);
-        centroEl.appendChild(card);
-
-        // Ações da tabela
-        const sel = row.querySelector('select[name^="num_series_"]');
-        const rodape = el('div', 'mt3-rodape');
-        const bAdd = el('button', 'mt3-btn', '+ Adicionar série');
-        bAdd.type = 'button';
-        bAdd.disabled = desativado || !sel || sel.selectedIndex >= sel.options.length - 1;
-        bAdd.addEventListener('click', function () { mudarNumSeries(row, 1); });
-        rodape.appendChild(bAdd);
-        if (num > 1) {
-            const bRem = el('button', 'mt3-btn mt3-btn-sec', '− Remover última');
-            bRem.type = 'button';
-            bRem.disabled = desativado;
-            bRem.addEventListener('click', function () { mudarNumSeries(row, -1); });
-            rodape.appendChild(bRem);
-        }
-        centroEl.appendChild(rodape);
+        // Tabela de séries (window.FitLogSeries). Completou o exercício:
+        // passa sozinho para o próximo que falta.
+        centroEl.appendChild(window.FitLogSeries.montarTabela(row, {
+            onMudou: function () { renderCentro(); renderLista(); },
+            onCompletou: function () {
+                const proximo = linhas().find(function (r) { return !feito(r) && !r.classList.contains('is-desativado'); });
+                if (proximo) setTimeout(function () { selecionar(proximo.dataset.exercicioId); }, 450);
+            }
+        }));
     }
 
     function selecionar(exId) {
@@ -6906,7 +6487,7 @@ function tocarBipe() {
        de verdade. O padding-bottom compensa a altura que ele deixa de
        ocupar no fluxo, pra nenhum exercício ficar escondido atrás dele. */
     var MODAIS_MODO_TREINO = ['modalConfirmarCancelamento', 'modalResumoTreino',
-        'modalImagensExercicio', 'modalInstrucoesExercicio', 'modalSeriesIndividuais'];
+        'modalImagensExercicio', 'modalInstrucoesExercicio'];
 
     function algumModalDoModoTreinoAberto() {
         return MODAIS_MODO_TREINO.some(function (id) {
