@@ -32,7 +32,8 @@ def _ler(caminho):
 class TestInvariantesDasCores:
     def test_toda_variavel_tem_a_cor_do_claro_como_reserva(self):
         sem_reserva = []
-        for f in _arquivos():
+        # tema-escuro.css só vale no escuro, onde as variáveis existem
+        for f in [f for f in _arquivos() if not f.endswith('tema-escuro.css')]:
             s = _ler(f)
             for m in re.finditer(r'var\(--fl-c-[\w-]+(\)|,)', s):
                 if m.group(1) == ')':

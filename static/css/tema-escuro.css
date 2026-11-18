@@ -139,3 +139,30 @@ html[data-bs-theme="dark"] {
    escuro o fundo vira superfície e o texto acompanha */
 [data-bs-theme="dark"] .bg-light.text-dark,
 [data-bs-theme="dark"] .bg-light .text-dark { color: var(--fl-texto) !important; }
+
+/* Calendário: chip de cardio no modal do dia ("5 min · Moderada"). No
+   claro é azul-claro com texto escuro; o negrito usava a cor de texto da
+   página, que no escuro é branca -- branco sobre azul-claro. */
+[data-bs-theme="dark"] .serie-chip--cardio {
+    background: var(--fl-c-tint-azul) !important;
+    border-color: rgba(108, 199, 217, 0.35) !important;
+    color: var(--fl-c-txt-azul) !important;
+}
+[data-bs-theme="dark"] .serie-chip--cardio b { color: #a4e1ec; }
+[data-bs-theme="dark"] .btn-outline-success {
+    --bs-btn-color: #6fd39a;
+    --bs-btn-border-color: #3f9e6a;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #198754;
+    --bs-btn-hover-border-color: #198754;
+}
+[data-bs-theme="dark"] .btn-light {
+    --bs-btn-bg: var(--fl-superficie-2);
+    --bs-btn-color: var(--fl-texto);
+    --bs-btn-border-color: var(--fl-borda);
+    --bs-btn-hover-bg: #2f343c;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-border-color: var(--fl-borda);
+    --bs-btn-active-bg: #2f343c;
+    --bs-btn-active-color: #fff;
+}
