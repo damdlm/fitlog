@@ -126,6 +126,9 @@
     padding: 16px 0 32px;
     color: #5f5f5f;
     font-size: 0.9rem;
+    /* Os links quebram em 2-3 linhas no celular: linha alta dá espaço
+       para a área de toque sem um link cobrir o outro (base.html, X3). */
+    line-height: 2.2;
 }
 
 .landing-footer-links a {

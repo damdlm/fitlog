@@ -174,3 +174,40 @@ class TestAcessibilidade:
             base = f.read()
         assert '.est-pill::before, .dash-filter-pill::before' in base
         assert 'inset: -9px -2px;' in base
+
+    def test_links_de_paragrafo_sem_cobrir_o_vizinho(self):
+        """Links que ficam um embaixo do outro ("Termos de Uso" / "Política de
+        Privacidade", rodapé da página inicial): ampliação vertical pequena e
+        o link nunca quebra no meio -- senão a área de um cobre o outro."""
+        with open('templates/base.html', encoding='utf-8') as f:
+            base = f.read()
+        assert '.login-terms a, .landing-footer-links a { white-space: nowrap; }' in base
+        bloco = base.split('.login-terms a::before, .landing-footer-links a::before {', 1)[1].split('}', 1)[0]
+        assert 'inset: -5px -2px;' in bloco
+        with open('static/css/auth-login.css', encoding='utf-8') as f:
+            assert 'line-height: 1.9;' in f.read()
+        with open('static/css/landing.css', encoding='utf-8') as f:
+            assert 'line-height: 2.2;' in f.read()
+
+
+class TestDataDoBrasilNoPainel:
+    def test_grafico_da_semana_usa_a_data_de_sao_paulo(self, app, client, monkeypatch):
+        """00:30 UTC de quarta (18/11) ainda é terça (17/11) 21:30 em Brasília:
+        o último dia do gráfico "esta semana" tem de ser terça."""
+        import routes.aluno.main as painel
+        from datetime import timezone
+
+        class Relogio(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                agora = datetime(2026, 11, 18, 0, 30, tzinfo=timezone.utc)
+                return agora.astimezone(tz) if tz else agora.replace(tzinfo=None)
+
+        with app.app_context():
+            _ficha_abc('painel_tz')
+        _login(client, 'painel_tz')
+        monkeypatch.setattr(painel, 'datetime', Relogio)
+        html = client.get('/aluno/dashboard').get_data(as_text=True)
+        m = re.search(r'labels: (\[[^\]]*\]),', html)
+        assert m, 'gráfico da semana não encontrado'
+        assert m.group(1).endswith('"Ter"]')

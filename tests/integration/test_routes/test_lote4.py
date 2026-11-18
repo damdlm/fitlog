@@ -10,6 +10,7 @@ import importlib.util
 import json
 import unicodedata
 from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
@@ -236,7 +237,7 @@ class TestNomeDoTreinoSemRepetirCodigo:
             db.session.get(TreinoVersao, ids['A']).nome_treino = 'Treino A - Costas'
             db.session.get(TreinoVersao, ids['B']).nome_treino = 'Treino B - Peito'
             db.session.commit()
-            _sessao(u, v, ids['A'], ex, date.today())
+            _sessao(u, v, ids['A'], ex, datetime.now(ZoneInfo('America/Sao_Paulo')).date())
         _login(client, 'd1_nome')
         html = client.get('/aluno/dashboard').get_data(as_text=True)
         assert 'Treino A · Costas' in html and 'Treino A · Treino A' not in html

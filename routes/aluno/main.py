@@ -157,8 +157,10 @@ def dashboard():
     ultimas_sessoes = _ultimas_sessoes(current_user.id, limite=3)
     proximo_treino = _proximo_treino(current_user.id)
 
-    # Atividade dos últimos 7 dias (para o gráfico de constância)
-    hoje = datetime.now(timezone.utc).date()
+    # Atividade dos últimos 7 dias (para o gráfico de constância). Data de
+    # São Paulo, como o registro: em UTC, das 21h à meia-noite o gráfico
+    # já mostrava o dia seguinte como "hoje".
+    hoje = datetime.now(ZoneInfo('America/Sao_Paulo')).date()
     inicio_semana = hoje - timedelta(days=6)
     registros_semana = RegistroTreino.query.filter(
         RegistroTreino.user_id == current_user.id,

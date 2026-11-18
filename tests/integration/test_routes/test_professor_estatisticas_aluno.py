@@ -5,6 +5,7 @@ com o "Desempenho por Treino" no fim; o período padrão é o da tela
 Progresso (últimos 30 dias).
 """
 from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from services.estatistica_service import EstatisticaService
 from models import (db, User, AlunoProfessor, Musculo, ExercicioUsuario,
@@ -69,6 +70,12 @@ def _montar_aluno_com_registro(aluno_id, data_treino, carga=100, repeticoes=10):
     return registro
 
 
+
+def _hoje_br():
+    """Hoje no fuso do app (São Paulo). date.today() é UTC no CI e, das 21h
+    à meia-noite, já é o dia seguinte -- o período padrão não batia."""
+    return datetime.now(ZoneInfo('America/Sao_Paulo')).date()
+
 class TestFiltroPeriodo:
     def test_requer_login(self, client):
         resp = client.get('/professor/aluno/1/estatisticas')
@@ -81,7 +88,7 @@ class TestFiltroPeriodo:
             db.session.add(AlunoProfessor(aluno_id=aluno.id, professor_id=prof.id,
                                            ativo=True, data_associacao=datetime.utcnow()))
             db.session.commit()
-            hoje_meia_noite = datetime.combine(date.today(), datetime.min.time())
+            hoje_meia_noite = datetime.combine(_hoje_br(), datetime.min.time())
             _montar_aluno_com_registro(aluno.id, hoje_meia_noite, carga=100, repeticoes=10)
             username, aluno_id = prof.username, aluno.id
 
@@ -92,7 +99,7 @@ class TestFiltroPeriodo:
 
         assert f'const ALUNO_ALVO = {aluno_id};' in html  # Progresso do aluno, via ?aluno_id=
         desempenho = html.split('id="estDesempenhoTreino"', 1)[1]
-        inicio = (date.today() - timedelta(days=29)).isoformat()
+        inicio = (_hoje_br() - timedelta(days=29)).isoformat()
         assert f'name="inicio" value="{inicio}"' in desempenho
         assert '1.000 kg' in desempenho, 'volume do treino A: 100 x 10 = 1000 kg (registro de hoje)'
 
@@ -176,9 +183,9 @@ class TestFiltroPeriodo:
         assert resp.status_code == 200
         assert 'ainda não registrou treinos' in resp.data.decode('utf-8')  # aluno sem registros
         with app.app_context():
-            _montar_aluno_com_registro(aluno_id, datetime.combine(date.today(), datetime.min.time()))
+            _montar_aluno_com_registro(aluno_id, datetime.combine(_hoje_br(), datetime.min.time()))
         parcial = client.get(f'/professor/aluno/{aluno_id}/estatisticas?parcial=1&inicio=lixo&fim=2026-99-99')
-        inicio = (date.today() - timedelta(days=29)).isoformat()
+        inicio = (_hoje_br() - timedelta(days=29)).isoformat()
         assert f'name="inicio" value="{inicio}"' in parcial.get_data(as_text=True)
 
     def test_treino_stats_tambem_respeita_o_periodo(self, client, app):

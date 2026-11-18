@@ -342,7 +342,9 @@
     font-size: 0.76rem;
     color: #6c757d;
     margin: 22px 0 0;
-    line-height: 1.5;
+    /* Linha mais alta: os dois links ficam em linhas separadas no celular
+       e precisam de espaço para a área de toque (base.html, X3). */
+    line-height: 1.9;
 }
 
 .login-terms a {

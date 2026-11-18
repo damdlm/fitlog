@@ -643,11 +643,22 @@
         .login-options-row .form-check-label {
             position: relative;
         }
-        .landing-footer-links a::before, .login-options-row > a::before,
-        .login-terms a::before {
+        .login-options-row > a::before {
             content: "";
             position: absolute;
             inset: -15px -4px;
+        }
+        /* Links dentro de um parágrafo que quebra linha ("Termos de Uso e
+           Política de Privacidade"): ampliar muito na vertical faria o link
+           de baixo cobrir o de cima. Ampliação pequena + linha mais alta. */
+        /* Um link que quebra no meio ("Política de / Privacidade") teria o
+           ::before do tamanho das duas linhas inteiras, cobrindo o vizinho:
+           esses links nunca quebram no meio. */
+        .login-terms a, .landing-footer-links a { white-space: nowrap; }
+        .login-terms a::before, .landing-footer-links a::before {
+            content: "";
+            position: absolute;
+            inset: -5px -2px;
         }
         .login-options-row .form-check-label::before {
             content: "";

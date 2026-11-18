@@ -6,6 +6,7 @@ vê a mesma tela Progresso do aluno (APIs com ?aluno_id=). Pr5: limite do
 plano no botão "Novo aluno".
 """
 from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from models import db, AlunoProfessor, Plano, User
 from services.billing_service import BillingService
@@ -13,7 +14,9 @@ from services.configuracao_service import ConfiguracaoService
 from tests.integration.test_routes.test_register_routes import _criar_usuario, _login
 from tests.integration.test_routes.test_registro_ux_lote2 import _ficha_abc, _sessao
 
-HOJE = date.today()
+# Mesma data do app (São Paulo): date.today() é UTC no CI e, das 21h à
+# meia-noite, já é o dia seguinte -- os testes de "ontem" quebravam.
+HOJE = datetime.now(ZoneInfo('America/Sao_Paulo')).date()
 
 
 def _professor(username):
