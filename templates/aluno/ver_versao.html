@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block h1_tela %}{% endblock %}
+{#- h1 oculto do base.html (nome da ficha): o .ct-header abaixo fica
+    escondido em todas as larguras, então leitores de tela usam aquele. -#}
 
 {% block page_icon %}<i class="bi bi-layers" style="color: #F28C33;"></i>{% endblock %}
 {% block page_title %}{{ versao.descricao }}{% endblock %}
@@ -80,12 +81,14 @@
     .ct-hero-botoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .ct-hero-botoes .ct-hero-desc-edit { margin-top: 0; }
     .ct-modo-btn {
-        display: inline-flex; align-items: center; gap: 6px; min-height: 40px;
+        display: inline-flex; align-items: center; gap: 6px; min-height: 44px;
         padding: 0 16px; border-radius: 999px; font-size: 0.88rem; font-weight: 600;
         border: 1.5px solid #F28C33; background: #fff; color: #a8560c;
     }
     .ct-modo-btn:focus-visible { outline: 3px solid rgba(242,140,51,0.45); outline-offset: 2px; }
-    .ct-ficha.is-editando .ct-modo-btn { background: #F28C33; color: #fff; }
+    /* em edição: fundo laranja claro e texto escuro (branco no laranja
+       ficava com contraste 2,4:1) */
+    .ct-ficha.is-editando .ct-modo-btn { background: #fff1e3; border-color: #a8560c; }
     .ct-hero-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--ct-muted); }
     .ct-hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
     .ct-status-pill {

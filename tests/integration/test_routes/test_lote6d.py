@@ -159,3 +159,20 @@ class TestScripts:
             js = f.read()
         assert 'passos: { semversao: passosSemVersao }' in js
         assert 'btnTourCadastrarLista' not in js and 'passosModal' not in js
+
+
+class TestRevisaoLote6d:
+    """Revisão depois do commit do 6d."""
+
+    def test_titulo_para_leitor_de_tela(self, client, app):
+        _ficha(app, 't2_h1')
+        _login(client, 't2_h1')
+        html = client.get('/aluno/cadastrar-treinos').get_data(as_text=True)
+        assert '<h1 class="visually-hidden">V1</h1>' in html
+
+    def test_botao_de_modo_com_contraste_e_toque(self, client, app):
+        _ficha(app, 't2_botao')
+        _login(client, 't2_botao')
+        html = client.get('/aluno/cadastrar-treinos').get_data(as_text=True)
+        assert 'min-height: 44px;' in html.split('.ct-modo-btn {')[1].split('}')[0]
+        assert '.ct-ficha.is-editando .ct-modo-btn { background: #fff1e3; border-color: #a8560c; }' in html
