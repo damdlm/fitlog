@@ -411,6 +411,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function etvGarantirMeta(card) {
         let linha = card.querySelector('.etv-meta-row');
         if (linha) return linha;
+        if (card.dataset.cardio) return null; // cardio: tempo e distância, sem meta de séries × reps
         const valor = card.dataset.valor || card.querySelector('.etv-checkbox')?.value;
         if (!valor) return null;
         linha = document.createElement('div');

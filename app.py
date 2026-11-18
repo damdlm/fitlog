@@ -321,8 +321,9 @@ def create_app(config_class=None):
     app.jinja_env.globals['static_v'] = static_v
 
     # T4: meta de séries × repetições da ficha (tela de registro)
-    from utils.meta_treino import formatar_meta, sugestao_progressao
+    from utils.meta_treino import formatar_meta, formatar_reps, sugestao_progressao
     app.jinja_env.globals['formatar_meta'] = formatar_meta
+    app.jinja_env.globals['formatar_reps'] = formatar_reps
     app.jinja_env.globals['sugestao_progressao'] = sugestao_progressao
 
     # SEO: URL absoluta e canônica da página atual (ou de um caminho

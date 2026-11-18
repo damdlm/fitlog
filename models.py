@@ -1138,6 +1138,9 @@ class VersaoExercicio(db.Model):
     @property
     def meta_texto(self):
         """'4 × 10–12', '4 séries', '10–12 reps' ou '' (sem meta)."""
+        ex = self.exercicio_base or self.exercicio_usuario
+        if ex is not None and getattr(ex, 'modo_registro', None) == 'tempo':
+            return ''  # cardio: tempo e distância, sem séries × repetições
         return formatar_meta(self.meta_series, self.meta_reps_min, self.meta_reps_max)
 
     # Relacionamentos

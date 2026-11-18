@@ -227,3 +227,62 @@ class TestSeriesNoCard:
         with open('static/js/registrar-treino-tour.js', encoding='utf-8') as f:
             src = f.read()
         assert "'#registroForm .btn-series-toggle'" in src
+
+
+class TestRevisaoLote6b:
+    """Revisão depois do commit do 6b."""
+
+    @pytest.mark.parametrize('meta, texto', [
+        ((4, 15, 10), '4 × 10–15'),   # invertida no banco (fora do formulário)
+        ((3, None, 12), '3 × 12'),    # só o máximo
+        ((None, 12, 8), '8–12 reps'),
+    ])
+    def test_formatar_se_protege_de_valores_do_banco(self, meta, texto):
+        assert formatar_meta(*meta) == texto
+
+    def test_progressao_com_faixa_invertida_usa_o_topo(self):
+        assert sugestao_progressao([S(40, 12)] * 3, 12, 8) == 2.5
+        assert sugestao_progressao([S(40, 10)] * 3, 12, 8) is None
+        assert sugestao_progressao([S(40, 12)] * 3, None, 12) == 2.5
+
+    def test_meta_acima_de_6_series_cabe_no_seletor(self, app, client):
+        html = TestMetaNoRegistro()._registro(app, client, 'meta_reg_8', (8, 6, 6),
+                                             ((40, 6), (40, 6), (40, 6)))
+        assert '<option value="3" selected>3 séries</option>' in html  # histórico manda
+        assert '<option value="8" >8 séries</option>' in html
+        assert 'name="carga_' in html and '_8"' in html  # campo oculto da série 8
+
+    def test_cardio_nao_recebe_meta(self, client, app):
+        with app.app_context():
+            user = _criar_usuario('meta_cardio')
+            ex, versao, tv = _montar_versao_com_treino_e_exercicio(user)
+            ex.modo_registro = 'tempo'
+            db.session.commit()
+            chave, vid, tid = f'u_{ex.id}', versao.id, tv.id
+        _login(client, 'meta_cardio')
+        TestSalvarMeta()._post(client, vid, tid, chave, meta_series='3', meta_reps_min='10')
+        with app.app_context():
+            ve = VersaoExercicio.query.filter_by(treino_versao_id=tid).one()
+            assert (ve.meta_series, ve.meta_reps_min, ve.meta_reps_max) == (None, None, None)
+            assert ve.observacao == 'pegada aberta'
+            ve.meta_series = 3  # mesmo que chegue ao banco por outro caminho
+            assert ve.meta_texto == ''
+        cards = client.get('/aluno/catalogo-exercicios/cards').get_data(as_text=True)
+        card = cards.split(f'data-valor="{chave}"')[1].split('</label>')[0]
+        assert card.startswith(' data-cardio="1">')
+        assert '>Observação <i class="bi bi-chevron-down">' in card
+
+    def test_exercicio_de_carga_segue_com_meta_e_obs(self, client, app):
+        with app.app_context():
+            user = _criar_usuario('meta_carga_card')
+            ex, _v, _t = _montar_versao_com_treino_e_exercicio(user)
+            chave = f'u_{ex.id}'
+        _login(client, 'meta_carga_card')
+        cards = client.get('/aluno/catalogo-exercicios/cards').get_data(as_text=True)
+        card = cards.split(f'data-valor="{chave}"')[1].split('</label>')[0]
+        assert 'data-cardio' not in card and '>Meta e obs. <i' in card
+
+    def test_js_nao_cria_meta_para_cardio(self):
+        with open('static/js/editar-treino-versao.js', encoding='utf-8') as f:
+            src = f.read()
+        assert 'if (card.dataset.cardio) return null;' in src

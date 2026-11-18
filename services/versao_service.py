@@ -464,6 +464,21 @@ class VersaoService(BaseService):
             # sorted é estável: quem não está em ordem_chaves fica no fim
             itens.sort(key=lambda it: posicao.get(f"{it[0]}_{it[1]}", len(posicao)))
 
+        if metas:
+            # Cardio registra tempo e distância: meta de séries × reps não vale.
+            from models import ExercicioSistema, ExercicioUsuario
+            com_meta = {}
+            for chave in metas:
+                t, _, i = chave.partition('_')
+                if i.isdigit():
+                    com_meta.setdefault(t, []).append(int(i))
+            cardio = set()
+            for t, modelo in (('b', ExercicioSistema), ('u', ExercicioUsuario)):
+                if com_meta.get(t):
+                    cardio |= {f"{t}_{i}" for (i,) in db.session.query(modelo.id).filter(
+                        modelo.id.in_(com_meta[t]), modelo.modo_registro == 'tempo')}
+            metas = {k: v for k, v in metas.items() if k not in cardio}
+
         for ordem, (tipo, ex_id) in enumerate(itens):
             obs = (observacoes.get(f"{tipo}_{ex_id}") or '').strip()[:60] or None
             ve = VersaoExercicio()

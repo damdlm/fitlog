@@ -5279,7 +5279,7 @@ function atualizarResumo() {
         const preenchido = cargaInput?.value !== '' && repsInput?.value !== '';
         row.classList.toggle('is-complete', !!preenchido);
 
-        // Exercício com séries individuais (lançadas pelo modal aberto
+        // Exercício com séries individuais (lançadas na tabela aberta
         // pela seta): soma carga*reps de cada série separada, em vez de
         // um valor único multiplicado pela contagem -- reflete valores
         // realmente diferentes entre séries.
@@ -5291,7 +5291,7 @@ function atualizarResumo() {
                 const n = cargaEl.dataset.serie;
                 if (parseInt(n) > series) return; // fora da contagem atual de séries
                 const repsEl = row.querySelector(`.reps-serie-input[data-serie="${n}"]`);
-                // Campo dessa série específica não foi tocado no modal --
+                // Campo dessa série específica não foi tocado na tabela --
                 // mesmo fallback pro valor padrão que o backend usa ao salvar.
                 const c = (cargaEl.value !== '') ? (parseFloat(cargaEl.value) || 0) : cargaPadrao;
                 const r = (repsEl && repsEl.value !== '') ? (parseInt(repsEl.value) || 0) : repsPadrao;
@@ -5835,7 +5835,7 @@ function inicializarSeriesNoCard() {
    aberto. Monta dois painéis NOVOS (lista de exercícios à esquerda e
    séries do exercício selecionado no centro) por cima dos MESMOS campos
    de sempre -- nada é duplicado nem movido: cada célula da tabela de
-   séries escreve nos mesmos campos ocultos do modal de séries
+   séries escreve nos mesmos campos ocultos das séries
    individuais (carga_<id>_<n> / reps_<id>_<n> + flag modo_series_<id>),
    então salvar, auto-save, volume e resumo continuam iguais. Abaixo de
    992px nada disto é criado (celular/tablet seguem como sempre). */
@@ -6102,9 +6102,9 @@ function aplicarEstadoExercicio(row, ativo) {
    nem no que é enviado no submit -- alterna a classe "is-feito" no card
    (troca a cor da borda lateral, laranja -> verde) E a classe "is-ativo"
    no próprio botão (troca o visual dele pra fundo verde + ícone branco),
-   pra o usuário acompanhar quais exercícios já concluiu na sessão. O
-   botão equivalente dentro do modal é tratado à parte, como um proxy
-   que clica neste aqui (ver inicializarModalSeriesIndividuais). */
+   pra o usuário acompanhar quais exercícios já concluiu na sessão. A
+   tabela de séries (window.FitLogSeries) marca/desmarca o exercício
+   clicando neste mesmo botão. */
 function inicializarBotoesMarcarFeito() {
     document.querySelectorAll('.btn-marcar-feito').forEach(function (btn) {
         const row = btn.closest('.exercise-row');

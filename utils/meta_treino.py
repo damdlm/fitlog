@@ -47,10 +47,23 @@ def parse_meta_form(form, chaves):
     return metas
 
 
+def _faixa(reps_min, reps_max):
+    """(min, max) em ordem e com um lado só virando número fixo -- vale
+    também para valores que chegaram ao banco sem passar pelo formulário."""
+    if reps_min is None:
+        reps_min = reps_max
+    if reps_max is None:
+        reps_max = reps_min
+    if reps_min is not None and reps_min > reps_max:
+        reps_min, reps_max = reps_max, reps_min
+    return reps_min, reps_max
+
+
 def formatar_reps(reps_min, reps_max):
+    reps_min, reps_max = _faixa(reps_min, reps_max)
     if reps_min is None:
         return ''
-    if reps_max is None or reps_max == reps_min:
+    if reps_max == reps_min:
         return str(reps_min)
     return f'{reps_min}–{reps_max}'
 
@@ -80,7 +93,7 @@ def sugestao_progressao(ultimas_series, reps_min, reps_max):
     última sessão do exercício). Devolve o incremento sugerido em kg
     (2.5, ou 1.0 para cargas abaixo de 10 kg) ou None.
     """
-    alvo = reps_max if reps_max is not None else reps_min
+    alvo = _faixa(reps_min, reps_max)[1]
     if not alvo or not ultimas_series:
         return None
 
