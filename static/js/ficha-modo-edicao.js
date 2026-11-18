@@ -5,7 +5,7 @@
    treinos"), qualquer ficha de "Minhas fichas" e a ficha do aluno vista
    pelo professor. Na ficha ativa, o botão "Editar ficha" (#btnModoEdicao)
    liga a classe .is-editando em #ctFicha, que mostra os controles
-   marcados com .ct-so-edicao (renomear/finalizar, editar e excluir
+   marcados com .ct-so-edicao (finalizar, editar e excluir
    treino, arrastar, adicionar treino) e esconde os .ct-so-leitura.
 
    O modo fica guardado por ficha no sessionStorage: depois de salvar um
@@ -52,6 +52,14 @@
     if (botao) {
         botao.addEventListener('click', function () {
             definir(!ficha.classList.contains('is-editando'));
+            // Ao ligar a edição, abre direto a janela "Editar Ficha"
+            // (nome da ficha), indicada em data-abre-modal.
+            var alvo = botao.getAttribute('data-abre-modal');
+            var modal = alvo ? document.querySelector(alvo) : null;
+            if (modal && editavel && ficha.classList.contains('is-editando')
+                    && window.bootstrap && window.bootstrap.Modal) {
+                window.bootstrap.Modal.getOrCreateInstance(modal).show();
+            }
         });
     }
 

@@ -57,18 +57,9 @@
                 element: '#btnModoEdicao',
                 popover: {
                     title: 'Ver ou editar',
-                    description: 'A ficha abre só para consulta. <b>Editar ficha</b> mostra os botões '
-                        + 'para mudar treinos e exercícios; <b>Concluir edição</b> esconde de novo.',
-                    side: 'bottom',
-                    align: 'start'
-                }
-            },
-            {
-                element: '.ct-hero-desc-edit',
-                popover: {
-                    title: 'Renomear ou finalizar',
-                    description: 'Muda o nome da ficha e permite <b>finalizá-la</b> quando essa fase '
-                        + 'acabar. Finalizada, ela vira histórico e pode ser clonada.',
+                    description: 'A ficha abre só para consulta. <b>Editar ficha</b> abre a janela para mudar o nome '
+                        + 'e mostra os botões para mudar treinos e exercícios; <b>Concluir edição</b> esconde de novo. '
+                        + 'O botão <b>Finalizar</b> fica no fim da página, durante a edição.',
                     side: 'bottom',
                     align: 'start'
                 }

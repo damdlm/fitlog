@@ -55,7 +55,11 @@ class TestFichaAtiva:
         assert 'ct-btn-editar-exercicios ct-so-edicao"' in html
         assert 'ct-btn-excluir-treino ct-so-edicao"' in html
         assert 'class="ct-add-treino-btn ct-btn-editar-exercicios ct-so-edicao"' in html
-        assert 'ct-hero-desc-edit ct-so-edicao"' in html
+        assert 'ct-hero-desc-edit ct-so-edicao"' not in html  # sem o botão "Renomear ou finalizar"
+        assert 'data-abre-modal="#modalEditarVersao"' in html
+        # Finalizar fica no fim da página (fora do modal), só na edição
+        assert html.index('data-confirm-label="Sim, finalizar"') > html.index('Voltar ao início')
+        assert 'text-center mt-3 ct-so-edicao' in html
         assert '.ct-ficha:not(.is-editando) .ct-so-edicao { display: none !important; }' in html
         assert '/static/js/ficha-modo-edicao.' in html
 

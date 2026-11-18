@@ -323,6 +323,16 @@
     }
     .ct-add-treino-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(242, 140, 51, 0.45); }
     .ct-add-treino-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    @media (max-width: 575.98px) {
+        .ct-add-treino-btn {
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 8px 18px;
+            font-size: .8rem;
+            border-radius: 10px;
+        }
+    }
 
     .ct-finalizar-hint { font-size: 0.82rem; color: var(--ct-muted); max-width: 480px; }
 
@@ -624,12 +634,9 @@
         </div>
         {% if esta_ativa %}
         <div class="ct-hero-botoes">
-            <button type="button" class="ct-modo-btn" id="btnModoEdicao" aria-pressed="false" aria-controls="ctFicha">
+            <button type="button" class="ct-modo-btn" id="btnModoEdicao" aria-pressed="false" aria-controls="ctFicha" data-abre-modal="#modalEditarVersao">
                 <i class="bi bi-pencil-square ct-so-leitura" aria-hidden="true"></i><span class="ct-so-leitura">Editar ficha</span>
                 <i class="bi bi-check2 ct-so-edicao" aria-hidden="true"></i><span class="ct-so-edicao">Concluir edição</span>
-            </button>
-            <button type="button" class="btn btn-sm ct-btn-treino ct-btn-editar-treino ct-hero-desc-edit ct-so-edicao" data-bs-toggle="modal" data-bs-target="#modalEditarVersao" title="Mudar o nome ou finalizar a ficha">
-                <span class="ct-btn-treino-icon"><i class="bi bi-pencil-fill"></i></span> Renomear ou finalizar
             </button>
         </div>
         {% endif %}
@@ -785,17 +792,6 @@
                     </div>
                 </div>
                 <div class="modal-footer justify-content-center">
-                    {% if esta_ativa %}
-                    <button type="button" class="btn btn-danger"
-                            data-confirm-url="{{ finalizar_url }}"
-                            data-confirm-title="Finalizar esta ficha?"
-                            data-confirm-text="Depois de finalizada, ela sai do modo de edição rápida e passa a fazer parte do seu histórico. Você ainda pode editá-la por aqui depois, se precisar."
-                            data-confirm-variant="danger"
-                            data-confirm-icon="bi-flag"
-                            data-confirm-label="Sim, finalizar">
-                        <i class="bi bi-flag"></i> Finalizar
-                    </button>
-                    {% endif %}
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn" style="background: #F28C33; color: white; border: none;">
                         <i class="bi bi-save"></i> Salvar
@@ -970,6 +966,19 @@
     <a href="{{ voltar_url }}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left"></i> Voltar para {{ voltar_label or 'Minhas Fichas' }}
     </a>
+</div>
+{% endif %}
+{% if esta_ativa %}
+<div class="text-center mt-3 ct-so-edicao">
+    <button type="button" class="btn btn-danger btn-sm"
+            data-confirm-url="{{ finalizar_url }}"
+            data-confirm-title="Finalizar esta ficha?"
+            data-confirm-text="Depois de finalizada, ela sai do modo de edição rápida e passa a fazer parte do seu histórico. Você ainda pode editá-la por aqui depois, se precisar."
+            data-confirm-variant="danger"
+            data-confirm-icon="bi-flag"
+            data-confirm-label="Sim, finalizar">
+        <i class="bi bi-flag"></i> Finalizar
+    </button>
 </div>
 {% endif %}
 {% endblock %}
