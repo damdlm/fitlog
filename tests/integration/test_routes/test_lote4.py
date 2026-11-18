@@ -115,7 +115,7 @@ class TestFichaNoLugarDeVersao:
         assert 'Minhas Fichas' in lista and 'Minhas Versões' not in lista
         detalhe = client.get(f'/aluno/versao/{vid}').get_data(as_text=True)
         assert 'Treinos desta ficha' in detalhe and 'Treinos desta versão' not in detalhe
-        assert 'Editar Ficha' in detalhe
+        assert 'aria-label="Nome da ficha"' in detalhe  # nome editável no título
 
     def test_versao_do_ios_e_da_politica_continuam(self):
         with open('templates/register/registrar_treino.html', encoding='utf-8') as f:

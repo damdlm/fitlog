@@ -71,24 +71,31 @@
         margin-bottom: 24px;
     }
     .ct-hero-desc-row { font-size: 1.15rem; font-weight: 700; color: var(--ct-ink); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .ct-hero-desc-edit { margin-top: 12px; }
 
-    /* T2: ver e editar na mesma tela. Na ficha ativa, "Editar ficha" liga
-       os controles de edição (renomear, editar/excluir treino, arrastar,
-       adicionar); fora do modo edição a ficha fica só para leitura. */
+    /* A ficha ativa já abre em edição (o servidor põe .is-editando):
+       os controles .ct-so-edicao (editar/excluir treino, arrastar,
+       adicionar, finalizar) só somem na ficha finalizada. */
     .ct-ficha:not(.is-editando) .ct-so-edicao { display: none !important; }
-    .ct-ficha.is-editando .ct-so-leitura { display: none !important; }
-    .ct-hero-botoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-    .ct-hero-botoes .ct-hero-desc-edit { margin-top: 0; }
-    .ct-modo-btn {
-        display: inline-flex; align-items: center; gap: 6px; min-height: 44px;
-        padding: 0 16px; border-radius: 999px; font-size: 0.88rem; font-weight: 600;
-        border: 1.5px solid #F28C33; background: var(--fl-c-sup, #fff); color: var(--fl-c-txt-laranja, #a8560c);
+
+    /* Nome da ficha editável no próprio título, com o ✓ para salvar ao
+       lado (ficha-modo-edicao.js liga o ✓ quando o nome muda). */
+    .ct-titulo-form { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0; margin: 0; }
+    .ct-titulo-input {
+        font: inherit; color: inherit; background: transparent;
+        border: 0; border-bottom: 1.5px dashed var(--fl-c-borda, #C9CED6); border-radius: 0;
+        padding: 2px 2px; min-width: 4ch; max-width: 100%; field-sizing: content;
     }
-    .ct-modo-btn:focus-visible { outline: 3px solid rgba(242,140,51,0.45); outline-offset: 2px; }
-    /* em edição: fundo laranja claro e texto escuro (branco no laranja
-       ficava com contraste 2,4:1) */
-    .ct-ficha.is-editando .ct-modo-btn { background: var(--fl-c-tint-laranja, #fff1e3); border-color: #a8560c; }
+    .ct-titulo-input:hover { border-bottom-color: #F28C33; }
+    .ct-titulo-input:focus { outline: none; border-bottom: 2px solid #F28C33; background: var(--fl-c-tint-laranja, #fff7ef); }
+    .ct-titulo-salvar {
+        flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+        width: 36px; height: 36px; border-radius: 50%; padding: 0;
+        border: 1.5px solid #198754; background: #198754; color: #fff; font-size: 1.1rem;
+        transition: opacity .15s, transform .15s;
+    }
+    .ct-titulo-salvar:hover:not(:disabled) { transform: scale(1.06); }
+    .ct-titulo-salvar:focus-visible { outline: 3px solid rgba(25,135,84,0.4); outline-offset: 2px; }
+    .ct-titulo-salvar:disabled { background: transparent; color: var(--ct-muted); border-color: var(--fl-c-borda, #C9CED6); opacity: .55; cursor: default; }
     .ct-hero-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--ct-muted); }
     .ct-hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
     .ct-status-pill {
@@ -498,7 +505,6 @@
             color: var(--fl-c-txt2, #4b5563);
         }
         .ct-hero-meta span i { color: var(--ct-orange); }
-        .ct-hero-desc-edit { margin-top: 16px; }
 
         .ct-section-title { margin: 26px 0 16px; }
         .ct-section-title h2 { font-size: 1.2rem; }
@@ -598,17 +604,26 @@
     {% set total_ex.value = total_ex.value + tv.exercicios|length %}
 {% endfor %}
 
-<div class="ct-ficha{{ ' is-editando' if esta_ativa and total_treinos == 0 else '' }}" id="ctFicha"
+<div class="ct-ficha{{ ' is-editando' if esta_ativa else '' }}" id="ctFicha"
      data-versao-id="{{ versao.id }}" data-editavel="{{ '1' if esta_ativa else '0' }}">
-{% if esta_ativa %}<script>
-    // Modo edição guardado (ficha-modo-edicao.js) aplicado antes de desenhar os cartões:
-    // depois de salvar um treino a página volta em edição sem piscar a leitura.
-    try { if (sessionStorage.getItem('fitlog:ficha-editando:{{ versao.id }}') === '1') document.getElementById('ctFicha').classList.add('is-editando'); } catch (e) { /* sem storage */ }
-</script>{% endif %}
 <div class="ct-hero">
     <div>
         <div class="ct-hero-desc-row">
+            {% if esta_ativa %}
+            <form method="post" action="{{ editar_descricao_url }}" class="ct-titulo-form" id="ctTituloForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="text" name="descricao" id="ctTituloInput" class="ct-titulo-input"
+                       value="{{ versao.descricao }}" data-original="{{ versao.descricao }}"
+                       maxlength="200" required aria-label="Nome da ficha" title="Toque para mudar o nome da ficha"
+                       size="{{ [versao.descricao|length, 4]|max }}" autocomplete="off">
+                <button type="submit" class="ct-titulo-salvar" id="ctTituloSalvar" disabled
+                        aria-label="Salvar nome da ficha" title="Salvar nome da ficha">
+                    <i class="bi bi-check-lg" aria-hidden="true"></i>
+                </button>
+            </form>
+            {% else %}
             {{ versao.descricao }}
+            {% endif %}
             {% if esta_ativa %}
             <span class="ct-status-pill ativa"><span class="dot"></span>Ativa</span>
             {% else %}
@@ -632,14 +647,6 @@
             <span><i class="bi bi-trophy"></i> {{ total_treinos }}/{{ max_treinos }} treinos</span>
             <span><i class="bi bi-list-check"></i> {{ total_ex.value }} exercício{{ 's' if total_ex.value != 1 else '' }}</span>
         </div>
-        {% if esta_ativa %}
-        <div class="ct-hero-botoes">
-            <button type="button" class="ct-modo-btn" id="btnModoEdicao" aria-pressed="false" aria-controls="ctFicha" data-abre-modal="#modalEditarVersao">
-                <i class="bi bi-pencil-square ct-so-leitura" aria-hidden="true"></i><span class="ct-so-leitura">Editar ficha</span>
-                <i class="bi bi-check2 ct-so-edicao" aria-hidden="true"></i><span class="ct-so-edicao">Concluir edição</span>
-            </button>
-        </div>
-        {% endif %}
     </div>
     {% if not esta_ativa %}
     <div class="ct-hero-actions">
@@ -752,8 +759,7 @@
         <div class="ct-ex-empty">
             <i class="bi bi-exclamation-triangle-fill"></i>
             {% if esta_ativa %}
-            <span class="ct-so-edicao">Sem exercícios ainda — toque em "Editar" no treino para adicionar.</span>
-            <span class="ct-so-leitura">Sem exercícios ainda — toque em "Editar ficha" para adicionar.</span>
+            Sem exercícios ainda — toque em "Editar" no treino para adicionar.
             {% else %}
             Sem exercícios registrados nesta ficha.
             {% endif %}
@@ -773,34 +779,6 @@
 {% endif %}
 </div><!-- /.ct-treinos-grid -->
 </div><!-- /.ct-ficha -->
-
-<!-- ===== Modal: Editar Versão ===== -->
-<div class="modal fade" id="modalEditarVersao" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
-                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Ficha</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="post" action="{{ editar_descricao_url }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="modal-body">
-                    <div class="mb-1">
-                        <label class="form-label fw-bold">Descrição da ficha</label>
-                        <input aria-label="Descrição da ficha" type="text" name="descricao" class="form-control form-control-lg"
-                               value="{{ versao.descricao }}" maxlength="200" required autofocus>
-                    </div>
-                </div>
-                <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn" style="background: #F28C33; color: white; border: none;">
-                        <i class="bi bi-save"></i> Salvar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <!-- ===== Modal: Adicionar/Editar treino + exercícios (compartilhado) ===== -->
 <div class="modal fade" id="modalExercicios" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
@@ -970,7 +948,7 @@
 {% endif %}
 {% if esta_ativa %}
 <div class="text-center mt-3 ct-so-edicao">
-    <button type="button" class="btn btn-danger btn-sm"
+    <button type="button" class="btn btn-danger btn-sm" id="btnFinalizarFicha"
             data-confirm-url="{{ finalizar_url }}"
             data-confirm-title="Finalizar esta ficha?"
             data-confirm-text="Depois de finalizada, ela sai do modo de edição rápida e passa a fazer parte do seu histórico. Você ainda pode editá-la por aqui depois, se precisar."

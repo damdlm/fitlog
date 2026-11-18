@@ -2,8 +2,8 @@
 
 T2: uma tela só para ver e editar a ficha. "Cadastrar treinos" com ficha
 ativa, "Minhas fichas" > ficha e a ficha do aluno vista pelo professor
-usam aluno/ver_versao.html. Na ficha ativa, "Editar ficha" liga o modo
-edição (ficha-modo-edicao.js); fora dele os controles ficam escondidos.
+usam aluno/ver_versao.html. A ficha ativa já abre em edição, com o nome
+editável no próprio título (✓ para salvar); a finalizada é só leitura.
 Os links antigos continuam valendo. O catálogo do editor não é mais
 carregado pelas rotas (vem à parte, por catalogo_url).
 """
@@ -37,9 +37,9 @@ class TestFichaAtiva:
         with _sem_catalogo():
             html = client.get('/aluno/cadastrar-treinos').get_data(as_text=True)
         assert 'id="ctFicha"' in html and 'data-editavel="1"' in html
-        assert 'class="ct-ficha" id="ctFicha"' in html  # abre para leitura
-        assert 'id="btnModoEdicao" aria-pressed="false"' in html
-        assert '>Editar ficha</span>' in html
+        assert 'class="ct-ficha is-editando" id="ctFicha"' in html  # já abre em edição
+        assert 'btnModoEdicao' not in html and '>Editar ficha</span>' not in html
+        assert 'modalEditarVersao' not in html
         # ações voltam para "Cadastrar treinos"
         assert f'/aluno/cadastrar-treinos/{vid}/treino/{tid}"' in html
         assert f'/aluno/cadastrar-treinos/{vid}/editar"' in html
@@ -48,20 +48,40 @@ class TestFichaAtiva:
         assert 'class="etv-grid etv-grid-static" id="etvGrid"' in html
         assert 'data-catalogo-url="/aluno/catalogo-exercicios/cards"' in html
 
-    def test_controles_so_aparecem_no_modo_edicao(self, client, app):
+    def test_controles_de_edicao_na_ficha_ativa(self, client, app):
         _ficha(app, 't2_controles')
         _login(client, 't2_controles')
         html = client.get('/aluno/cadastrar-treinos').get_data(as_text=True)
         assert 'ct-btn-editar-exercicios ct-so-edicao"' in html
         assert 'ct-btn-excluir-treino ct-so-edicao"' in html
         assert 'class="ct-add-treino-btn ct-btn-editar-exercicios ct-so-edicao"' in html
-        assert 'ct-hero-desc-edit ct-so-edicao"' not in html  # sem o botão "Renomear ou finalizar"
-        assert 'data-abre-modal="#modalEditarVersao"' in html
+        assert 'ct-hero-desc-edit' not in html  # sem o botão "Renomear ou finalizar"
+        assert 'ct-so-leitura' not in html
         # Finalizar fica no fim da página (fora do modal), só na edição
         assert html.index('data-confirm-label="Sim, finalizar"') > html.index('Voltar ao início')
         assert 'text-center mt-3 ct-so-edicao' in html
         assert '.ct-ficha:not(.is-editando) .ct-so-edicao { display: none !important; }' in html
         assert '/static/js/ficha-modo-edicao.' in html
+
+    def test_nome_editavel_no_titulo(self, client, app):
+        _uid, vid, _tid = _ficha(app, 't2_titulo')
+        _login(client, 't2_titulo')
+        html = client.get('/aluno/cadastrar-treinos').get_data(as_text=True)
+        hero = html.split('class="ct-hero-desc-row"')[1].split('class="ct-hero-meta"')[0]
+        assert f'action="/aluno/cadastrar-treinos/{vid}/editar" class="ct-titulo-form" id="ctTituloForm"' in hero
+        assert 'name="csrf_token"' in hero
+        assert 'name="descricao" id="ctTituloInput"' in hero and 'value="V1" data-original="V1"' in hero
+        assert 'maxlength="200" required aria-label="Nome da ficha"' in hero
+        assert 'id="ctTituloSalvar" disabled' in hero and 'bi-check-lg' in hero
+        assert hero.index('ctTituloSalvar') < hero.index('ct-status-pill')  # ✓ colado ao nome
+
+    def test_renomear_pelo_titulo_salva(self, client, app):
+        _uid, vid, _tid = _ficha(app, 't2_renomear')
+        _login(client, 't2_renomear')
+        resp = client.post(f'/aluno/cadastrar-treinos/{vid}/editar', data={'descricao': 'Hipertrofia'})
+        assert resp.status_code == 302 and resp.headers['Location'].endswith('/aluno/cadastrar-treinos')
+        html = client.get('/aluno/cadastrar-treinos').get_data(as_text=True)
+        assert 'value="Hipertrofia" data-original="Hipertrofia"' in html
 
     def test_modal_do_treino_fecha_com_confirmacao(self, client, app):
         _ficha(app, 't2_modal')
@@ -97,7 +117,8 @@ class TestMinhasFichas:
         _login(client, 't2_link')
         with _sem_catalogo():
             html = client.get(f'/aluno/versao/{vid}').get_data(as_text=True)
-        assert 'id="btnModoEdicao"' in html
+        assert 'class="ct-ficha is-editando" id="ctFicha"' in html
+        assert f'action="/aluno/versao/{vid}/editar" class="ct-titulo-form"' in html
         assert f'/aluno/versao/{vid}/treino/{tid}"' in html  # ações voltam para a própria ficha
         assert 'Voltar para Minhas Fichas' in html and 'Ver Fichas' not in html
 
@@ -111,10 +132,10 @@ class TestMinhasFichas:
         _login(client, 't2_encerrada')
         html = client.get(f'/aluno/versao/{vid}').get_data(as_text=True)
         assert 'data-editavel="0"' in html
-        assert 'id="btnModoEdicao"' not in html
+        assert 'class="ct-ficha" id="ctFicha"' in html
+        assert 'ctTituloForm' not in html and 'btnFinalizarFicha' not in html
         assert 'class="btn btn-sm ct-btn-treino ct-btn-excluir-treino' not in html
         assert 'Sim, clonar' in html
-        assert "sessionStorage.getItem('fitlog:ficha-editando" not in html
 
 
 class TestProfessor:
@@ -128,7 +149,8 @@ class TestProfessor:
         _login(client, 't2_prof')
         with _sem_catalogo():
             html = client.get(f'/professor/aluno/{aid}/versao/{vid}').get_data(as_text=True)
-        assert 'id="btnModoEdicao"' in html
+        assert 'class="ct-ficha is-editando" id="ctFicha"' in html
+        assert f'action="/professor/aluno/{aid}/versao/{vid}/editar" class="ct-titulo-form"' in html
         assert f'/professor/aluno/{aid}/versao/{vid}/treino/{tid}"' in html
         assert 'class="etv-grid etv-grid-static" id="etvGrid"' in html
         assert 'data-contexto="professor"' in html
@@ -146,17 +168,21 @@ class TestSemFicha:
 
 
 class TestScripts:
-    def test_modo_edicao_lembra_por_ficha(self):
+    def test_script_da_ficha_titulo_editavel(self):
         with open('static/js/ficha-modo-edicao.js', encoding='utf-8') as f:
             js = f.read()
-        assert "'fitlog:ficha-editando:'" in js and 'sessionStorage' in js
+        assert 'sessionStorage' not in js and 'btnModoEdicao' not in js
+        assert "getElementById('ctTituloInput')" in js and "e.key === 'Escape'" in js
+        assert "salvar.disabled = enviando || !mudou();" in js
+        # o reenvio do page-transition.js (requestSubmit) não pode ser barrado
+        assert 'if (form.dataset.flTransitionArmed) return;' in js
         assert 'window.FitLogFicha' in js
 
-    def test_tutorial_da_ficha_mostra_o_modo_edicao(self):
+    def test_tutorial_da_ficha_sem_modo_leitura(self):
         with open('static/js/ver-versao-tour.js', encoding='utf-8') as f:
             js = f.read()
-        assert "element: '#btnModoEdicao'" in js
-        assert 'ficha.definir(true, { lembrar: false })' in js and 'aoEncerrar' in js
+        assert 'btnModoEdicao' not in js and 'modoAntesDoPasseio' not in js
+        assert "element: '#ctTituloForm'" in js and "element: '#btnFinalizarFicha'" in js
 
     def test_tutorial_de_cadastrar_so_tem_a_tela_sem_ficha(self):
         with open('static/js/cadastrar-treinos-tour.js', encoding='utf-8') as f:
@@ -174,9 +200,10 @@ class TestRevisaoLote6d:
         html = client.get('/aluno/cadastrar-treinos').get_data(as_text=True)
         assert '<h1 class="visually-hidden">V1</h1>' in html
 
-    def test_botao_de_modo_com_contraste_e_toque(self, client, app):
+    def test_check_do_titulo_com_area_de_toque(self, client, app):
         _ficha(app, 't2_botao')
         _login(client, 't2_botao')
         html = client.get('/aluno/cadastrar-treinos').get_data(as_text=True)
-        assert 'min-height: 44px;' in html.split('.ct-modo-btn {')[1].split('}')[0]
-        assert '.ct-ficha.is-editando .ct-modo-btn { background: var(--fl-c-tint-laranja, #fff1e3); border-color: #a8560c; }' in html
+        css = html.split('.ct-titulo-salvar {')[1].split('}')[0]
+        assert 'width: 36px; height: 36px;' in css
+        assert 'ct-modo-btn' not in html

@@ -1,20 +1,19 @@
 /* ==========================================================
-   Ficha: modo de leitura e modo de edição na mesma tela (lote 6d, T2).
+   Ficha ativa: sempre em edição e nome editável no próprio título.
 
    templates/aluno/ver_versao.html serve a ficha ativa ("Cadastrar
    treinos"), qualquer ficha de "Minhas fichas" e a ficha do aluno vista
-   pelo professor. Na ficha ativa, o botão "Editar ficha" (#btnModoEdicao)
-   liga a classe .is-editando em #ctFicha, que mostra os controles
-   marcados com .ct-so-edicao (finalizar, editar e excluir
-   treino, arrastar, adicionar treino) e esconde os .ct-so-leitura.
+   pelo professor. Na ficha ativa o servidor já põe .is-editando em
+   #ctFicha, então os controles .ct-so-edicao (editar e excluir treino,
+   arrastar, adicionar treino, finalizar) aparecem direto -- não existe
+   mais o botão "Editar ficha". Na ficha finalizada eles ficam escondidos.
 
-   O modo fica guardado por ficha no sessionStorage: depois de salvar um
-   treino a página recarrega e volta em edição; numa visita nova, abre
-   para leitura. Ficha sem nenhum treino já abre em edição (o servidor
-   põe a classe).
+   O nome da ficha é um campo no próprio título (#ctTituloInput), com o
+   botão ✓ (#ctTituloSalvar) ao lado: ele só fica ativo quando o nome
+   muda e não está vazio; Esc desfaz a mudança; Enter salva.
 
-   window.FitLogFicha = { editavel(), editando(), definir(ligado, {lembrar}) }
-   -- usado pelo tutorial para mostrar os botões de edição durante o passeio.
+   window.FitLogFicha = { editavel(), editando(), definir(ligado) }
+   -- mantido para o tutorial e outros scripts que consultam o modo.
    ========================================================== */
 (function () {
     'use strict';
@@ -23,44 +22,59 @@
     if (!ficha) return;
 
     var editavel = ficha.getAttribute('data-editavel') === '1';
-    var chave = 'fitlog:ficha-editando:' + (ficha.getAttribute('data-versao-id') || '');
-    var botao = document.getElementById('btnModoEdicao');
 
-    function lembrar(ligado) {
-        try { window.sessionStorage.setItem(chave, ligado ? '1' : '0'); } catch (e) { /* sem storage */ }
+    function definir(ligado) {
+        ficha.classList.toggle('is-editando', !!ligado && editavel);
     }
 
-    function lido() {
-        try { return window.sessionStorage.getItem(chave); } catch (e) { return null; }
-    }
+    definir(editavel);
 
-    function definir(ligado, opcoes) {
-        ligado = !!ligado && editavel;
-        ficha.classList.toggle('is-editando', ligado);
-        if (botao) botao.setAttribute('aria-pressed', ligado ? 'true' : 'false');
-        if (!opcoes || opcoes.lembrar !== false) lembrar(ligado);
-    }
+    // ---------- nome da ficha no título ----------
+    var form = document.getElementById('ctTituloForm');
+    var input = document.getElementById('ctTituloInput');
+    var salvar = document.getElementById('ctTituloSalvar');
 
-    if (!editavel) {
-        ficha.classList.remove('is-editando');
-    } else {
-        var salvo = lido();
-        if (salvo === '1' || salvo === '0') definir(salvo === '1', { lembrar: false });
-        else definir(ficha.classList.contains('is-editando'), { lembrar: false });
-    }
+    if (form && input && salvar) {
+        var original = input.getAttribute('data-original') || input.value;
+        var enviando = false;
 
-    if (botao) {
-        botao.addEventListener('click', function () {
-            definir(!ficha.classList.contains('is-editando'));
-            // Ao ligar a edição, abre direto a janela "Editar Ficha"
-            // (nome da ficha), indicada em data-abre-modal.
-            var alvo = botao.getAttribute('data-abre-modal');
-            var modal = alvo ? document.querySelector(alvo) : null;
-            if (modal && editavel && ficha.classList.contains('is-editando')
-                    && window.bootstrap && window.bootstrap.Modal) {
-                window.bootstrap.Modal.getOrCreateInstance(modal).show();
+        var ajustarLargura = function () {
+            // Fallback de field-sizing: content (navegadores sem suporte).
+            input.size = Math.max((input.value || '').length, 4);
+        };
+
+        var mudou = function () {
+            var valor = input.value.trim();
+            return !!valor && valor !== original.trim();
+        };
+
+        var atualizar = function () {
+            salvar.disabled = enviando || !mudou();
+            ajustarLargura();
+        };
+
+        input.addEventListener('input', atualizar);
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                input.value = original;
+                atualizar();
+                input.blur();
             }
         });
+        form.addEventListener('submit', function (e) {
+            // Reenvio feito pelo page-transition.js (ele cancela o 1º
+            // submit, mostra a película e chama requestSubmit): deixa passar.
+            if (form.dataset.flTransitionArmed) return;
+            if (enviando || !mudou()) {
+                // Enter sem mudança (ou 2º toque no ✓): não recarrega à toa.
+                e.preventDefault();
+                return;
+            }
+            enviando = true;
+            salvar.setAttribute('aria-busy', 'true');
+        });
+
+        atualizar();
     }
 
     window.FitLogFicha = {

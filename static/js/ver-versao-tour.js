@@ -6,9 +6,9 @@
  * Driver.js servido localmente em static/vendor/driverjs/; o tema vem de
  * css/registrar-treino-tour.css (compartilhado com os outros tours).
  *
- * Na ficha ativa os botões de edição só aparecem no modo edição
- * (ficha-modo-edicao.js, lote 6d): o passeio "lista" liga esse modo
- * enquanto roda, para mostrar os botões, e volta como estava ao fechar.
+ * A ficha ativa já abre em edição (botões de treino visíveis e nome
+ * editável no próprio título, ficha-modo-edicao.js); a finalizada fica
+ * só para leitura. Passos cujo elemento não existe na tela são pulados.
  *
  * Dois passeios, um por momento da tela:
  *   1) "lista": resumo da versão e cartões de treino. Os passos mudam
@@ -31,16 +31,8 @@
     // Professor editando a versão de um aluno (texto em 3ª pessoa).
     var doProfessor = (scriptEl && scriptEl.getAttribute('data-contexto')) === 'professor';
 
-    // Modo da ficha antes do passeio (null = o passeio não mexeu).
-    var modoAntesDoPasseio = null;
-
     // ---------- passos ----------
     function passosLista() {
-        var ficha = window.FitLogFicha;
-        if (ficha && ficha.editavel() && modoAntesDoPasseio === null) {
-            modoAntesDoPasseio = ficha.editando();
-            ficha.definir(true, { lembrar: false });
-        }
         return [
             {
                 element: '.ct-hero',
@@ -54,12 +46,11 @@
                 }
             },
             {
-                element: '#btnModoEdicao',
+                element: '#ctTituloForm',
                 popover: {
-                    title: 'Ver ou editar',
-                    description: 'A ficha abre só para consulta. <b>Editar ficha</b> abre a janela para mudar o nome '
-                        + 'e mostra os botões para mudar treinos e exercícios; <b>Concluir edição</b> esconde de novo. '
-                        + 'O botão <b>Finalizar</b> fica no fim da página, durante a edição.',
+                    title: 'Nome da ficha',
+                    description: 'Toque no nome para mudar e confirme no <b>✓</b> ao lado '
+                        + '(ou Enter). <b>Esc</b> desfaz a mudança.',
                     side: 'bottom',
                     align: 'start'
                 }
@@ -134,6 +125,16 @@
                     title: 'Adicionar treino',
                     description: 'Cria o próximo treino da ficha (B, C...). '
                         + 'O contador mostra quantos já existem e o limite.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btnFinalizarFicha',
+                popover: {
+                    title: 'Finalizar a ficha',
+                    description: 'Quando essa fase do treino acabar, finalize a ficha: ela vai para o '
+                        + 'histórico e você pode criar a próxima. O app pede confirmação antes.',
                     side: 'top',
                     align: 'center'
                 }
@@ -221,11 +222,6 @@
         passos: {
             lista: passosLista,
             modal: passosModal
-        },
-        aoEncerrar: function (fase) {
-            if (fase !== 'lista' || modoAntesDoPasseio === null) return;
-            if (window.FitLogFicha) window.FitLogFicha.definir(modoAntesDoPasseio, { lembrar: false });
-            modoAntesDoPasseio = null;
         }
     });
 
