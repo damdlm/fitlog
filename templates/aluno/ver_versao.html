@@ -71,6 +71,21 @@
     }
     .ct-hero-desc-row { font-size: 1.15rem; font-weight: 700; color: var(--ct-ink); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .ct-hero-desc-edit { margin-top: 12px; }
+
+    /* T2: ver e editar na mesma tela. Na ficha ativa, "Editar ficha" liga
+       os controles de edição (renomear, editar/excluir treino, arrastar,
+       adicionar); fora do modo edição a ficha fica só para leitura. */
+    .ct-ficha:not(.is-editando) .ct-so-edicao { display: none !important; }
+    .ct-ficha.is-editando .ct-so-leitura { display: none !important; }
+    .ct-hero-botoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .ct-hero-botoes .ct-hero-desc-edit { margin-top: 0; }
+    .ct-modo-btn {
+        display: inline-flex; align-items: center; gap: 6px; min-height: 40px;
+        padding: 0 16px; border-radius: 999px; font-size: 0.88rem; font-weight: 600;
+        border: 1.5px solid #F28C33; background: #fff; color: #a8560c;
+    }
+    .ct-modo-btn:focus-visible { outline: 3px solid rgba(242,140,51,0.45); outline-offset: 2px; }
+    .ct-ficha.is-editando .ct-modo-btn { background: #F28C33; color: #fff; }
     .ct-hero-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--ct-muted); }
     .ct-hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
     .ct-status-pill {
@@ -570,6 +585,13 @@
     {% set total_ex.value = total_ex.value + tv.exercicios|length %}
 {% endfor %}
 
+<div class="ct-ficha{{ ' is-editando' if esta_ativa and total_treinos == 0 else '' }}" id="ctFicha"
+     data-versao-id="{{ versao.id }}" data-editavel="{{ '1' if esta_ativa else '0' }}">
+{% if esta_ativa %}<script>
+    // Modo edição guardado (ficha-modo-edicao.js) aplicado antes de desenhar os cartões:
+    // depois de salvar um treino a página volta em edição sem piscar a leitura.
+    try { if (sessionStorage.getItem('fitlog:ficha-editando:{{ versao.id }}') === '1') document.getElementById('ctFicha').classList.add('is-editando'); } catch (e) { /* sem storage */ }
+</script>{% endif %}
 <div class="ct-hero">
     <div>
         <div class="ct-hero-desc-row">
@@ -598,9 +620,15 @@
             <span><i class="bi bi-list-check"></i> {{ total_ex.value }} exercício{{ 's' if total_ex.value != 1 else '' }}</span>
         </div>
         {% if esta_ativa %}
-        <button type="button" class="btn btn-sm ct-btn-treino ct-btn-editar-treino ct-hero-desc-edit" data-bs-toggle="modal" data-bs-target="#modalEditarVersao" title="Editar descrição da ficha">
-            <span class="ct-btn-treino-icon"><i class="bi bi-pencil-fill"></i></span> Editar
-        </button>
+        <div class="ct-hero-botoes">
+            <button type="button" class="ct-modo-btn" id="btnModoEdicao" aria-pressed="false" aria-controls="ctFicha">
+                <i class="bi bi-pencil-square ct-so-leitura" aria-hidden="true"></i><span class="ct-so-leitura">Editar ficha</span>
+                <i class="bi bi-check2 ct-so-edicao" aria-hidden="true"></i><span class="ct-so-edicao">Concluir edição</span>
+            </button>
+            <button type="button" class="btn btn-sm ct-btn-treino ct-btn-editar-treino ct-hero-desc-edit ct-so-edicao" data-bs-toggle="modal" data-bs-target="#modalEditarVersao" title="Mudar o nome ou finalizar a ficha">
+                <span class="ct-btn-treino-icon"><i class="bi bi-pencil-fill"></i></span> Renomear ou finalizar
+            </button>
+        </div>
         {% endif %}
     </div>
     {% if not esta_ativa %}
@@ -628,7 +656,7 @@
 </div>
 
 {% if total_treinos >= max_treinos %}
-<div class="ct-finalizar-hint text-center" style="margin-bottom: 20px;">
+<div class="ct-finalizar-hint text-center ct-so-edicao" style="margin-bottom: 20px;">
     <i class="bi bi-info-circle"></i> Limite de {{ max_treinos }} treinos por ficha atingido.
 </div>
 {% endif %}
@@ -666,7 +694,7 @@
             </div>
             <div class="ct-treino-actions">
                 {% if esta_ativa %}
-                <button type="button" class="btn btn-sm ct-btn-treino ct-btn-editar-treino ct-btn-editar-exercicios"
+                <button type="button" class="btn btn-sm ct-btn-treino ct-btn-editar-treino ct-btn-editar-exercicios ct-so-edicao"
                         data-bs-toggle="modal" data-bs-target="#modalExercicios"
                         data-modo="editar"
                         data-treino-versao-id="{{ tv.id }}"
@@ -675,7 +703,7 @@
                         data-action="{{ salvar_treino_url(tv.id) }}">
                     <span class="ct-btn-treino-icon"><i class="bi bi-pencil-fill"></i></span> Editar
                 </button>
-                <button type="button" class="btn btn-sm ct-btn-treino ct-btn-excluir-treino"
+                <button type="button" class="btn btn-sm ct-btn-treino ct-btn-excluir-treino ct-so-edicao"
                         data-confirm-url="{{ remover_treino_url(tv.id) }}"
                         data-confirm-title="Remover o treino {{ codigo }}?"
                         data-confirm-text="&quot;{{ tv.nome_treino }}&quot; e todos os seus exercícios associados serão removidos desta ficha. Essa ação não pode ser desfeita. Se este treino já tiver sido registrado alguma vez, a remoção será bloqueada para não perder o histórico."
@@ -689,7 +717,7 @@
         </div>
 
         {% if esta_ativa and qtd_ex > 1 %}
-        <div class="ct-ex-toolbar">
+        <div class="ct-ex-toolbar ct-so-edicao">
             <span class="ct-ex-toolbar-hint"><i class="bi bi-grip-vertical"></i> Arraste para reordenar</span>
             <button type="button" class="ct-save-order-btn" data-treino-codigo="{{ codigo }}">
                 <i class="bi bi-save"></i> Salvar ordem
@@ -703,7 +731,7 @@
             {% set chave = ('u_' ~ ve.exercicio_usuario_id) if ve.exercicio_usuario_id else ('b_' ~ ve.exercicio_base_id) %}
             {% if ex %}
             <div class="ct-ex-item" data-exercicio-id="{{ chave }}">
-                {% if esta_ativa and qtd_ex > 1 %}<span class="ct-ex-drag-handle"><i class="bi bi-grip-vertical"></i></span>{% endif %}
+                {% if esta_ativa and qtd_ex > 1 %}<span class="ct-ex-drag-handle ct-so-edicao"><i class="bi bi-grip-vertical"></i></span>{% endif %}
                 <span class="ct-ex-nome">{{ ex.nome }}</span>
                 {% if ve.meta_texto %}<span class="ct-ex-meta" title="Meta">{{ ve.meta_texto }}</span>{% endif %}
             </div>
@@ -714,7 +742,8 @@
         <div class="ct-ex-empty">
             <i class="bi bi-exclamation-triangle-fill"></i>
             {% if esta_ativa %}
-            Sem exercícios ainda — clique em "Editar" para adicionar.
+            <span class="ct-so-edicao">Sem exercícios ainda — toque em "Editar" no treino para adicionar.</span>
+            <span class="ct-so-leitura">Sem exercícios ainda — toque em "Editar ficha" para adicionar.</span>
             {% else %}
             Sem exercícios registrados nesta ficha.
             {% endif %}
@@ -725,7 +754,7 @@
 {% endif %}
 
 {% if esta_ativa and total_treinos < max_treinos %}
-<button type="button" class="ct-add-treino-btn ct-btn-editar-exercicios"
+<button type="button" class="ct-add-treino-btn ct-btn-editar-exercicios ct-so-edicao"
         data-bs-toggle="modal" data-bs-target="#modalExercicios"
         data-modo="adicionar"
         data-action="{{ adicionar_treino_url }}">
@@ -733,6 +762,7 @@
 </button>
 {% endif %}
 </div><!-- /.ct-treinos-grid -->
+</div><!-- /.ct-ficha -->
 
 <!-- ===== Modal: Editar Versão ===== -->
 <div class="modal fade" id="modalEditarVersao" tabindex="-1" aria-hidden="true">
@@ -774,12 +804,12 @@
 </div>
 
 <!-- ===== Modal: Adicionar/Editar treino + exercícios (compartilhado) ===== -->
-<div class="modal fade" id="modalExercicios" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalExercicios" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header" style="background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: white;">
                 <h5 class="modal-title"><i class="bi bi-pencil-square me-2" id="ctModalIcone"></i><span id="ctModalTitulo">Editar treino</span> <span id="ctModalCodigo"></span></h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-etv-cancelar aria-label="Fechar"></button>
             </div>
             <form method="post" id="formEditarTreino">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -818,7 +848,7 @@
                     </div>
 
                     <div class="etv-scroll">
-                        <div class="etv-grid{{ ' etv-grid-static' if exercicios_catalogo|length > 100 else '' }}" id="etvGrid" data-catalogo-url="{{ catalogo_url or '' }}">
+                        <div class="etv-grid{{ ' etv-grid-static' if catalogo_url or (exercicios_catalogo or [])|length > 100 else '' }}" id="etvGrid" data-catalogo-url="{{ catalogo_url or '' }}">
                             {% if catalogo_url %}
                             <div class="etv-carregando" data-etv-carregando role="status">
                                 <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Carregando exercícios…
@@ -844,7 +874,7 @@
                         <span><span data-etv-contador-selecionados>0</span> exercício(s) selecionado(s)</span>
                     </div>
                     <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-secondary" data-etv-cancelar>Cancelar</button>
                         <button type="submit" class="btn etv-btn-save">
                             <i class="bi bi-save"></i> <span id="ctBtnSalvarTexto">Salvar treino</span>
                         </button>
@@ -923,11 +953,22 @@
     });
 </script>
 
+{% if na_ficha_ativa %}
+<div class="text-center mt-4 d-flex justify-content-center gap-2 flex-wrap">
+    <a href="{{ voltar_url }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-layers"></i> Ver Fichas
+    </a>
+    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-house"></i> Voltar ao início
+    </a>
+</div>
+{% else %}
 <div class="text-center mt-4">
     <a href="{{ voltar_url }}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left"></i> Voltar para {{ voltar_label or 'Minhas Fichas' }}
     </a>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -935,6 +976,7 @@
 <script src="{{ static_v('js/editar-treino-versao.js') }}"></script>
 <script src="{{ static_v('js/cadastrar-treinos.js') }}"></script>
 <script src="{{ static_v('js/cadastrar-treinos-reordenar.js') }}"></script>
+<script src="{{ static_v('js/ficha-modo-edicao.js') }}"></script>
 <script src="{{ static_v('vendor/driverjs/driver.js.iife.js') }}"></script>
 <script src="{{ static_v('js/fl-tour-core.js') }}"></script>
 {# data-contexto: o mesmo template serve o aluno (suas versões) e o professor

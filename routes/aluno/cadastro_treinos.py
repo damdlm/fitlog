@@ -19,7 +19,6 @@ já usado no restante do blueprint aluno.
 """
 
 import logging
-from collections import Counter
 
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
@@ -28,10 +27,9 @@ from . import aluno_bp
 from extensions import limiter
 from services.versao_service import VersaoService
 from services.exercicio_service import ExercicioService
-from services.musculo_service import MusculoService
 from services.notificacao_service import NotificacaoService
 from models import TreinoVersao
-from utils.meta_treino import meta_para_json, parse_meta_form
+from utils.meta_treino import parse_meta_form
 
 logger = logging.getLogger(__name__)
 
@@ -48,70 +46,19 @@ def cadastrar_treinos():
         return redirect(url_for('main.index'))
 
     versao_ativa = VersaoService.get_ativa(user_id=current_user.id)
-
-    treinos_versao = []
-    exercicios_catalogo = []
-    musculos_catalogo = []
-    contagem_musculos = {}
-    treino_exercicios_map = {}
-    treino_observacoes_map = {}
-    treino_metas_map = {}  # T4: {tv.id: {chave: {s, min, max}}}
-
     if versao_ativa:
-        # load_relations=True traz treinos + exercícios em poucas queries
-        # (joinedload), evitando N+1 ao montar o mapa abaixo.
+        # T2: com ficha ativa, é a mesma tela de "Minhas fichas" > ficha
+        # (ver_versao.html), com as ações voltando para cá.
+        from .versao import render_ficha_aluno
         versao_ativa = VersaoService.get_by_id(
             versao_ativa.id, user_id=current_user.id, load_relations=True
         )
-        treinos_versao = sorted(versao_ativa.treinos, key=lambda tv: tv.ordem or 0)
+        return render_ficha_aluno(versao_ativa, na_ficha_ativa=True)
 
-        exercicios_catalogo = ExercicioService.get_exercicios_completos(user_id=current_user.id)
-        musculos_catalogo = MusculoService.get_all_nomes()
-        # Contagem por músculo pros chips de filtro (ex: "Pernas (42)"),
-        # calculada uma vez só em O(n) -- antes o template fazia isso com
-        # um loop de músculos DENTRO de um loop de exercícios (~36 mil
-        # iterações Jinja a cada carregamento da página, com 27 músculos
-        # x 1351 exercícios no catálogo).
-        contagem_musculos = Counter(
-            ex.musculo_nome or getattr(ex, 'musculo', None) or 'N/A'
-            for ex in exercicios_catalogo
-        )
-
-        for tv in treinos_versao:
-            ids_prefixados = []
-            observacoes_tv = {}
-            metas_tv = {}
-            for ve in tv.exercicios:
-                if ve.exercicio_usuario_id is not None:
-                    chave = f"u_{ve.exercicio_usuario_id}"
-                elif ve.exercicio_base_id is not None:
-                    chave = f"b_{ve.exercicio_base_id}"
-                else:
-                    continue
-                ids_prefixados.append(chave)
-                if ve.observacao:
-                    observacoes_tv[chave] = ve.observacao
-                if ve.meta_series or ve.meta_reps_min:
-                    metas_tv[chave] = meta_para_json(ve.meta_series, ve.meta_reps_min, ve.meta_reps_max)
-            treino_exercicios_map[tv.id] = ids_prefixados
-            treino_observacoes_map[tv.id] = observacoes_tv
-            treino_metas_map[tv.id] = metas_tv
-
+    # Sem ficha ativa: fichas prontas (E2) e "Montar do zero".
     return render_template(
         'aluno/cadastrar_treinos.html',
-        versao=versao_ativa,
-        treinos_versao=treinos_versao,
-        exercicios_catalogo=exercicios_catalogo,
-        musculos_catalogo=musculos_catalogo,
-        contagem_musculos=contagem_musculos,
-        treino_exercicios_map=treino_exercicios_map,
-        treino_observacoes_map=treino_observacoes_map,
-        treino_metas_map=treino_metas_map,
-        max_treinos=VersaoService.MAX_TREINOS_POR_VERSAO,
-        catalogo_url=url_for('aluno.catalogo_cards') if versao_ativa else None,
-        novo_exercicio_url=url_for('aluno.novo_exercicio'),
-        # E2: modelos prontos, só na tela de quem ainda não tem ficha
-        fichas_prontas=None if versao_ativa else VersaoService.fichas_prontas_para_tela(),
+        fichas_prontas=VersaoService.fichas_prontas_para_tela(),
         ficha_pronta_url=url_for('aluno.cadastrar_treinos_ficha_pronta'),
     )
 

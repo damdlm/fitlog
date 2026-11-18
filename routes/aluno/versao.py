@@ -13,7 +13,6 @@ continuam aplicadas pelo service independente disso.
 """
 
 import logging
-from collections import Counter
 
 from flask import render_template, redirect, url_for, flash, request, make_response
 from flask_login import login_required, current_user
@@ -25,7 +24,8 @@ from services.exercicio_service import ExercicioService
 from services.musculo_service import MusculoService
 from services.notificacao_service import NotificacaoService
 from models import VersaoGlobal, TreinoVersao
-from utils.meta_treino import meta_para_json, parse_meta_form
+from utils.ficha_tela import mapas_da_ficha
+from utils.meta_treino import parse_meta_form
 
 logger = logging.getLogger(__name__)
 
@@ -68,65 +68,58 @@ def ver_versao(versao_id):
     if not versao:
         flash('Ficha não encontrada!', 'danger')
         return redirect(url_for('aluno.versoes'))
+    return render_ficha_aluno(versao, na_ficha_ativa=False)
 
+
+def render_ficha_aluno(versao, na_ficha_ativa):
+    """Tela da ficha do aluno (T2: uma tela só para ver e editar).
+
+    na_ficha_ativa=True: aberta por "Cadastrar treinos" (/cadastrar-treinos)
+    -- as ações voltam para lá. False: aberta por "Minhas fichas"
+    (/versao/<id>) -- as ações voltam para a própria ficha. Fora isso é a
+    mesma tela; editar só vale para a ficha ativa (o service confere)."""
     treinos_versao = sorted(versao.treinos, key=lambda tv: tv.ordem or 0)
-    exercicios_catalogo = ExercicioService.get_exercicios_completos(user_id=current_user.id)
-    musculos_catalogo = MusculoService.get_all_nomes()
-    # Contagem por músculo pros chips de filtro, calculada uma vez só em
-    # O(n) -- antes o template fazia isso com um loop de músculos DENTRO
-    # de um loop de exercícios (~36 mil iterações Jinja a cada
-    # carregamento, com 27 músculos x 1351 exercícios no catálogo).
-    contagem_musculos = Counter(
-        ex.musculo_nome or getattr(ex, 'musculo', None) or 'N/A'
-        for ex in exercicios_catalogo
-    )
+    treino_exercicios_map, treino_observacoes_map, treino_metas_map = mapas_da_ficha(treinos_versao)
 
-    treino_exercicios_map = {}
-    treino_observacoes_map = {}
-    treino_metas_map = {}  # T4: {tv.id: {chave: {s, min, max}}}
-    for tv in treinos_versao:
-        ids_prefixados = []
-        observacoes_tv = {}
-        metas_tv = {}
-        for ve in tv.exercicios:
-            if ve.exercicio_usuario_id is not None:
-                chave = f"u_{ve.exercicio_usuario_id}"
-            elif ve.exercicio_base_id is not None:
-                chave = f"b_{ve.exercicio_base_id}"
-            else:
-                continue
-            ids_prefixados.append(chave)
-            if ve.observacao:
-                observacoes_tv[chave] = ve.observacao
-            if ve.meta_series or ve.meta_reps_min:
-                metas_tv[chave] = meta_para_json(ve.meta_series, ve.meta_reps_min, ve.meta_reps_max)
-        treino_exercicios_map[tv.id] = ids_prefixados
-        treino_observacoes_map[tv.id] = observacoes_tv
-        treino_metas_map[tv.id] = metas_tv
+    if na_ficha_ativa:
+        acoes = dict(
+            finalizar_url=url_for('aluno.cadastrar_treinos_finalizar', versao_id=versao.id),
+            editar_descricao_url=url_for('aluno.cadastrar_treinos_editar_versao', versao_id=versao.id),
+            adicionar_treino_url=url_for('aluno.cadastrar_treinos_adicionar_treino', versao_id=versao.id),
+            salvar_treino_url=lambda tv_id: url_for(
+                'aluno.cadastrar_treinos_salvar_treino', versao_id=versao.id, treino_versao_id=tv_id),
+            remover_treino_url=lambda tv_id: url_for(
+                'aluno.cadastrar_treinos_remover_treino', versao_id=versao.id, treino_versao_id=tv_id),
+        )
+    else:
+        acoes = dict(
+            finalizar_url=url_for('aluno.versao_finalizar', versao_id=versao.id),
+            editar_descricao_url=url_for('aluno.versao_editar_descricao', versao_id=versao.id),
+            adicionar_treino_url=url_for('aluno.versao_adicionar_treino', versao_id=versao.id),
+            salvar_treino_url=lambda tv_id: url_for(
+                'aluno.versao_salvar_treino', versao_id=versao.id, treino_versao_id=tv_id),
+            remover_treino_url=lambda tv_id: url_for(
+                'aluno.versao_remover_treino', versao_id=versao.id, treino_versao_id=tv_id),
+        )
 
     return render_template(
         'aluno/ver_versao.html',
         versao=versao,
         treinos_versao=treinos_versao,
-        exercicios_catalogo=exercicios_catalogo,
-        musculos_catalogo=musculos_catalogo,
-        contagem_musculos=contagem_musculos,
+        musculos_catalogo=MusculoService.get_all_nomes(),
         treino_exercicios_map=treino_exercicios_map,
         treino_observacoes_map=treino_observacoes_map,
         treino_metas_map=treino_metas_map,
         max_treinos=VersaoService.MAX_TREINOS_POR_VERSAO,
+        na_ficha_ativa=na_ficha_ativa,
         voltar_url=url_for('aluno.versoes'),
         voltar_label='Minhas Fichas',
-        finalizar_url=url_for('aluno.versao_finalizar', versao_id=versao.id),
         clonar_url=url_for('aluno.versao_clonar', versao_id=versao.id),
         excluir_url=url_for('aluno.versao_excluir', versao_id=versao.id),
-        editar_descricao_url=url_for('aluno.versao_editar_descricao', versao_id=versao.id),
-        adicionar_treino_url=url_for('aluno.versao_adicionar_treino', versao_id=versao.id),
-        salvar_treino_url=lambda tv_id: url_for('aluno.versao_salvar_treino', versao_id=versao.id, treino_versao_id=tv_id),
-        remover_treino_url=lambda tv_id: url_for('aluno.versao_remover_treino', versao_id=versao.id, treino_versao_id=tv_id),
         novo_exercicio_url=url_for('aluno.novo_exercicio'),
         catalogo_url=url_for('aluno.catalogo_cards'),
         reordenar_url=url_for('api.api_reordenar_exercicios'),
+        **acoes,
     )
 
 

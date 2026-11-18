@@ -6,6 +6,10 @@
  * Driver.js servido localmente em static/vendor/driverjs/; o tema vem de
  * css/registrar-treino-tour.css (compartilhado com os outros tours).
  *
+ * Na ficha ativa os botões de edição só aparecem no modo edição
+ * (ficha-modo-edicao.js, lote 6d): o passeio "lista" liga esse modo
+ * enquanto roda, para mostrar os botões, e volta como estava ao fechar.
+ *
  * Dois passeios, um por momento da tela:
  *   1) "lista": resumo da versão e cartões de treino. Os passos mudam
  *      se a versão está ATIVA (editável) ou FINALIZADA (só Clonar/Excluir).
@@ -27,8 +31,16 @@
     // Professor editando a versão de um aluno (texto em 3ª pessoa).
     var doProfessor = (scriptEl && scriptEl.getAttribute('data-contexto')) === 'professor';
 
+    // Modo da ficha antes do passeio (null = o passeio não mexeu).
+    var modoAntesDoPasseio = null;
+
     // ---------- passos ----------
     function passosLista() {
+        var ficha = window.FitLogFicha;
+        if (ficha && ficha.editavel() && modoAntesDoPasseio === null) {
+            modoAntesDoPasseio = ficha.editando();
+            ficha.definir(true, { lembrar: false });
+        }
         return [
             {
                 element: '.ct-hero',
@@ -42,9 +54,19 @@
                 }
             },
             {
+                element: '#btnModoEdicao',
+                popover: {
+                    title: 'Ver ou editar',
+                    description: 'A ficha abre só para consulta. <b>Editar ficha</b> mostra os botões '
+                        + 'para mudar treinos e exercícios; <b>Concluir edição</b> esconde de novo.',
+                    side: 'bottom',
+                    align: 'start'
+                }
+            },
+            {
                 element: '.ct-hero-desc-edit',
                 popover: {
-                    title: 'Editar a ficha',
+                    title: 'Renomear ou finalizar',
                     description: 'Muda o nome da ficha e permite <b>finalizá-la</b> quando essa fase '
                         + 'acabar. Finalizada, ela vira histórico e pode ser clonada.',
                     side: 'bottom',
@@ -208,6 +230,11 @@
         passos: {
             lista: passosLista,
             modal: passosModal
+        },
+        aoEncerrar: function (fase) {
+            if (fase !== 'lista' || modoAntesDoPasseio === null) return;
+            if (window.FitLogFicha) window.FitLogFicha.definir(modoAntesDoPasseio, { lembrar: false });
+            modoAntesDoPasseio = null;
         }
     });
 

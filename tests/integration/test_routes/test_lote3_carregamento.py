@@ -165,6 +165,7 @@ class TestNovoExercicioDentroDoModal:
         assert "document.body.classList.add('modal-open')" in js
 
     def test_tour_do_modal_espera_a_lista(self):
-        for p in ('static/js/cadastrar-treinos-tour.js', 'static/js/ver-versao-tour.js'):
+        # lote 6d: o modal do treino só existe na tela da ficha (ver_versao.html)
+        for p in ('static/js/ver-versao-tour.js',):
             with open(p, encoding='utf-8') as f:
                 assert 'window.FitLogCatalogoEtv.pronto()' in f.read(), p

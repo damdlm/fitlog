@@ -24,10 +24,10 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy import func
 import logging
 import json
-from collections import Counter
 from utils.validators import corpo_json_objeto
 from services.cardio import volume_da_serie
-from utils.meta_treino import meta_para_json, parse_meta_form
+from utils.ficha_tela import mapas_da_ficha
+from utils.meta_treino import parse_meta_form
 
 professor_bp = Blueprint('professor', __name__, url_prefix='/professor')
 logger = logging.getLogger(__name__)
@@ -1122,44 +1122,16 @@ def ver_versao_aluno(aluno_id, versao_id):
         return redirect(url_for('professor.versoes_aluno', aluno_id=aluno.id))
 
     treinos_versao = sorted(versao.treinos, key=lambda tv: tv.ordem or 0)
-    exercicios_catalogo = ExercicioService.get_exercicios_completos(user_id=aluno.id)
-    musculos_catalogo = MusculoService.get_all_nomes()
-    contagem_musculos = Counter(
-        ex.musculo_nome or getattr(ex, 'musculo', None) or 'N/A'
-        for ex in exercicios_catalogo
-    )
-
-    treino_exercicios_map = {}
-    treino_observacoes_map = {}
-    treino_metas_map = {}  # T4: {tv.id: {chave: {s, min, max}}}
-    for tv in treinos_versao:
-        ids_prefixados = []
-        observacoes_tv = {}
-        metas_tv = {}
-        for ve in tv.exercicios:
-            if ve.exercicio_usuario_id is not None:
-                chave = f"u_{ve.exercicio_usuario_id}"
-            elif ve.exercicio_base_id is not None:
-                chave = f"b_{ve.exercicio_base_id}"
-            else:
-                continue
-            ids_prefixados.append(chave)
-            if ve.observacao:
-                observacoes_tv[chave] = ve.observacao
-            if ve.meta_series or ve.meta_reps_min:
-                metas_tv[chave] = meta_para_json(ve.meta_series, ve.meta_reps_min, ve.meta_reps_max)
-        treino_exercicios_map[tv.id] = ids_prefixados
-        treino_observacoes_map[tv.id] = observacoes_tv
-        treino_metas_map[tv.id] = metas_tv
+    # T2: mesmo montador da tela do aluno; o catálogo do editor vem à parte
+    # (catalogo_url), então não é carregado aqui.
+    treino_exercicios_map, treino_observacoes_map, treino_metas_map = mapas_da_ficha(treinos_versao)
 
     nome_aluno = aluno.nome_completo or aluno.username
     return render_template(
         'aluno/ver_versao.html',
         versao=versao,
         treinos_versao=treinos_versao,
-        exercicios_catalogo=exercicios_catalogo,
-        musculos_catalogo=musculos_catalogo,
-        contagem_musculos=contagem_musculos,
+        musculos_catalogo=MusculoService.get_all_nomes(),
         treino_exercicios_map=treino_exercicios_map,
         treino_observacoes_map=treino_observacoes_map,
         treino_metas_map=treino_metas_map,
