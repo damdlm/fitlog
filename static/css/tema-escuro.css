@@ -64,6 +64,12 @@
     background-color: var(--fl-fundo);
     color: var(--fl-texto);
 }
+/* Fundo do documento (abaixo do conteúdo) no próprio <html>; ver base.html:
+   herdado do body, o Safari do iPhone deixava uma faixa com a cor do tema
+   anterior ao trocar o tema com a página aberta. */
+html[data-bs-theme="dark"] {
+    background-color: var(--fl-fundo);
+}
 
 /* Variáveis de cor das próprias telas (definidas no :root de cada uma):
    html[...] é mais específico que :root, então vale mesmo vindo antes. */
@@ -170,4 +176,37 @@ html[data-bs-theme="dark"] {
    transparente -- a fitlog-logo.png tem fundo branco opaco. */
 [data-bs-theme="dark"] .watermark {
     background-image: url("../images/fitlog-logo-b.png") !important;
+}
+
+/* Tela de senha do financeiro (admin/financeiro_login.html, que usa o
+   visual de auth-login.css). O login público continua sempre claro: este
+   arquivo só carrega na área logada. */
+[data-bs-theme="dark"] .login-card {
+    background: var(--fl-superficie);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+[data-bs-theme="dark"] .login-form-header h1,
+[data-bs-theme="dark"] .login-field label,
+[data-bs-theme="dark"] .login-input-group input {
+    color: var(--fl-texto);
+}
+[data-bs-theme="dark"] .login-form-header p,
+[data-bs-theme="dark"] .login-input-group i.login-input-icon {
+    color: var(--fl-texto-suave);
+}
+[data-bs-theme="dark"] .login-input-group {
+    background: var(--fl-superficie-2);
+    border-color: var(--fl-borda);
+}
+[data-bs-theme="dark"] .login-input-group:focus-within {
+    background: var(--fl-fundo);
+    border-color: #F28C33;
+}
+[data-bs-theme="dark"] .login-input-group:focus-within i.login-input-icon { color: #F28C33; }
+[data-bs-theme="dark"] .login-input-group input::placeholder { color: #8a9099; opacity: 1; }
+/* preenchimento automático do navegador (senha salva): sem o fundo claro */
+[data-bs-theme="dark"] .login-input-group input:-webkit-autofill {
+    -webkit-text-fill-color: var(--fl-texto);
+    -webkit-box-shadow: 0 0 0 1000px var(--fl-superficie-2) inset;
+    caret-color: var(--fl-texto);
 }

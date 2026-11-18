@@ -1,11 +1,12 @@
 /* ==========================================================
-   Tema claro / escuro (lote 6e, C2).
+   Tema System / Dark / Light (lote 6e, C2).
 
-   A preferência fica no aparelho (localStorage "fitlog:tema": "claro" ou
-   "escuro"; padrão "claro"). O <head> do base.html já aplica
-   data-bs-theme no <html> antes da primeira pintura (e converte o antigo
-   "sistema" para claro/escuro); este arquivo:
-   - liga os seletores [data-tema-opcao] (menu do avatar e "Ajustes");
+   A preferência fica no aparelho (localStorage "fitlog:tema": "sistema",
+   "escuro" ou "claro"; padrão "claro"). O <head> do base.html já aplica
+   data-bs-theme no <html> antes da primeira pintura; este arquivo:
+   - liga o seletor [data-tema-opcao] (menu do avatar);
+   - em "sistema", acompanha a troca de claro/escuro do aparelho com a
+     página aberta;
    - avisa a página com o evento "fitlog:tema" (detail: {escuro}) --
      chart-ptbr.js usa para recolorir os gráficos.
 
@@ -15,14 +16,19 @@
     'use strict';
 
     var CHAVE = 'fitlog:tema';
-    var VALIDAS = ['claro', 'escuro'];
+    var VALIDAS = ['claro', 'escuro', 'sistema'];
     var raiz = document.documentElement;
+    var midia = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
     function preferencia() {
         try {
             var p = window.localStorage.getItem(CHAVE);
             return VALIDAS.indexOf(p) !== -1 ? p : 'claro';
         } catch (e) { return 'claro'; }
+    }
+
+    function calcularEscuro(pref) {
+        return pref === 'escuro' || (pref === 'sistema' && !!(midia && midia.matches));
     }
 
     function marcarSeletores(pref) {
@@ -34,7 +40,7 @@
     }
 
     function aplicar(pref) {
-        var escuro = pref === 'escuro';
+        var escuro = calcularEscuro(pref);
         var mudou = (raiz.getAttribute('data-bs-theme') === 'dark') !== escuro;
         raiz.setAttribute('data-bs-theme', escuro ? 'dark' : 'light');
         marcarSeletores(pref);
@@ -67,6 +73,12 @@
         definir(alvo.getAttribute('data-tema-opcao'));
         alvo.focus();
     });
+
+    if (midia) {
+        var aoMudarSistema = function () { if (preferencia() === 'sistema') aplicar('sistema'); };
+        if (midia.addEventListener) midia.addEventListener('change', aoMudarSistema);
+        else if (midia.addListener) midia.addListener(aoMudarSistema);
+    }
 
     // Outra aba mudou o tema: acompanha.
     window.addEventListener('storage', function (ev) {

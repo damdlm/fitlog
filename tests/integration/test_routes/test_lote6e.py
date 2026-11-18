@@ -1,7 +1,7 @@
 """Lote 6e da análise de UX.
 
-C2: tema claro ou escuro no app todo, escolhido em Ajustes
-(menu do avatar e painel "Ajustes" do celular) e guardado no aparelho.
+C2: tema System / Dark / Light no app todo, escolhido no menu do avatar
+e guardado no aparelho ("sistema" segue o claro/escuro do aparelho).
 Padrão: claro. O interruptor próprio do calendário saiu; o calendário
 segue o tema do app.
 
@@ -83,14 +83,25 @@ class TestBase:
         assert '/static/css/tema-escuro.' in html and '/static/js/tema.' in html
         # seletor só no menu do avatar (saiu do painel "Ajustes")
         assert html.count('role="radiogroup" aria-label="Tema do app"') == 1
-        for opcao in ('claro', 'escuro'):
+        for opcao in ('sistema', 'escuro', 'claro'):
             assert html.count(f'data-tema-opcao="{opcao}"') == 1
         assert 'mais-tema' not in html
         avatar = html.split('class="dropdown-tema"')[1].split('auth/logout')[0]
         assert 'aria-label="Tema do app"' in avatar
-        assert 'data-tema-opcao="sistema"' not in html and '<span>Do sistema</span>' not in html
-        # quem escolheu "Do sistema" antes de a opção sair fica com a cor do aparelho
-        assert "if (pref === 'sistema') {" in html
+        # nomes e ordem: System, Dark, Light
+        seletor = avatar.split('role="radiogroup"')[1].split('</div>')[0]
+        nomes = re.findall(r'<span>(\w+)</span>', seletor)
+        assert nomes == ['System', 'Dark', 'Light']
+        assert seletor.index('data-tema-opcao="sistema"') < seletor.index('data-tema-opcao="escuro"') \
+            < seletor.index('data-tema-opcao="claro"')
+        # "System" acompanha o aparelho já na primeira pintura
+        assert "if (pref !== 'claro' && pref !== 'escuro' && pref !== 'sistema') {" in html
+        assert "(pref === 'sistema' && !!window.matchMedia" in html
+        assert "matchMedia('(prefers-color-scheme: dark)').matches);" in html
+        assert '.tema-seletor {\n            display: grid;\n            grid-template-columns: repeat(3, 1fr);' in html.replace('\r\n', '\n')
+        # fundo do documento também no <html> (faixa no Safari ao trocar o tema)
+        css_html = html.replace('\r\n', '\n').split('        html {\n            overflow-x: hidden;')[1].split('}')[0]
+        assert 'background-color: var(--fl-c-sup2, #f8f9fa);' in css_html
         # quem tinha o calendário escuro continua no escuro
         assert "localStorage.getItem('fitlog_calendar_theme') === 'dark' ? 'escuro' : 'claro'" in html
 
@@ -105,6 +116,34 @@ class TestBase:
         _login(client, 'tema_publico' + url.strip('/'))
         html = client.get(url).get_data(as_text=True)
         assert 'fitlog:tema' not in html and 'data-tema-opcao' not in html
+
+
+class TestFinanceiroLogin:
+    def test_tela_de_senha_segue_o_tema(self, client, app):
+        from extensions import limiter
+        from models import User, db
+        limiter.reset()
+        with app.app_context():
+            u = User(username='tema_fin', email='tema_fin@teste.com', tipo_usuario='aluno', is_admin=True)
+            u.set_password('senha-correta-1')
+            db.session.add(u)
+            db.session.commit()
+        client.post('/auth/login', data={'username': 'tema_fin', 'password': 'senha-correta-1'})
+        html = client.get('/admin/financeiro/login').get_data(as_text=True)
+        assert 'Confirme seu acesso' in html
+        assert "localStorage.getItem('fitlog:tema')" in html and '/static/css/tema-escuro.' in html
+        limiter.reset()
+
+    def test_escuro_da_tela_de_senha(self):
+        css = _ler('static/css/tema-escuro.css')
+        for sel in ('[data-bs-theme="dark"] .login-card {', '[data-bs-theme="dark"] .login-input-group {',
+                    '[data-bs-theme="dark"] .login-input-group input:-webkit-autofill {'):
+            assert sel in css
+        assert 'tema_sempre_claro' not in _ler('templates/admin/financeiro_login.html')
+
+    def test_fundo_do_documento_no_html_escuro(self):
+        css = _ler('static/css/tema-escuro.css')
+        assert 'html[data-bs-theme="dark"] {\n    background-color: var(--fl-fundo);\n}' in css.replace('\r\n', '\n')
 
 
 class TestLogoEscura:
@@ -151,9 +190,12 @@ class TestScripts:
     def test_tema_js(self):
         js = _ler('static/js/tema.js')
         assert "var CHAVE = 'fitlog:tema';" in js
-        assert "var VALIDAS = ['claro', 'escuro'];" in js
+        assert "var VALIDAS = ['claro', 'escuro', 'sistema'];" in js
         assert "return VALIDAS.indexOf(p) !== -1 ? p : 'claro';" in js  # padrão claro
-        assert "'sistema'" not in js and 'prefers-color-scheme' not in js
+        # "System" segue o aparelho, inclusive com a página aberta
+        assert "window.matchMedia('(prefers-color-scheme: dark)')" in js
+        assert "return pref === 'escuro' || (pref === 'sistema' && !!(midia && midia.matches));" in js
+        assert "if (preferencia() === 'sistema') aplicar('sistema');" in js
         assert "new CustomEvent('fitlog:tema'" in js
         assert 'window.FitLogTema' in js
 
