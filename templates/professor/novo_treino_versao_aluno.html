@@ -35,7 +35,7 @@
         align-items: center;
         gap: 14px;
         flex-wrap: wrap;
-        background: white;
+        background: var(--fl-c-sup, white);
         border: 1px solid var(--nt-line);
         border-radius: 14px;
         padding: 16px 20px;
@@ -83,7 +83,7 @@
     }
 
     .nt-card {
-        background: white;
+        background: var(--fl-c-sup, white);
         border: 1px solid var(--nt-line);
         border-radius: 16px;
         overflow: hidden;
@@ -169,7 +169,7 @@
 
 {% set max_treinos = 3 if versao.divisao == 'ABC' else 4 if versao.divisao == 'ABCD' else 5 %}
 <div class="nt-summary">
-    <div class="nt-summary-id" style="background: linear-gradient(135deg, #CBD2D9 0%, #9AA5B1 100%);">
+    <div class="nt-summary-id" style="background: linear-gradient(135deg, var(--fl-c-sup2, #CBD2D9) 0%, #9AA5B1 100%);">
         {{ (aluno.nome_completo or aluno.username)[0]|upper }}
     </div>
     <div class="nt-summary-info">

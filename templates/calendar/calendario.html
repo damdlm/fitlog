@@ -29,8 +29,12 @@
         --surface-raised: #212129;
         --border-subtle: rgba(255,255,255,0.07);
         --text-primary: #f2f2f5;
-        --text-muted: #6a6a75;
+        --text-muted: #a3a3ad;  /* era #6a6a75: contraste 3:1 no fundo escuro */
         --shadow-elev: 0 20px 50px rgba(0,0,0,0.45);
+        /* FullCalendar: cabeçalho dos dias (sticky) e bordas */
+        --fc-page-bg-color: var(--surface);
+        --fc-border-color: rgba(255,255,255,0.09);
+        --fc-neutral-bg-color: var(--surface-raised);
     }
 
     #calendar {
@@ -364,7 +368,7 @@
     .btn-excluir-registro {
         flex: 1;
         background: transparent;
-        color: #dc3545;
+        color: var(--fl-c-txt-vermelho, #dc3545);
     }
 
     .btn-excluir-registro:hover,
@@ -405,7 +409,7 @@
        exercício que já tem valores reais registrados. */
     .editar-registro-card--vazio {
         border-left-style: dashed;
-        border-left-color: #ced4da;
+        border-left-color: var(--fl-c-borda, #ced4da);
         opacity: .75;
     }
 
@@ -430,7 +434,7 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: .03em;
-        color: #6c757d;
+        color: var(--fl-c-txt2, #6c757d);
         background: rgba(173, 181, 189, 0.15);
         padding: 3px 8px;
         border-radius: 999px;
@@ -445,7 +449,7 @@
     .editar-registro-badge-cardio {
         flex-shrink: 0;
         font-size: .65rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
-        color: #1F7A8C; background: rgba(31, 122, 140, 0.12);
+        color: var(--fl-c-txt-azul, #1F7A8C); background: rgba(31, 122, 140, 0.12);
         padding: 3px 8px; border-radius: 999px; white-space: nowrap;
     }
     .editar-registro-card--cardio { border-left: 4px solid #1F7A8C; }
@@ -473,7 +477,7 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: .03em;
-        color: #3a68c9;
+        color: var(--fl-c-txt-azul, #3a68c9);
         background: rgba(91, 141, 239, 0.12);
         padding: 3px 8px;
         border-radius: 999px;
@@ -497,7 +501,7 @@
     .editar-registro-labels span {
         font-size: .68rem;
         line-height: 1;
-        color: #6c757d;
+        color: var(--fl-c-txt2, #6c757d);
         text-transform: uppercase;
         letter-spacing: .04em;
         font-weight: 700;
@@ -793,9 +797,9 @@
     }
 
     .serie-chip--cardio {
-        background: #DDF0F3 !important;
+        background: var(--fl-c-sup2, #DDF0F3) !important;
         border-color: #BFDDE3 !important;
-        color: #1A6575 !important;
+        color: var(--fl-c-txt-azul, #1A6575) !important;
     }
     .serie-chip {
         background: var(--surface);
@@ -1002,7 +1006,7 @@
         .fc-col-header-cell-cushion {
             font-size: 0.68rem;
             font-weight: 600;
-            color: #6b6b6b;
+            color: var(--fl-c-txt2, #6b6b6b);
             padding: 6px 2px !important;
             text-transform: uppercase;
         }
@@ -1041,7 +1045,7 @@
 
         .fc-day-today .fc-day-dot {
             box-shadow: 0 0 0 2px var(--fl-accent-2, var(--fl-accent));
-            background: #fff;
+            background: var(--fl-c-sup, #fff);
         }
 
         /* O evento em si fica invisível — ele só existe pra guardar os
@@ -1134,7 +1138,7 @@
         width: 40px;
         height: 4px;
         border-radius: 4px;
-        background: rgba(255,255,255,0.6);
+        background: rgba(var(--fl-c-sup-rgb, 255, 255, 255), 0.6);
     }
 
     @media (max-width: 400px) {
@@ -1156,83 +1160,8 @@
         }
     }
 
-    /* ==========================================================
-       Toggle de tema (claro/escuro) — switch estilo iOS
-       ========================================================== */
-    .theme-toggle {
-        position: relative;
-        width: 52px;
-        height: 30px;
-        border-radius: 999px;
-        border: none;
-        background: #e4e4e4;
-        cursor: pointer;
-        padding: 0;
-        flex-shrink: 0;
-        transition: background-color 0.25s ease;
-    }
-
-    .theme-toggle-icon {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 0.72rem;
-        transition: opacity 0.2s ease, color 0.2s ease;
-    }
-
-    .theme-toggle-icon-sun {
-        left: 7px;
-        color: #F28C33;
-        opacity: 1;
-    }
-
-    .theme-toggle-icon-moon {
-        right: 7px;
-        color: #6b6b6b;
-        opacity: 0.5;
-    }
-
-    .theme-toggle-knob {
-        position: absolute;
-        top: 3px;
-        left: 3px;
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background: #fff;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-        transition: transform 0.25s ease;
-    }
-
-    .calendar-page[data-theme="dark"] .theme-toggle {
-        background: #3a3a3a;
-    }
-
-    .calendar-page[data-theme="dark"] .theme-toggle .theme-toggle-knob {
-        transform: translateX(22px);
-        background: #2D2D2D;
-    }
-
-    .calendar-page[data-theme="dark"] .theme-toggle-icon-sun {
-        opacity: 0.4;
-        color: #cfcfcf;
-    }
-
-    .calendar-page[data-theme="dark"] .theme-toggle-icon-moon {
-        opacity: 1;
-        color: #F28C33;
-    }
-
-    /* Variante vertical — usada ao lado do resumo do mês */
-    .theme-toggle-vertical {
-        width: 34px;
-        height: auto;
-        align-self: stretch;
-        min-height: 44px;
-        border-radius: 20px;
-    }
-
-    /* Compartilhar -- mesmo "peso" visual do toggle de tema, ao lado */
+    /* Compartilhar, ao lado do resumo do mês (o interruptor de tema que
+       ficava ao lado saiu no lote 6e: o tema agora é o do app) */
     .btn-compartilhar-calendario {
         width: 46px;
         align-self: stretch;
@@ -1253,40 +1182,11 @@
     .btn-compartilhar-calendario:active { transform: scale(0.96); }
     .btn-compartilhar-calendario:disabled { opacity: 0.6; }
 
-    .theme-toggle-vertical .theme-toggle-icon-sun {
-        top: 6px;
-        left: 50%;
-        right: auto;
-        transform: translateX(-50%);
-    }
-
-    .theme-toggle-vertical .theme-toggle-icon-moon {
-        top: auto;
-        bottom: 6px;
-        right: auto;
-        left: 50%;
-        transform: translateX(-50%);
-    }
-
-    .theme-toggle-vertical .theme-toggle-knob {
-        top: 3px;
-        left: 3px;
-        width: 24px;
-        height: 24px;
-        transition: top 0.25s ease;
-    }
-
-    .calendar-page[data-theme="dark"] .theme-toggle-vertical .theme-toggle-knob {
-        top: calc(100% - 27px);
-        left: 3px;
-        transform: none;
-    }
-
     /* ==========================================================
-       Tema escuro do calendário — escopado à .calendar-page para
-       não afetar o resto do app (que ainda não tem dark mode).
-       Bootstrap 5.3 respeita data-bs-theme nos componentes internos
-       (modal, botões), por isso ele também é setado via JS no wrapper.
+       Tema escuro do calendário, escopado à .calendar-page. Desde o
+       lote 6e ele segue o tema do app (Ajustes > Tema; js/tema.js):
+       sincronizarTema() abaixo copia o data-bs-theme do <html> para o
+       data-theme da página -- inclusive para a imagem compartilhada.
        ========================================================== */
     .calendar-page[data-theme="dark"] {
         color: #e8e8e8;
@@ -1298,7 +1198,7 @@
     }
 
     .calendar-page[data-theme="dark"] .fc-col-header-cell-cushion {
-        color: #6b6b6b !important;
+        color: var(--fl-c-txt2, #6b6b6b) !important;
     }
 
     .calendar-page[data-theme="dark"] .modal-content {
@@ -1796,12 +1696,6 @@
         <i class="bi bi-share-fill"></i>
     </button>
 
-    <!-- Toggle claro/escuro (vertical) -->
-    <button type="button" class="theme-toggle theme-toggle-vertical" id="themeToggle" aria-label="Alternar tema claro/escuro" aria-pressed="false">
-        <i class="bi bi-sun-fill theme-toggle-icon theme-toggle-icon-sun"></i>
-        <i class="bi bi-moon-stars-fill theme-toggle-icon theme-toggle-icon-moon"></i>
-        <span class="theme-toggle-knob"></span>
-    </button>
 </div>
 
 <button type="button" class="rt-tour-ajuda" id="btnTourCalendario" data-tour-pagina>Tutorial</button>
@@ -2040,34 +1934,18 @@
         return `${EVENTOS_API_BASE}${separador}ano=${ano}&mes=${mes}`;
     }
 
-    const THEME_STORAGE_KEY = 'fitlog_calendar_theme';
-
-    function aplicarTema(tema) {
+    // Tema: o do app (data-bs-theme no <html>, Ajustes > Tema). O
+    // interruptor próprio do calendário saiu no lote 6e.
+    function sincronizarTema() {
         const page = document.getElementById('calendarPage');
-        const toggle = document.getElementById('themeToggle');
+        const tema = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'dark' : 'light';
         page.setAttribute('data-theme', tema);
-        // Bootstrap 5.3: componentes internos (modal, botões) seguem
-        // data-bs-theme no ancestral mais próximo.
         page.setAttribute('data-bs-theme', tema);
-        toggle.setAttribute('aria-pressed', tema === 'dark' ? 'true' : 'false');
     }
-
-    function inicializarTema() {
-        const salvo = localStorage.getItem(THEME_STORAGE_KEY);
-        const prefereEscuro = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const temaInicial = salvo || (prefereEscuro ? 'dark' : 'light');
-        aplicarTema(temaInicial);
-
-        document.getElementById('themeToggle').addEventListener('click', function() {
-            const atual = document.getElementById('calendarPage').getAttribute('data-theme');
-            const novo = atual === 'dark' ? 'light' : 'dark';
-            aplicarTema(novo);
-            localStorage.setItem(THEME_STORAGE_KEY, novo);
-        });
-    }
+    document.addEventListener('fitlog:tema', sincronizarTema);
 
     document.addEventListener('DOMContentLoaded', function() {
-        inicializarTema();
+        sincronizarTema();
         inicializarCalendario();
         inicializarModalSeriesIndividuaisCalendario();
     });
@@ -3192,8 +3070,8 @@
             });
     }
 
-    // Redesenha com as cores do novo tema quando o usuário alterna
-    // claro/escuro no calendário (sem refazer a requisição à API).
+    // Redesenha com as cores do novo tema quando o tema do app muda com a
+    // página aberta (Ajustes > Tema), sem refazer a requisição à API.
     (function () {
         const pagina = document.getElementById('calendarPage');
         if (!pagina || typeof MutationObserver === 'undefined') return;

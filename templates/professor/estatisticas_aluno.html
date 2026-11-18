@@ -83,8 +83,8 @@
        controles (data inicial, data final, botão) ficam numa linha só
        que quebra para 2 colunas no mobile só se precisar. */
     .est-filtro-periodo {
-        background: #fff;
-        border: 1px solid #EEF0F3;
+        background: var(--fl-c-sup, #fff);
+        border: 1px solid var(--fl-c-borda, #EEF0F3);
         border-radius: 14px;
         padding: 12px 14px;
         margin-bottom: 20px;
@@ -101,16 +101,16 @@
         display: block;
         font-size: 0.72rem;
         font-weight: 600;
-        color: #6B7280;
+        color: var(--fl-c-txt2, #6B7280);
         margin-bottom: 3px;
     }
     .est-filtro-periodo input[type="date"] {
         width: 100%;
-        border: 1px solid #E5E7EB;
+        border: 1px solid var(--fl-c-borda, #E5E7EB);
         border-radius: 9px;
         padding: 7px 10px;
         font-size: 0.85rem;
-        color: #2D2D2D;
+        color: var(--fl-c-txt, #2D2D2D);
     }
     .est-filtro-periodo input[type="date"]:focus {
         outline: none;
@@ -220,16 +220,16 @@
     }
     .est-ranking-nome {
         font-weight: 600;
-        color: var(--secondary-color);
+        color: var(--fl-c-txt, var(--secondary-color));
         font-size: 0.92rem;
     }
     .est-ranking-valor {
         font-size: 0.85rem;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
         white-space: nowrap;
     }
     .est-ranking-bar-bg {
-        background: #f0f0f0;
+        background: var(--fl-c-sup2, #f0f0f0);
         border-radius: 999px;
         height: 8px;
         overflow: hidden;
@@ -279,7 +279,7 @@
     .est-empty {
         text-align: center;
         padding: 40px 20px;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
     }
     .est-empty i {
         font-size: 2.4rem;
@@ -308,8 +308,8 @@
     }
     .est-pill {
         border: 1px solid rgba(242, 140, 51, 0.3);
-        background: white;
-        color: #a8560c;
+        background: var(--fl-c-sup, white);
+        color: var(--fl-c-txt-laranja, #a8560c);
         border-radius: 999px;
         padding: 5px 14px;
         font-size: 0.82rem;
@@ -334,7 +334,7 @@
     }
     .est-chart-hint {
         font-size: 0.78rem;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
         text-align: center;
         margin: 0;
     }

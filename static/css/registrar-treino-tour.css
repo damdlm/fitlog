@@ -10,7 +10,7 @@
     max-width: min(340px, calc(100vw - 32px));
     padding: 20px 20px 16px;
     border-radius: 20px;
-    background: #fff;
+    background: var(--fl-c-sup, #fff);
     box-shadow: 0 16px 40px rgba(45, 45, 45, 0.28), 0 2px 8px rgba(45, 45, 45, 0.12);
 }
 
@@ -20,7 +20,7 @@
     font-size: 1.1rem;
     font-weight: 800;
     line-height: 1.3;
-    color: #2D2D2D;
+    color: var(--fl-c-txt, #2D2D2D);
 }
 
 .driver-popover.fl-tour .driver-popover-title::before {
@@ -37,11 +37,11 @@
     margin-top: 8px;
     font-size: 0.95rem;
     line-height: 1.55;
-    color: #5a554d;
+    color: var(--fl-c-txt2, #5a554d);
 }
 
 .driver-popover.fl-tour .driver-popover-description b {
-    color: #2D2D2D;
+    color: var(--fl-c-txt, #2D2D2D);
 }
 
 /* ---------- Botão fechar (X) ---------- */
@@ -53,14 +53,14 @@
     line-height: 32px;
     border-radius: 50%;
     font-size: 20px;
-    color: #5f5a50;
+    color: var(--fl-c-txt2, #5f5a50);
     transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .driver-popover.fl-tour .driver-popover-close-btn:hover,
 .driver-popover.fl-tour .driver-popover-close-btn:focus-visible {
-    color: #2D2D2D;
-    background: #f3efe9;
+    color: var(--fl-c-txt, #2D2D2D);
+    background: var(--fl-c-sup2, #f3efe9);
 }
 
 /* ---------- Rodapé ----------
@@ -84,7 +84,7 @@
     flex: 0 0 100%;
     height: 4px;
     border-radius: 4px;
-    background: #f1ece5;
+    background: var(--fl-c-sup2, #f1ece5);
     overflow: hidden;
 }
 
@@ -99,7 +99,7 @@
 .driver-popover.fl-tour .driver-popover-progress-text {
     font-size: 0.8rem;
     font-weight: 600;
-    color: #5f5a50;
+    color: var(--fl-c-txt2, #5f5a50);
     white-space: nowrap;
 }
 
@@ -157,16 +157,16 @@
 
 /* Anterior: ação secundária, só contorno. */
 .driver-popover.fl-tour .driver-popover-prev-btn {
-    background: #fff;
-    color: #5a554d;
-    border-color: #e3ddd3;
+    background: var(--fl-c-sup, #fff);
+    color: var(--fl-c-txt2, #5a554d);
+    border-color: var(--fl-c-borda, #e3ddd3);
 }
 
 .driver-popover.fl-tour .driver-popover-prev-btn:hover,
 .driver-popover.fl-tour .driver-popover-prev-btn:focus-visible {
-    background: #faf7f3;
+    background: var(--fl-c-sup2, #faf7f3);
     border-color: #F28C33;
-    color: #2D2D2D;
+    color: var(--fl-c-txt, #2D2D2D);
 }
 
 /* ---------- Telas muito estreitas ---------- */
@@ -187,7 +187,7 @@
     gap: 6px;
     border: none;
     background: transparent;
-    color: #5f5a50;
+    color: var(--fl-c-txt2, #5f5a50);
     font-size: 0.85rem;
     font-weight: 600;
     padding: 4px 8px;
@@ -206,7 +206,7 @@
 
 .rt-tour-ajuda:hover,
 .rt-tour-ajuda:focus-visible {
-    color: #B45309;
+    color: var(--fl-c-txt-laranja, #B45309);
     background: rgba(242, 140, 51, 0.12);
 }
 

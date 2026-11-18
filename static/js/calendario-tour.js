@@ -50,14 +50,6 @@
                 }
             },
             {
-                element: '#themeToggle',
-                popover: {
-                    title: 'Tema claro ou escuro',
-                    description: 'Troca o visual do calendário. Vale também para a imagem compartilhada.',
-                    side: 'bottom', align: 'end'
-                }
-            },
-            {
                 element: '#calendar .fc-toolbar',
                 popover: {
                     title: 'Mudar de mês',

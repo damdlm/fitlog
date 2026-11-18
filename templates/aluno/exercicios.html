@@ -22,14 +22,14 @@
     }
     .exs-btn-primary:hover { color: white; filter: brightness(1.05); }
     .exs-btn-light {
-        background: #F3F4F6;
-        color: #495057;
-        border: 1px solid #E2E5EA;
+        background: var(--fl-c-sup2, #F3F4F6);
+        color: var(--fl-c-txt2, #495057);
+        border: 1px solid var(--fl-c-borda, #E2E5EA);
         font-weight: 600;
         border-radius: 10px;
         white-space: nowrap;
     }
-    .exs-btn-light:hover { background: #E9EBEF; color: #495057; }
+    .exs-btn-light:hover { background: var(--fl-c-sup2, #E9EBEF); color: var(--fl-c-txt2, #495057); }
 
     /* ===== Filtros ===== */
     .exs-filtros {
@@ -39,7 +39,7 @@
     .exs-filtros .form-label {
         font-size: 0.78rem;
         font-weight: 700;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
         text-transform: uppercase;
         letter-spacing: .02em;
         margin-bottom: 4px;
@@ -63,9 +63,9 @@
     }
     .exs-contador {
         font-size: 0.82rem;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
     }
-    .exs-contador strong { color: var(--secondary-color); }
+    .exs-contador strong { color: var(--fl-c-txt, var(--secondary-color)); }
 
     /* ===== Tabela (desktop) ===== */
     .exs-table-card {
@@ -78,9 +78,9 @@
         font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: .03em;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
         font-weight: 700;
-        background: #fafafa;
+        background: var(--fl-c-sup2, #fafafa);
     }
     #tabelaExercicios tbody tr {
         transition: background-color .12s ease;
@@ -90,7 +90,7 @@
     }
     .exs-badge-musculo {
         background: rgba(45, 45, 45, 0.06);
-        color: var(--secondary-color);
+        color: var(--fl-c-txt, var(--secondary-color));
         font-weight: 600;
         border-radius: 999px;
         padding: 4px 11px;
@@ -109,7 +109,7 @@
     /* ===== Cards (mobile) ===== */
     .exs-cards { display: none; }
     .exs-card {
-        background: #fff;
+        background: var(--fl-c-sup, #fff);
         border-radius: 14px;
         border: 1px solid rgba(0,0,0,0.06);
         border-left: 4px solid #F28C33;
@@ -126,7 +126,7 @@
     .exs-card-nome {
         font-weight: 700;
         font-size: 0.98rem;
-        color: var(--secondary-color);
+        color: var(--fl-c-txt, var(--secondary-color));
         margin-bottom: 5px;
     }
     .exs-card-badges {
@@ -145,7 +145,7 @@
     .exs-empty {
         text-align: center;
         padding: 48px 20px;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
     }
     .exs-empty i {
         font-size: 2.6rem;
@@ -199,7 +199,7 @@
         }
         .exs-card .exs-card-acoes .btn.btn-danger {
             background: rgba(220, 53, 69, 0.10);
-            color: #dc3545;
+            color: var(--fl-c-txt-vermelho, #dc3545);
         }
         .exs-card .exs-card-acoes .btn.btn-warning:hover { background: #F28C33; color: #fff; }
         .exs-card .exs-card-acoes .btn.btn-danger:hover { background: #dc3545; color: #fff; }

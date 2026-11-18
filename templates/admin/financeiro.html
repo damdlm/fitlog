@@ -11,7 +11,7 @@
         gap: 6px;
         font-size: 0.78rem;
         font-weight: 600;
-        color: #9a6300;
+        color: var(--fl-c-txt-laranja, #9a6300);
         background: rgba(255, 193, 7, 0.16);
         border: 1px solid rgba(255, 193, 7, 0.35);
         border-radius: 999px;
@@ -58,14 +58,14 @@
         margin-bottom: 10px;
     }
 
-    .fin-kpi-icon.tone-neutral { background: rgba(45, 45, 45, 0.08); color: #2D2D2D; }
-    .fin-kpi-icon.tone-danger  { background: rgba(220, 53, 69, 0.12); color: #dc3545; }
-    .fin-kpi-icon.tone-success { background: rgba(25, 135, 84, 0.12); color: #198754; }
+    .fin-kpi-icon.tone-neutral { background: rgba(45, 45, 45, 0.08); color: var(--fl-c-txt, #2D2D2D); }
+    .fin-kpi-icon.tone-danger  { background: rgba(220, 53, 69, 0.12); color: var(--fl-c-txt-vermelho, #dc3545); }
+    .fin-kpi-icon.tone-success { background: rgba(25, 135, 84, 0.12); color: var(--fl-c-txt-verde, #198754); }
     .fin-kpi-icon.tone-primary { background: rgba(242, 140, 51, 0.14); color: var(--primary-color); }
 
     .fin-kpi-label {
         font-size: 0.82rem;
-        color: #6c757d;
+        color: var(--fl-c-txt2, #6c757d);
         font-weight: 600;
         margin-bottom: 2px;
     }
@@ -73,13 +73,13 @@
     .fin-kpi-value {
         font-size: 1.6rem;
         font-weight: 800;
-        color: var(--secondary-color);
+        color: var(--fl-c-txt, var(--secondary-color));
         line-height: 1.2;
     }
 
     .fin-kpi-sub {
         font-size: 0.78rem;
-        color: #5f6368;
+        color: var(--fl-c-txt2, #5f6368);
         margin-top: 4px;
     }
 
@@ -94,7 +94,7 @@
     .fin-report-title {
         font-size: 0.92rem;
         font-weight: 700;
-        color: var(--secondary-color);
+        color: var(--fl-c-txt, var(--secondary-color));
         display: flex;
         align-items: center;
         gap: 8px;
@@ -119,17 +119,17 @@
 
     .fin-report-row-label {
         font-weight: 600;
-        color: #2D2D2D;
+        color: var(--fl-c-txt, #2D2D2D);
     }
 
     .fin-report-row-value {
         font-weight: 700;
-        color: var(--secondary-color);
+        color: var(--fl-c-txt, var(--secondary-color));
         white-space: nowrap;
     }
 
     .fin-report-row-qtd {
-        color: #5f6368;
+        color: var(--fl-c-txt2, #5f6368);
         font-size: 0.76rem;
         margin-left: 6px;
     }
@@ -149,7 +149,7 @@
     }
 
     .fin-empty {
-        color: #5f6368;
+        color: var(--fl-c-txt2, #5f6368);
         font-size: 0.85rem;
         text-align: center;
         padding: 12px 0;

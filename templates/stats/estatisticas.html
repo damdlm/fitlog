@@ -86,16 +86,16 @@
     }
     .est-ranking-nome {
         font-weight: 600;
-        color: var(--secondary-color);
+        color: var(--fl-c-txt, var(--secondary-color));
         font-size: 0.92rem;
     }
     .est-ranking-valor {
         font-size: 0.85rem;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
         white-space: nowrap;
     }
     .est-ranking-bar-bg {
-        background: #f0f0f0;
+        background: var(--fl-c-sup2, #f0f0f0);
         border-radius: 999px;
         height: 8px;
         overflow: hidden;
@@ -126,7 +126,7 @@
         height: 36px;
         border-radius: 10px;
         background: rgba(242, 140, 51, 0.12);
-        color: #a8560c;
+        color: var(--fl-c-txt-laranja, #a8560c);
         font-weight: 700;
         font-size: 0.85rem;
         margin-bottom: 10px;
@@ -149,8 +149,8 @@
     }
     .est-pill {
         border: 1px solid rgba(242, 140, 51, 0.3);
-        background: white;
-        color: #a8560c;
+        background: var(--fl-c-sup, white);
+        color: var(--fl-c-txt-laranja, #a8560c);
         border-radius: 999px;
         padding: 5px 14px;
         font-size: 0.82rem;
@@ -170,7 +170,7 @@
     .est-empty {
         text-align: center;
         padding: 40px 20px;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
     }
     .est-empty i {
         font-size: 2.4rem;

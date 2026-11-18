@@ -49,7 +49,7 @@
         border-radius: 14px;
         padding: 16px 18px;
         height: 100%;
-        background: #fff;
+        background: var(--fl-c-sup, #fff);
         border: 1px solid rgba(0,0,0,0.06);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
@@ -60,7 +60,7 @@
     .pd-stat-value {
         font-size: 1.7rem;
         font-weight: 700;
-        color: var(--secondary-color);
+        color: var(--fl-c-txt, var(--secondary-color));
         line-height: 1.1;
     }
     .pd-stat-label {
@@ -68,20 +68,20 @@
         font-weight: 700;
         letter-spacing: 0.03em;
         text-transform: uppercase;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
         margin-top: 4px;
     }
     .pd-stat-sub {
         font-size: 0.8rem;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
         margin-top: 2px;
     }
-    .pd-stat-sub.pd-up { color: #1f7a45; }
-    .pd-stat-sub.pd-down { color: #b9372f; }
-    .pd-stat-alerta .pd-stat-value { color: #d9534f; }
+    .pd-stat-sub.pd-up { color: var(--fl-c-txt-verde, #1f7a45); }
+    .pd-stat-sub.pd-down { color: var(--fl-c-txt-vermelho, #b9372f); }
+    .pd-stat-alerta .pd-stat-value { color: var(--fl-c-txt-vermelho, #d9534f); }
 
     .pd-card {
-        background: #fff;
+        background: var(--fl-c-sup, #fff);
         border: 1px solid rgba(0,0,0,0.06);
         border-radius: 14px;
         padding: 18px 20px;
@@ -90,7 +90,7 @@
     .pd-card-title {
         font-weight: 700;
         font-size: 0.95rem;
-        color: var(--secondary-color);
+        color: var(--fl-c-txt, var(--secondary-color));
         display: flex;
         align-items: center;
         gap: 8px;
@@ -110,7 +110,7 @@
     .pd-acao-item:last-child { margin-bottom: 0; }
     .pd-acao-texto {
         font-size: 0.9rem;
-        color: var(--secondary-color);
+        color: var(--fl-c-txt, var(--secondary-color));
         font-weight: 600;
     }
 
@@ -125,12 +125,12 @@
     .pd-lista-item:last-child { border-bottom: none; }
     .pd-lista-nome {
         font-weight: 600;
-        color: var(--secondary-color);
+        color: var(--fl-c-txt, var(--secondary-color));
         font-size: 0.88rem;
     }
     .pd-lista-meta {
         font-size: 0.78rem;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
     }
 
     .pd-quick-grid {
@@ -144,8 +144,8 @@
         .pd-quick-grid { grid-template-columns: repeat(2, 1fr); }
     }
     /* Pr5: limite do plano no atalho "Adicionar aluno" */
-    .dash-quick-tile .pd-limite { font-size: .72rem; font-weight: 700; color: #5f6368; background: #f3f4f6; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
-    .dash-quick-tile .pd-limite.is-no-limite { color: #9c4a06; background: rgba(242, 140, 51, .14); }
+    .dash-quick-tile .pd-limite { font-size: .72rem; font-weight: 700; color: var(--fl-c-txt2, #5f6368); background: var(--fl-c-sup2, #f3f4f6); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+    .dash-quick-tile .pd-limite.is-no-limite { color: var(--fl-c-txt-laranja, #9c4a06); background: rgba(242, 140, 51, .14); }
 </style>
 
 <!-- Saudação -->
@@ -245,7 +245,7 @@
     <!-- Alunos que precisam de atenção -->
     <div class="col-md-6">
         <div class="pd-card" id="pdAlunosAtencao">
-            <div class="pd-card-title"><i class="bi bi-exclamation-triangle" style="color: #d9534f;"></i> Alunos que precisam de atenção</div>
+            <div class="pd-card-title"><i class="bi bi-exclamation-triangle" style="color: var(--fl-c-txt-vermelho, #d9534f);"></i> Alunos que precisam de atenção</div>
             {% if dados.alunos_atencao.itens %}
                 {% for item in dados.alunos_atencao.itens %}
                 <div class="pd-lista-item">

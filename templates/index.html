@@ -340,7 +340,7 @@
     }
 
     .card-body {
-        background: rgba(255,255,255,0.85);
+        background: rgba(var(--fl-c-sup-rgb, 255, 255, 255), 0.85);
     }
 
     /* --- Página inicial do admin: só marca d'água + animação --- */
@@ -452,11 +452,11 @@
     .admin-hero h2 {
         margin-top: 2.2rem;
         font-weight: 700;
-        color: var(--secondary-color, #2D2D2D);
+        color: var(--fl-c-txt, var(--secondary-color, #2D2D2D));
     }
 
     .admin-hero p {
-        color: #6c757d;
+        color: var(--fl-c-txt2, #6c757d);
         max-width: 380px;
     }
 

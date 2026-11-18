@@ -76,7 +76,7 @@
         padding: 0;
         font-size: 18px;
         line-height: 24px;
-        color: #6c757d;
+        color: var(--fl-c-txt2, #6c757d);
     }
     .mapa-popup a.leaflet-popup-close-button:hover {
         color: #F28C33;
@@ -104,7 +104,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: #fff4e9;
+        background: var(--fl-c-sup2, #fff4e9);
         color: #F28C33;
         font-size: 1.35rem;
         font-weight: 700;
@@ -114,13 +114,13 @@
         font-size: 1rem;
         font-weight: 700;
         line-height: 1.25;
-        color: #212529;
+        color: var(--fl-c-txt, #212529);
         overflow-wrap: anywhere;
     }
     .mapa-prof__local {
         margin-top: 4px;
         font-size: .8rem;
-        color: #6c757d;
+        color: var(--fl-c-txt2, #6c757d);
     }
     .mapa-prof__local .bi {
         color: #F28C33;
@@ -148,7 +148,7 @@
     .mapa-prof__indisponivel {
         margin-top: 14px;
         font-size: .8rem;
-        color: #6c757d;
+        color: var(--fl-c-txt2, #6c757d);
     }
 
     /* --- Layout da página ---
@@ -185,15 +185,15 @@
         height: 38px;
         border-radius: 50%;
         border: 1px solid rgba(0, 0, 0, .08);
-        background: #fff;
-        color: #495057;
+        background: var(--fl-c-sup, #fff);
+        color: var(--fl-c-txt2, #495057);
         font-size: 1.05rem;
         box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
         transition: background-color .15s ease, color .15s ease;
     }
     .mapa-btn-voltar:hover,
     .mapa-btn-voltar:active {
-        background: #fff4e9;
+        background: var(--fl-c-sup2, #fff4e9);
         color: #F28C33;
     }
     .mapa-busca-cidade {
@@ -206,7 +206,7 @@
         left: 14px;
         top: 50%;
         transform: translateY(-50%);
-        color: #6c757d;
+        color: var(--fl-c-txt2, #6c757d);
         font-size: .9rem;
         pointer-events: none;
     }
@@ -216,19 +216,19 @@
         padding: 0 14px 0 38px;
         border: 1px solid rgba(0, 0, 0, .1);
         border-radius: 999px;
-        background: #f5f6f8;
+        background: var(--fl-c-sup2, #f5f6f8);
         font-size: .9rem;
-        color: #212529;
+        color: var(--fl-c-txt, #212529);
         outline: none;
         transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
     }
     #mapaBuscaCidadeInput:focus {
-        background: #fff;
+        background: var(--fl-c-sup, #fff);
         border-color: #F28C33;
         box-shadow: 0 0 0 3px rgba(242, 140, 51, .15);
     }
     #mapaBuscaCidadeInput::placeholder {
-        color: #6c757d;
+        color: var(--fl-c-txt2, #6c757d);
     }
     #mapaBuscaResultados {
         display: none;
@@ -236,7 +236,7 @@
         top: calc(100% + 6px);
         left: 0;
         right: 0;
-        background: #fff;
+        background: var(--fl-c-sup, #fff);
         border: 1px solid rgba(0, 0, 0, .08);
         border-radius: 14px;
         box-shadow: 0 8px 20px rgba(0, 0, 0, .12);
@@ -254,7 +254,7 @@
         background: none;
         text-align: left;
         font-size: .88rem;
-        color: #212529;
+        color: var(--fl-c-txt, #212529);
     }
     .mapa-busca-item:first-child {
         border-radius: 14px 14px 0 0;
@@ -264,7 +264,7 @@
     }
     .mapa-busca-item:hover,
     .mapa-busca-item:focus {
-        background: #fff4e9;
+        background: var(--fl-c-sup2, #fff4e9);
     }
     .mapa-busca-dot {
         flex: 0 0 auto;
@@ -282,7 +282,7 @@
     .mapa-busca-vazio {
         padding: 10px 12px;
         font-size: .85rem;
-        color: #6c757d;
+        color: var(--fl-c-txt2, #6c757d);
     }
     #msg {
         min-height: 1.4em;
@@ -290,7 +290,7 @@
     }
     #mapa-busca-erro {
         display: none;
-        color: #dc3545;
+        color: var(--fl-c-txt-vermelho, #dc3545);
         font-size: .78rem;
         margin-top: 4px;
         padding: 0 12px;
@@ -304,7 +304,7 @@
         .mapa-card {
             border: 1px solid rgba(0, 0, 0, .125);
             border-radius: .5rem;
-            background: #fff;
+            background: var(--fl-c-sup, #fff);
             padding: 1rem;
         }
         #mapa {
@@ -334,7 +334,7 @@
         #mapaBuscaCidadeInput {
             height: 44px;
             border-radius: 14px;
-            background: #fff;
+            background: var(--fl-c-sup, #fff);
             border-color: rgba(20, 20, 20, 0.08);
             box-shadow: 0 4px 16px rgba(20, 20, 20, 0.05);
             font-size: .95rem;

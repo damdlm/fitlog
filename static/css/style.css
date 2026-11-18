@@ -11,7 +11,7 @@
 }
 
 body {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: linear-gradient(135deg, var(--fl-c-sup2, #f8f9fa) 0%, var(--fl-c-sup2, #e9ecef) 100%);
     font-family: 'Inter', sans-serif;
     min-height: 100vh;
 }
@@ -119,7 +119,7 @@ html {
 /* Forms */
 .form-control, .form-select {
     border-radius: 15px;
-    border: 2px solid #e9ecef;
+    border: 2px solid var(--fl-c-borda, #e9ecef);
     padding: 0.75rem 1rem;
     font-size: 1rem;
     transition: all 0.3s;
@@ -132,8 +132,8 @@ html {
 
 .input-group-text {
     border-radius: 15px;
-    border: 2px solid #e9ecef;
-    background: white;
+    border: 2px solid var(--fl-c-borda, #e9ecef);
+    background: var(--fl-c-sup, white);
 }
 
 /* Buttons */
@@ -193,7 +193,7 @@ html {
 .btn-outline-primary {
     background: #FFB366;
     border: 2px solid var(--primary-orange);
-    color: #495057;
+    color: var(--fl-c-txt2, #495057);
 }
 
 .btn-outline-primary:hover {
@@ -211,7 +211,7 @@ html {
 .btn-outline-clonar {
     background: #FFB366;
     border: 2px solid #FFB366;
-    color: #495057;
+    color: var(--fl-c-txt2, #495057);
 }
 
 .btn-outline-clonar:hover {
@@ -266,9 +266,9 @@ html {
 }
 
 .table thead th {
-    background: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
-    color: #495057;
+    background: var(--fl-c-sup2, #f8f9fa);
+    border-bottom: 2px solid var(--fl-c-borda, #dee2e6);
+    color: var(--fl-c-txt2, #495057);
     font-weight: 600;
 }
 
@@ -283,7 +283,7 @@ html {
 
 .nav-tabs .nav-link {
     border: none;
-    color: #6c757d;
+    color: var(--fl-c-txt2, #6c757d);
     font-weight: 600;
     padding: 1rem 2rem;
     border-radius: 15px 15px 0 0;
@@ -296,14 +296,14 @@ html {
 }
 
 .nav-tabs .nav-link.active {
-    background: white;
+    background: var(--fl-c-sup, white);
     color: var(--primary-orange);
     box-shadow: 0 -4px 10px rgba(0,0,0,0.02);
 }
 
 /* Footer */
 .footer {
-    background: white;
+    background: var(--fl-c-sup, white);
     border-radius: 20px;
     margin-top: 3rem !important;
     border-top: 3px solid var(--primary-orange) !important;
@@ -363,7 +363,7 @@ html {
 .spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid #f3f3f3;
+    border: 4px solid var(--fl-c-borda, #f3f3f3);
     border-top: 4px solid var(--primary-orange);
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -383,7 +383,7 @@ html {
 
 /* Welcome section */
 .welcome-section .lead {
-    color: #2D2D2D !important;
+    color: var(--fl-c-txt, #2D2D2D) !important;
     font-weight: 500;
 }
 
@@ -416,7 +416,7 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--fl-c-sup2, #f1f1f1);
     border-radius: 10px;
 }
 

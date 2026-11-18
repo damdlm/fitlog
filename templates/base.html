@@ -142,7 +142,7 @@
         }
         
         body {
-            background-color: #f8f9fa;
+            background-color: var(--fl-c-sup2, #f8f9fa);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             /* Trava o arrasto lateral da PÁGINA (html/body) -- se algum
                elemento acabar 1px mais largo que a tela, o iOS deixa
@@ -243,7 +243,7 @@
                de qualquer JS/CSS rodar. Usar uma cor diferente aqui criava
                um "flash" perceptível: claro (nativo) -> escuro (nosso
                splash) -> claro (app) logo em seguida. */
-            background: #f8f9fa;
+            background: var(--fl-c-sup2, #f8f9fa);
             align-items: center;
             justify-content: center;
             transition: opacity 0.25s ease;
@@ -283,7 +283,7 @@
            que isso vence .bg-white/.shadow-sm só dentro da media query. --- */
         @media (min-width: 992px) {
             .navbar {
-                background: rgba(255, 255, 255, 0.92) !important;
+                background: rgba(var(--fl-c-sup-rgb, 255, 255, 255), 0.92) !important;
                 box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
             }
         }
@@ -291,7 +291,7 @@
         @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
             @media (min-width: 992px) {
                 .navbar {
-                    background: rgba(255, 255, 255, 0.68) !important;
+                    background: rgba(var(--fl-c-sup-rgb, 255, 255, 255), 0.68) !important;
                     backdrop-filter: blur(20px) saturate(180%);
                     -webkit-backdrop-filter: blur(20px) saturate(180%);
                     border-bottom: 1px solid rgba(255, 255, 255, 0.6);
@@ -343,7 +343,7 @@
                 top: 100%;
                 left: 0;
                 right: 0;
-                background: #fff;
+                background: var(--fl-c-sup, #fff);
                 max-height: calc(100vh - 70px);
                 max-height: calc(100dvh - 70px);
                 overflow-y: auto;
@@ -354,7 +354,7 @@
         }
         
         .nav-link {
-            color: var(--secondary-color) !important;
+            color: var(--fl-c-txt, var(--secondary-color)) !important;
             font-weight: 500;
             transition: color 0.3s;
         }
@@ -414,9 +414,9 @@
         }
 
         .aviso-confirmar-email {
-            background: #FFF4E8;
+            background: var(--fl-c-sup2, #FFF4E8);
             border: 1px solid #F8C99A;
-            color: #6b3d10;
+            color: var(--fl-c-txt-laranja, #6b3d10);
             border-radius: 12px;
             padding: 8px 12px;
             font-size: 0.85rem;
@@ -424,7 +424,7 @@
             margin-bottom: 14px;
         }
         .aviso-confirmar-email > i { color: #F28C33; font-size: 1.05rem; line-height: 1.3; }
-        .aviso-confirmar-email-link { color: #c2621a; font-weight: 600; font-size: 0.88rem; }
+        .aviso-confirmar-email-link { color: var(--fl-c-txt-laranja, #c2621a); font-weight: 600; font-size: 0.88rem; }
 
         /* Flash messages flutuam por cima do conteúdo (estilo toast),
            centralizadas no meio da tela -- container fixo, acima de
@@ -501,7 +501,7 @@
         
         .alert-warning {
             background: linear-gradient(135deg, #ffc107 0%, #ffdb6d 100%);
-            color: var(--secondary-color);
+            color: var(--fl-c-txt, var(--secondary-color));
         }
         
         .alert-info {
@@ -523,7 +523,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(var(--fl-c-sup-rgb, 255, 255, 255), 0.95);
             z-index: 9999;
             display: none;
             justify-content: center;
@@ -534,7 +534,7 @@
         .loader-spinner {
             width: 60px;
             height: 60px;
-            border: 5px solid #f3f3f3;
+            border: 5px solid var(--fl-c-borda, #f3f3f3);
             border-top: 5px solid var(--primary-color);
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -593,13 +593,13 @@
             width: 34px; height: 40px;
             display: inline-flex; align-items: center; justify-content: center;
             padding: 0; border: 0; background: transparent;
-            color: #6b6b6b; font-size: 1.25rem; cursor: pointer;
+            color: var(--fl-c-txt2, #6b6b6b); font-size: 1.25rem; cursor: pointer;
             border-radius: 50%;
         }
         .fl-ajuda-tela[hidden] { display: none !important; }
         .fl-ajuda-titulo {
             border: 0; background: transparent; padding: 0 2px;
-            color: #6b6b6b; font-size: 0.95rem; line-height: 1;
+            color: var(--fl-c-txt2, #6b6b6b); font-size: 0.95rem; line-height: 1;
             align-self: center; cursor: pointer;
             /* área de toque maior que o desenho */
             margin: -14px -6px -14px 0; min-height: 44px; min-width: 28px;
@@ -686,7 +686,7 @@
             font-size: 0.6rem;
             line-height: 1;
             font-weight: 700;
-            border: 2px solid #fff;
+            border: 2px solid var(--fl-c-borda, #fff);
             box-sizing: border-box;
         }
 
@@ -729,14 +729,14 @@
                 width: var(--sidebar-w);
                 z-index: 1031; /* acima da navbar (1030), abaixo de modais/overlays */
                 flex-direction: column;
-                background: rgba(255, 255, 255, 0.92);
+                background: rgba(var(--fl-c-sup-rgb, 255, 255, 255), 0.92);
                 border-right: 1px solid rgba(0, 0, 0, 0.06);
                 box-shadow: 6px 0 28px rgba(45, 45, 45, 0.05);
                 transition: width 0.25s var(--sidebar-ease);
             }
             @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
                 .app-sidebar {
-                    background: rgba(255, 255, 255, 0.72);
+                    background: rgba(var(--fl-c-sup-rgb, 255, 255, 255), 0.72);
                     backdrop-filter: blur(20px) saturate(180%);
                     -webkit-backdrop-filter: blur(20px) saturate(180%);
                 }
@@ -773,8 +773,8 @@
                 place-items: center;
                 border: 1px solid rgba(0, 0, 0, 0.1);
                 border-radius: 50%;
-                background: #fff;
-                color: #6b7280;
+                background: var(--fl-c-sup, #fff);
+                color: var(--fl-c-txt2, #6b7280);
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
                 transition: color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
             }
@@ -830,7 +830,7 @@
                 background: none;
                 font-size: 0.92rem;
                 font-weight: 500;
-                color: #4b5563;
+                color: var(--fl-c-txt2, #4b5563);
                 position: relative;
                 white-space: nowrap;
                 transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
@@ -918,7 +918,7 @@
                 gap: 10px;
                 font-size: 1.05rem;
                 font-weight: 600;
-                color: var(--secondary-color);
+                color: var(--fl-c-txt, var(--secondary-color));
                 white-space: nowrap;
             }
             .topbar-title .bi { font-size: 1.2rem; line-height: 1; }
@@ -986,7 +986,7 @@
             top: calc(100% + 12px);
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.97);
+            background: rgba(var(--fl-c-sup-rgb, 255, 255, 255), 0.97);
             border-radius: 18px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.14);
             border: 1px solid rgba(0, 0, 0, 0.04);
@@ -996,7 +996,7 @@
 
         @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
             .mega-panel {
-                background: rgba(255, 255, 255, 0.78);
+                background: rgba(var(--fl-c-sup-rgb, 255, 255, 255), 0.78);
                 backdrop-filter: blur(24px) saturate(180%);
                 -webkit-backdrop-filter: blur(24px) saturate(180%);
                 border: 1px solid rgba(255, 255, 255, 0.6);
@@ -1035,7 +1035,7 @@
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.06em;
-            color: #5f6368;
+            color: var(--fl-c-txt2, #5f6368);
             font-weight: 700;
             margin-bottom: 0.4rem;
             padding-left: 0.35rem;
@@ -1048,14 +1048,14 @@
             padding: 0.6rem 0.65rem;
             border-radius: 12px;
             text-decoration: none;
-            color: var(--secondary-color);
+            color: var(--fl-c-txt, var(--secondary-color));
             transition: background 0.15s ease, transform 0.15s ease;
         }
 
         .mega-card:hover {
             background: rgba(242, 140, 51, 0.1);
             transform: translateY(-1px);
-            color: var(--secondary-color);
+            color: var(--fl-c-txt, var(--secondary-color));
         }
 
         .mega-card:hover .mega-icon {
@@ -1088,7 +1088,7 @@
         .mega-desc {
             display: block;
             font-size: 0.75rem;
-            color: #5f6670;
+            color: var(--fl-c-txt2, #5f6670);
             margin-top: 1px;
             line-height: 1.25;
         }
@@ -1100,7 +1100,7 @@
             left: 0;
             right: 0;
             z-index: 1035;
-            background: #fff;
+            background: var(--fl-c-sup, #fff);
             border-top: 1px solid rgba(0, 0, 0, 0.06);
             box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.06);
             display: flex;
@@ -1118,7 +1118,7 @@
             flex: 1;
             background: none;
             border: none;
-            color: #5f6670;
+            color: var(--fl-c-txt2, #5f6670);
             text-decoration: none;
             font-size: 0.66rem;
             font-weight: 600;
@@ -1132,7 +1132,7 @@
 
         .bottom-nav-item.active {
             /* X1: rótulo no laranja escuro (contraste 5,2:1); o ícone segue no laranja da marca. */
-            color: #a8560c;
+            color: var(--fl-c-txt-laranja, #a8560c);
         }
         .bottom-nav-item.active i,
         .bottom-nav-item.active svg {
@@ -1158,7 +1158,7 @@
             justify-content: center;
             font-size: 1.6rem;
             margin-top: -28px;
-            border: 4px solid #fff;
+            border: 4px solid var(--fl-c-borda, #fff);
             box-shadow: 0 8px 20px rgba(242, 140, 51, 0.45);
             flex: 0 0 auto;
             text-decoration: none;
@@ -1189,7 +1189,7 @@
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.06em;
-            color: #5f6368;
+            color: var(--fl-c-txt2, #5f6368);
             font-weight: 700;
             margin-bottom: 0.4rem;
             padding-left: 0.25rem;
@@ -1202,7 +1202,7 @@
             padding: 0.7rem 0.5rem;
             border-radius: 10px;
             text-decoration: none;
-            color: var(--secondary-color);
+            color: var(--fl-c-txt, var(--secondary-color));
             font-weight: 500;
             font-size: 0.92rem;
         }
@@ -1216,6 +1216,47 @@
             width: 20px;
             text-align: center;
             color: var(--primary-color);
+        }
+
+        /* C2 (lote 6e): seletor de tema (_tema_seletor.html) */
+        .tema-seletor {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            padding: 4px;
+            border-radius: 12px;
+            background: var(--bs-tertiary-bg);
+        }
+        .tema-opcao {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 44px;
+            padding: 0 8px;
+            border: none;
+            border-radius: 9px;
+            background: transparent;
+            color: var(--bs-body-color);
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .tema-opcao.is-ativo {
+            background: var(--bs-body-bg);
+            color: var(--fl-c-txt-laranja, var(--fl-texto-laranja, #a8560c));
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+        }
+        .tema-opcao:focus-visible { outline: 3px solid rgba(242, 140, 51, 0.5); outline-offset: 1px; }
+        .dropdown-tema { padding: 4px 12px 6px; min-width: 280px; }
+        .dropdown-tema-rotulo {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--bs-secondary-color);
+            margin: 2px 2px 6px;
         }
 
         /* ===================================================
@@ -1258,7 +1299,7 @@
         }
         .dash-registro-exercicio {
             font-weight: 600;
-            color: var(--secondary-color);
+            color: var(--fl-c-txt, var(--secondary-color));
             overflow-wrap: break-word;
         }
         .dash-registro-item-clicavel {
@@ -1275,7 +1316,7 @@
             outline: none;
         }
         .dash-registro-exercicio-trunc {
-            border-bottom: 1px dashed #ccc;
+            border-bottom: 1px dashed var(--fl-c-borda, #ccc);
             display: inline-block;
         }
         .dash-registro-item-clicavel:hover .dash-registro-exercicio-trunc,
@@ -1285,7 +1326,7 @@
         }
         .dash-registro-meta {
             font-size: 0.8rem;
-            color: #6b6b6b;
+            color: var(--fl-c-txt2, #6b6b6b);
             white-space: nowrap;
         }
         .dash-registro-badges {
@@ -1295,8 +1336,8 @@
             margin-top: 8px;
         }
         .dash-badge {
-            background: #f2f2f2;
-            color: #555;
+            background: var(--fl-c-sup2, #f2f2f2);
+            color: var(--fl-c-txt2, #555);
             font-size: 0.78rem;
             font-weight: 600;
             padding: 4px 9px;
@@ -1305,13 +1346,13 @@
         }
         /* Cardio (services/cardio.py): azul-petróleo, distinto do laranja da força. */
         .dash-badge--cardio, .dash-ultimo-body .dash-badge.dash-badge--cardio {
-            background: #DDF0F3;
-            color: #1A6575;
+            background: var(--fl-c-sup2, #DDF0F3);
+            color: var(--fl-c-txt-azul, #1A6575);
         }
         .dash-empty {
             text-align: center;
             padding: 40px 20px;
-            color: #6b6b6b;
+            color: var(--fl-c-txt2, #6b6b6b);
         }
         .dash-empty i {
             font-size: 2.4rem;
@@ -1335,9 +1376,9 @@
             height: 100%;
             padding: 16px 10px;
             border-radius: 12px;
-            background: #f8f9fa;
+            background: var(--fl-c-sup2, #f8f9fa);
             border: 1px solid rgba(0,0,0,0.05);
-            color: var(--secondary-color);
+            color: var(--fl-c-txt, var(--secondary-color));
             font-weight: 600;
             font-size: 0.85rem;
             text-align: center;
@@ -1455,16 +1496,16 @@
             font-size: 1.5rem;
             margin: 0 auto 14px;
         }
-        .fl-confirm-icon.variant-danger { background: rgba(220, 53, 69, 0.12); color: #dc3545; }
-        .fl-confirm-icon.variant-warning { background: #FEF3E2; color: #F59E0B; }
-        .fl-confirm-icon.variant-info { background: #E7F3FE; color: #0EA5E9; }
+        .fl-confirm-icon.variant-danger { background: rgba(220, 53, 69, 0.12); color: var(--fl-c-txt-vermelho, #dc3545); }
+        .fl-confirm-icon.variant-warning { background: var(--fl-c-tint-laranja, #FEF3E2); color: #F59E0B; }
+        .fl-confirm-icon.variant-info { background: var(--fl-c-sup2, #E7F3FE); color: #0EA5E9; }
         .fl-confirm-title {
             font-weight: 700;
-            color: var(--dark-bg, #2D2D2D);
+            color: var(--fl-c-txt, var(--dark-bg, #2D2D2D));
             margin-bottom: 8px;
         }
         .fl-confirm-text {
-            color: #6c757d;
+            color: var(--fl-c-txt2, #6c757d);
             font-size: 0.92rem;
             margin-bottom: 20px;
         }
@@ -1493,16 +1534,16 @@
             font-weight: 600;
             border-radius: 999px;
             padding: 11px 20px;
-            border: 2px solid #dee2e6;
-            color: #6c757d;
+            border: 2px solid var(--fl-c-borda, #dee2e6);
+            color: var(--fl-c-txt2, #6c757d);
             background: transparent;
             transition: filter .15s ease, transform .15s ease;
         }
         .fl-confirm-btn-cancel:hover,
         .fl-confirm-btn-cancel:focus {
-            color: #495057;
-            border-color: #ced4da;
-            background: #f8f9fa;
+            color: var(--fl-c-txt2, #495057);
+            border-color: var(--fl-c-borda, #ced4da);
+            background: var(--fl-c-sup2, #f8f9fa);
         }
         .fl-confirm-btn-cancel:active {
             transform: scale(0.97);
@@ -1554,7 +1595,7 @@
         /* ---- Modal de mídia (gif/vídeo) do exercício ---- */
         #modalImagensExercicio .modal-body {
             padding: 18px;
-            background: #fafafa;
+            background: var(--fl-c-sup2, #fafafa);
         }
 
         .exmodal-media-frame {
@@ -1648,7 +1689,7 @@
 
         .exmodal-media-caption-label {
             font-size: 0.82rem;
-            color: #6c757d;
+            color: var(--fl-c-txt2, #6c757d);
             display: flex;
             align-items: center;
             gap: 6px;
@@ -1705,7 +1746,7 @@
             right: 0;
             height: 32px;
             margin-top: -32px;
-            background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, #fff 85%);
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, var(--fl-c-sup, #fff) 85%);
             pointer-events: none;
         }
 
@@ -1771,14 +1812,14 @@
 
         .exmodal-step-text {
             padding-top: 4px;
-            color: #2D2D2D;
+            color: var(--fl-c-txt, #2D2D2D);
             font-size: 0.95rem;
             line-height: 1.55;
         }
 
         .exmodal-steps-empty {
             text-align: center;
-            color: #6c757d;
+            color: var(--fl-c-txt2, #6c757d);
             padding: 20px 0;
             font-size: 0.9rem;
         }
@@ -1786,6 +1827,31 @@
     </style>
     
     {% block extra_css %}{% endblock %}
+    {#- C2 (lote 6e): tema claro/escuro/do sistema, escolhido em Ajustes e
+        guardado no aparelho (localStorage "fitlog:tema"; padrão: claro).
+        Só na área logada: landing, login, preços etc. têm visual próprio
+        (a página pode ligar tema_sempre_claro). Aplicado aqui, antes da
+        primeira pintura, para não piscar o claro; static/js/tema.js
+        cuida do seletor e de "do sistema" mudando com a página aberta. -#}
+    {% if current_user.is_authenticated and not tema_sempre_claro %}
+    <link rel="stylesheet" href="{{ static_v('css/tema-escuro.css') }}">
+    <script>
+        (function () {
+            try {
+                var pref = localStorage.getItem('fitlog:tema');
+                if (pref !== 'claro' && pref !== 'escuro' && pref !== 'sistema') {
+                    // Quem tinha escolhido o escuro no interruptor do calendário
+                    // (removido no lote 6e) continua no escuro, agora no app todo.
+                    pref = localStorage.getItem('fitlog_calendar_theme') === 'dark' ? 'escuro' : 'claro';
+                    localStorage.setItem('fitlog:tema', pref);
+                }
+                var escuro = pref === 'escuro' || (pref === 'sistema' && window.matchMedia
+                    && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                document.documentElement.setAttribute('data-bs-theme', escuro ? 'dark' : 'light');
+            } catch (e) { /* sem storage: fica no claro */ }
+        })();
+    </script>
+    {% endif %}
     <script>
         /* Sidebar desktop: restaura "recolhida" antes da primeira pintura
            pra não piscar expandida -> recolhida a cada navegação. */
@@ -1995,6 +2061,13 @@
                             </a>
                         </li>
                         <li><hr class="dropdown-divider"></li>
+                        {% if not tema_sempre_claro %}
+                        <li class="dropdown-tema">
+                            <span class="dropdown-tema-rotulo" aria-hidden="true">Tema</span>
+                            {% include "_tema_seletor.html" %}
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        {% endif %}
                         <li>
                             <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
                                 <i class="bi bi-box-arrow-right"></i> Sair
@@ -2361,6 +2434,12 @@
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
         </div>
         <div class="offcanvas-body">
+            {% if not tema_sempre_claro %}
+            <div class="mais-section mais-tema">
+                <span class="mais-section-label" aria-hidden="true">Tema</span>
+                {% include "_tema_seletor.html" %}
+            </div>
+            {% endif %}
             {% if current_user.is_professor() and not current_user.is_admin %}
             <div class="mais-section">
                 <a class="mais-link" href="{{ url_for('calendar.calendario') }}"><i class="bi bi-calendar"></i> Meu calendário</a>
@@ -2618,6 +2697,7 @@
          só carrega/roda com usuário logado (login, cadastro, landing
          page etc. não devem sugerir instalação). -->
     {% if current_user.is_authenticated %}
+    {% if not tema_sempre_claro %}<script src="{{ static_v('js/tema.js') }}"></script>{% endif %}
     <script src="{{ static_v('js/modules/pwa-install.js') }}"></script>
     <script src="{{ static_v('js/modules/notificacoes.js') }}"></script>
     {% endif %}

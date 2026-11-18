@@ -1,0 +1,15 @@
+{#- C2 (lote 6e): seletor de tema. Usado no menu do avatar e no painel
+    "Ajustes" do celular; o comportamento fica em static/js/tema.js
+    ([data-tema-opcao]). O estado marcado (is-ativo/aria-checked) vem do
+    tema.js, que lê a preferência guardada no aparelho. -#}
+<div class="tema-seletor" role="radiogroup" aria-label="Tema do app">
+    <button type="button" class="tema-opcao" role="radio" aria-checked="false" data-tema-opcao="claro">
+        <i class="bi bi-sun" aria-hidden="true"></i><span>Claro</span>
+    </button>
+    <button type="button" class="tema-opcao" role="radio" aria-checked="false" data-tema-opcao="escuro">
+        <i class="bi bi-moon-stars" aria-hidden="true"></i><span>Escuro</span>
+    </button>
+    <button type="button" class="tema-opcao" role="radio" aria-checked="false" data-tema-opcao="sistema">
+        <i class="bi bi-circle-half" aria-hidden="true"></i><span>Do sistema</span>
+    </button>
+</div>

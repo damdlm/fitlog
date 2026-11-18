@@ -51,9 +51,9 @@
         resize: vertical;
         min-height: 140px;
     }
-    .ct-textarea:disabled { background: #f8f9fa; }
+    .ct-textarea:disabled { background: var(--fl-c-sup2, #f8f9fa); }
 
-    .ct-charcount { font-size: 0.75rem; color: #6b6b6b; text-align: right; margin-top: 4px; }
+    .ct-charcount { font-size: 0.75rem; color: var(--fl-c-txt2, #6b6b6b); text-align: right; margin-top: 4px; }
 
     .ct-toolbar {
         display: flex;
@@ -97,7 +97,7 @@
         align-items: center;
         gap: 8px;
         font-weight: 700;
-        color: #EF4444;
+        color: var(--fl-c-txt-vermelho, #EF4444);
         font-size: 0.9rem;
     }
     .ct-recording-info.is-active { display: flex; }
@@ -112,7 +112,7 @@
         align-items: center;
         gap: 8px;
         font-weight: 600;
-        color: #6c757d;
+        color: var(--fl-c-txt2, #6c757d);
         font-size: 0.88rem;
     }
     .ct-transcrevendo.is-active { display: flex; }
@@ -135,7 +135,7 @@
         padding: 40px 20px;
     }
     .ct-sucesso.is-active { display: block; }
-    .ct-sucesso i { font-size: 3rem; color: #15803d; margin-bottom: 12px; display: inline-block; }
+    .ct-sucesso i { font-size: 3rem; color: var(--fl-c-txt-verde, #15803d); margin-bottom: 12px; display: inline-block; }
 
     .ct-form.is-hidden { display: none; }
 </style>

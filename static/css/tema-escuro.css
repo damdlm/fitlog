@@ -1,0 +1,141 @@
+/* ==========================================================
+   Tema escuro do app (lote 6e, C2).
+
+   Ligado por data-bs-theme="dark" no <html> (base.html + js/tema.js),
+   só na área logada. O Bootstrap 5.3 já escurece os componentes dele;
+   este arquivo cuida da paleta do FitLog e das telas com CSS próprio
+   (cores fixas nos <style> de cada template). Todas as regras começam
+   por [data-bs-theme="dark"], então o tema claro não muda em nada.
+
+   Paleta:
+     --fl-fundo           fundo da página
+     --fl-superficie      cartões, painéis, modais
+     --fl-superficie-2    campos, chips, linhas alternadas
+     --fl-borda           bordas e divisórias
+     --fl-texto / --fl-texto-suave
+     --fl-texto-laranja   laranja como texto (o #a8560c do claro some no escuro)
+   ========================================================== */
+
+[data-bs-theme="dark"] {
+    color-scheme: dark;
+    --fl-fundo: #121417;
+    --fl-superficie: #1b1e23;
+    --fl-superficie-2: #252930;
+    --fl-borda: #353b45;
+    --fl-texto: #e7e9ec;
+    --fl-texto-suave: #b0b6be;
+    --fl-texto-laranja: #f5a35c;
+
+    --bs-body-bg: var(--fl-fundo);
+    --bs-body-bg-rgb: 18, 20, 23;
+    --bs-body-color: var(--fl-texto);
+    --bs-body-color-rgb: 231, 233, 236;
+    --bs-secondary-color: var(--fl-texto-suave);
+    --bs-secondary-bg: var(--fl-superficie-2);
+    --bs-tertiary-bg: var(--fl-superficie-2);
+    --bs-border-color: var(--fl-borda);
+    --bs-emphasis-color: #fff;
+    --bs-heading-color: var(--fl-texto);
+    --bs-link-color: var(--fl-texto-laranja);
+    --bs-link-hover-color: #ffbd85;
+    --bs-link-color-rgb: 245, 163, 92;
+
+    /* Cores fixas das telas trocadas por var(--fl-c-*, <cor do claro>)
+       (lote 6e): no claro valem as originais; aqui, estas. */
+    --fl-c-sup: var(--fl-superficie);
+    --fl-c-sup-rgb: 27, 30, 35;           /* rgba(var(--fl-c-sup-rgb, 255, 255, 255), .92) */
+    --fl-c-sup2: var(--fl-superficie-2);
+    --fl-c-borda: var(--fl-borda);
+    --fl-c-txt: var(--fl-texto);
+    --fl-c-txt2: var(--fl-texto-suave);
+    --fl-c-txt-laranja: var(--fl-texto-laranja);
+    --fl-c-txt-azul: #6cc7d9;
+    --fl-c-txt-verde: #6fd39a;
+    --fl-c-txt-vermelho: #ff8a80;
+    --fl-c-txt-amarelo: #f3d36b;
+    --fl-c-tint-laranja: #3a2817;
+    --fl-c-tint-amarelo: #3a3317;
+    --fl-c-tint-verde: #173a27;
+    --fl-c-tint-azul: #172c3a;
+    --fl-c-tint-vermelho: #3d1c1e;
+}
+
+[data-bs-theme="dark"] body {
+    background-color: var(--fl-fundo);
+    color: var(--fl-texto);
+}
+
+/* Variáveis de cor das próprias telas (definidas no :root de cada uma):
+   html[...] é mais específico que :root, então vale mesmo vindo antes. */
+html[data-bs-theme="dark"] {
+    --ct-ink: var(--fl-texto);  --ct-muted: var(--fl-texto-suave);
+    --ct-line: var(--fl-borda); --ct-bg-soft: var(--fl-superficie-2);
+    --cv-ink: var(--fl-texto);  --cv-muted: var(--fl-texto-suave);
+    --cv-line: var(--fl-borda); --cv-bg-soft: var(--fl-superficie-2);
+    --nt-ink: var(--fl-texto);  --nt-muted: var(--fl-texto-suave);
+    --nt-line: var(--fl-borda); --nt-bg-soft: var(--fl-superficie-2);
+    --v-ink: var(--fl-texto);   --v-muted: var(--fl-texto-suave);
+    --v-line: var(--fl-borda);  --v-bg-soft: var(--fl-superficie-2);
+    --n-ink: var(--fl-texto);   --n-muted: var(--fl-texto-suave);
+    --n-line: var(--fl-borda);
+    --epp-borda: var(--fl-borda); --epp-fundo-suave: var(--fl-superficie-2);
+    /* registrar_treino.html */
+    --surface: var(--fl-superficie);
+    --surface-muted: var(--fl-superficie-2);
+    --border-soft: var(--fl-borda);
+}
+
+/* Utilitários do Bootstrap com cor fixa usados nas telas */
+[data-bs-theme="dark"] .bg-white { background-color: var(--fl-superficie) !important; }
+[data-bs-theme="dark"] .bg-light { background-color: var(--fl-superficie-2) !important; }
+[data-bs-theme="dark"] .text-muted { color: var(--fl-texto-suave) !important; }
+[data-bs-theme="dark"] .border-light { border-color: var(--fl-borda) !important; }
+
+/* base.html (X1) fixa o cinza do botão contornado para o fundo branco */
+[data-bs-theme="dark"] .btn-outline-secondary {
+    --bs-btn-color: var(--fl-texto-suave);
+    --bs-btn-border-color: var(--fl-borda);
+    --bs-btn-hover-bg: var(--fl-superficie-2);
+    --bs-btn-hover-color: var(--fl-texto);
+    --bs-btn-hover-border-color: var(--fl-borda);
+}
+
+/* Vermelho e azul do Bootstrap como texto: os tons do claro somem no escuro */
+[data-bs-theme="dark"] .text-danger { color: #ff8a80 !important; }
+[data-bs-theme="dark"] .btn-outline-danger {
+    --bs-btn-color: #ff8a80;
+    --bs-btn-border-color: #c94a4f;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #b02a37;
+    --bs-btn-hover-border-color: #b02a37;
+}
+[data-bs-theme="dark"] .btn-outline-primary {
+    --bs-btn-color: #8bb9fe;
+    --bs-btn-border-color: #4d8ff8;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #0d6efd;
+    --bs-btn-hover-border-color: #0d6efd;
+}
+
+/* Mapa (Leaflet): os mapas continuam claros; só os controles acompanham */
+[data-bs-theme="dark"] .leaflet-bar a,
+[data-bs-theme="dark"] .leaflet-bar a:hover {
+    background-color: var(--fl-superficie);
+    color: var(--fl-texto);
+    border-bottom-color: var(--fl-borda);
+}
+[data-bs-theme="dark"] .leaflet-control-attribution {
+    background: rgba(27, 30, 35, 0.85) !important;
+    color: var(--fl-texto-suave);
+}
+[data-bs-theme="dark"] .leaflet-control-attribution a { color: var(--fl-texto-laranja); }
+[data-bs-theme="dark"] .leaflet-popup-content-wrapper,
+[data-bs-theme="dark"] .leaflet-popup-tip {
+    background: var(--fl-superficie);
+    color: var(--fl-texto);
+}
+
+/* Selos e blocos claros com texto escuro (bg-light + text-dark): no
+   escuro o fundo vira superfície e o texto acompanha */
+[data-bs-theme="dark"] .bg-light.text-dark,
+[data-bs-theme="dark"] .bg-light .text-dark { color: var(--fl-texto) !important; }

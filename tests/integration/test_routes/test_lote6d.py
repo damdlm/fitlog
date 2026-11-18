@@ -175,4 +175,4 @@ class TestRevisaoLote6d:
         _login(client, 't2_botao')
         html = client.get('/aluno/cadastrar-treinos').get_data(as_text=True)
         assert 'min-height: 44px;' in html.split('.ct-modo-btn {')[1].split('}')[0]
-        assert '.ct-ficha.is-editando .ct-modo-btn { background: #fff1e3; border-color: #a8560c; }' in html
+        assert '.ct-ficha.is-editando .ct-modo-btn { background: var(--fl-c-tint-laranja, #fff1e3); border-color: #a8560c; }' in html

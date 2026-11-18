@@ -51,7 +51,7 @@
     }
 
     .v-empty-card {
-        background: white;
+        background: var(--fl-c-sup, white);
         border: 1px solid var(--v-line);
         border-radius: 16px;
         padding: 32px 24px;
@@ -75,7 +75,7 @@
     .v-empty-card p { color: var(--v-muted); font-size: 0.92rem; margin-bottom: 22px; }
 
     .v-card {
-        background: white;
+        background: var(--fl-c-sup, white);
         border: 1px solid var(--v-line);
         border-radius: 14px;
         padding: 18px 20px;
@@ -104,7 +104,7 @@
         border-radius: 999px;
         white-space: nowrap;
     }
-    .v-status-pill.ativa { background: #E9F9EF; color: #15803d; }
+    .v-status-pill.ativa { background: var(--fl-c-sup2, #E9F9EF); color: var(--fl-c-txt-verde, #15803d); }
     .v-status-pill.ativa .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
     .v-status-pill.finalizada { background: var(--v-bg-soft); color: var(--v-muted); }
 
@@ -144,7 +144,7 @@
             box-shadow: 0 14px 32px rgba(20, 20, 20, 0.09);
         }
         .v-lista .v-card:has(.v-status-pill.ativa) {
-            background: linear-gradient(135deg, #FFF7EE 0%, #FFFFFF 70%);
+            background: linear-gradient(135deg, var(--fl-c-sup2, #FFF7EE) 0%, var(--fl-c-sup, #FFFFFF) 70%);
             border-color: rgba(242, 140, 51, 0.30);
         }
         .v-lista .v-card-titulo { font-size: 1.12rem; }

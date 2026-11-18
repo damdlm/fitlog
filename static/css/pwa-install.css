@@ -30,7 +30,7 @@
         baixo, como o menu do usuário. */
     width: 100%;
     max-width: 480px;
-    background: #fff;
+    background: var(--fl-c-sup, #fff);
     border-radius: 18px;
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
     padding: 16px;
@@ -65,12 +65,12 @@
 }
 
 .pwa-install-text strong {
-    color: var(--secondary-color, #2D2D2D);
+    color: var(--fl-c-txt, var(--secondary-color, #2D2D2D));
     font-size: 0.95rem;
 }
 
 .pwa-install-text span {
-    color: #6c757d;
+    color: var(--fl-c-txt2, #6c757d);
     font-size: 0.8rem;
     line-height: 1.3;
 }
@@ -110,12 +110,12 @@
 
 .btn-pwa-dismiss {
     background: transparent;
-    color: #6c757d;
+    color: var(--fl-c-txt2, #6c757d);
     padding: 8px 10px;
 }
 
 .btn-pwa-dismiss:hover {
-    color: #343a40;
+    color: var(--fl-c-txt2, #343a40);
 }
 
 /* Banner no mobile: cartão centralizado na tela com a bordinha laranja
@@ -243,7 +243,7 @@
 .pwa-ios-sheet-content strong,
 .pwa-android-sheet-content strong {
     display: block;
-    color: var(--secondary-color, #2D2D2D);
+    color: var(--fl-c-txt, var(--secondary-color, #2D2D2D));
     font-size: 1.2rem;
     font-weight: 700;
     margin-bottom: 6px;
@@ -251,7 +251,7 @@
 
 .pwa-ios-sheet-content > p,
 .pwa-android-sheet-content > p {
-    color: #6c757d;
+    color: var(--fl-c-txt2, #6c757d);
     font-size: 0.88rem;
     line-height: 1.4;
     margin: 0 0 20px;
@@ -271,7 +271,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    background: #f8f9fa;
+    background: var(--fl-c-sup2, #f8f9fa);
     border-radius: 16px;
     padding: 12px 14px;
 }
@@ -294,9 +294,9 @@
 }
 
 .pwa-step-icon-chip-alt {
-    background: #fff;
+    background: var(--fl-c-sup, #fff);
     color: var(--primary-color, #F28C33);
-    border: 1.5px solid #eee1d3;
+    border: 1.5px solid var(--fl-c-borda, #eee1d3);
     box-shadow: none;
 }
 
@@ -305,8 +305,8 @@
    outros ícones desse tutorial. */
 .pwa-step-icon-chip-circle {
     border-radius: 50%;
-    background: #eef0f2;
-    color: #495057;
+    background: var(--fl-c-sup2, #eef0f2);
+    color: var(--fl-c-txt2, #495057);
     box-shadow: none;
 }
 
@@ -328,13 +328,13 @@
 
 .pwa-step-text strong {
     font-size: 0.9rem;
-    color: var(--secondary-color, #2D2D2D);
+    color: var(--fl-c-txt, var(--secondary-color, #2D2D2D));
     font-weight: 600;
 }
 
 .pwa-step-text small {
     font-size: 0.76rem;
-    color: #6c757d;
+    color: var(--fl-c-txt2, #6c757d);
 }
 
 .btn-pwa-entendi {
@@ -351,12 +351,12 @@
     position: absolute;
     top: 8px;
     right: 8px;
-    background: #f8f9fa;
+    background: var(--fl-c-sup2, #f8f9fa);
     border: none;
     border-radius: 50%;
     font-size: 1.25rem;
     line-height: 1;
-    color: #6c757d;
+    color: var(--fl-c-txt2, #6c757d);
     cursor: pointer;
     width: 44px;
     height: 44px;
@@ -366,8 +366,8 @@
 }
 
 .btn-pwa-close:hover {
-    color: #6c757d;
-    background: #f1f3f5;
+    color: var(--fl-c-txt2, #6c757d);
+    background: var(--fl-c-sup2, #f1f3f5);
 }
 
 /* Desktop: mesmo cartão centralizado, só um pouco mais largo. */
@@ -425,7 +425,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #fff;
+    background: var(--fl-c-sup, #fff);
     color: var(--primary-color, #F28C33);
     border: 1.5px solid var(--primary-color, #F28C33);
     font-size: 1.1rem;
@@ -493,7 +493,7 @@
     align-items: center;
     gap: 10px;
     font-size: 0.85rem;
-    color: var(--secondary-color, #2D2D2D);
+    color: var(--fl-c-txt, var(--secondary-color, #2D2D2D));
 }
 
 .pwa-android-features li i {
@@ -505,7 +505,7 @@
 .btn-pwa-dismiss-link {
     background: transparent;
     border: none;
-    color: #6c757d;
+    color: var(--fl-c-txt2, #6c757d);
     font-size: 0.82rem;
     font-weight: 600;
     padding: 10px;
@@ -514,7 +514,7 @@
 }
 
 .btn-pwa-dismiss-link:hover {
-    color: #6c757d;
+    color: var(--fl-c-txt2, #6c757d);
     text-decoration: underline;
 }
 

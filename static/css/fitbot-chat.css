@@ -50,7 +50,7 @@
     height: 10px;
     border-radius: 50%;
     background: #2ecc71;
-    border: 2px solid #fff;
+    border: 2px solid var(--fl-c-borda, #fff);
 }
 
 /* ---- Modal ---- */
@@ -140,7 +140,7 @@
 
 #fitbotModal .modal-body {
     padding: 0;
-    background: #fff; /* fundo branco em todas as telas */
+    background: var(--fl-c-sup, #fff); /* fundo branco em todas as telas */
     position: relative; /* âncora para o avatar flutuante no canto */
     display: flex;
     flex-direction: column;
@@ -235,9 +235,9 @@
 
 .fitbot-msg.from-bot {
     align-self: flex-start;
-    background: #f4f1ea;
+    background: var(--fl-c-sup2, #f4f1ea);
     border: none;
-    color: #2D2D2D;
+    color: var(--fl-c-txt, #2D2D2D);
     border-bottom-left-radius: 4px;
     box-shadow: 0 2px 8px rgba(45, 45, 45, 0.06);
 }
@@ -254,7 +254,7 @@
     align-self: center;
     max-width: 92%;
     background: transparent;
-    color: #8a6d3b;
+    color: var(--fl-c-txt-laranja, #8a6d3b);
     font-size: 0.8rem;
     padding: 2px 8px;
     box-shadow: none;
@@ -263,8 +263,8 @@
 
 .fitbot-msg.from-error {
     align-self: flex-start;
-    background: #fdecea;
-    color: #a3312a;
+    background: var(--fl-c-sup2, #fdecea);
+    color: var(--fl-c-txt-vermelho, #a3312a);
     border: 1px solid #f5c2bd;
     border-bottom-left-radius: 4px;
 }
@@ -297,7 +297,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(var(--fl-c-sup-rgb, 255, 255, 255), 0.8);
     animation: fitbot-typing-bounce 1.2s infinite ease-in-out;
 }
 
@@ -311,8 +311,8 @@
 
 /* ---- Área de input ---- */
 .fitbot-input-area {
-    background: #fff;
-    border-top: 1px solid #ececec;
+    background: var(--fl-c-sup, #fff);
+    border-top: 1px solid var(--fl-c-borda, #ececec);
     padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
     flex: 0 0 auto; /* nunca encolhe -- só a área de mensagens acima é que estica/rola */
 }
@@ -323,7 +323,7 @@
     gap: 8px;
     margin-bottom: 8px;
     font-size: 0.82rem;
-    color: #555;
+    color: var(--fl-c-txt2, #555);
 }
 
 .fitbot-image-preview.is-visible {
@@ -344,8 +344,8 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background: #f4f6f8;
-    border: 1px solid #e7e9ec;
+    background: var(--fl-c-sup2, #f4f6f8);
+    border: 1px solid var(--fl-c-borda, #e7e9ec);
     border-radius: 24px;
     padding: 5px 5px 5px 16px;
     transition: border-color .2s ease, box-shadow .2s ease;
@@ -385,13 +385,13 @@
     justify-content: center;
     border: none;
     background: transparent;
-    color: #53585e;
+    color: var(--fl-c-txt2, #53585e);
     transition: background-color .2s ease, color .2s ease, transform .1s ease;
 }
 
 .fitbot-btn-icon:hover:not(:disabled) {
-    background: #e9ecef;
-    color: #2D2D2D;
+    background: var(--fl-c-sup2, #e9ecef);
+    color: var(--fl-c-txt, #2D2D2D);
 }
 
 .fitbot-btn-icon:active:not(:disabled) {

@@ -66,7 +66,7 @@
     }
     .avulso-badge {
         background: rgba(91, 141, 239, 0.12) !important;
-        color: #3a68c9 !important;
+        color: var(--fl-c-txt-azul, #3a68c9) !important;
     }
     .btn-remover-avulso {
         position: absolute;
@@ -79,7 +79,7 @@
         justify-content: center;
         border: none;
         background: var(--surface-muted);
-        color: #6b665c;
+        color: var(--fl-c-txt2, #6b665c);
         border-radius: 50%;
         font-size: 0.8rem;
         cursor: pointer;
@@ -88,8 +88,8 @@
     }
     .btn-remover-avulso:hover,
     .btn-remover-avulso:focus-visible {
-        background: #fde2e1;
-        color: #c0392b;
+        background: var(--fl-c-tint-vermelho, #fde2e1);
+        color: var(--fl-c-txt-vermelho, #c0392b);
         outline: none;
     }
 
@@ -112,7 +112,7 @@
         height: 30px;
         flex-shrink: 0;
         border-radius: var(--radius-sm);
-        background: #f2f2f2;
+        background: var(--fl-c-sup2, #f2f2f2);
         border: 2px solid var(--success-green);
         color: var(--success-green);
         font-size: 0.95rem;
@@ -145,9 +145,9 @@
        POST, então o backend nunca recebe (e portanto nunca salva)
        dados desse exercício. */
     .exercise-row.is-desativado {
-        background: #ececec;
+        background: var(--fl-c-sup2, #ececec);
         border-left-color: var(--border-soft);
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
         filter: grayscale(0.5);
         box-shadow: none;
         pointer-events: none;
@@ -232,7 +232,7 @@
         justify-content: center;
         border: none;
         background: transparent;
-        color: #6b665c;
+        color: var(--fl-c-txt2, #6b665c);
         font-size: 1.15rem;
         cursor: pointer;
         border-radius: var(--radius-sm);
@@ -264,15 +264,15 @@
     }
     .series-inline[hidden] { display: none; }
     .series-inline .mt3-card {
-        background: #fff;
-        border: 1px solid var(--border-soft, #ececec);
+        background: var(--fl-c-sup, #fff);
+        border: 1px solid var(--fl-c-borda, var(--border-soft, #ececec));
         border-radius: 14px;
         padding: 4px 8px 6px;
     }
     .series-inline .mt3-card.is-off { opacity: .55; }
     .series-inline .mt3-tabela { width: 100%; border-collapse: collapse; }
     .series-inline .mt3-tabela th {
-        text-align: center; font-size: .68rem; color: #6b6b6b; font-weight: 700;
+        text-align: center; font-size: .68rem; color: var(--fl-c-txt2, #6b6b6b); font-weight: 700;
         padding: 8px 2px 6px; text-transform: uppercase; letter-spacing: .03em;
     }
     .series-inline .mt3-tabela th:nth-child(2) { text-align: left; }
@@ -280,22 +280,22 @@
     .series-inline .mt3-th-longo { display: none; }
     .series-inline .mt3-th-curto { display: inline; }
     .series-inline .mt3-tabela td {
-        padding: 5px 2px; border-top: 1px solid #f0f1f4; vertical-align: middle; text-align: center;
+        padding: 5px 2px; border-top: 1px solid var(--fl-c-borda, #f0f1f4); vertical-align: middle; text-align: center;
     }
-    .series-inline .mt3-tabela tr.is-feita td { background: #f1faf4; }
+    .series-inline .mt3-tabela tr.is-feita td { background: var(--fl-c-sup2, #f1faf4); }
     .series-inline .mt3-num {
         display: inline-flex; align-items: center; justify-content: center;
         width: 26px; height: 26px; border-radius: 50%;
-        background: #eceef1; color: #2D2D2D; font-size: .8rem; font-weight: 700;
+        background: var(--fl-c-sup2, #eceef1); color: var(--fl-c-txt, #2D2D2D); font-size: .8rem; font-weight: 700;
     }
     .series-inline .mt3-ant {
-        color: #6b6b6b; font-size: .74rem; text-align: left; line-height: 1.2;
+        color: var(--fl-c-txt2, #6b6b6b); font-size: .74rem; text-align: left; line-height: 1.2;
         white-space: normal; max-width: 76px;
     }
     .series-inline .mt3-in {
         width: 100%; max-width: 72px; min-width: 52px; height: 42px;
-        border: 2px solid #dfe2e7; border-radius: 10px;
-        text-align: center; font-size: 1rem; font-weight: 700; color: #2D2D2D; background: #fff;
+        border: 2px solid var(--fl-c-borda, #dfe2e7); border-radius: 10px;
+        text-align: center; font-size: 1rem; font-weight: 700; color: var(--fl-c-txt, #2D2D2D); background: var(--fl-c-sup, #fff);
         -moz-appearance: textfield;
     }
     .series-inline .mt3-in::-webkit-outer-spin-button,
@@ -303,24 +303,24 @@
     .series-inline .mt3-in:focus { outline: none; border-color: #F28C33; box-shadow: 0 0 0 3px rgba(242,140,51,.2); }
     .series-inline .mt3-in.is-invalid { border-color: #dc3545; }
     .series-inline .mt3-feita {
-        width: 42px; height: 42px; border-radius: 12px; border: 2px solid #d5d9e0; background: #fff;
+        width: 42px; height: 42px; border-radius: 12px; border: 2px solid var(--fl-c-borda, #d5d9e0); background: var(--fl-c-sup, #fff);
         color: transparent; font-size: 1.15rem; cursor: pointer; transition: all .15s;
     }
     .series-inline .mt3-feita.is-on { background: #2e9e5b; border-color: #2e9e5b; color: #fff; }
     .series-inline .mt3-rodape { display: flex; gap: 8px; margin-top: 8px; }
     .series-inline .mt3-btn {
         flex: 1 1 0; min-height: 40px;
-        border: 1px dashed #F28C33; background: #fff8f0; color: #a8560c; font-weight: 700; font-size: .85rem;
+        border: 1px dashed #F28C33; background: var(--fl-c-sup2, #fff8f0); color: var(--fl-c-txt-laranja, #a8560c); font-weight: 700; font-size: .85rem;
         border-radius: 12px; padding: 6px 10px; cursor: pointer;
     }
     .series-inline .mt3-btn:disabled { opacity: .4; cursor: not-allowed; }
-    .series-inline .mt3-btn-sec { border-color: #cfd3da; background: #fff; color: #5f5f5f; }
+    .series-inline .mt3-btn-sec { border-color: var(--fl-c-borda, #cfd3da); background: var(--fl-c-sup, #fff); color: var(--fl-c-txt2, #5f5f5f); }
 
     /* ================= CARDIO (modo_registro='tempo') =================
        Linha de cardio: mesmo card dos exercícios de força, com o teal do
        cardio (#1F7A8C) na borda e nos destaques no lugar do laranja. */
     .exercise-row--cardio { border-left-color: #1F7A8C; }
-    .exercise-row--cardio .dash-registro-icon { color: #1F7A8C; background: rgba(31, 122, 140, 0.10); }
+    .exercise-row--cardio .dash-registro-icon { color: var(--fl-c-txt-azul, #1F7A8C); background: rgba(31, 122, 140, 0.10); }
     .exercicio-valores-grid--cardio { grid-template-rows: auto auto auto; }
     /* Minutos e km são números curtos; a intensidade ("Moderada") precisa
        de mais espaço que o "N séries" da força -- colunas 3/3/8 em vez de
@@ -343,39 +343,39 @@
         }
     }
     .cardio-tipo-wrap .form-select:focus { border-color: #1F7A8C; box-shadow: 0 0 0 3px rgba(31, 122, 140, 0.12); }
-    .dash-badge--cardio-tag { background: rgba(31, 122, 140, 0.12); color: #1F7A8C; font-weight: 700; }
+    .dash-badge--cardio-tag { background: rgba(31, 122, 140, 0.12); color: var(--fl-c-txt-azul, #1F7A8C); font-weight: 700; }
     /* Selo "Cardio" na linha do título, no canto direito (antes do X do
        avulso): o nome encolhe com reticências em vez de empurrar o selo. */
     .exercise-row--cardio .dash-registro-top { flex-wrap: nowrap; }
     .exercise-row--cardio .dash-registro-top .dash-registro-exercicio { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .exercise-row--cardio .dash-registro-top .dash-badge--cardio-tag { margin-left: auto; flex-shrink: 0; }
-    .cardio-tipo-wrap .form-select { font-weight: 600; color: #1F7A8C; border-color: rgba(31, 122, 140, 0.35); }
+    .cardio-tipo-wrap .form-select { font-weight: 600; color: var(--fl-c-txt-azul, #1F7A8C); border-color: rgba(31, 122, 140, 0.35); }
     .acoes-adicionar { display: flex; gap: 10px; }
     .acoes-adicionar .btn-adicionar-avulso { flex: 1 1 0; }
     .avulso-picker-item.is-carregando { opacity: .55; pointer-events: none; }
     /* R8: lista do "+ Exercício" chega sob demanda (_avulso_lista.html) */
     .avulso-picker-item.is-no-treino { display: none !important; }
-    .avulso-picker-carregando { display: flex; align-items: center; justify-content: center; padding: 32px 0; color: var(--text-muted, #6c757d); font-size: .9rem; }
-    .avulso-picker-carregando.is-erro { color: var(--danger, #dc3545); }
+    .avulso-picker-carregando { display: flex; align-items: center; justify-content: center; padding: 32px 0; color: var(--fl-c-txt2, var(--text-muted, #6c757d)); font-size: .9rem; }
+    .avulso-picker-carregando.is-erro { color: var(--fl-c-txt-vermelho, var(--danger, #dc3545)); }
     /* "+ Exercício" / "+ Cardio": neutros (fundo branco, borda fina), só o
        ícone na cor do tipo -- o mesmo ícone/cor dos cards (bi-activity
        laranja na força, bi-heart-pulse teal no cardio). */
     .acoes-adicionar .btn-adicionar-avulso {
         border: 1px solid var(--border-soft);
-        background: var(--surface, #fff);
-        color: #5F5E5A;
+        background: var(--fl-c-sup, var(--surface, #fff));
+        color: var(--fl-c-txt2, #5F5E5A);
     }
     .acoes-adicionar .btn-adicionar-avulso i { font-size: 1.05rem; color: var(--primary-orange); }
-    .acoes-adicionar .btn-adicionar-cardio i { color: #1F7A8C; }
+    .acoes-adicionar .btn-adicionar-cardio i { color: var(--fl-c-txt-azul, #1F7A8C); }
     .acoes-adicionar .btn-adicionar-avulso:hover,
     .acoes-adicionar .btn-adicionar-avulso:focus-visible {
-        border-color: var(--primary-orange); color: #2D2D2D; background: rgba(242, 140, 51, 0.04);
+        border-color: var(--primary-orange); color: var(--fl-c-txt, #2D2D2D); background: rgba(242, 140, 51, 0.04);
     }
     .acoes-adicionar .btn-adicionar-cardio:hover,
     .acoes-adicionar .btn-adicionar-cardio:focus-visible {
         border-color: #1F7A8C; background: rgba(31, 122, 140, 0.04);
     }
-    .resumo-cardio-valor { color: #1F7A8C; }
+    .resumo-cardio-valor { color: var(--fl-c-txt-azul, #1F7A8C); }
     .exercise-row--avulso .dash-registro-top { padding-right: 30px; }
 
     /* Modal "Cardio" (tela 2): bottom sheet no celular. */
@@ -383,30 +383,30 @@
         #modalCardio .modal-dialog { margin: 0; position: fixed; bottom: 0; left: 0; right: 0; max-width: none; }
         #modalCardio .modal-content { border-radius: 18px 18px 0 0; }
     }
-    #modalCardio .modal-title { color: #1F7A8C; font-weight: 700; }
+    #modalCardio .modal-title { color: var(--fl-c-txt-azul, #1F7A8C); font-weight: 700; }
     .cardio-tipos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
     .cardio-tipo-btn {
         display: flex; flex-direction: column; align-items: center; gap: 4px;
-        padding: 10px 4px; border: 1.5px solid var(--border-soft, #e5e1d8); border-radius: 12px;
-        background: #fff; color: #555; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+        padding: 10px 4px; border: 1.5px solid var(--fl-c-borda, var(--border-soft, #e5e1d8)); border-radius: 12px;
+        background: var(--fl-c-sup, #fff); color: var(--fl-c-txt2, #555); font-size: 0.8rem; font-weight: 600; cursor: pointer;
     }
     .cardio-tipo-btn i { font-size: 1.25rem; }
-    .cardio-tipo-btn.is-sel { border-color: #1F7A8C; background: rgba(31, 122, 140, 0.08); color: #1F7A8C; }
-    .cardio-secao-titulo { font-size: 0.75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #6b665c; margin-bottom: 6px; }
+    .cardio-tipo-btn.is-sel { border-color: #1F7A8C; background: rgba(31, 122, 140, 0.08); color: var(--fl-c-txt-azul, #1F7A8C); }
+    .cardio-secao-titulo { font-size: 0.75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--fl-c-txt2, #6b665c); margin-bottom: 6px; }
     .cardio-stepper { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 18px; }
     .cardio-stepper button {
         width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid rgba(31, 122, 140, 0.45);
-        background: #fff; color: #1F7A8C; font-weight: 700;
+        background: var(--fl-c-sup, #fff); color: var(--fl-c-txt-azul, #1F7A8C); font-weight: 700;
     }
     .cardio-stepper input { width: 96px; text-align: center; font-size: 1.6rem; font-weight: 700; border: none; border-bottom: 2px solid #1F7A8C; outline: none; }
-    .cardio-stepper .cardio-unidade { color: #6b665c; font-weight: 600; }
+    .cardio-stepper .cardio-unidade { color: var(--fl-c-txt2, #6b665c); font-weight: 600; }
     .cardio-distancia-linha { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
     .cardio-distancia-linha input { max-width: 120px; }
-    .cardio-velocidade { font-size: 0.85rem; color: #1F7A8C; min-height: 1.3em; margin-bottom: 16px; }
+    .cardio-velocidade { font-size: 0.85rem; color: var(--fl-c-txt-azul, #1F7A8C); min-height: 1.3em; margin-bottom: 16px; }
     .cardio-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
     .cardio-chip {
-        padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--border-soft, #e5e1d8);
-        background: #fff; font-weight: 600; font-size: 0.85rem; color: #555;
+        padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--fl-c-borda, var(--border-soft, #e5e1d8));
+        background: var(--fl-c-sup, #fff); font-weight: 600; font-size: 0.85rem; color: var(--fl-c-txt2, #555);
     }
     .cardio-chip.is-sel { border-color: #1F7A8C; background: #1F7A8C; color: #fff; }
     .btn-salvar-cardio { background: #1F7A8C; border-color: #1F7A8C; color: #fff; font-weight: 700; width: 100%; padding: 12px; }
@@ -428,7 +428,7 @@
         border: 2px dashed var(--border-soft);
         border-radius: var(--radius-md);
         background: transparent;
-        color: #6b665c;
+        color: var(--fl-c-txt2, #6b665c);
         font-weight: 600;
         font-size: 0.92rem;
         cursor: pointer;
@@ -454,7 +454,7 @@
         left: 12px;
         top: 50%;
         transform: translateY(-50%);
-        color: #6b665c;
+        color: var(--fl-c-txt2, #6b665c);
         font-size: 0.9rem;
         pointer-events: none;
     }
@@ -503,12 +503,12 @@
     }
     .avulso-picker-nome {
         font-weight: 600;
-        color: var(--dark-bg);
+        color: var(--fl-c-txt, var(--dark-bg));
     }
     .avulso-picker-musculo {
         flex-shrink: 0;
         font-size: 0.78rem;
-        color: #6b665c;
+        color: var(--fl-c-txt2, #6b665c);
         background: var(--surface-muted);
         padding: 3px 9px;
         border-radius: 999px;
@@ -518,11 +518,11 @@
     .exercicio-switch-label {
         font-size: 0.78rem;
         font-weight: 600;
-        color: var(--dark-bg);
+        color: var(--fl-c-txt, var(--dark-bg));
         white-space: nowrap;
     }
     .exercise-row.is-desativado .exercicio-switch-label {
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
     }
     /* Override local do alinhamento herdado de .dash-registro-top (base.html,
        compartilhado com dashboard/professor) só nesta tela, para o switch
@@ -539,8 +539,8 @@
         align-items: flex-start;
         gap: 5px;
         font-size: 0.78rem;
-        color: #8a6d3b;
-        background: #FFF8F1;
+        color: var(--fl-c-txt-laranja, #8a6d3b);
+        background: var(--fl-c-sup2, #FFF8F1);
         border-radius: 6px;
         padding: 3px 8px;
         margin-top: 4px;
@@ -576,13 +576,13 @@
     }
     .popover-musculo-linha {
         font-size: 0.8rem;
-        color: #6c757d;
+        color: var(--fl-c-txt2, #6c757d);
     }
     .popover-musculo-linha + .popover-musculo-linha {
         margin-top: 2px;
     }
     .popover-musculo-linha strong {
-        color: var(--dark-bg);
+        color: var(--fl-c-txt, var(--dark-bg));
     }
 
     @keyframes fadeSlideIn {
@@ -691,7 +691,7 @@
         font-size: 0.85rem !important;
         font-weight: 700 !important;
         font-family: inherit !important;
-        color: var(--dark-bg) !important;
+        color: var(--fl-c-txt, var(--dark-bg)) !important;
         border: 2px solid var(--border-soft) !important;
         border-radius: var(--radius-sm) !important;
         box-shadow: none !important;
@@ -746,7 +746,7 @@
     }
     .exercicio-nome-trunc.is-truncado {
         cursor: pointer;
-        border-bottom: 1px dashed #ccc;
+        border-bottom: 1px dashed var(--fl-c-borda, #ccc);
     }
     .exercicio-nome-trunc.is-truncado:hover,
     .exercicio-nome-trunc.is-truncado:focus {
@@ -805,7 +805,7 @@
         height: 36px;
         border-radius: 10px;
         background: rgba(242, 140, 51, 0.12);
-        color: #a8560c;
+        color: var(--fl-c-txt-laranja, #a8560c);
         font-weight: 700;
         font-size: 0.9rem;
         display: flex;
@@ -822,7 +822,7 @@
     }
     .treino-picker-nome {
         font-weight: 600;
-        color: var(--dark-bg);
+        color: var(--fl-c-txt, var(--dark-bg));
         font-size: 0.95rem;
         white-space: nowrap;
         overflow: hidden;
@@ -833,24 +833,24 @@
     /* T4: meta da ficha e dica de progressão (R3) */
     .dash-badge--meta {
         font-weight: 700;
-        color: #a8560c;
+        color: var(--fl-c-txt-laranja, #a8560c);
         background: rgba(242, 140, 51, 0.1);
     }
     .dash-badge--progressao {
         font-weight: 700;
-        color: #1f6f43;
+        color: var(--fl-c-txt-verde, #1f6f43);
         background: rgba(31, 122, 69, 0.1);
     }
     .treino-picker-sugerido {
         display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px;
-        background: rgba(242, 140, 51, 0.14); color: #9c4a06;
+        background: rgba(242, 140, 51, 0.14); color: var(--fl-c-txt-laranja, #9c4a06);
         font-size: 0.68rem; font-weight: 700; letter-spacing: .02em; vertical-align: 2px;
     }
     .treino-picker-item.is-sugerido:not(.is-selected) { border-color: rgba(242, 140, 51, 0.55); }
-    .treino-picker-ultimo { display: block; font-size: 0.74rem; color: #69645c; margin-top: 1px; }
+    .treino-picker-ultimo { display: block; font-size: 0.74rem; color: var(--fl-c-txt2, #69645c); margin-top: 1px; }
     .treino-picker-desc {
         font-size: 0.78rem;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -897,7 +897,7 @@
         border-radius: var(--radius-md);
         background: var(--surface-muted);
         border: 1px dashed var(--border-soft);
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
         font-size: 0.9rem;
     }
 
@@ -917,7 +917,7 @@
     .cronometro-label {
         font-size: 0.8rem;
         font-weight: 600;
-        color: #6a6963;
+        color: var(--fl-c-txt2, #6a6963);
         display: flex;
         align-items: center;
         gap: 6px;
@@ -956,7 +956,7 @@
         font-family: 'Courier New', ui-monospace, monospace;
         font-size: 2.4rem;
         font-weight: 700;
-        color: var(--dark-bg);
+        color: var(--fl-c-txt, var(--dark-bg));
         letter-spacing: 1px;
         line-height: 1;
         margin: 4px 0;
@@ -966,7 +966,7 @@
     /* Pulsa em vermelho quando o intervalo chega a zero -- chama
        atenção mesmo com o celular fora do campo de visão direto. */
     .cronometro-box.is-alerta .cronometro-display {
-        color: #d64545;
+        color: var(--fl-c-txt-vermelho, #d64545);
         animation: cronometro-pulso 0.6s ease-in-out 3;
     }
 
@@ -985,8 +985,8 @@
 
     .btn-preset {
         border: 1px solid var(--border-soft);
-        background: #fff;
-        color: #6a6963;
+        background: var(--fl-c-sup, #fff);
+        color: var(--fl-c-txt2, #6a6963);
         font-size: 0.78rem;
         font-weight: 600;
         padding: 4px 10px;
@@ -1044,9 +1044,9 @@
     }
 
     .btn-cronometro-ghost {
-        background: #fff;
+        background: var(--fl-c-sup, #fff);
         border: 1px solid var(--border-soft);
-        color: #6a6963;
+        color: var(--fl-c-txt2, #6a6963);
         padding: 8px 12px;
     }
 
@@ -1094,7 +1094,7 @@
         background: linear-gradient(135deg, var(--primary-orange) 0%, var(--light-orange) 100%);
         color: #fff;
         flex-shrink: 0;
-        border: 3px solid #fff;
+        border: 3px solid var(--fl-c-borda, #fff);
         border-radius: 18px;
         box-shadow: var(--shadow-md, 0 4px 14px rgba(0, 0, 0, 0.12));
     }
@@ -1174,9 +1174,9 @@
         width: 30px;
         height: 30px;
         border-radius: 50%;
-        background: #fff;
+        background: var(--fl-c-sup, #fff);
         border: 1.5px solid var(--light-orange);
-        color: #a8560c;
+        color: var(--fl-c-txt-laranja, #a8560c);
         font-weight: 700;
         font-size: 0.85rem;
         display: inline-flex;
@@ -1201,15 +1201,15 @@
     #preInicioTreinoOverlay .pre-inicio-item-nome {
         display: block;
         font-weight: 600;
-        color: var(--dark-bg);
+        color: var(--fl-c-txt, var(--dark-bg));
         line-height: 1.3;
     }
 
     /* T4: meta da ficha ao lado do músculo ("Peito · 4 × 10–12") */
-    #preInicioTreinoOverlay .pre-inicio-item-meta { color: #a8560c; font-weight: 700; }
+    #preInicioTreinoOverlay .pre-inicio-item-meta { color: var(--fl-c-txt-laranja, #a8560c); font-weight: 700; }
     #preInicioTreinoOverlay .pre-inicio-item-musculo {
         font-size: 0.8rem;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
     }
 
     #preInicioTreinoOverlay .pre-inicio-footer {
@@ -1285,7 +1285,7 @@
     .inputs-row-label {
         font-size: 0.65rem;
         line-height: 1;
-        color: #6c757d;
+        color: var(--fl-c-txt2, #6c757d);
         text-transform: uppercase;
         letter-spacing: 0.03em;
         font-weight: 600;
@@ -1335,7 +1335,7 @@
        não colidir com o .empty-state maior/animado logo abaixo (esse
        cobre "sem exercício no treino selecionado", caso diferente). */
     .rt-versao-empty {
-        background: white;
+        background: var(--fl-c-sup, white);
         border: 1px solid var(--border-soft);
         border-radius: 16px;
         padding: 32px 24px;
@@ -1355,8 +1355,8 @@
         font-size: 1.7rem;
         margin-bottom: 16px;
     }
-    .rt-versao-empty h2 { font-size: 1.2rem; font-weight: 700; color: var(--dark-bg); margin-bottom: 6px; }
-    .rt-versao-empty p { color: #6b6660; font-size: 0.92rem; margin-bottom: 22px; }
+    .rt-versao-empty h2 { font-size: 1.2rem; font-weight: 700; color: var(--fl-c-txt, var(--dark-bg)); margin-bottom: 6px; }
+    .rt-versao-empty p { color: var(--fl-c-txt2, #6b6660); font-size: 0.92rem; margin-bottom: 22px; }
     .rt-versao-empty-btn {
         background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%);
         color: white;
@@ -1402,12 +1402,12 @@
         100% { transform: translateY(0) rotateY(360deg); }
     }
     .empty-state h5 {
-        color: var(--dark-bg);
+        color: var(--fl-c-txt, var(--dark-bg));
         font-weight: 700;
         margin-bottom: 16px;
     }
     .empty-state p {
-        color: #6b6660;
+        color: var(--fl-c-txt2, #6b6660);
         max-width: 360px;
         margin: 0 auto;
     }
@@ -1478,7 +1478,7 @@
     .rt-data-field-label {
         font-size: 0.72rem;
         font-weight: 600;
-        color: #6b6660;
+        color: var(--fl-c-txt2, #6b6660);
         margin-bottom: 1px;
     }
     /* O flatpickr (altInput: true) copia a classe do input original pro
@@ -1489,7 +1489,7 @@
         padding: 0;
         height: auto;
         font-weight: 600;
-        color: var(--dark-bg);
+        color: var(--fl-c-txt, var(--dark-bg));
         font-size: 0.98rem;
         background: transparent;
         box-shadow: none !important;
@@ -1555,7 +1555,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(255, 255, 255, 0.92);
+        background: rgba(var(--fl-c-sup-rgb, 255, 255, 255), 0.92);
         backdrop-filter: blur(2px);
         z-index: 9999;
         display: none;
@@ -1755,7 +1755,7 @@
 
     #top-save-bar,
     #cronoIntervaloBox {
-        background: #fff;
+        background: var(--fl-c-sup, #fff);
         box-shadow: 0 4px 16px rgba(45, 45, 45, 0.10);
         border-radius: var(--radius-md);
         padding: 10px 16px;
@@ -1795,7 +1795,7 @@
         font-size: 1.85rem;
         font-weight: 700;
         line-height: 1;
-        color: var(--dark-bg);
+        color: var(--fl-c-txt, var(--dark-bg));
         /* Altura fixa (não padding vertical) pra bater exatamente com a
            altura dos botões (Cancelar/Pausar/Salvar, todos 40px) -- com
            padding vertical, a caixa crescia/encolhia junto com o
@@ -1880,7 +1880,7 @@
        "Cancelar treino?" continua igual. */
     #top-save-bar .btn-cancel-treino {
         background: transparent;
-        color: var(--bs-danger, #dc3545);
+        color: var(--fl-c-txt-vermelho, var(--bs-danger, #dc3545));
         border: 1.5px solid rgba(220, 53, 69, 0.45);
         box-shadow: none;
     }
@@ -1888,7 +1888,7 @@
     #top-save-bar .btn-cancel-treino:hover,
     #top-save-bar .btn-cancel-treino:focus {
         background: rgba(220, 53, 69, 0.08);
-        color: var(--bs-danger, #dc3545);
+        color: var(--fl-c-txt-vermelho, var(--bs-danger, #dc3545));
         border-color: var(--bs-danger, #dc3545);
         box-shadow: none;
     }
@@ -1914,14 +1914,14 @@
            "Pausar" e "Retomar". */
         min-width: 104px;
         background: #F5A623;
-        color: #2D2D2D;
+        color: #2D2D2D;  /* tema: fixo -- fundo amarelo nos dois temas, texto sempre escuro */
         box-shadow: 0 4px 14px rgba(245, 166, 35, 0.30);
     }
 
     #top-save-bar .top-save-bar-actions .btn-pausar-treino:hover,
     #top-save-bar .top-save-bar-actions .btn-pausar-treino:focus {
         filter: brightness(1.06);
-        color: #2D2D2D;
+        color: #2D2D2D;  /* tema: fixo */
         box-shadow: 0 6px 18px rgba(245, 166, 35, 0.40);
     }
 
@@ -2197,7 +2197,7 @@
         position: fixed;
         inset: 0;
         z-index: 1900;
-        background: #f2f2f2;
+        background: var(--fl-c-sup2, #f2f2f2);
         display: flex;
         flex-direction: column;
     }
@@ -2309,7 +2309,7 @@
 
     .modo-treino-header {
         flex: 0 0 auto;
-        background: #fff;
+        background: var(--fl-c-sup, #fff);
         box-shadow: 0 2px 10px rgba(45, 45, 45, 0.10);
         /* Linha laranja marcando onde o cabeçalho termina e o corpo
            (lista de exercícios, rolável) começa. */
@@ -2330,7 +2330,7 @@
 
     .modo-treino-footer {
         flex: 0 0 auto;
-        background: #fff;
+        background: var(--fl-c-sup, #fff);
         box-shadow: 0 -2px 10px rgba(45, 45, 45, 0.10);
         /* Mesma linha laranja, agora marcando onde o corpo termina e o
            rodapé (cronômetro de intervalo) começa. */
@@ -2539,7 +2539,7 @@
         padding-top: 12px;
         border-top: 1px solid rgba(255, 255, 255, 0.08);
         font-size: 0.68rem;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
         letter-spacing: 0.3px;
     }
 
@@ -2623,7 +2623,7 @@
         border-radius: 999px;
         border: 1px solid rgba(0, 0, 0, 0.12);
         background: transparent;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
         font-weight: 600;
         font-size: 0.88rem;
         transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
@@ -2637,7 +2637,7 @@
     .btn-sair-resumo:focus {
         background: rgba(0, 0, 0, 0.05);
         border-color: rgba(0, 0, 0, 0.22);
-        color: var(--dark-bg);
+        color: var(--fl-c-txt, var(--dark-bg));
     }
 
     .resumo-modal-actions {
@@ -2731,7 +2731,7 @@
         height: 56px;
         border-radius: 50%;
         background: rgba(220, 53, 69, 0.12);
-        color: var(--bs-danger, #dc3545);
+        color: var(--fl-c-txt-vermelho, var(--bs-danger, #dc3545));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -2741,12 +2741,12 @@
 
     .confirmar-cancelamento-titulo {
         font-weight: 700;
-        color: var(--dark-bg);
+        color: var(--fl-c-txt, var(--dark-bg));
         margin-bottom: 8px;
     }
 
     .confirmar-cancelamento-texto {
-        color: #6c757d;
+        color: var(--fl-c-txt2, #6c757d);
         font-size: 0.92rem;
         margin-bottom: 20px;
     }
@@ -3501,7 +3501,7 @@
             font-weight: 700;
             letter-spacing: 0.06em;
             text-transform: uppercase;
-            color: #5f6670;
+            color: var(--fl-c-txt2, #5f6670);
             padding: 2px 2px 0;
         }
         #preInicioTreinoOverlay .pre-inicio-item {
@@ -3527,7 +3527,7 @@
             background: var(--surface-muted);
             font-size: 0.74rem;
             font-weight: 600;
-            color: #6b7280;
+            color: var(--fl-c-txt2, #6b7280);
         }
     }
 
@@ -3539,7 +3539,7 @@
         display: grid;
         grid-template-columns: 290px minmax(0, 1fr) 340px;
         grid-template-rows: auto auto 1fr auto;
-        background: #f4f5f7;
+        background: var(--fl-c-sup2, #f4f5f7);
     }
     .modo-treino-overlay.mt3-ativo > .modo-treino-header { grid-column: 1 / -1; grid-row: 1; }
     .modo-treino-overlay.mt3-ativo #top-save-bar {
@@ -3552,35 +3552,35 @@
     .modo-treino-overlay.mt3-ativo > .mt3-lista {
         display: flex; flex-direction: column; gap: 10px;
         grid-column: 1; grid-row: 2 / 5;
-        background: #fff; border-right: 1px solid #e6e8ec;
+        background: var(--fl-c-sup, #fff); border-right: 1px solid var(--fl-c-borda, #e6e8ec);
         padding: 20px 16px; overflow-y: auto; min-height: 0;
     }
-    .mt3-lista-titulo { font-weight: 700; font-size: 1.05rem; color: #2D2D2D; padding: 0 6px 6px; }
+    .mt3-lista-titulo { font-weight: 700; font-size: 1.05rem; color: var(--fl-c-txt, #2D2D2D); padding: 0 6px 6px; }
     .mt3-lista-itens { display: flex; flex-direction: column; gap: 6px; }
     .mt3-item {
         display: flex; align-items: center; gap: 10px; width: 100%;
         text-align: left; border: 1px solid transparent; background: transparent;
-        padding: 10px 12px; border-radius: 12px; color: #2D2D2D; font-weight: 600;
+        padding: 10px 12px; border-radius: 12px; color: var(--fl-c-txt, #2D2D2D); font-weight: 600;
         cursor: pointer; transition: background .15s, border-color .15s;
     }
-    .mt3-item:hover { background: #fff6ec; }
-    .mt3-item.is-sel { background: #fff1e0; border-color: #F28C33; }
+    .mt3-item:hover { background: var(--fl-c-sup2, #fff6ec); }
+    .mt3-item.is-sel { background: var(--fl-c-tint-laranja, #fff1e0); border-color: #F28C33; }
     .mt3-item.is-off .mt3-item-nome { opacity: .45; text-decoration: line-through; }
     .mt3-item-nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .mt3-num {
         flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%;
         display: inline-flex; align-items: center; justify-content: center;
-        background: #eceef1; color: #2D2D2D; font-size: .85rem; font-weight: 700;
+        background: var(--fl-c-sup2, #eceef1); color: var(--fl-c-txt, #2D2D2D); font-size: .85rem; font-weight: 700;
     }
     .mt3-item.is-sel .mt3-num { background: #F28C33; color: #fff; }
     .mt3-item.is-feito .mt3-num { background: #2e9e5b; color: #fff; }
-    .mt3-tag { font-size: .7rem; background: #eceef1; border-radius: 999px; padding: 2px 8px; color: #666; }
-    .mt3-prog { height: 8px; background: #eceef1; border-radius: 999px; overflow: hidden; margin-top: 8px; }
+    .mt3-tag { font-size: .7rem; background: var(--fl-c-sup2, #eceef1); border-radius: 999px; padding: 2px 8px; color: var(--fl-c-txt2, #666); }
+    .mt3-prog { height: 8px; background: var(--fl-c-sup2, #eceef1); border-radius: 999px; overflow: hidden; margin-top: 8px; }
     .mt3-prog i { display: block; height: 100%; background: #F28C33; border-radius: 999px; transition: width .3s; }
-    .mt3-prog-txt { font-size: .85rem; color: #666; padding: 0 4px; }
+    .mt3-prog-txt { font-size: .85rem; color: var(--fl-c-txt2, #666); padding: 0 4px; }
     .mt3-tutorial {
-        margin-top: auto; border: 1px dashed #cfd3da; background: transparent; border-radius: 12px;
-        padding: 8px; color: #666; font-weight: 600; cursor: pointer;
+        margin-top: auto; border: 1px dashed var(--fl-c-borda, #cfd3da); background: transparent; border-radius: 12px;
+        padding: 8px; color: var(--fl-c-txt2, #666); font-weight: 600; cursor: pointer;
     }
 
     .modo-treino-overlay.mt3-ativo > .mt3-centro {
@@ -3588,51 +3588,51 @@
         padding: 28px 32px; overflow-y: auto; min-height: 0;
     }
     .mt3-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
-    .mt3-pill { display: inline-block; background: #fff1e0; color: #c2610f; font-weight: 700; font-size: .8rem; border-radius: 999px; padding: 3px 12px; }
-    .mt3-nome { margin: 8px 0 4px; font-size: 1.7rem; font-weight: 800; color: #2D2D2D; }
-    .mt3-sub { color: #666; font-size: .95rem; }
+    .mt3-pill { display: inline-block; background: var(--fl-c-tint-laranja, #fff1e0); color: var(--fl-c-txt-laranja, #c2610f); font-weight: 700; font-size: .8rem; border-radius: 999px; padding: 3px 12px; }
+    .mt3-nome { margin: 8px 0 4px; font-size: 1.7rem; font-weight: 800; color: var(--fl-c-txt, #2D2D2D); }
+    .mt3-sub { color: var(--fl-c-txt2, #666); font-size: .95rem; }
     .mt3-topo-acoes { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
     .mt3-icone {
-        width: 44px; height: 44px; border-radius: 12px; border: 1px solid #e0e3e8; background: #fff;
-        color: #2D2D2D; cursor: pointer; font-size: 1.1rem;
+        width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--fl-c-borda, #e0e3e8); background: var(--fl-c-sup, #fff);
+        color: var(--fl-c-txt, #2D2D2D); cursor: pointer; font-size: 1.1rem;
     }
     .mt3-icone:hover { border-color: #F28C33; color: #F28C33; }
-    .mt3-switch { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: #2D2D2D; cursor: pointer; }
-    .mt3-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 18px rgba(0,0,0,.07); padding: 8px 16px 12px; }
+    .mt3-switch { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--fl-c-txt, #2D2D2D); cursor: pointer; }
+    .mt3-card { background: var(--fl-c-sup, #fff); border-radius: 16px; box-shadow: 0 4px 18px rgba(0,0,0,.07); padding: 8px 16px 12px; }
     .mt3-card.is-off { opacity: .55; }
     .mt3-tabela { width: 100%; border-collapse: collapse; }
-    .mt3-tabela th { text-align: left; font-size: .8rem; color: #6b6b6b; font-weight: 700; padding: 12px 8px; text-transform: uppercase; letter-spacing: .03em; }
-    .mt3-tabela td { padding: 8px; border-top: 1px solid #f0f1f4; vertical-align: middle; }
-    .mt3-ant { color: #6b6b6b; font-size: .9rem; white-space: nowrap; }
-    .mt3-tabela tr.is-feita td { background: #f1faf4; }
+    .mt3-tabela th { text-align: left; font-size: .8rem; color: var(--fl-c-txt2, #6b6b6b); font-weight: 700; padding: 12px 8px; text-transform: uppercase; letter-spacing: .03em; }
+    .mt3-tabela td { padding: 8px; border-top: 1px solid var(--fl-c-borda, #f0f1f4); vertical-align: middle; }
+    .mt3-ant { color: var(--fl-c-txt2, #6b6b6b); font-size: .9rem; white-space: nowrap; }
+    .mt3-tabela tr.is-feita td { background: var(--fl-c-sup2, #f1faf4); }
     .mt3-in {
-        width: 100px; height: 46px; border: 1px solid #dfe2e7; border-radius: 10px;
-        text-align: center; font-size: 1.05rem; font-weight: 700; color: #2D2D2D; background: #fff;
+        width: 100px; height: 46px; border: 1px solid var(--fl-c-borda, #dfe2e7); border-radius: 10px;
+        text-align: center; font-size: 1.05rem; font-weight: 700; color: var(--fl-c-txt, #2D2D2D); background: var(--fl-c-sup, #fff);
     }
     .mt3-in:focus { outline: none; border-color: #F28C33; box-shadow: 0 0 0 3px rgba(242,140,51,.2); }
     .mt3-in.is-invalid { border-color: #dc3545; }
     .mt3-feita {
-        width: 44px; height: 44px; border-radius: 12px; border: 2px solid #d5d9e0; background: #fff;
+        width: 44px; height: 44px; border-radius: 12px; border: 2px solid var(--fl-c-borda, #d5d9e0); background: var(--fl-c-sup, #fff);
         color: transparent; cursor: pointer; font-size: 1.2rem; transition: all .15s;
     }
     .mt3-feita.is-on { background: #2e9e5b; border-color: #2e9e5b; color: #fff; }
     .mt3-feita:disabled { cursor: not-allowed; }
     .mt3-rodape { display: flex; gap: 12px; margin-top: 16px; }
     .mt3-btn {
-        border: 1px dashed #F28C33; background: #fff8f0; color: #c2610f; font-weight: 700;
+        border: 1px dashed #F28C33; background: var(--fl-c-sup2, #fff8f0); color: var(--fl-c-txt-laranja, #c2610f); font-weight: 700;
         border-radius: 12px; padding: 10px 18px; cursor: pointer;
     }
     .mt3-btn:disabled { opacity: .4; cursor: not-allowed; }
-    .mt3-btn-sec { border-color: #cfd3da; background: #fff; color: #666; }
+    .mt3-btn-sec { border-color: var(--fl-c-borda, #cfd3da); background: var(--fl-c-sup, #fff); color: var(--fl-c-txt2, #666); }
 
     /* cartão do cronômetro de descanso (coluna da direita) */
     .modo-treino-overlay.mt3-ativo > .modo-treino-footer {
         grid-column: 3; grid-row: 2; position: static;
-        margin: 24px 24px 12px 0; padding: 20px; background: #fff; border-radius: 16px;
+        margin: 24px 24px 12px 0; padding: 20px; background: var(--fl-c-sup, #fff); border-radius: 16px;
         box-shadow: 0 4px 18px rgba(0,0,0,.07); border: 0; width: auto;
     }
     .modo-treino-overlay.mt3-ativo > .modo-treino-footer::before {
-        content: "Descanso"; display: block; font-weight: 700; color: #2D2D2D; margin-bottom: 8px;
+        content: "Descanso"; display: block; font-weight: 700; color: var(--fl-c-txt, #2D2D2D); margin-bottom: 8px;
     }
     .mt3-ativo > .modo-treino-footer #cronoIntervaloBox.cronometro-box {
         display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px;
@@ -3651,11 +3651,11 @@
     .mt3-ativo #registroForm .exercise-row-wrap { display: none !important; }
     .modo-treino-overlay.mt3-ativo #registroForm > .resumo-treino-box {
         grid-column: 3; grid-row: 3; align-self: start; position: static;
-        margin: 0 24px 12px 0; background: #fff; border-radius: 16px;
+        margin: 0 24px 12px 0; background: var(--fl-c-sup, #fff); border-radius: 16px;
         box-shadow: 0 4px 18px rgba(0,0,0,.07); padding: 20px;
     }
     .modo-treino-overlay.mt3-ativo #registroForm > .resumo-treino-box::before {
-        content: "Resumo do treino"; display: block; font-weight: 700; color: #2D2D2D; margin-bottom: 8px;
+        content: "Resumo do treino"; display: block; font-weight: 700; color: var(--fl-c-txt, #2D2D2D); margin-bottom: 8px;
     }
     .mt3-ativo #registroForm > .acoes-adicionar { grid-column: 1; grid-row: 4; margin: 0 16px 16px; }
 }
@@ -4171,7 +4171,7 @@
         max-width: 340px;
         padding: 24px 20px 20px;
         text-align: center;
-        background: #fff;
+        background: var(--fl-c-sup, #fff);
         border-radius: 18px;
         box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
     }
@@ -4184,11 +4184,11 @@
     .rt-alerta-vazio-card h5 {
         margin: 0 0 8px;
         font-weight: 700;
-        color: #2b2b2b;
+        color: var(--fl-c-txt, #2b2b2b);
     }
     .rt-alerta-vazio-card p {
         margin: 0 0 18px;
-        color: #6b6b6b;
+        color: var(--fl-c-txt2, #6b6b6b);
         font-size: 0.95rem;
     }
     .rt-alerta-vazio-btn {
@@ -5906,7 +5906,7 @@ function inicializarPainelTresColunas() {
             item.appendChild(txt);
             if (row.classList.contains('exercise-row--cardio')) {
                 const tag = el('span', 'mt3-tag', 'Cardio');
-                tag.style.cssText = 'background: rgba(31,122,140,.12); color: #1F7A8C;';
+                tag.style.cssText = 'background: rgba(31,122,140,.12); color: var(--fl-c-txt-azul, #1F7A8C);';
                 item.appendChild(tag);
             } else if (row.classList.contains('exercise-row--avulso')) {
                 item.appendChild(el('span', 'mt3-tag', 'Avulso'));

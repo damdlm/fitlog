@@ -13,13 +13,13 @@
         transition: all 0.2s;
     }
     .exercicio-item:hover {
-        background-color: #fff3e0;
+        background-color: var(--fl-c-tint-laranja, #fff3e0);
     }
     .btn-group-sm .btn {
         padding: 0.25rem 0.5rem;
     }
     .badge-carga {
-        background: #e9ecef;
+        background: var(--fl-c-sup2, #e9ecef);
         color: #F28C33;
         font-weight: 600;
         padding: 5px 10px;
@@ -36,7 +36,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(var(--fl-c-sup-rgb, 255, 255, 255), 0.9);
         z-index: 9999;
         display: none;
         justify-content: center;
@@ -416,7 +416,7 @@
                             </div>
                             
                             <!-- Resultados da busca -->
-                            <div id="resultadosBusca" style="max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 5px; padding: 10px; display: none;">
+                            <div id="resultadosBusca" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--fl-c-borda, #dee2e6); border-radius: 5px; padding: 10px; display: none;">
                                 <div class="list-group" id="listaResultados"></div>
                             </div>
                             

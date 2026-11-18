@@ -27,8 +27,8 @@
 .tipo-usuario-group .btn-outline-primary {
     flex: 1;
     border-radius: 14px;
-    border: 1.5px solid #e9ecef;
-    color: var(--secondary-color, #2D2D2D);
+    border: 1.5px solid var(--fl-c-borda, #e9ecef);
+    color: var(--fl-c-txt, var(--secondary-color, #2D2D2D));
     transition: all 0.2s ease;
     padding: 12px 10px;
 }
@@ -53,8 +53,8 @@
 .register-info-box {
     border: none;
     border-radius: 14px;
-    background: #fff4e8;
-    color: var(--secondary-color, #2D2D2D);
+    background: var(--fl-c-sup2, #fff4e8);
+    color: var(--fl-c-txt, var(--secondary-color, #2D2D2D));
     font-size: 0.85rem;
     padding: 12px 14px;
 }
@@ -67,7 +67,7 @@
 .login-field-hint {
     display: block;
     font-size: 0.78rem;
-    color: #6c757d;
+    color: var(--fl-c-txt2, #6c757d);
     margin-top: 5px;
 }
 
@@ -75,18 +75,18 @@
    no input -- pra funcionar independente de suporte a :has() */
 .login-input-group.is-invalid-group {
     border-color: #dc3545;
-    background: #fff5f5;
+    background: var(--fl-c-sup2, #fff5f5);
 }
 
 .login-input-group.is-invalid-group i.login-input-icon {
-    color: #dc3545;
+    color: var(--fl-c-txt-vermelho, #dc3545);
 }
 
 .register-email-alert {
     border: none;
     border-radius: 10px;
-    background: #fdecea;
-    color: #dc3545;
+    background: var(--fl-c-sup2, #fdecea);
+    color: var(--fl-c-txt-vermelho, #dc3545);
     font-size: 0.85rem;
 }
 
@@ -96,7 +96,7 @@
     align-items: flex-start;
     gap: 10px;
     font-size: 0.85rem;
-    color: #6c757d;
+    color: var(--fl-c-txt2, #6c757d);
     margin: 18px 0 20px;
 }
 
@@ -111,7 +111,7 @@
 }
 
 .register-terms-check a {
-    color: #a8560c;
+    color: var(--fl-c-txt-laranja, #a8560c);
     font-weight: 600;
     text-decoration: none;
 }

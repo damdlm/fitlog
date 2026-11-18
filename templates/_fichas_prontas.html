@@ -6,42 +6,42 @@
 {% if fichas_prontas %}
 <style>
     .fp { margin-bottom: 8px; }
-    .fp-titulo { font-size: 1.1rem; font-weight: 700; color: var(--secondary-color, #212529); margin: 0 0 4px; }
-    .fp-sub { color: #5c636a; font-size: 0.9rem; margin: 0 0 14px; }
+    .fp-titulo { font-size: 1.1rem; font-weight: 700; color: var(--fl-c-txt, var(--secondary-color, #212529)); margin: 0 0 4px; }
+    .fp-sub { color: var(--fl-c-txt2, #5c636a); font-size: 0.9rem; margin: 0 0 14px; }
     .fp-lista { display: grid; gap: 12px; grid-template-columns: 1fr; }
     @media (min-width: 768px) { .fp-lista { grid-template-columns: 1fr 1fr; } }
     .fp-card {
-        background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: 16px;
+        background: var(--fl-c-sup, #fff); border: 1px solid rgba(0,0,0,0.08); border-radius: 16px;
         padding: 16px; display: flex; flex-direction: column; gap: 10px; text-align: left;
     }
-    .fp-card h3 { font-size: 1.05rem; font-weight: 700; color: var(--secondary-color, #212529); margin: 0; }
-    .fp-detalhe { display: block; color: #a8560c; font-size: 0.8rem; font-weight: 600; margin-top: 2px; }
-    .fp-resumo { color: #4f565d; font-size: 0.88rem; margin: 0; }
+    .fp-card h3 { font-size: 1.05rem; font-weight: 700; color: var(--fl-c-txt, var(--secondary-color, #212529)); margin: 0; }
+    .fp-detalhe { display: block; color: var(--fl-c-txt-laranja, #a8560c); font-size: 0.8rem; font-weight: 600; margin-top: 2px; }
+    .fp-resumo { color: var(--fl-c-txt2, #4f565d); font-size: 0.88rem; margin: 0; }
     .fp-treinos { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
-    .fp-treinos li { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: #343a40; }
+    .fp-treinos li { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--fl-c-txt2, #343a40); }
     .fp-letra {
         flex: 0 0 auto; width: 24px; height: 24px; border-radius: 7px; background: rgba(242,140,51,0.14);
-        color: #a8560c; font-weight: 700; font-size: 0.78rem; display: inline-flex; align-items: center; justify-content: center;
+        color: var(--fl-c-txt-laranja, #a8560c); font-weight: 700; font-size: 0.78rem; display: inline-flex; align-items: center; justify-content: center;
     }
-    .fp-qtd { margin-left: auto; color: #5c636a; font-size: 0.8rem; white-space: nowrap; }
+    .fp-qtd { margin-left: auto; color: var(--fl-c-txt2, #5c636a); font-size: 0.8rem; white-space: nowrap; }
     .fp-ver summary {
-        cursor: pointer; color: #a8560c; font-weight: 600; font-size: 0.88rem; list-style: none;
+        cursor: pointer; color: var(--fl-c-txt-laranja, #a8560c); font-weight: 600; font-size: 0.88rem; list-style: none;
         min-height: 44px; display: inline-flex; align-items: center; gap: 6px;
     }
     .fp-ver summary::-webkit-details-marker { display: none; }
     .fp-ver summary .bi { transition: transform .15s ease; }
     .fp-ver[open] summary .bi { transform: rotate(180deg); }
     .fp-ver-treino { margin: 0 0 10px; }
-    .fp-ver-treino h4 { font-size: 0.82rem; font-weight: 700; color: #343a40; margin: 0 0 4px; }
+    .fp-ver-treino h4 { font-size: 0.82rem; font-weight: 700; color: var(--fl-c-txt2, #343a40); margin: 0 0 4px; }
     .fp-ver-treino ol { margin: 0; padding-left: 1.2rem; }
-    .fp-ver-treino li { font-size: 0.84rem; color: #343a40; padding: 2px 0; }
-    .fp-ver-meta { color: #a8560c; font-weight: 600; white-space: nowrap; }
+    .fp-ver-treino li { font-size: 0.84rem; color: var(--fl-c-txt2, #343a40); padding: 2px 0; }
+    .fp-ver-meta { color: var(--fl-c-txt-laranja, #a8560c); font-weight: 600; white-space: nowrap; }
     .fp-usar {
         width: 100%; min-height: 44px; border: none; border-radius: 12px; font-weight: 600;
         background: linear-gradient(135deg, #F28C33 0%, #FFB366 100%); color: #fff;
     }
     .fp-usar:focus-visible { outline: 3px solid rgba(242,140,51,0.45); outline-offset: 2px; }
-    .fp-ou { display: flex; align-items: center; gap: 12px; color: #5c636a; font-size: 0.85rem; margin: 18px 0 14px; }
+    .fp-ou { display: flex; align-items: center; gap: 12px; color: var(--fl-c-txt2, #5c636a); font-size: 0.85rem; margin: 18px 0 14px; }
     .fp-ou::before, .fp-ou::after { content: ''; flex: 1; height: 1px; background: rgba(0,0,0,0.12); }
 </style>
 <section class="fp" aria-labelledby="fpTitulo" id="fichasProntas">

@@ -64,8 +64,8 @@
         align-items: center;
         flex-wrap: wrap;
         gap: 16px;
-        background: white;
-        border: 1.5px solid #E2E5EA;
+        background: var(--fl-c-sup, white);
+        border: 1.5px solid var(--fl-c-borda, #E2E5EA);
         border-radius: 16px;
         padding: 20px 24px;
         margin-bottom: 24px;
@@ -83,12 +83,12 @@
     .ct-modo-btn {
         display: inline-flex; align-items: center; gap: 6px; min-height: 44px;
         padding: 0 16px; border-radius: 999px; font-size: 0.88rem; font-weight: 600;
-        border: 1.5px solid #F28C33; background: #fff; color: #a8560c;
+        border: 1.5px solid #F28C33; background: var(--fl-c-sup, #fff); color: var(--fl-c-txt-laranja, #a8560c);
     }
     .ct-modo-btn:focus-visible { outline: 3px solid rgba(242,140,51,0.45); outline-offset: 2px; }
     /* em edição: fundo laranja claro e texto escuro (branco no laranja
        ficava com contraste 2,4:1) */
-    .ct-ficha.is-editando .ct-modo-btn { background: #fff1e3; border-color: #a8560c; }
+    .ct-ficha.is-editando .ct-modo-btn { background: var(--fl-c-tint-laranja, #fff1e3); border-color: #a8560c; }
     .ct-hero-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--ct-muted); }
     .ct-hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
     .ct-status-pill {
@@ -101,7 +101,7 @@
         border-radius: 999px;
         vertical-align: middle;
     }
-    .ct-status-pill.ativa { background: #E9F9EF; color: #15803d; }
+    .ct-status-pill.ativa { background: var(--fl-c-sup2, #E9F9EF); color: var(--fl-c-txt-verde, #15803d); }
     .ct-status-pill.ativa .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
     .ct-status-pill.finalizada { background: var(--ct-bg-soft); color: var(--ct-muted); }
     .ct-hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -117,7 +117,7 @@
     .ct-section-title h2 { font-size: 1.05rem; font-weight: 700; color: var(--ct-ink); margin: 0; }
 
     .ct-treino-card {
-        background: white;
+        background: var(--fl-c-sup, white);
         border: 1px solid var(--ct-line);
         border-left: 4px solid var(--accent, var(--ct-orange));
         border-radius: 14px;
@@ -159,10 +159,10 @@
         background: var(--accent-soft, var(--ct-bg-soft));
         color: var(--accent, var(--ct-ink));
         /* X1: a cor do treino um tom mais escura no texto (contraste). */
-        color: color-mix(in srgb, var(--accent, var(--ct-ink)) 62%, #000);
+        color: color-mix(in srgb, var(--accent, var(--ct-ink)) 62%, var(--fl-c-txt, #000));
         white-space: nowrap;
     }
-    .ct-count-chip.is-empty { background: #FEF2F2; color: #DC2626; }
+    .ct-count-chip.is-empty { background: var(--fl-c-sup2, #FEF2F2); color: var(--fl-c-txt-vermelho, #DC2626); }
     .ct-treino-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
     /* Editar/Excluir: "chip" pill totalmente arredondado com o ícone
@@ -195,7 +195,7 @@
     .ct-btn-editar-treino {
         background: rgba(242, 140, 51, 0.1);
         border-color: rgba(242, 140, 51, 0.35);
-        color: #a8560c;
+        color: var(--fl-c-txt-laranja, #a8560c);
     }
     .ct-btn-editar-treino .ct-btn-treino-icon { background: var(--ct-orange); }
     .ct-btn-editar-treino:hover {
@@ -206,7 +206,7 @@
     .ct-btn-excluir-treino {
         background: rgba(220, 53, 69, 0.08);
         border-color: rgba(220, 53, 69, 0.3);
-        color: #b02a37;
+        color: var(--fl-c-txt-vermelho, #b02a37);
     }
     .ct-btn-excluir-treino .ct-btn-treino-icon { background: #dc3545; }
     .ct-btn-excluir-treino:hover {
@@ -263,7 +263,7 @@
         flex: 0 0 auto;
         font-size: 0.76rem;
         font-weight: 700;
-        color: #a8560c;
+        color: var(--fl-c-txt-laranja, #a8560c);
         background: rgba(242, 140, 51, 0.1);
         border-radius: 999px;
         padding: 2px 8px;
@@ -289,7 +289,7 @@
     .ct-ex-empty {
         margin: 12px 0 0 44px;
         font-size: 0.82rem;
-        color: #DC2626;
+        color: var(--fl-c-txt-vermelho, #DC2626);
         display: flex;
         align-items: center;
         gap: 6px;
@@ -357,7 +357,7 @@
     }
     #modalExercicios .ct-modal-divider {
         border: none;
-        border-top: 1px solid #ececec;
+        border-top: 1px solid var(--fl-c-borda, #ececec);
         margin: 2px 0 10px;
     }
     #modalExercicios label.etv-field-label {
@@ -387,24 +387,24 @@
     #modalExercicios .etv-search-icon {
         position: absolute;
         left: 11px;
-        color: #6c757d;
+        color: var(--fl-c-txt2, #6c757d);
         font-size: .78rem;
         pointer-events: none;
     }
     #modalExercicios .etv-search-input {
         width: 100%;
         height: 29px;
-        border: 1px solid #e9ecef;
+        border: 1px solid var(--fl-c-borda, #e9ecef);
         border-radius: 999px;
         padding: 0 30px;
         font-size: .78rem;
-        background: #f8f9fa;
+        background: var(--fl-c-sup2, #f8f9fa);
         transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
     }
     #modalExercicios .etv-search-input:focus {
         outline: none;
         border-color: var(--primary-orange);
-        background: #fff;
+        background: var(--fl-c-sup, #fff);
         box-shadow: 0 0 0 3px rgba(242, 140, 51, .12);
     }
     #modalExercicios .etv-search-clear {
@@ -418,7 +418,7 @@
         line-height: 1;
         display: none;
     }
-    #modalExercicios .etv-search-clear:hover { color: #6c757d; }
+    #modalExercicios .etv-search-clear:hover { color: var(--fl-c-txt2, #6c757d); }
     #modalExercicios .etv-search-wrap.has-text .etv-search-clear { display: inline-flex; }
 
     /* Cards mais compactos: campo de observação vem oculto por padrão
@@ -439,7 +439,7 @@
         flex: 0 0 auto;
         border: none;
         background: none;
-        color: #5c636a;
+        color: var(--fl-c-txt2, #5c636a);
         font-size: .68rem;
         font-weight: 600;
         padding: 2px 4px;
@@ -474,18 +474,18 @@
             border-radius: 22px;
             padding: 24px 28px;
             margin-bottom: 8px;
-            background: linear-gradient(120deg, #fff 55%, #fff4ea 100%);
+            background: linear-gradient(120deg, var(--fl-c-sup, #fff) 55%, var(--fl-c-sup2, #fff4ea) 100%);
             box-shadow: 0 10px 30px rgba(20, 20, 20, 0.06);
         }
         .ct-hero-desc-row { font-size: 1.4rem; letter-spacing: -0.01em; margin-bottom: 12px; }
         .ct-hero-meta { gap: 10px; }
         .ct-hero-meta span {
-            background: #fff;
+            background: var(--fl-c-sup, #fff);
             border: 1px solid rgba(20, 20, 20, 0.07);
             border-radius: 999px;
             padding: 6px 14px;
             font-weight: 600;
-            color: #4b5563;
+            color: var(--fl-c-txt2, #4b5563);
         }
         .ct-hero-meta span i { color: var(--ct-orange); }
         .ct-hero-desc-edit { margin-top: 16px; }
@@ -673,7 +673,7 @@
 
 <div class="ct-treinos-grid">
 {% if not treinos_versao %}
-<div class="ct-empty-card" style="background:white;border:1px solid var(--ct-line);border-radius:16px;padding:32px 24px;text-align:center;margin:0 0 20px;">
+<div class="ct-empty-card" style="background:var(--fl-c-sup, white);border:1px solid var(--ct-line);border-radius:16px;padding:32px 24px;text-align:center;margin:0 0 20px;">
     <div class="ct-empty-icon" style="width:64px;height:64px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg, rgba(242,140,51,0.12) 0%, rgba(255,179,102,0.12) 100%);color:var(--ct-orange);font-size:1.7rem;margin-bottom:16px;">
         <i class="bi bi-trophy"></i>
     </div>

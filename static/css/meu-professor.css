@@ -18,7 +18,7 @@
     text-align: center;
     gap: 10px;
     padding: 28px 24px 20px;
-    background: linear-gradient(180deg, #FFF8F1 0%, #FFFFFF 100%);
+    background: linear-gradient(180deg, var(--fl-c-sup2, #FFF8F1) 0%, var(--fl-c-sup, #FFFFFF) 100%);
 }
 
 .mp-avatar-photo {
@@ -26,7 +26,7 @@
     height: 112px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid #fff;
+    border: 3px solid var(--fl-c-borda, #fff);
     box-shadow: 0 6px 18px rgba(242, 140, 51, 0.28);
 }
 
@@ -71,7 +71,7 @@
     align-items: center;
     gap: 4px;
     font-size: 0.88rem;
-    color: #6c757d;
+    color: var(--fl-c-txt2, #6c757d);
 }
 
 .mp-meta-line a {
@@ -124,16 +124,16 @@
 
 .mp-rating-value {
     font-weight: 700;
-    color: var(--secondary-color, #2D2D2D);
+    color: var(--fl-c-txt, var(--secondary-color, #2D2D2D));
 }
 
 .mp-rating-count {
-    color: #6c757d;
+    color: var(--fl-c-txt2, #6c757d);
     font-size: 0.85rem;
 }
 
 .mp-rating-empty {
-    color: #6b6b6b;
+    color: var(--fl-c-txt2, #6b6b6b);
     font-size: 0.85rem;
     font-style: italic;
 }
@@ -153,7 +153,7 @@
     gap: 10px;
     padding: 14px 16px;
     border-radius: 14px;
-    background: #F8F9FA;
+    background: var(--fl-c-sup2, #F8F9FA);
 }
 
 .mp-info-item i {
@@ -166,13 +166,13 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: #6b6b6b;
+    color: var(--fl-c-txt2, #6b6b6b);
     margin-bottom: 2px;
 }
 
 .mp-info-item .mp-info-value {
     font-weight: 600;
-    color: var(--secondary-color, #2D2D2D);
+    color: var(--fl-c-txt, var(--secondary-color, #2D2D2D));
     word-break: break-word;
 }
 
@@ -186,7 +186,7 @@
    ----------------------------------------------------- */
 .mp-rate-card {
     border-radius: 16px;
-    background: linear-gradient(135deg, #FFF4E8 0%, #FFFFFF 100%);
+    background: linear-gradient(135deg, var(--fl-c-sup2, #FFF4E8) 0%, var(--fl-c-sup, #FFFFFF) 100%);
     border: 1px solid rgba(242, 140, 51, 0.15);
     padding: 20px 22px;
 }
@@ -230,7 +230,7 @@
 
 .mp-rate-hint {
     font-size: 0.85rem;
-    color: #6c757d;
+    color: var(--fl-c-txt2, #6c757d);
 }
 
 /* -----------------------------------------------------
