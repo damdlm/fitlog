@@ -228,6 +228,14 @@ class TestSeriesNoCard:
             src = f.read()
         assert "'#registroForm .btn-series-toggle'" in src
 
+    def test_tutorial_explica_o_cardio(self):
+        with open('static/js/registrar-treino-tour.js', encoding='utf-8') as f:
+            src = f.read()
+        assert "element: '#btnAdicionarCardio'" in src and "title: 'Cardio'" in src
+        # logo depois do exercício avulso (o botão fica ao lado dele)
+        assert src.index("title: 'Exercício avulso'") < src.index("title: 'Cardio'") \
+            < src.index("title: 'Descanso entre séries'")
+
 
 class TestRevisaoLote6b:
     """Revisão depois do commit do 6b."""

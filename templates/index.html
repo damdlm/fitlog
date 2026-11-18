@@ -217,17 +217,6 @@
         -webkit-user-drag: none;
         touch-action: pan-y;
     }
-    .home-tips-title {
-        display: inline-flex;
-        align-items: center;
-        margin: 0 0 0.1rem;
-        font-size: 1rem;
-        font-weight: 700;
-        color: var(--ink);
-    }
-    .home-tips-title .dash-card-icon {
-        margin-right: 8px;
-    }
     /* Texto da dica fluido: acompanha a largura da tela (de celulares
        pequenos a desktop) e quebra de forma equilibrada. */
     .home-tips .tip-text {
@@ -259,14 +248,6 @@
         /* Sobe um pouco as dicas em relação à barra inferior (ajuste o valor
            para mais/menos altura). */
         .home-stage .home-tips { bottom: 18px; }
-        .home-tips-title { font-size: 0.85rem; margin-bottom: 0; }
-        .home-tips-title .dash-card-icon {
-            width: 24px;
-            height: 24px;
-            font-size: 0.75rem;
-            border-radius: 7px;
-            margin-right: 6px;
-        }
         .home-tips .dash-tip-slide { min-height: 0; }
         .home-tips .tip-slide-item { padding-top: 0; padding-bottom: 0; }
         .home-tips .tip-text {
@@ -285,7 +266,6 @@
        compacto para sobrar espaço ao átomo. */
     @media (max-height: 560px) {
         .home-tips { padding-top: 0.5rem; }
-        .home-tips-title { font-size: 0.9rem; }
         .home-tips .tip-text { font-size: 0.8rem; line-height: 1.25; }
         .home-tips .item-icon { width: 26px; height: 26px; min-width: 26px; font-size: 0.8rem; }
     }
@@ -476,8 +456,8 @@
 
 {% block content %}
 {# O átomo com os dots (antes só do admin) agora aparece para todos. Só quem
-   não é admin vê o título "Train · Log · Analyze" acima e as Dicas de treino
-   no rodapé; o admin continua com a tela só do átomo. #}
+   não é admin vê o título "Train · Log · Analyze" acima e as dicas de treino
+   (sem título) no rodapé; o admin continua com a tela só do átomo. #}
 <div{% if not current_user.is_admin %} class="home-stage"{% endif %}>
 {% if not current_user.is_admin %}
 <div class="dash-hero mb-4 d-none d-md-flex">
@@ -510,11 +490,9 @@
 
 {% if not current_user.is_admin %}
 <section class="home-tips" aria-label="Dicas de treino">
-    <div class="d-flex align-items-center justify-content-between gap-2">
-        <h5 class="home-tips-title">
-            <span class="dash-card-icon"><i class="bi bi-lightbulb"></i></span>
-            Dicas de treino
-        </h5>
+    {#- Sem o título "Dicas de treino": a faixa mostra só a dica (o nome
+        fica no aria-label da seção) e o botão do tutorial, à direita. -#}
+    <div class="d-flex align-items-center justify-content-end gap-2">
         <button type="button" class="rt-tour-ajuda" id="btnTourInicio" data-tour-pagina>
             <i class="bi bi-question-circle"></i> Tutorial
         </button>

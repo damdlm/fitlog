@@ -164,6 +164,18 @@
                 }
             },
             {
+                element: '#btnAdicionarCardio',
+                popover: {
+                    title: 'Cardio',
+                    description: 'Fez esteira, bike, corrida ou outro cardio? Registre aqui: '
+                        + 'escolha o tipo, o tempo (com -5/+5 min), a distância se quiser (o app '
+                        + 'mostra a velocidade) e a intensidade. Ele entra no fim da lista e é '
+                        + 'salvo junto com o treino.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
                 element: '#cronoIntervaloBox',
                 popover: {
                     title: 'Descanso entre séries',

@@ -58,8 +58,8 @@ class TestRaizPublicaEDashboard:
         # (a regra CSS .dash-quick-tile fica no base.html, compartilhada
         # com outras telas -- por isso se checa o elemento, não o nome)
         assert 'class="dash-quick-tile"' not in html
-        # o resto do dashboard continua lá
-        assert 'Dicas de treino' in html
+        # o resto do dashboard continua lá (as dicas, agora sem título)
+        assert 'class="home-tips" aria-label="Dicas de treino"' in html
 
     def test_dashboard_mostra_animacao_dos_dots_para_todos_os_usuarios(self, client, app):
         # O átomo com os dots (parallax) era só do admin; agora aparece
@@ -86,9 +86,10 @@ class TestRaizPublicaEDashboard:
         assert 'class="card dash-card"' not in html
         # rodapé = depois do átomo no HTML
         assert html.index('id="adminHeroAtomParallax"') < html.index('class="home-tips"')
-        # título e frase dentro da mesma faixa, título primeiro
-        faixa = html[html.index('class="home-tips"'):]
-        assert faixa.index('Dicas de treino') < faixa.index('id="tipText1"')
+        # sem o título "Dicas de treino": só o botão do tutorial e a dica
+        faixa = html[html.index('class="home-tips"'):html.index('id="tipText1"')]
+        assert 'home-tips-title' not in faixa and '>\n            Dicas de treino' not in faixa
+        assert 'id="btnTourInicio"' in faixa
 
     def test_admin_continua_so_com_o_atomo_sem_dicas(self, client, app):
         with app.app_context():
