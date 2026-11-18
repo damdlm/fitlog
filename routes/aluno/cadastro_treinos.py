@@ -128,6 +128,15 @@ def cadastrar_treinos_ficha_pronta():
         versao = VersaoService.criar_de_modelo(request.form.get('modelo'), user_id=current_user.id)
         flash(f'Ficha "{versao.descricao}" criada! Já dá para registrar o primeiro treino, '
               'e você pode trocar exercícios e metas quando quiser.', 'success')
+        NotificacaoService.notificar_professor(
+            current_user,
+            tipo='treino_adicionado',
+            titulo='Aluno criou uma ficha pronta',
+            mensagem=f'{current_user.nome_completo or current_user.username} começou a ficha '
+                     f'"{versao.descricao}" a partir de um modelo do FitLog.',
+            url=url_for('professor.ver_versao_aluno', aluno_id=current_user.id, versao_id=versao.id),
+            chave_agrupamento=f'versao_add_treino:{versao.id}',
+        )
     except ValueError as e:
         flash(str(e), 'danger')
     except Exception:

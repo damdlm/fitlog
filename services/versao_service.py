@@ -791,6 +791,11 @@ class VersaoService(BaseService):
             return versao
         except Exception:
             db.session.rollback()
+            # Dois toques quase juntos (workers diferentes): o banco aceita só
+            # um (numero_versao único por usuário). Quem perdeu vê a ficha
+            # criada pelo outro envio, então avisa isso em vez de "erro".
+            if VersaoService.get_ativa(user_id=user_id):
+                raise ValueError("A ficha já foi criada.")
             logger.exception(f"Erro ao criar ficha pronta '{slug}' para usuário {user_id}")
             raise ValueError("Não foi possível criar a ficha.")
 
@@ -1451,6 +1456,9 @@ class VersaoService(BaseService):
                             exercicio_base_id=ve.exercicio_base_id,
                             ordem=ve.ordem,
                             observacao=ve.observacao,
+                            meta_series=ve.meta_series,  # T4: a meta vem junto
+                            meta_reps_min=ve.meta_reps_min,
+                            meta_reps_max=ve.meta_reps_max,
                         ))
 
             logger.info(

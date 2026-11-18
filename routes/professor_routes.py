@@ -1019,6 +1019,15 @@ def ficha_pronta_aluno(aluno_id):
         versao = VersaoService.criar_de_modelo(request.form.get('modelo'), user_id=aluno.id)
         flash(f'Ficha "{versao.descricao}" criada para {aluno.nome_completo or aluno.username}. '
               'Ajuste exercícios e metas como preferir.', 'success')
+        NotificacaoService.notificar_aluno(
+            aluno.id, current_user,
+            tipo='treino_adicionado',
+            titulo='Seu professor criou sua ficha',
+            mensagem=f'{current_user.nome_completo or current_user.username} criou a ficha '
+                     f'"{versao.descricao}" para você. Já dá para registrar o primeiro treino.',
+            url=url_for('aluno.ver_versao', versao_id=versao.id),
+            chave_agrupamento=f'versao_add_treino:{versao.id}',
+        )
         return redirect(url_for('professor.ver_versao_aluno', aluno_id=aluno.id, versao_id=versao.id))
     except ValueError as e:
         flash(str(e), 'danger')

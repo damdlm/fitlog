@@ -272,3 +272,75 @@ class TestDataDoBrasil:
                              data_inicio=date(2026, 10, 17), validade_meses=1)
             with _a_noite():
                 assert v.dias_para_expirar == 0  # vence 17/11, que ainda é hoje no Brasil
+
+
+class TestRevisaoLote6c:
+    """Revisão depois do commit do 6c."""
+
+    def test_plano_padrao_leva_a_meta(self, app):
+        from services.configuracao_service import ConfiguracaoService
+        from tests.integration.test_plano_padrao import _montar_modelo, _usuario
+        with app.app_context():
+            admin = _usuario('fp_admin', 'professor', is_admin=True)
+            versao, _base, _custom = _montar_modelo(admin)
+            for ve in VersaoExercicio.query.join(TreinoVersao).filter(TreinoVersao.versao_id == versao.id):
+                ve.meta_series, ve.meta_reps_min, ve.meta_reps_max = 4, 10, 12
+            db.session.commit()
+            ConfiguracaoService.set_versao_padrao(versao.id, admin.id)
+            aluno = _usuario('fp_aluno_padrao')
+            nova = VersaoService.aplicar_plano_padrao_ao_aluno(aluno.id)
+            db.session.commit()
+            metas = {(ve.meta_series, ve.meta_reps_min, ve.meta_reps_max)
+                     for ve in VersaoExercicio.query.join(TreinoVersao).filter(TreinoVersao.versao_id == nova.id)}
+            assert metas == {(4, 10, 12)}
+
+    def test_dois_envios_juntos_quem_perde_ve_que_ja_foi_criada(self, app):
+        with app.app_context():
+            _semear_catalogo()
+            u = _criar_usuario('fp_corrida')
+            # o outro envio criou a ficha entre a checagem e o commit deste
+            outro = VersaoService.criar_de_modelo('em-casa', user_id=u.id)
+            with mock.patch.object(VersaoService, 'get_ativa', side_effect=[None, outro]):
+                with mock.patch.object(db.session, 'commit', side_effect=RuntimeError('duplicado')):
+                    with pytest.raises(ValueError, match='A ficha já foi criada'):
+                        VersaoService.criar_de_modelo('full-body', user_id=u.id)
+            assert VersaoGlobal.query.filter_by(user_id=u.id).count() == 1
+
+    def test_aluno_com_professor_avisa_o_professor(self, client, app):
+        from models import Notificacao
+        with app.app_context():
+            _semear_catalogo()
+            prof = _professor('fp_prof_aviso')
+            aluno = _criar_usuario('fp_aluno_aviso')
+            _vincular(aluno, prof)
+            pid = prof.id
+        _login(client, 'fp_aluno_aviso')
+        client.post('/aluno/cadastrar-treinos/ficha-pronta', data={'modelo': 'iniciante-abc'})
+        with app.app_context():
+            n = Notificacao.query.filter_by(destinatario_id=pid).one()
+            assert n.titulo == 'Aluno criou uma ficha pronta' and '"Iniciante ABC"' in n.mensagem
+
+    def test_professor_cria_e_avisa_o_aluno(self, client, app):
+        from models import Notificacao
+        with app.app_context():
+            _semear_catalogo()
+            prof = _professor('fp_prof_cria')
+            aluno = _criar_usuario('fp_aluno_recebe')
+            _vincular(aluno, prof)
+            aid = aluno.id
+        _login(client, 'fp_prof_cria')
+        client.post(f'/professor/aluno/{aid}/versao/ficha-pronta', data={'modelo': 'em-casa'})
+        with app.app_context():
+            n = Notificacao.query.filter_by(destinatario_id=aid).one()
+            assert n.titulo == 'Seu professor criou sua ficha' and '"Em casa"' in n.mensagem
+            assert n.url.startswith('/aluno/versao/')
+
+    def test_ficha_anterior_encerrada_vira_versao_2(self, app):
+        with app.app_context():
+            _semear_catalogo()
+            u = _criar_usuario('fp_v2')
+            _ex, v1, _tv = _montar_versao_com_treino_e_exercicio(u)
+            v1.data_fim = date(2026, 2, 1)
+            db.session.commit()
+            v2 = VersaoService.criar_de_modelo('full-body', user_id=u.id)
+            assert v2.numero_versao == 2 and v2.data_fim is None
