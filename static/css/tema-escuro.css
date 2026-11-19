@@ -210,3 +210,21 @@ html[data-bs-theme="dark"] {
     -webkit-box-shadow: 0 0 0 1000px var(--fl-superficie-2) inset;
     caret-color: var(--fl-texto);
 }
+
+/* Menus flutuantes (menu do avatar e outros dropdowns, painel "Ajustes"
+   do celular): no escuro tinham a mesma cor do fundo da página e se
+   misturavam. Fundo um degrau acima (cor dos cards), contorno cinza
+   discreto e sombra mais funda. */
+[data-bs-theme="dark"] .dropdown-menu {
+    --bs-dropdown-bg: var(--fl-superficie);
+    background-color: var(--fl-superficie);
+    border: 1px solid var(--fl-borda);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
+}
+[data-bs-theme="dark"] .mais-sheet {
+    --bs-offcanvas-bg: var(--fl-superficie);
+    background-color: var(--fl-superficie);
+    border: 1px solid var(--fl-borda);
+    border-bottom: 0;
+    box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.5);
+}

@@ -149,6 +149,18 @@ class TestFinanceiroLogin:
         assert 'html[data-bs-theme="dark"] {\n    background-color: var(--fl-fundo);\n}' in css.replace('\r\n', '\n')
 
 
+class TestMenusDestacadosNoEscuro:
+    def test_menus_com_contorno_e_fundo_de_superficie(self):
+        css = _ler('static/css/tema-escuro.css').replace('\r\n', '\n')
+        menu = css.split('[data-bs-theme="dark"] .dropdown-menu {')[1].split('}')[0]
+        sheet = css.split('[data-bs-theme="dark"] .mais-sheet {')[1].split('}')[0]
+        for bloco in (menu, sheet):
+            assert 'border: 1px solid var(--fl-borda);' in bloco
+            assert 'background-color: var(--fl-superficie);' in bloco
+        assert '--bs-dropdown-bg: var(--fl-superficie);' in menu
+        assert '--bs-offcanvas-bg: var(--fl-superficie);' in sheet and 'border-bottom: 0;' in sheet
+
+
 class TestLogoEscura:
     def test_marca_dagua_do_inicio_usa_a_logo_transparente(self):
         css = _ler('static/css/tema-escuro.css')
