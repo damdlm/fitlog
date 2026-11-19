@@ -106,7 +106,7 @@
                 <div class="register-terms-check">
                     <input type="checkbox" class="form-check-input" id="aceite_termos" name="aceite_termos" required {% if form.get('aceite_termos') %}checked{% endif %}>
                     <label for="aceite_termos">
-                        Li e aceito os <a href="{{ url_for('privacidade.termos') }}" target="_blank">Termos de Uso</a> e a <a href="{{ url_for('privacidade.politica') }}" target="_blank">Política de Privacidade</a>.
+                        Li e aceito os <a href="{{ url_for('privacidade.termos') }}" target="_blank" rel="noopener" data-doc-legal="Termos de Uso">Termos de Uso</a> e a <a href="{{ url_for('privacidade.politica') }}" target="_blank" rel="noopener" data-doc-legal="Política de Privacidade">Política de Privacidade</a>.
                     </label>
                 </div>
 
@@ -120,6 +120,26 @@
             <a href="{{ url_for('auth.login') }}" class="btn-login-register">
                 <i class="bi bi-box-arrow-in-right"></i> Fazer login
             </a>
+        </div>
+    </div>
+</div>
+
+{# Termos de Uso / Política de Privacidade em modal: abrir em outra página
+   fazia o celular perder o que já foi digitado no cadastro (e não havia
+   como voltar). O JS (auth-register-docs.js) carrega o texto da própria
+   página pública e mostra aqui; sem JS, o link continua abrindo a página
+   normalmente. #}
+<div class="modal fade" id="modalDocLegal" tabindex="-1" aria-labelledby="modalDocLegalTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-lg modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDocLegalTitulo">Documento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body" id="modalDocLegalCorpo"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar e voltar ao cadastro</button>
+            </div>
         </div>
     </div>
 </div>
@@ -289,4 +309,8 @@
         avaliar();
     })();
 </script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ static_v('js/auth-register-docs.js') }}"></script>
 {% endblock %}
