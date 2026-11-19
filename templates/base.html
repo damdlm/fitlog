@@ -152,6 +152,15 @@
                como o de Recordes Pessoais (que tem seu próprio
                overflow-x: auto e continua rolando normalmente). */
             overflow-x: hidden;
+            /* O body cobre a tela inteira mesmo com pouco conteúdo. Abaixo
+               do body sobra o fundo do documento, e o Safari do iPhone não
+               o repinta ao trocar o tema com a página aberta (nem com a cor
+               também no <html>): ficava uma faixa com a cor do tema anterior
+               (ex.: registrar treino, abaixo do card "Qual treino hoje?").
+               box-sizing border-box: o padding do menu inferior já está
+               incluído, então não cria rolagem a mais. */
+            min-height: 100vh;
+            min-height: 100dvh;
         }
         html {
             overflow-x: hidden;

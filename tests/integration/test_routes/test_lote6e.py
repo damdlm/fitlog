@@ -102,6 +102,9 @@ class TestBase:
         # fundo do documento também no <html> (faixa no Safari ao trocar o tema)
         css_html = html.replace('\r\n', '\n').split('        html {\n            overflow-x: hidden;')[1].split('}')[0]
         assert 'background-color: var(--fl-c-sup2, #f8f9fa);' in css_html
+        # e o body cobre a tela toda (abaixo dele o Safari não repinta o fundo)
+        css_body = html.replace('\r\n', '\n').split('        body {\n            background-color: var(--fl-c-sup2, #f8f9fa);')[1].split('}')[0]
+        assert 'min-height: 100vh;' in css_body and 'min-height: 100dvh;' in css_body
         # quem tinha o calendário escuro continua no escuro
         assert "localStorage.getItem('fitlog_calendar_theme') === 'dark' ? 'escuro' : 'claro'" in html
 
