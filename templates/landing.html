@@ -94,17 +94,15 @@
 </section>
 
 <section class="landing-cta-final">
-    <a href="{{ url_for('main.precos') }}" class="btn btn-primary">
-        Ver preços dos planos
-    </a>
-</section>
-
-
-<section class="landing-cta-final">
     <h2>Pronto para organizar sua rotina de treinos?</h2>
-    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
-        <i class="bi bi-person-plus"></i> Criar minha conta
-    </a>
+    <div class="landing-cta-final-botoes">
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
+            <i class="bi bi-person-plus"></i> Criar minha conta
+        </a>
+        <a href="{{ url_for('main.precos') }}" class="btn btn-outline-secondary btn-lg">
+            Ver planos
+        </a>
+    </div>
 </section>
 
 <nav class="landing-footer-links" aria-label="Links institucionais">
