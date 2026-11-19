@@ -742,7 +742,7 @@
         </div>
         {% endif %}
         {% if qtd_ex > 0 %}
-        <div class="ct-ex-list" data-treino-codigo="{{ codigo }}">
+        <div class="ct-ex-list" data-treino-codigo="{{ codigo }}" data-treino-versao-id="{{ tv.id }}">
             {% for ve in tv.exercicios %}
             {% set ex = ve.exercicio_usuario or ve.exercicio_base %}
             {% set chave = ('u_' ~ ve.exercicio_usuario_id) if ve.exercicio_usuario_id else ('b_' ~ ve.exercicio_base_id) %}

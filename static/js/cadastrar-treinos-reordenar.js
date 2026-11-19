@@ -52,6 +52,10 @@ document.addEventListener('DOMContentLoaded', function () {
             forceFallback: true,
             fallbackTolerance: 3,
             onEnd: function () {
+                // A ordem que está na tela passa a ser a que o modal
+                // "Editar treino" usa -- mesmo antes de clicar em "Salvar
+                // ordem" (ver sincronizarMapa).
+                sincronizarMapa(lista);
                 if (btnSalvar) btnSalvar.classList.add('is-visible');
             }
         });
@@ -63,7 +67,31 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // window.CT_TREINO_EXERCICIOS ({treino_versao_id: [chaves]}) é gravado
+    // na página só quando ela carrega (templates/aluno/ver_versao.html) e
+    // é ele que o modal "Editar treino" usa para abrir com os exercícios
+    // na ordem salva (cadastrar-treinos.js:aplicarSelecao). Sem atualizá-lo
+    // aqui, depois de reordenar na tela o modal ainda abria com a ordem
+    // ANTIGA, e ao adicionar um exercício e salvar, a ordem antiga era
+    // gravada por cima da nova (o servidor recria os exercícios do treino
+    // na ordem enviada). Exercícios do mapa que não aparecem na lista
+    // (ex.: exercício removido do catálogo) ficam no fim, como estavam.
+    function sincronizarMapa(lista) {
+        const treinoVersaoId = lista.dataset.treinoVersaoId;
+        if (!treinoVersaoId) return;
+        const naTela = Array.from(lista.querySelectorAll('.ct-ex-item'))
+            .map(function (item) { return item.dataset.exercicioId; })
+            .filter(Boolean);
+        if (!naTela.length) return;
+        const mapa = window.CT_TREINO_EXERCICIOS = window.CT_TREINO_EXERCICIOS || {};
+        const restantes = (mapa[treinoVersaoId] || []).filter(function (chave) {
+            return naTela.indexOf(chave) === -1;
+        });
+        mapa[treinoVersaoId] = naTela.concat(restantes);
+    }
+
     async function salvarOrdem(lista, treinoCodigo, btnSalvar) {
+        sincronizarMapa(lista);
         const novaOrdem = Array.from(lista.querySelectorAll('.ct-ex-item'))
             .map(function (item) { return item.dataset.exercicioId; })
             .filter(Boolean);
