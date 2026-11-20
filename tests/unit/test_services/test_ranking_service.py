@@ -5,11 +5,12 @@ desempate (dias treinados > tempo total > nome), descarte de sessões
 > 2h30 (só o tempo, não o dia), maior sessão do dia (não soma), exclusão
 de professores/inativos/opt-out, e ignorar datas futuras.
 """
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 
 from models import db, User, Musculo, ExercicioUsuario, TreinoVersao, VersaoGlobal, RegistroTreino, HistoricoTreino
 from services.ranking_service import RankingService, DURACAO_MAXIMA_VALIDA_SEGUNDOS
 from services.base_service import CacheService
+from utils.format_utils import data_atual
 
 
 def _criar_aluno(email, tipo_usuario='aluno', ativo=True, aparecer_no_ranking=True, nome_completo=None):
@@ -23,7 +24,7 @@ def _criar_aluno(email, tipo_usuario='aluno', ativo=True, aparecer_no_ranking=Tr
 
 def _criar_treino_e_versao(user):
     versao = VersaoGlobal(numero_versao=1, descricao='V1', divisao='ABC',
-                           data_inicio=date.today(), user_id=user.id)
+                           data_inicio=data_atual(), user_id=user.id)
     db.session.add(versao)
     db.session.flush()
     treino = TreinoVersao(versao_id=versao.id, codigo='A', nome_treino='Treino A', descricao_treino='')
@@ -66,7 +67,7 @@ def _limpar_cache():
 def test_dias_treinados_e_desempate_por_tempo(app, db):
     with app.app_context():
         _limpar_cache()
-        hoje = date.today()
+        hoje = data_atual()
 
         aluno_a = _criar_aluno('a@t.com', nome_completo='Aluno A')
         treino_a, versao_a = _criar_treino_e_versao(aluno_a)
@@ -91,7 +92,7 @@ def test_dias_treinados_e_desempate_por_tempo(app, db):
 def test_empate_em_dias_desempata_por_tempo_total(app, db):
     with app.app_context():
         _limpar_cache()
-        hoje = date.today()
+        hoje = data_atual()
 
         aluno_a = _criar_aluno('a@t.com', nome_completo='Aluno A')
         treino_a, versao_a = _criar_treino_e_versao(aluno_a)
@@ -110,7 +111,7 @@ def test_empate_em_dias_desempata_por_tempo_total(app, db):
 def test_sessao_acima_de_2h30_descarta_tempo_mas_conta_o_dia(app, db):
     with app.app_context():
         _limpar_cache()
-        hoje = date.today()
+        hoje = data_atual()
 
         aluno = _criar_aluno('a@t.com', nome_completo='Aluno A')
         treino, versao = _criar_treino_e_versao(aluno)
@@ -123,10 +124,42 @@ def test_sessao_acima_de_2h30_descarta_tempo_mas_conta_o_dia(app, db):
         assert ranking[0]['tempo_total_segundos'] == 0  # mas o tempo é descartado
 
 
+def test_cronometro_esquecido_nao_apaga_treino_valido_do_mesmo_dia(app, db):
+    """Regressão: com um treino real de 1h e outro com cronômetro esquecido
+    (5h) no mesmo dia, o tempo do dia é o do treino válido -- a sessão
+    inválida é descartada ANTES de escolher a maior do dia."""
+    with app.app_context():
+        _limpar_cache()
+        hoje = data_atual()
+        aluno = _criar_aluno('a@t.com', nome_completo='Aluno A')
+        treino, versao = _criar_treino_e_versao(aluno)
+        _criar_sessao(aluno, treino, versao, hoje, 3600)
+        _criar_sessao(aluno, treino, versao, hoje, 5 * 3600)
+
+        ranking = RankingService.calcular_ranking_geral()
+        assert ranking[0]['dias_treinados'] == 1
+        assert ranking[0]['tempo_total_segundos'] == 3600
+
+
+def test_janela_usa_a_data_de_brasilia_e_nao_a_de_utc(app, db, monkeypatch):
+    """Regressão: às 22h de Brasília já é o dia seguinte em UTC. A janela
+    precisa seguir Brasília (data_atual), senão avança um dia antes da
+    hora e o registro de 29 dias atrás sai do ranking às 21h."""
+    import services.ranking_service as rs
+    with app.app_context():
+        _limpar_cache()
+        brasilia = date(2026, 6, 15)
+        monkeypatch.setattr(rs, 'data_atual', lambda: brasilia)
+        inicio, hoje, fim_exclusivo = RankingService._janela_datas()
+        assert hoje == brasilia
+        assert inicio == brasilia - timedelta(days=29)
+        assert fim_exclusivo == brasilia + timedelta(days=1)
+
+
 def test_sessao_exatamente_no_limite_e_valida(app, db):
     with app.app_context():
         _limpar_cache()
-        hoje = date.today()
+        hoje = data_atual()
         aluno = _criar_aluno('a@t.com', nome_completo='Aluno A')
         treino, versao = _criar_treino_e_versao(aluno)
         _criar_sessao(aluno, treino, versao, hoje, DURACAO_MAXIMA_VALIDA_SEGUNDOS)
@@ -138,7 +171,7 @@ def test_sessao_exatamente_no_limite_e_valida(app, db):
 def test_multiplas_sessoes_no_mesmo_dia_usa_a_maior_nao_soma(app, db):
     with app.app_context():
         _limpar_cache()
-        hoje = date.today()
+        hoje = data_atual()
         aluno = _criar_aluno('a@t.com', nome_completo='Aluno A')
         treino, versao = _criar_treino_e_versao(aluno)
 
@@ -170,7 +203,7 @@ def test_multiplas_sessoes_no_mesmo_dia_usa_a_maior_nao_soma(app, db):
 def test_data_no_futuro_e_ignorada(app, db):
     with app.app_context():
         _limpar_cache()
-        amanha = date.today() + timedelta(days=1)
+        amanha = data_atual() + timedelta(days=1)
         aluno = _criar_aluno('a@t.com', nome_completo='Aluno A')
         treino, versao = _criar_treino_e_versao(aluno)
         _criar_sessao(aluno, treino, versao, amanha, 1800)
@@ -185,7 +218,7 @@ def test_registro_de_hoje_com_horario_conta_normalmente(app, db):
     HOJE com qualquer horário depois da meia-noite ficariam de fora."""
     with app.app_context():
         _limpar_cache()
-        hoje = date.today()
+        hoje = data_atual()
         aluno = _criar_aluno('a@t.com', nome_completo='Aluno A')
         treino, versao = _criar_treino_e_versao(aluno)
         _criar_sessao(aluno, treino, versao, hoje, 1800)  # criado às 10h
@@ -198,7 +231,7 @@ def test_registro_de_hoje_com_horario_conta_normalmente(app, db):
 def test_fora_da_janela_de_30_dias_nao_conta(app, db):
     with app.app_context():
         _limpar_cache()
-        muito_antigo = date.today() - timedelta(days=45)
+        muito_antigo = data_atual() - timedelta(days=45)
         aluno = _criar_aluno('a@t.com', nome_completo='Aluno A')
         treino, versao = _criar_treino_e_versao(aluno)
         _criar_sessao(aluno, treino, versao, muito_antigo, 1800)
@@ -210,7 +243,7 @@ def test_fora_da_janela_de_30_dias_nao_conta(app, db):
 def test_professor_nao_aparece_no_ranking(app, db):
     with app.app_context():
         _limpar_cache()
-        hoje = date.today()
+        hoje = data_atual()
         professor = _criar_aluno('p@t.com', tipo_usuario='professor', nome_completo='Professor X')
         treino, versao = _criar_treino_e_versao(professor)
         _criar_sessao(professor, treino, versao, hoje, 1800)
@@ -222,7 +255,7 @@ def test_professor_nao_aparece_no_ranking(app, db):
 def test_aluno_inativo_nao_aparece_no_ranking(app, db):
     with app.app_context():
         _limpar_cache()
-        hoje = date.today()
+        hoje = data_atual()
         aluno = _criar_aluno('a@t.com', ativo=False, nome_completo='Aluno Inativo')
         treino, versao = _criar_treino_e_versao(aluno)
         _criar_sessao(aluno, treino, versao, hoje, 1800)
@@ -234,7 +267,7 @@ def test_aluno_inativo_nao_aparece_no_ranking(app, db):
 def test_opt_out_nao_aparece_no_ranking(app, db):
     with app.app_context():
         _limpar_cache()
-        hoje = date.today()
+        hoje = data_atual()
         aluno = _criar_aluno('a@t.com', aparecer_no_ranking=False, nome_completo='Aluno Discreto')
         treino, versao = _criar_treino_e_versao(aluno)
         _criar_sessao(aluno, treino, versao, hoje, 1800)
@@ -246,7 +279,7 @@ def test_opt_out_nao_aparece_no_ranking(app, db):
 def test_top_n_limita_resultado(app, db):
     with app.app_context():
         _limpar_cache()
-        hoje = date.today()
+        hoje = data_atual()
         for i in range(7):
             aluno = _criar_aluno(f'a{i}@t.com', nome_completo=f'Aluno {i}')
             treino, versao = _criar_treino_e_versao(aluno)
@@ -259,7 +292,7 @@ def test_top_n_limita_resultado(app, db):
 def test_posicao_do_usuario_fora_do_top(app, db):
     with app.app_context():
         _limpar_cache()
-        hoje = date.today()
+        hoje = data_atual()
         alunos = []
         for i in range(7):
             aluno = _criar_aluno(f'a{i}@t.com', nome_completo=f'Aluno {i}')

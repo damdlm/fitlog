@@ -23,9 +23,10 @@ Regras de negócio (ver conversa com o usuário para o contexto completo):
    aparecer_no_ranking == True (opt-out configurável em Meu Perfil).
 """
 
-from datetime import datetime, timezone, timedelta
+from datetime import timedelta
 from models import db, User, RegistroTreino, HistoricoTreino
-from sqlalchemy import func
+from sqlalchemy import func, case
+from utils.format_utils import data_atual
 from .base_service import BaseService, CacheService
 import logging
 
@@ -52,7 +53,10 @@ class RankingService:
 
     @staticmethod
     def _janela_datas():
-        hoje = datetime.now(timezone.utc).date()
+        # Data de hoje em Brasília: em UTC, das 21h à meia-noite já seria o
+        # dia seguinte e a janela de 30 dias avançaria um dia antes da hora.
+        # data_registro é a data digitada pelo aluno (horário do Brasil).
+        hoje = data_atual()
         inicio = hoje - timedelta(days=JANELA_DIAS - 1)
         # Limite superior EXCLUSIVO (amanhã à meia-noite): data_registro é
         # DateTime, não Date -- comparar direto com "<= hoje" cortaria
@@ -106,10 +110,21 @@ class RankingService:
             # o máximo por dia equivale a pegar o valor de qualquer sessão
             # daquele dia, só que sem precisar identificar sessões
             # explicitamente aqui.
+            #
+            # A regra 5 (> 2h30 = cronômetro esquecido) é aplicada ANTES do
+            # máximo: o CASE ignora as sessões inválidas. Se o máximo fosse
+            # tirado primeiro, um cronômetro esquecido de 3h no mesmo dia
+            # de um treino real de 1h "ganharia" e o tempo do dia viraria
+            # zero, apagando o treino válido.
+            tempo_valido = case(
+                (HistoricoTreino.tempo_treino <= DURACAO_MAXIMA_VALIDA_SEGUNDOS,
+                 HistoricoTreino.tempo_treino),
+                else_=None,
+            )
             linhas = db.session.query(
                 RegistroTreino.user_id,
                 func.date(RegistroTreino.data_registro).label('dia'),
-                func.max(HistoricoTreino.tempo_treino).label('tempo_do_dia'),
+                func.max(tempo_valido).label('tempo_do_dia'),
             ).outerjoin(
                 HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id
             ).filter(
@@ -124,9 +139,10 @@ class RankingService:
             for user_id, _dia, tempo_do_dia in linhas:
                 agregado = agregados.setdefault(user_id, {'dias_treinados': 0, 'tempo_total_segundos': 0})
                 agregado['dias_treinados'] += 1
-                # Regra 5: duração > 2h30 descartada do tempo, mas o dia
+                # Regra 5: sessões > 2h30 já foram descartadas na query
+                # (tempo_do_dia vem só de sessões válidas); o dia
                 # (incrementado acima) continua contando.
-                if tempo_do_dia and tempo_do_dia <= DURACAO_MAXIMA_VALIDA_SEGUNDOS:
+                if tempo_do_dia:
                     agregado['tempo_total_segundos'] += tempo_do_dia
 
             ranking = []
