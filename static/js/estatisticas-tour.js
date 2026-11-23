@@ -69,6 +69,15 @@
                 }
             },
             {
+                element: '#mapaMuscular .card-header',
+                popover: {
+                    title: 'Mapa muscular',
+                    description: 'O corpo de frente e de costas. Em <b>Volume</b>, a cor mostra quantas séries cada músculo recebeu no período; '
+                        + 'em <b>Recuperação</b>, uma estimativa de quem já está pronto para treinar de novo. Toque num músculo para ver os detalhes.',
+                    side: 'top', align: 'center'
+                }
+            },
+            {
                 element: '#volumeMusculo .card-header',
                 popover: {
                     title: 'Volume por músculo',

@@ -47,6 +47,14 @@ Antes: Bootstrap CSS/JS e Bootstrap Icons vinham do CDN externo
   pacote npm `sortablejs@1.15.7`. Arrastar para reordenar exercícios nas telas de
   ficha (`cadastrar_treinos.html`, `ver_versao.html`).
 
+- `musclemap/` — desenho do corpo do mapa muscular (tela Progresso):
+  `corpo-fitlog.js` + `LICENSE` (MIT, © 2026 Melih Colpan). Caminhos SVG
+  convertidos de MuscleMap (github.com/melihcolpan/MuscleMap, commit
+  `d53ddf4`, `Sources/MuscleMap/Data/*Paths.swift`), só as regiões principais,
+  já agrupadas nas regiões do FitLog. O aviso MIT vai no cabeçalho do arquivo.
+  O estilo (silhueta, contorno, cores) é nosso, em
+  `static/js/modules/mapa-muscular.js`. Global: `window.FitLogCorpo`.
+
 Esses quatro vinham de `cdn.jsdelivr.net` (com reserva no `cdnjs`); os arquivos
 daqui são byte a byte os mesmos (hash SHA-384 igual ao `integrity` que as
 páginas usavam). Servidos localmente, deixam de falhar quando o CDN é bloqueado

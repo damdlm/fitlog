@@ -79,7 +79,7 @@ class TestProgressoAtalhos:
         _login(client, 'atalho_aluno')
         html = client.get('/aluno/estatisticas').get_data(as_text=True)
         alvos = re.findall(r'class="est-atalho[^"]*" href="#(\w+)"', html)
-        assert alvos == ['recordesPessoais', 'progressaoForca', 'volumeMusculo', 'evolucaoVolume', 'atividade']
+        assert alvos == ['recordesPessoais', 'progressaoForca', 'mapaMuscular', 'volumeMusculo', 'evolucaoVolume', 'atividade']
         for alvo in alvos:
             assert f'id="{alvo}"' in html
         # Sem cardio registrado, sem atalho de Cardio.

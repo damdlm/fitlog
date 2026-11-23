@@ -339,6 +339,23 @@ def api_musculo_stats():
     })
 
 
+@api_bp.route("/mapa-muscular")
+@login_required
+@estatisticas_do_alvo
+def api_mapa_muscular():
+    """Lote 5: séries e volume por região do corpo no período (dias=N |
+    inicio/fim | tudo=1; padrão 30 dias) e estimativa de recuperação
+    (sempre agora). Ver services/mapa_muscular_service.py."""
+    from services.mapa_muscular_service import MapaMuscularService
+    periodo, erro = _periodo_da_requisicao()
+    if erro:
+        return erro
+    if periodo is None:
+        hoje = EstatisticaService.hoje_brasil()
+        periodo = {'dia_inicio': hoje - timedelta(days=29), 'dia_fim': hoje}
+    return jsonify(MapaMuscularService.calcular(_uid_alvo(), periodo))
+
+
 @api_bp.route("/progressao-forca")
 @login_required
 @estatisticas_do_alvo
