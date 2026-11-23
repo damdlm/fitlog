@@ -2,7 +2,12 @@
     + globais). Servida à parte pela rota register.catalogo_avulso e buscada
     só quando o modal abre -- ~1.350 itens (~900 KB de HTML) que quase nunca
     são usados num treino. Os que já estão no treino são escondidos no
-    navegador (classe is-no-treino). Recebe: exercicios_catalogo. -#}
+    navegador (classe is-no-treino). Recebe: exercicios_catalogo.
+    O item é um div role="button" (e não <button>) para poder ter dentro o
+    botão pequeno de vídeo (.avulso-picker-video). Aqui vai só o caminho
+    da mídia (data-gif, exercícios do catálogo com gif_url); o botão é
+    criado no navegador quando a lista chega (são ~1.300: no HTML pesava
+    +40%). O teclado (Enter/Espaço) é tratado em registrar_treino.html. -#}
 {%- for ex in exercicios_catalogo %}
-<button type="button" class="avulso-picker-item" data-chave="{{ ex.prefixo ~ ex.id }}" data-nome="{{ ex.nome|lower }}" data-apelidos="{{ (ex.nicknames|join('|'))|lower if ex.nicknames else '' }}" data-i="{{ loop.index0 }}" data-musculo="{{ (ex.musculo or '')|lower }}"><span class="avulso-picker-nome">{{ ex.nome }}</span>{% if ex.musculo %}<span class="avulso-picker-musculo">{{ ex.musculo }}</span>{% endif %}</button>
+<div class="avulso-picker-item" role="button" tabindex="0" data-chave="{{ ex.prefixo ~ ex.id }}" data-nome="{{ ex.nome|lower }}" data-apelidos="{{ (ex.nicknames|join('|'))|lower if ex.nicknames else '' }}" data-i="{{ loop.index0 }}" data-musculo="{{ (ex.musculo or '')|lower }}"{% if ex.gif_url %} data-gif="{{ ex.gif_url }}"{% endif %}><span class="avulso-picker-nome">{{ ex.nome }}</span>{% if ex.musculo %}<span class="avulso-picker-musculo">{{ ex.musculo }}</span>{% endif %}</div>
 {%- endfor %}

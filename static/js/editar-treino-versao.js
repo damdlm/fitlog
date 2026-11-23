@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // alfabética do catálogo) aparece na posição alfabética -- uma
     // mistura das duas ordens, dependendo de detalhe incidental de
     // quais exercícios já estavam ou não no lote inicial.
-    function reordenarSelecionados(ordemIds) {
+    function reordenarSelecionados() {
         if (!grid) return;
         // Só move os SELECIONADOS (tipicamente uma dúzia, no máximo) pro
         // início -- os não-selecionados (podem ser ~1300, o catálogo
@@ -215,20 +215,43 @@ document.addEventListener('DOMContentLoaded', function () {
         // tanto no carregamento da página quanto toda vez que o modal
         // "Editar" abre, isso pesava bastante -- prepend() com múltiplos
         // nós faz o navegador mover só o que precisa, numa operação só.
-        let selecionados = itens().filter(item => {
-            const cb = item.querySelector('.etv-checkbox');
-            return cb && cb.checked;
-        });
+        const selecionados = cardsNaOrdemDeEnvio();
         if (!selecionados.length) return;
-        if (ordemIds && ordemIds.length) {
-            const posicao = new Map(ordemIds.map((id, i) => [id, i]));
-            selecionados = selecionados.slice().sort(function (a, b) {
-                const pa = posicao.has(a.dataset.valor) ? posicao.get(a.dataset.valor) : Infinity;
-                const pb = posicao.has(b.dataset.valor) ? posicao.get(b.dataset.valor) : Infinity;
-                return pa - pb;
-            });
-        }
         grid.prepend(...selecionados);
+    }
+
+    // Ordem em que os exercícios marcados são ENVIADOS (o servidor grava a
+    // ordem do treino na ordem dos campos exercicios[] do formulário):
+    //   1. os que já estavam no treino, na ordem salva (ultimaOrdemIds);
+    //   2. os marcados agora, na ordem em que foram marcados;
+    //   3. qualquer outro marcado (segurança), na ordem da tela.
+    // Antes, valia a ordem em que os cards estavam na grade no momento de
+    // salvar -- e a busca joga os resultados pro topo (inclusive o recém-
+    // -marcado e exercícios já salvos que batem com o termo), e um exercício
+    // criado na hora ("Novo exercício") entra no topo: salvar sem limpar a
+    // busca trazia o exercício novo pro começo e embaralhava a sequência.
+    let marcadosAgora = [];
+
+    function ordemDeEnvio() {
+        const marcados = checkboxes().filter(cb => cb.checked).map(cb => cb.value);
+        const estaMarcado = new Set(marcados);
+        const ordem = [];
+        const incluir = function (v) {
+            if (estaMarcado.has(v) && ordem.indexOf(v) === -1) ordem.push(v);
+        };
+        (ultimaOrdemIds || []).forEach(incluir);
+        marcadosAgora.forEach(incluir);
+        marcados.forEach(incluir);
+        return ordem;
+    }
+
+    function cardsNaOrdemDeEnvio() {
+        const porValor = new Map();
+        checkboxes().forEach(function (cb) {
+            const card = cb.closest('.etv-card');
+            if (cb.checked && card && !porValor.has(cb.value)) porValor.set(cb.value, card);
+        });
+        return ordemDeEnvio().map(function (v) { return porValor.get(v); }).filter(Boolean);
     }
 
     // cadastrar-treinos.js reaproveita este grid num modal compartilhado
@@ -239,7 +262,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // ordem real e salva do treino (ver comentário acima).
     grid?.addEventListener('etv:reordenar', function (e) {
         ultimaOrdemIds = e.detail?.ordemIds || null;
-        reordenarSelecionados(ultimaOrdemIds);
+        marcadosAgora = [];
+        reordenarSelecionados();
     });
 
     // -----------------------------------------------------
@@ -274,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function () {
         todos.forEach(function (c) { frag.appendChild(c); });
         grid.appendChild(frag);
         ordenadoPorBusca = false;
-        reordenarSelecionados(ultimaOrdemIds);
+        reordenarSelecionados();
     }
 
     function etvIdsOcultosQueBatem(termo) {
@@ -458,6 +482,9 @@ document.addEventListener('DOMContentLoaded', function () {
     grid?.addEventListener('etv:contador', atualizarContador);
 
     function onCheckboxChange(checkbox) {
+        const i = marcadosAgora.indexOf(checkbox.value);
+        if (checkbox.checked && i === -1) marcadosAgora.push(checkbox.value);
+        else if (!checkbox.checked && i !== -1) marcadosAgora.splice(i, 1);
         sincronizarCard(checkbox);
         atualizarContador();
     }
@@ -619,6 +646,13 @@ document.addEventListener('DOMContentLoaded', function () {
             return false;
         }
 
+        // Põe os marcados no topo da grade na ordem de envio (ver
+        // ordemDeEnvio): o formulário manda os exercicios[] na ordem do DOM.
+        if (grid) {
+            const cards = cardsNaOrdemDeEnvio();
+            if (cards.length) grid.prepend(...cards);
+        }
+
         document.querySelectorAll('.etv-btn-save').forEach(btn => {
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Salvando...';
             btn.disabled = true;
@@ -758,6 +792,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                         atualizarContador();
                         filtrar();
+                        // Mostra o recém-criado depois dos já marcados (é onde ele
+                        // vai ficar no treino), e não no topo da grade.
+                        if (!ordenadoPorBusca) reordenarSelecionados();
                         if (window.FitLogUtils?.showToast) {
                             window.FitLogUtils.showToast('Exercício criado e adicionado!', 'success');
                         }

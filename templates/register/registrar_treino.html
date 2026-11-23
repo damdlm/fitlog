@@ -502,8 +502,37 @@
         border-bottom: none;
     }
     .avulso-picker-nome {
+        flex: 1 1 auto;
+        min-width: 0;
         font-weight: 600;
         color: var(--fl-c-txt, var(--dark-bg));
+    }
+    /* Botão pequeno de vídeo do exercício (abre o modal de mídia por cima
+       da lista, sem escolher o exercício). Discreto: contorno fino e
+       ícone cinza; laranja ao passar o dedo/mouse. */
+    .avulso-picker-video {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        margin: -4px 0;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid var(--border-soft);
+        background: transparent;
+        color: var(--fl-c-txt2, #6b665c);
+        font-size: 1rem;
+        line-height: 1;
+        transition: color .15s ease, border-color .15s ease, background-color .15s ease;
+    }
+    .avulso-picker-video:hover,
+    .avulso-picker-video:focus-visible {
+        color: var(--primary-orange);
+        border-color: var(--primary-orange);
+        background: rgba(242, 140, 51, 0.08);
+        outline: none;
     }
     .avulso-picker-musculo {
         flex-shrink: 0;
@@ -5384,6 +5413,51 @@ function ligarLinhaExercicio(wrap) {
     atualizarResumo();
 }
 
+// Botão pequeno de vídeo em cada exercício da lista do "+ Exercício" que
+// tem mídia (data-gif, vindo de _avulso_lista.html). Criado aqui, e não
+// no HTML da lista, para ela não pesar mais (~1.300 botões).
+function criarBotoesVideoAvulso(lista) {
+    const modelo = document.createElement('button');
+    modelo.type = 'button';
+    modelo.className = 'avulso-picker-video';
+    modelo.title = 'Ver vídeo';
+    modelo.setAttribute('aria-label', 'Ver vídeo');
+    modelo.innerHTML = '<i class="bi bi-play-circle" aria-hidden="true"></i>';
+    lista.querySelectorAll('.avulso-picker-item[data-gif]').forEach(function (item) {
+        const btn = modelo.cloneNode(true);
+        btn.dataset.gif = item.dataset.gif;
+        item.appendChild(btn);
+    });
+}
+
+// Vídeo do exercício a partir da lista do "+ Exercício": o modal de mídia
+// (base.html, exercicio-imagens.js) abre por cima do modal do avulso, que
+// continua aberto embaixo (ambos em z-index 2000 nesta tela, por causa do
+// modo treino em tela cheia). Sobe o z-index dele e do fundo escuro dele
+// e, ao fechar, devolve o travamento de rolagem do modal de baixo (o
+// Bootstrap tira a classe modal-open do body ao fechar qualquer modal).
+function abrirVideoSobreAvulso(btn) {
+    if (typeof window.abrirModalImagensExercicio !== 'function') return;
+    const item = btn.closest('.avulso-picker-item');
+    btn.dataset.nome = item?.querySelector('.avulso-picker-nome')?.textContent.trim() || 'Exercício';
+    const midiaEl = document.getElementById('modalImagensExercicio');
+    if (midiaEl) {
+        midiaEl.style.zIndex = '2010';
+        midiaEl.addEventListener('shown.bs.modal', function aoMostrar() {
+            const fundos = document.querySelectorAll('.modal-backdrop');
+            if (fundos.length > 1) fundos[fundos.length - 1].style.zIndex = '2005';
+        }, { once: true });
+        midiaEl.addEventListener('hidden.bs.modal', function aoFechar() {
+            midiaEl.style.zIndex = '';
+            if (document.querySelector('#modalAdicionarAvulso.show')) {
+                document.body.classList.add('modal-open');
+                document.getElementById('avulsoPickerBusca')?.focus({ preventScroll: true });
+            }
+        }, { once: true });
+    }
+    window.abrirModalImagensExercicio(btn);
+}
+
 function inicializarAvulsoExercicio() {
     const buscaInput = document.getElementById('avulsoPickerBusca');
     const lista = document.getElementById('avulsoPickerLista');
@@ -5424,6 +5498,7 @@ function inicializarAvulsoExercicio() {
                 })
                 .then(function (html) {
                     lista.innerHTML = html;
+                    criarBotoesVideoAvulso(lista);
                     listaPronta = true;
                     indice = null;
                     ocultarJaNoTreino();
@@ -5502,10 +5577,24 @@ function inicializarAvulsoExercicio() {
         }
 
         let adicionando = false;
+        // Item é div role="button" (para caber o botão de vídeo dentro):
+        // Enter/Espaço nele escolhem o exercício, como no <button> de antes.
+        lista.addEventListener('keydown', function (evt) {
+            if ((evt.key === 'Enter' || evt.key === ' ') && evt.target.classList.contains('avulso-picker-item')) {
+                evt.preventDefault();
+                evt.target.click();
+            }
+        });
         lista.addEventListener('click', async function (evt) {
             if (evt.target.closest('[data-avulso-recarregar]')) {
                 lista.innerHTML = carregandoHtml;
                 carregarLista();
+                return;
+            }
+            const btnVideo = evt.target.closest('.avulso-picker-video');
+            if (btnVideo) {
+                // Só mostra o vídeo (modal de mídia por cima); não escolhe.
+                abrirVideoSobreAvulso(btnVideo);
                 return;
             }
             const item = evt.target.closest('.avulso-picker-item');
