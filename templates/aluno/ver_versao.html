@@ -277,6 +277,38 @@
         white-space: nowrap;
         font-variant-numeric: tabular-nums;
     }
+    /* Botão pequeno de vídeo do exercício (modal de mídia do base.html), só
+       nos exercícios do catálogo que têm mídia. Discreto: contorno fino e
+       ícone cinza; laranja ao passar o dedo/mouse. Fica no fim da linha,
+       depois da meta quando houver. Não atrapalha o arrastar: ele só
+       começa pela alça (.ct-ex-drag-handle). */
+    .ct-ex-video {
+        margin-left: auto;
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        margin-top: -4px;
+        margin-bottom: -4px;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid var(--ct-line);
+        background: transparent;
+        color: var(--ct-muted);
+        font-size: 1rem;
+        line-height: 1;
+        transition: color .15s ease, border-color .15s ease, background-color .15s ease;
+    }
+    .ct-ex-meta + .ct-ex-video { margin-left: 0; }
+    .ct-ex-video:hover,
+    .ct-ex-video:focus-visible {
+        color: var(--primary-orange, #F28C33);
+        border-color: var(--primary-orange, #F28C33);
+        background: rgba(242, 140, 51, 0.08);
+        outline: none;
+    }
     .ct-ex-drag-handle {
         cursor: grab;
         color: #B0B5BD;
@@ -751,6 +783,10 @@
                 {% if esta_ativa and qtd_ex > 1 %}<span class="ct-ex-drag-handle ct-so-edicao"><i class="bi bi-grip-vertical"></i></span>{% endif %}
                 <span class="ct-ex-nome">{{ ex.nome }}</span>
                 {% if ve.meta_texto %}<span class="ct-ex-meta" title="Meta">{{ ve.meta_texto }}</span>{% endif %}
+                {% if ex.gif_url %}<button type="button" class="ct-ex-video" data-nome="{{ ex.nome }}" data-gif="{{ ex.gif_url }}"
+                        onclick="abrirModalImagensExercicio(this)" aria-label="Ver vídeo: {{ ex.nome }}" title="Ver vídeo">
+                    <i class="bi bi-play-circle" aria-hidden="true"></i>
+                </button>{% endif %}
             </div>
             {% endif %}
             {% endfor %}

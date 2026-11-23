@@ -113,3 +113,29 @@ class TestVideoNoMaisExercicio:
         assert "fundos[fundos.length - 1].style.zIndex = '2005';" in html
         # teclado: Enter/Espaço no item escolhem, como no <button> de antes
         assert "(evt.key === 'Enter' || evt.key === ' ') && evt.target.classList.contains('avulso-picker-item')" in html
+
+class TestVideoNaFicha:
+    def test_botao_de_video_so_nos_exercicios_com_midia(self, client, app):
+        from tests.integration.test_routes.test_lote6d import _sem_catalogo
+        with app.app_context():
+            _u, v, tv, ex = _ficha('vid_ficha')
+            base = ExercicioSistema(id_original='9301', nome='Remada com vídeo', grupo_muscular='Costas',
+                                    gif_url='videos/9301-teste.mp4')
+            db.session.add(base)
+            db.session.flush()
+            db.session.add(VersaoExercicio(treino_versao_id=tv.id, exercicio_usuario_id=ex.id, ordem=0))
+            db.session.add(VersaoExercicio(treino_versao_id=tv.id, exercicio_base_id=base.id, ordem=1))
+            db.session.commit()
+            vid = v.id
+        _login(client, 'vid_ficha')
+        with _sem_catalogo():
+            html = client.get(f'/aluno/versao/{vid}').get_data(as_text=True)
+        itens = html.split('class="ct-ex-item"')[1:]
+        com = next(i for i in itens if 'Remada com vídeo' in i).split('</div>')[0]
+        sem = next(i for i in itens if 'Supino do aluno' in i).split('</div>')[0]
+        assert ('class="ct-ex-video" data-nome="Remada com vídeo" data-gif="videos/9301-teste.mp4"') in com
+        assert 'onclick="abrirModalImagensExercicio(this)"' in com
+        assert 'ct-ex-video' not in sem  # exercício do aluno não tem mídia
+        # fim da linha, depois da meta quando houver; o arrastar segue só pela alça
+        assert '.ct-ex-meta + .ct-ex-video { margin-left: 0; }' in html
+        assert "handle: '.ct-ex-drag-handle'" in _ler('static/js/cadastrar-treinos-reordenar.js')
