@@ -390,3 +390,42 @@ def versao_excluir(versao_id):
         logger.exception("Erro inesperado ao excluir versão")
         flash('Não foi possível concluir a operação.', 'danger')
     return redirect(url_for('aluno.ver_versao', versao_id=versao_id))
+
+# ------------------------------------------------------------------
+# Ficha sugerida pelo professor (lote 4: "Enviar como sugestão")
+# ------------------------------------------------------------------
+
+@aluno_bp.route('/ficha-sugerida/<int:envio_id>')
+@login_required
+def ficha_sugerida(envio_id):
+    """Prévia da ficha que o professor sugeriu, com Aceitar / Manter a atual."""
+    from services.ficha_lote_service import FichaLoteService
+    envio = FichaLoteService.sugestao_do_aluno(envio_id, current_user.id)
+    if not envio:
+        flash('Sugestão não encontrada.', 'warning')
+        return redirect(url_for('aluno.dashboard'))
+    return render_template('aluno/ficha_sugerida.html', envio=envio,
+                           treinos=FichaLoteService.previa(envio),
+                           ativa=VersaoService.get_ativa(user_id=current_user.id))
+
+
+@aluno_bp.route('/ficha-sugerida/<int:envio_id>/responder', methods=['POST'])
+@login_required
+@limiter.limit("20 per hour", key_func=_chave_por_usuario)
+def responder_ficha_sugerida(envio_id):
+    from services.ficha_lote_service import FichaLoteService
+    aceitar = request.form.get('resposta') == 'aceitar'
+    try:
+        nova = FichaLoteService.responder_sugestao(envio_id, current_user, aceitar)
+    except ValueError as e:
+        flash(str(e), 'warning')
+        return redirect(url_for('aluno.dashboard'))
+    except Exception:
+        logger.exception(f'Erro ao responder a sugestão {envio_id}')
+        flash('Não foi possível concluir. Tente de novo.', 'danger')
+        return redirect(url_for('aluno.ficha_sugerida', envio_id=envio_id))
+    if nova:
+        flash(f'Pronto! "{nova.descricao}" agora é a sua ficha.', 'success')
+        return redirect(url_for('aluno.ver_versao', versao_id=nova.id))
+    flash('Combinado, você continua com a ficha atual. Seu professor foi avisado.', 'info')
+    return redirect(url_for('aluno.dashboard'))

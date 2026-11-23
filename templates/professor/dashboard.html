@@ -159,6 +159,7 @@
     .pd-alerta--sem_treinar .pd-alerta-icone { background: var(--fl-c-tint-vermelho, #fde2e1); color: var(--fl-c-txt-vermelho, #b9372f); }
     .pd-alerta--ritmo .pd-alerta-icone { background: var(--fl-c-tint-laranja, #fff3e0); color: var(--fl-c-txt-laranja, #9c4a06); }
     .pd-alerta--revisao .pd-alerta-icone { background: var(--fl-c-tint-amarelo, #fff8db); color: var(--fl-c-txt-amarelo, #8a6d00); }
+    .pd-alerta--sugestao .pd-alerta-icone { background: var(--fl-c-tint-azul, #e3eefb); color: var(--fl-c-txt-azul, #1d5fa8); }
     .pd-alerta--recorde .pd-alerta-icone { background: var(--fl-c-tint-verde, #e3f5ea); color: var(--fl-c-txt-verde, #1f7a45); }
     .pd-alerta-corpo { flex: 1 1 auto; min-width: 0; }
     .pd-alerta-nome { font-weight: 700; font-size: .9rem; color: var(--fl-c-txt, #2D2D2D); text-decoration: none; }
@@ -251,6 +252,8 @@
               'msg': 'Oi, {nome}! Vi que os treinos diminuíram nas últimas semanas. Está tudo certo? Posso ajustar algo na ficha?'},
     'revisao': {'rotulo': 'Ficha para revisar', 'icone': 'bi-clipboard2-pulse-fill', 'acao': 'Revisar ficha',
                 'msg': 'Oi, {nome}! Está na hora de renovar sua ficha. Vamos conversar sobre seus objetivos?'},
+    'sugestao': {'rotulo': 'Sugestão sem resposta', 'icone': 'bi-send-exclamation', 'acao': 'Ver envios',
+                 'msg': 'Oi, {nome}! Te mandei uma nova ficha no FitLog. Dá uma olhada quando puder?'},
     'recorde': {'rotulo': 'Recorde', 'icone': 'bi-trophy-fill', 'acao': 'Ver progresso',
                 'msg': 'Parabéns pelo recorde, {nome}! 💪 Continue assim.'},
 } %}
@@ -265,6 +268,7 @@
     <div class="pd-alerta-acoes">
         {% if a.tipo == 'revisao' %}{% set url = url_for('professor.versoes_aluno', aluno_id=a.aluno_id) %}
         {% elif a.tipo == 'recorde' %}{% set url = url_for('professor.progresso_aluno', aluno_id=a.aluno_id) %}
+        {% elif a.tipo == 'sugestao' %}{% set url = url_for('professor.aplicar_ficha_varios') %}
         {% else %}{% set url = url_for('professor.calendario_aluno', aluno_id=a.aluno_id) %}{% endif %}
         <a class="btn btn-sm pd-alerta-btn" href="{{ url }}">{{ cfg.acao }}</a>
         {% if a.telefone %}
@@ -350,6 +354,9 @@
         </a>
         <a href="{{ url_for('professor.listar_alunos') }}" class="dash-quick-tile">
             <i class="bi bi-people"></i> Meus alunos
+        </a>
+        <a href="{{ url_for('professor.aplicar_ficha_varios') }}" class="dash-quick-tile">
+            <i class="bi bi-copy"></i> Ficha para vários
         </a>
         <a href="{{ url_for('professor.solicitacoes') }}" class="dash-quick-tile">
             <i class="bi bi-bell"></i> Solicitações

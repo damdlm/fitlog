@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-people" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Mesma ficha para vários alunos{% endblock %}
+
+{% block content %}
+<style>
+    .fv-sub { color: var(--fl-c-txt2, #6b6b6b); font-size: .92rem; margin-bottom: 18px; }
+    .fv-card { background: var(--fl-c-sup, #fff); border: 1px solid var(--fl-c-borda, #e9ecef); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; }
+    .fv-passo { font-weight: 700; font-size: .95rem; color: var(--fl-c-txt, #2D2D2D); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .fv-num { width: 24px; height: 24px; border-radius: 50%; background: #F28C33; color: #fff; font-size: .8rem; display: inline-flex; align-items: center; justify-content: center; } /* tema: fixo */
+    .fv-ajuda { font-size: .8rem; color: var(--fl-c-txt2, #6b6b6b); margin-top: 6px; }
+
+    .fv-alunos-topo { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+    .fv-alunos-topo input { flex: 1 1 200px; }
+    @media (max-width: 576px) { .fv-alunos-topo input { flex-basis: 100%; } .fv-alunos-topo .btn { flex: 1; } }
+    .fv-lista { max-height: 380px; overflow-y: auto; border: 1px solid var(--fl-c-borda, #e9ecef); border-radius: 12px; }
+    .fv-aluno { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--fl-c-borda, #e9ecef); cursor: pointer; margin: 0; }
+    .fv-aluno:last-child { border-bottom: 0; }
+    .fv-aluno[hidden] { display: none; }
+    .fv-aluno input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: #F28C33; } /* tema: fixo */
+    .fv-aluno-nome { font-weight: 600; font-size: .9rem; color: var(--fl-c-txt, #2D2D2D); }
+    .fv-aluno-ficha { font-size: .78rem; color: var(--fl-c-txt2, #6b6b6b); }
+    .fv-aluno-pend { font-size: .72rem; font-weight: 700; color: var(--fl-c-txt-laranja, #9c4a06); background: var(--fl-c-tint-laranja, #fff3e0); border-radius: 999px; padding: 1px 8px; margin-left: 4px; white-space: nowrap; }
+    .fv-contagem { font-size: .82rem; color: var(--fl-c-txt2, #6b6b6b); }
+
+    .fv-modos { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .fv-modo { border: 1.5px solid var(--fl-c-borda, #e9ecef); border-radius: 12px; padding: 12px 14px; cursor: pointer; display: flex; gap: 10px; margin: 0; }
+    .fv-modo:has(input:checked) { border-color: #F28C33; background: var(--fl-c-tint-laranja, #fff3e0); } /* tema: fixo */
+    .fv-modo input { margin-top: 3px; accent-color: #F28C33; } /* tema: fixo */
+    .fv-modo-titulo { font-weight: 700; font-size: .9rem; color: var(--fl-c-txt, #2D2D2D); }
+    .fv-modo-desc { font-size: .8rem; color: var(--fl-c-txt2, #6b6b6b); }
+
+    .fv-validade { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .fv-validade select { max-width: 280px; }
+    .fv-validade input { width: 90px; }
+
+    .fv-enviar { background: #F28C33; border: 0; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 22px; min-height: 44px; } /* tema: fixo */
+    .fv-enviar:hover, .fv-enviar:focus-visible { background: #e07a1f; color: #fff; } /* tema: fixo */
+    .fv-enviar:disabled { background: #F28C33; color: #fff; opacity: .5; border: 0; } /* tema: fixo */
+
+    #fvResultado { scroll-margin-top: 90px; }
+    .fv-res-resumo { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .fv-res-chip { font-size: .8rem; font-weight: 700; border-radius: 999px; padding: 3px 10px; }
+    .fv-res { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--fl-c-borda, #e9ecef); }
+    .fv-res:last-child { border-bottom: 0; }
+    .fv-res i { font-size: 1.05rem; margin-top: 1px; }
+    .fv-res-nome { font-weight: 600; font-size: .9rem; color: var(--fl-c-txt, #2D2D2D); }
+    .fv-res-texto { font-size: .82rem; color: var(--fl-c-txt2, #6b6b6b); }
+    .fv-s-aplicada { color: var(--fl-c-txt-verde, #1f7a45); background: var(--fl-c-tint-verde, #e3f5ea); }
+    .fv-s-agendada { color: var(--fl-c-txt-azul, #1d5fa8); background: var(--fl-c-tint-azul, #e3eefb); }
+    .fv-s-sugerida { color: var(--fl-c-txt-laranja, #9c4a06); background: var(--fl-c-tint-laranja, #fff3e0); }
+    .fv-s-ignorado { color: var(--fl-c-txt-vermelho, #b9372f); background: var(--fl-c-tint-vermelho, #fde2e1); }
+    i.fv-s-aplicada, i.fv-s-agendada, i.fv-s-sugerida, i.fv-s-ignorado { background: none; }
+
+    .fv-pend { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--fl-c-borda, #e9ecef); flex-wrap: wrap; }
+    .fv-pend:last-child { border-bottom: 0; }
+</style>
+
+<p class="fv-sub">Escolha uma ficha, marque os alunos e diga como ela entra. Cada aluno recebe a própria cópia, que você pode ajustar depois.</p>
+
+{% if resultados %}
+{% set cont = {'aplicada': 0, 'agendada': 0, 'sugerida': 0, 'ignorado': 0} %}
+{% for r in resultados %}{% set _ = cont.update({r.status: cont[r.status] + 1}) %}{% endfor %}
+<div class="fv-card" id="fvResultado">
+    <div class="fv-passo"><i class="bi bi-clipboard-check" style="color: #F28C33;"></i> Resultado</div>
+    <div class="fv-res-resumo">
+        {% if cont.aplicada %}<span class="fv-res-chip fv-s-aplicada">{{ cont.aplicada }} aplicada{{ 's' if cont.aplicada != 1 }}</span>{% endif %}
+        {% if cont.agendada %}<span class="fv-res-chip fv-s-agendada">{{ cont.agendada }} agendada{{ 's' if cont.agendada != 1 }}</span>{% endif %}
+        {% if cont.sugerida %}<span class="fv-res-chip fv-s-sugerida">{{ cont.sugerida }} {{ 'sugestões enviadas' if cont.sugerida != 1 else 'sugestão enviada' }}</span>{% endif %}
+        {% if cont.ignorado %}<span class="fv-res-chip fv-s-ignorado">{{ cont.ignorado }} ignorado{{ 's' if cont.ignorado != 1 }}</span>{% endif %}
+    </div>
+    {% set icones = {'aplicada': 'bi-check-circle-fill', 'agendada': 'bi-calendar-check', 'sugerida': 'bi-send-check', 'ignorado': 'bi-dash-circle'} %}
+    {% for r in resultados %}
+    <div class="fv-res" data-status="{{ r.status }}">
+        <i class="bi {{ icones[r.status] }} fv-s-{{ r.status }}"></i>
+        <div>
+            <div class="fv-res-nome">{{ r.nome }}</div>
+            <div class="fv-res-texto">{{ {'aplicada': 'Aplicada', 'agendada': 'Agendada', 'sugerida': 'Sugestão enviada', 'ignorado': 'Ignorado'}[r.status] }}: {{ r.texto }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<form method="post" id="fvForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="fv-card">
+        <label class="fv-passo" for="fvFonte"><span class="fv-num">1</span> Qual ficha</label>
+        <select class="form-select" name="fonte" id="fvFonte" required>
+            <option value="">Escolha a ficha…</option>
+            {% for grupo, rotulo in [('minhas', 'Suas fichas'), ('alunos', 'Fichas atuais dos seus alunos'), ('prontas', 'Fichas prontas')] %}
+            {% if dados.fontes[grupo] %}
+            <optgroup label="{{ rotulo }}">
+                {% for f in dados.fontes[grupo] %}
+                <option value="{{ f.valor }}" {{ 'selected' if form.fonte == f.valor }}>{{ f.nome }} ({{ f.detalhe }})</option>
+                {% endfor %}
+            </optgroup>
+            {% endif %}
+            {% endfor %}
+        </select>
+        <div class="fv-ajuda">A ficha é copiada com treinos, exercícios, metas e observações. O histórico de treinos não vai junto.</div>
+    </div>
+
+    <div class="fv-card">
+        <div class="fv-passo"><span class="fv-num">2</span> Para quais alunos</div>
+        {% if dados.alunos %}
+        <div class="fv-alunos-topo">
+            <input type="search" class="form-control form-control-sm" id="fvBusca" placeholder="Buscar aluno" aria-label="Buscar aluno">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="fvTodos">Marcar todos</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="fvNenhum">Limpar</button>
+        </div>
+        <div class="fv-lista" id="fvLista">
+            {% for a in dados.alunos %}
+            <label class="fv-aluno" data-nome="{{ a.nome | lower }}">
+                <input type="checkbox" name="alunos" value="{{ a.id }}" {{ 'checked' if a.id in form.alunos }}>
+                <span>
+                    <span class="fv-aluno-nome">{{ a.nome }}</span>
+                    {% if a.pendente %}<span class="fv-aluno-pend">{{ 'sugestão pendente' if a.pendente.modo == 'sugestao' else 'ficha agendada' }}</span>{% endif %}
+                    <div class="fv-aluno-ficha">
+                        {% if a.ficha %}v{{ a.versao }} · {{ a.ficha }}
+                            {% if a.vence_em %} · {% if a.dias_para_vencer is not none and a.dias_para_vencer <= 0 %}venceu em {{ a.vence_em.strftime('%d/%m') }}{% else %}vence em {{ a.vence_em.strftime('%d/%m/%Y') }}{% endif %}
+                            {% else %} · sem data de vencimento{% endif %}
+                        {% else %}sem ficha ativa{% endif %}
+                    </div>
+                </span>
+            </label>
+            {% endfor %}
+        </div>
+        <div class="fv-contagem mt-2"><span id="fvN">0</span> aluno(s) marcado(s)</div>
+        {% else %}
+        <div class="dash-empty" style="padding: 16px;">Você ainda não tem alunos ativos.</div>
+        {% endif %}
+    </div>
+
+    <div class="fv-card">
+        <div class="fv-passo"><span class="fv-num">3</span> Como aplicar</div>
+        <div class="fv-modos">
+            <label class="fv-modo">
+                <input type="radio" name="modo" value="agora" {{ 'checked' if form.modo == 'agora' }}>
+                <span><span class="fv-modo-titulo">Substituir agora</span>
+                <div class="fv-modo-desc">A ficha atual termina hoje e a nova já vale no próximo treino.</div></span>
+            </label>
+            <label class="fv-modo">
+                <input type="radio" name="modo" value="vencer" {{ 'checked' if form.modo == 'vencer' }}>
+                <span><span class="fv-modo-titulo">Quando a atual vencer</span>
+                <div class="fv-modo-desc">Entra sozinha no dia do vencimento. Quem não tem data de vencimento fica de fora.</div></span>
+            </label>
+            <label class="fv-modo">
+                <input type="radio" name="modo" value="sugestao" {{ 'checked' if form.modo == 'sugestao' }}>
+                <span><span class="fv-modo-titulo">Enviar como sugestão</span>
+                <div class="fv-modo-desc">O aluno vê os treinos e decide se troca. Você é avisado da resposta.</div></span>
+            </label>
+        </div>
+    </div>
+
+    <div class="fv-card">
+        <label class="fv-passo" for="fvValidade"><span class="fv-num">4</span> Validade da nova ficha</label>
+        <div class="fv-validade">
+            <select class="form-select" name="validade" id="fvValidade">
+                <option value="__manter__" {{ 'selected' if form.validade == '__manter__' }}>Igual à ficha escolhida</option>
+                <option value="sem" {{ 'selected' if form.validade == 'sem' }}>Sem prazo</option>
+                <option value="meses" {{ 'selected' if form.validade == 'meses' }}>Definir em meses</option>
+            </select>
+            <input type="number" class="form-control" name="validade_meses" id="fvMeses" min="1" max="24"
+                   value="{{ form.validade_meses or '' }}" aria-label="Validade em meses" {{ '' if form.validade == 'meses' else 'hidden' }}>
+        </div>
+        <div class="fv-ajuda">Conta a partir do dia em que a ficha entra.</div>
+    </div>
+
+    <button type="submit" class="btn fv-enviar" id="fvEnviar" disabled>Aplicar</button>
+</form>
+
+{% if pendentes %}
+<div class="fv-card mt-4" id="fvPendentes">
+    <div class="fv-passo"><i class="bi bi-hourglass-split" style="color: #F28C33;"></i> Envios pendentes</div>
+    {% for e in pendentes %}
+    <div class="fv-pend">
+        <div>
+            <div class="fv-res-nome">{{ e.aluno.nome_completo or e.aluno.username }}</div>
+            <div class="fv-res-texto">"{{ e.descricao }}" ·
+                {% if e.modo == 'sugestao' %}sugestão aguardando resposta{% else %}entra quando a atual vencer{% if e.versao_alvo and e.versao_alvo.data_expiracao %} ({{ e.versao_alvo.data_expiracao.strftime('%d/%m/%Y') }}){% endif %}{% endif %}
+            </div>
+        </div>
+        <form method="post" action="{{ url_for('professor.cancelar_envio_ficha', envio_id=e.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-outline-secondary">Cancelar</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<script>
+(function () {
+    var form = document.getElementById('fvForm');
+    var enviar = document.getElementById('fvEnviar');
+    var fonte = document.getElementById('fvFonte');
+    var busca = document.getElementById('fvBusca');
+    var validade = document.getElementById('fvValidade');
+    var meses = document.getElementById('fvMeses');
+    function marcados() { return form.querySelectorAll('input[name="alunos"]:checked').length; }
+    function modo() { var m = form.querySelector('input[name="modo"]:checked'); return m ? m.value : ''; }
+    function atualizar() {
+        var n = marcados();
+        var nEl = document.getElementById('fvN');
+        if (nEl) nEl.textContent = n;
+        var alunos = n === 1 ? '1 aluno' : n + ' alunos';
+        var textos = { agora: 'Substituir a ficha de ' + alunos + ' agora',
+                       vencer: 'Agendar para ' + alunos,
+                       sugestao: 'Enviar sugestão para ' + alunos };
+        enviar.textContent = !n ? 'Marque os alunos' : (!fonte.value ? 'Escolha a ficha' : (textos[modo()] || 'Aplicar'));
+        enviar.disabled = !(n && fonte.value && modo());
+    }
+    form.addEventListener('change', atualizar);
+    if (busca) {
+        busca.addEventListener('input', function () {
+            var t = busca.value.trim().toLowerCase();
+            form.querySelectorAll('.fv-aluno').forEach(function (el) { el.hidden = t && el.dataset.nome.indexOf(t) === -1; });
+        });
+        document.getElementById('fvTodos').addEventListener('click', function () {
+            form.querySelectorAll('.fv-aluno:not([hidden]) input').forEach(function (c) { c.checked = true; });
+            atualizar();
+        });
+        document.getElementById('fvNenhum').addEventListener('click', function () {
+            form.querySelectorAll('.fv-aluno input').forEach(function (c) { c.checked = false; });
+            atualizar();
+        });
+    }
+    validade.addEventListener('change', function () {
+        meses.hidden = validade.value !== 'meses';
+        meses.required = validade.value === 'meses';
+        if (!meses.hidden) meses.focus();
+    });
+    form.addEventListener('submit', function () { enviar.disabled = true; enviar.textContent = 'Aplicando…'; });
+    atualizar();
+    var res = document.getElementById('fvResultado');
+    if (res) res.scrollIntoView({ block: 'start' });
+})();
+</script>
+{% endblock %}

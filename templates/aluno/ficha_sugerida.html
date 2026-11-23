@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block page_icon %}<i class="bi bi-send-check" style="color: #F28C33;"></i>{% endblock %}
+{% block page_title %}Ficha sugerida{% endblock %}
+
+{% block content %}
+<style>
+    .fs-card { background: var(--fl-c-sup, #fff); border: 1px solid var(--fl-c-borda, #e9ecef); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; }
+    .fs-titulo { font-size: 1.2rem; font-weight: 700; color: var(--fl-c-txt, #2D2D2D); margin: 0 0 4px; }
+    .fs-meta { font-size: .86rem; color: var(--fl-c-txt2, #6b6b6b); }
+    .fs-treino { margin-top: 14px; }
+    .fs-treino-nome { font-weight: 700; font-size: .92rem; color: var(--fl-c-txt, #2D2D2D); margin-bottom: 6px; }
+    .fs-cod { display: inline-flex; width: 24px; height: 24px; border-radius: 7px; background: var(--fl-c-tint-laranja, #fff3e0); color: var(--fl-c-txt-laranja, #9c4a06); font-size: .8rem; align-items: center; justify-content: center; margin-right: 6px; }
+    .fs-ex { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--fl-c-borda, #e9ecef); font-size: .86rem; color: var(--fl-c-txt, #2D2D2D); }
+    .fs-ex:last-child { border-bottom: 0; }
+    .fs-ex-meta { color: var(--fl-c-txt2, #6b6b6b); white-space: nowrap; }
+    .fs-acoes { display: flex; gap: 10px; flex-wrap: wrap; }
+    .fs-aceitar { background: #F28C33; border: 0; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 22px; min-height: 44px; } /* tema: fixo */
+    .fs-aceitar:hover, .fs-aceitar:focus-visible { background: #e07a1f; color: #fff; } /* tema: fixo */
+    .fs-manter { border-radius: 12px; min-height: 44px; font-weight: 600; }
+</style>
+
+<div class="fs-card">
+    <h2 class="fs-titulo">{{ envio.descricao }}</h2>
+    <div class="fs-meta">
+        Sugerida por {{ envio.professor.nome_completo or envio.professor.username }} em {{ envio.criada_em.strftime('%d/%m/%Y') }}
+        {% if envio.validade_meses %} · vale por {{ envio.validade_meses }} {{ 'mês' if envio.validade_meses == 1 else 'meses' }}{% endif %}
+    </div>
+    {% if ativa %}<div class="fs-meta mt-1">Sua ficha atual: v{{ ativa.numero_versao }} · {{ ativa.descricao }}</div>{% endif %}
+
+    {% if treinos %}
+        {% for t in treinos %}
+        <div class="fs-treino">
+            <div class="fs-treino-nome"><span class="fs-cod">{{ t.codigo }}</span>{{ t.nome }}</div>
+            {% for ex in t.exercicios %}
+            <div class="fs-ex"><span>{{ ex.nome }}</span>{% if ex.meta %}<span class="fs-ex-meta">{{ ex.meta }}</span>{% endif %}</div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    {% elif envio.status == 'pendente' %}
+        <div class="alert alert-warning mt-3 mb-0">A ficha original foi removida pelo professor.</div>
+    {% endif %}
+</div>
+
+{% if envio.status == 'pendente' and treinos %}
+<div class="fs-card">
+    <p class="fs-meta mb-3">Se aceitar, sua ficha atual termina hoje e esta passa a valer no próximo treino. Seu histórico continua salvo.</p>
+    <form method="post" action="{{ url_for('aluno.responder_ficha_sugerida', envio_id=envio.id) }}" class="fs-acoes">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" name="resposta" value="aceitar" class="btn fs-aceitar"><i class="bi bi-check2"></i> Aceitar ficha</button>
+        <button type="submit" name="resposta" value="recusar" class="btn btn-outline-secondary fs-manter">Manter a atual</button>
+    </form>
+</div>
+{% elif envio.status != 'pendente' %}
+<div class="alert alert-info">
+    {% if envio.status == 'aplicada' %}Você aceitou esta ficha.{% elif envio.status == 'recusada' %}Você preferiu manter a ficha atual.{% else %}Esta sugestão foi cancelada.{% endif %}
+</div>
+{% endif %}
+{% endblock %}

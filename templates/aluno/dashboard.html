@@ -5,6 +5,11 @@
 
 {% block content %}
 <style>
+    .dash-sugestao-ficha { display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin-bottom: 16px; border-radius: 14px; text-decoration: none;
+        background: var(--fl-c-tint-laranja, #fff3e0); color: var(--fl-c-txt, #2D2D2D); border: 1px solid rgba(242, 140, 51, .45); font-size: .9rem; }
+    .dash-sugestao-ficha > i { font-size: 1.2rem; color: var(--fl-c-txt-laranja, #9c4a06); }
+    .dash-sugestao-ficha:hover { color: var(--fl-c-txt, #2D2D2D); border-color: #F28C33; } /* tema: fixo */
+    .dash-sugestao-ver { margin-left: auto; font-weight: 700; color: var(--fl-c-txt-laranja, #9c4a06); white-space: nowrap; }
     .dash-hero {
         background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
         border-radius: 18px;
@@ -206,6 +211,14 @@
         {{ dias_treinados_semana }} de 7 dias treinados nesta semana
     </span>
 </div>
+
+{% for sug in sugestoes_ficha %}
+<a class="dash-sugestao-ficha" href="{{ url_for('aluno.ficha_sugerida', envio_id=sug.id) }}">
+    <i class="bi bi-send-check"></i>
+    <span><strong>{{ (sug.professor.nome_completo or sug.professor.username).split()[0] }} sugeriu uma nova ficha:</strong> {{ sug.descricao }}</span>
+    <span class="dash-sugestao-ver">Ver <i class="bi bi-chevron-right"></i></span>
+</a>
+{% endfor %}
 
 {% include "_comece_por_aqui.html" %}
 

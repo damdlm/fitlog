@@ -134,6 +134,9 @@
         {% if lim and lim.limite is not none %}<span class="ga-limite">{{ lim.total }} de {{ lim.limite }} alunos</span>{% endif %}
     </a>
     {% endif %}
+    <a href="{{ url_for('professor.aplicar_ficha_varios') }}" class="btn ga-btn-solicitacoes" id="gaBtnFichaVarios">
+        <i class="bi bi-copy"></i> Ficha para vários
+    </a>
     <a href="{{ url_for('professor.solicitacoes') }}" class="btn ga-btn-solicitacoes" id="gaBtnSolicitacoes">
         <i class="bi bi-envelope"></i> Solicitações
         {% if current_user.solicitacoes_pendentes_count > 0 %}

@@ -1,5 +1,6 @@
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
+from services.ficha_lote_service import FichaLoteService
 from . import aluno_bp
 from models import db, User, AlunoProfessor, SolicitacaoVinculo, TreinoVersao, VersaoGlobal, ExercicioCustomizado, RegistroTreino
 from utils.decorators import acesso_premium_required
@@ -216,6 +217,7 @@ def dashboard():
                          dias_semana_valores=dias_semana_valores,
                          dias_semana_detalhes=dias_semana_detalhes,
                          dias_treinados_semana=dias_treinados_semana,
+                         sugestoes_ficha=FichaLoteService.sugestoes_pendentes_do_aluno(current_user.id),
                          saudacao=saudacao)
 
 @aluno_bp.route('/meu-professor')

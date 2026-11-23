@@ -39,6 +39,8 @@ ALERTAS_DEFINICAO (lote 3):
     semana (ISO) -- visto esconde até a semana seguinte.
   - revisao: versão ativa há 60+ dias (REVISAO_DEFINICAO). Chave: id
     da versão -- volta quando houver outra versão parada.
+  - sugestao: ficha enviada como sugestão (lote 4) sem resposta do
+    aluno há 3+ dias. Chave: id do envio.
   - recorde: exercício em que a maior carga dos últimos 7 dias passou
     a maior carga de antes (precisa ter histórico anterior; cardio fica
     de fora). Alerta positivo, para o professor parabenizar. Chave: a
@@ -91,7 +93,7 @@ LIMITE_ALUNOS_REVISAO_EXIBIDOS = 5
 LIMITE_ATIVIDADE_RECENTE = 8
 
 # Alertas (lote 3) -- ver ALERTAS_DEFINICAO no docstring do módulo.
-TIPOS_ALERTA = ('sem_treinar', 'ritmo', 'revisao', 'recorde')
+TIPOS_ALERTA = ('sem_treinar', 'ritmo', 'revisao', 'sugestao', 'recorde')
 DIAS_RITMO_RECENTE = 14
 SEMANAS_RITMO_BASE = 6
 MIN_DIAS_BASE_POR_QUINZENA = 3
@@ -145,7 +147,8 @@ class DashboardService(BaseService):
                 'aderencia': DashboardService._aderencia(aluno_ids, hoje),
                 'alunos_atencao': {'total': len(parados), 'itens': parados[:LIMITE_ALUNOS_ATENCAO_EXIBIDOS]},
                 'treinos_revisao': {'total': len(revisao), 'itens': revisao[:LIMITE_ALUNOS_REVISAO_EXIBIDOS]},
-                'alertas': DashboardService._alertas(alunos_por_id, aluno_ids, hoje, parados, revisao),
+                'alertas': DashboardService._alertas(alunos_por_id, aluno_ids, hoje, parados, revisao,
+                                                     professor_id=professor_id),
                 'atividade_recente': DashboardService._atividade_recente(aluno_ids),
                 'grafico_30_dias': DashboardService._grafico_30_dias(aluno_ids, hoje),
             }
@@ -388,7 +391,7 @@ class DashboardService(BaseService):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _alertas(alunos_por_id, aluno_ids, hoje, parados, revisao):
+    def _alertas(alunos_por_id, aluno_ids, hoje, parados, revisao, professor_id=None):
         """Lista única de alertas, um item por (aluno, tipo). Ordem: os
         que pedem ação primeiro (sem treinar, ritmo, revisão), recordes
         por último; dentro de cada tipo, o caso mais forte primeiro."""
@@ -430,6 +433,18 @@ class DashboardService(BaseService):
             a['detalhe'] = f"ficha v{v['numero_versao']} há {v['dias_sem_revisao']} dias sem troca"
             a['peso'] = v['dias_sem_revisao']
             alertas.append(a)
+
+        if professor_id:
+            from services.ficha_lote_service import FichaLoteService
+            for e in FichaLoteService.sugestoes_sem_resposta(professor_id, aluno_ids):
+                if e.aluno_id not in alunos_por_id:
+                    continue
+                criada = e.criada_em if e.criada_em.tzinfo else e.criada_em.replace(tzinfo=timezone.utc)
+                dias = (datetime.now(timezone.utc) - criada).days
+                a = base(e.aluno_id, 'sugestao', f's{e.id}')
+                a['detalhe'] = f'"{e.descricao}" sem resposta há {dias} dias'
+                a['peso'] = dias
+                alertas.append(a)
 
         for r in DashboardService._recordes_da_semana(aluno_ids, hoje):
             a = base(r['aluno_id'], 'recorde', chave_semana)

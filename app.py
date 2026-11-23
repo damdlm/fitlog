@@ -803,15 +803,21 @@ def create_app(config_class=None):
     # =============================================================
     @app.cli.command("versoes-alertar-expiracao")
     def versoes_alertar_expiracao():
-        """Notifica o dono de cada versão ativa com validade definida
+        """Também aplica as fichas agendadas "quando a atual vencer" (lote 4).
+        Notifica o dono de cada versão ativa com validade definida
         (VersaoGlobal.validade_meses) que está entrando na janela de
         vencimento (ver VersaoService.LIMIAR_DIAS_ALERTA_EXPIRACAO), e
         também o professor vinculado a ele, se houver. Cada expiração só
         gera um alerta (ver VersaoGlobal.alerta_expiracao_enviado_em).
         Rodar diariamente."""
         from services.versao_service import VersaoService
+        from services.ficha_lote_service import FichaLoteService
         total = VersaoService.alertar_expiracoes()
         print(f"{total} versão(ões) alertada(s) por expiração próxima.")
+        # Lote 4: fichas enviadas "para quando a atual vencer" entram aqui,
+        # no mesmo cron diário (fitlog-cron-versoes-expiracao).
+        aplicadas, canceladas = FichaLoteService.aplicar_agendadas()
+        print(f"{aplicadas} ficha(s) agendada(s) aplicada(s), {canceladas} cancelada(s).")
 
     # =============================================================
     # COMANDOS CLI (monitoramento)

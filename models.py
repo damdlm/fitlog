@@ -1428,6 +1428,46 @@ class AlertaVistoProfessor(db.Model):
     )
 
 
+class FichaEnviada(db.Model):
+    """Ficha que o professor mandou para um aluno e que ainda vai (ou não)
+    virar a ficha ativa dele -- "Mesma ficha para vários alunos" (lote 4).
+
+    modo:
+      - 'vencer': entra sozinha quando a ficha atual (versao_alvo_id)
+        vencer -- aplicada pelo cron diário (FichaLoteService.aplicar_agendadas)
+      - 'sugestao': o aluno aceita ou recusa
+    A troca imediata ("substituir agora") não passa por aqui.
+
+    A origem é lida na hora de aplicar: versão (do professor ou de um
+    aluno dele) em origem_versao_id, ou modelo pronto em origem_modelo.
+    status: pendente -> aplicada | recusada | cancelada."""
+    __tablename__ = 'fichas_enviadas'
+
+    id = db.Column(db.Integer, primary_key=True)
+    professor_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    aluno_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    origem_versao_id = db.Column(db.Integer, db.ForeignKey('versoes_globais.id', ondelete='SET NULL'), nullable=True)
+    origem_modelo = db.Column(db.String(60), nullable=True)
+    descricao = db.Column(db.String(200), nullable=False)
+    validade_meses = db.Column(db.Integer, nullable=True)
+    modo = db.Column(db.String(12), nullable=False)
+    status = db.Column(db.String(12), nullable=False, default='pendente')
+    versao_alvo_id = db.Column(db.Integer, db.ForeignKey('versoes_globais.id', ondelete='SET NULL'), nullable=True)
+    versao_criada_id = db.Column(db.Integer, db.ForeignKey('versoes_globais.id', ondelete='SET NULL'), nullable=True)
+    motivo = db.Column(db.String(200), nullable=True)
+    criada_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    respondida_em = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    aluno = db.relationship('User', foreign_keys=[aluno_id])
+    professor = db.relationship('User', foreign_keys=[professor_id])
+    versao_alvo = db.relationship('VersaoGlobal', foreign_keys=[versao_alvo_id])
+
+    __table_args__ = (
+        db.Index('idx_ficha_enviada_aluno_status', 'aluno_id', 'status'),
+        db.Index('idx_ficha_enviada_professor_status', 'professor_id', 'status'),
+    )
+
+
 # =====================================================
 # MODELOS BASE COMPARTILHADOS
 # =====================================================

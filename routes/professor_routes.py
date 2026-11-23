@@ -97,6 +97,61 @@ def marcar_alerta_visto():
 
 
 # =============================================
+# MESMA FICHA PARA VÁRIOS ALUNOS (lote 4)
+# =============================================
+
+@professor_bp.route('/fichas/aplicar', methods=['GET', 'POST'])
+@login_required
+@professor_acesso_tela_required('professor_meus_alunos')
+@professor_acesso_alunos_required
+@limiter.limit("20 per hour", methods=['POST'], key_func=lambda: f"ficha-varios-{current_user.id}")
+def aplicar_ficha_varios():
+    """Escolhe uma ficha, marca os alunos e diz como aplicar (agora, quando
+    a atual vencer ou como sugestão). O resultado volta aluno por aluno,
+    inclusive os ignorados com o motivo."""
+    from services.ficha_lote_service import FichaLoteService
+    if not current_user.is_professor():
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('main.index'))
+
+    resultados = None
+    form = {'fonte': request.args.get('fonte', ''), 'alunos': [], 'modo': 'agora', 'validade': '__manter__'}
+    if request.args.get('aluno', type=int):
+        form['alunos'] = [request.args.get('aluno', type=int)]
+    if request.method == 'POST':
+        form = {'fonte': request.form.get('fonte', ''), 'alunos': request.form.getlist('alunos', type=int),
+                'modo': request.form.get('modo', ''), 'validade': request.form.get('validade', '__manter__')}
+        validade = form['validade']
+        if validade == 'meses':
+            validade = request.form.get('validade_meses') or ''
+            form['validade_meses'] = validade
+        elif validade == 'sem':
+            validade = None
+        try:
+            resultados = FichaLoteService.aplicar(current_user, form['fonte'], form['alunos'], form['modo'],
+                                                  validade=validade)
+            form['alunos'] = []  # evita reenviar sem querer
+        except ValueError as e:
+            flash(str(e), 'danger')
+    dados = FichaLoteService.dados_tela(current_user.id)
+    return render_template('professor/aplicar_ficha_varios.html', dados=dados, form=form,
+                           resultados=resultados,
+                           pendentes=FichaLoteService.pendentes_do_professor(current_user.id))
+
+
+@professor_bp.route('/fichas/envio/<int:envio_id>/cancelar', methods=['POST'])
+@login_required
+@professor_acesso_tela_required('professor_meus_alunos')
+def cancelar_envio_ficha(envio_id):
+    from services.ficha_lote_service import FichaLoteService
+    if FichaLoteService.cancelar(envio_id, current_user.id):
+        flash('Envio cancelado.', 'info')
+    else:
+        flash('Este envio não está mais pendente.', 'warning')
+    return redirect(url_for('professor.aplicar_ficha_varios'))
+
+
+# =============================================
 # GERENCIAMENTO DE ALUNOS
 # =============================================
 
