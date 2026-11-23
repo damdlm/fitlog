@@ -146,6 +146,41 @@
     /* Pr5: limite do plano no atalho "Adicionar aluno" */
     .dash-quick-tile .pd-limite { font-size: .72rem; font-weight: 700; color: var(--fl-c-txt2, #5f6368); background: var(--fl-c-sup2, #f3f4f6); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
     .dash-quick-tile .pd-limite.is-no-limite { color: var(--fl-c-txt-laranja, #9c4a06); background: rgba(242, 140, 51, .14); }
+    /* Lote 3: alertas por aluno */
+    .pd-filtros { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .pd-filtro { border: 1px solid var(--fl-c-borda, #e9ecef); background: var(--fl-c-sup, #fff); color: var(--fl-c-txt, #2D2D2D);
+        border-radius: 999px; padding: 4px 12px; font-size: .8rem; font-weight: 600; }
+    .pd-filtro.is-ativo { background: #F28C33; border-color: #F28C33; color: #fff; } /* tema: fixo */
+    .pd-filtro-n { opacity: .7; margin-left: 2px; }
+    .pd-alerta { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px;
+        background: var(--fl-c-sup2, #f6f7f9); margin-bottom: 8px; }
+    .pd-alerta[hidden] { display: none; }
+    .pd-alerta-icone { flex: 0 0 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+    .pd-alerta--sem_treinar .pd-alerta-icone { background: var(--fl-c-tint-vermelho, #fde2e1); color: var(--fl-c-txt-vermelho, #b9372f); }
+    .pd-alerta--ritmo .pd-alerta-icone { background: var(--fl-c-tint-laranja, #fff3e0); color: var(--fl-c-txt-laranja, #9c4a06); }
+    .pd-alerta--revisao .pd-alerta-icone { background: var(--fl-c-tint-amarelo, #fff8db); color: var(--fl-c-txt-amarelo, #8a6d00); }
+    .pd-alerta--recorde .pd-alerta-icone { background: var(--fl-c-tint-verde, #e3f5ea); color: var(--fl-c-txt-verde, #1f7a45); }
+    .pd-alerta-corpo { flex: 1 1 auto; min-width: 0; }
+    .pd-alerta-nome { font-weight: 700; font-size: .9rem; color: var(--fl-c-txt, #2D2D2D); text-decoration: none; }
+    .pd-alerta-nome:hover { text-decoration: underline; }
+    .pd-alerta-detalhe { font-size: .8rem; color: var(--fl-c-txt2, #6b6b6b); }
+    .pd-alerta-tag { font-weight: 700; margin-right: 2px; }
+    .pd-alerta-acoes { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .pd-alerta-btn { border: 1px solid var(--fl-c-borda, #e9ecef); background: var(--fl-c-sup, #fff); color: var(--fl-c-txt, #2D2D2D);
+        font-size: .78rem; font-weight: 600; border-radius: 8px; padding: 4px 10px; white-space: nowrap; }
+    .pd-alerta-btn:hover { border-color: #F28C33; color: var(--fl-c-txt-laranja, #9c4a06); } /* tema: fixo */
+    .pd-alerta-whats { color: #1f9d55; } /* tema: fixo */
+    .pd-alerta-desfazer { display: none; }
+    .pd-alertas--vistos .pd-alerta { opacity: .7; }
+    .pd-alertas--vistos .pd-alerta-visto { display: none; }
+    .pd-alertas--vistos .pd-alerta-desfazer { display: inline-block; }
+    .pd-mostrar-mais, .pd-vistos-toggle { font-size: .82rem; padding-left: 0; --bs-btn-color: var(--fl-c-txt-laranja, #9c4a06); --bs-btn-hover-color: var(--fl-c-txt-laranja, #9c4a06); --bs-btn-active-color: var(--fl-c-txt-laranja, #9c4a06); --bs-btn-active-bg: transparent; --bs-btn-active-border-color: transparent; }
+    .pd-vistos { border-top: 1px solid var(--fl-c-borda, #e9ecef); margin-top: 10px; padding-top: 6px; }
+    @media (max-width: 576px) {
+        .pd-alerta { flex-wrap: wrap; }
+        .pd-alerta-corpo { flex-basis: calc(100% - 50px); }
+        .pd-alerta-acoes { flex-basis: 100%; justify-content: flex-start; padding-left: 46px; }
+    }
 </style>
 
 <!-- Saudação -->
@@ -208,89 +243,67 @@
     </div>
 </div>
 
-<!-- O que precisa da sua atenção -->
+<!-- O que precisa da sua atenção (lote 3: alertas por aluno) -->
+{% set ALERTA = {
+    'sem_treinar': {'rotulo': 'Sem treinar', 'icone': 'bi-exclamation-triangle-fill', 'acao': 'Ver calendário',
+                    'msg': 'Oi, {nome}! Tudo bem? Senti sua falta nos treinos. Bora voltar essa semana?'},
+    'ritmo': {'rotulo': 'Abaixo do ritmo', 'icone': 'bi-graph-down-arrow', 'acao': 'Ver calendário',
+              'msg': 'Oi, {nome}! Vi que os treinos diminuíram nas últimas semanas. Está tudo certo? Posso ajustar algo na ficha?'},
+    'revisao': {'rotulo': 'Ficha para revisar', 'icone': 'bi-clipboard2-pulse-fill', 'acao': 'Revisar ficha',
+                'msg': 'Oi, {nome}! Está na hora de renovar sua ficha. Vamos conversar sobre seus objetivos?'},
+    'recorde': {'rotulo': 'Recorde', 'icone': 'bi-trophy-fill', 'acao': 'Ver progresso',
+                'msg': 'Parabéns pelo recorde, {nome}! 💪 Continue assim.'},
+} %}
+{% macro item_alerta(a) %}
+{% set cfg = ALERTA[a.tipo] %}
+<div class="pd-alerta pd-alerta--{{ a.tipo }}" data-tipo="{{ a.tipo }}" data-aluno-id="{{ a.aluno_id }}" data-chave="{{ a.chave }}">
+    <span class="pd-alerta-icone"><i class="bi {{ cfg.icone }}"></i></span>
+    <div class="pd-alerta-corpo">
+        <a class="pd-alerta-nome" href="{{ url_for('professor.visualizar_aluno', aluno_id=a.aluno_id) }}">{{ a.nome }}</a>
+        <div class="pd-alerta-detalhe"><span class="pd-alerta-tag">{{ cfg.rotulo }}</span> {{ a.detalhe }}</div>
+    </div>
+    <div class="pd-alerta-acoes">
+        {% if a.tipo == 'revisao' %}{% set url = url_for('professor.versoes_aluno', aluno_id=a.aluno_id) %}
+        {% elif a.tipo == 'recorde' %}{% set url = url_for('professor.progresso_aluno', aluno_id=a.aluno_id) %}
+        {% else %}{% set url = url_for('professor.calendario_aluno', aluno_id=a.aluno_id) %}{% endif %}
+        <a class="btn btn-sm pd-alerta-btn" href="{{ url }}">{{ cfg.acao }}</a>
+        {% if a.telefone %}
+        <a class="btn btn-sm pd-alerta-btn pd-alerta-whats" target="_blank" rel="noopener"
+           href="https://wa.me/{{ a.telefone }}?text={{ cfg.msg.replace('{nome}', a.primeiro_nome) | urlencode }}"
+           title="Mandar mensagem no WhatsApp" aria-label="Mandar mensagem para {{ a.primeiro_nome }} no WhatsApp"><i class="bi bi-whatsapp"></i></a>
+        {% endif %}
+        <button type="button" class="btn btn-sm pd-alerta-btn pd-alerta-visto" title="Marcar como visto"><i class="bi bi-check2"></i> Visto</button>
+        <button type="button" class="btn btn-sm pd-alerta-btn pd-alerta-desfazer" title="Voltar para a lista"><i class="bi bi-arrow-counterclockwise"></i> Desfazer</button>
+    </div>
+</div>
+{% endmacro %}
 <div class="pd-card mb-4" id="pdAtencao">
     <div class="pd-card-title"><i class="bi bi-bell" style="color: #F28C33;"></i> O que precisa da sua atenção</div>
 
-    {% if dados.alunos_atencao.total == 0 and dados.treinos_revisao.total == 0 %}
-        <div class="dash-empty" style="padding: 20px;">
-            <i class="bi bi-emoji-smile"></i>
-            Tudo certo por aqui. Seus alunos estão em dia.
-        </div>
-    {% else %}
-        {% if dados.alunos_atencao.total > 0 %}
-        <div class="pd-acao-item">
-            <span class="pd-acao-texto">
-                <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>
-                {{ dados.alunos_atencao.total }} aluno{{ 's' if dados.alunos_atencao.total != 1 else '' }}
-                {{ 'estão' if dados.alunos_atencao.total != 1 else 'está' }} há mais de 7 dias sem treinar
-            </span>
-            <a href="{{ url_for('professor.listar_alunos') }}" class="btn btn-sm btn-outline-danger">Ver alunos</a>
-        </div>
-        {% endif %}
-        {% if dados.treinos_revisao.total > 0 %}
-        <div class="pd-acao-item">
-            <span class="pd-acao-texto">
-                <i class="bi bi-clipboard2-pulse-fill text-warning me-1"></i>
-                {{ dados.treinos_revisao.total }} treino{{ 's' if dados.treinos_revisao.total != 1 else '' }}
-                {{ 'precisam' if dados.treinos_revisao.total != 1 else 'precisa' }} ser revisado{{ 's' if dados.treinos_revisao.total != 1 else '' }}
-            </span>
-            <a href="{{ url_for('professor.listar_alunos') }}" class="btn btn-sm btn-outline-warning">Revisar</a>
-        </div>
-        {% endif %}
-    {% endif %}
-</div>
-
-<div class="row g-3 mb-4">
-    <!-- Alunos que precisam de atenção -->
-    <div class="col-md-6">
-        <div class="pd-card" id="pdAlunosAtencao">
-            <div class="pd-card-title"><i class="bi bi-exclamation-triangle" style="color: var(--fl-c-txt-vermelho, #d9534f);"></i> Alunos que precisam de atenção</div>
-            {% if dados.alunos_atencao.itens %}
-                {% for item in dados.alunos_atencao.itens %}
-                <div class="pd-lista-item">
-                    <span class="pd-lista-nome"><i class="bi bi-exclamation-circle-fill text-danger me-1"></i>{{ item.nome }}</span>
-                    <span class="pd-lista-meta">
-                        {% if item.nunca_treinou %}nunca treinou{% else %}{{ item.dias_parado }} dias sem treinar{% endif %}
-                    </span>
-                </div>
-                {% endfor %}
-                {% if dados.alunos_atencao.total > dados.alunos_atencao.itens|length %}
-                <div class="text-center mt-2">
-                    <a href="{{ url_for('professor.listar_alunos') }}" class="small">Ver todos</a>
-                </div>
-                {% endif %}
-            {% else %}
-                <div class="dash-empty" style="padding: 20px;">
-                    <i class="bi bi-check2-circle"></i>
-                    Nenhum aluno precisa de atenção hoje.
-                </div>
-            {% endif %}
-        </div>
+    <div class="pd-filtros" id="pdFiltrosAlerta" role="group" aria-label="Filtrar alertas"{% if not alertas %} hidden{% endif %}>
+        <button type="button" class="pd-filtro is-ativo" data-filtro="todos" aria-pressed="true">Todos <span class="pd-filtro-n">{{ alertas | length }}</span></button>
+        {% for tipo, cfg in ALERTA.items() %}
+        {% set n = alertas | selectattr('tipo', 'equalto', tipo) | list | length %}
+        <button type="button" class="pd-filtro" data-filtro="{{ tipo }}" aria-pressed="false"{% if n == 0 %} hidden{% endif %}>{{ cfg.rotulo }} <span class="pd-filtro-n">{{ n }}</span></button>
+        {% endfor %}
     </div>
 
-    <!-- Treinos aguardando revisão -->
-    <div class="col-md-6">
-        <div class="pd-card" id="pdRevisao">
-            <div class="pd-card-title"><i class="bi bi-clipboard2-pulse" style="color: #F28C33;"></i> Treinos aguardando revisão</div>
-            {% if dados.treinos_revisao.itens %}
-                {% for item in dados.treinos_revisao.itens %}
-                <div class="pd-lista-item">
-                    <span class="pd-lista-nome"><i class="bi bi-arrow-repeat text-warning me-1"></i>{{ item.nome }}</span>
-                    <span class="pd-lista-meta">v{{ item.numero_versao }} · {{ item.dias_sem_revisao }} dias sem atualizar</span>
-                </div>
-                {% endfor %}
-                {% if dados.treinos_revisao.total > dados.treinos_revisao.itens|length %}
-                <div class="text-center mt-2">
-                    <a href="{{ url_for('professor.listar_alunos') }}" class="small">Ver todos</a>
-                </div>
-                {% endif %}
-            {% else %}
-                <div class="dash-empty" style="padding: 20px;">
-                    <i class="bi bi-check2-circle"></i>
-                    Nenhum treino aguardando revisão.
-                </div>
-            {% endif %}
+    <div class="pd-alertas" id="pdListaAlertas">
+        {% for a in alertas %}{{ item_alerta(a) }}{% endfor %}
+    </div>
+    <button type="button" class="btn btn-sm btn-link pd-mostrar-mais" id="pdMostrarMais" hidden>Mostrar mais</button>
+
+    <div class="dash-empty" id="pdAlertasVazio" style="padding: 20px;"{% if alertas %} hidden{% endif %}>
+        <i class="bi bi-emoji-smile"></i>
+        Tudo certo por aqui. Seus alunos estão em dia.
+    </div>
+
+    <div class="pd-vistos" id="pdVistos"{% if not alertas_vistos %} hidden{% endif %}>
+        <button type="button" class="btn btn-sm btn-link pd-vistos-toggle" id="pdVistosToggle" aria-expanded="false">
+            {% set nv = alertas_vistos | length %}<span id="pdVistosN">{{ nv }}</span> <span id="pdVistosTxt">{{ 'marcados como vistos' if nv != 1 else 'marcado como visto' }}</span> · <span class="pd-vistos-acao">mostrar</span>
+        </button>
+        <div class="pd-alertas pd-alertas--vistos" id="pdListaVistos" hidden>
+            {% for a in alertas_vistos %}{{ item_alerta(a) }}{% endfor %}
         </div>
     </div>
 </div>
@@ -379,5 +392,101 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+</script>
+<script>
+// Lote 3: filtro por tipo, "Mostrar mais" e "Visto" dos alertas
+(function () {
+    var lista = document.getElementById('pdListaAlertas');
+    if (!lista) return;
+    var listaVistos = document.getElementById('pdListaVistos');
+    var filtros = document.getElementById('pdFiltrosAlerta');
+    var vazio = document.getElementById('pdAlertasVazio');
+    var maisBtn = document.getElementById('pdMostrarMais');
+    var blocoVistos = document.getElementById('pdVistos');
+    var toggle = document.getElementById('pdVistosToggle');
+    var POR_PAGINA = 8;
+    var filtro = 'todos';
+    var mostrando = POR_PAGINA;
+
+    function itens() { return Array.prototype.slice.call(lista.querySelectorAll('.pd-alerta')); }
+
+    function atualizar() {
+        var todos = itens();
+        var visiveis = todos.filter(function (el) { return filtro === 'todos' || el.dataset.tipo === filtro; });
+        todos.forEach(function (el) { el.hidden = true; });
+        visiveis.forEach(function (el, i) { el.hidden = i >= mostrando; });
+        maisBtn.hidden = visiveis.length <= mostrando;
+        maisBtn.textContent = 'Mostrar mais (' + (visiveis.length - mostrando) + ')';
+        vazio.hidden = todos.length > 0;
+        filtros.hidden = todos.length === 0;
+        filtros.querySelectorAll('.pd-filtro').forEach(function (b) {
+            var f = b.dataset.filtro;
+            var n = f === 'todos' ? todos.length : todos.filter(function (el) { return el.dataset.tipo === f; }).length;
+            b.querySelector('.pd-filtro-n').textContent = n;
+            if (f !== 'todos') b.hidden = n === 0;
+        });
+        if (filtro !== 'todos' && visiveis.length === 0) { escolher('todos'); return; }
+        var nVistos = listaVistos.querySelectorAll('.pd-alerta').length;
+        document.getElementById('pdVistosN').textContent = nVistos;
+        document.getElementById('pdVistosTxt').textContent = nVistos === 1 ? 'marcado como visto' : 'marcados como vistos';
+        blocoVistos.hidden = nVistos === 0;
+    }
+
+    function escolher(f) {
+        filtro = f;
+        mostrando = POR_PAGINA;
+        filtros.querySelectorAll('.pd-filtro').forEach(function (b) {
+            var ativo = b.dataset.filtro === f;
+            b.classList.toggle('is-ativo', ativo);
+            b.setAttribute('aria-pressed', ativo ? 'true' : 'false');
+        });
+        atualizar();
+    }
+
+    filtros.addEventListener('click', function (e) {
+        var b = e.target.closest('.pd-filtro');
+        if (b) escolher(b.dataset.filtro);
+    });
+    maisBtn.addEventListener('click', function () { mostrando += POR_PAGINA; atualizar(); });
+    toggle.addEventListener('click', function () {
+        var abrir = listaVistos.hidden;
+        listaVistos.hidden = !abrir;
+        toggle.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+        toggle.querySelector('.pd-vistos-acao').textContent = abrir ? 'ocultar' : 'mostrar';
+    });
+
+    function enviar(el, desfazer, depois) {
+        var botoes = el.querySelectorAll('button');
+        botoes.forEach(function (b) { b.disabled = true; });
+        fetch('{{ url_for("professor.marcar_alerta_visto") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ aluno_id: el.dataset.alunoId, tipo: el.dataset.tipo, chave: el.dataset.chave, desfazer: desfazer })
+        }).then(function (r) { return r.json().catch(function () { return {}; }); })
+          .then(function (j) {
+              botoes.forEach(function (b) { b.disabled = false; });
+              if (j && j.ok) { depois(); atualizar(); }
+              else if (window.FitLogUtils && FitLogUtils.showToast) { FitLogUtils.showToast('Não foi possível salvar. Tente de novo.', 'danger'); }
+          })
+          .catch(function () {
+              botoes.forEach(function (b) { b.disabled = false; });
+              if (window.FitLogUtils && FitLogUtils.showToast) { FitLogUtils.showToast('Sem conexão. Tente de novo.', 'danger'); }
+          });
+    }
+
+    document.getElementById('pdAtencao').addEventListener('click', function (e) {
+        var visto = e.target.closest('.pd-alerta-visto');
+        var desf = e.target.closest('.pd-alerta-desfazer');
+        if (!visto && !desf) return;
+        var el = e.target.closest('.pd-alerta');
+        if (visto) {
+            enviar(el, false, function () { el.hidden = false; listaVistos.prepend(el); });
+        } else {
+            enviar(el, true, function () { lista.prepend(el); });
+        }
+    });
+
+    atualizar();
+})();
 </script>
 {% endblock %}

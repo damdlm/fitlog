@@ -22,6 +22,27 @@ Números calculados aqui, nenhum mockado:
     professor, já com nome do aluno e do treino (sem N+1)
   - grafico_30_dias: contagem de treinos/dia dos alunos do professor,
     para o gráfico "Treinos realizados nos últimos 30 dias"
+  - alertas: lista única para o card "O que precisa da sua atenção",
+    um item por (aluno, tipo) -- ver ALERTAS_DEFINICAO
+
+ALERTAS_DEFINICAO (lote 3):
+  - sem_treinar: 7+ dias sem registrar treino (mesma regra de
+    alunos_atencao). Chave: data do último treino ("nunca" se nunca
+    treinou) -- marcar como visto esconde até o aluno treinar e parar
+    de novo.
+  - ritmo: "treinando abaixo do ritmo habitual". Dias com treino nos
+    últimos 14 dias comparados com a média por quinzena das 6 semanas
+    anteriores. Só entra quem costuma treinar (média >= 3 dias por
+    quinzena) e caiu para a metade ou menos; quem já está "sem treinar"
+    fica só naquele alerta. Não existe meta semanal por aluno no
+    sistema, então o "habitual" é o próprio histórico dele. Chave: a
+    semana (ISO) -- visto esconde até a semana seguinte.
+  - revisao: versão ativa há 60+ dias (REVISAO_DEFINICAO). Chave: id
+    da versão -- volta quando houver outra versão parada.
+  - recorde: exercício em que a maior carga dos últimos 7 dias passou
+    a maior carga de antes (precisa ter histórico anterior; cardio fica
+    de fora). Alerta positivo, para o professor parabenizar. Chave: a
+    semana (ISO).
 
 ADERENCIA_DEFINICAO: o documento de especificação sugere "dias com
 treino / dias esperados de treino", mas o sistema não tem (e esta
@@ -49,9 +70,10 @@ versão criada) conta como "aguardando revisão".
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import func
+from sqlalchemy import func, case
 
-from models import db, AlunoProfessor, User, RegistroTreino, TreinoVersao, VersaoGlobal
+from models import (db, AlunoProfessor, User, RegistroTreino, TreinoVersao, VersaoGlobal,
+                    HistoricoTreino, ExercicioUsuario, ExercicioSistema, AlertaVistoProfessor)
 from .base_service import BaseService, CacheService
 
 import logging
@@ -67,6 +89,15 @@ DIAS_VERSAO_SEM_REVISAO = 60
 LIMITE_ALUNOS_REVISAO_EXIBIDOS = 5
 
 LIMITE_ATIVIDADE_RECENTE = 8
+
+# Alertas (lote 3) -- ver ALERTAS_DEFINICAO no docstring do módulo.
+TIPOS_ALERTA = ('sem_treinar', 'ritmo', 'revisao', 'recorde')
+DIAS_RITMO_RECENTE = 14
+SEMANAS_RITMO_BASE = 6
+MIN_DIAS_BASE_POR_QUINZENA = 3
+FRACAO_RITMO_BAIXO = 0.5
+DIAS_RECORDE = 7
+LIMITE_ALERTAS = 60
 
 FUSO_BR = ZoneInfo('America/Sao_Paulo')
 
@@ -105,13 +136,16 @@ class DashboardService(BaseService):
             aluno_ids = [a.id for a in alunos]
             alunos_por_id = {a.id: a for a in alunos}
 
+            parados = DashboardService._alunos_parados(alunos_por_id, aluno_ids, hoje)
+            revisao = DashboardService._versoes_paradas(alunos_por_id, aluno_ids, hoje)
             dados = {
                 'total_alunos': len(alunos),
                 'alunos_novos_mes': DashboardService._alunos_novos_mes(professor_id, hoje),
                 'treinaram_hoje': DashboardService._treinaram_hoje(aluno_ids, hoje),
                 'aderencia': DashboardService._aderencia(aluno_ids, hoje),
-                'alunos_atencao': DashboardService._alunos_atencao(alunos_por_id, aluno_ids, hoje),
-                'treinos_revisao': DashboardService._treinos_revisao(alunos_por_id, aluno_ids, hoje),
+                'alunos_atencao': {'total': len(parados), 'itens': parados[:LIMITE_ALUNOS_ATENCAO_EXIBIDOS]},
+                'treinos_revisao': {'total': len(revisao), 'itens': revisao[:LIMITE_ALUNOS_REVISAO_EXIBIDOS]},
+                'alertas': DashboardService._alertas(alunos_por_id, aluno_ids, hoje, parados, revisao),
                 'atividade_recente': DashboardService._atividade_recente(aluno_ids),
                 'grafico_30_dias': DashboardService._grafico_30_dias(aluno_ids, hoje),
             }
@@ -129,6 +163,7 @@ class DashboardService(BaseService):
             'aderencia': {'pct': None, 'pct_anterior': None},
             'alunos_atencao': {'total': 0, 'itens': []},
             'treinos_revisao': {'total': 0, 'itens': []},
+            'alertas': [],
             'atividade_recente': [], 'grafico_30_dias': {'labels': [], 'valores': []},
         }
 
@@ -198,11 +233,17 @@ class DashboardService(BaseService):
 
     @staticmethod
     def _alunos_atencao(alunos_por_id, aluno_ids, hoje):
+        """Alunos com 7+ dias sem treinar, já cortado para o card."""
+        itens = DashboardService._alunos_parados(alunos_por_id, aluno_ids, hoje)
+        return {'total': len(itens), 'itens': itens[:LIMITE_ALUNOS_ATENCAO_EXIBIDOS]}
+
+    @staticmethod
+    def _alunos_parados(alunos_por_id, aluno_ids, hoje):
         """Alunos com 7+ dias sem treinar (ou que nunca treinaram),
-        ordenados pelo maior tempo parado. Uma única query agregada
-        (MAX(data_registro) por aluno) -- sem N+1."""
+        ordenados pelo maior tempo parado, lista completa. Uma única
+        query agregada (MAX(data_registro) por aluno) -- sem N+1."""
         if not aluno_ids:
-            return {'total': 0, 'itens': []}
+            return []
 
         ultimo_por_aluno = dict(
             db.session.query(RegistroTreino.user_id, func.max(RegistroTreino.data_registro))
@@ -232,17 +273,24 @@ class DashboardService(BaseService):
                     'nome': aluno.nome_completo or aluno.username,
                     'dias_parado': dias_parado,
                     'nunca_treinou': nunca_treinou,
+                    'ultimo': ultimo.date().isoformat() if ultimo is not None else None,
                 })
 
         itens.sort(key=lambda i: i['dias_parado'], reverse=True)
-        return {'total': len(itens), 'itens': itens[:LIMITE_ALUNOS_ATENCAO_EXIBIDOS]}
+        return itens
 
     @staticmethod
     def _treinos_revisao(alunos_por_id, aluno_ids, hoje):
+        """Versões paradas há 60+ dias, já cortado para o card."""
+        itens = DashboardService._versoes_paradas(alunos_por_id, aluno_ids, hoje)
+        return {'total': len(itens), 'itens': itens[:LIMITE_ALUNOS_REVISAO_EXIBIDOS]}
+
+    @staticmethod
+    def _versoes_paradas(alunos_por_id, aluno_ids, hoje):
         """Ver REVISAO_DEFINICAO no docstring do módulo: versão ativa
-        (data_fim IS NULL) há 60+ dias no ar."""
+        (data_fim IS NULL) há 60+ dias no ar. Lista completa."""
         if not aluno_ids:
-            return {'total': 0, 'itens': []}
+            return []
 
         limite = hoje - timedelta(days=DIAS_VERSAO_SEM_REVISAO)
         versoes_ativas = (VersaoGlobal.query
@@ -262,10 +310,11 @@ class DashboardService(BaseService):
                 'nome': aluno.nome_completo or aluno.username,
                 'dias_sem_revisao': dias_sem_revisao,
                 'numero_versao': v.numero_versao,
+                'versao_id': v.id,
             })
 
         itens.sort(key=lambda i: i['dias_sem_revisao'], reverse=True)
-        return {'total': len(itens), 'itens': itens[:LIMITE_ALUNOS_REVISAO_EXIBIDOS]}
+        return itens
 
     @staticmethod
     def _atividade_recente(aluno_ids):
@@ -333,3 +382,201 @@ class DashboardService(BaseService):
             valores.append(valores_por_dia.get(dia, 0))
 
         return {'labels': labels, 'valores': valores}
+
+    # ------------------------------------------------------------------
+    # Alertas (lote 3) -- ver ALERTAS_DEFINICAO no docstring do módulo
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _alertas(alunos_por_id, aluno_ids, hoje, parados, revisao):
+        """Lista única de alertas, um item por (aluno, tipo). Ordem: os
+        que pedem ação primeiro (sem treinar, ritmo, revisão), recordes
+        por último; dentro de cada tipo, o caso mais forte primeiro."""
+        if not aluno_ids:
+            return []
+        ano, semana, _ = hoje.isocalendar()
+        chave_semana = f'{ano}-W{semana:02d}'
+
+        def base(aluno_id, tipo, chave):
+            aluno = alunos_por_id[aluno_id]
+            return {
+                'tipo': tipo,
+                'aluno_id': aluno_id,
+                'nome': aluno.nome_completo or aluno.username,
+                'primeiro_nome': (aluno.nome_completo or aluno.username).split()[0],
+                'telefone': _telefone_whatsapp(aluno.telefone),
+                'chave': chave,
+            }
+
+        alertas = []
+        for p in parados:
+            a = base(p['aluno_id'], 'sem_treinar', p['ultimo'] or 'nunca')
+            a['detalhe'] = ('nunca registrou treino' if p['nunca_treinou']
+                            else f"{p['dias_parado']} dias sem treinar")
+            a['peso'] = p['dias_parado']
+            alertas.append(a)
+
+        ids_parados = {p['aluno_id'] for p in parados}
+        for r in DashboardService._abaixo_do_ritmo(aluno_ids, hoje, ids_parados):
+            a = base(r['aluno_id'], 'ritmo', chave_semana)
+            vezes = 'vez' if r['recente'] == 1 else 'vezes'
+            a['detalhe'] = (f"treinou {r['recente']} {vezes} em 2 semanas"
+                            f" · costuma {r['habitual']}")
+            a['peso'] = r['habitual'] - r['recente']
+            alertas.append(a)
+
+        for v in revisao:
+            a = base(v['aluno_id'], 'revisao', f"v{v['versao_id']}")
+            a['detalhe'] = f"ficha v{v['numero_versao']} há {v['dias_sem_revisao']} dias sem troca"
+            a['peso'] = v['dias_sem_revisao']
+            alertas.append(a)
+
+        for r in DashboardService._recordes_da_semana(aluno_ids, hoje):
+            a = base(r['aluno_id'], 'recorde', chave_semana)
+            n = r['total']
+            texto = f"{n} recorde{'s' if n != 1 else ''} na semana"
+            if r['exercicio']:
+                texto += f" · {r['exercicio']}: {_kg(r['carga'])} (antes {_kg(r['anterior'])})"
+            a['detalhe'] = texto
+            a['peso'] = n
+            alertas.append(a)
+
+        ordem = {t: i for i, t in enumerate(TIPOS_ALERTA)}
+        alertas.sort(key=lambda a: (ordem[a['tipo']], -a['peso'], a['nome'].lower()))
+        return alertas[:LIMITE_ALERTAS]
+
+    @staticmethod
+    def _abaixo_do_ritmo(aluno_ids, hoje, ignorar):
+        """Quem costuma treinar e caiu para a metade (ou menos) nas
+        últimas 2 semanas. Uma query: dias distintos com treino por aluno
+        nas últimas 8 semanas, separados em "recente" e "base"."""
+        dias_base = SEMANAS_RITMO_BASE * 7
+        inicio_recente = hoje - timedelta(days=DIAS_RITMO_RECENTE - 1)
+        inicio_base = inicio_recente - timedelta(days=dias_base)
+        linhas = (db.session.query(RegistroTreino.user_id, RegistroTreino.data_registro)
+                  .filter(RegistroTreino.user_id.in_(aluno_ids),
+                          RegistroTreino.data_registro >= inicio_base,
+                          RegistroTreino.data_registro < hoje + timedelta(days=1))
+                  .distinct()
+                  .all())
+        recente, antes = {}, {}
+        for user_id, d in {(u, d.date()) for u, d in linhas}:
+            alvo = recente if d >= inicio_recente.date() else antes
+            alvo[user_id] = alvo.get(user_id, 0) + 1
+
+        quinzenas_base = dias_base / DIAS_RITMO_RECENTE
+        itens = []
+        for aluno_id in aluno_ids:
+            if aluno_id in ignorar:
+                continue
+            habitual = antes.get(aluno_id, 0) / quinzenas_base
+            atual = recente.get(aluno_id, 0)
+            if habitual >= MIN_DIAS_BASE_POR_QUINZENA and atual <= habitual * FRACAO_RITMO_BAIXO:
+                itens.append({'aluno_id': aluno_id, 'recente': atual, 'habitual': round(habitual)})
+        return itens
+
+    @staticmethod
+    def _recordes_da_semana(aluno_ids, hoje):
+        """Exercícios em que a maior carga dos últimos 7 dias passou a
+        maior carga de antes. Uma query agregada (MAX(carga) por aluno,
+        exercício e "é desta semana"); cardio (duracao_segundos) fora."""
+        limite = hoje - timedelta(days=DIAS_RECORDE - 1)
+        recente = case((RegistroTreino.data_registro >= limite, 1), else_=0)
+        linhas = (db.session.query(RegistroTreino.user_id, RegistroTreino.exercicio_usuario_id,
+                                   RegistroTreino.exercicio_base_id, recente.label('recente'),
+                                   func.max(HistoricoTreino.carga).label('carga'))
+                  .join(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)
+                  .filter(RegistroTreino.user_id.in_(aluno_ids),
+                          RegistroTreino.data_registro < hoje + timedelta(days=1),
+                          HistoricoTreino.duracao_segundos.is_(None),
+                          HistoricoTreino.carga.isnot(None))
+                  .group_by(RegistroTreino.user_id, RegistroTreino.exercicio_usuario_id,
+                            RegistroTreino.exercicio_base_id, recente)
+                  .all())
+        por_ex = {}
+        for user_id, eu_id, eb_id, eh_recente, carga in linhas:
+            chave = (user_id, eu_id, eb_id)
+            por_ex.setdefault(chave, {})[int(eh_recente)] = float(carga or 0)
+
+        por_aluno = {}
+        for (user_id, eu_id, eb_id), cargas in por_ex.items():
+            nova, antiga = cargas.get(1), cargas.get(0)
+            if not nova or not antiga or nova <= antiga:
+                continue
+            r = por_aluno.setdefault(user_id, {'aluno_id': user_id, 'total': 0, 'melhor': None})
+            r['total'] += 1
+            ganho = nova - antiga
+            if r['melhor'] is None or ganho > r['melhor'][0]:
+                r['melhor'] = (ganho, eu_id, eb_id, nova, antiga)
+
+        ids_u = {r['melhor'][1] for r in por_aluno.values() if r['melhor'][1]}
+        ids_b = {r['melhor'][2] for r in por_aluno.values() if r['melhor'][2]}
+        nomes_u = dict(db.session.query(ExercicioUsuario.id, ExercicioUsuario.nome)
+                       .filter(ExercicioUsuario.id.in_(ids_u)).all()) if ids_u else {}
+        nomes_b = dict(db.session.query(ExercicioSistema.id, ExercicioSistema.nome)
+                       .filter(ExercicioSistema.id.in_(ids_b)).all()) if ids_b else {}
+
+        itens = []
+        for r in por_aluno.values():
+            _, eu_id, eb_id, nova, antiga = r['melhor']
+            itens.append({
+                'aluno_id': r['aluno_id'], 'total': r['total'],
+                'exercicio': nomes_u.get(eu_id) if eu_id else nomes_b.get(eb_id),
+                'carga': nova, 'anterior': antiga,
+            })
+        return itens
+
+    @staticmethod
+    def separar_vistos(professor_id, alertas):
+        """Divide os alertas em (ativos, vistos). Fica fora do cache do
+        painel de propósito: marcar como visto reflete na hora."""
+        if not alertas:
+            return [], []
+        vistos = {(v.aluno_id, v.tipo): v.chave for v in
+                  AlertaVistoProfessor.query.filter_by(professor_id=professor_id).all()}
+        ativos, ocultos = [], []
+        for a in alertas:
+            (ocultos if vistos.get((a['aluno_id'], a['tipo'])) == a['chave'] else ativos).append(a)
+        return ativos, ocultos
+
+    @staticmethod
+    def marcar_visto(professor_id, aluno_id, tipo, chave, desfazer=False):
+        """Marca (ou desmarca) um alerta como visto. Só para aluno com
+        vínculo ativo com este professor. Retorna False se não puder."""
+        if tipo not in TIPOS_ALERTA or not chave or len(chave) > 40:
+            return False
+        vinculo = AlunoProfessor.query.filter_by(aluno_id=aluno_id, professor_id=professor_id,
+                                                 ativo=True).first()
+        if not vinculo:
+            return False
+        registro = AlertaVistoProfessor.query.filter_by(professor_id=professor_id, aluno_id=aluno_id,
+                                                        tipo=tipo).first()
+        if desfazer:
+            if registro and registro.chave == chave:
+                db.session.delete(registro)
+        elif registro:
+            registro.chave = chave
+            registro.visto_em = datetime.now(timezone.utc)
+        else:
+            db.session.add(AlertaVistoProfessor(professor_id=professor_id, aluno_id=aluno_id,
+                                                tipo=tipo, chave=chave))
+        db.session.commit()
+        return True
+
+
+def _kg(valor):
+    """80.0 -> '80 kg'; 37.5 -> '37,5 kg'."""
+    v = float(valor)
+    texto = str(int(v)) if v.is_integer() else f'{v:.1f}'.replace('.', ',')
+    return f'{texto} kg'
+
+
+def _telefone_whatsapp(telefone):
+    """Só dígitos, com 55 na frente para número brasileiro (10 ou 11
+    dígitos). None se não der para montar um link do WhatsApp."""
+    if not telefone:
+        return None
+    digitos = ''.join(c for c in telefone if c.isdigit())
+    if len(digitos) in (10, 11):
+        digitos = '55' + digitos
+    return digitos if 12 <= len(digitos) <= 13 else None

@@ -1405,6 +1405,29 @@ class AvaliacaoProfessor(db.Model):
         return f'<AvaliacaoProfessor aluno={self.aluno_id} professor={self.professor_id} nota={self.nota}>'
 
 
+class AlertaVistoProfessor(db.Model):
+    """Alerta do painel do professor marcado como "Visto".
+
+    Um registro por (professor, aluno, tipo). `chave` identifica a
+    ocorrência do alerta (ex: a data do último treino para "sem treinar",
+    a semana para "recorde"): o alerta some enquanto a chave atual for a
+    mesma e volta sozinho quando a situação muda (ver
+    DashboardService.separar_vistos)."""
+    __tablename__ = 'alertas_vistos_professor'
+
+    id = db.Column(db.Integer, primary_key=True)
+    professor_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    aluno_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    tipo = db.Column(db.String(20), nullable=False)
+    chave = db.Column(db.String(40), nullable=False)
+    visto_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        db.UniqueConstraint('professor_id', 'aluno_id', 'tipo', name='uq_alerta_visto_prof_aluno_tipo'),
+        db.Index('idx_alerta_visto_professor', 'professor_id'),
+    )
+
+
 # =====================================================
 # MODELOS BASE COMPARTILHADOS
 # =====================================================

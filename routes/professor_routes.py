@@ -55,6 +55,7 @@ def dashboard():
         return redirect(url_for('main.index'))
 
     dados = DashboardService.dados_professor(current_user.id)
+    alertas, alertas_vistos = DashboardService.separar_vistos(current_user.id, dados.get('alertas'))
 
     hora_atual = datetime.now(ZoneInfo('America/Sao_Paulo')).hour
     if hora_atual < 12:
@@ -66,7 +67,33 @@ def dashboard():
 
     from services.billing_service import BillingService
     return render_template('professor/dashboard.html', dados=dados, saudacao=saudacao,
+                           alertas=alertas, alertas_vistos=alertas_vistos,
                            limite_alunos=BillingService.limite_alunos_info(current_user))
+
+
+@professor_bp.route('/alertas/visto', methods=['POST'])
+@login_required
+@professor_acesso_tela_required('professor_dashboard')
+def marcar_alerta_visto():
+    """Marca (ou desfaz, com "desfazer": true) um alerta do painel como
+    visto. JSON: {aluno_id, tipo, chave}. Só vale para aluno com vínculo
+    ativo com o professor logado -- o aluno_id do request é conferido."""
+    if not current_user.is_professor():
+        return jsonify({'ok': False, 'erro': 'Acesso negado.'}), 403
+    dados = request.get_json(silent=True)
+    if not isinstance(dados, dict):
+        return jsonify({'ok': False, 'erro': 'Requisição inválida.'}), 400
+    try:
+        aluno_id = int(dados.get('aluno_id'))
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'erro': 'Aluno inválido.'}), 400
+    tipo = str(dados.get('tipo') or '')
+    chave = str(dados.get('chave') or '')
+    ok = DashboardService.marcar_visto(current_user.id, aluno_id, tipo, chave,
+                                       desfazer=bool(dados.get('desfazer')))
+    if not ok:
+        return jsonify({'ok': False, 'erro': 'Alerta não encontrado.'}), 404
+    return jsonify({'ok': True})
 
 
 # =============================================

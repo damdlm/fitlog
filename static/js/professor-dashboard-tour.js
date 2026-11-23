@@ -3,8 +3,8 @@
  * (templates/professor/dashboard.html). Usa o motor static/js/fl-tour-core.js
  * (Driver.js local) e o tema css/registrar-treino-tour.css.
  *
- * Passeio único: saudação, indicadores, "o que precisa da sua atenção",
- * listas de alunos/treinos, última atividade, gráfico de 30 dias e ações
+ * Passeio único: saudação, indicadores, "o que precisa da sua atenção"
+ * (alertas por aluno), última atividade, gráfico de 30 dias e ações
  * rápidas. Blocos que não aparecem (ex: sem alunos) ficam de fora.
  */
 (function () {
@@ -43,24 +43,10 @@
                 element: alvo('#pdAtencao'),
                 popover: {
                     title: 'O que precisa da sua atenção',
-                    description: 'Atalhos para o que está pendente: alunos parados e treinos que já pedem revisão. '
-                        + 'Se estiver tudo em dia, o painel avisa.',
-                    side: 'top', align: 'center'
-                }
-            },
-            {
-                element: alvo('#pdAlunosAtencao'),
-                popover: {
-                    title: 'Alunos que precisam de atenção',
-                    description: 'Quem está há mais tempo sem treinar. Vale uma mensagem para motivar.',
-                    side: 'top', align: 'center'
-                }
-            },
-            {
-                element: alvo('#pdRevisao'),
-                popover: {
-                    title: 'Treinos aguardando revisão',
-                    description: 'Alunos cuja ficha de treino está ativa há 60 dias ou mais sem troca. Hora de pensar numa evolução.',
+                    description: 'Um alerta por aluno: <b>sem treinar</b> há 7+ dias, <b>abaixo do ritmo</b> de costume, '
+                        + '<b>ficha para revisar</b> (60+ dias) e <b>recordes</b> da semana para parabenizar. '
+                        + 'Filtre por tipo, aja direto pelo aluno (ou pelo WhatsApp) e marque <b>Visto</b>: '
+                        + 'o alerta some e só volta se a situação mudar.',
                     side: 'top', align: 'center'
                 }
             },
