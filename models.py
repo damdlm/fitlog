@@ -1526,6 +1526,29 @@ class ExercicioUsuario(db.Model):
         db.Index('idx_exercicio_usuario_copiado_de_exercicio', 'copiado_de_exercicio_id'),
     )
 
+# Alvo do catálogo (ExercicioSistema.alvo) -> nome na tabela `musculos`
+# (a mesma lista que os exercícios personalizados usam). Alvos que já
+# existem com o mesmo nome (Bíceps, Tríceps, Glúteos...) não precisam
+# estar aqui. Ver ExercicioSistema.musculo_principal.
+ALVO_PARA_MUSCULO = {
+    'Peitorais': 'Peito',
+    'Abdômen': 'Abdominais',
+    'Deltoides': 'Ombros',
+    'Dorsais': 'Grande dorsal',
+    'Coluna': 'Lombar',
+    'Sistema cardiovascular': 'Cardio',
+    'Serrátil anterior': 'Peito',
+    'Levantador da escápula': 'Trapézio',
+}
+
+
+def musculo_principal_de(alvo, grupo_muscular):
+    """Ver ExercicioSistema.musculo_principal (versão para linhas de consulta)."""
+    if alvo:
+        return ALVO_PARA_MUSCULO.get(alvo, alvo)
+    return grupo_muscular
+
+
 class ExercicioSistema(db.Model):
     """
     Catálogo de exercícios importado de data/exercises.json.
@@ -1570,9 +1593,30 @@ class ExercicioSistema(db.Model):
     # que precisa mudar — NÃO são colunas reais nem aceitam joinedload().
 
     @property
+    def musculo_principal(self):
+        """Músculo principal do exercício, com o nome da tabela `musculos`.
+
+        No dataset (data/exercises.json) o principal é `alvo` ("target");
+        `grupo_muscular` ("muscle_group") é só o PRIMEIRO SECUNDÁRIO -- no
+        supino reto é "Tríceps", com alvo "Peitorais". O alvo é traduzido
+        para os nomes que o app já usa (ALVO_PARA_MUSCULO) para bater com
+        os exercícios personalizados. Sem alvo, cai no grupo_muscular."""
+        return musculo_principal_de(self.alvo, self.grupo_muscular)
+
+    @staticmethod
+    def filtro_musculo_principal(nome):
+        """Condição SQL equivalente a `musculo_principal == nome`."""
+        alvos = [a for a, m in ALVO_PARA_MUSCULO.items() if m == nome]
+        if nome not in ALVO_PARA_MUSCULO:
+            alvos.append(nome)
+        sem_alvo = db.or_(ExercicioSistema.alvo.is_(None), ExercicioSistema.alvo == '')
+        return db.or_(ExercicioSistema.alvo.in_(alvos),
+                      db.and_(sem_alvo, ExercicioSistema.grupo_muscular == nome))
+
+    @property
     def musculo_nome(self):
-        """Compat: em ExercicioBase isso era coluna real; aqui é o próprio grupo_muscular."""
-        return self.grupo_muscular
+        """Compat: em ExercicioBase isso era coluna real; hoje é o músculo principal."""
+        return self.musculo_principal
 
     @property
     def musculo_ref(self):

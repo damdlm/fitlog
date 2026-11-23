@@ -3,7 +3,7 @@ Serviço para gerenciar o catálogo de exercícios - AGORA USA O BANCO DE DADOS
 (catálogo global = exercicios_sistema, importado de data/exercises.json)
 """
 from .base_service import BaseService, CacheService
-from models import db, ExercicioSistema
+from models import db, ExercicioSistema, musculo_principal_de
 from sqlalchemy import or_
 import logging
 from utils.exercise_utils import remover_acentos
@@ -49,8 +49,8 @@ class CatalogoService:
                 resultados.append({
                     "id": ex.id,
                     "nome": ex.nome,
-                    "musculo": ex.grupo_muscular or "Não especificado",
-                    "musculo_original": ex.grupo_muscular or "",
+                    "musculo": ex.musculo_principal or "Não especificado",
+                    "musculo_original": ex.musculo_principal or "",
                     "equipment": ex.equipamento or "",
                     "level": "",
                     "force": "",
@@ -82,7 +82,7 @@ class CatalogoService:
                 )
             
             if musculo:
-                query = query.filter(ExercicioSistema.grupo_muscular == musculo)
+                query = query.filter(ExercicioSistema.filtro_musculo_principal(musculo))
             
             exercicios = query.order_by(ExercicioSistema.nome).limit(limite).all()
             
@@ -94,8 +94,8 @@ class CatalogoService:
                 resultados.append({
                     "id": ex.id,
                     "nome": ex.nome,
-                    "musculo": ex.grupo_muscular or "Não especificado",
-                    "musculo_original": ex.grupo_muscular or "",
+                    "musculo": ex.musculo_principal or "Não especificado",
+                    "musculo_original": ex.musculo_principal or "",
                     "equipment": ex.equipamento or "",
                     "level": "",
                     "force": "",
@@ -112,13 +112,11 @@ class CatalogoService:
     def get_musculos_disponiveis(cls):
         """Retorna lista de grupos musculares disponíveis no catálogo"""
         try:
-            resultados = db.session.query(ExercicioSistema.grupo_muscular)\
-                .filter(ExercicioSistema.grupo_muscular.isnot(None))\
-                .distinct()\
-                .order_by(ExercicioSistema.grupo_muscular)\
-                .all()
-            
-            return [r[0] for r in resultados]
+            # Músculo principal = alvo traduzido (ver
+            # ExercicioSistema.musculo_principal); grupo_muscular só sem alvo.
+            pares = db.session.query(ExercicioSistema.alvo, ExercicioSistema.grupo_muscular).distinct().all()
+            nomes = {musculo_principal_de(a, g) for a, g in pares}
+            return sorted((n for n in nomes if n), key=lambda n: remover_acentos(n.lower()))
             
         except Exception:
             logger.exception("Erro ao buscar músculos")
@@ -138,7 +136,7 @@ class CatalogoService:
             return {
                 "id": exercicio.id,
                 "nome": exercicio.nome,
-                "musculo": exercicio.grupo_muscular or "Não especificado",
+                "musculo": exercicio.musculo_principal or "Não especificado",
                 "equipment": exercicio.equipamento or "",
                 "instructions": exercicio.instrucoes or []
             }

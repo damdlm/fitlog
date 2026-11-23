@@ -228,7 +228,7 @@ class VersaoService(BaseService):
             
             exercicios = []
 
-            # "musculo_nome" é property real (baseada em grupo_muscular) — atribuir aqui
+            # "musculo_nome" é property real (baseada em musculo_principal) — atribuir aqui
             # dentro de uma leitura marca o objeto como sujo e o autoflush da
             # próxima query tenta gravar isso no catálogo global, disputando
             # locks com outras requisições (ver correção equivalente em
@@ -291,8 +291,8 @@ class VersaoService(BaseService):
                     for ex in ex_base:
                         ex.tipo = 'base'
                         ex.prefixo = 'b_'
-                        # musculo_nome já é property (= grupo_muscular)
-                        ex.musculo = ex.grupo_muscular or 'N/A'
+                        # musculo_nome já é property (= musculo_principal)
+                        ex.musculo = ex.musculo_principal or 'N/A'
                         ex.observacao_treino = observacao_map.get(('base', ex.id))
                         ex.meta_treino = meta_map.get(('base', ex.id), (None, None, None))
                         # instrucao_pt é o texto livre de descrição do exercício
@@ -414,7 +414,7 @@ class VersaoService(BaseService):
                     for ex in ex_base:
                         ex.tipo = 'base'
                         ex.prefixo = 'b_'
-                        ex.musculo = ex.grupo_muscular or 'N/A'
+                        ex.musculo = ex.musculo_principal or 'N/A'
                         set_committed_value(ex, 'registros', registros_base_map.get(ex.id, []))
                         db.session.expunge(ex)
                         t_id = treino_id_por_ve.get(('base', ex.id))

@@ -79,7 +79,7 @@ class ExercicioService(BaseService):
                 for ex in ex_base:
                     ex.tipo = 'base'
                     ex.prefixo = 'b_'
-                    ex.musculo = ex.grupo_muscular or 'N/A'
+                    ex.musculo = ex.musculo_principal or 'N/A'
                     ex.observacao_treino = None
                     ex.meta_treino = (None, None, None)  # avulso: fora da ficha, sem meta
                     ex.descricao_completa = (ex.instrucao_pt or '').strip()
@@ -114,8 +114,8 @@ class ExercicioService(BaseService):
                     exercicio_base.tipo = 'base'
                     exercicio_base.prefixo = 'b_'
                     exercicio_base.is_custom = False
-                    # grupo_muscular já vem pronto como texto em exercicios_sistema
-                    exercicio_base.musculo = exercicio_base.grupo_muscular or 'Não especificado'
+                    # músculo principal = alvo do catálogo (ver ExercicioSistema.musculo_principal)
+                    exercicio_base.musculo = exercicio_base.musculo_principal or 'Não especificado'
                     db.session.expunge(exercicio_base)
                     return exercicio_base
 
@@ -195,8 +195,8 @@ class ExercicioService(BaseService):
                     ex.tipo = 'base'
                     ex.prefixo = 'b_'
                     ex.is_custom = False
-                    # musculo_nome já é property (= grupo_muscular); só setamos "musculo"
-                    ex.musculo = ex.grupo_muscular or 'Não especificado'
+                    # musculo_nome já é property (= musculo_principal); só setamos "musculo"
+                    ex.musculo = ex.musculo_principal or 'Não especificado'
                     set_committed_value(ex, 'registros', registros_base_map.get(ex.id, []))
                     db.session.expunge(ex)
 
@@ -316,7 +316,7 @@ class ExercicioService(BaseService):
                         ex.is_custom = False
                         ex.treino_id = base_map.get(ex.id, "")
                         ex.treino_ref = treinos_by_id.get(ex.treino_id)
-                        ex.musculo = ex.grupo_muscular or 'Não especificado'
+                        ex.musculo = ex.musculo_principal or 'Não especificado'
                         db.session.expunge(ex)
                         exercicios.append(ex)
 

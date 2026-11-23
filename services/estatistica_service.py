@@ -4,7 +4,7 @@ from collections import Counter
 from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 from sqlalchemy.orm import joinedload
-from models import db, Musculo, ExercicioCustomizado, ExercicioSistema, ExercicioUsuario, RegistroTreino, HistoricoTreino, TreinoVersao
+from models import db, Musculo, ExercicioCustomizado, ExercicioSistema, ExercicioUsuario, RegistroTreino, HistoricoTreino, TreinoVersao, musculo_principal_de
 from sqlalchemy import func, and_
 from .base_service import BaseService, CacheService
 import logging
@@ -44,12 +44,13 @@ class EstatisticaService(BaseService):
           - exercicio_usuario_id -> exercícios personalizados, cujo músculo
             vem da tabela Musculo (musculo_id em ExercicioUsuario);
           - exercicio_base_id -> exercícios do catálogo do sistema, cujo
-            músculo vem direto de ExercicioSistema.grupo_muscular (essa
-            tabela não tem FK para Musculo).
+            músculo é o principal do catálogo (ExercicioSistema.musculo_principal:
+            o alvo traduzido para os nomes da tabela Musculo; essa tabela
+            não tem FK para Musculo).
 
         As duas taxonomias de nome de músculo não são idênticas (a tabela
-        Musculo usa grupos amplos em pt-BR; grupo_muscular do catálogo é
-        mais granular), então o resultado mescla as duas por nome -- cada
+        Musculo usa grupos amplos em pt-BR; o catálogo pode trazer nomes
+        que a tabela não tem), então o resultado mescla as duas por nome -- cada
         nome de músculo que aparecer em qualquer uma das origens vira uma
         chave do dicionário retornado.
 
@@ -94,10 +95,14 @@ class EstatisticaService(BaseService):
              .group_by(Musculo.id, Musculo.nome_exibicao)\
              .all()
 
-            # --- Exercícios do catálogo do sistema (via grupo_muscular) ---
+            # --- Exercícios do catálogo do sistema (músculo principal) ---
+            # O principal é o alvo traduzido (ExercicioSistema.musculo_principal);
+            # agrupa por (alvo, grupo_muscular) e traduz aqui. Cada exercício
+            # cai num par só, então somar os pares não conta nada duas vezes.
             filtro_catalogo = [RegistroTreino.user_id == user_id] + condicao_periodo_registro
             do_catalogo = db.session.query(
-                ExercicioSistema.grupo_muscular.label('musculo'),
+                ExercicioSistema.alvo.label('alvo'),
+                ExercicioSistema.grupo_muscular.label('grupo'),
                 db.func.count(db.distinct(ExercicioSistema.id)).label('qtd_exercicios'),
                 db.func.count(db.distinct(RegistroTreino.id)).label('qtd_registros'),
                 db.func.count(HistoricoTreino.carga).label('total_series'),
@@ -106,7 +111,7 @@ class EstatisticaService(BaseService):
              .join(ExercicioSistema, ExercicioSistema.id == RegistroTreino.exercicio_base_id)\
              .outerjoin(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)\
              .filter(*filtro_catalogo)\
-             .group_by(ExercicioSistema.grupo_muscular)\
+             .group_by(ExercicioSistema.alvo, ExercicioSistema.grupo_muscular)\
              .all()
 
             stats = {}
@@ -119,7 +124,7 @@ class EstatisticaService(BaseService):
                 }
 
             for r in do_catalogo:
-                nome = r.musculo or 'Não especificado'
+                nome = musculo_principal_de(r.alvo, r.grupo) or 'Não especificado'
                 atual = stats.get(nome, {
                     'qtd_exercicios': 0, 'qtd_registros': 0,
                     'total_series': 0, 'volume_total': 0.0

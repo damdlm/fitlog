@@ -34,8 +34,8 @@ def buscar_musculo_no_catalogo(nome_exercicio):
             ExercicioSistema.nome.ilike(nome_exercicio)
         ).first()
         
-        if exercicio and exercicio.grupo_muscular:
-            musculo = exercicio.grupo_muscular
+        if exercicio and exercicio.musculo_principal:
+            musculo = exercicio.musculo_principal
             logger.debug("Correspondência exata encontrada: %s", musculo)
             return musculo
         
@@ -46,16 +46,16 @@ def buscar_musculo_no_catalogo(nome_exercicio):
         
         for ex in exercicios:
             nome_catalogo = remover_acentos(ex.nome.lower())
-            if nome_busca in nome_catalogo and ex.grupo_muscular:
-                musculo = ex.grupo_muscular
+            if nome_busca in nome_catalogo and ex.musculo_principal:
+                musculo = ex.musculo_principal
                 logger.debug("Correspondência parcial: %s", musculo)
                 return musculo
         
         # 3. Nome buscado CONTÉM o nome do catálogo
         for ex in exercicios:
             nome_catalogo = remover_acentos(ex.nome.lower())
-            if nome_catalogo in nome_busca and ex.grupo_muscular:
-                musculo = ex.grupo_muscular
+            if nome_catalogo in nome_busca and ex.musculo_principal:
+                musculo = ex.musculo_principal
                 logger.debug("Correspondência inversa: %s", musculo)
                 return musculo
         
