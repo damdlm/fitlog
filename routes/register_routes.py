@@ -161,6 +161,7 @@ def linha_avulsa():
         ex=ex,
         registros=_mapa_registros(registros),
         historico_series=historico_series,
+        recordes=ExercicioService.get_recordes_em_lote([ex]),
         opcoes_cardio=opcoes_tipo_cardio(),
     )
 
@@ -229,6 +230,7 @@ def registrar_treino():
     exercicios = []
     registros_map = {}
     historico_series = {}
+    recordes = {}
     versao_info = None
     erro_versao = None
     treinos_disponiveis = []
@@ -334,6 +336,9 @@ def registrar_treino():
                     exercicios,
                     versao_id=versao_ativa.id
                 )
+                # Recordes de todo o histórico: aviso de valor digitado
+                # errado (static/js/modules/valor-suspeito.js).
+                recordes = ExercicioService.get_recordes_em_lote(exercicios)
 
                 # O catálogo do "+ Exercício" não vem mais aqui: o modal
                 # busca a lista quando abre (catalogo_avulso, abaixo).
@@ -348,6 +353,7 @@ def registrar_treino():
         exercicios=exercicios,
         registros=registros_map,
         historico_series=historico_series,
+        recordes=recordes,
         versao_info=versao_info,
         erro_versao=erro_versao,
         # Combo "tipo de cardio" e modal "Cardio" (services/cardio.py).

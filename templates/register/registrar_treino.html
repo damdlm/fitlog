@@ -2248,7 +2248,8 @@
     #modalImagensExercicio,
     #modalInstrucoesExercicio,
     #modalAdicionarAvulso,
-    #modalCardio {
+    #modalCardio,
+    #modalValorSuspeito {
         z-index: 2000;
     }
 
@@ -2750,6 +2751,42 @@
 
     /* ====== Modal de confirmação ao cancelar/sair com treino em
        andamento ====== */
+    /* Aviso de valor digitado errado (static/js/modules/valor-suspeito.js):
+       mesmo visual do "Cancelar treino?", ícone laranja em vez de vermelho. */
+    #modalValorSuspeito .confirmar-cancelamento-content {
+        border-color: var(--primary-orange, #F28C33);
+    }
+    .valor-suspeito-icone {
+        background: rgba(242, 140, 51, 0.14) !important;
+        color: var(--fl-c-txt-laranja, #a8560c) !important;
+    }
+    .valor-suspeito-lista {
+        text-align: left;
+        margin: 0 0 6px;
+    }
+    .valor-suspeito-item {
+        margin: 0 0 8px;
+        font-size: 0.95rem;
+        color: var(--fl-c-txt, #2D2D2D);
+    }
+    .btn-valor-corrigir {
+        background: var(--primary-orange, #F28C33);
+        border-color: var(--primary-orange, #F28C33);
+        color: #fff;
+        font-weight: 600;
+        min-height: 44px;
+    }
+    .btn-valor-corrigir:hover,
+    .btn-valor-corrigir:focus-visible {
+        background: #e07b22;
+        border-color: #e07b22;
+        color: #fff;
+    }
+    .valor-suspeito-nota {
+        font-size: 0.82rem;
+        color: var(--fl-c-txt2, #6B7280);
+        margin-bottom: 16px;
+    }
     .confirmar-cancelamento-content {
         border: 2px solid var(--bs-danger, #dc3545);
         border-radius: var(--radius-lg);
@@ -3827,6 +3864,28 @@
     </div>
 </div>
 
+<!-- Aviso de valor digitado errado: carga/reps muito fora do recorde ou
+     da última vez (static/js/modules/valor-suspeito.js). Não trava:
+     "Está certo" segue normalmente. -->
+<div class="modal fade" id="modalValorSuspeito" tabindex="-1" aria-hidden="true" aria-labelledby="modalValorSuspeitoTitulo">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content confirmar-cancelamento-content">
+            <div class="modal-body text-center p-4">
+                <div class="confirmar-cancelamento-icone valor-suspeito-icone">
+                    <i class="bi bi-question-lg"></i>
+                </div>
+                <h5 class="confirmar-cancelamento-titulo" id="modalValorSuspeitoTitulo">Confere esse valor?</h5>
+                <div class="valor-suspeito-lista" data-valor-suspeito-lista></div>
+                <p class="valor-suspeito-nota">Esse número vira a referência do próximo treino e pode contar como recorde.</p>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-valor-corrigir w-100" data-valor-suspeito-corrigir>Corrigir</button>
+                    <button type="button" class="btn btn-outline-secondary w-100" data-valor-suspeito-ok>Está certo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="top-sticky-bar">
     {% if exercicios %}
     <div id="top-save-bar" class="d-none">
@@ -4865,6 +4924,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     alert(aviso);
                 }
+                return;
+            }
+
+            // Valor que parece digitado errado (300 no lugar de 30...):
+            // pergunta antes de salvar; "Está certo" envia de novo.
+            if (window.FitLogValorSuspeito && !window.FitLogValorSuspeito.conferirAntesDeSalvar(function () {
+                form.requestSubmit();
+            })) {
                 return;
             }
 
@@ -7626,6 +7693,7 @@ function tocarBipe() {
     };
 })();
 </script>
+<script src="{{ static_v('js/modules/valor-suspeito.js') }}"></script>
 <script src="{{ static_v('js/fl-tour-core.js') }}"></script>
 <script src="{{ static_v('js/registrar-treino-tour.js') }}" data-user-id="{{ current_user.id if current_user.is_authenticated else 'anon' }}"></script>
 {% endblock %}

@@ -36,6 +36,9 @@
                  data-ultima-carga="{{ ultima_carga }}"
                  data-ultimas-reps="{{ ultimas_reps }}"
                  data-ultimas-series="{{ ultimas_series }}"
+                 {%- set rec_ex = (recordes or {}).get(chave_ex) %}
+                 data-recorde-carga="{{ rec_ex.carga if rec_ex and rec_ex.carga is not none else '' }}"
+                 data-recorde-reps="{{ rec_ex.reps if rec_ex and rec_ex.reps is not none else '' }}"
                  data-meta-texto="{{ meta_txt if not eh_cardio_ex else '' }}">
                 {% if ex.avulso %}
                 <button type="button" class="btn-remover-avulso" data-exercicio-id="{{ chave_ex }}"

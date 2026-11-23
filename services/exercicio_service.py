@@ -780,6 +780,65 @@ class ExercicioService(BaseService):
         except Exception:
             logger.exception("Erro ao buscar última sessão de séries em lote")
             return {}
+
+    @staticmethod
+    def get_recordes_em_lote(exercicios, user_id=None):
+        """Maior carga e maior número de repetições já registrados pelo
+        usuário em cada exercício, em TODAS as fichas (não só a ativa, ao
+        contrário da "última vez"). Usado pelo aviso de valor digitado
+        errado na tela de registrar treino (static/js/modules/
+        valor-suspeito.js): um número muito fora do recorde vira a
+        referência do próximo treino e um recorde falso no ranking.
+
+        Séries de cardio (duracao_segundos preenchido) ficam de fora.
+        Uma consulta agregada só, para todos os exercícios.
+
+        Retorna {f"{prefixo}{id}": {'carga': float|None, 'reps': int|None}};
+        exercício nunca registrado não aparece.
+        """
+        try:
+            from models import HistoricoTreino
+
+            if user_id is None:
+                user_id = BaseService.get_current_user_id()
+            if not user_id:
+                return {}
+            usuario_ids = [ex.id for ex in exercicios if ex.tipo == 'usuario']
+            base_ids = [ex.id for ex in exercicios if ex.tipo == 'base']
+            if not usuario_ids and not base_ids:
+                return {}
+
+            condicoes = []
+            if usuario_ids:
+                condicoes.append(RegistroTreino.exercicio_usuario_id.in_(usuario_ids))
+            if base_ids:
+                condicoes.append(RegistroTreino.exercicio_base_id.in_(base_ids))
+            linhas = (
+                db.session.query(
+                    RegistroTreino.exercicio_usuario_id,
+                    RegistroTreino.exercicio_base_id,
+                    func.max(HistoricoTreino.carga),
+                    func.max(HistoricoTreino.repeticoes),
+                )
+                .join(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)
+                .filter(RegistroTreino.user_id == user_id)
+                .filter(or_(*condicoes))
+                .filter(HistoricoTreino.duracao_segundos.is_(None))
+                .group_by(RegistroTreino.exercicio_usuario_id, RegistroTreino.exercicio_base_id)
+                .all()
+            )
+            resultado = {}
+            for usuario_id, base_id, carga, reps in linhas:
+                chave = f"u_{usuario_id}" if usuario_id is not None else f"b_{base_id}"
+                atual = resultado.setdefault(chave, {'carga': None, 'reps': None})
+                if carga is not None:
+                    atual['carga'] = max(float(carga), atual['carga'] or 0.0)
+                if reps is not None:
+                    atual['reps'] = max(int(reps), atual['reps'] or 0)
+            return resultado
+        except Exception:
+            logger.exception("Erro ao buscar recordes em lote")
+            return {}
     
     # =============================================
     # MÉTODOS DE UTILIDADE
