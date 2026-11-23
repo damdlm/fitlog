@@ -2642,6 +2642,119 @@
         margin-top: 0;
     }
 
+    /* ====== Estilos da imagem (Escuro, Laranja, Claro) ======
+       Cores fixas de propósito: a imagem sai igual em qualquer tema do
+       app. Escolha guardada no aparelho (localStorage "fitlog:share-estilo"). */
+    .share-card--laranja {
+        background: linear-gradient(160deg, #f6a053 0%, #e2711b 58%, #c45f0d 100%); /* tema: fixo */
+    }
+    .share-card--laranja::before { display: none; }
+    .share-card--laranja .share-card-subtitle { color: rgba(255, 255, 255, 0.88); } /* tema: fixo */
+    .share-card--laranja .share-card-stats {
+        background: rgba(255, 255, 255, 0.16); /* tema: fixo */
+        border-color: rgba(255, 255, 255, 0.26); /* tema: fixo */
+    }
+    .share-card--laranja .share-card-stat:not(:last-child)::after { background: rgba(255, 255, 255, 0.3); } /* tema: fixo */
+    .share-card--laranja .share-card-stat-icon { color: #fff; } /* tema: fixo */
+    .share-card--laranja .share-card-stat-label { color: rgba(255, 255, 255, 0.82); } /* tema: fixo */
+    .share-card--laranja .share-card-exercicio-item { background: rgba(255, 255, 255, 0.15); } /* tema: fixo */
+    .share-card--laranja .share-card-exercicio-tag {
+        color: #fff; /* tema: fixo */
+        background: rgba(0, 0, 0, 0.16); /* tema: fixo */
+    }
+    .share-card--laranja .share-card-footer {
+        color: rgba(255, 255, 255, 0.88); /* tema: fixo */
+        border-top-color: rgba(255, 255, 255, 0.28); /* tema: fixo */
+    }
+    .share-card--laranja .share-card-footer-brand { color: #fff; } /* tema: fixo */
+
+    .share-card--claro {
+        background: #ffffff; /* tema: fixo */
+        color: #2D2D2D; /* tema: fixo */
+        border: 1px solid #e3e6ea; /* tema: fixo */
+    }
+    .share-card--claro .share-card-subtitle { color: #6B7280; } /* tema: fixo */
+    .share-card--claro .share-card-stats {
+        background: #fff7ef; /* tema: fixo */
+        border-color: #fde3c8; /* tema: fixo */
+    }
+    .share-card--claro .share-card-stat:not(:last-child)::after { background: #fde3c8; } /* tema: fixo */
+    .share-card--claro .share-card-stat-value { color: #2D2D2D; } /* tema: fixo */
+    .share-card--claro .share-card-stat-label { color: #6B7280; } /* tema: fixo */
+    .share-card--claro .share-card-exercicio-item { background: #f6f7f9; } /* tema: fixo */
+    .share-card--claro .share-card-exercicio-tag {
+        color: #a8560c; /* tema: fixo */
+        background: #fff1e3; /* tema: fixo */
+    }
+    .share-card--claro .share-card-footer {
+        color: #6B7280; /* tema: fixo */
+        border-top-color: #eceef1; /* tema: fixo */
+    }
+    .share-card--claro .share-card-footer-brand { color: #a8560c; } /* tema: fixo */
+
+    /* Recorde batido neste treino (carga acima do maior já registrado). */
+    .share-card .share-card-exercicio-tag--recorde {
+        color: #fff; /* tema: fixo */
+        background: #e2711b; /* tema: fixo */
+    }
+    .share-card--laranja .share-card-exercicio-tag--recorde {
+        color: #c45f0d; /* tema: fixo */
+        background: #fff; /* tema: fixo */
+    }
+
+    /* "Compartilhar" do resumo: ação principal, em laranja (o .btn-save
+       desta página só tinha cor dentro da barra de cima, então ele
+       aparecia como texto solto). */
+    #btnCompartilharResumo {
+        background: var(--primary-orange, #F28C33);
+        border-color: var(--primary-orange, #F28C33);
+        color: #fff; /* tema: fixo */
+        font-weight: 700;
+        min-height: 46px;
+        animation: none;
+    }
+    #btnCompartilharResumo:hover,
+    #btnCompartilharResumo:focus-visible {
+        background: #e07b22; /* tema: fixo */
+        border-color: #e07b22; /* tema: fixo */
+        color: #fff; /* tema: fixo */
+    }
+
+    /* Seletor de estilo, abaixo da prévia */
+    .share-estilos {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin: 12px 0 4px;
+    }
+    .share-estilo-opcao {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 38px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid var(--fl-c-borda, #dee2e6);
+        background: var(--fl-c-sup, #fff);
+        color: var(--fl-c-txt, #2D2D2D);
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .share-estilo-opcao .share-estilo-amostra {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+    }
+    .share-estilo-opcao[aria-checked="true"] {
+        border-color: var(--primary-orange, #F28C33);
+        box-shadow: 0 0 0 2px rgba(242, 140, 51, 0.25);
+    }
+    .share-estilo-opcao:focus-visible {
+        outline: 3px solid rgba(242, 140, 51, 0.45);
+        outline-offset: 2px;
+    }
+
     .btn-sair-resumo {
         display: inline-flex;
         align-items: center;
@@ -3816,6 +3929,17 @@
                     </div>
                 </div>
 
+                <div class="share-estilos" role="radiogroup" aria-label="Estilo da imagem">
+                    <button type="button" class="share-estilo-opcao" role="radio" aria-checked="true" data-share-estilo="escuro">
+                        <span class="share-estilo-amostra" style="background:#1e1e1e"></span>Escuro
+                    </button>
+                    <button type="button" class="share-estilo-opcao" role="radio" aria-checked="false" data-share-estilo="laranja">
+                        <span class="share-estilo-amostra" style="background:#e2711b"></span>Laranja
+                    </button>
+                    <button type="button" class="share-estilo-opcao" role="radio" aria-checked="false" data-share-estilo="claro">
+                        <span class="share-estilo-amostra" style="background:#ffffff"></span>Claro
+                    </button>
+                </div>
                 <div class="resumo-modal-actions">
                     <button type="button" id="btnCompartilharResumo" class="btn btn-save w-100 mb-2">
                         <i class="bi bi-share-fill me-2"></i>Compartilhar
@@ -3828,6 +3952,9 @@
                             <i class="bi bi-whatsapp me-1"></i>WhatsApp
                         </button>
                     </div>
+                    <button type="button" id="btnCopiarTextoResumo" class="btn btn-outline-secondary w-100 mb-2">
+                        <i class="bi bi-clipboard me-1"></i>Copiar texto do treino
+                    </button>
                     <button type="button" id="btnSairResumo" class="btn-sair-resumo">
                         <i class="bi bi-box-arrow-right"></i>Sair
                     </button>
@@ -7165,6 +7292,14 @@ function tocarBipe() {
         return opt ? opt.textContent.trim() : 'Treino';
     }
 
+    // Recorde batido neste treino: carga acima da maior já registrada no
+    // exercício (data-recorde-carga, ExercicioService.get_recordes_em_lote,
+    // calculado ANTES deste treino). Exercício sem histórico não conta.
+    function ehRecorde(row, carga) {
+        const rec = parseFloat(row.dataset.recordeCarga);
+        return !isNaN(rec) && rec > 0 && typeof carga === 'number' && !isNaN(carga) && carga > rec;
+    }
+
     function coletarExercicios() {
         const linhas = [];
         let volumeTotal = 0;
@@ -7193,11 +7328,43 @@ function tocarBipe() {
             const reps = repsInput ? repsInput.value : '';
             const series = seriesSelect ? seriesSelect.value : '';
 
+            // Modo série a série (tabela de séries / 3 painéis): os valores
+            // de verdade estão em carga_<id>_<n> / reps_<id>_<n>.
+            const wrap = row.closest('.exercise-row-wrap');
+            const flag = wrap && wrap.querySelector('.modo-series-flag');
+            const box = wrap && wrap.querySelector(`.series-individuais-inputs[data-exercicio-id="${exId}"]`);
+            const nSeries = parseInt(series) || 0;
+            if (flag && flag.value === 'individual' && box && nSeries) {
+                const cargas = [];
+                const repsLista = [];
+                let volumeEx = 0;
+                for (let n = 1; n <= nSeries; n++) {
+                    const c = parseFloat((box.querySelector(`.carga-serie-input[data-serie="${n}"]`) || {}).value);
+                    const r = parseInt((box.querySelector(`.reps-serie-input[data-serie="${n}"]`) || {}).value);
+                    if (!isNaN(c)) cargas.push(c);
+                    if (!isNaN(r)) repsLista.push(r);
+                    volumeEx += (isNaN(c) ? 0 : c) * (isNaN(r) ? 0 : r);
+                }
+                if (!cargas.length && !repsLista.length) return;
+                volumeTotal += volumeEx;
+                const cMax = cargas.length ? Math.max.apply(null, cargas) : '';
+                const rMin = repsLista.length ? Math.min.apply(null, repsLista) : '';
+                const rMax = repsLista.length ? Math.max.apply(null, repsLista) : '';
+                linhas.push({
+                    nome: nome, series: series,
+                    carga: cMax === '' ? '' : String(cMax),
+                    cargaVaria: cargas.length > 1 && Math.min.apply(null, cargas) !== cMax,
+                    reps: rMin === '' ? '' : (rMin === rMax ? String(rMin) : `${rMin}–${rMax}`),
+                    recorde: ehRecorde(row, cMax)
+                });
+                return;
+            }
+
             if (carga === '' && reps === '') return; // exercício não preenchido, não entra no resumo
 
             volumeTotal += (parseFloat(carga) || 0) * (parseInt(reps) || 0) * (parseInt(series) || 0);
 
-            linhas.push({ nome: nome, carga: carga, reps: reps, series: series });
+            linhas.push({ nome: nome, carga: carga, reps: reps, series: series, recorde: ehRecorde(row, parseFloat(carga)) });
         });
         return { linhas: linhas, volumeTotal: volumeTotal };
     }
@@ -7252,7 +7419,10 @@ function tocarBipe() {
                 tags.push(`<span class="share-card-exercicio-tag"><i class="bi bi-arrow-repeat"></i>${escapeHtml(ex.reps)} ${ex.reps == 1 ? 'repetição' : 'repetições'}</span>`);
             }
             if (ex.carga !== '') {
-                tags.push(`<span class="share-card-exercicio-tag"><i class="bi bi-speedometer2"></i>${escapeHtml(FitLogUtils.formatarKg(ex.carga))}</span>`);
+                tags.push(`<span class="share-card-exercicio-tag"><i class="bi bi-speedometer2"></i>${ex.cargaVaria ? 'até ' : ''}${escapeHtml(FitLogUtils.formatarKg(ex.carga))}</span>`);
+            }
+            if (ex.recorde) {
+                tags.push('<span class="share-card-exercicio-tag share-card-exercicio-tag--recorde"><i class="bi bi-trophy-fill"></i>Recorde</span>');
             }
             item.innerHTML = `
                 <span class="share-card-exercicio-nome">${escapeHtml(ex.nome)}</span>
@@ -7262,7 +7432,46 @@ function tocarBipe() {
         });
     }
 
+    // ---- Estilo da imagem (Escuro, Laranja, Claro) ----
+    const ESTILOS = { escuro: '#1e1e1e', laranja: '#e2711b', claro: '#ffffff' };
+    const CHAVE_ESTILO = 'fitlog:share-estilo';
+    function estiloAtual() {
+        try {
+            const e = localStorage.getItem(CHAVE_ESTILO);
+            return Object.prototype.hasOwnProperty.call(ESTILOS, e) ? e : 'escuro';
+        } catch (err) { return 'escuro'; }
+    }
+    function aplicarEstilo(estilo) {
+        const card = document.getElementById('shareCard');
+        if (!card) return;
+        card.classList.remove('share-card--laranja', 'share-card--claro');
+        if (estilo !== 'escuro') card.classList.add('share-card--' + estilo);
+        document.querySelectorAll('[data-share-estilo]').forEach(function (b) {
+            b.setAttribute('aria-checked', b.dataset.shareEstilo === estilo ? 'true' : 'false');
+        });
+    }
+
+    // ---- Texto para colar no WhatsApp (formatação do WhatsApp: *negrito*) ----
+    function textoDoTreino(resumo) {
+        const linhas = resumo.exercicios.map(function (ex) {
+            if (ex.cardio) {
+                return `• ${ex.nome}: ${ex.minutos} min${ex.km !== '' ? ` · ${ex.km} km` : ''}`;
+            }
+            const partes = [];
+            if (ex.series !== '' && ex.reps !== '') partes.push(`${ex.series} × ${ex.reps}`);
+            else if (ex.series !== '') partes.push(`${ex.series} ${ex.series == 1 ? 'série' : 'séries'}`);
+            else if (ex.reps !== '') partes.push(`${ex.reps} reps`);
+            if (ex.carga !== '' && parseFloat(ex.carga) > 0) partes.push(`${ex.cargaVaria ? 'até ' : ''}${FitLogUtils.formatarKg(ex.carga)}`);
+            return `• ${ex.nome}${partes.length ? ': ' + partes.join(' · ') : ''}${ex.recorde ? ' 🏆 recorde' : ''}`;
+        });
+        return `*${resumo.treino}* — ${resumo.dataExtenso}\n`
+            + `⏱ ${resumo.tempo} · ${resumo.exercicios.length} exercício${resumo.exercicios.length === 1 ? '' : 's'} · ${FitLogUtils.formatarKg(resumo.volumeTotal, { casas: 0 })}\n\n`
+            + linhas.join('\n')
+            + '\n\nRegistrado no FitLog';
+    }
+
     function abrir() {
+        aplicarEstilo(estiloAtual());
         preencherCard(montarResumoTreino());
         const modalEl = document.getElementById('modalResumoTreino');
         if (!modalEl || !window.bootstrap) return;
@@ -7325,7 +7534,7 @@ function tocarBipe() {
             // travar em FINAL_H e cortar conteúdo.
             const alturaReal = Math.max(clone.scrollHeight, cloneMinHeightCss);
             finalCanvas = await html2canvas(clone, {
-                backgroundColor: '#1e1e1e',
+                backgroundColor: ESTILOS[estiloAtual()] || '#1e1e1e',
                 scale: SCALE,
                 useCORS: true,
                 width: cloneWidthCss,
@@ -7378,6 +7587,28 @@ function tocarBipe() {
         const btnCompartilhar = document.getElementById('btnCompartilharResumo');
         const btnBaixar = document.getElementById('btnBaixarResumo');
         const btnWhatsapp = document.getElementById('btnWhatsappResumo');
+        const btnCopiarTexto = document.getElementById('btnCopiarTextoResumo');
+
+        document.querySelectorAll('[data-share-estilo]').forEach(function (b) {
+            b.addEventListener('click', function () {
+                const estilo = b.dataset.shareEstilo;
+                try { localStorage.setItem(CHAVE_ESTILO, estilo); } catch (err) { /* sem storage */ }
+                aplicarEstilo(estilo);
+                // A imagem pronta era do estilo anterior: gera de novo.
+                imagemPromise = gerarImagemCard();
+            });
+        });
+
+        if (btnCopiarTexto) {
+            btnCopiarTexto.addEventListener('click', function () {
+                const texto = textoDoTreino(montarResumoTreino());
+                FitLogUtils.copyToClipboard(texto).then(function () {
+                    mostrarToast('Texto copiado! Cole no WhatsApp do seu professor ou no grupo.', 'success');
+                }).catch(function () {
+                    mostrarToast('Não foi possível copiar o texto.', 'danger');
+                });
+            });
+        }
 
         if (btnCompartilhar) {
             btnCompartilhar.addEventListener('click', async function () {
@@ -7440,10 +7671,7 @@ function tocarBipe() {
                     // mensagem pronta (a imagem precisa ser anexada manualmente,
                     // pois o link do WhatsApp não aceita arquivo por URL).
                     baixarBlob(blob, 'fitlog-treino.png');
-                    const resumo = montarResumoTreino();
-                    const texto = encodeURIComponent(
-                        `Treino finalizado no FitLog! 💪\n${resumo.treino} - ${resumo.dataExtenso}\nTempo: ${resumo.tempo} | Volume: ${FitLogUtils.formatarKg(resumo.volumeTotal, { casas: 0 })}`
-                    );
+                    const texto = encodeURIComponent(textoDoTreino(montarResumoTreino()));
                     window.open(`https://wa.me/?text=${texto}`, '_blank');
                     mostrarToast('Imagem baixada! Anexe ela na conversa do WhatsApp.', 'success');
                 } catch (err) {
