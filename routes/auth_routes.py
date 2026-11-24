@@ -626,6 +626,18 @@ def update_profile():
         genero = request.form.get('genero', '').strip().upper()
         genero = genero if genero in ('M', 'F') else None
 
+        # Peso corporal (opcional): vazio limpa; fora de 30-300 kg é recusado.
+        peso_txt = (request.form.get('peso_kg') or '').strip().replace(',', '.')
+        peso_kg = None
+        if peso_txt:
+            try:
+                peso_kg = round(float(peso_txt), 1)
+            except ValueError:
+                peso_kg = -1
+            if not 30 <= peso_kg <= 300:
+                flash('Peso corporal deve estar entre 30 e 300 kg.', 'danger')
+                return redirect(url_for('auth.profile'))
+
         if not email:
             flash('E-mail é obrigatório', 'danger')
             return redirect(url_for('auth.profile'))
@@ -686,6 +698,8 @@ def update_profile():
             current_user.email_verificado_em = None
         current_user.telefone = telefone or None
         current_user.genero = genero
+        if 'peso_kg' in request.form:
+            current_user.peso_kg = peso_kg
 
         if current_user.tipo_usuario == 'aluno':
             # Checkbox desmarcado não vem no POST -- ausência = False.

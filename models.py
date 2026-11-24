@@ -79,6 +79,10 @@ class User(UserMixin, db.Model):
     # como dado factual do usuário em nenhuma outra tela). Ver
     # utils/genero_utils.py:resolver_genero.
     genero = db.Column(db.String(1), nullable=True)
+    # Opcional, em kg -- só para o nível de força da tela Progresso (carga
+    # do levantamento ÷ peso corporal). Preenchido no perfil; nunca exibido
+    # para outros usuários além do professor do aluno (no próprio cálculo).
+    peso_kg = db.Column(db.Numeric(5, 1), nullable=True)
     telefone = db.Column(db.String(20))
     data_nascimento = db.Column(db.Date)
     # Só dígitos (11 = CPF, 14 = CNPJ), sem pontuação -- exigido pelo

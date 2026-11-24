@@ -123,6 +123,13 @@
                                         </select>
                                     </div>
 
+                                    <div class="mb-3" id="peso">
+                                        <label class="form-label fw-bold" for="perfil-peso">Peso corporal (kg)</label>
+                                        <input type="number" name="peso_kg" id="perfil-peso" class="form-control" min="30" max="300" step="0.1" inputmode="decimal"
+                                               value="{{ '%g'|format(user.peso_kg|float) if user.peso_kg else '' }}" placeholder="Opcional">
+                                        <div class="form-text">Usado só para calcular o seu nível de força no Progresso (carga ÷ peso). Seu professor também vê esse cálculo.</div>
+                                    </div>
+
                                     {% if user.tipo_usuario == 'aluno' %}
                                     <div class="mb-3 form-check form-switch">
                                         <input type="checkbox" class="form-check-input" role="switch"

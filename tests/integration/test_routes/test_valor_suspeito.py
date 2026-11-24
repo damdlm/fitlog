@@ -13,10 +13,20 @@ from pathlib import Path
 from models import db, HistoricoTreino, RegistroTreino, TreinoVersao, VersaoExercicio, VersaoGlobal
 from services.exercicio_service import ExercicioService
 from tests.unit.test_services.test_exercicio_service_extra import (
-    _criar_exercicio_base, _criar_exercicio_usuario, _criar_usuario, _criar_versao_com_treino,
+    _criar_exercicio_base, _criar_exercicio_usuario, _criar_usuario, _criar_versao_com_treino as _criar_versao_base,
 )
 
 RAIZ = Path(__file__).resolve().parents[3]
+
+
+def _criar_versao_com_treino(usuario_id, codigo='A'):
+    """Ficha que começou há 30 dias. O helper compartilhado usa date.today() (data UTC
+    do servidor); entre 21h e meia-noite de Brasília ela já é "amanhã" para a tela
+    de registro, que usa o dia de Brasília, e a ficha não aparecia."""
+    versao, tv = _criar_versao_base(usuario_id, codigo)
+    versao.data_inicio = versao.data_inicio - timedelta(days=30)
+    db.session.commit()
+    return versao, tv
 
 
 def _ler(caminho):

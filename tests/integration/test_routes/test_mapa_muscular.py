@@ -4,10 +4,16 @@ import json
 import re
 from datetime import datetime, timedelta
 
-from models import (db, User, AlunoProfessor, VersaoGlobal, TreinoVersao, RegistroTreino, HistoricoTreino,
-                    ExercicioSistema, ExercicioUsuario, Musculo)
+from datetime import date, timezone
+from zoneinfo import ZoneInfo
+
+import services.mapa_muscular_service as mms
+from models import (db, User, AlunoProfessor, VersaoGlobal, TreinoVersao, VersaoExercicio, RegistroTreino,
+                    HistoricoTreino, ExercicioSistema, ExercicioUsuario, Musculo)
 from services.billing_service import BillingService
-from services.mapa_muscular_service import MapaMuscularService, REGIOES, regiao_do_musculo, _hoje
+from services.mapa_muscular_service import MapaMuscularService, REGIOES, regiao_do_musculo, _hoje, e1rm
+
+BR = ZoneInfo('America/Sao_Paulo')
 
 
 def _usuario(username, tipo='aluno', nome=None, genero=None):
@@ -44,11 +50,13 @@ def _ficha(u):
     return v, t
 
 
-def _treino(u, v, t, dias_atras, series, base=None, custom=None, carga=50, reps=10, cardio=False):
-    dia = _hoje() - timedelta(days=dias_atras)
+def _treino(u, v, t, dias_atras, series, base=None, custom=None, carga=50, reps=10, cardio=False, salvo_em=None):
+    dia = mms._hoje() - timedelta(days=dias_atras)  # respeita o relógio fixado no teste
     r = RegistroTreino(treino_versao_id=t.id, versao_id=v.id, periodo='Nov/2026', semana=1, user_id=u.id,
                        exercicio_base_id=base.id if base else None, exercicio_usuario_id=custom.id if custom else None,
                        data_registro=datetime(dia.year, dia.month, dia.day))
+    if salvo_em is not None:
+        r.created_at = salvo_em.astimezone(timezone.utc)
     db.session.add(r)
     db.session.flush()
     for i in range(series):
@@ -110,27 +118,97 @@ class TestCalculo:
             tudo = MapaMuscularService.calcular(u.id, None)['regioes']
             assert tudo['peito']['series'] == 8
 
-    def test_recuperacao_estimada(self, app):
+    def test_recuperacao_por_hora(self, app, monkeypatch):
+        monkeypatch.setattr(mms, '_hoje', lambda: date(2026, 11, 23))
+        monkeypatch.setattr(mms, '_agora', lambda: datetime(2026, 11, 23, 21, 0, tzinfo=BR))
         with app.app_context():
             u = _usuario('mm_rec')
             v, t = _ficha(u)
             supino = _ex('Peitorais', ['Tríceps'])
             agach = _ex('Quadríceps', [])
             rosca = _ex('Bíceps', [])
-            _treino(u, v, t, 0, 3, base=supino)
-            _treino(u, v, t, 3, 4, base=agach)
-            _treino(u, v, t, 1, 3, base=rosca)
-            r = MapaMuscularService.calcular(u.id, _periodo(30))['regioes']
-            assert (r['peito']['status'], r['peito']['faltam'], r['peito']['dias_desde']) == ('recuperando', 3, 0)
+            _treino(u, v, t, 0, 3, base=supino, salvo_em=datetime(2026, 11, 23, 16, 0, tzinfo=BR))
+            # lançado hoje, mas o treino foi há 3 dias: vale 18h daquele dia
+            _treino(u, v, t, 3, 4, base=agach, salvo_em=datetime(2026, 11, 23, 9, 0, tzinfo=BR))
+            _treino(u, v, t, 1, 3, base=rosca, salvo_em=datetime(2026, 11, 22, 20, 0, tzinfo=BR))
+            r = MapaMuscularService.calcular(u.id, {'dia_inicio': date(2026, 10, 25), 'dia_fim': date(2026, 11, 23)})['regioes']
+            assert (r['peito']['status'], r['peito']['horas_desde'], r['peito']['horas_restantes']) == ('cedo', 5, 67)
+            assert r['peito']['pronto_em'] == '2026-11-26T16:00'
             assert r['triceps']['status'] == 'sem_treino'  # 1,5 série efetiva: abaixo do mínimo
-            assert (r['quadriceps']['status'], r['quadriceps']['faltam']) == ('recuperado', 0)
-            assert (r['biceps']['status'], r['biceps']['faltam']) == ('recuperando', 1)
+            assert (r['quadriceps']['status'], r['quadriceps']['horas_desde']) == ('recuperado', 75)
+            assert (r['biceps']['status'], r['biceps']['horas_restantes'], r['biceps']['janela_h']) == ('quase', 23, 48)
             assert r['costas']['status'] == 'sem_treino'
+
+    def test_media_por_semana_e_faixa(self, app):
+        with app.app_context():
+            u = _usuario('mm_semana')
+            v, t = _ficha(u)
+            supino = _ex('Peitorais', [])
+            _treino(u, v, t, 2, 3, base=supino)
+            _treino(u, v, t, 9, 3, base=supino)
+            d = MapaMuscularService.calcular(u.id, _periodo(14))
+            assert d['semanas'] == 2
+            assert (d['regioes']['peito']['series'], d['regioes']['peito']['series_semana']) == (6, 3)
+            assert d['regioes']['peito']['faixa'] == (10, 20) and d['regioes']['canelas']['faixa'] is None
+
+    def test_planejado_pela_ficha(self, app):
+        with app.app_context():
+            u = _usuario('mm_plan')
+            v, t = _ficha(u)
+            t2 = TreinoVersao(versao_id=v.id, codigo='B', nome_treino='B')
+            db.session.add(t2)
+            db.session.flush()
+            supino = _ex('Peitorais', ['Tríceps'])
+            rosca = _ex('Bíceps', [])
+            esteira = _ex('Sistema cardiovascular', [])
+            esteira.modo_registro = 'tempo'
+            db.session.add_all([VersaoExercicio(treino_versao_id=t.id, exercicio_base_id=supino.id, meta_series=4),
+                                VersaoExercicio(treino_versao_id=t2.id, exercicio_base_id=rosca.id),
+                                VersaoExercicio(treino_versao_id=t2.id, exercicio_base_id=esteira.id, meta_series=1)])
+            db.session.commit()
+            for dias in (1, 3, 8, 10):
+                _treino(u, v, t, dias, 1, base=supino)
+            d = MapaMuscularService.calcular(u.id, _periodo(30))
+            assert d['planejado'] == {'treinos': 2, 'sessoes_semana': 1.0, 'ficha': 'V'}
+            r = d['regioes']
+            assert (r['peito']['planejado_ciclo'], r['triceps']['planejado_ciclo'], r['biceps']['planejado_ciclo']) == (4, 2, 3)
+            assert r['costas']['planejado_ciclo'] == 0
 
     def test_figura_pelo_genero(self, app):
         with app.app_context():
             assert MapaMuscularService.calcular(_usuario('mm_g1', nome='Mariana Alves').id)['genero'] == 'F'
             assert MapaMuscularService.calcular(_usuario('mm_g2', nome='Ana', genero='M').id)['genero'] == 'M'
+
+
+class TestForca:
+    def test_e1rm(self):
+        assert e1rm(100, 1) == 100
+        assert round(e1rm(100, 5), 2) == 116.67
+
+    def test_nivel_pelo_peso(self, app):
+        with app.app_context():
+            u = _usuario('mm_forca', nome='Carlos', genero='M')
+            v, t = _ficha(u)
+            supino = ExercicioSistema(id_original='mmf1', nome='Supino reto com barra', alvo='Peitorais')
+            agach = ExercicioSistema(id_original='mmf2', nome='Agachamento completo com barra', alvo='Quadríceps')
+            outro = ExercicioSistema(id_original='mmf3', nome='Supino com halteres', alvo='Peitorais')
+            db.session.add_all([supino, agach, outro])
+            db.session.commit()
+            _treino(u, v, t, 2, 1, base=supino, carga=100, reps=1)
+            _treino(u, v, t, 3, 1, base=supino, carga=110, reps=15)  # acima de 12 reps: fora
+            _treino(u, v, t, 4, 1, base=agach, carga=100, reps=5)
+            _treino(u, v, t, 200, 1, base=agach, carga=200, reps=1)  # mais de 6 meses: fora
+            _treino(u, v, t, 1, 1, base=outro, carga=60, reps=8)
+            sem_peso = MapaMuscularService.niveis_forca(u.id)
+            assert sem_peso['peso_kg'] is None and 'nivel' not in sem_peso['levantamentos'][0]
+            u.peso_kg = 80
+            db.session.commit()
+            d = MapaMuscularService.niveis_forca(u.id)
+            por = {x['chave']: x for x in d['levantamentos']}
+            assert set(por) == {'supino', 'agachamento'}
+            assert (por['supino']['e1rm'], por['supino']['razao'], por['supino']['nivel']) == (100, 1.25, 'Intermediário')
+            assert (por['supino']['proximo'], por['supino']['faltam_kg']) == ('Avançado', 20)
+            assert (por['agachamento']['nivel'], por['agachamento']['faltam_kg']) == ('Novato', 3.3)
 
 
 def _login(client, username):
@@ -159,6 +237,37 @@ class TestApiETela:
         assert client.get(f'/api/mapa-muscular?dias=30&aluno_id={ids[0]}').get_json()['regioes']['costas']['series'] == 3
         assert client.get(f'/api/mapa-muscular?dias=30&aluno_id={ids[1]}').status_code == 403
 
+    def test_api_nivel_forca(self, client, app):
+        with app.app_context():
+            prof = _usuario('mmf_prof', 'professor')
+            aluno = _usuario('mmf_aluno')
+            outro = _usuario('mmf_outro')
+            db.session.add(AlunoProfessor(aluno_id=aluno.id, professor_id=prof.id, ativo=True))
+            db.session.commit()
+            ids = (aluno.id, outro.id)
+        _login(client, 'mmf_aluno')
+        j = client.get('/api/nivel-forca').get_json()
+        assert j['e_o_proprio'] is True and j['levantamentos'] == []
+        client.get('/auth/logout')
+        _login(client, 'mmf_prof')
+        assert client.get(f'/api/nivel-forca?aluno_id={ids[0]}').get_json()['e_o_proprio'] is False
+        assert client.get(f'/api/nivel-forca?aluno_id={ids[1]}').status_code == 403
+
+    def test_peso_no_perfil(self, client, app):
+        with app.app_context():
+            _usuario('mm_peso')
+        _login(client, 'mm_peso')
+        assert 'name="peso_kg"' in client.get('/auth/profile').get_data(as_text=True)
+        base = {'email': 'mm_peso@teste.com', 'nome_completo': 'Mm Peso'}
+        client.post('/auth/profile/update', data={**base, 'peso_kg': '72,5'})
+        with app.app_context():
+            assert float(User.query.filter_by(username='mm_peso').one().peso_kg) == 72.5
+        r = client.post('/auth/profile/update', data={**base, 'peso_kg': '20'}, follow_redirects=True)
+        assert 'Peso corporal deve estar entre 30 e 300 kg.' in r.get_data(as_text=True)
+        client.post('/auth/profile/update', data={**base, 'peso_kg': ''})
+        with app.app_context():
+            assert User.query.filter_by(username='mm_peso').one().peso_kg is None
+
     def test_secao_na_tela_de_progresso(self, client, app):
         with app.app_context():
             u = _usuario('mm_tela')
@@ -170,6 +279,8 @@ class TestApiETela:
         assert 'vendor/musclemap/corpo-fitlog.js' in html and 'js/modules/mapa-muscular.js' in html
         assert 'MuscleMap' in html and 'licença MIT' in html
         assert "comAluno('/api/mapa-muscular?' + periodoAtual.query)" in html
+        assert "comAluno('/api/nivel-forca')" in html
+        assert 'data-aba="recuperacao"' in html and 'data-aba="forca"' in html and 'data-sub="planejado"' in html
 
 
 def test_desenho_do_corpo_e_licenca():
@@ -190,3 +301,27 @@ def test_desenho_do_corpo_e_licenca():
                 assert p['d'] and all(d[:1] in 'Mm' for d in p['d'])
                 usadas.add(p['r'])
         assert set(REGIOES) <= usadas
+
+
+def test_migracao_peso(app):
+    import importlib.util
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    from sqlalchemy import inspect
+    spec = importlib.util.spec_from_file_location('mig_peso', 'migrations/versions/e1f3a7b9c2d4_peso_corporal.py')
+    mig = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mig)
+    assert mig.down_revision == 'd9e2f6a3b8c5'
+    with app.app_context():
+        def rodar(f):
+            with db.engine.begin() as conn:
+                with Operations.context(MigrationContext.configure(conn)):
+                    f()
+
+        def colunas():
+            return {c['name'] for c in inspect(db.engine).get_columns('users')}
+        assert 'peso_kg' in colunas()
+        rodar(mig.downgrade)
+        assert 'peso_kg' not in colunas()
+        rodar(mig.upgrade)
+        assert 'peso_kg' in colunas()

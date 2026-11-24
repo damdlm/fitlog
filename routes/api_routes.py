@@ -343,9 +343,10 @@ def api_musculo_stats():
 @login_required
 @estatisticas_do_alvo
 def api_mapa_muscular():
-    """Lote 5: séries e volume por região do corpo no período (dias=N |
-    inicio/fim | tudo=1; padrão 30 dias) e estimativa de recuperação
-    (sempre agora). Ver services/mapa_muscular_service.py."""
+    """Séries por região no período (dias=N | inicio/fim | tudo=1; padrão
+    30 dias) com a média por semana e a faixa de referência, séries
+    planejadas pela ficha ativa e recuperação estimada por hora (sempre
+    agora). Ver services/mapa_muscular_service.py."""
     from services.mapa_muscular_service import MapaMuscularService
     periodo, erro = _periodo_da_requisicao()
     if erro:
@@ -354,6 +355,19 @@ def api_mapa_muscular():
         hoje = EstatisticaService.hoje_brasil()
         periodo = {'dia_inicio': hoje - timedelta(days=29), 'dia_fim': hoje}
     return jsonify(MapaMuscularService.calcular(_uid_alvo(), periodo))
+
+
+@api_bp.route("/nivel-forca")
+@login_required
+@estatisticas_do_alvo
+def api_nivel_forca():
+    """Melhor 1RM estimado dos levantamentos com barra e o nível de força
+    pelo peso corporal (precisa de User.peso_kg). Ver
+    services/mapa_muscular_service.py."""
+    from services.mapa_muscular_service import MapaMuscularService
+    dados = MapaMuscularService.niveis_forca(_uid_alvo())
+    dados['e_o_proprio'] = _uid_alvo() == current_user.id
+    return jsonify(dados)
 
 
 @api_bp.route("/progressao-forca")

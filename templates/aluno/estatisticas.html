@@ -503,15 +503,24 @@
         border-radius: 50%;
         display: inline-block;
     }
-    /* ===== Lote 5: mapa muscular ===== */
-    .mm-modos { display: inline-flex; background: var(--fl-c-sup2, #f3f1ee); border-radius: 999px; padding: 3px; }
-    .mm-modo { border: 0; background: transparent; color: var(--fl-c-txt2, #6b665c); font-size: .8rem; font-weight: 700; border-radius: 999px; padding: 4px 12px; }
-    .mm-modo.is-ativo { background: #F28C33; color: #fff; } /* tema: fixo */
+    /* ===== Mapa muscular ===== */
+    .mm-abas { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--fl-c-sup2, #f3f1ee); border-radius: 12px; padding: 3px; gap: 3px; }
+    .mm-aba, .mm-sub-modo { border: 0; background: transparent; color: var(--fl-c-txt2, #6b665c); font-size: .84rem; font-weight: 700; border-radius: 9px; padding: 6px 8px; }
+    .mm-aba.is-ativo { background: #F28C33; color: #fff; } /* tema: fixo */
+    .mm-sub { margin-bottom: 8px; }
+    .mm-sub[hidden] { display: none; }
+    .mm-sub-modos { display: inline-flex; background: var(--fl-c-sup2, #f3f1ee); border-radius: 999px; padding: 3px; }
+    .mm-sub-modo { border-radius: 999px; font-size: .78rem; padding: 3px 14px; }
+    .mm-sub-modo.is-ativo { background: var(--fl-c-sup, #fff); color: var(--fl-c-txt, #2D2D2D); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+    .mm-nota-planejado { font-size: .8rem; color: var(--fl-c-txt2, #6b665c); margin: 8px 0 0; }
+    .mm-treinos-wrap { display: inline; }
+    .mm-treinos-semana { width: 52px; display: inline-block; padding: 1px 6px; border: 1px solid var(--fl-c-borda, #e2dcd5); border-radius: 6px; background: var(--fl-c-sup, #fff); color: var(--fl-c-txt, #2D2D2D); text-align: center; }
     .mm-layout { display: flex; gap: 18px; align-items: flex-start; }
-    .mm-vistas { flex: 0 1 420px; display: flex; gap: 6px; }
-    .mm-lado { flex: 1 1 220px; min-width: 0; }
+    .mm-layout.is-forca .mm-vistas { display: none; }
+    .mm-vistas { flex: 0 1 400px; display: flex; gap: 6px; }
+    .mm-lado { flex: 1 1 260px; min-width: 0; }
     .mm-vista { flex: 1 1 0; margin: 0; text-align: center; }
-    .mm-vista svg { width: 100%; height: auto; max-height: 420px; display: block; }
+    .mm-vista svg { width: 100%; height: auto; max-height: 400px; display: block; }
     .mm-vista figcaption { font-size: .72rem; font-weight: 700; color: var(--fl-c-txt2, #6b665c); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
     .mm-silhueta path { fill: var(--fl-c-sup2, #efebe6); stroke: var(--fl-c-sup2, #efebe6); stroke-width: 22; stroke-linejoin: round; }
     .mm-r path { stroke: var(--fl-c-sup, #fff); stroke-width: 5; stroke-linejoin: round; transition: fill .25s ease; }
@@ -522,30 +531,52 @@
     .mm-vol-2 path, i.mm-vol-2 { fill: #f6a053; background: #f6a053; } /* tema: fixo */
     .mm-vol-3 path, i.mm-vol-3 { fill: #e2711b; background: #e2711b; } /* tema: fixo */
     .mm-vol-4 path, i.mm-vol-4 { fill: #a84f0a; background: #a84f0a; } /* tema: fixo */
-    .mm-rec-cedo path, i.mm-rec-cedo { fill: #e2711b; background: #e2711b; } /* tema: fixo */
+    .mm-rec-cedo path, i.mm-rec-cedo { fill: #e2552b; background: #e2552b; } /* tema: fixo */
     .mm-rec-quase path, i.mm-rec-quase { fill: #f2c14e; background: #f2c14e; } /* tema: fixo */
     .mm-rec-ok path, i.mm-rec-ok { fill: #4caf7a; background: #4caf7a; } /* tema: fixo */
     .mm-rec-sem path, i.mm-rec-sem { fill: var(--fl-c-borda, #e2dcd5); background: var(--fl-c-borda, #e2dcd5); }
     .mm-detalhe { background: var(--fl-c-sup2, #f6f4f1); border-radius: 12px; padding: 12px 14px; font-size: .86rem; color: var(--fl-c-txt2, #6b665c); min-height: 64px; }
+    .mm-detalhe[hidden], .mm-legenda[hidden] { display: none; }
     .mm-detalhe strong { display: block; font-size: 1rem; color: var(--fl-c-txt, #2D2D2D); }
     .mm-detalhe-ex { margin-top: 4px; font-size: .8rem; }
-    .mm-detalhe-dica { font-size: .84rem; }
-    .mm-legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 12px 0 6px; font-size: .76rem; color: var(--fl-c-txt2, #6b665c); }
-    .mm-legenda i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: -2px; margin-right: 4px; }
-    .mm-legenda .mm-leg-txt { margin: 0 -4px 0 0; }
-    .mm-legenda .mm-leg-sem { margin-left: 8px; }
-    .mm-aviso-estimativa { font-size: .76rem; color: var(--fl-c-txt2, #6b665c); margin: 6px 0; }
-    .mm-lista summary { font-size: .82rem; font-weight: 700; color: var(--fl-c-txt-laranja, #a8560c); cursor: pointer; margin-top: 6px; }
-    .mm-lista-corpo { list-style: none; padding: 0; margin: 6px 0 0; max-height: 260px; overflow-y: auto; }
-    .mm-lista-corpo li { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; padding: 6px 0; border-top: 1px solid var(--fl-c-borda, #f0ece4); font-size: .82rem; }
-    .mm-lista-nome { font-weight: 600; color: var(--fl-c-txt, #2D2D2D); }
-    .mm-lista-val { text-align: right; color: var(--fl-c-txt, #2D2D2D); }
-    .mm-lista-rec { grid-column: 1 / -1; color: var(--fl-c-txt2, #6b665c); font-size: .76rem; }
+    .mm-legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 12px 0 8px; font-size: .76rem; color: var(--fl-c-txt2, #6b665c); }
+    .mm-legenda i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; vertical-align: -1px; margin-right: 3px; }
+    .mm-painel-titulo { font-size: .74rem; font-weight: 800; color: var(--fl-c-txt2, #6b665c); text-transform: uppercase; letter-spacing: .05em; margin: 8px 0 4px; }
+    .mm-painel-vazio { font-size: .84rem; color: var(--fl-c-txt2, #6b665c); margin: 8px 0; }
+    .mm-barras, .mm-prontos, .mm-forca { list-style: none; padding: 0; margin: 0; }
+    .mm-barras li { display: grid; grid-template-columns: minmax(84px, 1fr) 2fr 84px; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--fl-c-borda, #f0ece4); font-size: .84rem; cursor: pointer; }
+    .mm-barras li.is-sel .mm-barra-nome, .mm-prontos li.is-sel .mm-pronto-nome { color: var(--fl-c-txt-laranja, #a8560c); }
+    .mm-barra-nome { font-weight: 600; color: var(--fl-c-txt, #2D2D2D); }
+    .mm-barra { position: relative; height: 8px; border-radius: 99px; background: var(--fl-c-sup2, #efebe6); }
+    .mm-barra-faixa { position: absolute; top: 0; bottom: 0; background: rgba(242, 140, 51, .28); border-radius: 99px; } /* tema: fixo */
+    .mm-barra-valor { position: absolute; left: 0; top: 2px; bottom: 2px; background: #f6a053; border-radius: 99px; } /* tema: fixo */
+    .mm-barra-valor.is-na-faixa { background: #e2711b; } /* tema: fixo */
+    .mm-barra-valor.is-acima { background: #a84f0a; } /* tema: fixo */
+    .mm-barra-marca { position: absolute; top: -3px; width: 2px; height: 14px; margin-left: -1px; background: var(--fl-c-txt, #2D2D2D); border-radius: 2px; }
+    .mm-barra-num { color: var(--fl-c-txt2, #6b665c); white-space: nowrap; font-size: .8rem; text-align: right; }
+    .mm-barra-num b { color: var(--fl-c-txt, #2D2D2D); font-size: .9rem; }
+    .mm-mais { border: 0; background: none; color: var(--fl-c-txt-laranja, #a8560c); font-weight: 700; font-size: .82rem; padding: 6px 0; }
+    .mm-prontos li { display: grid; grid-template-columns: 12px 1fr auto 72px; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid var(--fl-c-borda, #f0ece4); font-size: .84rem; cursor: pointer; }
+    .mm-prontos li i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .mm-pronto-nome { font-weight: 600; color: var(--fl-c-txt, #2D2D2D); }
+    .mm-pronto-tempo { color: var(--fl-c-txt, #2D2D2D); text-align: right; }
+    .mm-pronto-quando { color: var(--fl-c-txt2, #6b665c); text-align: right; font-size: .78rem; }
+    .mm-forca-peso { background: var(--fl-c-tint-laranja, #fff3e0); color: var(--fl-c-txt, #2D2D2D); border-radius: 10px; padding: 10px 12px; font-size: .84rem; margin-bottom: 10px; }
+    .mm-forca-peso a { color: var(--fl-c-txt-laranja, #a8560c); font-weight: 700; }
+    .mm-forca li { padding: 9px 0; border-top: 1px solid var(--fl-c-borda, #f0ece4); }
+    .mm-forca-topo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .mm-forca-nome { font-weight: 700; font-size: .88rem; color: var(--fl-c-txt, #2D2D2D); margin-right: auto; }
+    .mm-nivel { font-size: .74rem; font-weight: 800; border-radius: 999px; padding: 2px 10px; background: var(--fl-c-sup2, #f3f1ee); color: var(--fl-c-txt, #2D2D2D); }
+    .mm-nivel-2 { background: var(--fl-c-tint-laranja, #fff3e0); color: var(--fl-c-txt-laranja, #a8560c); }
+    .mm-nivel-3, .mm-nivel-4 { background: #e2711b; color: #fff; } /* tema: fixo */
+    .mm-razao { font-size: .8rem; color: var(--fl-c-txt2, #6b665c); }
+    .mm-forca-sub { font-size: .78rem; color: var(--fl-c-txt2, #6b665c); margin-top: 2px; }
+    .mm-forca-nota { font-size: .74rem; color: var(--fl-c-txt2, #6b665c); margin: 10px 0 0; }
     .mm-nota { font-size: .72rem; color: var(--fl-c-txt2, #6b665c); margin: 12px 0 0; }
     .mm-nota a { color: inherit; }
     @media (max-width: 767px) {
         .mm-layout { flex-direction: column; gap: 10px; }
-        .mm-vistas { flex-basis: auto; width: 100%; max-width: 360px; margin: 0 auto; }
+        .mm-vistas { flex-basis: auto; width: 100%; max-width: 340px; margin: 0 auto; }
         .mm-lado { width: 100%; }
     }
 
@@ -759,19 +790,31 @@
     </div>
 </div>
 
-<!-- Lote 5: Mapa muscular (volume no período e recuperação estimada).
+<!-- Mapa muscular: séries (feito/planejado) com faixa de referência,
+     recuperação estimada por hora e nível de força (static/js/modules/mapa-muscular.js).
      Desenho do corpo adaptado de MuscleMap (MIT), ver static/vendor/musclemap. -->
 <div class="card est-card mb-3" id="mapaMuscular">
-    <div class="card-header bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 pb-0">
-        <h6 class="fw-bold mb-0">
+    <div class="card-header bg-white border-0 pb-0">
+        <h6 class="fw-bold mb-2">
             <i class="bi bi-person-arms-up me-1" style="color: #F28C33;"></i>Mapa muscular
         </h6>
-        <div class="mm-modos" role="group" aria-label="O que o mapa mostra">
-            <button type="button" class="mm-modo is-ativo" data-modo="volume" aria-pressed="true">Volume</button>
-            <button type="button" class="mm-modo" data-modo="recuperacao" aria-pressed="false">Recuperação</button>
+        <div class="mm-abas" role="group" aria-label="O que o mapa mostra">
+            <button type="button" class="mm-aba is-ativo" data-aba="series" aria-pressed="true">Séries</button>
+            <button type="button" class="mm-aba" data-aba="recuperacao" aria-pressed="false">Recuperação</button>
+            <button type="button" class="mm-aba" data-aba="forca" aria-pressed="false">Força</button>
         </div>
     </div>
     <div class="card-body">
+        <div class="mm-sub">
+            <div class="mm-sub-modos" role="group" aria-label="Séries feitas ou planejadas">
+                <button type="button" class="mm-sub-modo is-ativo" data-sub="feito" aria-pressed="true">Feito</button>
+                <button type="button" class="mm-sub-modo" data-sub="planejado" aria-pressed="false">Planejado</button>
+            </div>
+            <p class="mm-nota-planejado" hidden>
+                Séries por semana que a ficha <span class="mm-ficha-nome"></span> prevê, fazendo
+                <label class="mm-treinos-wrap"><input type="number" class="mm-treinos-semana" min="1" max="14" step="1" inputmode="numeric" aria-label="Treinos por semana"> treinos por semana</label>.
+            </p>
+        </div>
         <div class="est-empty mm-vazio" hidden>
             <i class="bi bi-person-arms-up"></i>Sem séries de musculação nesse período.
         </div>
@@ -780,14 +823,10 @@
             <div class="mm-lado">
                 <div class="mm-detalhe" aria-live="polite"></div>
                 <div class="mm-legenda"></div>
-                <p class="mm-aviso-estimativa" hidden><i class="bi bi-info-circle"></i> Estimativa: músculos grandes levam cerca de 72 h para se recuperar e os menores cerca de 48 h. Varia com a intensidade, o sono e a alimentação.</p>
-                <details class="mm-lista">
-                    <summary>Ver em lista</summary>
-                    <ul class="mm-lista-corpo"></ul>
-                </details>
+                <div class="mm-painel"></div>
             </div>
         </div>
-        <p class="mm-nota">Cada série conta inteira para o músculo principal do exercício e meia para os secundários. Desenho do corpo adaptado de <a href="https://github.com/melihcolpan/MuscleMap" target="_blank" rel="noopener">MuscleMap</a> (licença MIT).</p>
+        <p class="mm-nota">Cada série conta inteira para o músculo principal e meia para os secundários. Faixas de séries por semana e tempos de recuperação são referências gerais e estimativas: variam com a intensidade, o sono e a alimentação. Desenho do corpo adaptado de <a href="https://github.com/melihcolpan/MuscleMap" target="_blank" rel="noopener">MuscleMap</a> (licença MIT).</p>
     </div>
 </div>
 
@@ -1211,7 +1250,8 @@
 
     function carregarMapaMuscular() {
         if (window.FitLogMapaMuscular) {
-            FitLogMapaMuscular.carregar(comAluno('/api/mapa-muscular?' + periodoAtual.query), periodoAtual.frase);
+            FitLogMapaMuscular.carregar(comAluno('/api/mapa-muscular?' + periodoAtual.query),
+                                        comAluno('/api/nivel-forca'), periodoAtual.frase);
         }
     }
 
