@@ -98,10 +98,18 @@
 
         if (ehVideo) {
             els.video.onerror = function () { mostrarErro(els); };
+            // Sem controles: a animação se comporta como o GIF (loop mudo).
+            // Se o navegador barrar o autoplay (iPhone em modo de economia
+            // de energia), mostra os controles para o aluno tocar.
+            els.video.controls = false;
             els.video.oncanplay = function () {
                 esconderSpinner(els);
                 frameDoSpinner(els).classList.remove('is-vazia');
                 els.video.classList.remove('d-none');
+                const tocando = els.video.play();
+                if (tocando && tocando.catch) {
+                    tocando.catch(function () { els.video.controls = true; });
+                }
             };
             els.video.src = url;
             els.video.load();
