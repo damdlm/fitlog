@@ -134,3 +134,28 @@ def auth_client(client):
         })
     
     return client
+
+
+
+# ---------------------------------------------------------------------------
+# Divisão da suíte em partes (CI): PYTEST_PARTE="i/n" roda só a parte i
+# (0..n-1). A divisão é por ARQUIVO (fixtures de módulo continuam juntas) e
+# estável (crc32 do caminho), então um teste novo cai sozinho numa das partes
+# e a soma das n partes é sempre a suíte inteira. Sem a variável, roda tudo.
+# Motivo: os runners do GitHub deste repositório têm 1 CPU, então paralelizar
+# dentro do job (pytest-xdist) não ajuda; mais jobs, sim.
+# ---------------------------------------------------------------------------
+def pytest_collection_modifyitems(config, items):
+    parte = os.environ.get('PYTEST_PARTE', '').strip()
+    if not parte:
+        return
+    import zlib
+    i, n = (int(x) for x in parte.split('/'))
+    if not 0 <= i < n:
+        raise ValueError(f'PYTEST_PARTE inválido: {parte!r} (use "i/n" com 0 <= i < n)')
+    ficam, saem = [], []
+    for item in items:
+        arquivo = item.nodeid.split('::', 1)[0]
+        (ficam if zlib.crc32(arquivo.encode()) % n == i else saem).append(item)
+    items[:] = ficam
+    config.hook.pytest_deselected(items=saem)

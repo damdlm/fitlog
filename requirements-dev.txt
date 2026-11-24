@@ -10,8 +10,8 @@
 # =========================
 pytest==9.0.3
 pytest-cov==4.1.0
-# roda os testes em paralelo (-n auto): suíte ~2x mais rápida; os testes usam
-# SQLite em memória por teste, então não há estado compartilhado entre workers
+# testes em paralelo NA SUA MÁQUINA (-n auto): ~2x mais rápido com 2+ CPUs.
+# Não usado no CI: os runners deste repo têm 1 CPU (ver .github/workflows/ci.yml)
 pytest-xdist==3.6.1
 factory-boy==3.3.0
 

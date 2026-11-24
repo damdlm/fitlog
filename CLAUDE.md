@@ -51,7 +51,9 @@ alunos registrarem treinos e professores gerenciarem fichas. Produção no Railw
 - Completo (antes de entregar): `python -m pytest -q -n auto -p no:cacheprovider tests 2>&1 | tail -5`
   (~10 min com 2 CPUs; em série ~19). Filtre a saída: são ~1.700 warnings.
 - CI (`.github/workflows/ci.yml`): flake8 `E9,F63,F7,F82` quebra o build;
-  cobertura mínima 85% somando os 4 grupos (unit, security, integration, resto).
+  cobertura mínima 85% somando todos os jobs. Os runners têm 1 CPU, então o CI
+  NÃO usa `-n`: divide unit (2) e integration (3) em jobs com
+  `PYTEST_PARTE=i/n` (gancho em `tests/conftest.py`, divisão por arquivo).
 - Helpers de teste usados em vários arquivos:
   `tests/unit/test_services/test_exercicio_service_extra.py` (`_criar_usuario`
   com senha `SenhaForte123!`, `_criar_versao_com_treino`, `_criar_exercicio_base`).
