@@ -206,6 +206,7 @@
     function montarBarras() {
         var itens = Object.keys(dados.regioes).map(function (k) { return [k, dados.regioes[k]]; })
             .filter(function (it) { return it[1].faixa || valorSeries(it[1]) > 0; });
+        if (sub === 'planejado' && !dados.planejado.treinos) { painel.innerHTML = ''; return; }
         itens.sort(function (a, b) { return valorSeries(b[1]) - valorSeries(a[1]) || a[1].nome.localeCompare(b[1].nome); });
         var visiveis = mostrarTodos ? itens : itens.slice(0, 6);
         var html = '<ul class="mm-barras">' + visiveis.map(function (it) {
@@ -332,7 +333,9 @@
                     treinosSemana = p.sessoes_semana || p.treinos || null;
                     if (treinosSemana) campoTreinos.value = String(treinosSemana).replace('.', ',');
                 }
-                el('.mm-ficha-nome').textContent = p.ficha ? '"' + p.ficha + '" (' + p.treinos + ' treino' + (p.treinos === 1 ? '' : 's') + ')' : 'nenhuma ficha ativa';
+                el('.mm-ficha-nome').textContent = p.ficha ? '"' + p.ficha + '" (' + p.treinos + ' treino' + (p.treinos === 1 ? '' : 's') + ')' : '';
+                el('.mm-com-ficha').hidden = !p.treinos;
+                el('.mm-sem-ficha').hidden = !!p.treinos;
                 vazio.hidden = Object.keys(j.regioes).some(function (k) {
                     var r = j.regioes[k];
                     return r.series || r.planejado_ciclo || r.status !== 'sem_treino';
