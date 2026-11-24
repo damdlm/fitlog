@@ -9,6 +9,11 @@ EXERCICIOS_MEDIA_DIR apontando pra uma cópia do volume):
     python3 scripts/migrar_midia_para_bucket.py --dry-run  # só lista, não sobe nada
     python3 scripts/migrar_midia_para_bucket.py --verificar  # confere o que já foi migrado
 
+Para subir um pacote de mídia novo a partir do seu computador (as
+credenciais do bucket vêm do Railway só para essa execução):
+
+    railway run python scripts/migrar_midia_para_bucket.py --media-dir <pasta>
+
 Idempotente: pode rodar de novo sem problema -- arquivos que já existem
 no bucket (mesmo nome/chave) são pulados por padrão, a menos que
 --forcar seja passado.
@@ -21,6 +26,10 @@ import mimetypes
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from services.storage_service import StorageService
+
+
+TIPOS = {'.mp4': 'video/mp4', '.webm': 'video/webm', '.webp': 'image/webp', '.gif': 'image/gif',
+         '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png'}
 
 
 def encontrar_arquivos(media_dir: str):
@@ -81,7 +90,9 @@ def main():
             pulados += 1
             continue
 
-        content_type, _ = mimetypes.guess_type(caminho)
+        # Tipos fixos para a mídia dos exercícios: o mimetypes do Windows
+        # pode não conhecer .webp, e o bucket serviria octet-stream.
+        content_type = TIPOS.get(os.path.splitext(caminho)[1].lower()) or mimetypes.guess_type(caminho)[0]
         ok = StorageService.upload_file(caminho, chave, content_type=content_type)
         if ok:
             enviados += 1
