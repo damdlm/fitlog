@@ -9,8 +9,9 @@ name: CI
 # (ver config.py) -- por isso não tem nenhum "services:" aqui.
 #
 # A suíte inteira leva ~17 min em série. Por isso os testes rodam em
-# 4 jobs paralelos (unit, security, integration e o "resto") e o tempo total cai para o
-# do grupo mais lento (~9 min). O lint é um job à parte, rápido. Um job final
+# 4 jobs paralelos (unit, security, integration e o "resto") e, dentro de
+# cada job, em paralelo por CPU (pytest-xdist, -n auto); o tempo total cai
+# para o do grupo mais lento. O lint é um job à parte, rápido. Um job final
 # ("cobertura") junta os dados dos 4 grupos e exige a cobertura mínima.
 on:
   push:
@@ -102,7 +103,9 @@ jobs:
         # cada grupo isolado, falharia, pois cada um cobre só uma parte.
         env:
           COVERAGE_FILE: cov-${{ matrix.nome }}
-        run: pytest ${{ matrix.caminho }} --cov-report=xml
+        # -n auto: um worker por CPU do runner (pytest-xdist). A cobertura de
+        # todos os workers é juntada pelo pytest-cov no mesmo COVERAGE_FILE.
+        run: pytest ${{ matrix.caminho }} -n auto --cov-report=xml
 
       - name: Publicar relatório de cobertura como artefato
         if: always()

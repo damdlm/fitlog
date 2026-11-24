@@ -10,6 +10,9 @@
 # =========================
 pytest==9.0.3
 pytest-cov==4.1.0
+# roda os testes em paralelo (-n auto): suíte ~2x mais rápida; os testes usam
+# SQLite em memória por teste, então não há estado compartilhado entre workers
+pytest-xdist==3.6.1
 factory-boy==3.3.0
 
 # =========================
