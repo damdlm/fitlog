@@ -10,6 +10,7 @@ for cenario in ('cel', 'escuro', 'desk'):
         pg.goto(s.url('/aluno/estatisticas'))
         pg.wait_for_selector('#mapaMuscular .mm-r')
         print(cenario, '| séries:', s.texto(pg, '#mapaMuscular .mm-painel')[:80])
-        pg.click('#mapaMuscular .mm-aba[data-aba="recuperacao"]')
-        print(cenario, '| recuperação:', s.texto(pg, '#mapaMuscular .mm-painel')[:80])
+        for aba in ('fadiga', 'forca'):
+            pg.click(f'#mapaMuscular .mm-aba[data-aba="{aba}"]')
+            print(cenario, '|', aba + ':', s.texto(pg, '#mapaMuscular .mm-painel')[:80])
         print(cenario, '| largura', s.largura(pg), '| erros', s.erros(pg))
