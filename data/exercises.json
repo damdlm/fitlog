@@ -4262,8 +4262,8 @@
       "Core"
     ],
     "target": "Glúteos",
-    "image": "images/0042-zG0zs85.jpg",
-    "gif_url": "videos/0042-zG0zs85.gif",
+    "image": "images/gdt/agachamento-frontal-48b2aba.webp",
+    "gif_url": "videos/gdt/agachamento-frontal-ba00153.mp4",
     "media_id": "zG0zs85",
     "created_at": "2026-03-18T12:31:32.871523+00:00",
     "attribution": "© Gym visual — https://gymvisual.com/"
@@ -48772,8 +48772,8 @@
     "id": "8037",
     "name": "Barra fixa com salto",
     "nicknames": [],
-    "category": "Pernas superiores",
-    "body_part": "Pernas superiores",
+    "category": "Costas",
+    "body_part": "Costas",
     "equipment": "Barra",
     "instructions": {
       "pt": "A barra fixa com salto é um exercício de calistenia que combina força, técnica e explosão. Este movimento é realizado utilizando uma barra fixa para ajudar a desenvolver a parte superior do corpo, em especial os músculos das costas, ombros e braços.\n\nDurante a execução, o praticante começa pendurado na barra, utilizando um salto para ajudar a eleva-se. A partir dessa posição inicial, deve-se puxar o corpo para cima até o queixo ultrapasse a barra, trabalhando os músculos de forma intensa e promovendo também o desenvolvimento da coordenação e do equilíbrio. Esse exercício não só melhora a força muscular, mas também potencializa o condicionamento físico geral.\n\nAlém disso, a barra fixa com salto é uma ótima maneira de preparar o corpo para movimentos mais complexos, como os muscle-ups, e pode ser uma excelente adição a rotinas de treinamento funcional ou de calistenia."
@@ -48790,7 +48790,7 @@
       "Costas superiores",
       "Ombros"
     ],
-    "target": "Quadríceps",
+    "target": "Dorsais",
     "image": "images/gdt/barra-fixa-com-salto-cef19c7.webp",
     "gif_url": "videos/gdt/barra-fixa-com-salto-cac71d2.mp4",
     "media_id": null,
@@ -48831,8 +48831,8 @@
     "id": "8039",
     "name": "Caminhada na parada de mão",
     "nicknames": [],
-    "category": "Cardio",
-    "body_part": "Cardio",
+    "category": "Ombros",
+    "body_part": "Ombros",
     "equipment": "Peso corporal",
     "instructions": {
       "pt": "A Caminhada na Parada de Mão é um exercício avançado de força, equilíbrio e coordenação. Este exercício consiste em realizar uma caminhada sobre as mãos, com o corpo invertido, utilizando a força dos ombros e do abdômen para manter a posição. É um exercício que requer uma boa base de força e controle corporal.\n\nOs principais benefícios da Caminhada na Parada de Mão incluem:\n\nPara realizar a Caminhada na Parada de Mão, siga os seguintes passos:\n\nConsulte sempre um especialista antes de iniciar novos exercícios físicos."
@@ -48850,13 +48850,12 @@
       "Ombros",
       "Core"
     ],
-    "target": "Sistema cardiovascular",
+    "target": "Deltoides",
     "image": "images/gdt/caminhada-na-parada-de-mao-d1ca48a.webp",
     "gif_url": "videos/gdt/caminhada-na-parada-de-mao-d691036.mp4",
     "media_id": null,
     "created_at": "2026-11-24T12:00:00+00:00",
-    "attribution": "© Gym visual — https://gymvisual.com/",
-    "record_mode": "time"
+    "attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
     "id": "8040",
@@ -48995,7 +48994,7 @@
       "Costas superiores",
       "Glúteos"
     ],
-    "target": "Isquiotibiais",
+    "target": "Glúteos",
     "image": "images/gdt/elevacao-de-quadril-com-peso-corporal-d1f1ff3.webp",
     "gif_url": "videos/gdt/elevacao-de-quadril-com-peso-corporal-c47cc36.mp4",
     "media_id": null,
@@ -49510,11 +49509,11 @@
   },
   {
     "id": "8062",
-    "name": "Flexão de joelhos",
+    "name": "Flexão de braço com joelhos apoiados",
     "nicknames": [],
-    "category": "Pernas superiores",
-    "body_part": "Pernas superiores",
-    "equipment": "Halter",
+    "category": "Peito",
+    "body_part": "Peito",
+    "equipment": "Peso corporal",
     "instructions": {
       "pt": "A flexão de joelhos é um exercício essencial que tem como principal objetivo fortalecer a musculatura dos membros inferiores, especialmente os músculos quadríceps, isquiotibiais e glúteos. Este movimento é fundamental para atividades do dia a dia, como correr, subir escadas e até mesmo agachar, contribuindo para uma melhor performance nessas ações.\n\nAlém de desenvolver a força, a flexão de joelhos também ajuda na melhoria da mobilidade e flexibilidade das articulações, o que é crucial para prevenir lesões. Este exercício pode ser realizado com o peso do corpo ou com equipamentos, como barras e halteres, dependendo do nível de experiência e do objetivo do praticante."
     },
@@ -49530,7 +49529,7 @@
       "Glúteos",
       "Costas superiores"
     ],
-    "target": "Quadríceps",
+    "target": "Peitorais",
     "image": "images/gdt/flexao-de-joelhos-b7c41e2.webp",
     "gif_url": "videos/gdt/flexao-de-joelhos-f089bed.mp4",
     "media_id": null,
@@ -49786,8 +49785,8 @@
     "id": "8071",
     "name": "Paralelas entre cadeiras",
     "nicknames": [],
-    "category": "Ombros",
-    "body_part": "Ombros",
+    "category": "Braços",
+    "body_part": "Braços",
     "equipment": "Peso corporal",
     "instructions": {
       "pt": "As Paralelas entre Cadeiras é um exercício que visa trabalhar principalmente os músculos dos braços, ombros e peitorais, além de envolver a musculatura do core (abdominais e lombares) para estabilização.\n\nPara executá-lo, posicione duas cadeiras em paralelo, a uma distância que permita que você suporte o peso do corpo com os braços. Sente-se na ponta de uma cadeira e posicione as mãos na borda, com os dedos apontando para frente. Estenda as pernas à frente, mantendo os calcanhares no chão ou elevados. Em seguida, flexione os cotovelos para abaixar o corpo em direção ao chão e, depois, empurre-se de volta à posição inicial, mantendo os ombros longe das orelhas e o tronco firme.\n\nEste exercício pode ser uma excelente opção para quem busca fortalecer a parte superior do corpo e melhorar a resistência muscular. Além disso, pode ser adaptado para diferentes níveis de condicionamento físico, permitindo variações na amplitude do movimento e na dificuldade."
@@ -49805,7 +49804,7 @@
       "Core",
       "Lombar"
     ],
-    "target": "Deltoides",
+    "target": "Tríceps",
     "image": "images/gdt/paralelas-entre-cadeiras-b871740.webp",
     "gif_url": "videos/gdt/paralelas-entre-cadeiras-973c517.mp4",
     "media_id": null,
@@ -49816,8 +49815,8 @@
     "id": "8072",
     "name": "Paralelas na argola",
     "nicknames": [],
-    "category": "Cintura",
-    "body_part": "Cintura",
+    "category": "Braços",
+    "body_part": "Braços",
     "equipment": "Peso corporal",
     "instructions": {
       "pt": "As Paralelas na Argola são um exercício de calistenia que trabalha intensamente a força do tronco, bem como a estabilidade dos ombros e dos músculos da parte superior do corpo.\n\nAo realizar as Paralelas na Argola, você se suspende em anéis de fibra, que são fixados em um suporte. A partir de uma posição inicial pendurada, você deve flexionar os cotovelos e puxar seu corpo para cima, mantendo o controle e a estabilidade. Este movimento exige concentração e força, envolvendo os músculos do peitoral, ombros, tríceps e abdominais.\n\nEsse exercício é excelente para desenvolver a força funcional, melhorar a coordenação motora e aumentar a consciência corporal. Além disso, praticá-lo regularmente pode contribuir para uma performance atlética superior e melhorar o condicionamento físico geral."
@@ -49835,7 +49834,7 @@
       "Peito",
       "Tríceps"
     ],
-    "target": "Abdômen",
+    "target": "Tríceps",
     "image": "images/gdt/paralelas-na-argola-ebe669f.webp",
     "gif_url": "videos/gdt/paralelas-na-argola-ed68ca5.mp4",
     "media_id": null,
@@ -50942,7 +50941,7 @@
     "nicknames": [],
     "category": "Costas",
     "body_part": "Costas",
-    "equipment": "Cabo",
+    "equipment": "Barra",
     "instructions": {
       "pt": "O Arranco de Potência, também conhecido como Power Clean, é um exercício de levantamento de peso que visa desenvolver explosão e potência muscular, especialmente nas pernas, costas e ombros.\n\nEste movimento é fundamental para atletas que necessitam de força rápida, como jogadores de futebol, atletas de atletismo e praticantes de crossfit, pois simula de forma eficaz os esforços explosivos exigidos em diversas modalidades esportivas.\n\nO exercício é realizado em três etapas principais: a elevação do peso do chão até a altura do joelho, a transição rápida ao nível da cintura e, por fim, a colocação do peso sobre os ombros. Essa sequência ativa diversos grupos musculares, como quadríceps, glúteos, trapézio e core, contribuindo para o aumento da força funcional e potência geral do corpo."
     },
@@ -51026,7 +51025,7 @@
   },
   {
     "id": "8113",
-    "name": "Arremesso de medicina bola com levantamento de tronco",
+    "name": "Arremesso de bola medicinal com levantamento de tronco",
     "nicknames": [],
     "category": "Cintura",
     "body_part": "Cintura",
@@ -51054,11 +51053,13 @@
   },
   {
     "id": "8114",
-    "name": "Barbell hang clean",
-    "nicknames": [],
+    "name": "Hang clean com barra",
+    "nicknames": [
+      "Barbell hang clean"
+    ],
     "category": "Ombros",
     "body_part": "Ombros",
-    "equipment": "Peso corporal",
+    "equipment": "Barra",
     "instructions": {
       "pt": "O Barbell Hang Clean é um exercício de levantamento de peso que se concentra em melhorar a força, potência e explosividade do corpo, tornando-se um componente essencial para atletas em diversos esportes.\n\nNo movimento, o atleta inicia com a barra posicionada na altura dos joelhos, utilizando uma pegada pronada (palmas voltadas para o corpo). A execução começa com uma leve flexão dos joelhos e quadris, seguida de uma extensão explosiva do corpo, onde o atleta puxa a barra para cima, posicionando-a nos ombros. A técnica correta exige coordenação e ritmo, promovendo não apenas força muscular, mas também o desenvolvimento da agilidade.\n\nO Barbell Hang Clean contribui significativamente para o fortalecimento da cadeia posterior (glúteos, isquiotibiais e costas), além de melhorar a mobilidade e a postura. É frequentemente utilizado como parte de treinos de força e condicionamento, sendo extremamente eficaz na preparação para atividades que exigem explosão e potência, como corridas, saltos e lutas."
     },
@@ -51115,8 +51116,8 @@
     "id": "8116",
     "name": "Bola na parede",
     "nicknames": [],
-    "category": "Ombros",
-    "body_part": "Ombros",
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
     "equipment": "Bola de estabilidade",
     "instructions": {
       "pt": "O exercício \"Bola na parede\" é uma excelente atividade para desenvolver força, estabilidade e coordenação. Este exercício é comumente utilizado em treinos de reabilitação, treinamento funcional e em práticas de esportes como basquete e vôlei.\n\nPara realizar o exercício, comece posicionando-se a uma distância de cerca de um passo da parede. Segure uma bola (pode ser uma bola medicinal, de basquete ou qualquer outra bola adequada) com ambas as mãos. Em seguida, faça um agachamento leve, mantendo os pés alinhados com os ombros e a coluna ereta.\n\nApós a posição de agachamento, empurre a bola em direção à parede, utilizando a força dos braços, e acompanhe o movimento estendendo as pernas. A bola deve tocar a parede e voltar até você, permitindo que você repita o movimento de forma controlada. É importante manter a postura correta e o core ativado durante todo o exercício.\n\nEste exercício fortalece os músculos do tronco, das pernas e dos braços, além de melhorar a agilidade e a capacidade cardiorrespiratória. O movimento de empurrar a bola também ajuda a desenvolver a força explosiva."
@@ -51133,7 +51134,7 @@
     "secondary_muscles": [
       "Core"
     ],
-    "target": "Deltoides",
+    "target": "Quadríceps",
     "image": "images/gdt/bola-na-parede-74eac13.webp",
     "gif_url": "videos/gdt/bola-na-parede-931e034.mp4",
     "media_id": null,
@@ -51173,11 +51174,11 @@
   },
   {
     "id": "8118",
-    "name": "Carregamento Zercher",
+    "name": "Carregamento Zercher com barra",
     "nicknames": [],
     "category": "Cintura",
     "body_part": "Cintura",
-    "equipment": "Kettlebell",
+    "equipment": "Barra",
     "instructions": {
       "pt": "O Carregamento Zercher é um exercício de força que envolve a execução de uma carga suportada aos braços, geralmente a partir da posição em que os braços estão dobrados, com a barra posicionada na parte interna dos cotovelos. Este movimento pode ser realizado utilizando uma barra, kettlebell ou qualquer outro peso que possa ser segurado de maneira semelhante.\n\nEle é particularmente eficaz para trabalhar a musculatura do core, incluindo abdômen, lombar e quadris, além de direcionar a atenção para os músculos das pernas e braços. O Carregamento Zercher também ajuda a melhorar a mobilidade dos ombros e a capacidade de manter uma boa postura durante levantamentos pesados.\n\nAlém de ser um ótimo exercício para desenvolver força e resistência, o Carregamento Zercher pode ser utilizado em treinos de resistência funcional e treinamento atlético, proporcionando uma base sólida para outros levantamentos e atividades físicas."
     },
@@ -51231,8 +51232,10 @@
   },
   {
     "id": "8120",
-    "name": "Dumbbell devil press",
-    "nicknames": [],
+    "name": "Devil press com halteres",
+    "nicknames": [
+      "Dumbbell devil press"
+    ],
     "category": "Ombros",
     "body_part": "Ombros",
     "equipment": "Halter",
@@ -51259,8 +51262,10 @@
   },
   {
     "id": "8121",
-    "name": "Dumbbell power clean",
-    "nicknames": [],
+    "name": "Power clean com halteres",
+    "nicknames": [
+      "Dumbbell power clean"
+    ],
     "category": "Ombros",
     "body_part": "Ombros",
     "equipment": "Halter",
@@ -51348,11 +51353,13 @@
   },
   {
     "id": "8124",
-    "name": "Heaving snatch balance",
-    "nicknames": [],
+    "name": "Snatch balance com barra",
+    "nicknames": [
+      "Heaving snatch balance"
+    ],
     "category": "Ombros",
     "body_part": "Ombros",
-    "equipment": "Peso corporal",
+    "equipment": "Barra",
     "instructions": {
       "pt": "O Heaving Snatch Balance é um exercício de força e estabilidade que combina elementos do levantamento de peso e do equilíbrio. Ele é utilizado principalmente para melhorar a técnica do snatch (arranco) e a força na posição em pé. Neste exercício, o atleta inicia com a barra apoiada nos ombros, realiza uma leve subida do quadril, e então \"arremessa\" a barra para cima, ao mesmo tempo em que faz um agachamento ao se posicionar embaixo da barra. Isso requer coordenação, controle corporal e habilidade para transferir potência das pernas para a barra.\n\nO Heaving Snatch Balance serve para desenvolver a força explosiva dos membros inferiores, ao mesmo tempo em que melhora a estabilidade do core e a consciência corporal. Além disso, ele ajuda a aprimorar a mobilidade dos ombros e a prática do movimento de snatch, tornando-o mais eficiente para a execução de levantamentos olímpicos."
     },
@@ -51489,11 +51496,13 @@
   },
   {
     "id": "8129",
-    "name": "Muscle snatch",
-    "nicknames": [],
+    "name": "Muscle snatch com barra",
+    "nicknames": [
+      "Muscle snatch"
+    ],
     "category": "Costas",
     "body_part": "Costas",
-    "equipment": "Cabo",
+    "equipment": "Barra",
     "instructions": {
       "pt": "O Muscle Snatch é um exercício de levantamento de peso que combina potência, força e técnica, sendo uma variação do tradicional snatch, ou arranco. Ele consiste em levantar uma barra do chão até acima da cabeça em um único movimento contínuo, sem a ajuda de um agachamento. Isso exige não apenas força dos músculos das pernas, costas e ombros, mas também uma excelente coordenação e mobilidade.\n\nEsse exercício é frequentemente utilizado para desenvolver força explosiva, resistência e melhora da técnica de levantamento. É benéfico para atletas que praticam esportes que exigem movimentos rápidos e potentes, como o atletismo e crossfit, além de ser uma ótima adição a treinos de musculação para fortalecimento muscular e definição."
     },
@@ -51548,8 +51557,8 @@
     "id": "8131",
     "name": "Swing de kettlebell",
     "nicknames": [],
-    "category": "Costas",
-    "body_part": "Costas",
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
     "equipment": "Kettlebell",
     "instructions": {
       "pt": "O exercício Swing de kettlebell é um movimento dinâmico que tem como principal objetivo desenvolver força, resistência e potência. Ele trabalha diversos grupos musculares, sendo especialmente eficaz para a cadeia posterior, que inclui os músculos das costas, glúteos e isquiotibiais. Além disso, o movimento também ativa o core, ajudando na estabilização do tronco durante a execução.\n\nPara realizar o Swing, comece em uma posição de pé com os pés na largura dos ombros, segurando o kettlebell com ambas as mãos. Ao iniciar o movimento, faça uma leve flexão nos joelhos e incline o tronco para frente, puxando o kettlebell entre as pernas. Em seguida, explosivamente, estenda os quadris e joelhos, levando o kettlebell para frente e para cima, até atingir a altura dos ombros. O movimento deve ser contínuo e controlado, focando na energia gerada pelas pernas e quadris, em vez do uso apenas dos braços.\n\nEste exercício não só melhora a força muscular, mas também aumenta a capacidade cardiovascular, tornando-se uma excelente opção para treinos de alta intensidade. Além disso, o Swing de kettlebell ajuda na melhoria da coordenação e do equilíbrio, contribuindo para uma performance atlética mais completa."
@@ -51568,7 +51577,7 @@
       "Core",
       "Ombros"
     ],
-    "target": "Costas superiores",
+    "target": "Glúteos",
     "image": "images/gdt/swing-de-kettlebell-7731042.webp",
     "gif_url": "videos/gdt/swing-de-kettlebell-129695c.mp4",
     "media_id": null,
@@ -51579,8 +51588,8 @@
     "id": "8132",
     "name": "Swing de kettlebell de um braço",
     "nicknames": [],
-    "category": "Cintura",
-    "body_part": "Cintura",
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
     "equipment": "Kettlebell",
     "instructions": {
       "pt": "O exercício Swing de kettlebell de um braço é uma excelente opção para quem busca desenvolver força, potência e resistência cardiovascular. Este movimento utiliza a força do quadril e do core, além de engajar os músculos do ombro e das costas.\n\nPara executar o swing de um braço, comece segurando o kettlebell com uma mão e coloque os pés na largura dos ombros. Flexione ligeiramente os joelhos e incline-se à frente a partir dos quadris, mantendo as costas retas. O kettlebell deve estar pendurado diretamente em frente ao corpo.\n\nInicie o movimento empurrando os quadris para trás e, em seguida, impulsione o kettlebell para trás entre as pernas. Em um movimento explosivo, empurre os quadris para frente, mantendo o tronco ereto, para elevar o kettlebell até a altura do peito, usando apenas uma mão. O movimento deve ser fluido, utilizando a força do corpo inferior.\n\nEsse exercício proporciona benefícios como o aumento da força explosiva, melhora da coordenação motora e queima de gordura, sendo bastante eficaz para o condicionamento físico geral."
@@ -51600,7 +51609,7 @@
       "Costas superiores",
       "Peito"
     ],
-    "target": "Abdômen",
+    "target": "Glúteos",
     "image": "images/gdt/swing-de-kettlebell-de-um-braco-06f8850.webp",
     "gif_url": "videos/gdt/swing-de-kettlebell-de-um-braco-a2faa67.mp4",
     "media_id": null,
@@ -51613,7 +51622,7 @@
     "nicknames": [],
     "category": "Costas",
     "body_part": "Costas",
-    "equipment": "Halter",
+    "equipment": "Com peso",
     "instructions": {
       "pt": "O exercício de Extensão Lombar com Peso é um movimento específico que visa fortalecer a musculatura da região lombar, ou seja, a parte inferior das costas.\n\nEsse exercício é executado geralmente em uma bancada apropriada, onde a pessoa se posiciona com o tronco apoiado e a parte inferior das pernas fixadas. A prática envolve a extensão do tronco, levantando o corpo para cima e voltando à posição inicial, podendo ser realizado com o uso de pesos, como um haltere ou uma barra, para aumentar a resistência e eficácia do exercício.\n\nOs principais benefícios da Extensão Lombar com Peso incluem:"
     },
@@ -51935,7 +51944,7 @@
     "nicknames": [],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
-    "equipment": "Peso corporal",
+    "equipment": "Faixa elástica",
     "instructions": {
       "pt": "O exercício Afundo com Gymstick é uma variação do afundo tradicional que utiliza o Gymstick, uma ferramenta flexível que combina resistência e estabilidade. Esse exercício é altamente eficaz para trabalhar os músculos das pernas, principalmente quadríceps, glúteos e isquiotibiais.\n\nPara realizar o Afundo com Gymstick, comece segurando o Gymstick ao nível dos ombros, com os pés na largura dos quadris. Dê um passo à frente com uma perna, mantendo o tronco ereto e os joelhos alinhados aos pés. Abaixe-se até que o joelho de trás quase toque o chão, enquanto o joelho da frente não ultrapassa a ponta do pé. Retorne à posição inicial e repita com a outra perna. Esse movimento não apenas fortalece as pernas, mas também melhora o equilíbrio e a coordenação.\n\nÉ importante ajustar a resistência do Gymstick conforme seu nível de habilidade e força. Iniciantes devem começar com uma resistência mais leve, enquanto praticantes mais experientes podem aumentar a intensidade."
     },
@@ -52418,7 +52427,7 @@
     "nicknames": [],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
-    "equipment": "Peso corporal",
+    "equipment": "Medicine ball",
     "instructions": {
       "pt": "O exercício Balloon Drill, ou \"exercício do balão\", é uma técnica popular utilizada principalmente em treinamentos para melhorar a resistência cardiorrespiratória, a coordenação motora e a agilidade. Durante a execução, o praticante deve manter um balão no ar utilizando somente partes do corpo, como as mãos e a cabeça, evitando que o balão toque o chão.\n\nEsse exercício envolve movimentos rápidos e dinâmicos, além de exigir controle e precisão, o que o torna uma boa opção para aquecimentos, atividades em grupo e até sessões de fisioterapia. As aplicações vão além do condicionamento físico, ajudando a desenvolver habilidades como trabalho em equipe e comunicação."
     },
@@ -52472,8 +52481,8 @@
     "id": "8162",
     "name": "Boxe sombra",
     "nicknames": [],
-    "category": "Pernas superiores",
-    "body_part": "Pernas superiores",
+    "category": "Ombros",
+    "body_part": "Ombros",
     "equipment": "Peso corporal",
     "instructions": {
       "pt": "O Boxe Sombra é um exercício que simula as ações do boxeador no ringue, onde o praticante realiza movimentos de socos e esquivas, porém sem um oponente. Este exercício serve para melhorar a técnica de golpe, aumentar a resistência cardiovascular, fortalecer a musculatura superior do corpo e aprimorar a coordenação motora.\n\nAo praticar o Boxe Sombra, você desenvolve habilidades como agilidade, velocidade e reflexos, além de queimar calorias de forma eficiente, sendo uma excelente opção para quem deseja melhorar a forma física. A prática regular pode também ajudar a aliviar o estresse e aumentar a concentração."
@@ -52486,7 +52495,7 @@
     },
     "muscle_group": "Cardio",
     "secondary_muscles": [],
-    "target": "Quadríceps",
+    "target": "Deltoides",
     "image": "images/gdt/boxe-sombra-8ddad54.webp",
     "gif_url": "videos/gdt/boxe-sombra-7a1c9eb.mp4",
     "media_id": null,
@@ -52497,8 +52506,8 @@
     "id": "8163",
     "name": "Boxe jab",
     "nicknames": [],
-    "category": "Pernas superiores",
-    "body_part": "Pernas superiores",
+    "category": "Ombros",
+    "body_part": "Ombros",
     "equipment": "Peso corporal",
     "instructions": {
       "pt": "O Boxe Jab é um dos golpes mais fundamentais e frequentemente utilizados no boxe. Trata-se de um soco rápido e direto, normalmente executado com a mão não dominante, que serve para medir distância, criar oportunidades de ataque e desestabilizar o oponente. Além de ser uma ferramenta de ataque, o jab é uma excelente forma de defesa, pois permite que o boxeador mantenha o controle do ritmo da luta e evite o avanço do adversário.\n\nO movimento do jab começa com uma leve rotação do quadril enquanto a mão se projeta para frente. A pontuação do soco deve acontecer na ponta dos dedos, e é crucial que o peso do corpo seja transferido para a frente durante a execução, garantindo maior potência e eficácia. Com a prática correta, o jab não só melhora a agilidade e a precisão do boxeador, mas também serve para aprimorar a resistência cardiovascular."
@@ -52511,7 +52520,7 @@
     },
     "muscle_group": "Cardio",
     "secondary_muscles": [],
-    "target": "Quadríceps",
+    "target": "Deltoides",
     "image": "images/gdt/boxe-jab-0d4e00f.webp",
     "gif_url": "videos/gdt/boxe-jab-0beb8bb.mp4",
     "media_id": null,
@@ -52671,7 +52680,7 @@
     "nicknames": [],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
-    "equipment": "Máquina de alavanca",
+    "equipment": "Peso corporal",
     "instructions": {
       "pt": "O Coice de Burro é um exercício de força e tonificação que visa trabalhar principalmente os músculos glúteos e isquiotibiais. É um movimento que pode ser realizado em diversas variações, incluindo no solo, com equipamentos ou em máquinas específicas nas academias.\n\nPara realizar esse exercício, o praticante se posiciona em quatro apoios, com as mãos e os joelhos no chão. Em seguida, uma perna é estendida para trás em um movimento de extensão do quadril, enquanto o pé permanece flexionado. Isso não só ativa os glúteos, mas também ajuda a estabilizar o core.\n\nAlém de melhorar a força e a resistência das pernas, o Coice de Burro contribui para a estabilidade do quadril e melhora a postura. É um exercício altamente eficaz para quem busca tonificar a região dos glúteos e aumentar a massa muscular nessa área."
     },
@@ -52726,7 +52735,7 @@
   },
   {
     "id": "8171",
-    "name": "Corrida latera",
+    "name": "Corrida lateral",
     "nicknames": [],
     "category": "Cardio",
     "body_part": "Cardio",
@@ -52938,9 +52947,9 @@
     "id": "8178",
     "name": "Crucifixo invertido com gymstick para deltoides posterior",
     "nicknames": [],
-    "category": "Peito",
-    "body_part": "Peito",
-    "equipment": "Peso corporal",
+    "category": "Ombros",
+    "body_part": "Ombros",
+    "equipment": "Faixa elástica",
     "instructions": {
       "pt": "O exercício Crucifixo Invertido com Gymstick é uma ótima opção para fortalecer os deltoides posteriores, além de trabalhar a musculatura das costas. Ao executar este movimento, você ativa os músculos que ajudam a melhorar a postura e a estabilidade dos ombros, essenciais para uma performance eficiente em diversos esportes e atividades diárias.\n\nA execução do exercício envolve a posição inicial em pé ou inclinado, segurando o Gymstick em ambas as mãos, com os braços estendidos para baixo. Ao puxar o stick para trás, mantendo os cotovelos ligeiramente flexionados, os músculos do ombro são ativados. É importante focar na contração dos músculos das costas, evitando o uso excessivo da força dos membros inferiores através de uma postura controlada e estável.\n\nAlém de desenvolver força e resistência na parte superior do corpo, o Crucifixo Invertido com Gymstick auxilia na correção de desequilíbrios musculares, promovendo um desenvolvimento mais harmonioso da musculatura dos ombros e das costas."
     },
@@ -52956,7 +52965,7 @@
       "Ombros",
       "Costas superiores"
     ],
-    "target": "Peitorais",
+    "target": "Deltoides",
     "image": "images/gdt/crucifixo-invertido-com-gymstick-para-deltoides-posterior-e1695c1.webp",
     "gif_url": "videos/gdt/crucifixo-invertido-com-gymstick-para-deltoides-posterior-85b2e59.mp4",
     "media_id": null,
@@ -52993,7 +53002,7 @@
   },
   {
     "id": "8180",
-    "name": "Cópia de abdominal de rã com bola de exercícios",
+    "name": "Abdominal sapo com bola de exercício",
     "nicknames": [],
     "category": "Cintura",
     "body_part": "Cintura",
@@ -53055,7 +53064,7 @@
     "nicknames": [],
     "category": "Ombros",
     "body_part": "Ombros",
-    "equipment": "Peso corporal",
+    "equipment": "Faixa elástica",
     "instructions": {
       "pt": "O exercício do Desenvolvimento Lateral com Gymstick é uma ótima opção para fortalecer os músculos dos ombros e melhorar a estabilidade da parte superior do corpo. Esse movimento foca principalmente nos músculos deltoides, que são responsáveis pela elevação dos braços, além de trabalhar a musculatura dos trapézios e os músculos estabilizadores da escápula.\n\nPara realizar o Desenvolvimento Lateral, posicione-se em pé com os pés na largura dos ombros, segurando a barra do Gymstick com as duas mãos, à frente do corpo. Em seguida, eleve os braços lateralmente até a altura dos ombros, mantendo os cotovelos levemente flexionados, e retorne à posição inicial com controle. O ritmo deve ser controlado, evitando movimentos abruptos, para prevenir lesões e garantir a eficácia do exercício.\n\nAlém de promover o fortalecimento muscular, o exercício também ajuda a aprimorar a coordenação e a flexibilidade dos ombros. Incorporá-lo à sua rotina de treinos pode aumentar a resistência e o desempenho em atividades do dia a dia que exigem força na parte superior do corpo."
     },
@@ -53113,7 +53122,7 @@
     "nicknames": [],
     "category": "Ombros",
     "body_part": "Ombros",
-    "equipment": "Halter",
+    "equipment": "Peso corporal",
     "instructions": {
       "pt": "O exercício Desenvolvimento Militar com peso do corpo é uma variação do exercício tradicional de desenvolvimento militar, que normalmente é realizado com cargas externas, como halteres ou barras. No entanto, neste exercício, você utiliza apenas o peso do corpo para desenvolver força e estabilidade nos músculos dos ombros, peitorais e tríceps.\n\nPara realizar o Desenvolvimento Militar com peso do corpo, inicie na posição de pé ou sentado. Levante os braços lateralmente até que eles estejam paralelos ao chão. A partir dessa posição, pressione os braços para cima, estendendo totalmente os cotovelos antes de retornar à posição inicial. A forma correta é essencial para evitar lesões e maximizar os benefícios do exercício.\n\nEsse exercício é excelente para melhorar a força funcional, estabilidade do core e resistência muscular. Além disso, ele pode contribuir para a melhoria da postura e prevenção de lesões na parte superior do corpo."
     },
@@ -53141,8 +53150,8 @@
     "id": "8185",
     "name": "Elevação lateral de perna com faixa elástica",
     "nicknames": [],
-    "category": "Ombros",
-    "body_part": "Ombros",
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
     "equipment": "Faixa elástica",
     "instructions": {
       "pt": "A Elevação Lateral de Perna com Faixa Elástica é um exercício simples, mas altamente eficaz, destinado a fortalecer e tonificar os músculos da região lateral das coxas e glúteos.\n\nPara realizar o exercício, posicione uma faixa elástica em volta das pernas, logo acima dos joelhos. Em pé, com os pés na largura dos ombros, distribua o peso corporal para uma das pernas e eleve a outra lateralmente, contra a resistência da faixa. Mantenha o movimento controlado e evite inclinar-se para o lado.\n\nEsse exercício não só ajuda a desenvolver a força muscular, mas também melhora a estabilidade do quadril e a mobilidade da articulação, além de contribuir para a definição da região dos glúteos."
@@ -53158,7 +53167,7 @@
     "secondary_muscles": [
       "Glúteos"
     ],
-    "target": "Deltoides",
+    "target": "Glúteos",
     "image": "images/gdt/elevacao-lateral-de-perna-com-faixa-elastica-5951b76.webp",
     "gif_url": "videos/gdt/elevacao-lateral-de-perna-com-faixa-elastica-9c3023b.mp4",
     "media_id": null,
@@ -53169,8 +53178,8 @@
     "id": "8186",
     "name": "Elevação lateral de perna com faixa elástica deitado de lado",
     "nicknames": [],
-    "category": "Ombros",
-    "body_part": "Ombros",
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
     "equipment": "Faixa elástica",
     "instructions": {
       "pt": "A Elevação Lateral de Perna com Faixa Elástica Deitado de Lado é um ótimo exercício para fortalecer os músculos da região lateral da coxa, incluindo os glúteos e os músculos abdutores. Este exercício pode ser particularmente benéfico para pessoas que buscam melhorar a estabilidade da pelve e a força do quadril, o que é essencial para atividades diárias e esportivas.\n\nPara realizar o exercício, deite-se de lado em uma superfície confortável, colocando a faixa elástica em torno das pernas, aproximadamente na altura dos joelhos. Mantenha a perna de baixo estendida e levante a perna de cima lentamente em direção ao teto, controlando o movimento. É importante manter o corpo alinhado e evitar a rotação do tronco durante a execução. Após atingir a altura máxima, retorne lentamente à posição inicial. Repita o movimento para uma quantidade desejada de repetições e, em seguida, troque de lado.\n\nEste exercício ajuda a aumentar a resistência muscular, contribui para a melhoria do equilíbrio e pode auxiliar na prevenção de lesões, especialmente em atividades que exigem força nas pernas."
@@ -53187,7 +53196,7 @@
       "Glúteos",
       "Core"
     ],
-    "target": "Deltoides",
+    "target": "Glúteos",
     "image": "images/gdt/elevacao-lateral-de-perna-com-faixa-elastica-deitado-de-lado-d9ca143.webp",
     "gif_url": "videos/gdt/elevacao-lateral-de-perna-com-faixa-elastica-deitado-de-lado-35fbbec.mp4",
     "media_id": null,
@@ -53406,7 +53415,7 @@
     "nicknames": [],
     "category": "Ombros",
     "body_part": "Ombros",
-    "equipment": "Halter",
+    "equipment": "Peso corporal",
     "instructions": {
       "pt": "A Elevação Lateral de Braços é um exercício de musculação que tem como principal objetivo fortalecer os músculos deltoides, que são os responsáveis pela movimentação e estabilidade dos ombros. Além disso, esse exercício também ativa músculos secundários, como o trapézio e os músculos que compõem a região da parte posterior do ombro.\n\nPara realizar a Elevação Lateral, o praticante deve ficar em pé, com os pés na largura dos ombros e segurando um par de halteres ao lado do corpo. A execução se dá ao levantar os braços lateralmente até atingir a altura dos ombros, mantendo uma leve flexão nos cotovelos e evitando que os ombros se elevem durante o movimento. O retorno deve ser controlado, permitindo um aumento gradativo da força e resistência muscular.\n\nEsse exercício é eficaz para desenvolver força e definição nos ombros, sendo muito utilizado em rotinas de musculação e em treinos voltados para a estética corporal. É importante lembrar que a execução correta é fundamental para evitar lesões e maximizar os benefícios do exercício."
     },
@@ -53432,8 +53441,8 @@
     "id": "8195",
     "name": "Escalador de montanha",
     "nicknames": [],
-    "category": "Peito",
-    "body_part": "Peito",
+    "category": "Cintura",
+    "body_part": "Cintura",
     "equipment": "Peso corporal",
     "instructions": {
       "pt": "O exercício Escalador de Montanha, também conhecido como Mountain Climbers, é um movimento dinâmico que simula a ação de escalar uma montanha. Ele pode ser realizado em uma posição de prancha, onde o praticante alterna rapidamente a aproximação dos joelhos em direção ao peito.\n\nEsse exercício é excelente para o trabalho cardiovascular, ajudando a aumentar a frequência cardíaca e a queimar calorias. Além disso, envolve diversos grupos musculares, como os abdominais, peitorais, ombros e pernas, promovendo força e resistência muscular. Também melhora a coordenação e a agilidade, sendo uma ótima adição a treinos funcionais ou de alta intensidade.\n\nPor conta de sua natureza de alta intensidade, é importante manter a forma adequada durante a execução para evitar lesões. Começar devagar e aumentar a intensidade gradualmente pode trazer melhores resultados e segurança."
@@ -53450,7 +53459,7 @@
       "Core",
       "Ombros"
     ],
-    "target": "Peitorais",
+    "target": "Abdômen",
     "image": "images/gdt/escalador-de-montanha-7c56148.webp",
     "gif_url": "videos/gdt/escalador-de-montanha-0869f9f.mp4",
     "media_id": null,
@@ -53463,7 +53472,7 @@
     "nicknames": [],
     "category": "Cintura",
     "body_part": "Cintura",
-    "equipment": "Peso corporal",
+    "equipment": "Faixa elástica",
     "instructions": {
       "pt": "O exercício Esquiador com Gymstick é uma atividade que simula o movimento do esqui, proporcionando um excelente treino cardiovascular e de força. Este exercício é eficaz para fortalecer a parte superior do corpo, as pernas e o core, melhorando a resistência muscular e a coordenação. Durante o movimento, você utiliza o Gymstick para realizar puxadas e empurrões, ativando os músculos das costas, ombros, peitorais e membros inferiores. Além disso, o Esquiador com Gymstick também trabalha o equilíbrio e a estabilidade, essenciais para diversas atividades físicas.\n\nPara executar o exercício, posicione-se com os pés afastados na largura dos ombros e segure as extremidades do Gymstick com as mãos. Flexione levemente os joelhos e ative o core. Em seguida, simule o movimento de esqui: empurre o Gymstick para frente enquanto uma perna se afunda para trás, alternando esse movimento de forma fluida. É importante manter a postura correta, com a coluna ereta, evitando a sobrecarga nas articulações."
     },
@@ -53597,11 +53606,11 @@
   },
   {
     "id": "8201",
-    "name": "Extensão de perna reta",
+    "name": "Extensão de quadril em quatro apoios com perna reta",
     "nicknames": [],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
-    "equipment": "Máquina de alavanca",
+    "equipment": "Peso corporal",
     "instructions": {
       "pt": "O exercício de Extensão de Perna Reta é um movimento de fortalecimento focado nos músculos do quadríceps, que são os músculos na parte frontal da coxa. Este exercício é comumente realizado em máquinas específicas nos academias, onde você se senta e estende as pernas para frente contra a resistência.\n\nAo realizar a Extensão de Perna Reta, você ativa principalmente o músculo reto femoral e os vastos laterais e intermediários, que juntos ajudam na extensão do joelho. Isso é importante para várias atividades diárias e esportivas, como correr, saltar e até mesmo sentar e levantar-se de uma cadeira.\n\nAlém de aumentar a força muscular, este exercício pode contribuir para a melhora da resistência, estabilidade e controle do movimento nas atividades funcionais, além de ajudar a definir a musculatura da coxa."
     },
@@ -53616,7 +53625,7 @@
     "secondary_muscles": [
       "Isquiotibiais"
     ],
-    "target": "Quadríceps",
+    "target": "Glúteos",
     "image": "images/gdt/extensao-de-perna-reta-47fd843.webp",
     "gif_url": "videos/gdt/extensao-de-perna-reta-5bcaae8.mp4",
     "media_id": null,
@@ -53691,7 +53700,7 @@
     "nicknames": [],
     "category": "Braços",
     "body_part": "Braços",
-    "equipment": "Peso corporal",
+    "equipment": "Faixa elástica",
     "instructions": {
       "pt": "O exercício de extensão de tríceps acima da cabeça é uma excelente maneira de trabalhar a parte posterior dos braços, especificamente os músculos tríceps braquial. Este exercício não só fortalece essa região, como também ajuda a melhorar a estabilidade e a mobilidade do ombro.\n\nPara realizar este exercício com o Gymstick, comece segurando o equipamento com ambas as mãos em uma posição acima da cabeça, com os cotovelos próximos às orelhas. Em seguida, flexione lentamente os cotovelos, levando a barra do Gymstick atrás da cabeça, e então estenda os braços novamente, voltando à posição inicial.\n\nEste movimento deve ser feito de forma controlada e concentrada, evitando movimentos bruscos. É importante manter a postura correta, com o tronco ereto e os abdominais contraídos, para prevenir lesões."
     },
@@ -53984,8 +53993,8 @@
     "id": "8214",
     "name": "Flexão de ombro com faixa",
     "nicknames": [],
-    "category": "Peito",
-    "body_part": "Peito",
+    "category": "Ombros",
+    "body_part": "Ombros",
     "equipment": "Faixa elástica",
     "instructions": {
       "pt": "O exercício de Flexão de Ombro com Faixa é uma atividade essencial para fortalecer os músculos da parte superior do corpo, especialmente o deltoide anterior, o peitoral maior e os músculos estabilizadores da escápula.\n\nPara realizar o exercício, você deve ficar em pé, segurando uma faixa elástica com as duas mãos. As mãos devem estar na largura dos ombros e a faixa deve estar esticada. Com os pés firmes no chão, comece a levantar os braços à frente do corpo, até que fiquem paralelos ao chão, mantendo a postura ereta. Então, retorne lentamente à posição inicial.\n\nEste exercício possui vários benefícios, incluindo a melhora da mobilidade do ombro, aumento da força muscular e maior estabilidade articular, o que pode ajudar na prevenção de lesões e melhorar a performance em atividades do dia a dia e em outros treinos."
@@ -54001,7 +54010,7 @@
     "secondary_muscles": [
       "Ombros"
     ],
-    "target": "Peitorais",
+    "target": "Deltoides",
     "image": "images/gdt/flexao-de-ombro-com-faixa-ea64833.webp",
     "gif_url": "videos/gdt/flexao-de-ombro-com-faixa-1e823fa.mp4",
     "media_id": null,
@@ -54043,7 +54052,7 @@
     "nicknames": [],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
-    "equipment": "Peso corporal",
+    "equipment": "Faixa elástica",
     "instructions": {
       "pt": "O exercício Glúteo Coice com Gymstick é uma variação eficaz para tonificar e fortalecer os músculos glúteos e isquiotibiais. A execução desse movimento tem como objetivo principal isolar a região dos glúteos, proporcionando um trabalho específico para o fortalecimento da parte posterior da coxa e do quadril, além de ajudar na melhora da estabilidade e postura corporal.\n\nPara realizar o Glúteo Coice, inicie posicionando-se em quatro apoios, com as mãos e joelhos no chão. Com um Gymstick posicionado atrás do joelho da perna que ficará estendida, execute uma extensão da perna para trás, contraindo os glúteos ao final do movimento. É importante manter a coluna alinhada e evitar compensações, para garantir a correta ativação dos músculos e prevenir lesões.\n\nEsse exercício é ideal para quem busca fortalecer a musculatura dos glúteos, melhorar a estética da região e aumentar a potência nas atividades físicas que exigem força nas pernas. A inclusão desse movimento em uma rotina de treinamento pode trazer ótimos resultados quando combinado com outras atividades focadas na parte inferior do corpo."
     },
@@ -54244,7 +54253,7 @@
     "nicknames": [],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
-    "equipment": "Máquina de alavanca",
+    "equipment": "Faixa elástica",
     "instructions": {
       "pt": "O exercício Leg Press Alternado Deitado com Gymstick é uma variação do tradicional leg press que foca em trabalhar a musculatura das pernas, especialmente quadríceps, glúteos e isquiotibiais. Utilizando o Gymstick, um equipamento versátil que combina resistência e suporte, esse exercício promove não apenas o fortalecimento muscular, mas também melhora a estabilidade e a mobilidade articular.\n\nPara realizar o Leg Press Alternado Deitado, o praticante deve se posicionar em um banco com o Gymstick estendido na frente. Ao deitar, as pernas são levantadas alternadamente, pressando o Gymstick contra uma superfície de resistência. Esse movimento permite uma ativação muscular unilateral, o que é benéfico para corrigir desequilíbrios de força entre as pernas.\n\nAlém disso, esse exercício auxilia na melhora da propriocepção, contribuindo para um padrão de movimento mais eficiente e seguro em atividades do dia a dia e em outras práticas esportivas."
     },
@@ -54768,8 +54777,8 @@
     "id": "8241",
     "name": "Remada com banda de resistência curvada para deltoides posterior",
     "nicknames": [],
-    "category": "Costas",
-    "body_part": "Costas",
+    "category": "Ombros",
+    "body_part": "Ombros",
     "equipment": "Faixa elástica",
     "instructions": {
       "pt": "A Remada com Banda de Resistência Curvada é um exercício eficaz voltado principalmente para o fortalecimento dos músculos deltoides posteriores, assim como os músculos das costas, como o trapezio e o romboide. Este exercício é particularmente benéfico para melhorar a postura e a estabilidade dos ombros.\n\nPara executar a remada, comece segurando uma banda de resistência com as duas mãos. Posicione-se com os pés na largura dos ombros e uma leve flexão nos joelhos. Dobre-se para frente a partir da cintura, mantendo as costas retas e o abdômen contraído. Puxe a banda em direção ao seu corpo, mantendo os cotovelos próximos ao tronco e os ombros relaxados. Concentre-se em fechar as escápulas ao final do movimento, em seguida, retorne lentamente à posição inicial.\n\nA Remada com Banda de Resistência Curvada não só ajuda a desenvolver a força muscular, mas também melhora a mobilidade dos ombros e a resistência muscular geral. Este exercício pode ser facilmente adaptado a diferentes níveis de condicionamento físico, ajustando a tensão da banda de resistência."
@@ -54787,7 +54796,7 @@
       "Trapézio",
       "Core"
     ],
-    "target": "Dorsais",
+    "target": "Deltoides",
     "image": "images/gdt/remada-com-banda-de-resistencia-curvada-para-deltoides-posterior-01724fa.webp",
     "gif_url": "videos/gdt/remada-com-banda-de-resistencia-curvada-para-deltoides-posterior-ed75e17.mp4",
     "media_id": null,
@@ -54830,7 +54839,7 @@
     "nicknames": [],
     "category": "Costas",
     "body_part": "Costas",
-    "equipment": "Peso corporal",
+    "equipment": "Faixa elástica",
     "instructions": {
       "pt": "A remada unilateral com gymstick é um exercício de força que visa fortalecer a musculatura das costas, ombros e braços. Ao realizar este movimento, você ativa principalmente o músculo latíssimo do dorso, além de trabalhar os músculos rombóides, trapézio e bíceps. A execução adequada também ajuda a melhorar a postura e a estabilidade do tronco.\n\nPara realizar a remada unilateral com gymstick, comece posicionado em pé, com os pés na largura dos ombros e uma extremidade do gymstick fixada no chão. Com a outra extremidade, segure o gymstick com uma mão enquanto se inclina levemente para frente. Mantenha as costas retas e, em seguida, puxe o gymstick em direção ao seu tronco, mantendo o cotovelo próximo ao corpo. Complete o movimento com controle e retorne à posição inicial. Alterne os lados após completar a série desejada."
     },
@@ -54977,7 +54986,7 @@
     "nicknames": [],
     "category": "Braços",
     "body_part": "Braços",
-    "equipment": "Peso corporal",
+    "equipment": "Com peso",
     "instructions": {
       "pt": "A rosca martelo com garrafa de água é um excelente exercício para fortalecer e tonificar os músculos dos braços, especialmente os bíceps e os músculos do antebraço.\n\nPara realizar este exercício, você começará em pé, segurando uma garrafa de água em cada mão, com os braços estendidos ao longo do corpo e as palmas das mãos voltadas para dentro.\n\nEm seguida, você deve flexionar os cotovelos, trazendo as garrafas em direção aos ombros, mantendo os braços próximos ao corpo. É importante contrair os bíceps durante o movimento e, ao finalizar, desça lentamente as garrafas de volta à posição inicial.\n\nEsse exercício ajuda a aumentar a força da parte superior do corpo, melhora a resistência muscular e ajuda na estabilidade do punho, sendo ideal para quem procura um treino com materiais simples e acessíveis."
     },
@@ -55556,7 +55565,7 @@
     "nicknames": [],
     "category": "Braços",
     "body_part": "Braços",
-    "equipment": "Peso corporal",
+    "equipment": "Faixa elástica",
     "instructions": {
       "pt": "O exercício Tríceps Francês em Pé com Gymstick é uma excelente opção para fortalecer e definir os músculos do tríceps. Este movimento se concentra na extensão dos cotovelos, trabalhando especificamente a parte posterior dos braços, o que contribui para uma aparência mais tonificada e musculosa.\n\nPara executar o exercício, fique em pé com os pés na largura dos ombros, segurando o Gymstick com ambas as mãos acima da cabeça. Mantendo os cotovelos próximos ao rosto, flexione-os para trazer o Gymstick atrás da cabeça, depois estenda os braços novamente para a posição inicial. É fundamental manter o core ativado e os joelhos levemente flexionados durante o movimento para garantir a estabilidade e evitar lesões.\n\nIncorporar o Tríceps Francês em Pé com Gymstick em sua rotina pode ajudar a melhorar a força funcional, beneficiando atividades diárias além de contribuir para um desempenho melhor em exercícios que envolvem a parte superior do corpo."
     },
@@ -55900,7 +55909,7 @@
   },
   {
     "id": "8280",
-    "name": "Gluteos coice nilateral polia baixa",
+    "name": "Glúteo coice unilateral na polia baixa",
     "nicknames": [],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
@@ -56337,7 +56346,7 @@
     "nicknames": [],
     "category": "Peito",
     "body_part": "Peito",
-    "equipment": "Faixa elástica",
+    "equipment": "Peso corporal",
     "instructions": {
       "pt": "O Alongamento Assistido Reverso é um exercício projetado para melhorar a flexibilidade e a mobilidade dos músculos peitorais e dos ombros. Este alongamento é especialmente benéfico para pessoas que passam longos períodos em posições que encurtam esses músculos, como ao trabalhar em frente a um computador.\n\nPara executar o alongamento, uma pessoa deve se posicionar em pé ou sentada, segurando um parceiro ou utilizando uma faixa elástica. Ao focar na abertura do peito, a pessoa deve puxar suavemente os braços para trás, garantindo que o peito se projete para frente. É importante manter a postura, agindo de forma a não forçar a região do pescoço.\n\nEsse exercício ajuda a corrigir a postura, aliviando a tensão acumulada na região peitoral e melhorando a amplitude de movimento dos ombros, o que pode resultar em um melhor desempenho em atividades físicas diárias e esportivas."
     },
@@ -57809,7 +57818,7 @@
     "nicknames": [],
     "category": "Ombros",
     "body_part": "Ombros",
-    "equipment": "Halter",
+    "equipment": "Peso corporal",
     "instructions": {
       "pt": "A flexão alternada de ombro é um exercício de fortalecimento que foca nos músculos do ombro, além de envolver também o core (músculos do tronco). Este movimento é realizado com halteres, onde você se posiciona de pé ou sentado, segurando um halter em cada mão.\n\nPara executar o exercício, comece em uma posição neutra, com os pés na largura dos ombros. Levante um halter para o lado, enquanto mantém o outro halter em repouso ao seu lado. Após completar a primeira repetição, altere os braços. Este movimento ajuda a melhorar a força, a estabilidade e a coordenação do ombro, sendo benéfico para diversas atividades diárias e esportivas.\n\nAlém disso, a flexão alternada de ombro é excelente para desenvolver a simetria muscular, já que cada lado do corpo é trabalhado de maneira independente."
     },
@@ -57837,7 +57846,7 @@
     "nicknames": [],
     "category": "Cintura",
     "body_part": "Cintura",
-    "equipment": "Halter",
+    "equipment": "Peso corporal",
     "instructions": {
       "pt": "O exercício de Inclinação Lateral é uma ótima forma de trabalhar a musculatura oblíqua do abdômen, assim como os músculos laterais do tronco. Este movimento é eficiente para tonificar e fortalecer a região da cintura, ajudando na definição do contorno abdominal e na melhora da estabilidade do core.\n\nPara realizar o exercício, fique de pé com os pés na largura dos ombros e uma leve flexão nos joelhos. Com um peso em uma das mãos (pode ser um haltere ou outro objeto que ofereça resistência), incline-se lateralmente para o lado oposto ao peso, mantendo o tronco reto e os quadris fixos. Em seguida, retorne à posição inicial, repetindo a ação para o número desejado de repetições e alternando os lados.\n\nAlém de ajudar na definição abdominal, a Inclinação Lateral também contribui para a mobilidade e flexibilidade da coluna, podendo ser um ótimo complemento para outros treinos que envolvem a região do core e da parte superior do corpo."
     },
@@ -57865,7 +57874,7 @@
     "nicknames": [],
     "category": "Cintura",
     "body_part": "Cintura",
-    "equipment": "Halter",
+    "equipment": "Peso corporal",
     "instructions": {
       "pt": "O exercício de Inclinação Lateral em Pé é uma excelente atividade para fortalecer e definir a musculatura oblíqua do abdômen, além de trabalhar os músculos laterais do tronco e melhorar a flexibilidade. Ao realizar este movimento, você também ativa os músculos das costas, promovendo uma melhora na postura e estabilidade do core.\n\nPara executar a Inclinação Lateral em Pé, comece em pé com os pés alinhados na largura dos ombros e os braços ao longo do corpo ou segurando halteres. Inspire, elevando um dos braços acima da cabeça, e ao expirar, incline o tronco lateralmente para o lado oposto do braço levantado. Mantenha a posição por alguns segundos e volte à posição inicial. Repita do outro lado.\n\nEste exercício pode ser incorporado em rotinas de treinamento, sendo eficaz tanto para quem busca aumento de força muscular quanto para aqueles que desejam uma melhor definição abdominal. No entanto, é fundamental realizar o movimento com controle e evitar compensações, como inclinar o quadril ou usar a força dos ombros."
     },
@@ -57892,8 +57901,8 @@
     "id": "8350",
     "name": "Joelho alternado no peito",
     "nicknames": [],
-    "category": "Peito",
-    "body_part": "Peito",
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
     "equipment": "Peso corporal",
     "instructions": {
       "pt": "O exercício \"Joelho Alternado no Peito\" é uma excelente atividade para quem busca fortalecer a região do core, melhorar a flexibilidade e aumentar a coordenação motora.\n\nEsse exercício é realizado em posição deitada, geralmente de costas, onde uma perna é elevada em direção ao peito, enquanto a outra permanece estendida. A alternância entre as pernas requer um bom controle abdominal, contribuindo para a estabilização do tronco e ativação dos músculos abdominais, oblíquos e flexores do quadrilátero.\n\nAlém de trabalhar a força, o Joelho Alternado no Peito também melhora a circulação sanguínea e contribui para a mobilidade das articulações, fazendo dele uma ótima opção para incluir em rotinas de aquecimento e de fortalecimento."
@@ -57912,7 +57921,7 @@
       "Oblíquos",
       "Flexores do quadril"
     ],
-    "target": "Peitorais",
+    "target": "Glúteos",
     "image": "images/gdt/joelho-alternado-no-peito-1936709.webp",
     "gif_url": "videos/gdt/joelho-alternado-no-peito-308fe87.mp4",
     "media_id": null,
@@ -58014,8 +58023,8 @@
     "id": "8354",
     "name": "Postura de meio sapo",
     "nicknames": [],
-    "category": "Ombros",
-    "body_part": "Ombros",
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
     "equipment": "Peso corporal",
     "instructions": {
       "pt": "A Postura de Meio Sapo, também conhecida como \"Half Frog Pose\" em inglês, é uma posição de yoga que visa alongar e fortalecer a região dos quadris e da parte interna das coxas.\n\nPara realizar o exercício, comece na posição de quatro apoios, com as mãos alinhadas sob os ombros e os joelhos sob os quadris. Em seguida, deslize lentamente o joelho direito para fora, mantendo a perna esquerda esticada. A posição deve criar um alongamento confortável na parte interna da coxa direita.\n\nEssa postura é benéfica para melhorar a flexibilidade dos quadris, aliviar a tensão nas costas e aumentar a mobilidade geral do corpo. Além disso, pode ajudar na preparação para posturas mais avançadas de yoga que exigem uma boa abertura de quadris."
@@ -58031,7 +58040,7 @@
     "secondary_muscles": [
       "Costas superiores"
     ],
-    "target": "Deltoides",
+    "target": "Quadríceps",
     "image": "images/gdt/postura-de-meio-sapo-5b0d7a7.webp",
     "gif_url": "videos/gdt/postura-de-meio-sapo-4a219ba.mp4",
     "media_id": null,
@@ -58853,7 +58862,7 @@
     "nicknames": [],
     "category": "Ombros",
     "body_part": "Ombros",
-    "equipment": "Halter",
+    "equipment": "Peso corporal",
     "instructions": {
       "pt": "O exercício de rotação externa do ombro é fundamental para o fortalecimento e a estabilização da articulação do ombro, além de auxiliar na correção de desequilíbrios musculares. Este movimento foca principalmente nos músculos do manguito rotador, que são essenciais para a saúde e a funcionalidade do ombro.\n\nA execução correta da rotação externa é feita geralmente com o uso de um haltere leve ou bandas elásticas. Em pé ou sentado, mantenha o cotovelo a 90 graus, próximo ao corpo, e, em seguida, gire o antebraço para fora, mantendo o ombro fixo. É importante realizar o exercício de maneira controlada, evitando movimentos bruscos que podem levar a lesões.\n\nEsse exercício é particularmente benéfico para atletas e praticantes de atividades físicas, pois ajuda a prevenir lesões e melhora a performance em esportes que envolvem lançamentos ou movimentos acentuados dos braços."
     },
@@ -58935,7 +58944,7 @@
     "nicknames": [],
     "category": "Ombros",
     "body_part": "Ombros",
-    "equipment": "Halter",
+    "equipment": "Peso corporal",
     "instructions": {
       "pt": "A rotação interna do ombro é um exercício fundamental para a mobilidade e estabilidade da articulação do ombro. Este exercício é executado geralmente com o auxílio de um elástico ou haltere e foca em fortalecer os músculos rotadores do manguito, principalmente o subescapular.\n\nAo realizar a rotação interna, você ajuda a melhorar a força da parte anterior do ombro, o que é crucial para prevenir lesões, especialmente em atletas que praticam esportes que exigem movimentos de arremesso ou levantamento. Além disso, este exercício contribui para uma melhor postura e funcionalidade na vida cotidiana."
     },
@@ -59016,8 +59025,8 @@
     "id": "8390",
     "name": "Toques de dedos em pé",
     "nicknames": [],
-    "category": "Ombros",
-    "body_part": "Ombros",
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
     "equipment": "Peso corporal",
     "instructions": {
       "pt": "O exercício de Toques de Dedos em Pé é uma atividade física que visa aumentar a flexibilidade dos músculos das pernas e da coluna, além de melhorar o equilíbrio. Para realizá-lo, fique em pé com os pés alinhados na largura dos ombros. Lentamente, dobre-se para frente, tentando tocar a ponta dos pés com as mãos, enquanto mantém as pernas retas. O objetivo é sentir um alongamento na parte posterior das pernas e na região da coluna. Mantenha a posição por alguns segundos e retorne à posição inicial.\n\nEsse exercício pode ser benéfico para melhorar a postura, aumentar a flexibilidade e aliviar a tensão nas costas. Além disso, é uma ótima maneira de iniciar um aquecimento antes de atividades físicas mais intensas."
@@ -59032,7 +59041,7 @@
     "secondary_muscles": [
       "Costas superiores"
     ],
-    "target": "Deltoides",
+    "target": "Isquiotibiais",
     "image": "images/gdt/toques-de-dedos-em-pe-7d5c155.webp",
     "gif_url": "videos/gdt/toques-de-dedos-em-pe-e4d25f8.mp4",
     "media_id": null,
@@ -59525,7 +59534,7 @@
     "nicknames": [],
     "category": "Ombros",
     "body_part": "Ombros",
-    "equipment": "Peso corporal",
+    "equipment": "Halter",
     "instructions": {
       "pt": "A Elevação Lateral com Braço Flexionado é um exercício eficaz para fortalecer e tonificar os músculos do ombro, especialmente o deltóide lateral e a parte superior das costas. Neste exercício, o movimento é realizado com os braços flexionados em um ângulo de 90 graus, o que ajuda a reduzir a pressão sobre as articulações do ombro e a focar mais na ativação muscular durante a elevação. A execução correta do movimento não só aumenta a força muscular na região, mas também melhora a estabilidade e a mobilidade do ombro.\n\nComo realizar:\n\nRecomenda-se realizar 2-3 séries de 10-15 repetições, ajustando o peso conforme sua capacidade."
     },
@@ -59789,7 +59798,7 @@
     "nicknames": [],
     "category": "Pernas inferiores",
     "body_part": "Pernas inferiores",
-    "equipment": "Peso corporal",
+    "equipment": "Com peso",
     "instructions": {
       "pt": "A Elevação de Panturrilha Sentado com Peso é um exercício essencial para o fortalecimento dos músculos da panturrilha, especificamente o gastrocnêmio e o sóleo. Este exercício é realizado em uma posição sentada, o que permite uma carga controlada e maior isolamento dos músculos da panturrilha, evitando a ativação excessiva dos músculos das pernas.\n\nPara realizar este exercício, siga estas etapas:\n\nAlém de fortalecer a panturrilha, a Elevação de Panturrilha Sentado ajuda a melhorar a estabilidade do tornozelo e pode contribuir para um desempenho melhor em atividades esportivas que envolvem saltos e corrida. É um exercício importante para qualquer rotina de treinamento voltada para resistência ou força dos membros inferiores."
     },
@@ -60251,11 +60260,11 @@
   },
   {
     "id": "8433",
-    "name": "Supino com pegada aberta",
+    "name": "Supino com barra pegada aberta",
     "nicknames": [],
     "category": "Peito",
     "body_part": "Peito",
-    "equipment": "Peso corporal",
+    "equipment": "Barra",
     "instructions": {
       "pt": "O supino com pegada aberta é um exercício essencial para o desenvolvimento da força e massa muscular na região do peito, especialmente no músculo peitoral maior.\n\nQuando realizado com uma pegada mais ampla, este exercício ativa não apenas o peitoral, mas também os músculos estabilizadores das articulações do ombro e do tríceps. A pegada aberta proporciona um maior alongamento do peitoral durante a fase de descida, o que pode resultar em uma maior ativação muscular. Dessa forma, o supino com pegada aberta é uma excelente opção para aqueles que desejam enfatizar a parte externa do peito e melhorar a definição muscular nessa região."
     },
@@ -60313,7 +60322,7 @@
     "nicknames": [],
     "category": "Peito",
     "body_part": "Peito",
-    "equipment": "Peso corporal",
+    "equipment": "Halter",
     "instructions": {
       "pt": "O supino no banco inclinado a 30 graus com pegada invertida é um exercício fundamental para o desenvolvimento da musculatura peitoral, especialmente a parte superior do peito. A inclinação do banco ajuda a ativar mais fibras musculares do que o supino reto, enquanto a pegada invertida (com as palmas das mãos voltadas para você) alterara o ângulo de carga e foca mais nos músculos do peitoral maior e deltoides anteriores.\n\nAo realizar este exercício, você também trabalha os tríceps e a estabilidade dos ombros, proporcionando um desenvolvimento muscular equilibrado e um aumento de força funcional. A pegada invertida pode ajudar a reduzir a tensão nos ombros, tornando o movimento mais seguro para muitas pessoas."
     },
@@ -60636,37 +60645,6 @@
     "attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "id": "8446",
-    "name": "Agachamento frontal",
-    "nicknames": [],
-    "category": "Pernas superiores",
-    "body_part": "Pernas superiores",
-    "equipment": "Peso corporal",
-    "instructions": {
-      "pt": "O Agachamento Frontal é um excelente exercício de treinamento de força que visa trabalhar principalmente os músculos das pernas e glúteos, mas também envolve o core (músculos abdominais e lombares) para estabilização. Neste exercício, a carga (geralmente uma barra) é posicionada na parte frontal dos ombros, o que exige uma postura ereta e ativa, contrastando com o agachamento tradicional.\n\nOs pricipais benefícios do Agachamento Frontal incluem:\n\nPara realizar o Agachamento Frontal, é fundamental seguir algumas etapas:"
-    },
-    "instruction_steps": {
-      "pt": [
-        "O Agachamento Frontal é um excelente exercício de treinamento de força que visa trabalhar principalmente os músculos das pernas e glúteos, mas também envolve o core (músculos abdominais e lombares) para estabilização. Neste exercício, a carga (geralmente uma barra) é posicionada na parte frontal dos ombros, o que exige uma postura ereta e ativa, contrastando com o agachamento tradicional.",
-        "Os pricipais benefícios do Agachamento Frontal incluem:",
-        "Para realizar o Agachamento Frontal, é fundamental seguir algumas etapas:"
-      ]
-    },
-    "muscle_group": "Glúteos",
-    "secondary_muscles": [
-      "Glúteos",
-      "Core",
-      "Lombar",
-      "Ombros"
-    ],
-    "target": "Quadríceps",
-    "image": "images/gdt/agachamento-frontal-48b2aba.webp",
-    "gif_url": "videos/gdt/agachamento-frontal-ba00153.mp4",
-    "media_id": null,
-    "created_at": "2026-11-24T12:00:00+00:00",
-    "attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "id": "8447",
     "name": "Agachamento frontal com barra no Smith",
     "nicknames": [],
@@ -60823,7 +60801,7 @@
     "nicknames": [],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
-    "equipment": "Peso corporal",
+    "equipment": "Barra",
     "instructions": {
       "pt": "O Agachamento com Trava é um exercício muito eficaz que visa fortalecer os músculos das pernas, glúteos e core (região central do corpo). Durante a execução desse exercício, o praticante se agacha como se estivesse sentado em uma cadeira, mantendo a coluna ereta e os joelhos alinhados com os pés. A 'trava' refere-se à técnica de como posicionar os pés e os joelhos, garantindo que a movimentação seja controlada e segura.\n\nEsse exercício não apenas melhora a força muscular, mas também contribui para a mobilidade, estabilidade e resistência. Além disso, ao realizar o Agachamento com Trava, você pode ajudar a corrigir a postura e reduzir o risco de lesões, já que fortalece grupos musculares importantes utilizados em diversas atividades diárias."
     },
@@ -61149,46 +61127,11 @@
     "attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "id": "8463",
-    "name": "Bom dia",
-    "nicknames": [],
-    "category": "Pernas superiores",
-    "body_part": "Pernas superiores",
-    "equipment": "Peso corporal",
-    "instructions": {
-      "pt": "O exercício \"Bom Dia\" é um movimento de aquecimento e fortalecimento que se concentra na região posterior do corpo, especialmente na cadeia muscular das costas, glúteos e isquiotibiais. Sua execução correta ajuda a melhorar a flexibilidade da coluna vertebral, além de ativar os músculos que suportam a postura.\n\nComo executar:\n\n1. Fique em pé, com os pés alinhados com os ombros e os joelhos ligeiramente flexionados.\n\n2. Mantendo a coluna reta e os ombros relaxados, segure uma barra ou, se preferir, coloque as mãos em volta da cintura.\n\n3. Incline-se à frente a partir da cintura, mantendo as costas retas e a cabeça alinhada com a coluna.\n\n4. Desça até sentir um leve alongamento nos músculos posteriores da coxa e dos glúteos.\n\n5. Retorne à posição inicial contraindo os músculos das costas e dos glúteos.\n\nO exercício \"Bom Dia\" é excelente para pré-treinos, pois ativa os músculos que serão trabalhados em atividades posteriores, ajudando a prevenir lesões e aumentando a performance."
-    },
-    "instruction_steps": {
-      "pt": [
-        "O exercício \"Bom Dia\" é um movimento de aquecimento e fortalecimento que se concentra na região posterior do corpo, especialmente na cadeia muscular das costas, glúteos e isquiotibiais. Sua execução correta ajuda a melhorar a flexibilidade da coluna vertebral, além de ativar os músculos que suportam a postura.",
-        "Como executar:",
-        "1. Fique em pé, com os pés alinhados com os ombros e os joelhos ligeiramente flexionados.",
-        "2. Mantendo a coluna reta e os ombros relaxados, segure uma barra ou, se preferir, coloque as mãos em volta da cintura.",
-        "3. Incline-se à frente a partir da cintura, mantendo as costas retas e a cabeça alinhada com a coluna.",
-        "4. Desça até sentir um leve alongamento nos músculos posteriores da coxa e dos glúteos.",
-        "5. Retorne à posição inicial contraindo os músculos das costas e dos glúteos.",
-        "O exercício \"Bom Dia\" é excelente para pré-treinos, pois ativa os músculos que serão trabalhados em atividades posteriores, ajudando a prevenir lesões e aumentando a performance."
-      ]
-    },
-    "muscle_group": "Costas superiores",
-    "secondary_muscles": [
-      "Costas superiores",
-      "Glúteos",
-      "Ombros"
-    ],
-    "target": "Isquiotibiais",
-    "image": "images/gdt/bom-dia-da642b6.webp",
-    "gif_url": "videos/gdt/bom-dia-08f1bef.mp4",
-    "media_id": null,
-    "created_at": "2026-11-24T12:00:00+00:00",
-    "attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "id": "8464",
     "name": "Descida de um pé só",
     "nicknames": [],
-    "category": "Pernas inferiores",
-    "body_part": "Pernas inferiores",
+    "category": "Pernas superiores",
+    "body_part": "Pernas superiores",
     "equipment": "Peso corporal",
     "instructions": {
       "pt": "O exercício \"Descida de um Pé Só\" é uma atividade que visa melhorar a força, equilíbrio e estabilidade dos membros inferiores, especialmente das pernas e tornozelos. Este exercício é particularmente benéfico para o fortalecimento dos músculos do quadríceps, isquiotibiais e glúteos, além de ativar o core, promovendo uma maior consciência corporal.\n\nPara realizar a descida de um pé só, comece em pé com os pés alinhados e a coluna ereta. Em seguida, levante um dos pés do chão, mantendo o joelho ligeiramente flexionado. Desça lentamente, flexionando a perna de apoio até que a parte de trás do joelho se aproxime do chão. O objetivo é controlar a descida e retornar à posição inicial. Repita com a outra perna. Lembre-se de manter os músculos do core contraídos durante todo o movimento para garantir a estabilidade."
@@ -61206,7 +61149,7 @@
       "Glúteos",
       "Core"
     ],
-    "target": "Panturrilhas",
+    "target": "Quadríceps",
     "image": "images/gdt/descida-de-um-pe-so-e9f5ded.webp",
     "gif_url": "videos/gdt/descida-de-um-pe-so-96a2a54.mp4",
     "media_id": null,
@@ -61395,7 +61338,7 @@
     "nicknames": [],
     "category": "Pernas superiores",
     "body_part": "Pernas superiores",
-    "equipment": "Halter",
+    "equipment": "Barra",
     "instructions": {
       "pt": "O Levantamento Terra Zercher é um exercício composto que foca em diversos grupos musculares, incluindo quadris, glúteos, costas, coxas e até mesmo o core. O movimento é realizado com os halteres ou barras posicionados na frente do corpo, geralmente em uma posição elevada, o que ajuda a minimizar a tensão nas costas durante a execução.\n\nEste exercício é particularmente eficaz para melhorar a força funcional, já que simula padrões de levantamento que utilizamos no dia a dia. Além disso, a posição das mãos junto ao corpo, como nos movimentos de empurrar e puxar, engaja os músculos de forma diferente, tornando-o um ótimo complemento para o treinamento de força geral.\n\nAo realizar o Levantamento Terra Zercher, é fundamental manter uma postura adequada. A coluna deve estar alinhada e os ombros retraídos, evitando assim lesões. A execução deve ser controlada, com atenção à respiração e ao controle do movimento durante a descida e subida."
     },
@@ -61598,11 +61541,11 @@
   },
   {
     "id": "8478",
-    "name": "Encolhimento acima da cabeça",
+    "name": "Encolhimento acima da cabeça com barra",
     "nicknames": [],
     "category": "Costas",
     "body_part": "Costas",
-    "equipment": "Halter",
+    "equipment": "Barra",
     "instructions": {
       "pt": "O Encolhimento Acima da Cabeça, também conhecido como Shoulder Shrug, é um exercício que visa desenvolver a força e a musculatura da região superior, especialmente os músculos trapézio e deltóides. Este movimento é realizado elevando os ombros em direção às orelhas, enquanto a barra, halteres ou qualquer outro peso é segurado acima da cabeça.\n\nExecução:\n\n1. Comece em pé, segurando a barra ou halteres com os braços estendidos acima da cabeça, com uma pegada um pouco maior que a largura dos ombros.\n\n2. Mantenha o tronco ereto e os pés firmes no chão.\n\n3. Inspire e, ao expirar, encolha os ombros para cima, tentando levar as orelhas em direção aos ombros.\n\n4. Mantenha a posição por um breve momento e depois, ao inspirar, retorne lentamente à posição inicial, controlando o movimento.\n\nEste exercício é excelente para melhorar a postura, estabilizar os ombros e aumentar a força funcional para atividades do dia a dia e esportes.Além disso, pode auxiliar na prevenção de lesões nessa região ao fortalecer os músculos acessórios."
     },
@@ -61746,10 +61689,10 @@
   },
   {
     "id": "8483",
-    "name": "Remada invertida com cable inclinado",
+    "name": "Crucifixo inverso curvado no cabo",
     "nicknames": [],
-    "category": "Costas",
-    "body_part": "Costas",
+    "category": "Ombros",
+    "body_part": "Ombros",
     "equipment": "Cabo",
     "instructions": {
       "pt": "A remada invertida com cabo inclinado é um exercício de treinamento de força que visa desenvolver a musculatura das costas, além de engajar os músculos dos braços e do core.\n\nPara realizar o exercício, você geralmente utiliza uma máquina de cabos, ajustando o cabo em uma posição baixa. Posicione-se de costas para a máquina, segurando o cabo com as duas mãos. Incline seu tronco para trás, mantendo uma linha reta da cabeça aos calcanhares, e puxe o cabo em direção ao seu corpo, contraindo as escápulas. Este movimento não apenas fortalece a musculatura das costas, mas também melhora a postura e a estabilidade do tronco.\n\nA remada invertida é especialmente eficaz para equilibrar a musculatura, uma vez que muitas atividades diárias e exercícios típicos tendem a enfatizar a parte da frente do corpo."
@@ -61766,7 +61709,7 @@
       "Costas superiores",
       "Core"
     ],
-    "target": "Trapézio",
+    "target": "Deltoides",
     "image": "images/gdt/remada-invertida-com-cable-inclinado-a636886.webp",
     "gif_url": "videos/gdt/remada-invertida-com-cable-inclinado-926745d.mp4",
     "media_id": null,
@@ -61779,7 +61722,7 @@
     "nicknames": [],
     "category": "Braços",
     "body_part": "Braços",
-    "equipment": "Halter",
+    "equipment": "Cabo",
     "instructions": {
       "pt": "O exercício de Extensão de Tríceps Invertida Unilateral é uma ótima opção para fortalecer e tonificar a parte de trás dos braços, especificamente os músculos tríceps braquial.\n\nPara realizar este exercício, você deve se posicionar com um pé à frente e uma mão em uma superfície estável (como um banco), mantendo o tronco inclinado ligeiramente para frente. Em seguida, pegue um haltere com a outra mão, mantendo o cotovelo próximo ao corpo. A partir dessa posição, estenda o braço, levando o haltere para trás até que o braço esteja completamente estendido, e então retorne à posição inicial. É importante controlar o movimento, evitando balanços.\n\nEste exercício ajuda a aumentar a força dos tríceps, melhora a resistência muscular e pode contribuir para uma maior definição nos músculos dos braços. Além disso, o unilateral permite que você trabalhe um lado de cada vez, ajudando a corrigir desequilíbrios de força."
     },
@@ -61939,11 +61882,11 @@
   },
   {
     "id": "8490",
-    "name": "Supino fechado",
+    "name": "Supino fechado com barra",
     "nicknames": [],
     "category": "Braços",
     "body_part": "Braços",
-    "equipment": "Peso corporal",
+    "equipment": "Barra",
     "instructions": {
       "pt": "O supino fechado é um exercício de musculação voltado principalmente para a musculatura do peitoral e tríceps. Diferente do supino tradicional, que utiliza uma pegada mais ampla, o supino fechado é executado com as mãos posicionadas mais próximas uma da outra, geralmente na largura dos ombros ou um pouco mais estreita. Isso provoca uma maior ativação dos músculos do tríceps e da parte interna do peito.\n\nPara realizar o exercício, deite-se em um banco plano com os pés firmes no chão. Segure a barra com as palmas voltadas para frente e as mãos alinhadas na largura dos ombros. Desça a barra controladamente até o peito e, em seguida, empurre-a de volta à posição inicial, mantendo sempre os cotovelos próximos ao corpo.\n\nO supino fechado é eficaz para aumentar a força e o volume muscular, além de ajudar na definição do tríceps e peitoral. É uma ótima opção para complementar o treino de força e pode ser incluído em qualquer rotina de musculação."
     },
