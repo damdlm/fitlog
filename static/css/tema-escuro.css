@@ -46,6 +46,8 @@
     --fl-c-sup-rgb: 27, 30, 35;           /* rgba(var(--fl-c-sup-rgb, 255, 255, 255), .92) */
     --fl-c-sup2: var(--fl-superficie-2);
     --fl-c-borda: var(--fl-borda);
+    --fl-c-corpo: #5b5e64;                /* mapa muscular: cabeça, mãos, pés (partes neutras) */
+    --fl-c-corpo-vazio: #3a3d43;          /* mapa muscular: músculo sem dado */
     --fl-c-txt: var(--fl-texto);
     --fl-c-txt2: var(--fl-texto-suave);
     --fl-c-txt-laranja: var(--fl-texto-laranja);

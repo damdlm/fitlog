@@ -343,18 +343,14 @@ def api_musculo_stats():
 @login_required
 @estatisticas_do_alvo
 def api_mapa_muscular():
-    """Séries por região no período (dias=N | inicio/fim | tudo=1; padrão
-    30 dias) com a média por semana e a faixa de referência, séries
-    planejadas pela ficha ativa e recuperação estimada por hora (sempre
-    agora). Ver services/mapa_muscular_service.py."""
+    """Séries da semana (?semana=0 atual, -1 anterior...; até 52 semanas
+    para trás) com a faixa de referência, séries planejadas pela ficha
+    ativa, fadiga estimada e força retida por músculo (sempre agora). Ver
+    services/mapa_muscular_service.py."""
     from services.mapa_muscular_service import MapaMuscularService
-    periodo, erro = _periodo_da_requisicao()
-    if erro:
-        return erro
-    if periodo is None:
-        hoje = EstatisticaService.hoje_brasil()
-        periodo = {'dia_inicio': hoje - timedelta(days=29), 'dia_fim': hoje}
-    return jsonify(MapaMuscularService.calcular(_uid_alvo(), periodo))
+    semana = request.args.get('semana', 0, type=int) or 0
+    semana = max(-52, min(0, semana))
+    return jsonify(MapaMuscularService.calcular(_uid_alvo(), semana))
 
 
 @api_bp.route("/nivel-forca")

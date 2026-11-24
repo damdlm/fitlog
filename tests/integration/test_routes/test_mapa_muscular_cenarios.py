@@ -1,8 +1,8 @@
 """Cenários de borda do mapa muscular: aluno sem nada, só cardio, carga zero,
-períodos curtos e "tudo", treino salvo de madrugada (UTC já no dia seguinte),
-relógio adiantado, nível de força nos extremos, planejado com ficha
-finalizada, permissões (vínculo inativo, admin, aluno alheio), parâmetros
-estranhos na API e valores inválidos de peso no perfil."""
+virada de semana, treino salvo de madrugada (UTC já no dia seguinte), relógio
+adiantado, treino com data futura, nível de força nos extremos, planejado com
+ficha finalizada, permissões (vínculo inativo, admin, aluno alheio),
+parâmetros estranhos na API e valores inválidos de peso no perfil."""
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -63,24 +63,25 @@ def _reg(u, v, t, dias, series, base=None, custom=None, salvo=None):
     return r
 
 
-def _p(dias):
-    h = mms._hoje()
-    return {'dia_inicio': h - timedelta(days=dias - 1), 'dia_fim': h}
+def _relogio(monkeypatch, hoje, agora):
+    monkeypatch.setattr(mms, '_hoje', lambda: hoje)
+    monkeypatch.setattr(mms, '_agora', lambda: agora)
 
 
 S10 = {'carga': 50, 'repeticoes': 10}
+TER = date(2026, 11, 24)
 
 
 class TestBordas:
     def test_usuario_sem_nada(self, app):
         with app.app_context():
             u = _u('zz_vazio')
-            for per, semanas in ((_p(30), 4.3), (None, 1), ({'dia_inicio': None, 'dia_fim': None}, 1)):
-                d = S.calcular(u.id, per)
-                assert all(r['series'] == 0 and r['series_semana'] == 0 and r['status'] == 'sem_treino'
-                           for r in d['regioes'].values())
+            for semana in (0, -1, -52):
+                d = S.calcular(u.id, semana)
+                assert all(r['series'] == 0 and r['estado'] == 'sem_treino' and r['retida'] == 0.5
+                           and r['exercicios'] == [] and r['ultimo_treino'] is None for r in d['regioes'].values())
                 assert d['planejado'] == {'treinos': 0, 'sessoes_semana': None, 'ficha': None}
-                assert d['semanas'] == semanas and d['max_series'] == 0
+                assert d['max_series'] == 0
             assert S.niveis_forca(u.id) == {'peso_kg': None, 'genero': 'M', 'levantamentos': []}
 
     def test_so_cardio_exercicio_sem_musculo_e_alvo_sem_regiao(self, app):
@@ -92,11 +93,12 @@ class TestBordas:
             sem = ExercicioUsuario(usuario_id=u.id, nome='Sem músculo')
             db.session.add(sem)
             db.session.commit()
-            _reg(u, v, t, 1, [{'duracao_segundos': 900}], base=esteira)
-            _reg(u, v, t, 1, [S10, S10], base=pular)
-            _reg(u, v, t, 1, [S10, S10, S10], custom=sem)
-            d = S.calcular(u.id, _p(7))
+            _reg(u, v, t, 0, [{'duracao_segundos': 900}], base=esteira)
+            _reg(u, v, t, 0, [S10, S10], base=pular)
+            _reg(u, v, t, 0, [S10, S10, S10], custom=sem)
+            d = S.calcular(u.id)
             assert sum(r['series'] for r in d['regioes'].values()) == 0
+            assert all(r['estado'] == 'sem_treino' and not r['exercicios'] for r in d['regioes'].values())
 
     def test_carga_zero_e_sem_carga(self, app):
         with app.app_context():
@@ -104,56 +106,60 @@ class TestBordas:
             v, t = _ficha(u)
             flexao = _ex('Peitorais', nome='Flexão')
             supino = _ex('Peitorais', nome='Supino reto com barra')
-            _reg(u, v, t, 1, [{'carga': 0, 'repeticoes': 15}, {'carga': None, 'repeticoes': 12}], base=flexao)
-            _reg(u, v, t, 1, [{'carga': 0, 'repeticoes': 5}], base=supino)
-            r = S.calcular(u.id, _p(7))['regioes']['peito']
+            _reg(u, v, t, 0, [{'carga': 0, 'repeticoes': 15}, {'carga': None, 'repeticoes': 12}], base=flexao)
+            _reg(u, v, t, 0, [{'carga': 0, 'repeticoes': 5}], base=supino)
+            r = S.calcular(u.id)['regioes']['peito']
             assert (r['series'], r['volume']) == (3, 0)
+            assert [(e['nome'], e['e1rm']) for e in r['exercicios']] == [('Flexão', None), ('Supino reto com barra', None)]
             assert S.niveis_forca(u.id)['levantamentos'] == []
 
-    def test_periodo_de_um_dia_e_tudo(self, app):
+    def test_virada_de_semana(self, app, monkeypatch):
+        # domingo 23h59 ainda é a semana de segunda 16; segunda 00h01 já é a outra
+        _relogio(monkeypatch, date(2026, 11, 22), datetime(2026, 11, 22, 23, 59, tzinfo=BR))
+        assert S.semana(0) == (date(2026, 11, 16), date(2026, 11, 22))
+        _relogio(monkeypatch, date(2026, 11, 23), datetime(2026, 11, 23, 0, 1, tzinfo=BR))
+        assert S.semana(0) == (date(2026, 11, 23), date(2026, 11, 29))
         with app.app_context():
-            u = _u('zz_periodo')
+            u = _u('zz_virada')
             v, t = _ficha(u)
             e = _ex('Bíceps')
-            _reg(u, v, t, 0, [S10] * 4, base=e)
-            _reg(u, v, t, 20, [S10] * 4, base=e)
-            hoje = mms._hoje()
-            assert S.calcular(u.id, {'dia_inicio': hoje, 'dia_fim': hoje})['regioes']['biceps']['series_semana'] == 4
-            tudo = S.calcular(u.id, {'dia_inicio': None, 'dia_fim': None})
-            assert tudo['semanas'] == 3 and tudo['regioes']['biceps']['series_semana'] == 2.7
+            _reg(u, v, t, 1, [S10] * 4, base=e)  # domingo 22
+            assert S.calcular(u.id, 0)['regioes']['biceps']['series'] == 0
+            assert S.calcular(u.id, -1)['regioes']['biceps']['series'] == 4
 
     def test_dois_treinos_no_dia_e_madrugada_utc(self, app, monkeypatch):
-        monkeypatch.setattr(mms, '_hoje', lambda: date(2026, 11, 23))
-        monkeypatch.setattr(mms, '_agora', lambda: datetime(2026, 11, 23, 23, 50, tzinfo=BR))
+        _relogio(monkeypatch, TER, datetime(2026, 11, 24, 23, 50, tzinfo=BR))
         with app.app_context():
             u = _u('zz_madrugada')
             v, t = _ficha(u)
             e = _ex('Peitorais')
-            _reg(u, v, t, 0, [S10] * 3, base=e, salvo=datetime(2026, 11, 23, 7, 0, tzinfo=BR))
-            # 23h30 em Brasília = 02h30 UTC do dia 24
-            _reg(u, v, t, 0, [S10] * 3, base=e, salvo=datetime(2026, 11, 23, 23, 30, tzinfo=BR))
-            r = S.calcular(u.id, {'dia_inicio': date(2026, 11, 1), 'dia_fim': date(2026, 11, 23)})['regioes']['peito']
-            assert r['pronto_em'] == '2026-11-26T23:30' and r['horas_desde'] == 0.3 and r['status'] == 'cedo'
+            _reg(u, v, t, 0, [S10] * 3, base=e, salvo=datetime(2026, 11, 24, 7, 0, tzinfo=BR))
+            # 23h30 em Brasília = 02h30 UTC do dia 25: continua sendo o treino do dia 24
+            _reg(u, v, t, 0, [S10] * 3, base=e, salvo=datetime(2026, 11, 24, 23, 30, tzinfo=BR))
+            r = S.calcular(u.id)['regioes']['peito']
+            # mesmo dia = uma sessão de 6 séries (6/8 = 0,75) na hora mais tarde, 20 min atrás
+            assert r['series'] == 6 and r['estado'] == 'fatigado' and r['fadiga'] == 0.744
+            assert r['ultimo_treino'] == '2026-11-24T23:30'
 
     def test_relogio_adiantado_nao_da_hora_negativa(self, app, monkeypatch):
-        monkeypatch.setattr(mms, '_hoje', lambda: date(2026, 11, 23))
-        monkeypatch.setattr(mms, '_agora', lambda: datetime(2026, 11, 23, 10, 0, tzinfo=BR))
+        _relogio(monkeypatch, TER, datetime(2026, 11, 24, 10, 0, tzinfo=BR))
         with app.app_context():
             u = _u('zz_relogio')
             v, t = _ficha(u)
             e = _ex('Peitorais')
-            _reg(u, v, t, 0, [S10] * 3, base=e, salvo=datetime(2026, 11, 23, 11, 0, tzinfo=BR))
-            r = S.calcular(u.id, None)['regioes']['peito']
-            assert r['horas_desde'] == 0 and r['horas_restantes'] == 72
+            _reg(u, v, t, 0, [S10] * 4, base=e, salvo=datetime(2026, 11, 24, 11, 0, tzinfo=BR))
+            r = S.calcular(u.id)['regioes']['peito']
+            assert r['fadiga'] == 0.5 and r['retida'] == 1  # sem decaimento negativo
 
-    def test_treino_no_futuro_nao_conta(self, app):
+    def test_treino_no_futuro_nao_conta(self, app, monkeypatch):
+        _relogio(monkeypatch, TER, datetime(2026, 11, 24, 12, 0, tzinfo=BR))
         with app.app_context():
             u = _u('zz_futuro')
             v, t = _ficha(u)
             e = _ex('Peitorais')
-            _reg(u, v, t, -2, [S10] * 3, base=e)
-            d = S.calcular(u.id, _p(30))
-            assert d['regioes']['peito']['series'] == 0 and d['regioes']['peito']['status'] == 'sem_treino'
+            _reg(u, v, t, -2, [S10] * 3, base=e)  # quinta 26, ainda nesta semana
+            r = S.calcular(u.id)['regioes']['peito']
+            assert r['series'] == 0 and r['estado'] == 'sem_treino' and r['exercicios'] == []
 
 
 class TestForcaBordas:
@@ -246,12 +252,10 @@ class TestPermissoesEApi:
         with app.app_context():
             _u('zz_param')
         _login(client, 'zz_param')
-        assert client.get('/api/mapa-muscular?dias=abc').status_code == 200
-        assert client.get('/api/mapa-muscular?dias=-5').status_code == 200
-        assert client.get('/api/mapa-muscular?dias=0').status_code == 200
-        assert client.get('/api/mapa-muscular?dias=100000').status_code == 200
-        assert client.get('/api/mapa-muscular?inicio=2026-11-10&fim=2026-11-01').status_code == 400
-        assert client.get('/api/mapa-muscular?inicio=x&fim=y').status_code == 400
+        for q, esperado in (('semana=abc', 0), ('semana=-5', -5), ('semana=7', 0), ('semana=-1000', -52),
+                            ('semana=', 0), ('semana=1.5', 0), ('dias=30', 0)):
+            r = client.get('/api/mapa-muscular?' + q)
+            assert r.status_code == 200 and r.get_json()['semana']['offset'] == esperado, q
         assert client.get('/api/mapa-muscular?aluno_id=999999').status_code == 403
 
     def test_sem_login(self, client):

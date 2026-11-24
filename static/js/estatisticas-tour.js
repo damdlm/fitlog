@@ -72,8 +72,8 @@
                 element: '#mapaMuscular .card-header',
                 popover: {
                     title: 'Mapa muscular',
-                    description: 'O corpo de frente e de costas. Em <b>Volume</b>, a cor mostra quantas séries cada músculo recebeu no período; '
-                        + 'em <b>Recuperação</b>, uma estimativa de quem já está pronto para treinar de novo. Toque num músculo para ver os detalhes.',
+                    description: 'O corpo de frente e de costas. <b>Séries</b>: quantas séries cada músculo recebeu na semana, contra uma faixa de referência (ou o que a ficha prevê). '
+                        + '<b>Fadiga</b>: quem ainda está se recuperando. <b>Força</b>: quanto cada músculo mantém da força, e os exercícios dele.',
                     side: 'top', align: 'center'
                 }
             },

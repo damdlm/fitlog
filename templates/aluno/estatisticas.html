@@ -503,81 +503,82 @@
         border-radius: 50%;
         display: inline-block;
     }
-    /* ===== Mapa muscular ===== */
+    /* ===== Mapa muscular (abas Séries / Fadiga / Força) ===== */
     .mm-abas { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--fl-c-sup2, #f3f1ee); border-radius: 12px; padding: 3px; gap: 3px; }
-    .mm-aba, .mm-sub-modo { border: 0; background: transparent; color: var(--fl-c-txt2, #6b665c); font-size: .84rem; font-weight: 700; border-radius: 9px; padding: 6px 8px; }
-    .mm-aba.is-ativo { background: #F28C33; color: #fff; } /* tema: fixo */
-    .mm-sub { margin-bottom: 8px; }
+    .mm-aba, .mm-sub-modo { border: 0; background: transparent; color: var(--fl-c-txt2, #6b665c); font-size: .84rem; font-weight: 700; border-radius: 9px; padding: 7px 8px; }
+    .mm-aba.is-ativo { background: var(--fl-c-sup, #fff); color: var(--fl-c-txt, #2D2D2D); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
     .mm-sub[hidden] { display: none; }
-    .mm-sub-modos { display: inline-flex; background: var(--fl-c-sup2, #f3f1ee); border-radius: 999px; padding: 3px; }
-    .mm-sub-modo { border-radius: 999px; font-size: .78rem; padding: 3px 14px; }
+    .mm-sub-linha { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .mm-sub-modos { flex: 1 1 200px; display: grid; grid-template-columns: 1fr 1fr; background: var(--fl-c-sup2, #f3f1ee); border-radius: 10px; padding: 3px; }
+    .mm-sub-modo { font-size: .78rem; padding: 5px 8px; border-radius: 8px; }
     .mm-sub-modo.is-ativo { background: var(--fl-c-sup, #fff); color: var(--fl-c-txt, #2D2D2D); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+    .mm-semana { display: flex; align-items: center; justify-content: space-between; gap: 4px; flex: 1 1 200px; }
+    .mm-semana[hidden] { display: none; }
+    .mm-semana button { border: 0; background: none; color: var(--fl-c-txt, #2D2D2D); width: 32px; height: 32px; border-radius: 8px; }
+    .mm-semana button:disabled { opacity: .3; }
+    .mm-semana-rotulo { font-weight: 700; font-size: .86rem; color: var(--fl-c-txt, #2D2D2D); }
     .mm-nota-planejado { font-size: .8rem; color: var(--fl-c-txt2, #6b665c); margin: 8px 0 0; }
-    .mm-treinos-wrap { display: inline; }
+    .mm-nota-planejado[hidden] { display: none; }
     .mm-treinos-semana { width: 52px; display: inline-block; padding: 1px 6px; border: 1px solid var(--fl-c-borda, #e2dcd5); border-radius: 6px; background: var(--fl-c-sup, #fff); color: var(--fl-c-txt, #2D2D2D); text-align: center; }
-    .mm-layout { display: flex; gap: 18px; align-items: flex-start; }
-    .mm-layout.is-forca .mm-vistas { display: none; }
-    .mm-vistas { flex: 0 1 400px; display: flex; gap: 6px; }
-    .mm-lado { flex: 1 1 260px; min-width: 0; }
-    .mm-vista { flex: 1 1 0; margin: 0; text-align: center; }
-    .mm-vista svg { width: 100%; height: auto; max-height: 400px; display: block; }
-    .mm-vista figcaption { font-size: .72rem; font-weight: 700; color: var(--fl-c-txt2, #6b665c); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
-    .mm-silhueta path { fill: var(--fl-c-sup2, #efebe6); stroke: var(--fl-c-sup2, #efebe6); stroke-width: 22; stroke-linejoin: round; }
-    .mm-r path { stroke: var(--fl-c-sup, #fff); stroke-width: 5; stroke-linejoin: round; transition: fill .25s ease; }
+    .mm-vistas { display: flex; justify-content: center; gap: 8%; margin: 14px auto 0; max-width: 440px; }
+    .mm-corpo { width: 42%; height: auto; max-height: 300px; display: block; }
+    .mm-corpo path { stroke: var(--fl-c-sup, #fff); stroke-width: 2.5; stroke-linejoin: round; }
+    .mm-corpo .mm-neutra { fill: var(--fl-c-corpo, #c9c4be); }
     .mm-r { cursor: pointer; outline: none; }
-    .mm-r.is-sel path, .mm-r:focus-visible path { stroke: var(--fl-c-txt, #2D2D2D); stroke-width: 7; }
-    .mm-vol-0 path, i.mm-vol-0 { fill: var(--fl-c-borda, #e2dcd5); background: var(--fl-c-borda, #e2dcd5); }
-    .mm-vol-1 path, i.mm-vol-1 { fill: #fbd3ad; background: #fbd3ad; } /* tema: fixo */
-    .mm-vol-2 path, i.mm-vol-2 { fill: #f6a053; background: #f6a053; } /* tema: fixo */
-    .mm-vol-3 path, i.mm-vol-3 { fill: #e2711b; background: #e2711b; } /* tema: fixo */
-    .mm-vol-4 path, i.mm-vol-4 { fill: #a84f0a; background: #a84f0a; } /* tema: fixo */
-    .mm-rec-cedo path, i.mm-rec-cedo { fill: #e2552b; background: #e2552b; } /* tema: fixo */
-    .mm-rec-quase path, i.mm-rec-quase { fill: #f2c14e; background: #f2c14e; } /* tema: fixo */
-    .mm-rec-ok path, i.mm-rec-ok { fill: #4caf7a; background: #4caf7a; } /* tema: fixo */
-    .mm-rec-sem path, i.mm-rec-sem { fill: var(--fl-c-borda, #e2dcd5); background: var(--fl-c-borda, #e2dcd5); }
-    .mm-detalhe { background: var(--fl-c-sup2, #f6f4f1); border-radius: 12px; padding: 12px 14px; font-size: .86rem; color: var(--fl-c-txt2, #6b665c); min-height: 64px; }
-    .mm-detalhe[hidden], .mm-legenda[hidden] { display: none; }
-    .mm-detalhe strong { display: block; font-size: 1rem; color: var(--fl-c-txt, #2D2D2D); }
-    .mm-detalhe-ex { margin-top: 4px; font-size: .8rem; }
-    .mm-legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 12px 0 8px; font-size: .76rem; color: var(--fl-c-txt2, #6b665c); }
-    .mm-legenda i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; vertical-align: -1px; margin-right: 3px; }
-    .mm-painel-titulo { font-size: .74rem; font-weight: 800; color: var(--fl-c-txt2, #6b665c); text-transform: uppercase; letter-spacing: .05em; margin: 8px 0 4px; }
-    .mm-painel-vazio { font-size: .84rem; color: var(--fl-c-txt2, #6b665c); margin: 8px 0; }
-    .mm-barras, .mm-prontos, .mm-forca { list-style: none; padding: 0; margin: 0; }
-    .mm-barras li { display: grid; grid-template-columns: minmax(84px, 1fr) 2fr 84px; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--fl-c-borda, #f0ece4); font-size: .84rem; cursor: pointer; }
-    .mm-barras li.is-sel .mm-barra-nome, .mm-prontos li.is-sel .mm-pronto-nome { color: var(--fl-c-txt-laranja, #a8560c); }
-    .mm-barra-nome { font-weight: 600; color: var(--fl-c-txt, #2D2D2D); }
-    .mm-barra { position: relative; height: 8px; border-radius: 99px; background: var(--fl-c-sup2, #efebe6); }
-    .mm-barra-faixa { position: absolute; top: 0; bottom: 0; background: rgba(242, 140, 51, .28); border-radius: 99px; } /* tema: fixo */
-    .mm-barra-valor { position: absolute; left: 0; top: 2px; bottom: 2px; background: #f6a053; border-radius: 99px; } /* tema: fixo */
-    .mm-barra-valor.is-na-faixa { background: #e2711b; } /* tema: fixo */
-    .mm-barra-valor.is-acima { background: #a84f0a; } /* tema: fixo */
-    .mm-barra-marca { position: absolute; top: -3px; width: 2px; height: 14px; margin-left: -1px; background: var(--fl-c-txt, #2D2D2D); border-radius: 2px; }
-    .mm-barra-num { color: var(--fl-c-txt2, #6b665c); white-space: nowrap; font-size: .8rem; text-align: right; }
-    .mm-barra-num b { color: var(--fl-c-txt, #2D2D2D); font-size: .9rem; }
-    .mm-mais { border: 0; background: none; color: var(--fl-c-txt-laranja, #a8560c); font-weight: 700; font-size: .82rem; padding: 6px 0; }
-    .mm-prontos li { display: grid; grid-template-columns: 12px 1fr auto 72px; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid var(--fl-c-borda, #f0ece4); font-size: .84rem; cursor: pointer; }
-    .mm-prontos li i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-    .mm-pronto-nome { font-weight: 600; color: var(--fl-c-txt, #2D2D2D); }
-    .mm-pronto-tempo { color: var(--fl-c-txt, #2D2D2D); text-align: right; }
-    .mm-pronto-quando { color: var(--fl-c-txt2, #6b665c); text-align: right; font-size: .78rem; }
-    .mm-forca-peso { background: var(--fl-c-tint-laranja, #fff3e0); color: var(--fl-c-txt, #2D2D2D); border-radius: 10px; padding: 10px 12px; font-size: .84rem; margin-bottom: 10px; }
-    .mm-forca-peso a { color: var(--fl-c-txt-laranja, #a8560c); font-weight: 700; }
-    .mm-forca li { padding: 9px 0; border-top: 1px solid var(--fl-c-borda, #f0ece4); }
-    .mm-forca-topo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .mm-forca-nome { font-weight: 700; font-size: .88rem; color: var(--fl-c-txt, #2D2D2D); margin-right: auto; }
-    .mm-nivel { font-size: .74rem; font-weight: 800; border-radius: 999px; padding: 2px 10px; background: var(--fl-c-sup2, #f3f1ee); color: var(--fl-c-txt, #2D2D2D); }
-    .mm-nivel-2 { background: var(--fl-c-tint-laranja, #fff3e0); color: var(--fl-c-txt-laranja, #a8560c); }
-    .mm-nivel-3, .mm-nivel-4 { background: #e2711b; color: #fff; } /* tema: fixo */
-    .mm-razao { font-size: .8rem; color: var(--fl-c-txt2, #6b665c); }
-    .mm-forca-sub { font-size: .78rem; color: var(--fl-c-txt2, #6b665c); margin-top: 2px; }
-    .mm-forca-nota { font-size: .74rem; color: var(--fl-c-txt2, #6b665c); margin: 10px 0 0; }
-    .mm-nota { font-size: .72rem; color: var(--fl-c-txt2, #6b665c); margin: 12px 0 0; }
+    .mm-r path { transition: fill .25s ease; }
+    .mm-r.is-sel path, .mm-r:focus-visible path { stroke: var(--fl-c-txt, #2D2D2D); stroke-width: 6; }
+    .mm-c-vazio path, i.mm-c-vazio { fill: var(--fl-c-corpo-vazio, #e4e0db); background: var(--fl-c-corpo-vazio, #e4e0db); }
+    .mm-s1 path, i.mm-s1 { fill: #fbd3ad; background: #fbd3ad; } /* tema: fixo */
+    .mm-s2 path, i.mm-s2 { fill: #f6a053; background: #f6a053; } /* tema: fixo */
+    .mm-s3 path, i.mm-s3 { fill: #e2711b; background: #e2711b; } /* tema: fixo */
+    .mm-s4 path, i.mm-s4 { fill: #a84f0a; background: #a84f0a; } /* tema: fixo */
+    .mm-f-fatigado path, i.mm-f-fatigado { fill: #e5483b; background: #e5483b; } /* tema: fixo */
+    .mm-f-recuperando path, i.mm-f-recuperando { fill: #f39a2b; background: #f39a2b; } /* tema: fixo */
+    .mm-f-pronto path, i.mm-f-pronto { fill: #f2c94c; background: #f2c94c; } /* tema: fixo */
+    .mm-r1 path, i.mm-r1 { fill: #f2c94c; background: #f2c94c; } /* tema: fixo */
+    .mm-r2 path, i.mm-r2 { fill: #b5c14a; background: #b5c14a; } /* tema: fixo */
+    .mm-r3 path, i.mm-r3 { fill: #7ea545; background: #7ea545; } /* tema: fixo */
+    .mm-r4 path, i.mm-r4 { fill: #4f7a3a; background: #4f7a3a; } /* tema: fixo */
+    .mm-legenda { display: flex; justify-content: flex-end; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 6px 0 4px; font-size: .72rem; color: var(--fl-c-txt2, #6b665c); }
+    .mm-legenda i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; vertical-align: -1px; margin-right: 3px; }
+    .mm-legenda > i { margin: 0; }
+    .mm-explica { font-size: .8rem; color: var(--fl-c-txt2, #6b665c); margin: 4px 0 8px; }
+    .mm-explica:empty { display: none; }
+    .mm-titulo { font-size: .72rem; font-weight: 800; color: var(--fl-c-txt2, #6b665c); text-transform: uppercase; letter-spacing: .05em; margin: 12px 0 2px; }
+    .mm-vazio-txt { font-size: .84rem; color: var(--fl-c-txt2, #6b665c); margin: 6px 0; }
+    .mm-lista { list-style: none; padding: 0; margin: 0; }
+    .mm-lista li { display: grid; grid-template-columns: minmax(90px, 1.1fr) 1.6fr minmax(96px, auto); align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--fl-c-borda, #f0ece4); font-size: .86rem; }
+    .mm-lista li[data-r] { cursor: pointer; }
+    .mm-lista li.is-sel .mm-lista-nome { color: var(--fl-c-txt-laranja, #a8560c); }
+    .mm-lista-nome { font-weight: 600; color: var(--fl-c-txt, #2D2D2D); }
+    .mm-lista-num { text-align: right; color: var(--fl-c-txt2, #6b665c); white-space: nowrap; font-size: .82rem; }
+    .mm-lista-num b { color: var(--fl-c-txt, #2D2D2D); font-size: .9rem; }
+    .mm-barra { position: relative; height: 6px; border-radius: 99px; background: var(--fl-c-sup2, #efebe6); }
+    .mm-barra-faixa { position: absolute; top: 0; bottom: 0; background: rgba(242, 140, 51, .3); border-radius: 99px; } /* tema: fixo */
+    .mm-barra-valor { position: absolute; left: 0; top: 0; bottom: 0; background: #e2711b; border-radius: 99px; } /* tema: fixo */
+    .mm-barra-marca { position: absolute; top: -4px; width: 2px; height: 14px; margin-left: -1px; background: var(--fl-c-txt, #2D2D2D); border-radius: 2px; }
+    .mm-lista-fadiga li { grid-template-columns: 12px 1fr auto 82px; }
+    .mm-lista-forca .mm-barra-valor { background: var(--fl-c-txt2, #9a958f); }
+    .mm-ponto { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .mm-lista-quando { text-align: right; color: var(--fl-c-txt2, #6b665c); font-size: .8rem; }
+    .mm-prontos { font-size: .84rem; color: var(--fl-c-txt, #2D2D2D); margin: 4px 0 0; }
+    .mm-lista-ex li { grid-template-columns: 1.4fr 1fr auto; }
+    .mm-ex { display: flex; flex-direction: column; min-width: 0; }
+    .mm-ex-nome { font-weight: 600; color: var(--fl-c-txt, #2D2D2D); }
+    .mm-ex-nome small { font-weight: 600; font-size: .7rem; color: var(--fl-c-txt2, #6b665c); margin-left: 4px; }
+    .mm-ex-sub { font-size: .76rem; color: var(--fl-c-txt2, #6b665c); }
+    .mm-lista-niveis li { grid-template-columns: 1fr auto; }
+    .mm-niveis { margin-top: 18px; padding-top: 6px; border-top: 2px solid var(--fl-c-borda, #f0ece4); }
+    .mm-niveis-topo { display: flex; align-items: center; justify-content: space-between; }
+    .mm-sobre { font-size: .82rem; font-weight: 700; color: var(--fl-c-txt-laranja, #a8560c); text-decoration: none; }
+    .mm-nota-niveis { font-size: .72rem; color: var(--fl-c-txt2, #6b665c); margin: 6px 0 0; }
+    .mm-mais { display: block; margin: 8px auto 0; border: 0; background: none; color: var(--fl-c-txt-laranja, #a8560c); font-weight: 700; font-size: .84rem; }
+    .mm-nota { font-size: .72rem; color: var(--fl-c-txt2, #6b665c); margin: 14px 0 0; }
     .mm-nota a { color: inherit; }
-    @media (max-width: 767px) {
-        .mm-layout { flex-direction: column; gap: 10px; }
-        .mm-vistas { flex-basis: auto; width: 100%; max-width: 340px; margin: 0 auto; }
-        .mm-lado { width: 100%; }
+    @media (max-width: 576px) {
+        .mm-lista li { grid-template-columns: minmax(80px, 1fr) 1.2fr minmax(84px, auto); gap: 8px; }
+        .mm-lista-fadiga li { grid-template-columns: 12px 1fr auto 74px; }
+        .mm-lista-ex li { grid-template-columns: 1.6fr .8fr auto; }
     }
 
     /* Cartão Cardio (teal #1F7A8C, cor do cardio no app) */
@@ -790,9 +791,9 @@
     </div>
 </div>
 
-<!-- Mapa muscular: séries (feito/planejado) com faixa de referência,
-     recuperação estimada por hora e nível de força (static/js/modules/mapa-muscular.js).
-     Desenho do corpo adaptado de MuscleMap (MIT), ver static/vendor/musclemap. -->
+<!-- Mapa muscular: abas Séries / Fadiga / Força (modelo do openGym, código
+     próprio: static/js/modules/mapa-muscular.js; regras em
+     services/mapa_muscular_service.py). Corpo: MuscleMap (MIT), sem alterações. -->
 <div class="card est-card mb-3" id="mapaMuscular">
     <div class="card-header bg-white border-0 pb-0">
         <h6 class="fw-bold mb-2">
@@ -800,34 +801,34 @@
         </h6>
         <div class="mm-abas" role="group" aria-label="O que o mapa mostra">
             <button type="button" class="mm-aba is-ativo" data-aba="series" aria-pressed="true">Séries</button>
-            <button type="button" class="mm-aba" data-aba="recuperacao" aria-pressed="false">Recuperação</button>
+            <button type="button" class="mm-aba" data-aba="fadiga" aria-pressed="false">Fadiga</button>
             <button type="button" class="mm-aba" data-aba="forca" aria-pressed="false">Força</button>
         </div>
     </div>
     <div class="card-body">
         <div class="mm-sub">
-            <div class="mm-sub-modos" role="group" aria-label="Séries feitas ou planejadas">
-                <button type="button" class="mm-sub-modo is-ativo" data-sub="feito" aria-pressed="true">Feito</button>
-                <button type="button" class="mm-sub-modo" data-sub="planejado" aria-pressed="false">Planejado</button>
+            <div class="mm-sub-linha">
+                <div class="mm-sub-modos" role="group" aria-label="Séries feitas ou planejadas">
+                    <button type="button" class="mm-sub-modo is-ativo" data-sub="feito" aria-pressed="true">Feito</button>
+                    <button type="button" class="mm-sub-modo" data-sub="planejado" aria-pressed="false">Planejado</button>
+                </div>
+                <div class="mm-semana">
+                    <button type="button" class="mm-semana-ant" aria-label="Semana anterior"><i class="bi bi-chevron-left"></i></button>
+                    <span class="mm-semana-rotulo" aria-live="polite">Esta semana</span>
+                    <button type="button" class="mm-semana-prox" aria-label="Próxima semana" disabled><i class="bi bi-chevron-right"></i></button>
+                </div>
             </div>
             <p class="mm-nota-planejado" hidden>
-                <span class="mm-com-ficha">Séries por semana que a ficha <span class="mm-ficha-nome"></span> prevê, fazendo
+                <span class="mm-com-ficha">Ficha <span class="mm-ficha-nome"></span> com
                 <label class="mm-treinos-wrap"><input type="number" class="mm-treinos-semana" min="1" max="14" step="1" inputmode="numeric" aria-label="Treinos por semana"> treinos por semana</label>.</span>
                 <span class="mm-sem-ficha" hidden>Não há ficha ativa, então não há séries planejadas para comparar.</span>
             </p>
         </div>
-        <div class="est-empty mm-vazio" hidden>
-            <i class="bi bi-person-arms-up"></i>Sem séries de musculação nesse período.
-        </div>
-        <div class="mm-layout">
-            <div class="mm-vistas"></div>
-            <div class="mm-lado">
-                <div class="mm-detalhe" aria-live="polite"></div>
-                <div class="mm-legenda"></div>
-                <div class="mm-painel"></div>
-            </div>
-        </div>
-        <p class="mm-nota">Cada série conta inteira para o músculo principal e meia para os secundários. Faixas de séries por semana e tempos de recuperação são referências gerais e estimativas: variam com a intensidade, o sono e a alimentação. Desenho do corpo adaptado de <a href="https://github.com/melihcolpan/MuscleMap" target="_blank" rel="noopener">MuscleMap</a> (licença MIT).</p>
+        <div class="mm-vistas"></div>
+        <div class="mm-legenda"></div>
+        <p class="mm-explica"></p>
+        <div class="mm-painel" aria-live="polite"></div>
+        <p class="mm-nota">Séries efetivas: cada série conta inteira para o músculo principal e meia para os secundários. Faixas, fadiga e força retida são estimativas. Desenho do corpo: <a href="https://github.com/melihcolpan/MuscleMap" target="_blank" rel="noopener">MuscleMap</a> (licença MIT).</p>
     </div>
 </div>
 
@@ -1251,8 +1252,8 @@
 
     function carregarMapaMuscular() {
         if (window.FitLogMapaMuscular) {
-            FitLogMapaMuscular.carregar(comAluno('/api/mapa-muscular?' + periodoAtual.query),
-                                        comAluno('/api/nivel-forca'), periodoAtual.frase);
+            // O mapa tem a própria semana (não segue o filtro de período).
+            FitLogMapaMuscular.carregar(comAluno('/api/mapa-muscular'), comAluno('/api/nivel-forca'));
         }
     }
 

@@ -1,36 +1,40 @@
-"""Mapa muscular da tela Progresso: séries, recuperação e nível de força.
+"""Mapa muscular da tela Progresso: Séries, Fadiga e Força (modelo do openGym,
+com implementação própria -- o código do openGym é AGPL e não foi copiado).
 
-SÉRIES (segue o período escolhido na tela)
-  Séries por região do corpo. Cada série de força conta 1 para o músculo
-  principal do exercício e 0,5 para cada secundário ("séries efetivas").
-  O volume em kg (carga × repetições) entra só no principal. Cardio fica
-  de fora. `series_semana` é a média por semana no período, comparada com
-  uma FAIXA DE REFERÊNCIA por região (FAIXAS_SEMANAIS: ordem de grandeza
-  comum para hipertrofia; não é prescrição).
-
-  De onde vem o músculo:
-    - catálogo: principal = ExercicioSistema.alvo, secundários =
-      musculos_secundarios (grupo_muscular NÃO é o principal no dataset).
-    - exercício personalizado: o músculo escolhido, sem secundários.
+SÉRIES (por semana, segunda a domingo no fuso de Brasília; ?semana=0 é a
+atual, -1 a anterior...)
+  Cada série de força conta 1 para o músculo principal e 0,5 para cada
+  secundário ("séries efetivas"); kg só no principal; cardio fora. Comparado
+  com uma FAIXA DE REFERÊNCIA semanal por região (FAIXAS_SEMANAIS).
+  Músculo do catálogo: principal = alvo, secundários = musculos_secundarios
+  (grupo_muscular NÃO é o principal no dataset).
 
 PLANEJADO (ficha ativa)
-  Séries que a ficha prevê por região em UM ciclo (cada treino uma vez):
-  meta de séries do exercício (3 se a ficha não tiver meta). A tela
-  converte para semana com "treinos por semana" (padrão: a média real das
-  últimas 4 semanas; sem histórico, o número de treinos da ficha).
+  Séries que a ficha prevê por região em UM ciclo (meta de séries, 3 sem
+  meta); a tela converte para semana com "treinos por semana".
 
-RECUPERAÇÃO (sempre "agora", ESTIMATIVA)
-  Últimos 14 dias: a última sessão em que a região recebeu 2+ séries
-  efetivas, na hora em que o treino foi salvo (created_at; se o treino foi
-  lançado em outro dia, 18h do dia do treino). Janela: 72 h para músculos
-  grandes, 48 h para os menores. Fração da janela já passada: < 50%
-  "cedo", < 100% "quase", senão "recuperado".
+FADIGA (agora; ESTIMATIVA)
+  Cada sessão gera um estímulo por região = séries efetivas do dia ÷ 8 (uma
+  sessão cheia ~ 8 séries = 1,0), limitado a 12 séries. O estímulo decai pela
+  meia-vida da região (MEIA_VIDA_H: 24 h músculos pequenos/core, 30 h tronco,
+  48 h pernas e lombar) e a fadiga é a soma do que sobrou das sessões dos
+  últimos 21 dias. Estados: > 0,5 fatigado; 0,25-0,5 recuperando; < 0,25
+  pronto. "Pronto de novo" = quando a soma cai para 0,25.
+  Hora da sessão: quando o treino foi salvo (created_at); lançado em outro
+  dia, 18h do dia do treino.
+
+FORÇA RETIDA (agora; ESTIMATIVA)
+  1,0 até 14 dias depois do último treino da região; depois cai pela metade
+  a cada 28 dias, até o piso de 0,5. Nunca treinada nos últimos 6 meses:
+  "não treinado" (piso). Por região, os exercícios que a treinam (principal
+  ou secundário) com o melhor 1RM estimado (Epley, 1-12 reps, 6 meses), a
+  data do último treino e a força retida daquele exercício.
 
 NÍVEL DE FORÇA (precisa do peso corporal, User.peso_kg)
-  Melhor 1RM estimado (Epley, séries de 1 a 12 repetições, últimos 180
-  dias) dos levantamentos com barra de LEVANTAMENTOS, dividido pelo peso
-  corporal e comparado com PADROES_FORCA (referência aproximada por sexo).
+  Melhor 1RM estimado dos levantamentos com barra de LEVANTAMENTOS ÷ peso
+  corporal, comparado com PADROES_FORCA (referência aproximada por sexo).
 """
+import math
 import unicodedata
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -42,25 +46,24 @@ from models import (db, RegistroTreino, HistoricoTreino, ExercicioSistema, Exerc
 
 FUSO_BR = ZoneInfo('America/Sao_Paulo')
 
-# slug -> (nome na tela, janela de recuperação em horas)
+# slug -> (nome na tela, meia-vida da fadiga em horas)
 REGIOES = {
-    'peito': ('Peito', 72),
-    'costas': ('Costas', 72),
-    'lombar': ('Lombar', 72),
-    'trapezio': ('Trapézio', 48),
-    'ombros': ('Ombros', 48),
-    'biceps': ('Bíceps', 48),
-    'triceps': ('Tríceps', 48),
-    'antebracos': ('Antebraços', 48),
-    'abdomen': ('Abdômen', 48),
-    'obliquos': ('Oblíquos', 48),
-    'gluteos': ('Glúteos', 72),
-    'quadriceps': ('Quadríceps', 72),
-    'isquiotibiais': ('Posterior de coxa', 72),
+    'peito': ('Peito', 30),
+    'costas': ('Costas', 30),
+    'lombar': ('Lombar', 48),
+    'trapezio': ('Trapézio', 30),
+    'ombros': ('Ombros', 24),
+    'biceps': ('Bíceps', 24),
+    'triceps': ('Tríceps', 24),
+    'antebracos': ('Antebraços', 24),
+    'abdomen': ('Abdômen', 24),
+    'obliquos': ('Oblíquos', 24),
+    'gluteos': ('Glúteos', 48),
+    'quadriceps': ('Quadríceps', 48),
+    'isquiotibiais': ('Posterior de coxa', 48),
     'adutores': ('Adutores', 48),
     'panturrilhas': ('Panturrilhas', 48),
-    'canelas': ('Canelas', 48),
-    'pescoco': ('Pescoço', 48),
+    'canelas': ('Canelas', 24),
 }
 
 # Séries por semana: faixa de referência (mín., máx.). Regiões sem faixa
@@ -92,15 +95,25 @@ _MUSCULO_REGIAO = {
     'adutores': 'adutores', 'parte interna das coxas': 'adutores', 'virilha': 'adutores',
     'panturrilhas': 'panturrilhas', 'soleo': 'panturrilhas',
     'tornozelos': 'canelas', 'estabilizadores do tornozelo': 'canelas', 'canelas': 'canelas', 'pes': 'canelas',
-    'esternocleidomastoideo': 'pescoco', 'pescoco': 'pescoco',
     # nomes antigos/amplos da tabela Musculo
     'braco': 'biceps', 'bracos': 'biceps', 'perna': 'quadriceps', 'pernas': 'quadriceps', 'abdominal': 'abdomen',
 }
 
-DIAS_RECUPERACAO_OLHADOS = 14
-SERIES_MINIMAS_RECUPERACAO = 2
 SERIES_PADRAO_SEM_META = 3
 HORA_PADRAO_TREINO = 18  # treino lançado em outro dia: considera 18h do dia do treino
+
+# Fadiga (ver FADIGA no docstring)
+DIAS_FADIGA = 21
+SERIES_SESSAO_CHEIA = 8
+SERIES_SESSAO_MAX = 12
+FADIGA_FATIGADO = 0.5
+FADIGA_PRONTO = 0.25
+
+# Força retida (ver FORÇA RETIDA no docstring)
+DIAS_FORCA_CHEIA = 14
+DIAS_MEIA_VIDA_FORCA = 28
+PISO_FORCA = 0.5
+DIAS_HISTORICO = 180
 
 # Levantamentos do nível de força: chave -> (nome na tela, nomes exatos no catálogo, minúsculos)
 LEVANTAMENTOS = {
@@ -170,6 +183,13 @@ def _momento_do_treino(data_registro, created_at):
         if c.date() == dia:
             return c
     return datetime(dia.year, dia.month, dia.day, HORA_PADRAO_TREINO, tzinfo=FUSO_BR)
+
+
+def forca_retida(dias):
+    """Ver FORÇA RETIDA no docstring do módulo."""
+    if dias <= DIAS_FORCA_CHEIA:
+        return 1.0
+    return max(PISO_FORCA, 0.5 ** ((dias - DIAS_FORCA_CHEIA) / DIAS_MEIA_VIDA_FORCA))
 
 
 def e1rm(carga, reps):
@@ -248,57 +268,75 @@ class MapaMuscularService:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def calcular(user_id, periodo=None):
-        """Dados do mapa. `periodo` é o dict de _periodo_da_requisicao
-        (dia_inicio/dia_fim) ou None para todo o histórico."""
-        dia_ini = periodo.get('dia_inicio') if periodo else None
-        dia_fim = periodo.get('dia_fim') if periodo else None
-        inicio = datetime.combine(dia_ini, datetime.min.time()) if dia_ini else None
-        fim = datetime.combine(dia_fim, datetime.min.time()) if dia_fim else None
+    def semana(offset=0):
+        """(segunda, domingo) da semana `offset` (0 = atual, -1 = anterior)."""
+        hoje = _hoje()
+        seg = hoje - timedelta(days=hoje.weekday()) + timedelta(weeks=offset)
+        return seg, seg + timedelta(days=6)
 
-        regioes = {slug: {'nome': nome, 'series': 0.0, 'volume': 0.0, 'exercicios': {},
-                          'faixa': FAIXAS_SEMANAIS.get(slug)}
-                   for slug, (nome, _) in REGIOES.items()}
-        linhas = MapaMuscularService._series_por_registro(user_id, inicio, fim)
+    @staticmethod
+    def calcular(user_id, semana=0):
+        """Dados das três abas para a semana `semana` (0 = atual)."""
+        seg, dom = MapaMuscularService.semana(semana)
+        hoje = _hoje()
+        inicio_hist = hoje - timedelta(days=DIAS_HISTORICO - 1)
+        linhas = MapaMuscularService._series_por_registro(
+            user_id, datetime.combine(min(seg, inicio_hist), datetime.min.time()),
+            datetime.combine(max(dom, hoje), datetime.min.time()))
         pares = {(b, u) for b, u, *_ in linhas}
         musculos = MapaMuscularService._musculos_dos_exercicios(pares)
         nomes = MapaMuscularService._nomes_dos_exercicios(pares)
-        primeiro_dia = None
-        for b, u, dia, _criado, series, volume in linhas:
+
+        regioes = {slug: {'nome': nome, 'faixa': FAIXAS_SEMANAIS.get(slug), 'series': 0.0, 'volume': 0.0,
+                          'exercicios_semana': {}}
+                   for slug, (nome, _) in REGIOES.items()}
+        sessoes = {}   # (região, dia) -> [séries efetivas, momento mais tarde]
+        ultimo = {}    # região -> momento do último treino (6 meses)
+        for b, u, dia, criado, series, volume in linhas:
             k = MapaMuscularService._chave(b, u)
             principal, secundarios = musculos.get(k, (None, []))
             d = _dia(dia)
-            primeiro_dia = d if primeiro_dia is None or d < primeiro_dia else primeiro_dia
-            if principal:
-                r = regioes[principal]
-                r['series'] += series
-                r['volume'] += float(volume or 0)
-                if nomes.get(k):
-                    r['exercicios'][nomes[k]] = r['exercicios'].get(nomes[k], 0) + series
-            for s in secundarios:
-                regioes[s]['series'] += series * 0.5
+            alvos = ([(principal, 1.0)] if principal else []) + [(r, 0.5) for r in secundarios]
+            if not alvos:
+                continue
+            if seg <= d <= dom and d <= hoje:  # treino com data futura não conta
+                for regiao, peso in alvos:
+                    regioes[regiao]['series'] += series * peso
+                if principal:
+                    regioes[principal]['volume'] += float(volume or 0)
+                    if nomes.get(k):
+                        ex = regioes[principal]['exercicios_semana']
+                        ex[nomes[k]] = ex.get(nomes[k], 0) + series
+            if d > hoje or d < inicio_hist:
+                continue
+            momento = _momento_do_treino(dia, criado)
+            for regiao, peso in alvos:
+                atual = sessoes.setdefault((regiao, d), [0.0, momento])
+                atual[0] += series * peso
+                atual[1] = max(atual[1], momento)
+                if regiao not in ultimo or momento > ultimo[regiao]:
+                    ultimo[regiao] = momento
 
-        # semanas do período (todo o histórico: desde o primeiro treino)
-        ini = dia_ini or primeiro_dia
-        fim_d = dia_fim or _hoje()
-        dias = ((fim_d - ini).days + 1) if ini else 7
-        semanas = max(dias, 7) / 7
-
-        recuperacao = MapaMuscularService._recuperacao(user_id)
+        fadiga = MapaMuscularService._fadiga(sessoes)
+        exercicios = MapaMuscularService._exercicios_por_regiao(user_id, musculos, nomes, inicio_hist)
         planejado = MapaMuscularService.planejado(user_id)
+        agora = _agora()
         for slug, r in regioes.items():
             r['series'] = round(r['series'], 1)
-            r['series_semana'] = round(r['series'] / semanas, 1)
             r['volume'] = round(r['volume'])
-            r['principais'] = [n for n, _ in sorted(r['exercicios'].items(), key=lambda x: -x[1])[:3]]
-            del r['exercicios']
+            r['principais'] = [n for n, _ in sorted(r['exercicios_semana'].items(), key=lambda x: -x[1])[:3]]
+            del r['exercicios_semana']
             r['planejado_ciclo'] = planejado['por_regiao'].get(slug, 0)
-            r.update(recuperacao[slug])
+            r.update(fadiga[slug])
+            m = ultimo.get(slug)
+            r['ultimo_treino'] = m.strftime('%Y-%m-%dT%H:%M') if m else None
+            r['retida'] = round(forca_retida((agora - m).total_seconds() / 86400) if m else PISO_FORCA, 3)
+            r['exercicios'] = exercicios.get(slug, [])
 
         aluno = db.session.get(User, user_id)
         return {
             'genero': _genero(aluno),
-            'semanas': round(semanas, 1),
+            'semana': {'offset': semana, 'inicio': seg.isoformat(), 'fim': dom.isoformat()},
             'regioes': regioes,
             'max_series': max((r['series'] for r in regioes.values()), default=0),
             'planejado': {k: v for k, v in planejado.items() if k != 'por_regiao'},
@@ -358,49 +396,74 @@ class MapaMuscularService:
         }
 
     # ------------------------------------------------------------------
-    # Recuperação por hora
+    # Fadiga e força retida
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _recuperacao(user_id):
-        """Ver RECUPERAÇÃO no docstring do módulo."""
-        hoje = _hoje()
+    def _fadiga(sessoes):
+        """Ver FADIGA no docstring do módulo. `sessoes`: (região, dia) ->
+        [séries efetivas, momento]."""
         agora = _agora()
-        inicio = datetime.combine(hoje - timedelta(days=DIAS_RECUPERACAO_OLHADOS - 1), datetime.min.time())
-        fim = datetime.combine(hoje, datetime.min.time())
-        linhas = MapaMuscularService._series_por_registro(user_id, inicio, fim)
-        musculos = MapaMuscularService._musculos_dos_exercicios({(b, u) for b, u, *_ in linhas})
-
-        # (região, dia do treino) -> [séries efetivas, momento mais tarde]
-        por_dia = {}
-        for b, u, dia, criado, series, _v in linhas:
-            principal, secundarios = musculos.get(MapaMuscularService._chave(b, u), (None, []))
-            momento = _momento_do_treino(dia, criado)
-            alvos = ([(principal, 1)] if principal else []) + [(s, 0.5) for s in secundarios]
-            for regiao, peso in alvos:
-                atual = por_dia.setdefault((regiao, _dia(dia)), [0, momento])
-                atual[0] += series * peso
-                atual[1] = max(atual[1], momento)
-
-        ultimo = {}
-        for (regiao, _d), (series, momento) in por_dia.items():
-            if series >= SERIES_MINIMAS_RECUPERACAO and (regiao not in ultimo or momento > ultimo[regiao]):
-                ultimo[regiao] = momento
-
-        out = {}
-        for slug, (_nome, janela) in REGIOES.items():
-            m = ultimo.get(slug)
-            if m is None:
-                out[slug] = {'status': 'sem_treino', 'horas_desde': None, 'horas_restantes': None,
-                             'pronto_em': None, 'janela_h': janela}
+        limite = agora - timedelta(days=DIAS_FADIGA)
+        por_regiao = {}
+        for (regiao, _d), (series, momento) in sessoes.items():
+            if momento < limite:
                 continue
-            horas = max(0.0, (agora - m).total_seconds() / 3600)
-            fracao = horas / janela
-            status = 'recuperado' if fracao >= 1 else ('quase' if fracao >= 0.5 else 'cedo')
-            out[slug] = {'status': status, 'horas_desde': round(horas, 1),
-                         'horas_restantes': round(max(0.0, janela - horas), 1),
-                         'pronto_em': (m + timedelta(hours=janela)).strftime('%Y-%m-%dT%H:%M'),
-                         'janela_h': janela}
+            horas = max(0.0, (agora - momento).total_seconds() / 3600)
+            estimulo = min(series, SERIES_SESSAO_MAX) / SERIES_SESSAO_CHEIA
+            meia_vida = REGIOES[regiao][1]
+            por_regiao[regiao] = por_regiao.get(regiao, 0.0) + estimulo * 0.5 ** (horas / meia_vida)
+        out = {}
+        for slug, (_nome, meia_vida) in REGIOES.items():
+            f = por_regiao.get(slug)
+            if f is None:
+                out[slug] = {'fadiga': 0, 'estado': 'sem_treino', 'horas_restantes': 0, 'pronto_em': None}
+                continue
+            estado = 'fatigado' if f > FADIGA_FATIGADO else ('recuperando' if f >= FADIGA_PRONTO else 'pronto')
+            horas = meia_vida * math.log2(f / FADIGA_PRONTO) if f > FADIGA_PRONTO else 0.0
+            out[slug] = {'fadiga': round(f, 3), 'estado': estado, 'horas_restantes': round(horas, 1),
+                         'pronto_em': (agora + timedelta(hours=horas)).strftime('%Y-%m-%dT%H:%M') if horas else None}
+        return out
+
+    @staticmethod
+    def _exercicios_por_regiao(user_id, musculos, nomes, desde):
+        """Região -> exercícios que a treinam nos últimos 6 meses, com melhor
+        1RM estimado, último treino e força retida do exercício."""
+        linhas = (db.session.query(RegistroTreino.exercicio_base_id, RegistroTreino.exercicio_usuario_id,
+                                   RegistroTreino.data_registro, RegistroTreino.created_at,
+                                   HistoricoTreino.carga, HistoricoTreino.repeticoes)
+                  .join(HistoricoTreino, HistoricoTreino.registro_id == RegistroTreino.id)
+                  .filter(RegistroTreino.user_id == user_id,
+                          RegistroTreino.data_registro >= datetime.combine(desde, datetime.min.time()),
+                          RegistroTreino.data_registro <= datetime.combine(_hoje(), datetime.min.time()),
+                          HistoricoTreino.duracao_segundos.is_(None)))
+        por_ex = {}
+        for b, u, dia, criado, carga, reps in linhas:
+            k = MapaMuscularService._chave(b, u)
+            e = por_ex.setdefault(k, {'e1rm': None, 'momento': None})
+            momento = _momento_do_treino(dia, criado)
+            if e['momento'] is None or momento > e['momento']:
+                e['momento'] = momento
+            if carga and reps and 1 <= int(reps) <= REPS_MAX_1RM and float(carga) > 0:
+                v = e1rm(carga, reps)
+                if e['e1rm'] is None or v > e['e1rm']:
+                    e['e1rm'] = v
+        agora = _agora()
+        out = {}
+        for k, e in por_ex.items():
+            principal, secundarios = musculos.get(k, (None, []))
+            nome = nomes.get(k)
+            if not nome:
+                continue
+            dias = (agora - e['momento']).total_seconds() / 86400
+            base = {'nome': nome, 'e1rm': round(e['e1rm'], 1) if e['e1rm'] else None,
+                    'data': e['momento'].strftime('%Y-%m-%d'), 'retida': round(forca_retida(dias), 3)}
+            for regiao, papel in ([(principal, 'principal')] if principal else []) + \
+                    [(r, 'secundario') for r in secundarios]:
+                out.setdefault(regiao, []).append({**base, 'papel': papel})
+        for lista in out.values():
+            lista.sort(key=lambda x: (x['papel'] != 'principal', -(x['e1rm'] or 0), x['nome']))
+            del lista[8:]
         return out
 
     # ------------------------------------------------------------------
