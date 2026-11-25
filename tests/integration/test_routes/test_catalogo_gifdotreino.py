@@ -28,6 +28,10 @@ CORR = _mig('b5d8f2a4c6e1_corrige_catalogo_gifdotreino.py')
 NOVOS = [dict(n, **{col: par[1] for col, par in CORR.CORRECOES.get(n['id_original'], {}).items()})
          for n in DADOS['novos'] if n['id_original'] not in CORR.DUPLICADOS]
 
+# MP4 → WebP animado (migração d2f6a8c4e0b3): o <video> travava o iPhone.
+WEBP_MIG = _mig('d2f6a8c4e0b3_midia_gdt_webp.py')
+WEBP = WEBP_MIG._mapa()
+
 
 class TestDados:
     def test_tamanhos(self):
@@ -36,7 +40,7 @@ class TestDados:
 
     def test_trocas_batem_com_o_exercises_json(self):
         for fid, (gif, img) in DADOS['trocas'].items():
-            assert POR_ID[fid]['gif_url'] == gif and POR_ID[fid]['image'] == img
+            assert POR_ID[fid]['gif_url'] == WEBP[gif] and POR_ID[fid]['image'] == img
 
     def test_novos_estao_no_exercises_json_sem_colidir(self):
         ids = [n['id_original'] for n in DADOS['novos']]
@@ -45,7 +49,7 @@ class TestDados:
         for n in NOVOS:
             e = POR_ID[n['id_original']]
             assert (e['name'], e['target'], e['equipment'], e['category'], e['gif_url']) == (
-                n['nome'], n['alvo'], n['equipamento'], n['categoria'], n['gif_url'])
+                n['nome'], n['alvo'], n['equipamento'], n['categoria'], WEBP[n['gif_url']])
             assert e.get('record_mode') == {'tempo': 'time'}.get(n['modo_registro'])
         assert not set(CORR.DUPLICADOS) & set(POR_ID)
 
@@ -154,3 +158,47 @@ def test_correcoes_vao_e_voltam(app):
         assert (ex.nome, ex.equipamento) == ('Barbell hang clean', 'Peso corporal')
         assert q.filter_by(id_original='8039').one().modo_registro == 'tempo'
         assert q.filter_by(id_original='0042').one().gif_url == CORR.MIDIA['0042'][0][0]
+
+class TestWebp:
+    def test_todo_mp4_do_catalogo_tem_webp(self):
+        assert WEBP_MIG.down_revision == 'b5d8f2a4c6e1'
+        usados = [g for g, _ in DADOS['trocas'].values()] + [n['gif_url'] for n in DADOS['novos']]
+        usados.append(CORR.MIDIA['0042'][1][0])
+        assert set(usados) <= set(WEBP)
+        assert len(set(WEBP.values())) == len(WEBP)  # um arquivo por animação
+        for antes, depois in WEBP.items():
+            assert antes.startswith('videos/gdt/') and antes.endswith('.mp4')
+            assert depois.startswith('videos/gdt/') and depois.endswith('.webp')
+            assert _MEDIA_EXERCICIO_RE.match(depois)
+        # nenhum exercício do catálogo fica com vídeo
+        assert not [e['id'] for e in CATALOGO if (e.get('gif_url') or '').endswith(('.mp4', '.webm'))]
+
+    def test_webp_abre_como_imagem_no_modal(self):
+        js = (RAIZ / 'static' / 'js' / 'modules' / 'exercicio-imagens.js').read_text(encoding='utf-8')
+        assert "const EXTENSOES_VIDEO = ['mp4', 'webm', 'mov', 'm4v'];" in js  # .webp vai no <img>
+
+
+def test_migracao_webp_vai_e_volta(app):
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    mp4, webp = next(iter(WEBP.items()))
+    with app.app_context():
+        db.session.add_all([
+            ExercicioSistema(id_original='9901', nome='Com mp4', gif_url=mp4),
+            ExercicioSistema(id_original='9902', nome='Com gif antigo', gif_url='videos/0001-2gPfomN.gif'),
+        ])
+        db.session.commit()
+
+        def rodar(f):
+            with db.engine.begin() as conn:
+                with Operations.context(MigrationContext.configure(conn)):
+                    f()
+
+        def midia(fid):
+            db.session.expire_all()
+            return ExercicioSistema.query.filter_by(id_original=fid).one().gif_url
+
+        rodar(WEBP_MIG.upgrade)
+        assert (midia('9901'), midia('9902')) == (webp, 'videos/0001-2gPfomN.gif')
+        rodar(WEBP_MIG.downgrade)
+        assert (midia('9901'), midia('9902')) == (mp4, 'videos/0001-2gPfomN.gif')
