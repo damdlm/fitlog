@@ -72,6 +72,63 @@
         frameDoSpinner(els).classList.add('is-vazia');
     }
 
+    // Avisa a página que um vídeo de demonstração vai tocar / parou. O
+    // modo treino (registrar_treino.html) mantém a tela acesa com um
+    // <video> invisível em loop quando o iPhone não concede o Wake Lock
+    // nativo; com ele tocando, começar o MP4 da demonstração derrubava o
+    // processo de vídeo do iOS e a página inteira congelava (só voltava
+    // fechando o app -- e o treino em andamento recarregava do zero).
+    // Ele pausa esse vídeo enquanto a demonstração está aberta.
+    function avisarVideo(aberto) {
+        document.dispatchEvent(new CustomEvent('fitlog:midia-video', { detail: { aberto: aberto } }));
+    }
+
+    // Um <video> NOVO a cada abertura, descartado ao fechar (em vez de
+    // trocar o src do mesmo elemento e chamar load() no meio da animação
+    // do modal): é o caminho mais previsível para o WebKit do iPhone.
+    function novoVideo(els) {
+        const v = els.video.cloneNode(false);
+        v.removeAttribute('src');
+        v.classList.add('d-none');
+        v.controls = false;
+        els.video.replaceWith(v);
+        els.video = v;
+        return v;
+    }
+
+    function descartarVideo(els) {
+        const v = els.video;
+        v.oncanplay = null;
+        v.onloadeddata = null;
+        v.onerror = null;
+        try { v.pause(); } catch (e) { /* ignora */ }
+        if (v.hasAttribute('src')) {
+            v.removeAttribute('src');
+            try { v.load(); } catch (e) { /* ignora */ }
+        }
+        novoVideo(els);
+    }
+
+    function carregarVideo(els, url) {
+        const v = els.video;
+        v.onerror = function () { mostrarErro(els); };
+        // Sem controles: a animação se comporta como o GIF (loop mudo).
+        // Uma única tentativa de tocar quando o primeiro quadro chega; se
+        // o navegador barrar o autoplay (iPhone em modo de economia de
+        // energia), mostra os controles para o aluno tocar.
+        v.onloadeddata = function () {
+            v.onloadeddata = null;
+            esconderSpinner(els);
+            frameDoSpinner(els).classList.remove('is-vazia');
+            v.classList.remove('d-none');
+            const tocando = v.play();
+            if (tocando && tocando.catch) {
+                tocando.catch(function () { v.controls = true; });
+            }
+        };
+        v.src = url;
+    }
+
     window.abrirModalImagensExercicio = function (btn) {
         const nome = btn.dataset.nome || 'Exercício';
         const caminhoOriginal = btn.dataset.gif;
@@ -86,34 +143,23 @@
         if (els.contador) els.contador.classList.add('d-none');
 
         const ehVideo = EXTENSOES_VIDEO.indexOf(extensao(caminhoOriginal)) !== -1;
+        // Cada abertura ganha um número: um "shown" ou "hidden" atrasado de
+        // uma abertura anterior (aluno fechou e já tocou em outro
+        // exercício) não mexe na mídia da atual.
+        const abertura = (els.modalEl._flAbertura || 0) + 1;
+        els.modalEl._flAbertura = abertura;
 
         mostrarSpinner(els);
         els.img.classList.add('d-none');
-        els.video.classList.add('d-none');
         // Zera handlers de uma abertura anterior para não empilhar.
         els.img.onload = null;
         els.img.onerror = null;
-        els.video.oncanplay = null;
-        els.video.onerror = null;
+        descartarVideo(els);
 
-        if (ehVideo) {
-            els.video.onerror = function () { mostrarErro(els); };
-            // Sem controles: a animação se comporta como o GIF (loop mudo).
-            // Se o navegador barrar o autoplay (iPhone em modo de economia
-            // de energia), mostra os controles para o aluno tocar.
-            els.video.controls = false;
-            els.video.oncanplay = function () {
-                esconderSpinner(els);
-                frameDoSpinner(els).classList.remove('is-vazia');
-                els.video.classList.remove('d-none');
-                const tocando = els.video.play();
-                if (tocando && tocando.catch) {
-                    tocando.catch(function () { els.video.controls = true; });
-                }
-            };
-            els.video.src = url;
-            els.video.load();
-        } else {
+        // Vídeo: pausa o vídeo invisível do modo treino. GIF: libera (se
+        // uma abertura anterior com vídeo não chegou a avisar o fim).
+        avisarVideo(ehVideo);
+        if (!ehVideo) {
             els.img.onerror = function () { mostrarErro(els); };
             els.img.onload = function () {
                 esconderSpinner(els);
@@ -125,16 +171,43 @@
         }
 
         modalInstance = bootstrap.Modal.getOrCreateInstance(els.modalEl);
-        modalInstance.show();
+        const modalEl = els.modalEl;
 
-        // Pausa/reseta o vídeo ao fechar, pra não continuar tocando (e
+        // Para e descarta o vídeo ao fechar, pra não continuar tocando (e
         // baixando) em segundo plano depois que o modal já foi fechado.
-        els.modalEl.addEventListener('hidden.bs.modal', function aoFechar() {
-            els.video.pause();
-            els.video.removeAttribute('src');
-            els.video.load();
-            els.modalEl.removeEventListener('hidden.bs.modal', aoFechar);
-        });
+        function aoFechar() {
+            if (modalEl._flAbertura !== abertura) return;
+            descartarVideo(els);
+            if (ehVideo) avisarVideo(false);
+        }
+
+        // Só depois que o modal terminou de abrir: o vídeo começa a
+        // carregar (não no mesmo quadro em que o vídeo do modo treino
+        // acabou de ser pausado e a animação do modal começou) e passa a
+        // valer o "ao fechar" desta abertura.
+        function aoMostrar() {
+            if (modalEl._flAbertura !== abertura) return;
+            if (ehVideo) carregarVideo(els, url);
+            modalEl.addEventListener('hidden.bs.modal', aoFechar, { once: true });
+        }
+
+        if (modalEl.classList.contains('show')) {
+            aoMostrar();
+            return;
+        }
+        modalEl.addEventListener('shown.bs.modal', aoMostrar, { once: true });
+
+        // Ainda fechando a abertura anterior (aluno fechou e já tocou em
+        // outro exercício): o Bootstrap ignora o show() durante a animação
+        // de fechar e nada abria -- era preciso tocar de novo. Abre assim
+        // que ela terminar.
+        if (modalEl.style.display === 'block') {
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                if (modalEl._flAbertura === abertura) modalInstance.show();
+            }, { once: true });
+            return;
+        }
+        modalInstance.show();
     };
 
     window.abrirModalInstrucoesExercicio = function (btn) {

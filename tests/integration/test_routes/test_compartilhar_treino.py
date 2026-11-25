@@ -49,9 +49,24 @@ class TestEstilos:
         assert "const ESTILOS = { escuro: '#1e1e1e', laranja: '#e2711b', claro: '#ffffff' };" in js
         assert "const CHAVE_ESTILO = 'fitlog:share-estilo';" in js
         assert "backgroundColor: ESTILOS[estiloAtual()] || '#1e1e1e'," in js
-        # trocar o estilo gera a imagem de novo (a pronta era do estilo anterior)
+        # trocar o estilo gera a imagem de novo (a pronta era do estilo
+        # anterior), mas só depois que o aluno para de tocar nos estilos
         troca = js[js.index("document.querySelectorAll('[data-share-estilo]').forEach(function (b) {\n            b.addEventListener"):][:500]
-        assert 'imagemPromise = gerarImagemCard();' in troca
+        assert 'agendarGeracao(350);' in troca and 'gerarImagemCard()' not in troca
+
+    def test_geracao_leve_e_em_fila(self, client, app):
+        """No iPhone, cada geração copiava a página inteira e várias rodavam
+        juntas: trocar o tema travava a tela (o crash-watchdog recarregava) e
+        o salvar parecia lento."""
+        js = _script_resumo(_html(client, app, 'sh_fila'))
+        # o clone do html2canvas leva só o cartão e o CSS
+        assert 'ignoreElements: function (el) {' in js
+        assert "document.body.querySelectorAll('style, link[rel=\"stylesheet\"]')" in js
+        assert '!holder.contains(el) && !manterNoClone.has(el)' in js
+        # uma geração por vez, depois da animação do modal
+        assert 'const r = filaGeracao.then(gerarImagemCard);' in js
+        abrir = js[js.index('    function abrir() {'):js.index('    async function gerarImagemCard() {')]
+        assert 'agendarGeracao(450);' in abrir and 'gerarImagemCard()' not in abrir
 
     def test_cores_da_imagem_sao_fixas(self, client, app):
         html = _html(client, app, 'sh_fixo')

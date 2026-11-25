@@ -5581,6 +5581,42 @@ function ligarRemoverAvulso(btn) {
     });
 }
 
+/* Busca no servidor o card de um exercício avulso e o insere na lista
+   (antes do "+ Exercício"), já ligado. Usado pelo seletor do "+ Exercício"
+   e pelo rascunho ao retomar um treino (ver auto-save no fim da página):
+   reaberto pelo ícone, o app volta para /registrar-treino SEM o
+   ?avulso=<chave> na URL, e os avulsos sumiam junto com o que já tinha
+   sido digitado neles. Rejeita se não der (sem rede, card vazio...). */
+async function inserirLinhaAvulsa(chave) {
+    const existente = document.querySelector('.exercise-row[data-exercicio-id="' + CSS.escape(chave) + '"]');
+    if (existente) return existente;
+    const form = document.getElementById('registroForm');
+    const treino = form && form.querySelector('input[name="treino"]');
+    const data = form && form.querySelector('input[name="data"]');
+    const ancora = document.querySelector('.acoes-adicionar');
+    if (!form || !treino || !data || !ancora) throw new Error('tela sem lista de exercícios');
+
+    const params = new URLSearchParams({ treino: treino.value, data: data.value, chave: chave });
+    const resp = await fetch('/registrar/linha-avulsa?' + params.toString(), {
+        credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' }
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const tmp = document.createElement('div');
+    tmp.innerHTML = (await resp.text()).trim();
+    const wrap = tmp.querySelector('.exercise-row-wrap');
+    if (!wrap) throw new Error('card vazio');
+
+    ancora.parentNode.insertBefore(wrap, ancora);
+    ligarLinhaExercicio(wrap);
+    const url = new URL(window.location.href);
+    if (url.searchParams.getAll('avulso').indexOf(chave) === -1) {
+        url.searchParams.append('avulso', chave);
+        window.history.replaceState(null, '', url.toString());
+    }
+    return wrap.querySelector('.exercise-row');
+}
+window.FitLogInserirLinhaAvulsa = inserirLinhaAvulsa;
+
 /* Liga num card inserido depois do carregamento o que a página liga card
    a card ao abrir (switch "vou fazer", seleção ao focar, remover, feito,
    nome truncado, popover de músculos). Resumo e rascunho escutam o
@@ -5811,33 +5847,17 @@ function inicializarAvulsoExercicio() {
             }
 
             const form = document.getElementById('registroForm');
-            const treino = form && form.querySelector('input[name="treino"]');
-            const data = form && form.querySelector('input[name="data"]');
-            const ancora = document.querySelector('.acoes-adicionar');
-            if (!form || !treino || !data || !ancora) { window.location.href = urlRecarregar.toString(); return; }
+            if (!form || !document.querySelector('.acoes-adicionar')) { window.location.href = urlRecarregar.toString(); return; }
 
             adicionando = true;
             item.classList.add('is-carregando');
             item.setAttribute('aria-busy', 'true');
             try {
-                const params = new URLSearchParams({ treino: treino.value, data: data.value, chave: chave });
-                const resp = await fetch('/registrar/linha-avulsa?' + params.toString(), {
-                    credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' }
-                });
-                if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                const tmp = document.createElement('div');
-                tmp.innerHTML = (await resp.text()).trim();
-                const wrap = tmp.querySelector('.exercise-row-wrap');
-                if (!wrap) throw new Error('card vazio');
-
-                ancora.parentNode.insertBefore(wrap, ancora);
-                ligarLinhaExercicio(wrap);
-                window.history.replaceState(null, '', urlRecarregar.toString());
+                const row = await inserirLinhaAvulsa(chave);
                 fecharModal();
                 form.dispatchEvent(new Event('change', { bubbles: true })); // rascunho
-                const row = wrap.querySelector('.exercise-row');
                 document.dispatchEvent(new CustomEvent('fitlog:linha-adicionada', { detail: { row: row } }));
-                wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                (row.closest('.exercise-row-wrap') || row).scrollIntoView({ behavior: 'smooth', block: 'center' });
             } catch (e) {
                 // Sem rede ou erro no servidor: comportamento antigo.
                 window.location.href = urlRecarregar.toString();
@@ -6543,9 +6563,36 @@ function tocarBipe() {
         iniciarFallbackVideo();
     }
 
+    // Vídeo de demonstração do exercício aberto (modal de mídia, ver
+    // exercicio-imagens.js): o vídeo invisível fica pausado até ele
+    // fechar. Os dois tocando juntos derrubavam o processo de vídeo do
+    // iPhone e congelavam a página inteira no meio do treino.
+    var suspensoPorMidia = false;
+
+    document.addEventListener('fitlog:midia-video', function (ev) {
+        var aberto = !!(ev.detail && ev.detail.aberto);
+        suspensoPorMidia = aberto;
+        if (!elWakeVideo) return;
+        if (aberto) {
+            if (!elWakeVideo.paused) {
+                pausaIntencionalVideo = true;
+                elWakeVideo.pause();
+                pausaIntencionalVideo = false;
+            }
+        } else if (rodando && !wakeLock && usandoFallbackVideo) {
+            iniciarFallbackVideo();
+        }
+    });
+
     function iniciarFallbackVideo() {
         if (!elWakeVideo) {
             atualizarBadgeWakeLock('⚠️ sem proteção (vídeo ausente)');
+            return;
+        }
+        if (suspensoPorMidia) {
+            // Volta sozinho quando a demonstração fechar (listener acima);
+            // 'usandoFallbackVideo' marca que ele deve voltar.
+            usandoFallbackVideo = true;
             return;
         }
         // Checa o estado REAL do vídeo (elWakeVideo.paused), não uma
@@ -7470,6 +7517,40 @@ function tocarBipe() {
             + '\n\nRegistrado no FitLog';
     }
 
+    // Gera a imagem UMA de cada vez (em fila) e só depois de um respiro:
+    // ao abrir, espera a animação do modal terminar; ao trocar o tema,
+    // espera o aluno parar de tocar nos estilos. Antes, cada toque
+    // disparava uma geração na hora, todas ao mesmo tempo, e no iPhone a
+    // tela travava por segundos (o salvar parecia lento e o crash-watchdog
+    // chegava a recarregar a página). Quem já está esperando a imagem
+    // (Compartilhar/Baixar) recebe a da última escolha.
+    let filaGeracao = Promise.resolve();
+    let pendente = null;
+    let timerGeracao = null;
+
+    function gerarEmFila() {
+        const r = filaGeracao.then(gerarImagemCard);
+        filaGeracao = r.catch(function () { /* a próxima segue */ });
+        return r;
+    }
+
+    function agendarGeracao(atrasoMs) {
+        if (!pendente) {
+            pendente = {};
+            imagemPromise = new Promise(function (resolve, reject) {
+                pendente.resolve = resolve;
+                pendente.reject = reject;
+            });
+            imagemPromise.catch(function () { /* tratado em obterImagem */ });
+        }
+        clearTimeout(timerGeracao);
+        timerGeracao = setTimeout(function () {
+            const atual = pendente;
+            pendente = null;
+            gerarEmFila().then(atual.resolve, atual.reject);
+        }, atrasoMs);
+    }
+
     function abrir() {
         aplicarEstilo(estiloAtual());
         preencherCard(montarResumoTreino());
@@ -7491,7 +7572,7 @@ function tocarBipe() {
         // precisa aguardar essa Promise -- que na prática já estará pronta
         // -- então o navigator.share() roda quase imediatamente após o
         // toque.
-        imagemPromise = gerarImagemCard();
+        agendarGeracao(450);
     }
 
     async function gerarImagemCard() {
@@ -7526,6 +7607,11 @@ function tocarBipe() {
         holder.appendChild(clone);
         document.body.appendChild(holder);
 
+        const manterNoClone = new Set();
+        document.body.querySelectorAll('style, link[rel="stylesheet"]').forEach(function (st) {
+            for (let n = st; n && n !== document.body; n = n.parentElement) manterNoClone.add(n);
+        });
+
         let finalCanvas;
         try {
             // Se o treino tiver muitos exercícios e não couber na altura
@@ -7540,7 +7626,19 @@ function tocarBipe() {
                 width: cloneWidthCss,
                 height: alturaReal,
                 windowWidth: cloneWidthCss,
-                windowHeight: alturaReal
+                windowHeight: alturaReal,
+                // O html2canvas copia o DOCUMENTO INTEIRO (com o estilo
+                // calculado de cada nó) antes de desenhar. Nesta tela isso
+                // é a lista de exercícios, modais, vídeos... a cada geração
+                // -- no iPhone, trocar o tema 2-3 vezes travava a tela por
+                // segundos e o crash-watchdog recarregava a página. Só o
+                // cartão (holder) importa: o resto do <body> fica de fora,
+                // menos os <style>/<link> (o CSS do cartão mora neles) e o
+                // caminho até eles.
+                ignoreElements: function (el) {
+                    return el.parentNode !== null && document.body.contains(el) && el !== document.body
+                        && !holder.contains(el) && !manterNoClone.has(el);
+                }
             });
         } finally {
             holder.remove();
@@ -7558,7 +7656,7 @@ function tocarBipe() {
     // primeiro) ou tiver falhado, gera uma na hora como fallback.
     function obterImagem() {
         if (!imagemPromise) {
-            imagemPromise = gerarImagemCard();
+            imagemPromise = gerarEmFila();
         }
         return imagemPromise.catch(function (err) {
             imagemPromise = null;
@@ -7595,7 +7693,7 @@ function tocarBipe() {
                 try { localStorage.setItem(CHAVE_ESTILO, estilo); } catch (err) { /* sem storage */ }
                 aplicarEstilo(estilo);
                 // A imagem pronta era do estilo anterior: gera de novo.
-                imagemPromise = gerarImagemCard();
+                agendarGeracao(350);
             });
         });
 
@@ -7773,13 +7871,19 @@ function tocarBipe() {
             feitos: feitos,
             // Linhas de cardio criadas pelo "+ Cardio" (não vêm do servidor):
             // recriadas antes de restaurarCampos().
-            cardiosAvulsos: Array.from(document.querySelectorAll('input[name="avulso_cardio[]"]')).map(function (i) { return i.value; })
+            cardiosAvulsos: Array.from(document.querySelectorAll('input[name="avulso_cardio[]"]')).map(function (i) { return i.value; }),
+            // Exercícios do "+ Exercício" (avulsos do catálogo/do aluno):
+            // também não vêm do servidor quando o app é reaberto pelo
+            // ícone (a URL volta sem ?avulso=). Recriados ao retomar.
+            exerciciosAvulsos: Array.from(document.querySelectorAll('input[name="avulso_exercicios[]"]')).map(function (i) { return i.value; })
         };
     }
 
+    var restaurando = false;
+
     function salvarEstado() {
         var s = ls();
-        if (!s) return;
+        if (!s || restaurando) return;
         try {
             if (!window.FitLogTreinoState || !window.FitLogTreinoState.emAndamento()) {
                 s.removeItem(STORAGE_KEY);
@@ -7815,7 +7919,24 @@ function tocarBipe() {
         });
     }
 
-    function tentarRestaurar() {
+    // Recria os avulsos do rascunho que a página não trouxe (um de cada
+    // vez, na ordem em que foram adicionados). Um que falhar (sem rede,
+    // exercício apagado) não impede os outros.
+    function recriarAvulsos(chaves) {
+        var inserir = window.FitLogInserirLinhaAvulsa;
+        var faltando = (chaves || []).filter(function (c) {
+            return !document.querySelector('.exercise-row[data-exercicio-id="' + CSS.escape(c) + '"]');
+        });
+        if (!faltando.length || typeof inserir !== 'function') return Promise.resolve(0);
+        var perdidos = 0;
+        return faltando.reduce(function (p, chave) {
+            return p.then(function () {
+                return inserir(chave).catch(function () { perdidos += 1; });
+            });
+        }, Promise.resolve()).then(function () { return perdidos; });
+    }
+
+    async function tentarRestaurar() {
         var estado = lerEstadoSalvo();
         if (!estado) return;
 
@@ -7850,6 +7971,15 @@ function tocarBipe() {
 
         if (window.FitLogCardio && Array.isArray(estado.cardiosAvulsos)) {
             estado.cardiosAvulsos.forEach(function (chave) { window.FitLogCardio.criarLinhaAvulsa(chave); });
+        }
+        // Enquanto recria os avulsos, o auto-save não pode gravar por cima
+        // um estado sem eles (o intervalo de 5 s roda nesse meio tempo).
+        restaurando = true;
+        var avulsosPerdidos = 0;
+        try {
+            avulsosPerdidos = await recriarAvulsos(estado.exerciciosAvulsos);
+        } finally {
+            restaurando = false;
         }
         var linhas = coletarLinhasPorId();
 
@@ -7886,7 +8016,11 @@ function tocarBipe() {
         crono.restaurar(Math.round(segundos), estado.rodando);
 
         if (window.FitLogUtils && typeof window.FitLogUtils.showToast === 'function') {
-            window.FitLogUtils.showToast('Treino retomado de onde você parou.', 'success');
+            if (avulsosPerdidos) {
+                window.FitLogUtils.showToast('Treino retomado, mas ' + avulsosPerdidos + (avulsosPerdidos === 1 ? ' exercício avulso não pôde' : ' exercícios avulsos não puderam') + ' ser recuperado(s). Adicione de novo pelo "+ Exercício".', 'warning', 8000);
+            } else {
+                window.FitLogUtils.showToast('Treino retomado de onde você parou.', 'success');
+            }
         }
 
         // Já restaurado -- volta a salvar a partir daqui pra manter o
