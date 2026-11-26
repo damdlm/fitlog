@@ -270,11 +270,11 @@ class TestTela:
             v, t = _ficha(u, fim=mms._hoje())
             _reg(u, v, t, 1, [S10], base=_ex('Peitorais'))
         _login(client, 'zz_tela')
-        assert client.get('/api/mapa-muscular').get_json()['planejado']['treinos'] == 0
+        html = client.get('/aluno/estatisticas').get_data(as_text=True)
+        assert 'class="mm-sem-ficha" hidden>Não há ficha ativa' in html
         with open('static/js/modules/mapa-muscular.js', encoding='utf-8') as f:
             js = f.read()
-        assert "if (!p.treinos) {" in js
-        assert 'Não há ficha ativa, então não há séries previstas para comparar.' in js
+        assert "el('.mm-sem-ficha').hidden = !!p.treinos" in js
 
 
 class TestPerfilPeso:
@@ -297,77 +297,3 @@ class TestPerfilPeso:
             assert peso() == 30, ruim
         client.post('/auth/profile/update', data=base)  # form sem o campo: não mexe
         assert peso() == 30
-
-
-class TestEvolucaoForca:
-    def test_recente_x_antes(self, app, monkeypatch):
-        """Aba Força: melhor 1RM das últimas 4 semanas x melhor de antes."""
-        with app.app_context():
-            _relogio(monkeypatch, TER, datetime(2026, 11, 24, 20, 0, tzinfo=BR))
-            u = _u('zz_evol')
-            v, t = _ficha(u, dias_atras=120)
-            ex = _ex('Peitorais')
-            _reg(u, v, t, 60, [{'carga': 60, 'repeticoes': 10}], base=ex)   # antes: 80
-            _reg(u, v, t, 35, [{'carga': 50, 'repeticoes': 10}], base=ex)   # antes, menor
-            _reg(u, v, t, 10, [{'carga': 66, 'repeticoes': 10}], base=ex)   # recente: 88
-            _reg(u, v, t, 2, [{'carga': 60, 'repeticoes': 5}], base=ex)     # recente, menor
-            e = S.calcular(u.id)['regioes']['peito']['exercicios'][0]
-            assert (e['e1rm'], e['e1rm_recente'], e['e1rm_antes']) == (88, 88, 80)
-
-            # só treino antigo: sem "recente" (a tela mostra "sem treino há X dias")
-            u2 = _u('zz_evol2')
-            v2, t2 = _ficha(u2, dias_atras=120)
-            _reg(u2, v2, t2, 40, [{'carga': 60, 'repeticoes': 10}], base=ex)
-            e = S.calcular(u2.id)['regioes']['peito']['exercicios'][0]
-            assert (e['e1rm_recente'], e['e1rm_antes']) == (None, 80)
-
-            # o 28º dia para trás ainda é "antes"; o 27º já é recente
-            u3 = _u('zz_evol3')
-            v3, t3 = _ficha(u3, dias_atras=120)
-            _reg(u3, v3, t3, 28, [{'carga': 60, 'repeticoes': 10}], base=ex)
-            _reg(u3, v3, t3, 27, [{'carga': 30, 'repeticoes': 10}], base=ex)
-            e = S.calcular(u3.id)['regioes']['peito']['exercicios'][0]
-            assert (e['e1rm_recente'], e['e1rm_antes']) == (40, 80)
-
-
-class TestApiPeso:
-    def test_salva_valida_e_apaga(self, client, app):
-        with app.app_context():
-            _u('zz_api_peso')
-        _login(client, 'zz_api_peso')
-
-        def peso():
-            with app.app_context():
-                v = User.query.filter_by(username='zz_api_peso').one().peso_kg
-                return None if v is None else float(v)
-
-        r = client.post('/api/peso-corporal', json={'peso_kg': '62,35'})
-        assert r.status_code == 200 and r.get_json() == {'peso_kg': 62.4} and peso() == 62.4
-        for ruim in ('20', '301', 'abc', -5):
-            r = client.post('/api/peso-corporal', json={'peso_kg': ruim})
-            assert r.status_code == 400 and 'entre 30 e 300' in r.get_json()['erro'] and peso() == 62.4
-        assert client.post('/api/peso-corporal', json={'peso_kg': 80}).get_json() == {'peso_kg': 80.0}
-        assert client.post('/api/peso-corporal', json={'peso_kg': ''}).get_json() == {'peso_kg': None} and peso() is None
-        # aparece nos níveis de força na hora
-        client.post('/api/peso-corporal', json={'peso_kg': 70})
-        assert client.get('/api/nivel-forca').get_json()['peso_kg'] == 70
-
-    def test_sem_login(self, client):
-        assert client.post('/api/peso-corporal', json={'peso_kg': 70}).status_code in (302, 401)
-
-
-def test_abas_novas_no_js():
-    """Séries pintadas pelo resultado, Recuperação com 'Pronto para treinar
-    hoje', Força com 1RM só de exercício PRINCIPAL e peso salvo na aba."""
-    with open('static/js/modules/mapa-muscular.js', encoding='utf-8') as f:
-        js = f.read()
-    # Séries: status, "Faltam N" na semana atual, aviso de ficha abaixo da faixa
-    assert "return dados.semana.offset === 0 ? 'faltando' : 'abaixo';" in js
-    assert "var pill = st === 'faltando' ? 'Faltam ' + falta : ROTULO_STATUS[st];" in js
-    assert 'Mesmo cumprindo a ficha (' in js and 'média das últimas 4 semanas' in js
-    # Recuperação
-    assert 'Pronto para treinar hoje' in js and "Pronto em ' + duracao(r.horas_restantes) + (r.pronto_em ? '<small>' + quando(r.pronto_em)" in js
-    # Força: só exercício principal; evolução; aviso de parado; peso
-    assert "if (e.papel === 'principal' && e.e1rm && (!ex || e.e1rm > ex.e1rm)) ex = e;" in js
-    assert 'evol = (ex.e1rm_recente / ex.e1rm_antes - 1) * 100' in js
-    assert 'Sem treino há mais de 1 semana:' in js and "fetch('/api/peso-corporal'" in js

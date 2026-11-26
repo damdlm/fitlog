@@ -534,29 +534,21 @@
     }
     /* ===== Mapa muscular (abas Séries / Fadiga / Força) ===== */
     .mm-abas { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--fl-c-sup2, #f3f1ee); border-radius: 12px; padding: 3px; gap: 3px; }
-    .mm-aba { border: 0; background: transparent; color: var(--fl-c-txt2, #6b665c); font-size: .84rem; font-weight: 700; border-radius: 9px; padding: 7px 8px; }
+    .mm-aba, .mm-sub-modo { border: 0; background: transparent; color: var(--fl-c-txt2, #6b665c); font-size: .84rem; font-weight: 700; border-radius: 9px; padding: 7px 8px; }
     .mm-aba.is-ativo { background: var(--fl-c-sup, #fff); color: var(--fl-c-txt, #2D2D2D); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
-    .mm-pergunta { font-size: .84rem; color: var(--fl-c-txt2, #6b665c); margin: 2px 0 8px; line-height: 1.4; }
-    .mm-pergunta:empty { display: none; }
-    .mm-semana { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin: 0 0 8px; }
+    .mm-sub[hidden] { display: none; }
+    .mm-sub-linha { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .mm-sub-modos { flex: 1 1 200px; display: grid; grid-template-columns: 1fr 1fr; background: var(--fl-c-sup2, #f3f1ee); border-radius: 10px; padding: 3px; }
+    .mm-sub-modo { font-size: .78rem; padding: 5px 8px; border-radius: 8px; }
+    .mm-sub-modo.is-ativo { background: var(--fl-c-sup, #fff); color: var(--fl-c-txt, #2D2D2D); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+    .mm-semana { display: flex; align-items: center; justify-content: space-between; gap: 4px; flex: 1 1 200px; }
     .mm-semana[hidden] { display: none; }
     .mm-semana button { border: 0; background: none; color: var(--fl-c-txt, #2D2D2D); width: 32px; height: 32px; border-radius: 8px; }
     .mm-semana button:disabled { opacity: .3; }
     .mm-semana-rotulo { font-weight: 700; font-size: .86rem; color: var(--fl-c-txt, #2D2D2D); }
-    .mm-resumo:empty { display: none; }
-    .mm-resumo { display: flex; flex-wrap: wrap; gap: 6px; }
-    .mm-chip { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 700; padding: 4px 10px; border-radius: 99px; }
-    .mm-chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-    .mm-chip-ok { background: rgba(46, 158, 91, .13); color: var(--fl-c-txt-verde, #1f6b3f); } /* tema: fixo */
-    .mm-chip-ok i { background: #2E9E5B; } /* tema: fixo */
-    .mm-chip-falta { background: rgba(227, 154, 43, .16); color: var(--fl-c-txt-laranja, #8a5210); } /* tema: fixo */
-    .mm-chip-falta i { background: #E39A2B; } /* tema: fixo */
-    .mm-chip-acima { background: rgba(91, 107, 214, .14); color: var(--fl-c-txt-azul, #3b469c); } /* tema: fixo */
-    .mm-chip-acima i { background: #5B6BD6; } /* tema: fixo */
-    .mm-prontos { flex: 1 1 100%; background: rgba(46, 158, 91, .09); border: 1px solid rgba(46, 158, 91, .28); border-radius: 12px; padding: 9px 11px; } /* tema: fixo */
-    .mm-prontos-tit { font-weight: 700; font-size: .86rem; color: var(--fl-c-txt-verde, #1f6b3f); margin-bottom: 6px; }
-    .mm-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-    .mm-tag { border: 1px solid rgba(46, 158, 91, .3); background: var(--fl-c-sup, #fff); color: var(--fl-c-txt, #2D2D2D); border-radius: 99px; font-size: .8rem; font-weight: 600; padding: 3px 10px; } /* tema: fixo */
+    .mm-nota-planejado { font-size: .8rem; color: var(--fl-c-txt2, #6b665c); margin: 8px 0 0; }
+    .mm-nota-planejado[hidden] { display: none; }
+    .mm-treinos-semana { width: 52px; display: inline-block; padding: 1px 6px; border: 1px solid var(--fl-c-borda, #e2dcd5); border-radius: 6px; background: var(--fl-c-sup, #fff); color: var(--fl-c-txt, #2D2D2D); text-align: center; }
     .mm-vistas { display: flex; justify-content: center; gap: 8%; margin: 14px auto 0; max-width: 440px; }
     .mm-corpo { width: 42%; height: auto; max-height: 300px; display: block; }
     .mm-corpo path { stroke: var(--fl-c-sup, #fff); stroke-width: 2.5; stroke-linejoin: round; }
@@ -565,99 +557,57 @@
     .mm-r path { transition: fill .25s ease; }
     .mm-r.is-sel path, .mm-r:focus-visible path { stroke: var(--fl-c-txt, #2D2D2D); stroke-width: 6; }
     .mm-c-vazio path, i.mm-c-vazio { fill: var(--fl-c-corpo-vazio, #e4e0db); background: var(--fl-c-corpo-vazio, #e4e0db); }
-    .mm-s-ok path, i.mm-s-ok { fill: #2E9E5B; background: #2E9E5B; } /* tema: fixo */
-    .mm-s-faltando path, i.mm-s-faltando { fill: #E39A2B; background: #E39A2B; } /* tema: fixo */
-    .mm-s-acima path, i.mm-s-acima { fill: #5B6BD6; background: #5B6BD6; } /* tema: fixo */
+    .mm-s1 path, i.mm-s1 { fill: #fbd3ad; background: #fbd3ad; } /* tema: fixo */
+    .mm-s2 path, i.mm-s2 { fill: #f6a053; background: #f6a053; } /* tema: fixo */
+    .mm-s3 path, i.mm-s3 { fill: #e2711b; background: #e2711b; } /* tema: fixo */
+    .mm-s4 path, i.mm-s4 { fill: #a84f0a; background: #a84f0a; } /* tema: fixo */
     .mm-f-fatigado path, i.mm-f-fatigado { fill: #e5483b; background: #e5483b; } /* tema: fixo */
     .mm-f-recuperando path, i.mm-f-recuperando { fill: #f39a2b; background: #f39a2b; } /* tema: fixo */
-    .mm-f-pronto path, i.mm-f-pronto { fill: #9fd4b3; background: #9fd4b3; } /* tema: fixo */
-    .mm-t-sobe path, i.mm-t-sobe { fill: #2E9E5B; background: #2E9E5B; } /* tema: fixo */
-    .mm-t-estavel path, i.mm-t-estavel { fill: #f2b57c; background: #f2b57c; } /* tema: fixo */
-    .mm-t-cai path, i.mm-t-cai { fill: #d9483b; background: #d9483b; } /* tema: fixo */
-    .mm-t-parado path, i.mm-t-parado { fill: #b9a99a; background: #b9a99a; } /* tema: fixo */
-    .mm-legenda { display: flex; justify-content: center; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 8px 0 6px; font-size: .74rem; color: var(--fl-c-txt2, #6b665c); }
-    .mm-legenda span { display: inline-flex; align-items: center; gap: 5px; }
-    .mm-legenda i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; }
-    .mm-titulo { font-size: .72rem; font-weight: 800; color: var(--fl-c-txt2, #6b665c); text-transform: uppercase; letter-spacing: .05em; margin: 14px 0 2px; }
+    .mm-f-pronto path, i.mm-f-pronto { fill: #f2c94c; background: #f2c94c; } /* tema: fixo */
+    .mm-r1 path, i.mm-r1 { fill: #f2c94c; background: #f2c94c; } /* tema: fixo */
+    .mm-r2 path, i.mm-r2 { fill: #b5c14a; background: #b5c14a; } /* tema: fixo */
+    .mm-r3 path, i.mm-r3 { fill: #7ea545; background: #7ea545; } /* tema: fixo */
+    .mm-r4 path, i.mm-r4 { fill: #4f7a3a; background: #4f7a3a; } /* tema: fixo */
+    .mm-legenda { display: flex; justify-content: flex-end; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 6px 0 4px; font-size: .72rem; color: var(--fl-c-txt2, #6b665c); }
+    .mm-legenda i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; vertical-align: -1px; margin-right: 3px; }
+    .mm-legenda > i { margin: 0; }
+    .mm-explica { font-size: .8rem; color: var(--fl-c-txt2, #6b665c); margin: 4px 0 8px; }
+    .mm-explica:empty { display: none; }
+    .mm-titulo { font-size: .72rem; font-weight: 800; color: var(--fl-c-txt2, #6b665c); text-transform: uppercase; letter-spacing: .05em; margin: 12px 0 2px; }
     .mm-vazio-txt { font-size: .84rem; color: var(--fl-c-txt2, #6b665c); margin: 6px 0; }
     .mm-lista { list-style: none; padding: 0; margin: 0; }
-    .mm-lista li { padding: 10px 0; border-top: 1px solid var(--fl-c-borda, #f0ece4); font-size: .86rem; }
+    .mm-lista li { display: grid; grid-template-columns: minmax(90px, 1.1fr) 1.6fr minmax(96px, auto); align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--fl-c-borda, #f0ece4); font-size: .86rem; }
     .mm-lista li[data-r] { cursor: pointer; }
     .mm-lista li.is-sel .mm-lista-nome { color: var(--fl-c-txt-laranja, #a8560c); }
     .mm-lista-nome { font-weight: 600; color: var(--fl-c-txt, #2D2D2D); }
-    .mm-lista-num { text-align: right; color: var(--fl-c-txt2, #6b665c); white-space: nowrap; font-size: .8rem; }
-    .mm-lista-num b { color: var(--fl-c-txt, #2D2D2D); }
-    .mm-linha-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .mm-marcas { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .74rem; color: var(--fl-c-txt2, #6b665c); background: var(--fl-c-sup2, #f7f5f2); border-radius: 10px; padding: 7px 10px; margin: 10px 0 2px; }
-    .mm-marcas span { display: inline-flex; align-items: center; gap: 6px; }
-    .mm-m-feito { width: 16px; height: 8px; border-radius: 4px; background: #2E9E5B; display: inline-block; } /* tema: fixo */
-    .mm-m-ficha { height: 12px; border-left: 2px dashed var(--fl-c-txt, #2D2D2D); display: inline-block; }
-    .mm-m-faixa { width: 16px; height: 8px; border-radius: 4px; background: rgba(46, 158, 91, .2); display: inline-block; } /* tema: fixo */
-    .mm-pill { font-size: .72rem; font-weight: 800; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
-    .mm-st-ok .mm-pill { background: rgba(46, 158, 91, .13); color: var(--fl-c-txt-verde, #1f6b3f); } /* tema: fixo */
-    .mm-st-faltando .mm-pill, .mm-st-abaixo .mm-pill { background: rgba(227, 154, 43, .16); color: var(--fl-c-txt-laranja, #8a5210); } /* tema: fixo */
-    .mm-st-acima .mm-pill { background: rgba(91, 107, 214, .14); color: var(--fl-c-txt-azul, #3b469c); } /* tema: fixo */
-    .mm-barra { position: relative; display: block; height: 10px; border-radius: 99px; background: var(--fl-c-sup2, #efebe6); margin: 8px 0 6px; }
-    .mm-barra-faixa { position: absolute; top: 0; bottom: 0; background: rgba(46, 158, 91, .2); border-radius: 99px; } /* tema: fixo */
-    .mm-barra-valor { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: #2E9E5B; } /* tema: fixo */
-    .mm-st-faltando .mm-barra-valor, .mm-st-abaixo .mm-barra-valor { background: #E39A2B; } /* tema: fixo */
-    .mm-st-acima .mm-barra-valor { background: #5B6BD6; } /* tema: fixo */
-    .mm-barra-ficha { position: absolute; top: -4px; bottom: -4px; margin-left: -1px; border-left: 2px dashed var(--fl-c-txt, #2D2D2D); }
-    .mm-linha-num { font-size: .8rem; color: var(--fl-c-txt2, #6b665c); }
-    .mm-linha-num b { color: var(--fl-c-txt, #2D2D2D); font-size: .92rem; }
-    .mm-aviso-ficha { font-size: .78rem; color: var(--fl-c-txt-laranja, #8a5210); margin-top: 4px; }
-    .mm-ficha-linha { font-size: .8rem; color: var(--fl-c-txt2, #6b665c); margin: 10px 0 0; }
-    .mm-ficha-linha input { width: 64px; margin-left: 4px; padding: 2px 6px; border: 1px solid var(--fl-c-borda, #e2dcd5); border-radius: 6px; background: var(--fl-c-sup, #fff); color: var(--fl-c-txt, #2D2D2D); text-align: center; }
-    .mm-link { border: 0; background: none; padding: 0; color: var(--fl-c-txt-laranja, #a8560c); font-weight: 700; font-size: inherit; }
-    .mm-lista-rec li { display: flex; align-items: center; gap: 10px; }
-    .mm-anel { width: 34px; height: 34px; flex: none; }
-    .mm-anel circle { fill: none; stroke-width: 4; }
-    .mm-anel-fundo { stroke: var(--fl-c-sup2, #efe9e3); }
-    .mm-anel-valor { stroke: #f39a2b; stroke-linecap: round; } /* tema: fixo */
-    .mm-st-fatigado .mm-anel-valor { stroke: #e5483b; } /* tema: fixo */
-    .mm-rec-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-    .mm-rec-txt small, .mm-rec-quando small { font-size: .74rem; color: var(--fl-c-txt2, #6b665c); font-weight: 400; }
-    .mm-rec-quando { text-align: right; font-weight: 700; font-size: .82rem; color: var(--fl-c-txt, #2D2D2D); white-space: nowrap; display: flex; flex-direction: column; }
-    .mm-alerta { background: rgba(227, 154, 43, .1); border: 1px solid rgba(227, 154, 43, .35); border-radius: 12px; padding: 9px 11px; font-size: .82rem; color: var(--fl-c-txt, #2D2D2D); margin: 4px 0 6px; line-height: 1.4; } /* tema: fixo */
-    .mm-alerta b { color: var(--fl-c-txt-laranja, #8a5210); }
-    .mm-peso { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; background: var(--fl-c-sup2, #f7f5f2); border-radius: 12px; padding: 9px 11px; margin: 0 0 8px; font-size: .84rem; color: var(--fl-c-txt, #2D2D2D); }
-    .mm-peso input { width: 70px; border: 1px solid var(--fl-c-borda, #ddd6cf); border-radius: 8px; padding: 5px 8px; text-align: right; background: var(--fl-c-sup, #fff); color: var(--fl-c-txt, #2D2D2D); }
-    .mm-peso button { margin-left: auto; background: #F28C33; color: #fff; border: 0; border-radius: 8px; padding: 6px 14px; font-weight: 700; } /* tema: fixo */
-    .mm-peso button:disabled { opacity: .6; }
-    .mm-peso-msg { flex: 1 1 100%; font-size: .78rem; color: #c0392b; } /* tema: fixo */
-    .mm-peso-msg:empty { display: none; }
-    .mm-peso-linha { font-size: .82rem; color: var(--fl-c-txt2, #6b665c); margin: 0 0 6px; }
-    .mm-peso-linha b { color: var(--fl-c-txt, #2D2D2D); }
-    .mm-kg { font-size: .95rem; color: var(--fl-c-txt, #2D2D2D); white-space: nowrap; }
-    .mm-tend { font-size: .76rem; font-weight: 700; margin-left: 6px; white-space: nowrap; }
-    .mm-tend-sobe, .mm-tend-novo { color: var(--fl-c-txt-verde, #1f7a45); }
-    .mm-tend-estavel, .mm-tend-parado { color: var(--fl-c-txt2, #8a837c); }
-    .mm-tend-cai { color: #c0392b; } /* tema: fixo */
-    .mm-niv { display: flex; gap: 3px; margin-top: 7px; }
-    .mm-niv span { flex: 1; height: 6px; border-radius: 4px; background: var(--fl-c-sup2, #ece7e2); }
-    .mm-niv span.on { background: #F28C33; } /* tema: fixo */
-    .mm-niv-txt { display: flex; justify-content: space-between; font-size: .72rem; color: var(--fl-c-txt2, #8a837c); margin-top: 3px; }
-    .mm-detalhe { border: 1px solid var(--fl-c-borda, #ece6df); border-radius: 12px; padding: 10px 12px; margin: 10px 0 6px; background: var(--fl-c-sup, #fff); }
-    .mm-detalhe-topo { display: flex; align-items: center; justify-content: space-between; font-weight: 800; font-size: .95rem; color: var(--fl-c-txt, #2D2D2D); }
-    .mm-detalhe-fechar { border: 0; background: none; color: var(--fl-c-txt2, #6b665c); width: 30px; height: 30px; }
-    .mm-detalhe p { font-size: .82rem; color: var(--fl-c-txt2, #6b665c); margin: 4px 0 0; line-height: 1.5; }
-    .mm-detalhe p b { color: var(--fl-c-txt, #2D2D2D); font-weight: 600; }
-    .mm-lista-ex li { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; }
-    .mm-ex-nome { font-weight: 600; color: var(--fl-c-txt, #2D2D2D); min-width: 0; }
+    .mm-lista-num { text-align: right; color: var(--fl-c-txt2, #6b665c); white-space: nowrap; font-size: .82rem; }
+    .mm-lista-num b { color: var(--fl-c-txt, #2D2D2D); font-size: .9rem; }
+    .mm-barra { position: relative; height: 6px; border-radius: 99px; background: var(--fl-c-sup2, #efebe6); }
+    .mm-barra-faixa { position: absolute; top: 0; bottom: 0; background: rgba(242, 140, 51, .3); border-radius: 99px; } /* tema: fixo */
+    .mm-barra-valor { position: absolute; left: 0; top: 0; bottom: 0; background: #e2711b; border-radius: 99px; } /* tema: fixo */
+    .mm-barra-marca { position: absolute; top: -4px; width: 2px; height: 14px; margin-left: -1px; background: var(--fl-c-txt, #2D2D2D); border-radius: 2px; }
+    .mm-lista-fadiga li { grid-template-columns: 12px 1fr auto 82px; }
+    .mm-lista-forca .mm-barra-valor { background: var(--fl-c-txt2, #9a958f); }
+    .mm-ponto { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .mm-lista-quando { text-align: right; color: var(--fl-c-txt2, #6b665c); font-size: .8rem; }
+    .mm-prontos { font-size: .84rem; color: var(--fl-c-txt, #2D2D2D); margin: 4px 0 0; }
+    .mm-lista-ex li { grid-template-columns: 1.4fr 1fr auto; }
+    .mm-ex { display: flex; flex-direction: column; min-width: 0; }
+    .mm-ex-nome { font-weight: 600; color: var(--fl-c-txt, #2D2D2D); }
     .mm-ex-nome small { font-weight: 600; font-size: .7rem; color: var(--fl-c-txt2, #6b665c); margin-left: 4px; }
-    .mm-ex-sub { font-size: .76rem; color: var(--fl-c-txt2, #6b665c); margin-top: 2px; }
-    .mm-niveis { margin-top: 18px; padding-top: 2px; border-top: 2px solid var(--fl-c-borda, #f0ece4); }
+    .mm-ex-sub { font-size: .76rem; color: var(--fl-c-txt2, #6b665c); }
+    .mm-lista-niveis li { grid-template-columns: 1fr auto; }
+    .mm-niveis { margin-top: 18px; padding-top: 6px; border-top: 2px solid var(--fl-c-borda, #f0ece4); }
+    .mm-niveis-topo { display: flex; align-items: center; justify-content: space-between; }
+    .mm-sobre { font-size: .82rem; font-weight: 700; color: var(--fl-c-txt-laranja, #a8560c); text-decoration: none; }
     .mm-nota-niveis { font-size: .72rem; color: var(--fl-c-txt2, #6b665c); margin: 6px 0 0; }
     .mm-mais { display: block; margin: 8px auto 0; border: 0; background: none; color: var(--fl-c-txt-laranja, #a8560c); font-weight: 700; font-size: .84rem; }
     .mm-nota { font-size: .72rem; color: var(--fl-c-txt2, #6b665c); margin: 14px 0 0; }
     .mm-nota a { color: inherit; }
-    /* Desktop: corpo à esquerda, lista à direita (as barras não esticam a tela toda) */
-    @media (min-width: 992px) {
-        #mapaMuscular .card-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); grid-template-rows: repeat(5, auto) 1fr; column-gap: 32px; align-items: start; }
-        #mapaMuscular .card-body > * { grid-column: 1; }
-        #mapaMuscular .mm-painel { grid-column: 2; grid-row: 1 / span 6; }
-        #mapaMuscular .mm-painel > .mm-marcas:first-child, #mapaMuscular .mm-painel > .mm-detalhe:first-child { margin-top: 0; }
-        #mapaMuscular .mm-nota { grid-column: 1 / -1; }
+    @media (max-width: 576px) {
+        .mm-lista li { grid-template-columns: minmax(80px, 1fr) 1.2fr minmax(84px, auto); gap: 8px; }
+        .mm-lista-fadiga li { grid-template-columns: 12px 1fr auto 74px; }
+        .mm-lista-ex li { grid-template-columns: 1.6fr .8fr auto; }
     }
 
     /* Cartão Cardio (teal #1F7A8C, cor do cardio no app) */
@@ -880,22 +830,34 @@
         </h6>
         <div class="mm-abas" role="group" aria-label="O que o mapa mostra">
             <button type="button" class="mm-aba is-ativo" data-aba="series" aria-pressed="true">Séries</button>
-            <button type="button" class="mm-aba" data-aba="fadiga" aria-pressed="false">Recuperação</button>
+            <button type="button" class="mm-aba" data-aba="fadiga" aria-pressed="false">Fadiga</button>
             <button type="button" class="mm-aba" data-aba="forca" aria-pressed="false">Força</button>
         </div>
     </div>
     <div class="card-body">
-        <p class="mm-pergunta"></p>
-        <div class="mm-semana">
-            <button type="button" class="mm-semana-ant" aria-label="Semana anterior"><i class="bi bi-chevron-left"></i></button>
-            <span class="mm-semana-rotulo" aria-live="polite">Esta semana</span>
-            <button type="button" class="mm-semana-prox" aria-label="Próxima semana" disabled><i class="bi bi-chevron-right"></i></button>
+        <div class="mm-sub">
+            <div class="mm-sub-linha">
+                <div class="mm-sub-modos" role="group" aria-label="Séries feitas ou planejadas">
+                    <button type="button" class="mm-sub-modo is-ativo" data-sub="feito" aria-pressed="true">Feito</button>
+                    <button type="button" class="mm-sub-modo" data-sub="planejado" aria-pressed="false">Planejado</button>
+                </div>
+                <div class="mm-semana">
+                    <button type="button" class="mm-semana-ant" aria-label="Semana anterior"><i class="bi bi-chevron-left"></i></button>
+                    <span class="mm-semana-rotulo" aria-live="polite">Esta semana</span>
+                    <button type="button" class="mm-semana-prox" aria-label="Próxima semana" disabled><i class="bi bi-chevron-right"></i></button>
+                </div>
+            </div>
+            <p class="mm-nota-planejado" hidden>
+                <span class="mm-com-ficha">Ficha <span class="mm-ficha-nome"></span> com
+                <label class="mm-treinos-wrap"><input type="number" class="mm-treinos-semana" min="1" max="14" step="1" inputmode="numeric" aria-label="Treinos por semana"> treinos por semana</label>.</span>
+                <span class="mm-sem-ficha" hidden>Não há ficha ativa, então não há séries planejadas para comparar.</span>
+            </p>
         </div>
-        <div class="mm-resumo"></div>
         <div class="mm-vistas"></div>
         <div class="mm-legenda"></div>
+        <p class="mm-explica"></p>
         <div class="mm-painel" aria-live="polite"></div>
-        <p class="mm-nota">Séries efetivas: cada série conta inteira para o músculo principal e meia para os secundários (a lista arredonda; toque no músculo para ver o valor exato). Faixas, tempos de recuperação e 1RM são estimativas. Desenho do corpo: <a href="https://github.com/melihcolpan/MuscleMap" target="_blank" rel="noopener">MuscleMap</a> (licença MIT).</p>
+        <p class="mm-nota">Séries efetivas: cada série conta inteira para o músculo principal e meia para os secundários. Faixas, fadiga e força retida são estimativas. Desenho do corpo: <a href="https://github.com/melihcolpan/MuscleMap" target="_blank" rel="noopener">MuscleMap</a> (licença MIT).</p>
     </div>
 </div>
 

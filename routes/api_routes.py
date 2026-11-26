@@ -366,29 +366,6 @@ def api_nivel_forca():
     return jsonify(dados)
 
 
-@api_bp.route("/peso-corporal", methods=["POST"])
-@login_required
-def api_peso_corporal():
-    """Salva o peso corporal do próprio usuário (aba Força do mapa
-    muscular libera os níveis de força). Mesma regra do perfil: 30 a 300 kg,
-    uma casa decimal; vazio apaga."""
-    from models import db
-    dados = request.get_json(silent=True) or {}
-    txt = str(dados.get('peso_kg') if dados.get('peso_kg') is not None else '').strip().replace(',', '.')
-    if not txt:
-        current_user.peso_kg = None
-    else:
-        try:
-            peso = round(float(txt), 1)
-        except ValueError:
-            peso = -1
-        if not 30 <= peso <= 300:
-            return jsonify({'erro': 'Peso corporal deve estar entre 30 e 300 kg.'}), 400
-        current_user.peso_kg = peso
-    db.session.commit()
-    return jsonify({'peso_kg': float(current_user.peso_kg) if current_user.peso_kg is not None else None})
-
-
 @api_bp.route("/progressao-forca")
 @login_required
 @estatisticas_do_alvo

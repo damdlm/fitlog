@@ -144,9 +144,6 @@ PADROES_FORCA = {
 }
 DIAS_FORCA = 180
 REPS_MAX_1RM = 12
-# Aba Força: evolução = melhor 1RM estimado dos últimos 28 dias comparado
-# com o melhor de antes disso (dentro dos 6 meses de histórico).
-DIAS_EVOLUCAO_FORCA = 28
 
 
 def _sem_acento(texto):
@@ -440,11 +437,10 @@ class MapaMuscularService:
                           RegistroTreino.data_registro >= datetime.combine(desde, datetime.min.time()),
                           RegistroTreino.data_registro <= datetime.combine(_hoje(), datetime.min.time()),
                           HistoricoTreino.duracao_segundos.is_(None)))
-        corte = _hoje() - timedelta(days=DIAS_EVOLUCAO_FORCA)
         por_ex = {}
         for b, u, dia, criado, carga, reps in linhas:
             k = MapaMuscularService._chave(b, u)
-            e = por_ex.setdefault(k, {'e1rm': None, 'momento': None, 'recente': None, 'antes': None})
+            e = por_ex.setdefault(k, {'e1rm': None, 'momento': None})
             momento = _momento_do_treino(dia, criado)
             if e['momento'] is None or momento > e['momento']:
                 e['momento'] = momento
@@ -452,10 +448,6 @@ class MapaMuscularService:
                 v = e1rm(carga, reps)
                 if e['e1rm'] is None or v > e['e1rm']:
                     e['e1rm'] = v
-                # evolução: melhor das últimas 4 semanas x melhor de antes
-                janela = 'recente' if _dia(dia) > corte else 'antes'
-                if e[janela] is None or v > e[janela]:
-                    e[janela] = v
         agora = _agora()
         out = {}
         for k, e in por_ex.items():
@@ -465,8 +457,6 @@ class MapaMuscularService:
                 continue
             dias = (agora - e['momento']).total_seconds() / 86400
             base = {'nome': nome, 'e1rm': round(e['e1rm'], 1) if e['e1rm'] else None,
-                    'e1rm_recente': round(e['recente'], 1) if e['recente'] else None,
-                    'e1rm_antes': round(e['antes'], 1) if e['antes'] else None,
                     'data': e['momento'].strftime('%Y-%m-%d'), 'retida': round(forca_retida(dias), 3)}
             for regiao, papel in ([(principal, 'principal')] if principal else []) + \
                     [(r, 'secundario') for r in secundarios]:
