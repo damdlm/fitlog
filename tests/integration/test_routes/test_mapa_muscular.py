@@ -304,7 +304,9 @@ class TestApiETela:
         assert 'vendor/musclemap/corpo-fitlog.js' in html and 'js/modules/mapa-muscular.js' in html
         assert 'MuscleMap' in html and 'licença MIT' in html
         assert "FitLogMapaMuscular.carregar(comAluno('/api/mapa-muscular'), comAluno('/api/nivel-forca'))" in html
-        assert 'data-aba="fadiga"' in html and 'data-aba="forca"' in html and 'data-sub="planejado"' in html
+        assert 'data-aba="fadiga"' in html and 'data-aba="forca"' in html
+        assert '>Recuperação</button>' in html and 'data-sub="planejado"' not in html  # Feito/Planejado viraram uma barra só
+        assert 'class="mm-pergunta"' in html and 'class="mm-resumo"' in html
         assert 'class="mm-semana-ant"' in html and 'class="mm-semana-prox"' in html
 
 
