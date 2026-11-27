@@ -553,6 +553,7 @@
 
 {% block scripts %}
 <script src="{{ static_v('vendor/chartjs/chart.umd.min.js') }}"></script>
+<script src="{{ static_v('js/modules/escala-raiz.js') }}"></script>
 <script src="{{ static_v('js/chart-ptbr.js') }}"></script>
 <script>
     // Dados do gráfico de pizza
@@ -825,6 +826,15 @@
                         }];
                     }
 
+                    // "Todos": barras em escala raiz -- o treino de perna (200 kg) não
+                    // esmaga o de braço (15 kg). Eixo e tooltip seguem em kg reais.
+                    const escalaRaiz = treinoEvolucao === 'todos' && datasetsBarras.length > 1;
+                    if (escalaRaiz) {
+                        FitlogEscalaRaiz.comprimir(datasetsBarras);
+                        document.getElementById('evolucaoHint').textContent = dicaEvolucao(modoEvolucao) +
+                            ' Altura das barras em escala raiz, para treinos de perna e de braço caberem lado a lado.';
+                    }
+
                     evolucaoChart = new Chart(canvas, {
                         type: 'bar',
                         data: {
@@ -888,7 +898,7 @@
                                             // são sempre carga média.
                                             const rotulo = context.dataset.label;
                                             const sufixo = /\(kg\)$/.test(rotulo) ? '' : ' kg (carga média)';
-                                            return `${rotulo}: ${context.formattedValue}${sufixo}`;
+                                            return `${rotulo}: ${FitlogEscalaRaiz.valor(context)}${sufixo}`;
                                         }
                                     }
                                 }
@@ -909,7 +919,7 @@
                                         }
                                     }
                                 },
-                                y: {
+                                y: FitlogEscalaRaiz.eixo(escalaRaiz && datasetsBarras, {
                                     beginAtZero: true,
                                     // Rótulo do eixo: plugin 'rotulosEixos' acima.
                                     grid: { color: 'rgba(0,0,0,0.05)' },
@@ -918,7 +928,7 @@
                                         font: { size: 11 },
                                         maxTicksLimit: isMobile ? 5 : 8
                                     }
-                                },
+                                }),
                                 y1: {
                                     beginAtZero: true,
                                     position: 'right',
