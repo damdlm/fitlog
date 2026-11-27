@@ -129,11 +129,12 @@
     // 1RM). Antes era o de maior 1RM dos 6 meses -- aparecia um exercício de
     // meses atrás ao lado de "treinou há 3 dias", que era a data do músculo.
     // Um exercício em que o músculo é só secundário (mergulho para ombros,
-    // p.ex.) não diz quanto ele levanta.
+    // p.ex.) não diz quanto ele levanta. Só os últimos dias_forca (60) dias:
+    // um 1RM de meses atrás não é a força de hoje.
     function exercicioDoMusculo(r) {
-        var ex = null;
+        var ex = null, janela = dados.dias_forca || 60;
         r.exercicios.forEach(function (e) {
-            if (e.papel !== 'principal' || !e.e1rm) return;
+            if (e.papel !== 'principal' || !e.e1rm || diasDesde(e.data) > janela) return;
             if (!ex || e.data > ex.data || (e.data === ex.data && e.e1rm > ex.e1rm)) ex = e;
         });
         return ex;
@@ -321,7 +322,7 @@
                 }).join('') + '</ul>' + mostrarMais(itens.length);
         }
         if (sem.length) {
-            html += '<p class="mm-sem-carga"><b>Sem exercício principal com carga:</b> ' + sem.map(esc).join(', ') + '</p>';
+            html += '<p class="mm-sem-carga"><b>Sem exercício principal com carga nos últimos ' + (dados.dias_forca || 60) + ' dias:</b> ' + sem.map(esc).join(', ') + '</p>';
         }
         return html + montarNiveis();
     }

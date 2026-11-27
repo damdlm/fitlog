@@ -347,7 +347,7 @@ def test_textos_das_abas_no_js():
     # 6 meses), com a data dele mesmo
     assert "if (!ex || e.data > ex.data || (e.data === ex.data && e.e1rm > ex.e1rm)) ex = e;" in js
     assert "'<small>' + feitoHa(diasDesde(ex.data)) + '</small></span></li>'" in js and 'treinouHa(diasDesde(r.ultimo_treino))' not in js
-    assert '<b>Sem exercício principal com carga:</b>' in js and "fetch('/api/peso-corporal'" in js
+    assert "<b>Sem exercício principal com carga nos últimos ' + (dados.dias_forca || 60) + ' dias:</b>" in js and "fetch('/api/peso-corporal'" in js
 
 
 class TestExerciciosDoMusculo:
@@ -377,6 +377,14 @@ class TestExerciciosDoMusculo:
             ex = S.calcular(u2.id)['regioes']['costas']['exercicios']
             assert [(e['nome'], e['data']) for e in ex] == [('Remada atual', '2026-11-22'), ('Puxada antiga pesada', '2026-06-27')]
 
+class TestJanelaDaForca:
+    def test_forca_so_olha_60_dias(self, client, app, monkeypatch):
+        """Antes eram 180 dias: aparecia rosca de punho "feito há 116 dias"."""
+        js = open('static/js/modules/mapa-muscular.js', encoding='utf-8').read()
+        assert "var ex = null, janela = dados.dias_forca || 60;" in js
+        assert "|| diasDesde(e.data) > janela) return;" in js
+        with app.app_context():
+            assert S.calcular(_u('zz_janela_forca').id)['dias_forca'] == 60
 class TestRegistrarDuasVezesNaSemana:
     def test_mesmo_treino_segunda_e_quinta_conta_nas_tres_abas(self, client, app, monkeypatch):
         """Bug que sumia treino: salvar o treino A na quinta apagava o treino A

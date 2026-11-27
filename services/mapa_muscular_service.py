@@ -28,7 +28,8 @@ FORÇA RETIDA (agora; ESTIMATIVA)
   a cada 28 dias, até o piso de 0,5. Nunca treinada nos últimos 6 meses:
   "não treinado" (piso). Por região, os exercícios que a treinam (principal
   ou secundário) com o melhor 1RM estimado (Epley, 1-12 reps, 6 meses), a
-  data do último treino e a força retida daquele exercício.
+  data do último treino e a força retida daquele exercício. A aba Força e
+  os níveis só usam os últimos DIAS_FORCA (60) dias.
 
 NÍVEL DE FORÇA (precisa do peso corporal, User.peso_kg)
   Melhor 1RM estimado dos levantamentos com barra de LEVANTAMENTOS ÷ peso
@@ -142,7 +143,9 @@ PADROES_FORCA = {
           'terra_romeno': (0.75, 1.0, 1.4, 1.9), 'desenvolvimento': (0.3, 0.45, 0.6, 0.8),
           'remada': (0.4, 0.6, 0.85, 1.1)},
 }
-DIAS_FORCA = 180
+# Janela da aba Força e dos níveis: um 1RM de meses atrás não diz quanto o
+# aluno levanta hoje (era 180 dias e aparecia "feito há 116 dias").
+DIAS_FORCA = 60
 REPS_MAX_1RM = 12
 
 
@@ -344,6 +347,7 @@ class MapaMuscularService:
             'semana': {'offset': semana, 'inicio': seg.isoformat(), 'fim': dom.isoformat()},
             'regioes': regioes,
             'max_series': max((r['series'] for r in regioes.values()), default=0),
+            'dias_forca': DIAS_FORCA,
             'planejado': {k: v for k, v in planejado.items() if k != 'por_regiao'},
         }
 
