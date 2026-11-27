@@ -305,6 +305,7 @@ class TestApiETela:
         assert 'MuscleMap' in html and 'licença MIT' in html
         assert "FitLogMapaMuscular.carregar(comAluno('/api/mapa-muscular'), comAluno('/api/nivel-forca'))" in html
         assert 'data-aba="fadiga"' in html and 'data-aba="forca"' in html and 'data-sub="planejado"' in html
+        assert '>Recuperação</button>' in html and '>Feito na semana</button>' in html and '>Previsto na ficha</button>' in html
         assert 'class="mm-semana-ant"' in html and 'class="mm-semana-prox"' in html
 
 

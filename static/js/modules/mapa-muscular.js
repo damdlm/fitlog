@@ -1,10 +1,22 @@
 /**
- * Mapa muscular da tela Progresso: abas Séries, Fadiga e Força.
+ * Mapa muscular da tela Progresso: abas Séries, Recuperação e Força.
  *
  * Segue o modelo de tela do openGym, com implementação própria (o código do
  * openGym é AGPL e não foi copiado). O desenho do corpo é o do MuscleMap
  * (MIT), sem alterações: static/vendor/musclemap/corpo-fitlog.js.
  * Regras dos números: services/mapa_muscular_service.py.
+ *
+ * Visual de uma cor só (escala de laranja) e linhas curtas; cada número diz
+ * o que é:
+ *  - Séries: "Feito na semana" ou "Previsto na ficha". Cada músculo mostra
+ *    "9 de 6–14" (séries x meta recomendada) e, embaixo, "✓ na meta" /
+ *    "faltam 8" / "acima da meta". No previsto, os treinos por semana são
+ *    escolhidos num seletor (− 3 +).
+ *  - Recuperação: quanto falta para cada músculo descansar ("em ~8 h ·
+ *    amanhã, 4h26") e quais já podem ser treinados.
+ *  - Força: carga máxima estimada (1RM) do melhor exercício em que o músculo
+ *    é o principal e há quantos dias ele foi treinado; níveis de força dos
+ *    levantamentos com barra, com o peso corporal informado ali mesmo.
  *
  * Uso: FitLogMapaMuscular.carregar(urlMapa, urlForca)
  *   urlMapa recebe "&semana=N" (0 = semana atual).
@@ -26,7 +38,9 @@
     var selecionada = null;
     var mostrarTodos = false;
     var treinosSemana = null;
+    var editandoPeso = false;
     var urlBase = '';
+    var urlForcaBase = '';
     var req = 0;
 
     var el = function (s) { return raiz.querySelector(s); };
@@ -34,7 +48,6 @@
     var legenda = el('.mm-legenda');
     var explica = el('.mm-explica');
     var painel = el('.mm-painel');
-    var campoTreinos = el('.mm-treinos-semana');
 
     function esc(t) {
         return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) {
@@ -43,17 +56,34 @@
     }
     function fmt(n) { return String(Math.round(n * 10) / 10).replace('.', ','); }
     function dataCurta(iso) {
-        var p = iso.split('-');
+        var p = iso.slice(0, 10).split('-');
         return +p[2] + ' ' + MESES[+p[1] - 1];
     }
-    function diaHora(isoLocal) {
-        var p = isoLocal.split('T');
-        return DIAS[new Date(p[0] + 'T12:00:00').getDay()] + ' ' + p[1];
+    function diaSemana(iso) { return DIAS[new Date(iso.slice(0, 10) + 'T12:00:00').getDay()]; }
+    // dias de hoje até a data (negativo = passado)
+    function diasAte(iso) {
+        var d = new Date(iso.slice(0, 10) + 'T12:00:00'), h = new Date();
+        h.setHours(12, 0, 0, 0);
+        return Math.round((d - h) / 864e5);
     }
+    function diasDesde(iso) { return Math.max(0, -diasAte(iso)); }
+    // "hoje, 4h26" / "amanhã, 18h" / "sáb, 8h31"
+    function quando(isoLocal) {
+        var p = isoLocal.split('T'), hm = (p[1] || '00:00').split(':');
+        var dif = diasAte(p[0]);
+        var dia = dif === 0 ? 'hoje' : dif === 1 ? 'amanhã' : diaSemana(p[0]);
+        return dia + ', ' + (+hm[0]) + 'h' + (hm[1] !== '00' ? hm[1] : '');
+    }
+    // "~40 min" / "~8 h" / "~1d 12h"
     function duracao(h) {
         if (h < 1) return '~' + Math.max(1, Math.round(h * 60)) + ' min';
-        if (h < 48) return '~' + Math.round(h) + ' h';
-        return '~' + Math.round(h / 24) + ' d';
+        if (h < 24) return '~' + Math.round(h) + ' h';
+        var d = Math.floor(h / 24), r = Math.round(h - d * 24);
+        if (r === 24) { d += 1; r = 0; }
+        return '~' + d + 'd' + (r ? ' ' + r + 'h' : '');
+    }
+    function treinouHa(dias) {
+        return dias === 0 ? 'treinou hoje' : dias === 1 ? 'treinou ontem' : 'treinou há ' + dias + ' dias';
     }
     function regioesOrdenadas(f) {
         return Object.keys(dados.regioes).map(function (k) { return [k, dados.regioes[k]]; }).filter(f || function () { return true; });
@@ -68,6 +98,7 @@
         }
         return r.series;
     }
+    // pouco (menos da metade da meta) / quase na meta / na meta / acima
     function classeSeries(r) {
         var v = valorSeries(r);
         if (!v) return 'mm-c-vazio';
@@ -78,16 +109,26 @@
         }
         return v < 2 ? 'mm-s1' : 'mm-s2';
     }
-    function classeFadiga(r) {
+    function classeRecuperacao(r) {
         return { fatigado: 'mm-f-fatigado', recuperando: 'mm-f-recuperando', pronto: 'mm-f-pronto' }[r.estado] || 'mm-c-vazio';
     }
+    // Força: há quanto tempo o músculo foi treinado
     function classeForca(r) {
         if (!r.ultimo_treino) return 'mm-c-vazio';
-        var x = r.retida;
-        return x >= 0.95 ? 'mm-r1' : x >= 0.8 ? 'mm-r2' : x >= 0.65 ? 'mm-r3' : x > 0.5 ? 'mm-r4' : 'mm-c-vazio';
+        var d = diasDesde(r.ultimo_treino);
+        return d <= 7 ? 'mm-s3' : d <= 14 ? 'mm-s2' : 'mm-s1';
     }
     function classeDe(r) {
-        return aba === 'series' ? classeSeries(r) : aba === 'fadiga' ? classeFadiga(r) : classeForca(r);
+        return aba === 'series' ? classeSeries(r) : aba === 'fadiga' ? classeRecuperacao(r) : classeForca(r);
+    }
+    // Melhor exercício em que o músculo é o PRINCIPAL (um em que ele é só
+    // secundário -- mergulho para ombros, p.ex. -- não diz quanto ele levanta).
+    function melhorExercicio(r) {
+        var ex = null;
+        r.exercicios.forEach(function (e) {
+            if (e.papel === 'principal' && e.e1rm && (!ex || e.e1rm > ex.e1rm)) ex = e;
+        });
+        return ex;
     }
 
     // ---------------- corpo ----------------
@@ -140,72 +181,98 @@
     // ---------------- cabeçalho de cada aba ----------------
 
     function montarTopo() {
+        var p = dados.planejado;
         el('.mm-sub').hidden = aba !== 'series';
         el('.mm-semana').hidden = sub !== 'feito';
-        el('.mm-nota-planejado').hidden = sub !== 'planejado';
+        var nota = el('.mm-nota-planejado');
+        nota.hidden = sub !== 'planejado';
+        nota.innerHTML = p.treinos
+            ? 'Séries por semana se você cumprir a ficha' + (p.ficha ? ' <b>' + esc(p.ficha) + '</b>' : '') + '.'
+            : 'Não há ficha ativa, então não há séries previstas para mostrar.';
         var s = dados.semana;
-        el('.mm-semana-rotulo').textContent = s.offset === 0 ? 'Esta semana' : 'Semana de ' + dataCurta(s.inicio);
+        el('.mm-semana-rotulo').textContent = (s.offset === 0 ? 'Esta semana' : 'Semana') + ' · ' + dataCurta(s.inicio) + ' a ' + dataCurta(s.fim);
         el('.mm-semana-prox').disabled = s.offset >= 0;
         if (aba === 'series') {
-            legenda.innerHTML = '<span class="mm-leg-txt">menos</span><i class="mm-s1"></i><i class="mm-s2"></i><i class="mm-s3"></i><i class="mm-s4"></i><span class="mm-leg-txt">mais</span>';
-            explica.textContent = sub === 'planejado' ? 'Séries por semana previstas pela sua ficha.' : '';
+            legenda.innerHTML = '<span><i class="mm-s1"></i>pouco</span><span><i class="mm-s2"></i>quase na meta</span>'
+                + '<span><i class="mm-s3"></i>na meta</span><span><i class="mm-s4"></i>acima</span>';
+            explica.textContent = '';
         } else if (aba === 'fadiga') {
-            legenda.innerHTML = '<span><i class="mm-f-fatigado"></i>Fatigado</span><span><i class="mm-f-recuperando"></i>Recuperando</span><span><i class="mm-f-pronto"></i>Pronto</span><span><i class="mm-c-vazio"></i></span>';
-            explica.textContent = 'A fadiga mostra quão recente foi o treino de cada músculo. Alta quer dizer descanso.';
+            legenda.innerHTML = '<span><i class="mm-f-fatigado"></i>cansado</span><span><i class="mm-f-recuperando"></i>recuperando</span>'
+                + '<span><i class="mm-f-pronto"></i>pronto</span><span><i class="mm-c-vazio"></i>sem treino recente</span>';
+            explica.textContent = 'Quanto tempo falta para cada músculo descansar do último treino.';
         } else {
-            legenda.innerHTML = '<span class="mm-leg-txt">1 cheia</span><i class="mm-r1"></i><i class="mm-r2"></i><i class="mm-r3"></i><i class="mm-r4"></i><i class="mm-c-vazio"></i><span class="mm-leg-txt">0,5 piso</span>';
-            explica.textContent = 'A força mostra o quanto cada músculo mantém da força. Treine de novo para renovar. Toque num músculo para ver os exercícios.';
+            legenda.innerHTML = '<span><i class="mm-s3"></i>treinou nos últimos 7 dias</span><span><i class="mm-s2"></i>8 a 14 dias</span>'
+                + '<span><i class="mm-s1"></i>mais de 14 dias</span><span><i class="mm-c-vazio"></i>sem treino</span>';
+            explica.textContent = 'A carga máxima estimada (1RM) de cada músculo e quando ele foi treinado pela última vez.';
         }
-        var p = dados.planejado;
-        el('.mm-com-ficha').hidden = !p.treinos;
-        el('.mm-sem-ficha').hidden = !!p.treinos;
-        el('.mm-ficha-nome').textContent = p.ficha ? '"' + p.ficha + '"' : '';
     }
 
     // ---------------- listas ----------------
 
     function barra(pct, faixa) {
         var html = '<span class="mm-barra" aria-hidden="true">';
-        if (faixa) html += '<span class="mm-barra-faixa" style="left:' + faixa[0] + '%;width:' + (faixa[1] - faixa[0]) + '%"></span>';
-        return html + '<span class="mm-barra-valor" style="width:' + Math.min(100, pct).toFixed(1) + '%"></span>'
-            + (faixa ? '<span class="mm-barra-marca" style="left:' + Math.min(100, pct).toFixed(1) + '%"></span>' : '') + '</span>';
+        if (faixa) html += '<span class="mm-barra-faixa" style="left:' + faixa[0].toFixed(1) + '%;width:' + (faixa[1] - faixa[0]).toFixed(1) + '%"></span>';
+        return html + '<span class="mm-barra-valor" style="width:' + Math.min(100, pct).toFixed(1) + '%"></span></span>';
+    }
+
+    function mostrarMais(total) {
+        if (total <= 6) return '';
+        return '<button type="button" class="mm-mais">' + (mostrarTodos ? 'Mostrar menos' : 'Mostrar mais') + ' <i class="bi bi-chevron-' + (mostrarTodos ? 'up' : 'down') + '"></i></button>';
     }
 
     function listaSeries() {
+        var plan = sub === 'planejado';
+        if (plan && !dados.planejado.treinos) return '';
         var itens = regioesOrdenadas(function (it) { return it[1].faixa || valorSeries(it[1]) > 0; });
-        if (sub === 'planejado' && !dados.planejado.treinos) return '';
         itens.sort(function (a, b) { return valorSeries(b[1]) - valorSeries(a[1]) || a[1].nome.localeCompare(b[1].nome); });
         var visiveis = mostrarTodos ? itens : itens.slice(0, 6);
-        var html = '<ul class="mm-lista">' + visiveis.map(function (it) {
-            var r = it[1], v = valorSeries(r), f = r.faixa;
-            var topo = Math.max(f ? f[1] * 1.15 : 0, v * 1.05, 1);
-            var pf = f ? [f[0] / topo * 100, f[1] / topo * 100] : null;
-            return '<li data-r="' + it[0] + '"' + (it[0] === selecionada ? ' class="is-sel"' : '') + '>'
-                + '<span class="mm-lista-nome">' + esc(r.nome) + '</span>' + barra(v / topo * 100, pf)
-                + '<span class="mm-lista-num"><b>' + fmt(v) + '</b>' + (f ? ' / ' + f[0] + '–' + f[1] : '') + '</span></li>';
-        }).join('') + '</ul>';
-        if (itens.length > 6) {
-            html += '<button type="button" class="mm-mais">' + (mostrarTodos ? 'Mostrar menos' : 'Mostrar mais') + ' <i class="bi bi-chevron-' + (mostrarTodos ? 'up' : 'down') + '"></i></button>';
+        var feitas = plan ? 'previstas' : 'feitas';
+        var html = '<div class="mm-marcas"><span><i class="mm-m-valor"></i>séries ' + feitas + '</span><span><i class="mm-m-faixa"></i>meta recomendada</span></div>'
+            + '<div class="mm-cab"><span>Músculo</span><span>Séries ' + feitas + ' · meta</span></div>'
+            + '<ul class="mm-lista">' + visiveis.map(function (it) {
+                var r = it[1], v = valorSeries(r), f = r.faixa, n = Math.round(v);
+                var topo = Math.max(f ? f[1] * 1.12 : 0, v * 1.05, 1);
+                var pf = f ? [f[0] / topo * 100, f[1] / topo * 100] : null;
+                var st = '';
+                if (f) {
+                    if (v >= f[0] && v <= f[1]) st = '<small class="mm-ok">✓ na meta</small>';
+                    else if (v > f[1]) st = '<small class="mm-falta">acima da meta</small>';
+                    else st = '<small class="mm-falta">' + (plan ? 'abaixo da meta' : 'faltam ' + Math.max(1, Math.round(f[0] - v))) + '</small>';
+                }
+                return '<li data-r="' + it[0] + '"' + (it[0] === selecionada ? ' class="is-sel"' : '') + '>'
+                    + '<span class="mm-lista-nome">' + esc(r.nome) + '</span>' + barra(v / topo * 100, pf)
+                    + '<span class="mm-lista-num"><b>' + n + '</b>' + (f ? ' de ' + f[0] + '–' + f[1] : '') + st + '</span></li>';
+            }).join('') + '</ul>' + mostrarMais(itens.length);
+        if (plan) {
+            html += '<p class="mm-treinos">Considerando <span class="mm-stepper" role="group" aria-label="Treinos por semana">'
+                + '<button type="button" class="mm-treinos-menos" aria-label="Menos um treino por semana"' + (treinosSemana <= 1 ? ' disabled' : '') + '>−</button>'
+                + '<b class="mm-treinos-valor" aria-live="polite">' + treinosSemana + '</b>'
+                + '<button type="button" class="mm-treinos-mais" aria-label="Mais um treino por semana"' + (treinosSemana >= 14 ? ' disabled' : '') + '>+</button>'
+                + '</span> ' + (treinosSemana === 1 ? 'treino' : 'treinos') + ' por semana</p>';
         }
         return html;
     }
 
-    function listaFadiga() {
+    function listaRecuperacao() {
         var pendentes = regioesOrdenadas(function (it) { return it[1].estado === 'fatigado' || it[1].estado === 'recuperando'; });
         pendentes.sort(function (a, b) { return a[1].horas_restantes - b[1].horas_restantes; });
         var prontos = regioesOrdenadas(function (it) { return it[1].estado === 'pronto'; });
+        prontos.sort(function (a, b) { return a[1].nome.localeCompare(b[1].nome); });
         if (!pendentes.length && !prontos.length) return '<p class="mm-vazio-txt">Nenhum músculo treinado nas últimas 3 semanas.</p>';
         var html = '';
-        if (pendentes.length) {
-            html += '<div class="mm-titulo">Pronto de novo</div><ul class="mm-lista mm-lista-fadiga">' + pendentes.map(function (it) {
-                var r = it[1];
-                return '<li data-r="' + it[0] + '"' + (it[0] === selecionada ? ' class="is-sel"' : '') + '><i class="mm-ponto ' + classeFadiga(r) + '"></i>'
-                    + '<span class="mm-lista-nome">' + esc(r.nome) + '</span><span class="mm-lista-num">' + duracao(r.horas_restantes) + '</span>'
-                    + '<span class="mm-lista-quando">' + diaHora(r.pronto_em) + '</span></li>';
-            }).join('') + '</ul>';
-        }
         if (prontos.length) {
-            html += '<div class="mm-titulo">Pronto</div><p class="mm-prontos">' + prontos.map(function (it) { return esc(it[1].nome); }).join(' · ') + '</p>';
+            html += '<p class="mm-ja"><b>Já pode treinar:</b> ' + prontos.map(function (it) { return esc(it[1].nome); }).join(', ') + '</p>';
+        }
+        if (pendentes.length) {
+            html += '<div class="mm-cab"><span>Ainda recuperando</span><span>Fica pronto</span></div><ul class="mm-lista mm-lista-fadiga">'
+                + pendentes.map(function (it) {
+                    var r = it[1];
+                    return '<li data-r="' + it[0] + '"' + (it[0] === selecionada ? ' class="is-sel"' : '') + '><i class="mm-ponto ' + classeRecuperacao(r) + '"></i>'
+                        + '<span class="mm-lista-nome">' + esc(r.nome) + '</span><span class="mm-lista-num">em <b>' + duracao(r.horas_restantes) + '</b></span>'
+                        + '<span class="mm-lista-quando">' + (r.pronto_em ? quando(r.pronto_em) : '') + '</span></li>';
+                }).join('') + '</ul>';
+        } else {
+            html += '<p class="mm-vazio-txt">Todos os músculos treinados já recuperaram.</p>';
         }
         return html;
     }
@@ -218,43 +285,64 @@
             if (!r.exercicios.length) {
                 html += '<p class="mm-vazio-txt">Nenhum exercício para este músculo nos últimos 6 meses.</p>';
             } else {
-                html += '<ul class="mm-lista mm-lista-ex mm-lista-forca">' + r.exercicios.map(function (e) {
-                    var pct = Math.round(e.retida * 100);
+                html += '<ul class="mm-lista mm-lista-ex">' + r.exercicios.map(function (e) {
                     return '<li><span class="mm-ex"><span class="mm-ex-nome">' + esc(e.nome)
                         + (e.papel === 'secundario' ? ' <small>secundário</small>' : '') + '</span>'
-                        + '<span class="mm-ex-sub">' + (e.e1rm ? '1RM est.: ' + fmt(e.e1rm) + ' kg · ' : '') + diaHora(e.data + 'T00:00').split(' ')[0] + ' ' + dataCurta(e.data) + '</span></span>'
-                        + barra(pct) + '<span class="mm-lista-num">' + (e.e1rm ? '<b>' + fmt(e.e1rm) + ' kg</b> · ' : '') + pct + '%</span></li>';
+                        + '<span class="mm-ex-sub">' + treinouHa(diasDesde(e.data)) + ' · ' + diaSemana(e.data) + ' ' + dataCurta(e.data) + '</span></span>'
+                        + '<span class="mm-lista-num">' + (e.e1rm ? '<b>' + fmt(e.e1rm) + ' kg</b>' : 'sem carga') + '</span></li>';
                 }).join('') + '</ul>';
             }
         }
-        var itens = regioesOrdenadas();
-        itens.sort(function (a, b) {
-            var ta = a[1].ultimo_treino ? 1 : 0, tb = b[1].ultimo_treino ? 1 : 0;
-            return tb - ta || b[1].retida - a[1].retida || a[1].nome.localeCompare(b[1].nome);
+        var itens = [], sem = [];
+        regioesOrdenadas().forEach(function (it) {
+            var ex = melhorExercicio(it[1]);
+            if (ex) itens.push([it[0], it[1], ex]); else sem.push(it[1].nome);
         });
-        html += '<ul class="mm-lista mm-lista-forca">' + itens.map(function (it) {
-            var r = it[1], pct = Math.round(r.retida * 100);
-            return '<li data-r="' + it[0] + '"' + (it[0] === selecionada ? ' class="is-sel"' : '') + '>'
-                + '<span class="mm-lista-nome">' + esc(r.nome) + '</span>' + barra(pct)
-                + '<span class="mm-lista-num">' + (r.ultimo_treino ? '<b>' + pct + '%</b>' : 'não treinado') + '</span></li>';
-        }).join('') + '</ul>';
+        itens.sort(function (a, b) { return b[2].e1rm - a[2].e1rm || a[1].nome.localeCompare(b[1].nome); });
+        sem.sort(function (a, b) { return a.localeCompare(b); });
+        if (itens.length) {
+            var visiveis = mostrarTodos ? itens : itens.slice(0, 6);
+            html += '<div class="mm-cab"><span>Músculo · melhor exercício</span><span>1RM estimado</span></div>'
+                + '<ul class="mm-lista mm-lista-forca">' + visiveis.map(function (it) {
+                    var r = it[1], ex = it[2];
+                    return '<li data-r="' + it[0] + '"' + (it[0] === selecionada ? ' class="is-sel"' : '') + '>'
+                        + '<span class="mm-ex"><span class="mm-lista-nome">' + esc(r.nome) + '</span><span class="mm-ex-sub">' + esc(ex.nome) + '</span></span>'
+                        + '<span class="mm-lista-num"><b>' + fmt(ex.e1rm) + ' kg</b>'
+                        + (r.ultimo_treino ? '<small>' + treinouHa(diasDesde(r.ultimo_treino)) + '</small>' : '') + '</span></li>';
+                }).join('') + '</ul>' + mostrarMais(itens.length);
+        }
+        if (sem.length) {
+            html += '<p class="mm-sem-carga"><b>Sem carga registrada:</b> ' + sem.map(esc).join(', ') + '</p>';
+        }
         return html + montarNiveis();
     }
 
+    function blocoPeso() {
+        if (!forca.e_o_proprio) {
+            return forca.peso_kg ? '' : '<p class="mm-vazio-txt">O aluno ainda não informou o peso corporal.</p>';
+        }
+        if (forca.peso_kg && !editandoPeso) {
+            return '<p class="mm-peso-linha">Peso corporal: <b>' + fmt(forca.peso_kg) + ' kg</b> · <button type="button" class="mm-link mm-peso-editar">alterar</button></p>';
+        }
+        return '<form class="mm-peso" novalidate><label for="mmPeso">Seu peso corporal</label>'
+            + '<input id="mmPeso" type="text" inputmode="decimal" autocomplete="off" placeholder="ex.: 70" value="' + (forca.peso_kg ? fmt(forca.peso_kg) : '') + '"> kg'
+            + '<button type="submit">Ver níveis</button><span class="mm-peso-msg" role="status"></span></form>';
+    }
+
     function montarNiveis() {
-        var html = '<div class="mm-niveis"><div class="mm-niveis-topo"><span class="mm-titulo">Níveis de força</span>'
-            + (forca && forca.e_o_proprio ? '<a href="/auth/profile#peso" class="mm-sobre"><i class="bi bi-person"></i> Sobre você</a>' : '') + '</div>';
+        var html = '<div class="mm-niveis"><div class="mm-titulo">Níveis de força</div>';
         if (!forca) return html + '<p class="mm-vazio-txt">Carregando…</p></div>';
-        if (!forca.peso_kg) {
-            html += '<p class="mm-vazio-txt">' + (forca.e_o_proprio ? 'Informe seu peso corporal em "Sobre você" para ver os níveis.' : 'O aluno ainda não informou o peso corporal.') + '</p>';
-        }
         if (!forca.levantamentos.length) {
-            return html + '<p class="mm-vazio-txt">Nenhum levantamento com barra nos últimos 6 meses (supino reto, agachamento, terra, desenvolvimento, remada curvada).</p></div>';
+            return html + '<p class="mm-vazio-txt">Aparecem quando você registra um levantamento com barra (supino reto, agachamento, terra, desenvolvimento ou remada curvada).</p></div>';
         }
-        html += '<ul class="mm-lista mm-lista-niveis">' + forca.levantamentos.map(function (l) {
-            return '<li><span class="mm-lista-nome">' + esc(l.nome) + '</span><span class="mm-lista-num">'
-                + (l.nivel ? '<b>' + esc(l.nivel) + '</b> · ' + l.razao.toFixed(2).replace('.', ',') + '×' : fmt(l.e1rm) + ' kg') + '</span></li>';
-        }).join('') + '</ul><p class="mm-nota-niveis">1RM estimado ÷ peso corporal. Referência aproximada para adultos, não é meta.</p></div>';
+        html += blocoPeso() + '<ul class="mm-lista mm-lista-niveis">' + forca.levantamentos.map(function (l) {
+            var sub = l.nivel
+                ? '<b>' + esc(l.nivel) + '</b> · ' + l.razao.toFixed(2).replace('.', ',') + '× o peso'
+                    + (l.proximo ? '<small>' + esc(l.proximo) + ': faltam ' + fmt(l.faltam_kg) + ' kg</small>' : '')
+                : '<small>informe o peso para ver o nível</small>';
+            return '<li><span class="mm-ex"><span class="mm-lista-nome">' + esc(l.nome) + '</span><span class="mm-ex-sub">1RM estimado: ' + fmt(l.e1rm) + ' kg</span></span>'
+                + '<span class="mm-lista-num">' + sub + '</span></li>';
+        }).join('') + '</ul><p class="mm-nota-niveis">Nível = 1RM estimado ÷ peso corporal. Referência aproximada para adultos, não é meta.</p></div>';
         return html;
     }
 
@@ -262,7 +350,7 @@
         if (!dados) return;
         montarTopo();
         pintar();
-        painel.innerHTML = aba === 'series' ? listaSeries() : aba === 'fadiga' ? listaFadiga() : listaForca();
+        painel.innerHTML = aba === 'series' ? listaSeries() : aba === 'fadiga' ? listaRecuperacao() : listaForca();
     }
 
     // ---------------- eventos ----------------
@@ -281,8 +369,41 @@
     });
     painel.addEventListener('click', function (e) {
         if (e.target.closest('.mm-mais')) { mostrarTodos = !mostrarTodos; render(); return; }
+        var passo = e.target.closest('.mm-treinos-menos') ? -1 : e.target.closest('.mm-treinos-mais') ? 1 : 0;
+        if (passo) {
+            treinosSemana = Math.max(1, Math.min(14, treinosSemana + passo));
+            render();
+            var b = painel.querySelector(passo < 0 ? '.mm-treinos-menos' : '.mm-treinos-mais');
+            if (b && !b.disabled) b.focus();
+            return;
+        }
+        if (e.target.closest('.mm-peso-editar')) {
+            editandoPeso = true; render();
+            var campo = painel.querySelector('#mmPeso');
+            if (campo) campo.focus();
+            return;
+        }
         var li = e.target.closest('li[data-r]');
         if (li) escolher(li.getAttribute('data-r'));
+    });
+    painel.addEventListener('submit', function (e) {
+        var form = e.target.closest('.mm-peso');
+        if (!form) return;
+        e.preventDefault();
+        var campo = form.querySelector('#mmPeso'), msg = form.querySelector('.mm-peso-msg'), botao = form.querySelector('button');
+        botao.disabled = true;
+        msg.textContent = '';
+        fetch('/api/peso-corporal', {
+            method: 'POST', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ peso_kg: campo.value })
+        }).then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); })
+            .then(function (res) {
+                if (!res[0]) { msg.textContent = res[1].erro || 'Não foi possível salvar.'; botao.disabled = false; return; }
+                editandoPeso = false;
+                return carregarForca();
+            })
+            .catch(function () { msg.textContent = 'Sem conexão. Tente de novo.'; botao.disabled = false; });
     });
     function grupo(seletor, attr, aoEscolher) {
         raiz.querySelectorAll(seletor).forEach(function (b) {
@@ -297,13 +418,9 @@
         });
     }
     grupo('.mm-aba', 'aba', function (v) { aba = v; selecionada = null; mostrarTodos = false; });
-    grupo('.mm-sub-modo', 'sub', function (v) { sub = v; });
+    grupo('.mm-sub-modo', 'sub', function (v) { sub = v; mostrarTodos = false; });
     el('.mm-semana-ant').addEventListener('click', function () { buscar(semana - 1); });
     el('.mm-semana-prox').addEventListener('click', function () { if (semana < 0) buscar(semana + 1); });
-    campoTreinos.addEventListener('input', function () {
-        var n = parseFloat(String(campoTreinos.value).replace(',', '.'));
-        if (n > 0 && n <= 14) { treinosSemana = n; render(); }
-    });
 
     function buscar(novaSemana) {
         var minha = ++req;
@@ -315,8 +432,8 @@
                 var redesenhar = !dados || dados.genero !== j.genero;
                 dados = j;
                 if (treinosSemana === null && j.planejado) {
-                    treinosSemana = j.planejado.sessoes_semana || j.planejado.treinos || null;
-                    if (treinosSemana) campoTreinos.value = String(treinosSemana).replace('.', ',');
+                    // média das últimas 4 semanas, arredondada (o seletor anda de 1 em 1)
+                    treinosSemana = Math.max(1, Math.min(14, Math.round(j.planejado.sessoes_semana || j.planejado.treinos || 3)));
                 }
                 if (redesenhar) desenhar();
                 render();
@@ -324,15 +441,18 @@
             .catch(function () { /* a seção fica como está */ });
     }
 
+    function carregarForca() {
+        return fetch(urlForcaBase, { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (j) { if (j) { forca = j; if (aba === 'forca') render(); } })
+            .catch(function () {});
+    }
+
     function carregar(urlMapa, urlForca) {
         urlBase = urlMapa;
+        urlForcaBase = urlForca || '';
         if (!dados) buscar(semana);
-        if (urlForca && !forca) {
-            fetch(urlForca, { credentials: 'same-origin' })
-                .then(function (r) { return r.ok ? r.json() : null; })
-                .then(function (j) { if (j) { forca = j; if (aba === 'forca') render(); } })
-                .catch(function () {});
-        }
+        if (urlForcaBase && !forca) carregarForca();
     }
 
     window.FitLogMapaMuscular = { carregar: carregar };

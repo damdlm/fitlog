@@ -271,10 +271,11 @@ class TestTela:
             _reg(u, v, t, 1, [S10], base=_ex('Peitorais'))
         _login(client, 'zz_tela')
         html = client.get('/aluno/estatisticas').get_data(as_text=True)
-        assert 'class="mm-sem-ficha" hidden>Não há ficha ativa' in html
+        assert '<p class="mm-nota-planejado" hidden></p>' in html
         with open('static/js/modules/mapa-muscular.js', encoding='utf-8') as f:
             js = f.read()
-        assert "el('.mm-sem-ficha').hidden = !!p.treinos" in js
+        assert 'Não há ficha ativa, então não há séries previstas para mostrar.' in js
+        assert "if (plan && !dados.planejado.treinos) return '';" in js
 
 
 class TestPerfilPeso:
@@ -297,3 +298,46 @@ class TestPerfilPeso:
             assert peso() == 30, ruim
         client.post('/auth/profile/update', data=base)  # form sem o campo: não mexe
         assert peso() == 30
+
+
+class TestApiPeso:
+    def test_salva_valida_e_apaga(self, client, app):
+        """Aba Força: o peso corporal é informado ali mesmo e libera os níveis."""
+        with app.app_context():
+            _u('zz_api_peso')
+        _login(client, 'zz_api_peso')
+
+        def peso():
+            with app.app_context():
+                v = User.query.filter_by(username='zz_api_peso').one().peso_kg
+                return None if v is None else float(v)
+
+        r = client.post('/api/peso-corporal', json={'peso_kg': '62,35'})
+        assert r.status_code == 200 and r.get_json() == {'peso_kg': 62.4} and peso() == 62.4
+        for ruim in ('20', '301', 'abc', -5):
+            r = client.post('/api/peso-corporal', json={'peso_kg': ruim})
+            assert r.status_code == 400 and 'entre 30 e 300' in r.get_json()['erro'] and peso() == 62.4
+        assert client.post('/api/peso-corporal', json={'peso_kg': 80}).get_json() == {'peso_kg': 80.0}
+        assert client.post('/api/peso-corporal', json={'peso_kg': ''}).get_json() == {'peso_kg': None} and peso() is None
+        client.post('/api/peso-corporal', json={'peso_kg': 70})
+        assert client.get('/api/nivel-forca').get_json()['peso_kg'] == 70
+
+    def test_sem_login(self, client):
+        assert client.post('/api/peso-corporal', json={'peso_kg': 70}).status_code in (302, 401)
+
+
+def test_textos_das_abas_no_js():
+    """Cada número diz o que é: "9 de 6–14" com "✓ na meta"/"faltam N",
+    Recuperação com "Já pode treinar" e "em ~8 h", Força com o 1RM do melhor
+    exercício PRINCIPAL e "treinou há X dias"."""
+    with open('static/js/modules/mapa-muscular.js', encoding='utf-8') as f:
+        js = f.read()
+    assert "(f ? ' de ' + f[0] + '–' + f[1] : '')" in js
+    assert "'<small class=\"mm-ok\">✓ na meta</small>'" in js and "'faltam ' + Math.max(1, Math.round(f[0] - v))" in js
+    assert "Séries ' + feitas + ' · meta" in js
+    # treinos/semana: seletor inteiro (o campo numérico ficava vazio com "2,8")
+    assert 'Math.round(j.planejado.sessoes_semana || j.planejado.treinos || 3)' in js
+    assert 'treinosSemana = Math.max(1, Math.min(14, treinosSemana + passo));' in js
+    assert '<b>Já pode treinar:</b>' in js and "em <b>' + duracao(r.horas_restantes) + '</b>" in js
+    assert "if (e.papel === 'principal' && e.e1rm && (!ex || e.e1rm > ex.e1rm)) ex = e;" in js
+    assert '<b>Sem carga registrada:</b>' in js and "fetch('/api/peso-corporal'" in js
