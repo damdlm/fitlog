@@ -1635,6 +1635,10 @@
            na largura do modal, resultava mais baixo que 220px. */
         .exmodal-media-frame.is-vazia {
             min-height: 220px;
+            /* sem mídia dentro, o fit-content da moldura dava largura 0: o
+               spinner e a mensagem de erro (absolutos) sumiam e o modal
+               parecia vazio enquanto o gif carregava no 4G */
+            width: 100%;
         }
 
         /* width/height "auto" (em vez de width:100% fixo) faz a moldura

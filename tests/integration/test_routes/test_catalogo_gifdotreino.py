@@ -177,6 +177,14 @@ class TestWebp:
         js = (RAIZ / 'static' / 'js' / 'modules' / 'exercicio-imagens.js').read_text(encoding='utf-8')
         assert "const EXTENSOES_VIDEO = ['mp4', 'webm', 'mov', 'm4v'];" in js  # .webp vai no <img>
 
+    def test_moldura_vazia_ocupa_a_largura(self):
+        """Carregando (ou em erro), a moldura não tem mídia dentro: com o
+        fit-content ela ficava com largura 0 e o spinner/erro sumiam -- o modal
+        parecia vazio enquanto o gif carregava no 4G."""
+        html = (RAIZ / 'templates' / 'base.html').read_text(encoding='utf-8')
+        regra = html.split('.exmodal-media-frame.is-vazia {', 1)[1].split('}', 1)[0]
+        assert 'min-height: 220px;' in regra and 'width: 100%;' in regra
+
 
 def test_migracao_webp_vai_e_volta(app):
     from alembic.migration import MigrationContext
