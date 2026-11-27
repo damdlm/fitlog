@@ -333,7 +333,11 @@ def test_textos_das_abas_no_js():
     with open('static/js/modules/mapa-muscular.js', encoding='utf-8') as f:
         js = f.read()
     assert "(f ? ' de ' + f[0] + '–' + f[1] : '')" in js
-    assert "'<small class=\"mm-ok\">✓ na meta</small>'" in js and "'faltam ' + Math.max(1, Math.round(f[0] - v))" in js
+    assert "'<small class=\"mm-ok\">✓ na meta</small>'" in js
+    # "faltam N" só na semana em andamento; semana fechada: "abaixo da meta"
+    assert "(plan || dados.semana.offset < 0 ? 'abaixo da meta' : 'faltam ' + (f[0] - v))" in js
+    # status e cor usam o número inteiro que aparece na tela
+    assert 'return Math.round(r.series);' in js
     assert "Séries ' + feitas + ' · meta" in js
     # treinos/semana: seletor inteiro (o campo numérico ficava vazio com "2,8")
     assert 'Math.round(j.planejado.sessoes_semana || j.planejado.treinos || 3)' in js
@@ -343,7 +347,7 @@ def test_textos_das_abas_no_js():
     # 6 meses), com a data dele mesmo
     assert "if (!ex || e.data > ex.data || (e.data === ex.data && e.e1rm > ex.e1rm)) ex = e;" in js
     assert "'<small>' + feitoHa(diasDesde(ex.data)) + '</small></span></li>'" in js and 'treinouHa(diasDesde(r.ultimo_treino))' not in js
-    assert '<b>Sem carga registrada:</b>' in js and "fetch('/api/peso-corporal'" in js
+    assert '<b>Sem exercício principal com carga:</b>' in js and "fetch('/api/peso-corporal'" in js
 
 
 class TestExerciciosDoMusculo:
@@ -372,3 +376,27 @@ class TestExerciciosDoMusculo:
             _reg(u2, v2, t2, 2, [{'carga': 40, 'repeticoes': 10}], base=_ex('Dorsais', nome='Remada atual'))
             ex = S.calcular(u2.id)['regioes']['costas']['exercicios']
             assert [(e['nome'], e['data']) for e in ex] == [('Remada atual', '2026-11-22'), ('Puxada antiga pesada', '2026-06-27')]
+
+class TestRegistrarDuasVezesNaSemana:
+    def test_mesmo_treino_segunda_e_quinta_conta_nas_tres_abas(self, client, app, monkeypatch):
+        """Bug que sumia treino: salvar o treino A na quinta apagava o treino A
+        de segunda (a sessão era treino + semana do ano, não treino + data)."""
+        with app.app_context():
+            u = _u('zz_reg_2x_semana')
+            v, t = _ficha(u)
+            ex = _ex('Peitorais', ['Tríceps'], nome='Supino 2x')
+            db.session.add(VersaoExercicio(treino_versao_id=t.id, exercicio_base_id=ex.id, ordem=0))
+            db.session.commit()
+            tid, eid, uid = t.id, ex.id, u.id
+        _login(client, 'zz_reg_2x_semana')
+        for dia, carga in (('2026-11-16', '40'), ('2026-11-19', '50')):  # segunda e quinta
+            r = client.post('/registrar/registrar-treino', data={
+                'treino': str(tid), 'data': dia,
+                f'carga_b_{eid}': carga, f'reps_b_{eid}': '10', f'num_series_b_{eid}': '3'})
+            assert r.status_code == 302
+        with app.app_context():
+            assert RegistroTreino.query.filter_by(user_id=uid).count() == 2
+            _relogio(monkeypatch, TER, datetime(2026, 11, 24, 20, 0, tzinfo=BR))
+            d = S.calcular(uid, semana=-1)
+            assert d['regioes']['peito']['series'] == 6 and d['regioes']['triceps']['series'] == 3
+            assert [(e['nome'], e['data']) for e in d['regioes']['peito']['exercicios']] == [('Supino 2x', '2026-11-19')]

@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 
 from flask_login import login_user
 
-from models import db, User, TreinoVersao, VersaoGlobal, ExercicioUsuario
+from models import db, User, TreinoVersao, VersaoGlobal, ExercicioUsuario, RegistroTreino
 from services.registro_service import RegistroService
 
 
@@ -37,12 +37,48 @@ def _criar_cenario_base(username):
 
 
 def _salvar_sessao(t, v, ex, user_id, periodo='Janeiro/2024', semana=1, carga=50,
-                    repeticoes=10, num_series=3):
+                    repeticoes=10, num_series=3, data=None):
     dados = {
         ex.id: {'exercicio_id': ex.id, 'tipo': 'usuario', 'carga': carga,
                 'repeticoes': repeticoes, 'num_series': num_series}
     }
+    if data is not None:  # como a rota: a data da sessão vai em cada exercício
+        dados[ex.id]['data_registro'] = data
     return RegistroService.salvar_registros(t.id, v.id, periodo, semana, dados, user_id=user_id)
+
+
+class TestSessaoPorData:
+    """A sessão é o treino NA DATA. Antes era treino + período + semana do
+    ano: registrar o treino A na quinta apagava o treino A de segunda."""
+
+    def test_mesmo_treino_dois_dias_da_mesma_semana(self, app):
+        with app.app_context():
+            u, t, v, ex = _criar_cenario_base('rs_sessao_2x')
+            seg, qui = date(2026, 11, 16), date(2026, 11, 19)
+            assert _salvar_sessao(t, v, ex, u.id, periodo='Novembro/2026', semana=47, carga=40, data=seg)
+            assert _salvar_sessao(t, v, ex, u.id, periodo='Novembro/2026', semana=47, carga=50, data=qui)
+            regs = RegistroTreino.query.filter_by(user_id=u.id).order_by(RegistroTreino.data_registro).all()
+            assert [(r.data_registro.date(), float(r.series[0].carga)) for r in regs] == [(seg, 40), (qui, 50)]
+
+    def test_salvar_de_novo_no_mesmo_dia_substitui(self, app):
+        with app.app_context():
+            u, t, v, ex = _criar_cenario_base('rs_sessao_edita')
+            dia = date(2026, 11, 16)
+            _salvar_sessao(t, v, ex, u.id, carga=40, num_series=3, data=dia)
+            _salvar_sessao(t, v, ex, u.id, carga=45, num_series=2, data=dia)
+            regs = RegistroTreino.query.filter_by(user_id=u.id).all()
+            assert len(regs) == 1 and [float(s.carga) for s in regs[0].series] == [45, 45]
+
+    def test_nao_mexe_em_outro_treino(self, app):
+        with app.app_context():
+            u, t, v, ex = _criar_cenario_base('rs_sessao_isola')
+            dia = date(2026, 11, 16)
+            _salvar_sessao(t, v, ex, u.id, data=dia)
+            t2 = TreinoVersao(versao_id=v.id, codigo='B', nome_treino='B')
+            db.session.add(t2)
+            db.session.commit()
+            _salvar_sessao(t2, v, ex, u.id, data=dia)
+            assert RegistroTreino.query.filter_by(user_id=u.id).count() == 2
 
 
 class TestSalvarRegistros:
@@ -382,8 +418,8 @@ class TestGetPeriodosExistentes:
     def test_retorna_periodos_ordenados_desc(self, app):
         with app.app_context():
             u, t, v, ex = _criar_cenario_base('rs_periodos_1')
-            _salvar_sessao(t, v, ex, u.id, periodo='Janeiro/2024')
-            _salvar_sessao(t, v, ex, u.id, periodo='Marco/2024', semana=2)
+            _salvar_sessao(t, v, ex, u.id, periodo='Janeiro/2024', data=date(2024, 1, 2))
+            _salvar_sessao(t, v, ex, u.id, periodo='Marco/2024', semana=2, data=date(2024, 3, 12))
 
             resultado = RegistroService.get_periodos_existentes(user_id=u.id)
             assert resultado == ['Marco/2024', 'Janeiro/2024']
@@ -397,8 +433,8 @@ class TestGetSemanasPorPeriodo:
     def test_agrupa_semanas_por_periodo(self, app):
         with app.app_context():
             u, t, v, ex = _criar_cenario_base('rs_semanas_1')
-            _salvar_sessao(t, v, ex, u.id, periodo='Janeiro/2024', semana=1)
-            _salvar_sessao(t, v, ex, u.id, periodo='Janeiro/2024', semana=2)
+            _salvar_sessao(t, v, ex, u.id, periodo='Janeiro/2024', semana=1, data=date(2024, 1, 2))
+            _salvar_sessao(t, v, ex, u.id, periodo='Janeiro/2024', semana=2, data=date(2024, 1, 9))
 
             resultado = RegistroService.get_semanas_por_periodo(user_id=u.id)
             assert 'Janeiro/2024' in resultado
@@ -440,8 +476,8 @@ class TestGetPorExercicio:
     def test_respeita_limite(self, app):
         with app.app_context():
             u, t, v, ex = _criar_cenario_base('rs_porex_2')
-            _salvar_sessao(t, v, ex, u.id, periodo='Janeiro/2024', semana=1)
-            _salvar_sessao(t, v, ex, u.id, periodo='Janeiro/2024', semana=2)
+            _salvar_sessao(t, v, ex, u.id, periodo='Janeiro/2024', semana=1, data=date(2024, 1, 2))
+            _salvar_sessao(t, v, ex, u.id, periodo='Janeiro/2024', semana=2, data=date(2024, 1, 9))
 
             resultado = RegistroService.get_por_exercicio(ex.id, limite=1, user_id=u.id)
             assert len(resultado) == 1

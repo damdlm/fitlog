@@ -91,12 +91,15 @@
 
     // ---------------- valores e cores por aba ----------------
 
+    // Séries na tela são inteiras (a série do músculo secundário conta 0,5);
+    // status e cor usam o MESMO número que aparece, senão "6 de 6–16" vinha
+    // com "faltam 1" (5,5 séries).
     function valorSeries(r) {
         if (sub === 'planejado') {
             var t = dados.planejado.treinos || 0;
-            return t ? r.planejado_ciclo * (treinosSemana || t) / t : 0;
+            return t ? Math.round(r.planejado_ciclo * (treinosSemana || t) / t) : 0;
         }
-        return r.series;
+        return Math.round(r.series);
     }
     // pouco (menos da metade da meta) / quase na meta / na meta / acima
     function classeSeries(r) {
@@ -235,14 +238,15 @@
         var html = '<div class="mm-marcas"><span><i class="mm-m-valor"></i>séries ' + feitas + '</span><span><i class="mm-m-faixa"></i>meta recomendada</span></div>'
             + '<div class="mm-cab"><span>Músculo</span><span>Séries ' + feitas + ' · meta</span></div>'
             + '<ul class="mm-lista">' + visiveis.map(function (it) {
-                var r = it[1], v = valorSeries(r), f = r.faixa, n = Math.round(v);
+                var r = it[1], v = valorSeries(r), f = r.faixa, n = v;
                 var topo = Math.max(f ? f[1] * 1.12 : 0, v * 1.05, 1);
                 var pf = f ? [f[0] / topo * 100, f[1] / topo * 100] : null;
                 var st = '';
                 if (f) {
                     if (v >= f[0] && v <= f[1]) st = '<small class="mm-ok">✓ na meta</small>';
                     else if (v > f[1]) st = '<small class="mm-falta">acima da meta</small>';
-                    else st = '<small class="mm-falta">' + (plan ? 'abaixo da meta' : 'faltam ' + Math.max(1, Math.round(f[0] - v))) + '</small>';
+                    // "faltam N" só na semana em andamento; semana fechada ou ficha: "abaixo da meta"
+                    else st = '<small class="mm-falta">' + (plan || dados.semana.offset < 0 ? 'abaixo da meta' : 'faltam ' + (f[0] - v)) + '</small>';
                 }
                 return '<li data-r="' + it[0] + '"' + (it[0] === selecionada ? ' class="is-sel"' : '') + '>'
                     + '<span class="mm-lista-nome">' + esc(r.nome) + '</span>' + barra(v / topo * 100, pf)
@@ -317,7 +321,7 @@
                 }).join('') + '</ul>' + mostrarMais(itens.length);
         }
         if (sem.length) {
-            html += '<p class="mm-sem-carga"><b>Sem carga registrada:</b> ' + sem.map(esc).join(', ') + '</p>';
+            html += '<p class="mm-sem-carga"><b>Sem exercício principal com carga:</b> ' + sem.map(esc).join(', ') + '</p>';
         }
         return html + montarNiveis();
     }

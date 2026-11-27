@@ -3,7 +3,7 @@
 from models import db, RegistroTreino, HistoricoTreino
 from sqlalchemy.orm import selectinload
 from sqlalchemy import or_  # ✅ ADICIONADO
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from .base_service import BaseService
 from .analytics_service import AnalyticsService
 import logging
@@ -252,6 +252,17 @@ class RegistroService(BaseService):
         return dados.get('carga') is not None and bool(dados.get('repeticoes'))
 
     @staticmethod
+    def _dia_da_sessao(dados_exercicios):
+        """Data da sessão: a data_registro que a rota manda em cada
+        exercício (todas iguais). Sem ela, o registro é gravado com o agora
+        em UTC (ver salvar_registros), então a sessão é o dia de hoje em UTC."""
+        for dados in dados_exercicios.values():
+            valor = dados.get('data_registro')
+            if valor is not None:
+                return valor.date() if isinstance(valor, datetime) else valor
+        return datetime.now(timezone.utc).date()
+
+    @staticmethod
     def salvar_registros(treino_id, versao_id, periodo, semana, dados_exercicios, user_id=None, tempo_treino=None):
         """Salva múltiplos registros de uma sessão de treino
 
@@ -276,13 +287,21 @@ class RegistroService(BaseService):
             # tempo_treino que já estava salvo -- é o candidato a manter
             # caso o valor recém-enviado não pareça uma medição real de
             # cronômetro (ver _resolver_tempo_treino).
-            registro_existente = RegistroTreino.query.filter_by(
-                treino_versao_id=treino_id,
-                periodo=periodo,
-                semana=semana,
-                versao_id=versao_id,
-                user_id=user_id
-            ).options(selectinload(RegistroTreino.series)).first()
+            # A sessão é o treino NA DATA (mesma regra de get_by_data, que a
+            # tela de registro usa para carregar o que já foi salvo). Antes
+            # era treino + período + semana do ano: registrar o treino A na
+            # quinta APAGAVA o treino A de segunda da mesma semana (a tela
+            # da quinta abre vazia, então o aluno nem via que sobrescrevia).
+            dia = RegistroService._dia_da_sessao(dados_exercicios)
+            mesma_sessao = (
+                RegistroTreino.user_id == user_id,
+                RegistroTreino.treino_versao_id == treino_id,
+                RegistroTreino.versao_id == versao_id,
+                RegistroTreino.data_registro >= datetime(dia.year, dia.month, dia.day),
+                RegistroTreino.data_registro < datetime(dia.year, dia.month, dia.day) + timedelta(days=1),
+            )
+            registro_existente = RegistroTreino.query.filter(*mesma_sessao) \
+                .options(selectinload(RegistroTreino.series)).first()
             tempo_treino_anterior = None
             if registro_existente and registro_existente.series:
                 tempo_treino_anterior = registro_existente.series[0].tempo_treino
@@ -308,14 +327,8 @@ class RegistroService(BaseService):
                     db.session.expunge(serie_antiga)
                 db.session.expunge(registro_existente)
 
-            # Remover registros antigos da mesma sessão
-            RegistroTreino.query.filter_by(
-                treino_versao_id=treino_id,
-                periodo=periodo,
-                semana=semana,
-                versao_id=versao_id,
-                user_id=user_id
-            ).delete()
+            # Remover registros antigos da mesma sessão (mesmo treino, mesma data)
+            RegistroTreino.query.filter(*mesma_sessao).delete(synchronize_session=False)
             
             for chave, dados in dados_exercicios.items():
                 if RegistroService._dados_validos(dados):
@@ -419,10 +432,13 @@ class RegistroService(BaseService):
                 return None
             
             # Remover registros antigos do mesmo exercício na mesma sessão
+            # (mesmo treino NA MESMA DATA -- ver salvar_registros)
+            dia = data_registro.date() if isinstance(data_registro, datetime) else data_registro
+            inicio_dia = datetime(dia.year, dia.month, dia.day)
             delete_query = RegistroTreino.query.filter(
                 RegistroTreino.treino_versao_id == treino_id,
-                RegistroTreino.periodo == periodo,
-                RegistroTreino.semana == semana,
+                RegistroTreino.data_registro >= inicio_dia,
+                RegistroTreino.data_registro < inicio_dia + timedelta(days=1),
                 RegistroTreino.versao_id == versao_id,
                 RegistroTreino.user_id == user_id
             )
@@ -430,7 +446,7 @@ class RegistroService(BaseService):
                 delete_query = delete_query.filter(RegistroTreino.exercicio_usuario_id == exercicio_id)
             else:
                 delete_query = delete_query.filter(RegistroTreino.exercicio_base_id == exercicio_id)
-            delete_query.delete()
+            delete_query.delete(synchronize_session=False)
             
             # Criar novo registro
             registro = RegistroTreino(
