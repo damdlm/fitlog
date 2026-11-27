@@ -45,7 +45,12 @@ jobs:
           cache: pip
 
       - name: Instalar dependências do sistema (libpq para psycopg2)
-        run: sudo apt-get update && sudo apt-get install -y libpq-dev
+        # O runner vem com o repositório da Microsoft configurado; quando ele
+        # responde 403 o apt-get update falha (exit 100) e derruba o job antes
+        # de qualquer teste. Não usamos nada de lá: tira a fonte antes.
+        run: |
+          sudo grep -l packages.microsoft.com /etc/apt/sources.list.d/* 2>/dev/null | xargs -r sudo rm -f
+          sudo apt-get update && sudo apt-get install -y libpq-dev
 
       - name: Instalar dependências Python
         run: |
@@ -104,7 +109,12 @@ jobs:
           cache: pip
 
       - name: Instalar dependências do sistema (libpq para psycopg2)
-        run: sudo apt-get update && sudo apt-get install -y libpq-dev
+        # O runner vem com o repositório da Microsoft configurado; quando ele
+        # responde 403 o apt-get update falha (exit 100) e derruba o job antes
+        # de qualquer teste. Não usamos nada de lá: tira a fonte antes.
+        run: |
+          sudo grep -l packages.microsoft.com /etc/apt/sources.list.d/* 2>/dev/null | xargs -r sudo rm -f
+          sudo apt-get update && sudo apt-get install -y libpq-dev
 
       - name: Instalar dependências Python
         run: |
