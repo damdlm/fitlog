@@ -339,5 +339,36 @@ def test_textos_das_abas_no_js():
     assert 'Math.round(j.planejado.sessoes_semana || j.planejado.treinos || 3)' in js
     assert 'treinosSemana = Math.max(1, Math.min(14, treinosSemana + passo));' in js
     assert '<b>Já pode treinar:</b>' in js and "em <b>' + duracao(r.horas_restantes) + '</b>" in js
-    assert "if (e.papel === 'principal' && e.e1rm && (!ex || e.e1rm > ex.e1rm)) ex = e;" in js
+    # Força: o exercício do músculo é o ÚLTIMO feito (não o mais pesado dos
+    # 6 meses), com a data dele mesmo
+    assert "if (!ex || e.data > ex.data || (e.data === ex.data && e.e1rm > ex.e1rm)) ex = e;" in js
+    assert "'<small>' + feitoHa(diasDesde(ex.data)) + '</small></span></li>'" in js and 'treinouHa(diasDesde(r.ultimo_treino))' not in js
     assert '<b>Sem carga registrada:</b>' in js and "fetch('/api/peso-corporal'" in js
+
+
+class TestExerciciosDoMusculo:
+    def test_recentes_primeiro_e_antigo_pesado_sai_do_corte(self, app, monkeypatch):
+        """Um exercício pesado de meses atrás não pode esconder os que o aluno
+        faz hoje: a lista vem dos mais recentes e o corte de 8 tira o antigo."""
+        with app.app_context():
+            _relogio(monkeypatch, TER, datetime(2026, 11, 24, 20, 0, tzinfo=BR))
+            u = _u('zz_ex_recentes')
+            v, t = _ficha(u, dias_atras=170)
+            antigo = _ex('Dorsais', nome='Puxada antiga pesada')
+            _reg(u, v, t, 150, [{'carga': 120, 'repeticoes': 5}], base=antigo)
+            for i in range(8):
+                _reg(u, v, t, 1 + i, [{'carga': 30 + i, 'repeticoes': 10}], base=_ex('Dorsais', nome=f'Remada {i}'))
+            sec = _ex('Bíceps', ['Dorsais'], nome='Rosca')
+            _reg(u, v, t, 0, [{'carga': 20, 'repeticoes': 10}], base=sec)
+            ex = S.calcular(u.id)['regioes']['costas']['exercicios']
+            assert len(ex) == 8
+            assert [e['nome'] for e in ex] == [f'Remada {i}' for i in range(8)]  # o mais recente primeiro
+            assert 'Puxada antiga pesada' not in [e['nome'] for e in ex]
+
+            # com poucos exercícios, o antigo continua na lista, depois dos recentes
+            u2 = _u('zz_ex_recentes2')
+            v2, t2 = _ficha(u2, dias_atras=170)
+            _reg(u2, v2, t2, 150, [{'carga': 120, 'repeticoes': 5}], base=antigo)
+            _reg(u2, v2, t2, 2, [{'carga': 40, 'repeticoes': 10}], base=_ex('Dorsais', nome='Remada atual'))
+            ex = S.calcular(u2.id)['regioes']['costas']['exercicios']
+            assert [(e['nome'], e['data']) for e in ex] == [('Remada atual', '2026-11-22'), ('Puxada antiga pesada', '2026-06-27')]

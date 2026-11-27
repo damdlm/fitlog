@@ -14,8 +14,8 @@
  *    escolhidos num seletor (− 3 +).
  *  - Recuperação: quanto falta para cada músculo descansar ("em ~8 h ·
  *    amanhã, 4h26") e quais já podem ser treinados.
- *  - Força: carga máxima estimada (1RM) do melhor exercício em que o músculo
- *    é o principal e há quantos dias ele foi treinado; níveis de força dos
+ *  - Força: carga máxima estimada (1RM) do último exercício feito em que o
+ *    músculo é o principal e há quantos dias foi feito; níveis de força dos
  *    levantamentos com barra, com o peso corporal informado ali mesmo.
  *
  * Uso: FitLogMapaMuscular.carregar(urlMapa, urlForca)
@@ -82,8 +82,8 @@
         if (r === 24) { d += 1; r = 0; }
         return '~' + d + 'd' + (r ? ' ' + r + 'h' : '');
     }
-    function treinouHa(dias) {
-        return dias === 0 ? 'treinou hoje' : dias === 1 ? 'treinou ontem' : 'treinou há ' + dias + ' dias';
+    function feitoHa(dias) {
+        return dias === 0 ? 'feito hoje' : dias === 1 ? 'feito ontem' : 'feito há ' + dias + ' dias';
     }
     function regioesOrdenadas(f) {
         return Object.keys(dados.regioes).map(function (k) { return [k, dados.regioes[k]]; }).filter(f || function () { return true; });
@@ -121,12 +121,17 @@
     function classeDe(r) {
         return aba === 'series' ? classeSeries(r) : aba === 'fadiga' ? classeRecuperacao(r) : classeForca(r);
     }
-    // Melhor exercício em que o músculo é o PRINCIPAL (um em que ele é só
-    // secundário -- mergulho para ombros, p.ex. -- não diz quanto ele levanta).
-    function melhorExercicio(r) {
+    // Exercício que representa o músculo: o que o aluno fez POR ÚLTIMO entre
+    // os que têm o músculo como PRINCIPAL e carga registrada (empate: maior
+    // 1RM). Antes era o de maior 1RM dos 6 meses -- aparecia um exercício de
+    // meses atrás ao lado de "treinou há 3 dias", que era a data do músculo.
+    // Um exercício em que o músculo é só secundário (mergulho para ombros,
+    // p.ex.) não diz quanto ele levanta.
+    function exercicioDoMusculo(r) {
         var ex = null;
         r.exercicios.forEach(function (e) {
-            if (e.papel === 'principal' && e.e1rm && (!ex || e.e1rm > ex.e1rm)) ex = e;
+            if (e.papel !== 'principal' || !e.e1rm) return;
+            if (!ex || e.data > ex.data || (e.data === ex.data && e.e1rm > ex.e1rm)) ex = e;
         });
         return ex;
     }
@@ -203,7 +208,7 @@
         } else {
             legenda.innerHTML = '<span><i class="mm-s3"></i>treinou nos últimos 7 dias</span><span><i class="mm-s2"></i>8 a 14 dias</span>'
                 + '<span><i class="mm-s1"></i>mais de 14 dias</span><span><i class="mm-c-vazio"></i>sem treino</span>';
-            explica.textContent = 'A carga máxima estimada (1RM) de cada músculo e quando ele foi treinado pela última vez.';
+            explica.textContent = 'A carga máxima estimada (1RM) do último exercício que você fez para cada músculo.';
         }
     }
 
@@ -288,27 +293,27 @@
                 html += '<ul class="mm-lista mm-lista-ex">' + r.exercicios.map(function (e) {
                     return '<li><span class="mm-ex"><span class="mm-ex-nome">' + esc(e.nome)
                         + (e.papel === 'secundario' ? ' <small>secundário</small>' : '') + '</span>'
-                        + '<span class="mm-ex-sub">' + treinouHa(diasDesde(e.data)) + ' · ' + diaSemana(e.data) + ' ' + dataCurta(e.data) + '</span></span>'
+                        + '<span class="mm-ex-sub">' + feitoHa(diasDesde(e.data)) + ' · ' + diaSemana(e.data) + ' ' + dataCurta(e.data) + '</span></span>'
                         + '<span class="mm-lista-num">' + (e.e1rm ? '<b>' + fmt(e.e1rm) + ' kg</b>' : 'sem carga') + '</span></li>';
                 }).join('') + '</ul>';
             }
         }
         var itens = [], sem = [];
         regioesOrdenadas().forEach(function (it) {
-            var ex = melhorExercicio(it[1]);
+            var ex = exercicioDoMusculo(it[1]);
             if (ex) itens.push([it[0], it[1], ex]); else sem.push(it[1].nome);
         });
         itens.sort(function (a, b) { return b[2].e1rm - a[2].e1rm || a[1].nome.localeCompare(b[1].nome); });
         sem.sort(function (a, b) { return a.localeCompare(b); });
         if (itens.length) {
             var visiveis = mostrarTodos ? itens : itens.slice(0, 6);
-            html += '<div class="mm-cab"><span>Músculo · melhor exercício</span><span>1RM estimado</span></div>'
+            html += '<div class="mm-cab"><span>Músculo · último exercício</span><span>1RM estimado</span></div>'
                 + '<ul class="mm-lista mm-lista-forca">' + visiveis.map(function (it) {
                     var r = it[1], ex = it[2];
                     return '<li data-r="' + it[0] + '"' + (it[0] === selecionada ? ' class="is-sel"' : '') + '>'
                         + '<span class="mm-ex"><span class="mm-lista-nome">' + esc(r.nome) + '</span><span class="mm-ex-sub">' + esc(ex.nome) + '</span></span>'
                         + '<span class="mm-lista-num"><b>' + fmt(ex.e1rm) + ' kg</b>'
-                        + (r.ultimo_treino ? '<small>' + treinouHa(diasDesde(r.ultimo_treino)) + '</small>' : '') + '</span></li>';
+                        + '<small>' + feitoHa(diasDesde(ex.data)) + '</small></span></li>';
                 }).join('') + '</ul>' + mostrarMais(itens.length);
         }
         if (sem.length) {

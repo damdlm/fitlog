@@ -36,7 +36,7 @@ NÍVEL DE FORÇA (precisa do peso corporal, User.peso_kg)
 """
 import math
 import unicodedata
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import func
@@ -162,6 +162,11 @@ def _hoje():
 
 def _agora():
     return datetime.now(FUSO_BR)
+
+
+def _ordinal_inverso(data_iso):
+    """Chave de ordenação: datas mais recentes primeiro ('AAAA-MM-DD')."""
+    return -date.fromisoformat(data_iso).toordinal()
 
 
 def _genero(user):
@@ -461,8 +466,11 @@ class MapaMuscularService:
             for regiao, papel in ([(principal, 'principal')] if principal else []) + \
                     [(r, 'secundario') for r in secundarios]:
                 out.setdefault(regiao, []).append({**base, 'papel': papel})
+        # Principais primeiro e, dentro de cada papel, os feitos MAIS
+        # RECENTEMENTE: com o corte em 8, um exercício pesado de meses atrás
+        # não pode tirar da lista o que o aluno faz hoje.
         for lista in out.values():
-            lista.sort(key=lambda x: (x['papel'] != 'principal', -(x['e1rm'] or 0), x['nome']))
+            lista.sort(key=lambda x: (x['papel'] != 'principal', _ordinal_inverso(x['data']), -(x['e1rm'] or 0), x['nome']))
             del lista[8:]
         return out
 
